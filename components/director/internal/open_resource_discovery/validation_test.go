@@ -18,6 +18,7 @@ const (
 	invalidPolicyLevel           = "invalidPolicyLevel"
 	customPolicyLevel            = "custom"
 	invalidVendor                = "wrongVendor!"
+	invalidType                  = "invalidType"
 )
 
 var (
@@ -90,13 +91,11 @@ var (
           "description": "foo bar"
         }
       ]`
-
 	invalidLinkDueToMissingURL = `[
         {
           "title": "myTitle"
         }
       ]`
-
 	invalidLinkDueToWrongURL = `[
         {
           "url": "wrongURL",
@@ -188,6 +187,101 @@ var (
         {
           "type": "custom",
 		  "callbackUrl": "wrongURL"		  
+        }
+      ]`
+
+	invalidApiResourceLinksDueToMissingType = `[
+        {
+          "url": "https://example.com/shell/discover"
+        },
+		{
+          "type": "console",
+          "url": "%s/shell/discover/relative"
+        }
+      ]`
+	invalidApiResourceLinksDueToWrongType = `[
+        {
+          "type": "wrongType",
+          "url": "https://example.com/shell/discover"
+        }
+      ]`
+	invalidApiResourceLinksDueToMissingCustomValueOfType = `[
+        {
+          "type": "console",
+          "customType": "foo",
+          "url": "https://example.com/shell/discover"
+        }
+      ]`
+	invalidApiResourceLinksDueToMissingURL = `[
+        {
+          "type": "console"
+        }
+      ]`
+	invalidApiResourceLinksDueToWrongURL = `[
+        {
+          "type": "console",
+          "url": "wrongURL"
+        }
+      ]`
+
+	invalidChangeLogEntriesDueToMissingVersion = `[
+        {
+		  "date": "2020-04-29",
+		  "description": "lorem ipsum dolor sit amet",
+		  "releaseStatus": "active",
+		  "url": "https://example.com/changelog/v1"
+        }
+      ]`
+	invalidChangeLogEntriesDueToWrongVersion = `[
+        {
+		  "date": "2020-04-29",
+		  "description": "lorem ipsum dolor sit amet",
+		  "releaseStatus": "active",
+		  "url": "https://example.com/changelog/v1",
+          "version": "wrongValue"
+        }
+      ]`
+	invalidChangeLogEntriesDueToMissingReleaseStatus = `[
+        {
+		  "date": "2020-04-29",
+		  "description": "lorem ipsum dolor sit amet",
+		  "url": "https://example.com/changelog/v1",
+          "version": "1.0.0"
+        }
+      ]`
+	invalidChangeLogEntriesDueToWrongReleaseStatus = `[
+        {
+		  "date": "2020-04-29",
+		  "description": "lorem ipsum dolor sit amet",
+		  "releaseStatus": "wrongValue",
+		  "url": "https://example.com/changelog/v1",
+          "version": "1.0.0"
+        }
+      ]`
+	invalidChangeLogEntriesDueToMissingDate = `[
+        {
+		  "description": "lorem ipsum dolor sit amet",
+		  "releaseStatus": "active",
+		  "url": "https://example.com/changelog/v1",
+          "version": "1.0.0"
+        }
+      ]`
+	invalidChangeLogEntriesDueToWrongDate = `[
+        {
+		  "date": "wrongValue",
+		  "description": "lorem ipsum dolor sit amet",
+		  "releaseStatus": "active",
+		  "url": "https://example.com/changelog/v1",
+          "version": "1.0.0"
+        }
+      ]`
+	invalidChangeLogEntriesDueToWrongURL = `[
+        {
+		  "date": "2020-04-29",
+		  "description": "lorem ipsum dolor sit amet",
+		  "releaseStatus": "active",
+		  "url": "wrongValue",
+          "version": "1.0.0"
         }
       ]`
 )
@@ -994,3 +1088,854 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 		})
 	}
 }
+
+func TestDocuments_ValidateAPI(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Missing `ordID` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdID = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordID` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdID = str.Ptr(invalidOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Name = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `shortDescription` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ShortDescription = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `shortDescription` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `shortDescription` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ShortDescription = str.Ptr("")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "New lines in `shortDescription` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ShortDescription = str.Ptr(`newLine\n`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `description` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Description = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `version` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].VersionInput.Value = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `version` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].VersionInput.Value = invalidVersion
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `partOfPackage` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `partOfPackage` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = str.Ptr(invalidOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `partOfPackage` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `partOfPackage` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `partOfPackage` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `partOfConsumptionBundle` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdBundleID = str.Ptr(invalidOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `apiProtocol` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ApiProtocol = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `apiProtocol` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ApiProtocol = str.Ptr("wrongApiProtocol")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `visibility` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Visibility = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `visibility` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Visibility = str.Ptr("wrongVisibility")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `tags` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Tags = json.RawMessage(invalidTagsValue)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Tags = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Tags = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when the JSON array is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Tags = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it contains non string value for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid value for `countries` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Countries = json.RawMessage(invalidCountriesElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Countries = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Countries = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when the JSON array is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Countries = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when it contains non string value for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Countries = json.RawMessage(invalidCountriesNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid value for `lineOfBusiness` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(invalidLineOfBusinessElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when the JSON array is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it contains non string value for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(invalidCountriesNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `industry` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(invalidIndustryElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when the JSON array is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it contains non string value for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(invalidIndustryNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `type` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `type` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = invalidType
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Field `type` value is not `custom` when field `customType` is provided for `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].CustomType = "test:test:v1"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customType` value when field `type` has value `custom`for `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].CustomType = "wrongCustomType"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `mediaType` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "invalid/type"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `openapi-v2` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "openapi-v2"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/xml"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `openapi-v3` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "openapi-v3"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/xml"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `raml-v1` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "raml-v1"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/xml"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `edmx` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "edmx"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/json"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `csdl-json` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "csdl-json"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/xml"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `wsdl-v1` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "wsdl-v1"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/json"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `wsdl-v2` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "wsdl-v2"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/json"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `sap-rfc-metadata-v1` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "sap-rfc-metadata-v1"
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = "application/json"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `url` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].URL = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `url` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].URL = invalidUrl
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `type` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `type` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = invalidType
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` when field `type` is not `custom` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = "foo"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = "foo"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `customDescription` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `type` field for `apiResourceLink` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToMissingType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for `apiResourceLink` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToWrongType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` when field `type` is not `custom` for `apiResourceLink` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToMissingCustomValueOfType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `url` field for `apiResourceLink` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToMissingURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field for `apiResourceLink` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToWrongURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `apiResourceLink` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `apiResourceLink` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `apiResourceLink` field when it is an empty JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+
+		{
+			Name: "Missing `title` field in `Links` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage(invalidLinkDueToMissingTitle)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `url` field in `Links` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage(invalidLinkDueToMissingURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field in `Links` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage(invalidLinkDueToWrongURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is an empty JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `releaseStatus` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ReleaseStatus = str.Ptr("")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `releaseStatus` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ReleaseStatus = str.Ptr("wrongValue")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `sunsetDate` field when `releaseStatus` field has value `deprecated` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `sunsetDate` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SunsetDate = str.Ptr("wrongDate")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `successor` field when `releaseStatus` field has value `deprecated` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successor` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successor = str.Ptr("invalidValue")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `version` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToMissingVersion)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `version` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongVersion)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `releaseStatus` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToMissingReleaseStatus)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `releaseStatus` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongReleaseStatus)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `date` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToMissingDate)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `date` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongDate)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `url` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `changeLogEntries` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `changeLogEntries` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `changeLogEntries` field when it is an empty JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing field `entryPoint` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURL = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `entryPoint` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURL = invalidUrl
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `Labels` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Labels = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `Labels` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Labels = json.RawMessage(`[]`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array of strings for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `Labels` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+

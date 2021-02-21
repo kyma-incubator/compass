@@ -243,6 +243,9 @@ func validateORDChangeLogEntries(value interface{}) error {
 			validation.Required,
 			validation.Date("2006-01-02"),
 		},
+		"url": {
+			is.RequestURI,
+		},
 	})
 }
 
