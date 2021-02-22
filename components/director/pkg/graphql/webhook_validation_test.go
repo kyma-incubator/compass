@@ -326,6 +326,28 @@ func TestWebhookInput_Validate_URLTemplate(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
+			Name: "InvalidURL",
+			Value: stringPtr(`{
+	   "method": "POST",
+	   "path": "abc"
+ }`),
+			ExpectedValid: false,
+		},
+		{
+			Name: "MissingPath",
+			Value: stringPtr(`{
+	   "method": "POST"
+ }`),
+			ExpectedValid: false,
+		},
+		{
+			Name: "MissingMethod",
+			Value: stringPtr(`{
+	   "path": "https://my-int-system/api/v1/{{.Application.ID}}/pairing"
+ }`),
+			ExpectedValid: false,
+		},
+		{
 			Name:          "Empty",
 			Value:         stringPtr(""),
 			ExpectedValid: false, // it should not be valid due to the fact that we also discard the legacy URL from the webhook in the test below
@@ -465,7 +487,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 		{
 			Name: "ExpectedValid",
 			Value: stringPtr(`{
-			   "location": "{{.Headers.location}}",
+			   "location": "{{.Headers.Location}}",
 			   "success_status_code": 202,
 			   "error": "{{.Body.error}}"
 			 }`),
@@ -474,7 +496,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 		{
 			Name: "Invalid - contains only location",
 			Value: stringPtr(`{
-			   "location": "{{.Headers.location}}"
+			   "location": "{{.Headers.Location}}"
 			 }`),
 			ExpectedValid: false,
 		},
@@ -544,7 +566,10 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 			Name: "Invalid - missing error",
 			Value: stringPtr(`{
 			   "status": "{{.Body.status}}",
-			   "success_status_code": 200
+			   "success_status_code": 200,
+			   "success_status_identifier": "SUCCESS",
+			   "in_progress_status_identifier": "IN_PROGRESS",
+			   "failed_status_identifier": "FAILED"
 			 }`),
 			ExpectedValid: false,
 		},
@@ -552,6 +577,9 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 			Name: "Invalid -  missing status",
 			Value: stringPtr(`{
 			   "success_status_code": 200,
+			   "success_status_identifier": "SUCCESS",
+			   "in_progress_status_identifier": "IN_PROGRESS",
+			   "failed_status_identifier": "FAILED",
 			   "error": "{{.Body.error}}"
 			 }`),
 			ExpectedValid: false,
@@ -560,8 +588,44 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 			Name: "Invalid - missing success status code",
 			Value: stringPtr(`{
 			   "status": "{{.Body.status}}",
+			   "success_status_identifier": "SUCCESS",
+			   "in_progress_status_identifier": "IN_PROGRESS",
+			   "failed_status_identifier": "FAILED",
 			   "error": "{{.Body.error}}"
 			 }`),
+			ExpectedValid: false,
+		},
+		{
+			Name: "Invalid - missing success status identifier",
+			Value: stringPtr(`{
+			   "status": "{{.Body.status}}",
+			   "success_status_code": 200,
+			   "in_progress_status_identifier": "IN_PROGRESS",
+			   "failed_status_identifier": "FAILED",
+			   "error": "{{.Body.error}}"
+			}`),
+			ExpectedValid: false,
+		},
+		{
+			Name: "Invalid - missing in progress status identifier",
+			Value: stringPtr(`{
+			   "status": "{{.Body.status}}",
+			   "success_status_code": 200,
+			   "success_status_identifier": "SUCCESS",
+			   "failed_status_identifier": "FAILED",
+			   "error": "{{.Body.error}}"
+			}`),
+			ExpectedValid: false,
+		},
+		{
+			Name: "Invalid - missing failed status identifier",
+			Value: stringPtr(`{
+			   "status": "{{.Body.status}}",
+			   "success_status_code": 200,
+			   "success_status_identifier": "SUCCESS",
+			   "in_progress_status_identifier": "IN_PROGRESS",
+			   "error": "{{.Body.error}}"
+			}`),
 			ExpectedValid: false,
 		},
 		{
@@ -633,7 +697,7 @@ func TestWebhookInput_Validate_AsyncWebhook_MissingLocationInOutputTemplate_Shou
 func fixValidWebhookInput(url string) graphql.WebhookInput {
 	template := `{}`
 	outputTemplate := `{
-	   "location": "{{.Headers.location}}",
+	   "location": "{{.Headers.Location}}",
 	   "success_status_code": 202,
 	   "error": "{{.Body.error}}"
  }`
