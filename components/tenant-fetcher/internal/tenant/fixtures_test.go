@@ -12,10 +12,11 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 }
 
 const (
-	testID           = "foo"
-	createQuery      = "INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, provider_name, status ) VALUES ( ?, ?, ?, ?, ? )"
-	deleteQuery      = "DELETE FROM public.business_tenant_mappings WHERE external_tenant = $1"
-	testProviderName = "test-provider"
+	testID                         = "foo"
+	createQuery                    = "INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, provider_name, status ) VALUES ( ?, ?, ?, ?, ? )"
+	deleteQuery                    = "DELETE FROM public.business_tenant_mappings WHERE external_tenant = $1"
+	testProviderName               = "test-provider"
+	tenantProviderTenantIdProperty = "TenantId"
 )
 
 var testError = errors.New("test error")
@@ -27,3 +28,9 @@ var createQueryArgs = fixTenantMappingCreateArgs(tenant.Entity{
 	Status:         tenant.Active,
 	ProviderName:   testProviderName,
 })
+
+type errReader int
+
+func (errReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("test error")
+}

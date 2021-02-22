@@ -1,8 +1,12 @@
 package tenant_test
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -20,22 +24,27 @@ import (
 
 func TestService_Create(t *testing.T) {
 	//GIVEN
-	testErr := errors.New("test error")
-	ctx := context.Background()
-	txGen := txtest.NewTransactionContextGenerator(testErr)
+	txGen := txtest.NewTransactionContextGenerator(testError)
+	target := "http://example.com/foo"
 	tenantModel := model.TenantModel{
 		ID:             testID,
 		TenantId:       testID,
 		Status:         tenantEntity.Active,
 		TenantProvider: testProviderName,
 	}
+	requestBody, err := json.Marshal(tenantModel)
+	assert.NoError(t, err)
 
 	testCases := []struct {
-		Name           string
-		TenantRepoFn   func() *automock.TenantRepository
-		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		UidFn          func() *automock.UIDService
-		ExpectedOutput error
+		Name                  string
+		TenantRepoFn          func() *automock.TenantRepository
+		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		UidFn                 func() *automock.UIDService
+		ConfigFn              func() tenant.Config
+		Request               *http.Request
+		ExpectedErrorOutput   error
+		ExpectedSuccessOutput string
+		ExpectedStatusCode    int
 	}{
 		{
 			Name: "Success",
@@ -50,14 +59,47 @@ func TestService_Create(t *testing.T) {
 				uidSvc.On("Generate").Return(testID)
 				return uidSvc
 			},
-			ExpectedOutput: nil,
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   nil,
+			ExpectedSuccessOutput: "https://github.com/kyma-incubator/compass",
+			ExpectedStatusCode:    200,
 		},
 		{
-			Name: "Error when creating tenant in database",
+			Name: "Error when extracting request body",
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(testErr)
+				tenantMappingRepo.AssertNotCalled(t, "Create")
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.AssertNotCalled(t, "Generate")
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, errReader(0)),
+			ExpectedErrorOutput:   testError,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
+			Name: "Error when beginning transaction",
+			TxFn: txGen.ThatFailsOnBegin,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.AssertNotCalled(t, "Create")
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -65,7 +107,40 @@ func TestService_Create(t *testing.T) {
 				uidSvc.On("Generate").Return(testID)
 				return uidSvc
 			},
-			ExpectedOutput: testErr,
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   testError,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
+			Name: "Error when creating tenant in database",
+			TxFn: txGen.ThatSucceeds,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(testError)
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(testID)
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   testError,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
 		},
 		{
 			Name: "Error when committing transaction in database",
@@ -80,22 +155,16 @@ func TestService_Create(t *testing.T) {
 				uidSvc.On("Generate").Return(testID)
 				return uidSvc
 			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error when beginning transaction in database",
-			TxFn: txGen.ThatFailsOnBegin,
-			TenantRepoFn: func() *automock.TenantRepository {
-				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.AssertNotCalled(t, "Create")
-				return tenantMappingRepo
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
 			},
-			UidFn: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				uidSvc.AssertNotCalled(t, "Generate")
-				return uidSvc
-			},
-			ExpectedOutput: testErr,
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   testError,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
 		},
 	}
 
@@ -104,19 +173,33 @@ func TestService_Create(t *testing.T) {
 			_, transact := testCase.TxFn()
 			tenantRepo := testCase.TenantRepoFn()
 			uidSvc := testCase.UidFn()
+			config := testCase.ConfigFn()
 
-			svc := tenant.NewService(tenantRepo, transact, uidSvc)
+			body, err := json.Marshal(tenantModel)
+			require.NoError(t, err)
+			handler := tenant.NewService(tenantRepo, transact, uidSvc, config)
+			req := testCase.Request
+			w := httptest.NewRecorder()
 
 			//WHEN
-			err := svc.Create(ctx, tenantModel)
+			handler.Create(w, req)
 
 			// THEN
-			if testCase.ExpectedOutput != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedOutput.Error())
+			resp := w.Result()
+			body, err = ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if testCase.ExpectedErrorOutput != nil {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput.Error())
 			} else {
 				assert.NoError(t, err)
 			}
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
+			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
 
 			tenantRepo.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
@@ -127,15 +210,27 @@ func TestService_Create(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	//GIVEN
 	testErr := errors.New("test error")
-	ctx := context.Background()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
+	target := "http://example.com/foo"
+	tenantModel := model.TenantModel{
+		ID:             testID,
+		TenantId:       testID,
+		Status:         tenantEntity.Active,
+		TenantProvider: testProviderName,
+	}
+	requestBody, err := json.Marshal(tenantModel)
+	assert.NoError(t, err)
 
 	testCases := []struct {
-		Name           string
-		TenantRepoFn   func() *automock.TenantRepository
-		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		UidFn          func() *automock.UIDService
-		ExpectedOutput error
+		Name                  string
+		TenantRepoFn          func() *automock.TenantRepository
+		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		UidFn                 func() *automock.UIDService
+		ConfigFn              func() tenant.Config
+		Request               *http.Request
+		ExpectedErrorOutput   error
+		ExpectedSuccessOutput string
+		ExpectedStatusCode    int
 	}{
 		{
 			Name: "Success",
@@ -149,35 +244,39 @@ func TestService_Delete(t *testing.T) {
 				uidSvc := &automock.UIDService{}
 				return uidSvc
 			},
-			ExpectedOutput: nil,
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   nil,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    200,
 		},
 		{
-			Name: "Error when deleting tenant from database",
+			Name: "Error when extracting request body",
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(testErr)
+				tenantMappingRepo.AssertNotCalled(t, "DeleteByExternalID")
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				return uidSvc
 			},
-			ExpectedOutput: testErr,
-		},
-		{
-			Name: "Error when committing transaction in database",
-			TxFn: txGen.ThatFailsOnCommit,
-			TenantRepoFn: func() *automock.TenantRepository {
-				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(nil)
-				return tenantMappingRepo
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
 			},
-			UidFn: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				return uidSvc
-			},
-			ExpectedOutput: testErr,
+			Request:               httptest.NewRequest(http.MethodPut, target, errReader(0)),
+			ExpectedErrorOutput:   testErr,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
 		},
 		{
 			Name: "Error when beginning transaction in database",
@@ -191,7 +290,62 @@ func TestService_Delete(t *testing.T) {
 				uidSvc := &automock.UIDService{}
 				return uidSvc
 			},
-			ExpectedOutput: testErr,
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   testError,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
+			Name: "Error when deleting tenant from database",
+			TxFn: txGen.ThatSucceeds,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(testErr)
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   testErr,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
+			Name: "Error when committing transaction in database",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(nil)
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedErrorOutput:   testErr,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
 		},
 	}
 
@@ -200,19 +354,25 @@ func TestService_Delete(t *testing.T) {
 			_, transact := testCase.TxFn()
 			tenantRepo := testCase.TenantRepoFn()
 			uidSvc := testCase.UidFn()
+			config := testCase.ConfigFn()
 
-			svc := tenant.NewService(tenantRepo, transact, uidSvc)
+			handler := tenant.NewService(tenantRepo, transact, uidSvc, config)
+			req := testCase.Request
+			w := httptest.NewRecorder()
 
 			//WHEN
-			err := svc.DeleteByExternalID(ctx, testID)
+			handler.DeleteByExternalID(w, req)
 
 			// THEN
-			if testCase.ExpectedOutput != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedOutput.Error())
-			} else {
-				assert.NoError(t, err)
+			resp := w.Result()
+			body, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
 			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
 
 			tenantRepo.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)

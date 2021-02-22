@@ -18,27 +18,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-
-	"github.com/tidwall/gjson"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	auth "github.com/kyma-incubator/compass/components/tenant-fetcher/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -48,13 +36,10 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const compassURL = "https://github.com/kyma-incubator/compass"
 const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
-
-	Database persistence.DatabaseConfig
 
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout time.Duration `envconfig:"default=10s"`
@@ -63,17 +48,7 @@ type config struct {
 
 	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
-	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
-	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-
-	TenantProviderTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
-	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER"`
-
-	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
-	IdentityZone              string        `envconfig:"APP_TENANT_IDENTITY_ZONE"`
-	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
+	Handler tenant.Config
 }
 
 func main() {
@@ -88,65 +63,20 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	if cfg.HandlerEndpoint == "" || cfg.TenantPathParam == "" {
+	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
 		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
 	}
-
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
 
 	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
 
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
-	uidSvc := uuid.NewService()
-	converter := tenant.NewConverter()
-	repo := tenant.NewRepository(converter)
-	service := tenant.NewService(repo, transact, uidSvc)
-
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
-	logger := log.C(ctx)
 
-	middleware := auth.New(
-		cfg.JwksEndpoint,
-		cfg.IdentityZone,
-		cfg.SubscriptionCallbackScope,
-		extractTrustedIssuersScopePrefixes(authenticatorsConfig),
-		cfg.AllowJWTSigningNone,
-	)
+	handler, err := initAPIHandler(ctx, cfg, authenticatorsConfig)
+	exitOnError(err, "Failed to init tenant fetcher handlers")
 
-	logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
-		err := middleware.SynchronizeJWKS(ctx)
-		if err != nil {
-			logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
-		}
-	})
-	go periodicExecutor.Run(ctx)
-
-	mainRouter := mux.NewRouter()
-	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	subrouter.Use(middleware.Handler(), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
-
-	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderTenantIdProperty, cfg.TenantProvider)).Methods(http.MethodPut)
-
-	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderTenantIdProperty)).Methods(http.MethodDelete)
-
-	healthCheckSubrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	logger.Infof("Registering readiness endpoint...")
-	healthCheckSubrouter.HandleFunc("/readyz", newReadinessHandler())
-
-	logger.Infof("Registering liveness endpoint...")
-	healthCheckSubrouter.HandleFunc("/healthz", newReadinessHandler())
-
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, mainRouter, "main")
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
 		<-ctx.Done()
@@ -156,6 +86,27 @@ func main() {
 	}()
 
 	runMainSrv()
+}
+
+func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Config) (http.Handler, error) {
+	logger := log.C(ctx)
+	mainRouter := mux.NewRouter()
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+
+	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+
+	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg); err != nil {
+		return nil, err
+	}
+
+	logger.Infof("Registering readiness endpoint...")
+	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
+
+	logger.Infof("Registering liveness endpoint...")
+	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
+
+	return mainRouter, nil
 }
 
 func exitOnError(err error, context string) {
@@ -197,103 +148,8 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantIdProperty, tenantProvider string) func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		logger := log.C(request.Context())
-
-		logHandlerRequest("onboarding", tenantPathParam, request)
-		body, err := extractBody(request, writer)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "while extracting request body"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
-		tenant := model.TenantModel{
-			TenantId:       tenantId,
-			TenantProvider: tenantProvider,
-			Status:         tenantEntity.Active,
-		}
-
-		if err := svc.Create(request.Context(), tenant); err != nil {
-			logger.Error(errors.Wrapf(err, "while creating tenant"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		writer.Header().Set("Content-Type", "text/plain")
-		writer.WriteHeader(http.StatusOK)
-		if _, err := writer.Write([]byte(compassURL)); err != nil {
-			logger.Error(errors.Wrapf(err, "while writing response body"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantIdProperty string) func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		logger := log.C(request.Context())
-
-		logHandlerRequest("decommissioning", tenantPathParam, request)
-
-		body, err := extractBody(request, writer)
-
-		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
-
-		if err := svc.DeleteByExternalID(request.Context(), tenantId); err != nil {
-			logger.Error(errors.Wrapf(err, "while deleting tenant"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		writer.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(writer).Encode(map[string]interface{}{})
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "while writing to response body"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func logHandlerRequest(operation, tenantPathParam string, request *http.Request) {
-	tenantID := mux.Vars(request)[tenantPathParam]
-	log.C(request.Context()).Infof("Performing %s for tenant with id %q", operation, tenantID)
-}
-
-func extractBody(r *http.Request, w http.ResponseWriter) ([]byte, error) {
-	logger := log.C(r.Context())
-
-	buf, bodyErr := ioutil.ReadAll(r.Body)
-	if bodyErr != nil {
-		logger.Info("Body Error: ", bodyErr.Error())
-		http.Error(w, bodyErr.Error(), http.StatusInternalServerError)
-		return nil, bodyErr
-	}
-
-	return buf, nil
-}
-
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	}
-}
-
-func extractTrustedIssuersScopePrefixes(config []authenticator.Config) []string {
-	var prefixes []string
-
-	for _, authenticator := range config {
-		if len(authenticator.TrustedIssuers) == 0 {
-			continue
-		}
-
-		for _, trustedIssuers := range authenticator.TrustedIssuers {
-			prefixes = append(prefixes, trustedIssuers.ScopePrefix)
-		}
-	}
-
-	return prefixes
 }
