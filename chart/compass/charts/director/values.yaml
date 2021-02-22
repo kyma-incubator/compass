@@ -29,3 +29,10 @@ operatorGroupNames: "runtimeOperator"
 applicationHideSelectors: |-
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"
+
+istio:
+  rbac:
+    enabled: true
+    connectorInternalApi:
+      compassConnector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector
+      compassConnectorTests: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector-tests

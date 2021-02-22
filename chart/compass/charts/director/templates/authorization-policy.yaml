@@ -20,11 +20,11 @@ spec:
     - from:
       - source:
           principals:
-          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassDirector . }}
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassConnector . }}
           - {{ tpl .Values.istio.rbac.connectorInternalApi.compassConnectorTests . }}
     - to:
       - operation:
           ports:
-          - "{{ .Values.global.connector.validator.port }}"
-          - "{{ .Values.global.connector.graphql.external.port }}"
+          - "{{ .Values.global.director.validator.port }}"
+          - "{{ .Values.global.director.graphql.external.port }}"
   {{ end }}

@@ -73,7 +73,7 @@ const envPrefix = "APP"
 
 type config struct {
 	Address         string `envconfig:"default=127.0.0.1:3000"`
-	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
+	InternalAddress string `envconfig:"default=127.0.0.1:3001"`
 	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
 
 	AppURL string `envconfig:"APP_URL"`
@@ -93,7 +93,7 @@ type config struct {
 
 	Log log.Config
 
-	MetricsAddress string `envconfig:"default=127.0.0.1:3001"`
+	MetricsAddress string `envconfig:"default=127.0.0.1:3002"`
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
