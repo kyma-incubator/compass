@@ -17,10 +17,11 @@
 package config
 
 import (
+	"reflect"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/server"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
-	"reflect"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
@@ -51,6 +52,7 @@ func DefaultConfig() *Config {
 		Server:        server.DefaultConfig(),
 		HttpClient:    http.DefaultConfig(),
 		GraphQLClient: graphql.DefaultConfig(),
+		Director:      director.DefaultConfig(),
 		Webhook:       webhook.DefaultConfig(),
 	}
 }
