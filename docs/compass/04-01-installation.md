@@ -114,7 +114,7 @@ To install Compass as central Management Plane on a cluster, follow these steps:
 1. Select installation option for Compass and Kyma. ​There are three possible installation options:
 
    | Installation option     	| Value to use with the installation command   	| Example value          	|
-       |-------------------------	|-------------------	|-------------------------	|
+   |-------------------------	|-------------------	|-------------------------	|
    | From the Compass `master` branch 	| `master`          	| `master`                	|
    | From a specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
    | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
