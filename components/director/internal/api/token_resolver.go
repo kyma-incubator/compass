@@ -20,7 +20,7 @@ type TokenResolver interface {
 }
 
 type TokenService interface {
-	RegenerateOneTimeToken(ctx context.Context, authID string, token string) (model.OneTimeToken, error)
+	RegenerateOneTimeToken(ctx context.Context, authID string, token tokens.TokenType) (model.OneTimeToken, error)
 }
 
 type tokenResolver struct {
@@ -45,7 +45,7 @@ func (r *tokenResolver) GenerateCSRToken(ctx context.Context, authID string) (*i
 
 	log.C(ctx).Infof("Generating one-time token for CSR with authID %s", authID)
 
-	token, err := r.tokenService.RegenerateOneTimeToken(ctx, authID, string(tokens.CSRToken))
+	token, err := r.tokenService.RegenerateOneTimeToken(ctx, authID, tokens.CSRToken)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for CSR with authID %s", authID)
 		return &internalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for CSR")

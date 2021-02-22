@@ -2,15 +2,13 @@ package systemauth
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
@@ -22,6 +20,8 @@ type Repository interface {
 	ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error
 	DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error
+	GetByJSONValue(ctx context.Context, value map[string]interface{}) (*model.SystemAuth, error)
+	Update(ctx context.Context, item *model.SystemAuth) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -108,6 +108,15 @@ func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemA
 	return item, nil
 }
 
+func (s *service) GetByID(ctx context.Context, authID string) (*model.SystemAuth, error) {
+	item, err := s.repo.GetByIDGlobal(ctx, authID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
+	}
+
+	return item, nil
+}
+
 func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	item, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {
@@ -115,6 +124,25 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 	}
 
 	return item, nil
+}
+
+func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
+	return s.repo.GetByJSONValue(ctx, map[string]interface{}{
+		"OneTimeToken": map[string]interface{}{
+			"Token": token,
+			"Used":  false,
+		},
+	})
+}
+
+func (s *service) InvalidateToken(ctx context.Context, item *model.SystemAuth) error {
+	item.Value.OneTimeToken.Used = true
+	item.Value.OneTimeToken.UsedAt = time.Now()
+	return s.repo.Update(ctx, item)
+}
+
+func (s *service) Update(ctx context.Context, item *model.SystemAuth) error {
+	return s.repo.Update(ctx, item)
 }
 
 func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {

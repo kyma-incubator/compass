@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
@@ -72,8 +74,9 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:3000"`
-	AppURL  string `envconfig:"APP_URL"`
+	Address         string `envconfig:"default=127.0.0.1:3000"`
+	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
+	AppURL          string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -109,13 +112,7 @@ type config struct {
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
 
-	// todo move this
-	Token struct {
-		Length                int           `envconfig:"default=64"`
-		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
-		ApplicationExpiration time.Duration `envconfig:"default=5m"`
-		CSRExpiration         time.Duration `envconfig:"default=5m"`
-	}
+	TokenConfig tokens.Config
 }
 
 func main() {
@@ -172,6 +169,7 @@ func main() {
 			metricsCollector,
 			httpClient,
 			cfg.ProtectedLabelPattern,
+			cfg.TokenConfig.Length,
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       operation.NewDirective(transact, webhookService().List, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
@@ -257,20 +255,23 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
+	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	exitOnError(err, "Failed configuring internal graphQL handler")
+
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
-
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, httpClient)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
-	exitOnError(err, "Failed configuring internal graphQL handler")
+	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
 		shutdownMainSrv()
+		shutdownInternalGQLSrv()
 	}()
 
 	go runMetricsSrv()
+	go runInternalGQLSrv()
 	runMainSrv()
 }
 
@@ -528,8 +529,8 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
-	documenSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documenSvc, uidSvc)
+	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
+	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.Token.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters)
+	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.TokenConfig.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters)
 }
