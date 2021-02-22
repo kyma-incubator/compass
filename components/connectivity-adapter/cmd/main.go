@@ -32,8 +32,6 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading app config")
 
-	cfg.AppRegistry.DirectorEndpoint = cfg.AppRegistry.DirectorEndpoint + "?useBundles=true" // TODO: Delete after bundles are adopted
-
 	h, err := initAPIHandler(cfg)
 	exitOnError(err, "Failed to init External Connector handler")
 

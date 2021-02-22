@@ -53,8 +53,6 @@ func main() {
 	cfg, err := config.New(env)
 	fatalOnError(err)
 
-	cfg.GraphQLClient.GraphqlEndpoint = cfg.GraphQLClient.GraphqlEndpoint + "?useBundles=true" // TODO: Delete after bundles are adopted
-
 	err = cfg.Validate()
 	fatalOnError(err)
 

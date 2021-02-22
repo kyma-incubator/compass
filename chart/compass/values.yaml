@@ -16,7 +16,7 @@ global:
       version: "PR-1720"
     connectivity_adapter:
       dir:
-      version: "PR-1720"
+      version: "PR-1732"
     pairing_adapter:
       dir:
       version: "PR-1720"
@@ -40,7 +40,7 @@ global:
       version: "PR-1736"
     system_broker:
       dir:
-      version: "PR-1721"
+      version: "PR-1732"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -55,7 +55,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1714"
+        version: "PR-1732"
       connector:
         dir:
         version: "PR-1715"
