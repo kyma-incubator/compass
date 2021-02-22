@@ -31,7 +31,7 @@ import (
 // and notifying Director for state changes of said application
 type Client interface {
 	types.ApplicationLister
-	UpdateStatus(ctx context.Context, request Request) error
+	UpdateStatus(ctx context.Context, request *Request) error
 }
 
 // defaultClient is the default implementation of the Client interface
@@ -41,7 +41,6 @@ type defaultClient struct {
 	DirectorURL string
 }
 
-// TODO: Remove this struct and resuse the one from Director once the Scheduler logic is merged
 type Request struct {
 	OperationType graphql.OperationType `json:"operation_type,omitempty"`
 	ResourceType  resource.Type         `json:"resource_type"`
@@ -59,7 +58,7 @@ func NewClient(directorURL string, httpClient http.Client, appLister types.Appli
 }
 
 // Notify makes an http request to the Director to notify for any state changes related to a given application
-func (dc *defaultClient) UpdateStatus(ctx context.Context, request Request) error {
+func (dc *defaultClient) UpdateStatus(ctx context.Context, request *Request) error {
 	body, err := json.Marshal(request)
 	if err != nil {
 		return err
