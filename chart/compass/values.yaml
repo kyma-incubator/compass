@@ -17,7 +17,7 @@ global:
       version: "PR-1720"
     connectivity_adapter:
       dir:
-      version: "PR-1720"
+      version: "PR-1732"
     pairing_adapter:
       dir:
       version: "PR-1720"
@@ -56,7 +56,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1714"
+        version: "PR-1732"
       connector:
         dir:
         version: "PR-1715"

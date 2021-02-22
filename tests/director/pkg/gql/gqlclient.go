@@ -25,7 +25,6 @@ func GetDirectorGraphQLURL() string {
 		url = "http://127.0.0.1:3000"
 	}
 	url = url + "/graphql"
-	url = url + "?useBundles=true" // TODO: Delete after bundles are adopted
 	return url
 }
 
