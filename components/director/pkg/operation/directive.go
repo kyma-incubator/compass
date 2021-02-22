@@ -124,7 +124,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	webhookIDs, err := d.prepareWebhookIDs(ctx, err, operation, webhookType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
-		return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
+		return nil, apperrors.NewInternalError("Unable to prepare webhooks")
 	}
 
 	operation.WebhookIDs = webhookIDs

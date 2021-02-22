@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -46,8 +47,8 @@ const (
 )
 
 func TestHandleOperation(t *testing.T) {
-	var mockedHeaders = map[string]string{
-		"key": "value",
+	var mockedHeaders = http.Header{
+		"key": []string{"value"},
 	}
 
 	t.Run("missing operation mode param causes internal server error", func(t *testing.T) {
@@ -374,6 +375,78 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 	})
 
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due missing webhooks", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
+			return nil, nil
+		}, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, "Unable to prepare webhooks")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due multiple webhooks found", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
+			return []*model.Webhook{
+				{ID: webhookID1, Type: model.WebhookTypeRegisterApplication},
+				{ID: webhookID2, Type: model.WebhookTypeRegisterApplication},
+				{ID: webhookID3, Type: model.WebhookTypeRegisterApplication},
+			}, nil
+		}, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, "Unable to prepare webhooks")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
 	t.Run("when mutation is in ASYNC mode, there is operation in context but Scheduler fails to schedule should roll-back", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
@@ -495,10 +568,8 @@ func TestHandleOperation(t *testing.T) {
 				Name: "when all webhooks match their IDs should be present in the operation",
 				Webhooks: []*model.Webhook{
 					{ID: webhookID1, Type: model.WebhookType(webhookType)},
-					{ID: webhookID2, Type: model.WebhookType(webhookType)},
-					{ID: webhookID3, Type: model.WebhookType(webhookType)},
 				},
-				ExpectedWebhookIDs: []string{webhookID1, webhookID2, webhookID3},
+				ExpectedWebhookIDs: []string{webhookID1},
 			},
 			{
 				Name: "when a single webhook matches its ID should be present in the operation",
@@ -508,15 +579,6 @@ func TestHandleOperation(t *testing.T) {
 					{ID: webhookID3, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
 				},
 				ExpectedWebhookIDs: []string{webhookID1},
-			},
-			{
-				Name: "when no webhooks match no IDs should be present in the operation",
-				Webhooks: []*model.Webhook{
-					{ID: webhookID1, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
-					{ID: webhookID2, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
-					{ID: webhookID3, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
-				},
-				ExpectedWebhookIDs: []string{},
 			},
 		}
 
@@ -550,10 +612,15 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operation.OperationType(operationType), op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
+				headers := make(map[string]string, 0)
+				for key, value := range mockedHeaders {
+					headers[key] = value[0]
+				}
+
 				expectedRequestData := &webhook.RequestData{
 					Application: mockedNextResponse().(webhook.Resource),
 					TenantID:    tenantID,
-					Headers:     mockedHeaders,
+					Headers:     headers,
 				}
 
 				expectedData, err := json.Marshal(expectedRequestData)
@@ -598,7 +665,9 @@ func mockedNextResponse() interface{} {
 }
 
 func mockedWebhooksResponse(_ context.Context, _ string) ([]*model.Webhook, error) {
-	return []*model.Webhook{}, nil
+	return []*model.Webhook{
+		{ID: webhookID1, Type: model.WebhookTypeRegisterApplication},
+	}, nil
 }
 
 func mockedTenantLoaderFunc(_ context.Context) (string, error) {
