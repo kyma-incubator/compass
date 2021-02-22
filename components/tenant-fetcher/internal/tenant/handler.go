@@ -56,8 +56,10 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 
 	defer func() {
 		err := closeFunc()
-		wrappedError := errors.Wrap(err, "Error while closing the connection to the database")
-		log.D().Fatal(wrappedError)
+		if err != nil {
+			wrappedError := errors.Wrap(err, "Error while closing the connection to the database")
+			log.D().Fatal(wrappedError)
+		}
 	}()
 
 	logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
