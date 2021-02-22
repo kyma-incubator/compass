@@ -54,6 +54,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				log.C(ctx).WithError(err).Error("An error has occurred while extracting the JWT token. Error code: ", http.StatusUnauthorized)
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
+				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(r.Context(), token)
