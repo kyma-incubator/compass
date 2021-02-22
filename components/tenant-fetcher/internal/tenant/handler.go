@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	auth "github.com/kyma-incubator/compass/components/tenant-fetcher/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
-	"github.com/pkg/errors"
 )
 
 type Config struct {
@@ -22,8 +21,6 @@ type Config struct {
 
 	TenantProviderTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
 	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER"`
-
-	Database persistence.DatabaseConfig
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
@@ -34,7 +31,7 @@ type Config struct {
 
 const compassURL = "https://github.com/kyma-incubator/compass"
 
-func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authConfig []authenticator.Config) error {
+func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authConfig []authenticator.Config, transact persistence.Transactioner) error {
 	logger := log.C(ctx)
 
 	middleware := auth.New(
@@ -46,21 +43,6 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 	)
 
 	router.Use(middleware.Handler())
-
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	if err != nil {
-		wrappedError := errors.Wrap(err, "Error while establishing the connection to the database")
-		log.D().Fatal(wrappedError)
-		return err
-	}
-
-	defer func() {
-		err := closeFunc()
-		if err != nil {
-			wrappedError := errors.Wrap(err, "Error while closing the connection to the database")
-			log.D().Fatal(wrappedError)
-		}
-	}()
 
 	logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
 	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {

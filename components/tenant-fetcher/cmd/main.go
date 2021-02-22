@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -49,6 +51,8 @@ type config struct {
 	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
 	Handler tenant.Config
+
+	Database persistence.DatabaseConfig
 }
 
 func main() {
@@ -67,13 +71,21 @@ func main() {
 		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
 	}
 
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	handler, err := initAPIHandler(ctx, cfg, authenticatorsConfig)
+	handler, err := initAPIHandler(ctx, cfg, authenticatorsConfig, transact)
 	exitOnError(err, "Failed to init tenant fetcher handlers")
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
@@ -88,7 +100,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Config) (http.Handler, error) {
+func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Config, transact persistence.Transactioner) (http.Handler, error) {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -96,7 +108,7 @@ func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Con
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg); err != nil {
+	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg, transact); err != nil {
 		return nil, err
 	}
 
