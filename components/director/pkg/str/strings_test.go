@@ -150,19 +150,19 @@ func TestTitle(t *testing.T) {
 	const testStr = "Test"
 
 	testCases := []struct {
-		Name     string
-		Input    string
+		Name  string
+		Input string
 	}{
 		{
-			Name: "when string is all-caps returns string with first capital letter",
+			Name:  "when string is all-caps returns string with first capital letter",
 			Input: "TEST",
 		},
 		{
-			Name: "when string is small-caps returns string with first capital letter",
+			Name:  "when string is small-caps returns string with first capital letter",
 			Input: "test",
 		},
 		{
-			Name: "when string has randomized all-caps letters returns string with first capital letter",
+			Name:  "when string has randomized all-caps letters returns string with first capital letter",
 			Input: "tEsT",
 		},
 	}
