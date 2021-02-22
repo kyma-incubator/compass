@@ -59,7 +59,7 @@ func NewClient(directorURL string, httpClient http.Client, appLister types.Appli
 }
 
 // Notify makes an http request to the Director to notify for any state changes related to a given application
-func (dc *defaultClient) Notify(ctx context.Context, request Request) error {
+func (dc *defaultClient) UpdateStatus(ctx context.Context, request Request) error {
 	body, err := json.Marshal(request)
 	if err != nil {
 		return err
