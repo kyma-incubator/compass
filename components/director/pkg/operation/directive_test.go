@@ -658,10 +658,15 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operation.OperationType(operationType), op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
+				headers := make(map[string]string, 0)
+				for key, value := range mockedHeaders {
+					headers[key] = value[0]
+				}
+
 				expectedRequestData := &graphql.RequestData{
 					Application: *(mockedNextResponse().(*graphql.Application)),
 					TenantID:    tenantID,
-					Headers:     mockedHeaders,
+					Headers:     headers,
 				}
 
 				expectedData, err := json.Marshal(expectedRequestData)

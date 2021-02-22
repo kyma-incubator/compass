@@ -17,7 +17,7 @@ import (
 type RequestData struct {
 	Application Application
 	TenantID    string
-	Headers     http.Header
+	Headers     map[string]string
 }
 
 // ResponseData struct contains parts of response that might be needed for later processing of Webhook response
