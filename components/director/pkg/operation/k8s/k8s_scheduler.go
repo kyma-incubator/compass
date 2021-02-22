@@ -3,9 +3,9 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -79,7 +79,7 @@ func toK8SOperation(op *operation.Operation) *v1alpha1.Operation {
 func updateOperationSpec(op *operation.Operation, k8sOp *v1alpha1.Operation) *v1alpha1.Operation {
 	k8sOp.Spec = v1alpha1.OperationSpec{
 		OperationCategory: op.OperationCategory,
-		OperationType:     v1alpha1.OperationType(title(string(op.OperationType))),
+		OperationType:     v1alpha1.OperationType(str.Title(string(op.OperationType))),
 		ResourceType:      string(op.ResourceType),
 		ResourceID:        op.ResourceID,
 		CorrelationID:     op.CorrelationID,
@@ -87,8 +87,4 @@ func updateOperationSpec(op *operation.Operation, k8sOp *v1alpha1.Operation) *v1
 		RequestData:       op.RequestData,
 	}
 	return k8sOp
-}
-
-func title(s string) string {
-	return strings.Title(strings.ToLower(s))
 }

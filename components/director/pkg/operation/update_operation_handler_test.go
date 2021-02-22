@@ -218,7 +218,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 						if expectedErrorMsg == "" {
 							require.Nil(t, errorMsg)
 						} else {
-							require.Equal(t, expectedErrorMsg, *errorMsg)
+							require.Equal(t, fmt.Sprintf("{\"error\":%q}", expectedErrorMsg), *errorMsg)
 						}
 						updateCalled++
 						return nil

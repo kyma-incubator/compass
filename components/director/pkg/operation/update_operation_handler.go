@@ -23,7 +23,6 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -112,11 +111,18 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	resourceUpdaterFunc := h.resourceUpdaterFuncs[operation.ResourceType]
+	opError, err := getError(operation.Error)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while marshalling operation error: %s", err.Error())
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to marshal error"), http.StatusInternalServerError)
+		return
+	}
+
 	switch operation.OperationType {
 	case graphql.OperationTypeCreate:
 		fallthrough
 	case graphql.OperationTypeUpdate:
-		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, getError(operation.Error)); err != nil {
+		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError); err != nil {
 			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
 			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 			return
@@ -124,7 +130,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	case graphql.OperationTypeDelete:
 		resourceDeleterFunc := h.resourceDeleterFuncs[operation.ResourceType]
 		if operation.Error != "" {
-			if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, getError(operation.Error)); err != nil {
+			if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError); err != nil {
 				log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
 				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 				return
@@ -147,10 +153,21 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	writer.WriteHeader(http.StatusOK)
 }
 
-func getError(errorMsg string) *string {
-	if len(errorMsg) > 0 {
-		return &errorMsg
+type operationError struct {
+	Error string `json:"error"`
+}
+
+func getError(errorMsg string) (*string, error) {
+	if len(errorMsg) == 0 {
+		return nil, nil
 	}
 
-	return nil
+	opErr := operationError{Error: errorMsg}
+	bytesErr, err := json.Marshal(opErr)
+	if err != nil {
+		return nil, err
+	}
+
+	stringifiedErr := string(bytesErr)
+	return &stringifiedErr, nil
 }

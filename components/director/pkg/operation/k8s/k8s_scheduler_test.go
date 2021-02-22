@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -204,7 +205,7 @@ func toK8SOperation(op *operation.Operation) *v1alpha1.Operation {
 			Name: operationName,
 		},
 		Spec: v1alpha1.OperationSpec{
-			OperationType: "Create",
+			OperationType: v1alpha1.OperationType(str.Title(string(op.OperationType))),
 			ResourceID:    op.ResourceID,
 		},
 		Status: v1alpha1.OperationStatus{},
