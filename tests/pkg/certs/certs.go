@@ -3,9 +3,11 @@ package connectivity_adapter
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"strings"
 	"testing"
@@ -46,7 +48,7 @@ func CreateCsr(t *testing.T, strSubject string, keys *rsa.PrivateKey) []byte {
 
 // encodedCertChainToPemBytes decodes certificates chain and return pemBlock's bytes for client cert and ca cert
 func encodedCertChainToPemBytes(t *testing.T, encodedChain string) []byte {
-	crtBytes := decodeBase64Cert(encodedChain, t)
+	crtBytes := decodeBase64Cert(t, encodedChain)
 
 	clientCrtPem, rest := pem.Decode(crtBytes)
 	require.NotNil(t, clientCrtPem)
@@ -62,7 +64,7 @@ func encodedCertChainToPemBytes(t *testing.T, encodedChain string) []byte {
 
 // encodedCertToPemBytes decodes certificate and return pemBlock's bytes for it
 func encodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
-	crtBytes := decodeBase64Cert(encodedCert, t)
+	crtBytes := decodeBase64Cert(t, encodedCert)
 
 	certificate, _ := pem.Decode(crtBytes)
 	require.NotNil(t, certificate)
@@ -131,7 +133,7 @@ func parseSubject(subject string) pkix.Name {
 	}
 }
 
-func decodeBase64Cert(certificate string, t *testing.T) []byte {
+func decodeBase64Cert(t *testing.T, certificate string) []byte {
 	crtBytes, err := base64.StdEncoding.DecodeString(certificate)
 	require.NoError(t, err)
 	return crtBytes
@@ -148,4 +150,55 @@ func extractSubject(subject string) map[string]string {
 	}
 
 	return result
+}
+
+func CheckIfChainContainsTwoCertificates(t *testing.T, certChain string) {
+	certificates := DecodeCertChain(t, certChain)
+	require.Equal(t, 2, len(certificates))
+}
+
+
+// Certificate chain starts from leaf certificate and ends with a root certificate (https://tools.ietf.org/html/rfc5246#section-7.4.2).
+// The correct certificate chain holds the following property: ith certificate in the chain is issued by (i+1)th certificate
+func CheckCertificateChainOrder(t *testing.T, chain string) {
+	certChain := DecodeCertChain(t, chain)
+
+	for i := 0; i < len(certChain)-1; i++ {
+		issuer := certChain[i].Issuer
+		nextCertSubject := certChain[i+1].Subject
+
+		require.Equal(t, nextCertSubject, issuer)
+	}
+}
+
+func GetCertificateHash(t *testing.T, certificateStr string) string {
+	cert := DecodeCert(t, certificateStr)
+	sha := sha256.Sum256(cert.Raw)
+	return hex.EncodeToString(sha[:])
+}
+
+func DecodeCert(t *testing.T, certificateStr string) *x509.Certificate {
+	crtBytes := decodeBase64Cert(t,certificateStr)
+
+	clientCrtPem, _ := pem.Decode(crtBytes)
+	require.NotNil(t, clientCrtPem)
+
+	certificate, e := x509.ParseCertificate(clientCrtPem.Bytes)
+	require.NoError(t, e)
+	return certificate
+}
+
+func DecodeCertChain(t *testing.T, certificateChain string) []*x509.Certificate {
+	crtBytes := decodeBase64Cert(t,certificateChain)
+
+	clientCrtPem, rest := pem.Decode(crtBytes)
+	require.NotNil(t, clientCrtPem)
+
+	caCertPem, _ := pem.Decode(rest)
+	require.NotNil(t, caCertPem)
+
+	certificates, e := x509.ParseCertificates(append(clientCrtPem.Bytes, caCertPem.Bytes...))
+	require.NoError(t, e)
+
+	return certificates
 }

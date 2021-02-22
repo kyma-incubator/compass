@@ -15,5 +15,4 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vrischmann/envconfig v1.3.0
 	gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
-	k8s.io/client-go v11.0.0+incompatible // indirect
 )
