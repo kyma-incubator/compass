@@ -2731,7 +2731,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},  {
+		}, {
 			Name: "Invalid JSON `Labels` field for Product",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2768,6 +2768,108 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Products[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestDocuments_ValidateVendor(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Missing `id` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].OrdID = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `id` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].OrdID = invalidOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Title = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `type` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Type = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Type = invalidType
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `Labels` field for Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].Labels = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `Labels` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(`[]`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array of strings for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `Labels` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
 
 				return []*open_resource_discovery.Document{doc}
 			},
