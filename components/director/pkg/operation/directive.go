@@ -64,31 +64,9 @@ func NewDirective(transact persistence.Transactioner, webhookFetcherFunc Webhook
 	}
 }
 
-// NewDirective creates a new handler struct responsible for the Async directive business logic
+// NewAsyncDisabledDirective creates a new handler struct responsible for handling the directive logic when Async operations are disabled
 func NewAsyncDisabledDirective(transact persistence.Transactioner) *syncDirective {
 	return &syncDirective{transact}
-}
-
-func (sd *syncDirective) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, _ graphql.OperationType, _ *graphql.WebhookType, _ *string) (res interface{}, err error) {
-	resCtx := gqlgen.GetResolverContext(ctx)
-	mode, err := getOperationMode(resCtx)
-	if err != nil {
-		return nil, err
-	}
-	if *mode == graphql.OperationModeAsync {
-		return nil, apperrors.NewInvalidOperationError("asynchronous operations are disabled")
-	}
-
-	tx, err := sd.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening database transaction: %s", err.Error())
-		return nil, apperrors.NewInternalError("Unable to initialize database operation")
-	}
-	defer sd.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	return executeSyncOperation(ctx, next, tx)
 }
 
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
@@ -276,6 +254,29 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 		}
 	}
 	return webhookIDs, nil
+}
+
+// HandleOperation handles the transaction opening and commit since they're now extracted as part of the Async directive even for sync only mode
+func (sd *syncDirective) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, _ graphql.OperationType, _ *graphql.WebhookType, _ *string) (res interface{}, err error) {
+	resCtx := gqlgen.GetResolverContext(ctx)
+	mode, err := getOperationMode(resCtx)
+	if err != nil {
+		return nil, err
+	}
+	if *mode == graphql.OperationModeAsync {
+		return nil, apperrors.NewInvalidOperationError("asynchronous operations are disabled")
+	}
+
+	tx, err := sd.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening database transaction: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to initialize database operation")
+	}
+	defer sd.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	return executeSyncOperation(ctx, next, tx)
 }
 
 func getOperationMode(resCtx *gqlgen.ResolverContext) (*graphql.OperationMode, error) {

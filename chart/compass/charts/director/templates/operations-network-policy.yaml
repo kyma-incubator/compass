@@ -16,4 +16,4 @@ spec:
           app: operations-controller
     ports:
     - protocol: TCP
-      port: 3002
+      port: {{ .Values.global.director.internalPort }}

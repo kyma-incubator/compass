@@ -56,6 +56,15 @@ type updateOperationHandler struct {
 	resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc
 }
 
+type errResponse struct {
+	err        error
+	statusCode int
+}
+
+type operationError struct {
+	Error string `json:"error"`
+}
+
 // NewUpdateOperationHandler creates a new handler struct to update resource by operation
 func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc, resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc) *updateOperationHandler {
 	return &updateOperationHandler{
@@ -74,25 +83,13 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		return
 	}
 
-	bytes, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to read request body"), http.StatusInternalServerError)
-		return
-	}
-	defer func() {
-		err := request.Body.Close()
-		if err != nil {
-			log.C(ctx).WithError(err).Error("Failed to close request body")
-		}
-	}()
-
-	var operation OperationRequest
-	if err := json.Unmarshal(bytes, &operation); err != nil {
-		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to decode body to JSON"), http.StatusBadRequest)
+	operation, errResp := operationRequestFromBody(ctx, request)
+	if errResp != nil {
+		apperrors.WriteAppError(ctx, writer, errResp.err, errResp.statusCode)
 		return
 	}
 
-	if err := validation.ValidateStruct(&operation,
+	if err := validation.ValidateStruct(operation,
 		validation.Field(&operation.ResourceID, is.UUID),
 		validation.Field(&operation.OperationType, validation.Required, validation.In(graphql.OperationTypeCreate, graphql.OperationTypeUpdate, graphql.OperationTypeDelete)),
 		validation.Field(&operation.ResourceType, validation.Required, validation.In(resource.Application))); err != nil {
@@ -111,7 +108,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	resourceUpdaterFunc := h.resourceUpdaterFuncs[operation.ResourceType]
-	opError, err := getError(operation.Error)
+	opError, err := stringifiedJsonError(operation.Error)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while marshalling operation error: %s", err.Error())
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to marshal error"), http.StatusInternalServerError)
@@ -153,11 +150,27 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	writer.WriteHeader(http.StatusOK)
 }
 
-type operationError struct {
-	Error string `json:"error"`
+func operationRequestFromBody(ctx context.Context, request *http.Request) (*OperationRequest, *errResponse) {
+	bytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		return nil, &errResponse{apperrors.NewInternalError("Unable to read request body"), http.StatusInternalServerError}
+	}
+	defer func() {
+		err := request.Body.Close()
+		if err != nil {
+			log.C(ctx).WithError(err).Error("Failed to close request body")
+		}
+	}()
+
+	var operation OperationRequest
+	if err := json.Unmarshal(bytes, &operation); err != nil {
+		return nil, &errResponse{apperrors.NewInternalError("Unable to decode body to JSON"), http.StatusBadRequest}
+	}
+
+	return &operation, nil
 }
 
-func getError(errorMsg string) (*string, error) {
+func stringifiedJsonError(errorMsg string) (*string, error) {
 	if len(errorMsg) == 0 {
 		return nil, nil
 	}

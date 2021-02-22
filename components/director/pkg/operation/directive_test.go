@@ -50,12 +50,14 @@ const (
 	webhookID3 = "dbd54239-5188-4bea-8826-bc04587a118e"
 )
 
-var whType = graphql.WebhookTypeRegisterApplication
-var whTypeApplicationUnregister = graphql.WebhookTypeUnregisterApplication
+var (
+	whTypeApplicationRegister   = graphql.WebhookTypeRegisterApplication
+	whTypeApplicationUnregister = graphql.WebhookTypeUnregisterApplication
 
-var mockedHeaders = http.Header{
-	"key": []string{"value"},
-}
+	mockedHeaders = http.Header{
+		"key": []string{"value"},
+	}
+)
 
 func TestHandleOperation(t *testing.T) {
 
@@ -75,7 +77,7 @@ func TestHandleOperation(t *testing.T) {
 		directive := operation.NewDirective(nil, nil, nil, nil, nil)
 
 		// WHEN
-		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whType, &resourceIdField)
+		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
 		// THEN
 		require.Error(t, err, fmt.Sprintf("could not get %s parameter", operation.ModeParam))
 	})
@@ -99,7 +101,7 @@ func TestHandleOperation(t *testing.T) {
 		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whType, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to initialize database operation")
 		require.Empty(t, res)
@@ -126,7 +128,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to process operation")
 		require.Empty(t, res)
@@ -154,7 +156,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to finalize database operation")
 		require.Empty(t, res)
@@ -182,7 +184,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.NoError(t, err)
 		require.Equal(t, mockedNextResponse(), res)
@@ -214,7 +216,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to process operation")
 		require.Empty(t, res)
@@ -249,7 +251,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Failed to process operation")
 		require.Empty(t, res)
@@ -286,7 +288,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to retrieve webhooks")
 		require.Empty(t, res)
@@ -323,7 +325,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
 		require.Empty(t, res)
@@ -358,7 +360,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonWebhookProviderResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonWebhookProviderResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
 		require.Empty(t, res)
@@ -393,7 +395,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
 		require.Empty(t, res)
@@ -432,7 +434,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to schedule operation")
 		require.Empty(t, res)
@@ -473,7 +475,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whType, nil)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to finalize database operation")
 		require.Empty(t, res)
@@ -551,7 +553,7 @@ func TestHandleOperation(t *testing.T) {
 		directive := operation.NewDirective(mockedTransactioner, errorWebhooksResponse, nil, mockedTenantLoaderFunc, mockedScheduler)
 
 		// WHEN
-		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, &whType, nil)
+		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, &whTypeApplicationRegister, nil)
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "Unable to retrieve webhooks")
@@ -581,7 +583,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
 		defer mockedScheduler.AssertExpectations(t)
 
-		webhookType := whType
+		webhookType := whTypeApplicationRegister
 		webhooks := []*model.Webhook{
 			{ID: webhookID1, Type: model.WebhookType(webhookType)},
 			{ID: webhookID2, Type: model.WebhookType(webhookType)},
