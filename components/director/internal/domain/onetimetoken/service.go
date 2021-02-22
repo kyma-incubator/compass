@@ -21,20 +21,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const requestForRuntime = `
-		mutation { generateRuntimeToken (authID:"%s")
-		  {
-			token
-		  }
-		}`
-
-const requestForApplication = `
-		mutation { generateApplicationToken (authID:"%s")
-		  {
-			token
-		  }
-		}`
-
 //go:generate mockery -name=GraphQLClient -output=automock -outpkg=automock -case=underscore
 type GraphQLClient interface {
 	Run(ctx context.Context, req *gcli.Request, resp interface{}) error

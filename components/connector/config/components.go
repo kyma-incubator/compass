@@ -3,6 +3,8 @@ package config
 import (
 	"time"
 
+	gcli "github.com/machinebox/graphql"
+
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -24,7 +26,7 @@ type Components struct {
 	CSRSubjectConsts certificates.CSRSubjectConsts
 }
 
-func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Components, certificates.Loader, revocation.Loader) {
+func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, directorGCLI *gcli.Client) (Components, certificates.Loader, revocation.Loader) {
 	caSecret := namespacedname.Parse(cfg.CASecret.Name)
 	rootCASecret := namespacedname.Parse(cfg.RootCASecret.Name)
 
@@ -50,10 +52,8 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Comp
 	)
 
 	return Components{
-		Authenticator: authentication.NewAuthenticator(),
-		TokenService: tokens.NewTokenService(
-			tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration),
-			tokens.NewTokenGenerator(cfg.Token.Length)),
+		Authenticator:          authentication.NewAuthenticator(),
+		TokenService:           tokens.NewTokenService(directorGCLI),
 		CertificateService:     certsService,
 		RevokedCertsRepository: revokedCertsRepository,
 		CSRSubjectConsts:       newCSRSubjectConsts(cfg),

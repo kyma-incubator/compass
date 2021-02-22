@@ -91,7 +91,15 @@ global:
 
   director:
     prefix: /director
-    port: 3000
+    graphql:
+      external:
+        port: 3000
+      internal:
+        port: 3002
+    validator:
+      port: 8080
+    metrics:
+      port: 3001
 
     tests:
       scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
@@ -118,8 +126,6 @@ global:
     graphql:
       external:
         port: 3000
-      internal:
-        port: 3001
     validator:
       port: 8080
     # If secrets do not exist they will be created

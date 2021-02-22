@@ -42,10 +42,16 @@ spec:
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.deployment.args.containerPort }}
+              containerPort: {{ .Values.global.director.graphql.external.port }}
+              protocol: TCP
+            - name: http-gql-int
+              containerPort: { { .Values.global.director.graphql.internal.port } }
+              protocol: TCP
+            - name: http-validator
+              containerPort: { { .Values.global.director.validator.port } }
               protocol: TCP
             - name: metrics
-              containerPort: {{ .Values.metrics.port }}
+              containerPort: {{ .Values.global.director.metrics.port }}
               protocol: TCP
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
@@ -55,9 +61,13 @@ spec:
           {{- end }}
           env:
             - name: APP_ADDRESS
-              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+              value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
+            - name: APP_INTERNAL_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.director.graphql.internal.port }}"
+            - name: APP_HYDRATOR_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
             - name: APP_METRICS_ADDRESS
-              value: "0.0.0.0:{{ .Values.metrics.port }}"
+              value: "0.0.0.0:{{ .Values.global.director.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
@@ -96,8 +106,14 @@ spec:
               value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
-            - name: APP_ONE_TIME_TOKEN_URL
-              value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.internal.port }}/graphql"
+            - name: APP_ONE_TIME_TOKEN_LENGTH
+              value: {{ .Values.deployment.args.token.length | quote }}
+            - name: APP_ONE_TIME_TOKEN_RUNTIME_EXPIRATION
+              value: {{ .Values.deployment.args.token.runtimeExpiration | quote }}
+            - name: APP_ONE_TIME_TOKEN_APPLICATION_EXPIRATION
+              value: {{ .Values.deployment.args.token.applicationExpiration | quote }}
+            - name: APP_ONE_TIME_TOKEN_CSR_EXPIRATION
+              value: {{ .Values.deployment.args.token.csrExpiration | quote }}
             - name: APP_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_CONNECTOR_URL
@@ -128,14 +144,14 @@ spec:
             {{- end }}
           livenessProbe:
             httpGet:
-              port: {{.Values.deployment.args.containerPort }}
+              port: {{ .Values.global.director.graphql.external.port }}
               path: "/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
-              port: {{.Values.deployment.args.containerPort }}
+              port: {{ .Values.global.director.graphql.external.port }}
               path: "/readyz"
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}

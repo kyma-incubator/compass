@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tokens"
-
 	"github.com/99designs/gqlgen/handler"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
@@ -113,8 +111,6 @@ type config struct {
 	Features features.Config
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
-
-	TokenConfig tokens.Config
 }
 
 func main() {
@@ -171,7 +167,7 @@ func main() {
 			metricsCollector,
 			httpClient,
 			cfg.ProtectedLabelPattern,
-			cfg.TokenConfig.Length,
+			cfg.OneTimeToken.Length,
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       operation.NewDirective(transact, webhookService().List, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
@@ -540,7 +536,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.TokenConfig.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters)
+	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters)
 }
 
 func systemAuthSvc() oathkeeper.Service {
@@ -552,7 +548,7 @@ func systemAuthSvc() oathkeeper.Service {
 }
 
 func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, cfg.TokenConfig.CSRExpiration, cfg.TokenConfig.ApplicationExpiration, cfg.TokenConfig.RuntimeExpiration)
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
