@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -65,19 +64,6 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 	router.HandleFunc(cfg.HandlerEndpoint, service.DeleteByExternalID).Methods(http.MethodDelete)
 
 	return nil
-}
-
-func extractBody(r *http.Request, w http.ResponseWriter) ([]byte, error) {
-	logger := log.C(r.Context())
-
-	buf, bodyErr := ioutil.ReadAll(r.Body)
-	if bodyErr != nil {
-		logger.Info("Body Error: ", bodyErr.Error())
-		http.Error(w, bodyErr.Error(), http.StatusInternalServerError)
-		return nil, bodyErr
-	}
-
-	return buf, nil
 }
 
 func extractTrustedIssuersScopePrefixes(config []authenticator.Config) []string {

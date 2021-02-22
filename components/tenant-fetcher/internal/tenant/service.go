@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -135,4 +136,24 @@ func (s *service) DeleteByExternalID(writer http.ResponseWriter, request *http.R
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func extractBody(r *http.Request, w http.ResponseWriter) ([]byte, error) {
+	logger := log.C(r.Context())
+
+	buf, bodyErr := ioutil.ReadAll(r.Body)
+	if bodyErr != nil {
+		logger.Error(errors.Wrap(bodyErr, "while reading request body"))
+		http.Error(w, bodyErr.Error(), http.StatusInternalServerError)
+		return nil, bodyErr
+	}
+
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			logger.Warnf("Unable to close request body. Cause: %v", err)
+		}
+	}()
+
+	return buf, nil
 }
