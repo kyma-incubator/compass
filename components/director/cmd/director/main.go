@@ -76,7 +76,9 @@ const envPrefix = "APP"
 type config struct {
 	Address         string `envconfig:"default=127.0.0.1:3000"`
 	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
-	AppURL          string `envconfig:"APP_URL"`
+	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
+
+	AppURL string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -258,9 +260,13 @@ func main() {
 	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
+	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	exitOnError(err, "Failed configuring hydrator handler")
+
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
+	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
@@ -268,10 +274,12 @@ func main() {
 		shutdownMetricsSrv()
 		shutdownMainSrv()
 		shutdownInternalGQLSrv()
+		shutdownHydratorSrv()
 	}()
 
 	go runMetricsSrv()
 	go runInternalGQLSrv()
+	go runHydratorSrv()
 	runMainSrv()
 }
 
@@ -533,4 +541,35 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.TokenConfig.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters)
+}
+
+func systemAuthSvc() oathkeeper.Service {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+	systemAuthConverter := systemauth.NewConverter(authConverter)
+	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
+	return systemauth.NewService(systemAuthRepo, uidSvc)
+}
+
+func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, cfg.TokenConfig.CSRExpiration, cfg.TokenConfig.ApplicationExpiration, cfg.TokenConfig.RuntimeExpiration)
+
+	router := mux.NewRouter()
+	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	router.Use(middlewares...)
+
+	v1Router := router.PathPrefix("/v1").Subrouter()
+	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
+
+	router.Use(middlewares...)
+
+	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	return handlerWithTimeout, nil
 }
