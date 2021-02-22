@@ -3,17 +3,21 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
+	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/header"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 
@@ -129,6 +133,9 @@ type config struct {
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
 	OperationsNamespace   string `envconfig:"default=compass-system"`
+
+	DisableAsyncMode bool `envconfig:"default=false"`
+	OutsideCluster   bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -175,9 +182,6 @@ func main() {
 
 	appRepo := applicationRepo()
 
-	scheduler, err := buildScheduler(cfg.OperationsNamespace, cfg.ClientTimeout)
-	exitOnError(err, "Error while creating operations scheduler")
-
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -192,9 +196,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async: operation.NewDirective(transact, webhookService().List, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
-				return appRepo.GetByID(ctx, tenantID, resourceID)
-			}, tenant.LoadFromContext, scheduler).HandleOperation,
+			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -505,18 +507,50 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, uidSvc)
 }
 
-func buildScheduler(namespace string, timeout time.Duration) (operation.Scheduler, error) {
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		log.D().WithError(err).Warn("Could not start K8S Scheduler. Will use the default one")
-		return &operation.DefaultScheduler{}, nil
+func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
+	resourceFetcherFunc := func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}
-	cfg.Timeout = timeout
+
+	if cfg.DisableAsyncMode {
+		log.C(ctx).Info("Async operations are disabled")
+		return operation.NewAsyncDisabledDirective(transact).HandleOperation
+	}
+
+	scheduler, err := buildScheduler(ctx, cfg)
+	exitOnError(err, "Error while creating operations scheduler")
+
+	return operation.NewDirective(transact, webhookService().List, resourceFetcherFunc, tenant.LoadFromContext, scheduler).HandleOperation
+}
+
+func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
+	cfg, err := getKubeConfig(ctx, config)
+	exitOnError(err, "Failed to get cluster config for operations k8s client")
+
+	cfg.Timeout = config.ClientTimeout
 	k8sClient, err := client.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
-	operationsK8sClient := k8sClient.Operations(namespace)
+	operationsK8sClient := k8sClient.Operations(config.OperationsNamespace)
 
 	return k8s.NewScheduler(operationsK8sClient), nil
+}
+
+func getKubeConfig(ctx context.Context, config config) (*rest.Config, error) {
+	if !config.OutsideCluster {
+		log.C(ctx).Info("Using in-cluster configuration for k8s client")
+		return rest.InClusterConfig()
+	}
+
+	var kubeconfig *string
+	home := homedir.HomeDir()
+	if home == "" {
+		return nil, errors.New("failed to get home dir in order to build k8s client for scheduler")
+	}
+
+	log.C(ctx).Info("Using local configuration for k8s client")
+	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	flag.Parse()
+	return clientcmd.BuildConfigFromFlags("", *kubeconfig)
 }

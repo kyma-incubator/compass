@@ -483,6 +483,80 @@ func TestHandleOperation(t *testing.T) {
 		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
+	t.Run("when async mode is disabled it should roll-back", func(t *testing.T) {
+		operationType := graphql.OperationTypeCreate
+		operationCategory := "registerApplication"
+
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedTransactioner := &tx_automock.Transactioner{}
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		directive := operation.NewAsyncDisabledDirective(mockedTransactioner)
+		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, nil, nil)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "asynchronous operations are disabled")
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but webhook fetcher fails should roll-back", func(t *testing.T) {
+		operationType := graphql.OperationTypeCreate
+		operationCategory := "registerApplication"
+
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		dummyResolver := &dummyResolver{}
+
+		errorWebhooksResponse := func(_ context.Context, _ string) ([]*model.Webhook, error) {
+			return nil, errors.New("fail")
+		}
+
+		mockedScheduler := &automock.Scheduler{}
+		defer mockedScheduler.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, errorWebhooksResponse, nil, mockedTenantLoaderFunc, mockedScheduler)
+
+		// WHEN
+		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, &whType, nil)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Unable to retrieve webhooks")
+	})
+
 	t.Run("when mutation is in ASYNC mode, there is operation in context and finishes successfully", func(t *testing.T) {
 		operationType := graphql.OperationTypeCreate
 		operationCategory := "registerApplication"

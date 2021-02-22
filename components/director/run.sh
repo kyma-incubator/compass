@@ -13,6 +13,8 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
+OUTSIDE_CLUSTER=true
+DISABLE_ASYNC_MODE=true
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -37,6 +39,10 @@ do
             DEBUG=true
             DEBUG_PORT=40000
             shift
+        ;;
+        --async-enabled)
+          DISABLE_ASYNC_MODE=false
+          shift
         ;;
         --debug-port)
             DEBUG_PORT=$2
@@ -145,6 +151,8 @@ export APP_URL="http://director.not.configured.url/director"
 export APP_CONNECTOR_URL="http://connector.not.configured.url/connector/graphql"
 export APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
 export APP_LOG_LEVEL=debug 
+export APP_OUTSIDE_CLUSTER=${OUTSIDE_CLUSTER}
+export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
 
 if [[  ${DEBUG} ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"

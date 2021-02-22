@@ -49,6 +49,10 @@ type directive struct {
 	scheduler           Scheduler
 }
 
+type syncDirective struct {
+	transact persistence.Transactioner
+}
+
 // NewDirective creates a new handler struct responsible for the Async directive business logic
 func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
 	return &directive{
@@ -60,21 +64,42 @@ func NewDirective(transact persistence.Transactioner, webhookFetcherFunc Webhook
 	}
 }
 
+// NewDirective creates a new handler struct responsible for the Async directive business logic
+func NewAsyncDisabledDirective(transact persistence.Transactioner) *syncDirective {
+	return &syncDirective{transact}
+}
+
+func (sd *syncDirective) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, _ graphql.OperationType, _ *graphql.WebhookType, _ *string) (res interface{}, err error) {
+	resCtx := gqlgen.GetResolverContext(ctx)
+	mode, err := getOperationMode(resCtx)
+	if err != nil {
+		return nil, err
+	}
+	if *mode == graphql.OperationModeAsync {
+		return nil, apperrors.NewInvalidOperationError("asynchronous operations are disabled")
+	}
+
+	tx, err := sd.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening database transaction: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to initialize database operation")
+	}
+	defer sd.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	return executeSyncOperation(ctx, next, tx)
+}
+
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType *graphql.WebhookType, idField *string) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
-	var mode graphql.OperationMode
-	if _, found := resCtx.Args[ModeParam]; !found {
-		mode = graphql.OperationModeSync
-	} else {
-		modePointer, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
-		if !ok {
-			return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
-		}
-		mode = *modePointer
+	mode, err := getOperationMode(resCtx)
+	if err != nil {
+		return nil, err
 	}
 
-	ctx = SaveModeToContext(ctx, mode)
+	ctx = SaveModeToContext(ctx, *mode)
 
 	tx, err := d.transact.Begin()
 	if err != nil {
@@ -89,19 +114,8 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, err
 	}
 
-	if mode == graphql.OperationModeSync {
-		resp, err := next(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
-			return nil, apperrors.NewInternalError("Unable to finalize database operation")
-		}
-
-		return resp, nil
+	if *mode == graphql.OperationModeSync {
+		return executeSyncOperation(ctx, next, tx)
 	}
 
 	operation := &Operation{
@@ -257,4 +271,34 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 		}
 	}
 	return webhookIDs, nil
+}
+
+func getOperationMode(resCtx *gqlgen.ResolverContext) (*graphql.OperationMode, error) {
+	var mode graphql.OperationMode
+	if _, found := resCtx.Args[ModeParam]; !found {
+		mode = graphql.OperationModeSync
+	} else {
+		modePointer, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
+		if !ok {
+			return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
+		}
+		mode = *modePointer
+	}
+
+	return &mode, nil
+}
+
+func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persistence.PersistenceTx) (interface{}, error) {
+	resp, err := next(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to finalize database operation")
+	}
+
+	return resp, nil
 }
