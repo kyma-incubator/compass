@@ -21,13 +21,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-	"io/ioutil"
-	"net/http"
 )
 
 // Client defines a general purpose Webhook executor
@@ -102,7 +103,11 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 		return nil, err
 	}
 
-	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, web_hook.Mode(*webhook.Mode), *responseData)
+	mode := web_hook.ModeSync
+	if webhook.Mode != nil {
+		mode = web_hook.Mode(*webhook.Mode)
+	}
+	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, mode, *responseData)
 	if err != nil {
 		return nil, err
 	}
