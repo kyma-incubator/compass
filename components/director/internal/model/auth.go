@@ -5,7 +5,7 @@ type Auth struct {
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuth
-	OneTimeToken          OneTimeToken
+	OneTimeToken          *OneTimeToken
 }
 
 type CredentialRequestAuth struct {
@@ -62,7 +62,7 @@ func (i *AuthInput) ToAuth() *Auth {
 		AdditionalQueryParams: i.AdditionalQueryParams,
 		AdditionalHeaders:     i.AdditionalHeaders,
 		RequestAuth:           requestAuth,
-		OneTimeToken:          *i.OneTimeToken,
+		OneTimeToken:          i.OneTimeToken,
 	}
 }
 

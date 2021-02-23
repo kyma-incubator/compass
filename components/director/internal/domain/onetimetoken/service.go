@@ -150,7 +150,7 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 		UsedAt:       time.Time{},
 	}
 
-	sysAuth.Value.OneTimeToken = *oneTimeToken
+	sysAuth.Value.OneTimeToken = oneTimeToken
 	if err := s.sysAuthSvc.Update(ctx, sysAuth); err != nil {
 		return model.OneTimeToken{}, err
 	}
