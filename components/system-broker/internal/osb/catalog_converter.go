@@ -22,17 +22,16 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 )
 
 type CatalogConverter struct {
-	BaseURL string
+	ORDServiceURL string
 }
 
 func (c CatalogConverter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
-	plans, err := toPlans(c.BaseURL, app.ID, app.Bundles.Data)
+	plans, err := toPlans(c.ORDServiceURL, app.Bundles.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +54,7 @@ func (c CatalogConverter) Convert(app *schema.ApplicationExt) (*domain.Service, 
 	}, nil
 }
 
-func toPlans(baseURL, appID string, bundles []*graphql.BundleExt) ([]domain.ServicePlan, error) {
+func toPlans(ORDServiceURL string, bundles []*graphql.BundleExt) ([]domain.ServicePlan, error) {
 	var plans []domain.ServicePlan
 	for _, p := range bundles {
 		schemas, err := toSchemas(p)
@@ -67,7 +66,7 @@ func toPlans(baseURL, appID string, bundles []*graphql.BundleExt) ([]domain.Serv
 			desc = fmt.Sprintf("plan generated from bundle with name %s", p.Name)
 		}
 
-		metadata, err := toPlanMetadata(baseURL, appID, p)
+		metadata, err := toPlanMetadata(ORDServiceURL, p)
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +85,7 @@ func toPlans(baseURL, appID string, bundles []*graphql.BundleExt) ([]domain.Serv
 	return plans, nil
 }
 
-func toPlanMetadata(baseURL, appID string, pkg *graphql.BundleExt) (*domain.ServicePlanMetadata, error) {
+func toPlanMetadata(ORDServiceURL string, pkg *graphql.BundleExt) (*domain.ServicePlanMetadata, error) {
 	metadata := &domain.ServicePlanMetadata{
 		AdditionalMetadata: make(map[string]interface{}),
 	}
@@ -94,7 +93,7 @@ func toPlanMetadata(baseURL, appID string, pkg *graphql.BundleExt) (*domain.Serv
 	apis := make([]map[string]interface{}, 0, 0)
 
 	for _, apiDef := range pkg.APIDefinitions.Data {
-		api, err := toApiDefMap(baseURL, appID, pkg.ID, apiDef)
+		api, err := toApiDefMap(ORDServiceURL, apiDef)
 		if err != nil {
 			return nil, fmt.Errorf("while converting apidef to map: %w", err)
 		}
@@ -104,7 +103,7 @@ func toPlanMetadata(baseURL, appID string, pkg *graphql.BundleExt) (*domain.Serv
 
 	events := make([]map[string]interface{}, 0, 0)
 	for _, eventDef := range pkg.EventDefinitions.Data {
-		event, err := toEventDefMap(baseURL, appID, pkg.ID, eventDef)
+		event, err := toEventDefMap(ORDServiceURL, eventDef)
 		if err != nil {
 			return nil, fmt.Errorf("while converting eventdef to map: %w", err)
 		}
@@ -149,21 +148,21 @@ func toSchemas(pkg *graphql.BundleExt) (*domain.ServiceSchemas, error) {
 
 }
 
-func toApiDefMap(baseURL, appID, pkgID string, apiDef *graphql.APIDefinitionExt) (map[string]interface{}, error) {
+func toApiDefMap(ORDServiceURL string, apiDef *graphql.APIDefinitionExt) (map[string]interface{}, error) {
 	api := make(map[string]interface{})
 	api["id"] = apiDef.ID
 	api["name"] = apiDef.Name
 	api["target_url"] = apiDef.TargetURL
 	if apiDef.Spec != nil {
-		specsFormatHeader, err := specs.SpecFormatToContentTypeHeader(apiDef.Spec.Format)
+		specsFormatHeader, err := specFormatToContentTypeHeader(apiDef.Spec.Format)
 		if err != nil {
 			return nil, err
 		}
 		specification := make(map[string]interface{})
 		specification["type"] = apiDef.Spec.Type
 		specification["format"] = specsFormatHeader
-		specification["url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
-			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.BundleIDParameter, pkgID, specs.DefinitionIDParameter, apiDef.ID)
+		specification["url"] = fmt.Sprintf("%s/api/%s/specification/%s",
+			ORDServiceURL, apiDef.ID, apiDef.Spec.ID)
 		api["specification"] = specification
 	}
 	if apiDef.Description != nil && *apiDef.Description != "" {
@@ -179,20 +178,20 @@ func toApiDefMap(baseURL, appID, pkgID string, apiDef *graphql.APIDefinitionExt)
 	return api, nil
 }
 
-func toEventDefMap(baseURL, appID, pkgID string, eventDef *graphql.EventAPIDefinitionExt) (map[string]interface{}, error) {
+func toEventDefMap(baseURL string, eventDef *graphql.EventAPIDefinitionExt) (map[string]interface{}, error) {
 	event := make(map[string]interface{})
 	event["id"] = eventDef.ID
 	event["name"] = eventDef.Name
 	if eventDef.Spec != nil {
-		specsFormatHeader, err := specs.SpecFormatToContentTypeHeader(eventDef.Spec.Format)
+		specsFormatHeader, err := specFormatToContentTypeHeader(eventDef.Spec.Format)
 		if err != nil {
 			return nil, err
 		}
 		specification := make(map[string]interface{})
 		specification["type"] = eventDef.Spec.Type
 		specification["format"] = specsFormatHeader
-		specification["url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
-			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.BundleIDParameter, pkgID, specs.DefinitionIDParameter, eventDef.ID)
+		specification["url"] = fmt.Sprintf("%s/event/%s/specification/%s",
+			baseURL, eventDef.ID, eventDef.Spec.ID)
 		event["specification"] = specification
 	}
 	if eventDef.Description != nil && *eventDef.Description != "" {
@@ -232,4 +231,17 @@ func ptrStrToStr(s *string) string {
 
 func boolToPtr(in bool) *bool {
 	return &in
+}
+
+func specFormatToContentTypeHeader(format graphql.SpecFormat) (string, error) {
+	switch format {
+	case schema.SpecFormatJSON:
+		return "application/json", nil
+	case schema.SpecFormatXML:
+		return "application/xml", nil
+	case schema.SpecFormatYaml:
+		return "text/yaml", nil
+	}
+
+	return "", errors.Errorf("unknown spec format %s", format)
 }

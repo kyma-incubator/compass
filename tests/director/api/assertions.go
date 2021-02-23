@@ -48,7 +48,7 @@ func assertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 	for _, inWh := range in {
 		found := false
 		for _, actWh := range actual {
-			if inWh.URL == actWh.URL {
+			if urlsAreIdentical(inWh.URL, actWh.URL) {
 				found = true
 				assert.NotNil(t, actWh.ID)
 				assert.Equal(t, inWh.Type, actWh.Type)
@@ -472,4 +472,14 @@ func assertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *
 	require.NoError(t, err)
 
 	require.Equal(t, &queryParamsIn, actual)
+}
+
+func urlsAreIdentical(url1, url2 *string) bool {
+	identical := url1 == url2
+	if !identical {
+		if url1 != nil && url2 != nil {
+			identical = *url1 == *url2
+		}
+	}
+	return identical
 }
