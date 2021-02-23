@@ -47,7 +47,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		require.Equal(t, appByIntSys.ID, app.ID)
 
 		t.Log("Unregister application")
-		unregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+		UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 
 	})
 	t.Run("Test application template scopes", func(t *testing.T) {
