@@ -146,7 +146,7 @@ func genMockApp(bundles, apiDefs, eventDefs, docs int) *graphql.ApplicationExt {
 	result := &graphql.ApplicationExt{
 		Application: graphql.Application{
 			BaseEntity: &graphql.BaseEntity{
-				ID: "id",
+				ID: id,
 			},
 			Name: "name-" + id,
 		},
@@ -165,7 +165,7 @@ func genMockBundle(apiDefs, eventDefs, docs int) *graphql.BundleExt {
 	result := &graphql.BundleExt{
 		Bundle: graphql.Bundle{
 			BaseEntity: &graphql.BaseEntity{
-				ID: "id",
+				ID: id,
 			},
 			Name: "name-" + id,
 		},
@@ -196,7 +196,7 @@ func genApiDef() *graphql.APIDefinitionExt {
 	return &graphql.APIDefinitionExt{
 		APIDefinition: graphql.APIDefinition{
 			BaseEntity: &graphql.BaseEntity{
-				ID: "id",
+				ID: id,
 			},
 			Name: "name-" + id,
 		},
@@ -208,7 +208,7 @@ func genEventDef() *graphql.EventAPIDefinitionExt {
 	return &graphql.EventAPIDefinitionExt{
 		EventDefinition: graphql.EventDefinition{
 			BaseEntity: &graphql.BaseEntity{
-				ID: "id",
+				ID: id,
 			},
 			Name: "name-" + id,
 		},
@@ -220,7 +220,7 @@ func genDoc() *graphql.DocumentExt {
 	return &graphql.DocumentExt{
 		Document: graphql.Document{
 			BaseEntity: &graphql.BaseEntity{
-				ID: "id",
+				ID: id,
 			},
 			DisplayName: "display-name-" + id,
 		},
