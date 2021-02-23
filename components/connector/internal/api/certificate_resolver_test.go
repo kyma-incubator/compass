@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	tokensMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +21,7 @@ import (
 const (
 	clientId        = "clientId"
 	certificateHash = "somehash"
+	token           = "abcd-efgh"
 )
 
 var (
@@ -217,7 +217,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("CreateToken", mock.Anything, subject.CommonName, tokens.CSRToken).Return(token, nil)
+		tokenService.On("GetToken", mock.Anything, subject.CommonName).Return(token, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
@@ -240,7 +240,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("CreateToken", mock.Anything, subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
+		tokenService.On("GetToken", mock.Anything, subject.CommonName).Return("", apperrors.Internal("error"))
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
