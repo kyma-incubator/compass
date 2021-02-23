@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/client"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
@@ -33,29 +34,25 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 )
 
 // OperationReconciler reconciles a Operation object
 type OperationReconciler struct {
-	client         client.Client
-	webhookConfig  web_hook.Config
+	k8sClient      client.Client
+	webhookConfig  *web_hook.Config
 	directorClient director.Client
 	webhookClient  web_hook.Client
 	log            logr.Logger
-	scheme         *runtime.Scheme
 }
 
-func NewOperationReconciler(controllerClient client.Client, webhookConfig web_hook.Config, directorClient director.Client, webhookClient web_hook.Client, logger logr.Logger, scheme *runtime.Scheme) *OperationReconciler {
+func NewOperationReconciler(k8sClient client.Client, webhookConfig *web_hook.Config, directorClient director.Client, webhookClient web_hook.Client, logger logr.Logger) *OperationReconciler {
 	return &OperationReconciler{
-		client:         controllerClient,
+		k8sClient:      k8sClient,
 		webhookConfig:  webhookConfig,
 		log:            logger,
-		scheme:         scheme,
 		directorClient: directorClient,
 		webhookClient:  webhookClient,
 	}
@@ -68,8 +65,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	logger := r.log.WithValues("operation", req.NamespacedName)
 
-	var operation = &v1alpha1.Operation{}
-	err := r.client.Get(ctx, req.NamespacedName, operation)
+	operation, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
 		return ctrl.Result{}, nil
@@ -87,7 +83,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		logger.Error(err, operationError("Unable to fetch application", operation))
 
 		if isReconciliationTimeoutReached(operation, time.Duration(r.webhookConfig.TimeoutFactor)*r.webhookConfig.ReconciliationTimeout) {
-			if err := r.client.Delete(ctx, operation); err != nil {
+			if err := r.k8sClient.Delete(ctx, operation); err != nil {
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{}, nil
@@ -105,7 +101,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, *app.Result.Error)
 			operation.Status.Phase = v1alpha1.StateFailed
 		}
-		if err := r.client.Status().Update(ctx, operation); err != nil {
+		if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
@@ -114,7 +110,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if app.Result.Error != nil {
 		operation = setErrorStatus(*operation, *app.Result.Error)
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.client.Status().Update(ctx, operation); err != nil {
+		if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
@@ -146,7 +142,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		switch *webhookEntity.Mode {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
-			if err := r.client.Status().Update(ctx, operation); err != nil {
+			if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{Requeue: true}, nil
@@ -159,10 +155,11 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	requeueAfter, err := getNextPollTime(&webhookEntity, *webhookStatus, r.webhookConfig.TimeLayout)
 	if err != nil {
-		return ctrl.Result{}, err
+		logger.Error(err, operationError("Unable to calculate next poll time", operation))
+		return ctrl.Result{}, nil
 	}
 
-	if requeueAfter > 0 {
+	if requeueAfter > 0 { // poll interval has not passed
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
@@ -213,7 +210,7 @@ func (r *OperationReconciler) updateStatusWithError(ctx context.Context, logger 
 
 	operation.Status.Phase = state
 	operation.Status.Webhooks[0].State = state
-	if err := r.client.Status().Update(ctx, operation); err != nil {
+	if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -273,7 +270,7 @@ func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliatio
 	return time.Now().After(operationEndTime)
 }
 
-func isWebhookTimeoutReached(cfg web_hook.Config, webhook graphql.Webhook, creationTime time.Time) bool {
+func isWebhookTimeoutReached(cfg *web_hook.Config, webhook graphql.Webhook, creationTime time.Time) bool {
 	webhookTimeout := cfg.WebhookTimeout
 	if webhook.Timeout != nil {
 		webhookTimeout = time.Duration(*webhook.Timeout)

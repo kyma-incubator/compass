@@ -19,6 +19,7 @@ import (
 	director_graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/client"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
@@ -107,9 +108,9 @@ func main() {
 	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, unsignedTokenProvider)
 	fatalOnError(err)
 
-	controller := controllers.NewOperationReconciler(mgr.GetClient(), *cfg.Webhook,
+	controller := controllers.NewOperationReconciler(client.New(mgr.GetClient()), cfg.Webhook,
 		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient, OAuthClientProviderFunc: defaultOAuthClientProviderFunc},
-		ctrl.Log.WithName("controllers").WithName("Operation"), mgr.GetScheme())
+		ctrl.Log.WithName("controllers").WithName("Operation"))
 
 	if err = controller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")

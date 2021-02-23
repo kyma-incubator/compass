@@ -29,6 +29,7 @@ import (
 
 // Client defines a Director client which is capable of fetching an application
 // and notifying Director for state changes of said application
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	types.ApplicationLister
 	UpdateStatus(ctx context.Context, request *Request) error
