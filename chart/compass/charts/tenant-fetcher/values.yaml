@@ -15,6 +15,11 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
 
+database:
+  dbPool:
+    maxOpenConnections: 30
+    maxIdleConnections: 2
+
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
   tenantPathParam: "tenantId"
