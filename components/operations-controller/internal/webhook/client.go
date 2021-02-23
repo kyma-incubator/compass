@@ -107,9 +107,13 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 	if webhook.Mode != nil {
 		mode = web_hook.Mode(*webhook.Mode)
 	}
-	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, mode, *responseData)
+	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, *responseData)
 	if err != nil {
 		return nil, err
+	}
+
+	if *response.Location == "" && mode == web_hook.ModeAsync {
+		return nil, errors.New("missing location url after executing async webhook")
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
