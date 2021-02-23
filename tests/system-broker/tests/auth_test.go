@@ -127,10 +127,10 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 	require.NoError(t, err)
 	defer director.UnregisterApplication(t, ORDContext.Context, ORDContext.DexGraphqlClient, ORDContext.Tenant, app.ID)
 
-	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
-
 	bundle := director.CreateBundle(t, ORDContext.Context, ORDContext.DexGraphqlClient, app.ID, ORDContext.Tenant, testBundleName)
 	api := director.AddAPIToBundleWithInput(t, ORDContext.Context, ORDContext.DexGraphqlClient, bundle.ID, ORDContext.Tenant, apiDefInput)
+
+	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
 	t.Run("Should succeed calling ORD service with the same cert used for calling catalog", func(t *testing.T) {
 		req := createCatalogRequest(t)
