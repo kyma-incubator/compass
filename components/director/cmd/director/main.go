@@ -512,11 +512,6 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}
 
-	if cfg.DisableAsyncMode {
-		log.C(ctx).Info("Async operations are disabled")
-		return operation.NewAsyncDisabledDirective(transact).HandleOperation
-	}
-
 	scheduler, err := buildScheduler(ctx, cfg)
 	exitOnError(err, "Error while creating operations scheduler")
 
@@ -524,6 +519,11 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 }
 
 func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
+	if config.DisableAsyncMode {
+		log.C(ctx).Info("Async operations are disabled")
+		return &operation.DisabledScheduler{}, nil
+	}
+
 	cfg, err := getKubeConfig(ctx, config)
 	exitOnError(err, "Failed to get cluster config for operations k8s client")
 
