@@ -290,7 +290,7 @@ func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook, t
 		return 0, err
 	}
 
-	nextPollTime := lastPollTimestamp.Add(time.Duration(*webhook.RetryInterval) * time.Minute)
+	nextPollTime := lastPollTimestamp.Add(time.Duration(*webhook.RetryInterval) * time.Second)
 	return nextPollTime.Sub(time.Now()), nil
 }
 
@@ -411,7 +411,7 @@ func calculateReconciliationTimeout(webhooks map[string]graphql.Webhook, default
 		if webhook.Timeout == nil {
 			totalTimeout += defaultWebhookTimeout
 		} else {
-			totalTimeout += time.Duration(*webhook.Timeout) * time.Minute
+			totalTimeout += time.Duration(*webhook.Timeout) * time.Second
 		}
 	}
 

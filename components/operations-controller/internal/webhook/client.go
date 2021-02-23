@@ -30,6 +30,7 @@ import (
 )
 
 // Client defines a general purpose Webhook executor
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	Do(ctx context.Context, request *Request) (*web_hook.Response, error)
 	Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error)

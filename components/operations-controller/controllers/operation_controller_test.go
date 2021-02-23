@@ -17,12 +17,15 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/client/clientfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director/directorfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook/webhookfakes"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -35,14 +38,15 @@ import (
 
 const (
 	appGUID     = "f92f1fce-631a-4231-b43a-8f9fccebb22c"
+	webhookGUID = "d09731af-bc0a-4abf-9b09-f3c9d25d064b"
 	opName      = "application-f92f1fce-631a-4231-b43a-8f9fccebb22c"
 	opNamespace = "compass-system"
-	webhookID   = "d09731af-bc0a-4abf-9b09-f3c9d25d064b"
 )
 
 var (
-	mockedErr   = errors.New("mocked error")
-	ctrlRequest = ctrl.Request{
+	mockedErr         = errors.New("mocked error")
+	mockedLocationURL = "https://test-domain.com/operation"
+	ctrlRequest       = ctrl.Request{
 		NamespacedName: types.NamespacedName{
 			Namespace: opNamespace,
 			Name:      opName,
@@ -63,7 +67,7 @@ func TestReconcile_FailureToGetOperationCR_ShouldResultNoRequeueNoError(t *testi
 	require.Zero(t, res.RequeueAfter)
 
 	require.NoError(t, err)
-	require.Equal(t, logger.RecordedError, mockedErr)
+	require.Equal(t, mockedErr, logger.RecordedError)
 }
 
 func TestReconcile_FailureToParseData_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -117,8 +121,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 	require.Zero(t, res.RequeueAfter)
 
 	require.Error(t, err)
-	require.Equal(t, err, mockedErr)
-	require.Equal(t, logger.RecordedError, mockedErr)
+	require.Equal(t, mockedErr, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -150,7 +154,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	require.Zero(t, res.RequeueAfter)
 
 	require.NoError(t, err)
-	require.Equal(t, logger.RecordedError, mockedErr)
+	require.Equal(t, mockedErr, logger.RecordedError)
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -181,7 +185,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 	require.NotZero(t, res.RequeueAfter)
 
 	require.NoError(t, err)
-	require.Equal(t, logger.RecordedError, mockedErr)
+	require.Equal(t, mockedErr, logger.RecordedError)
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -215,7 +219,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperatio
 	require.Zero(t, res.RequeueAfter)
 
 	require.Error(t, err)
-	require.Equal(t, err, mockedErr)
+	require.Equal(t, mockedErr, err)
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -282,7 +286,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperat
 	require.Zero(t, res.RequeueAfter)
 
 	require.Error(t, err)
-	require.Equal(t, err, mockedErr)
+	require.Equal(t, mockedErr, err)
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -349,7 +353,7 @@ func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRe
 	require.Zero(t, res.RequeueAfter)
 
 	require.Error(t, err)
-	require.Equal(t, err, mockedErr)
+	require.Equal(t, mockedErr, err)
 }
 
 func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -465,7 +469,7 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:  appGUID,
 			RequestData: "{}",
-			WebhookIDs:  []string{webhookID},
+			WebhookIDs:  []string{webhookGUID},
 		},
 	}
 
@@ -484,7 +488,7 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 	require.Zero(t, res.RequeueAfter)
 
 	require.NoError(t, err)
-	require.Equal(t, logger.RecordedError, fmt.Errorf("missing webhook with ID: %s", webhookID))
+	require.Equal(t, logger.RecordedError, fmt.Errorf("missing webhook with ID: %s", webhookGUID))
 }
 
 func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -499,14 +503,14 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:  appGUID,
 			RequestData: "{}",
-			WebhookIDs:  []string{webhookID},
+			WebhookIDs:  []string{webhookGUID},
 		},
 	}
 
 	k8sClient := &clientfakes.FakeClient{}
 	k8sClient.GetReturns(operation, nil)
 
-	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookID, Timeout: intToIntPtr(0)})
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(0)})
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
@@ -519,7 +523,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 	require.NotZero(t, res.RequeueAfter)
 
 	require.NoError(t, err)
-	require.Equal(t, logger.RecordedError, mockedErr)
+	require.Equal(t, mockedErr, logger.RecordedError)
 }
 
 func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -534,7 +538,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:  appGUID,
 			RequestData: "{}",
-			WebhookIDs:  []string{webhookID},
+			WebhookIDs:  []string{webhookGUID},
 		},
 	}
 
@@ -542,7 +546,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
-	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookID, Timeout: intToIntPtr(0)})
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(0)})
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
@@ -555,7 +559,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 	require.Zero(t, res.RequeueAfter)
 
 	require.Error(t, err)
-	require.Equal(t, err, mockedErr)
+	require.Equal(t, mockedErr, err)
 }
 
 func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -570,7 +574,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:  appGUID,
 			RequestData: "{}",
-			WebhookIDs:  []string{webhookID},
+			WebhookIDs:  []string{webhookGUID},
 		},
 	}
 
@@ -578,7 +582,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
-	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookID, Timeout: intToIntPtr(0)})
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(0)})
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
@@ -594,81 +598,1157 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.DoReturns(nil, mockedErr)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(mockedErr)
+
+	webhookClient := &webhookfakes.FakeClient{
+		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return nil, mockedErr
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{
+		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return nil, mockedErr
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{
+		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return nil, mockedErr
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceeds_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	mode := graphql.WebhookModeAsync
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
-func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceeds_And_UpdateOperationStatusSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
+func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceeds_And_UpdateOperationStatusSucceeds_ShouldResultRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	mode := graphql.WebhookModeAsync
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.True(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	mode := graphql.WebhookModeSync
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(mockedErr)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	mode := graphql.WebhookModeSync
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds_And_UpdateDirectorAndUpdateOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	mode := graphql.WebhookModeSync
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Contains(t, logger.RecordedError.Error(), "cannot parse")
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL, LastPollTimestamp: time.Now().Format(time.RFC3339Nano)}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, RetryInterval: intToIntPtr(60)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(nil, mockedErr)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(mockedErr)
+
+	webhookClient := &webhookfakes.FakeClient{
+		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return nil, mockedErr
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{
+		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return nil, mockedErr
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{
+		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return nil, mockedErr
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_But_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("IN_PROGRESS"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(mockedErr)
+
+	webhookClient := &webhookfakes.FakeClient{
+		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return prepareResponseStatus("IN_PROGRESS"), nil
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{
+		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return prepareResponseStatus("IN_PROGRESS"), nil
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	webhookTimeout := 5
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{
+		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+			time.Sleep(time.Duration(webhookTimeout) * time.Second)
+			return prepareResponseStatus("IN_PROGRESS"), nil
+		},
+	}
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(mockedErr)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(mockedErr)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.NotZero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(mockedErr)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, mockedErr, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.UpdateStatusReturns(nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateStatusReturns(nil)
+
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsUnknown_And_ShouldResultNoRequeueError(t *testing.T) {
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: "{}",
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+
+	status := "UNKNOWN"
+	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient.PollReturns(prepareResponseStatus(status), nil)
+
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+	require.Equal(t, fmt.Errorf("unexpected poll status response: %s", status), err)
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 1, webhookClient.PollCallCount())
 }
 
 func prepareApplicationOutput(app *graphql.Application, webhooks ...graphql.Webhook) *director.ApplicationOutput {
@@ -676,6 +1756,15 @@ func prepareApplicationOutput(app *graphql.Application, webhooks ...graphql.Webh
 		Application: *app,
 		Webhooks:    webhooks,
 	}}
+}
+
+func prepareResponseStatus(status string) *web_hook.ResponseStatus {
+	return &web_hook.ResponseStatus{
+		Status:                     strToStrPtr(status),
+		SuccessStatusIdentifier:    strToStrPtr("SUCCEEDED"),
+		InProgressStatusIdentifier: strToStrPtr("IN_PROGRESS"),
+		FailedStatusIdentifier:     strToStrPtr("FAILED"),
+	}
 }
 
 func strToStrPtr(str string) *string {
