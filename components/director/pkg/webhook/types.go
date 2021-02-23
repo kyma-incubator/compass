@@ -90,8 +90,8 @@ func (ot *URL) Validate() error {
 	return nil
 }
 
-func (ot *Response) Validate(webhookMode Mode) error {
-	if webhookMode == ModeAsync && ot.Location == nil {
+func (ot *Response) Validate() error {
+	if ot.Location == nil {
 		return errors.New("missing Output Template location field")
 	}
 
@@ -208,7 +208,7 @@ func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error
 	return headers, nil
 }
 
-func ParseOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, respData ResponseData) (*Response, error) {
+func ParseOutputTemplate(inputTmpl, outputTmpl *string, respData ResponseData) (*Response, error) {
 	if outputTmpl == nil && inputTmpl != nil {
 		return nil, errors.New("missing webhook output template")
 	}
@@ -232,7 +232,7 @@ func ParseOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, respDa
 		return nil, err
 	}
 
-	return &outputTmplResp, outputTmplResp.Validate(webhookMode)
+	return &outputTmplResp, outputTmplResp.Validate()
 }
 
 func ParseStatusTemplate(tmpl *string, respData ResponseData) (*ResponseStatus, error) {

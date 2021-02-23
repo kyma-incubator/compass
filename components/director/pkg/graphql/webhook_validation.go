@@ -38,13 +38,8 @@ func (i WebhookInput) Validate() error {
 		return err
 	}
 
-	webhookMode := webhook.ModeSync
-	if i.Mode != nil {
-		webhookMode = webhook.Mode(*i.Mode)
-	}
-
 	var respData webhook.ResponseData
-	if _, err := webhook.ParseOutputTemplate(i.InputTemplate, i.OutputTemplate, webhookMode, respData); err != nil {
+	if _, err := webhook.ParseOutputTemplate(i.InputTemplate, i.OutputTemplate, respData); err != nil {
 		return err
 	}
 
