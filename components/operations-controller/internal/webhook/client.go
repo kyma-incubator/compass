@@ -137,7 +137,7 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 
 	req.Header = headers
 
-	client := http.DefaultClient
+	client := &d.HTTPClient
 	if webhook.Auth != nil {
 		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
 		if isBasicAuth {

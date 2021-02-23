@@ -429,6 +429,282 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) {
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &invalidTemplate,
+		},
+		Data: web_hook.RequestData{Application: app},
+	}
+
+	client := webhook.DefaultClient{}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unable to parse webhook headers")
+}
+
+func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{}
+
+	_, err := client.Poll(nil, webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "nil Context")
+}
+
+func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		HTTPClient: http.Client{
+			Transport: mockedTransport{err: errors.New(mockedError)},
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), mockedError)
+
+}
+
+func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+			StatusTemplate: &statusTemplate,
+			Mode:           &webhookAsyncMode,
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		HTTPClient: http.Client{
+			Transport: mockedTransport{
+				resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
+			},
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "missing Status Template success status code field")
+}
+
+func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+			StatusTemplate: &statusTemplate,
+			Mode:           &webhookAsyncMode,
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		HTTPClient: http.Client{
+			Transport: mockedTransport{
+				resp: &http.Response{
+					Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
+					Header:     http.Header{"Location": []string{mockedLocationURL}},
+					StatusCode: http.StatusOK,
+				},
+			},
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), mockedError)
+	require.Contains(t, err.Error(), "received error while polling external system")
+}
+
+func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+			StatusTemplate: &statusTemplate,
+			Mode:           &webhookAsyncMode,
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		HTTPClient: http.Client{
+			Transport: mockedTransport{
+				resp: &http.Response{
+					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+					Header:     http.Header{"Location": []string{mockedLocationURL}},
+					StatusCode: http.StatusInternalServerError,
+				},
+			},
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "response success status code was not met")
+}
+
+func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	username := "user"
+	password := "pass"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+			StatusTemplate: &statusTemplate,
+			Mode:           &webhookAsyncMode,
+			Auth: &graphql.Auth{
+				Credential: &graphql.BasicCredentialData{
+					Username: username,
+					Password: password,
+				},
+			},
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		HTTPClient: http.Client{
+			Transport: mockedTransport{
+				resp: &http.Response{
+					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+					Header:     http.Header{"Location": []string{mockedLocationURL}},
+					StatusCode: http.StatusOK,
+				},
+				roundTripExpectations: func(r *http.Request) {
+					auth := username + ":" + password
+					base64Creds := base64.StdEncoding.EncodeToString([]byte(auth))
+					require.NotEmpty(t, r.Header["Authorization"])
+					require.Equal(t, r.Header["Authorization"][0], "Basic "+base64Creds)
+				},
+			},
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.NoError(t, err)
+}
+
+func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			HeaderTemplate: &headersTemplate,
+			StatusTemplate: &statusTemplate,
+			Mode:           &webhookAsyncMode,
+			Auth: &graphql.Auth{
+				Credential: &graphql.OAuthCredentialData{
+					ClientID:     "client-id",
+					ClientSecret: "client-secret",
+					URL:          "https://test-domain.com/oauth/token",
+				},
+			},
+		},
+		Data:    web_hook.RequestData{Application: app},
+		PollURL: &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		OAuthClientProviderFunc: func(_ context.Context, client http.Client, _ *graphql.OAuthCredentialData) *http.Client {
+			client.Transport = mockedTransport{
+				resp: &http.Response{
+					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+					Header:     http.Header{"Location": []string{mockedLocationURL}},
+					StatusCode: http.StatusOK,
+				},
+			}
+			return &client
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.NoError(t, err)
+}
+
+func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	correlationIDKey := "X-Correlation-Id"
+	correlationID := "abc"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			CorrelationIDKey: &correlationIDKey,
+			HeaderTemplate:   &headersTemplate,
+			StatusTemplate:   &statusTemplate,
+			Mode:             &webhookAsyncMode,
+		},
+		Data:          web_hook.RequestData{Application: app, Headers: map[string]string{}},
+		CorrelationID: correlationID,
+		PollURL:       &mockedLocationURL,
+	}
+
+	client := webhook.DefaultClient{
+		HTTPClient: http.Client{
+			Transport: mockedTransport{
+				resp: &http.Response{
+					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+					Header:     http.Header{"Location": []string{mockedLocationURL}},
+					StatusCode: http.StatusOK,
+				},
+				roundTripExpectations: func(r *http.Request) {
+					require.NotEmpty(t, r.Header[correlationIDKey])
+					require.Equal(t, r.Header[correlationIDKey][0], correlationID)
+				},
+			},
+		},
+	}
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.NoError(t, err)
+}
+
 type mockedTransport struct {
 	resp                  *http.Response
 	err                   error
