@@ -26,7 +26,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Operation, error)
-	Status() client.StatusWriter
+	UpdateStatus(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error
 	Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error
 }
 
@@ -45,4 +45,8 @@ func (dc *defaultClient) Get(ctx context.Context, key client.ObjectKey) (*v1alph
 		return nil, err
 	}
 	return operation, nil
+}
+
+func (dc *defaultClient) UpdateStatus(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+	return dc.Status().Update(ctx, obj, opts...)
 }

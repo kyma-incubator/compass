@@ -40,15 +40,18 @@ type FakeClient struct {
 		result1 *v1alpha1.Operation
 		result2 error
 	}
-	StatusStub        func() clienta.StatusWriter
-	statusMutex       sync.RWMutex
-	statusArgsForCall []struct {
+	UpdateStatusStub        func(context.Context, runtime.Object, ...clienta.UpdateOption) error
+	updateStatusMutex       sync.RWMutex
+	updateStatusArgsForCall []struct {
+		arg1 context.Context
+		arg2 runtime.Object
+		arg3 []clienta.UpdateOption
 	}
-	statusReturns struct {
-		result1 clienta.StatusWriter
+	updateStatusReturns struct {
+		result1 error
 	}
-	statusReturnsOnCall map[int]struct {
-		result1 clienta.StatusWriter
+	updateStatusReturnsOnCall map[int]struct {
+		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -180,55 +183,65 @@ func (fake *FakeClient) GetReturnsOnCall(i int, result1 *v1alpha1.Operation, res
 	}{result1, result2}
 }
 
-func (fake *FakeClient) Status() clienta.StatusWriter {
-	fake.statusMutex.Lock()
-	ret, specificReturn := fake.statusReturnsOnCall[len(fake.statusArgsForCall)]
-	fake.statusArgsForCall = append(fake.statusArgsForCall, struct {
-	}{})
-	fake.recordInvocation("Status", []interface{}{})
-	fake.statusMutex.Unlock()
-	if fake.StatusStub != nil {
-		return fake.StatusStub()
+func (fake *FakeClient) UpdateStatus(arg1 context.Context, arg2 runtime.Object, arg3 ...clienta.UpdateOption) error {
+	fake.updateStatusMutex.Lock()
+	ret, specificReturn := fake.updateStatusReturnsOnCall[len(fake.updateStatusArgsForCall)]
+	fake.updateStatusArgsForCall = append(fake.updateStatusArgsForCall, struct {
+		arg1 context.Context
+		arg2 runtime.Object
+		arg3 []clienta.UpdateOption
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("UpdateStatus", []interface{}{arg1, arg2, arg3})
+	fake.updateStatusMutex.Unlock()
+	if fake.UpdateStatusStub != nil {
+		return fake.UpdateStatusStub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.statusReturns
+	fakeReturns := fake.updateStatusReturns
 	return fakeReturns.result1
 }
 
-func (fake *FakeClient) StatusCallCount() int {
-	fake.statusMutex.RLock()
-	defer fake.statusMutex.RUnlock()
-	return len(fake.statusArgsForCall)
+func (fake *FakeClient) UpdateStatusCallCount() int {
+	fake.updateStatusMutex.RLock()
+	defer fake.updateStatusMutex.RUnlock()
+	return len(fake.updateStatusArgsForCall)
 }
 
-func (fake *FakeClient) StatusCalls(stub func() clienta.StatusWriter) {
-	fake.statusMutex.Lock()
-	defer fake.statusMutex.Unlock()
-	fake.StatusStub = stub
+func (fake *FakeClient) UpdateStatusCalls(stub func(context.Context, runtime.Object, ...clienta.UpdateOption) error) {
+	fake.updateStatusMutex.Lock()
+	defer fake.updateStatusMutex.Unlock()
+	fake.UpdateStatusStub = stub
 }
 
-func (fake *FakeClient) StatusReturns(result1 clienta.StatusWriter) {
-	fake.statusMutex.Lock()
-	defer fake.statusMutex.Unlock()
-	fake.StatusStub = nil
-	fake.statusReturns = struct {
-		result1 clienta.StatusWriter
+func (fake *FakeClient) UpdateStatusArgsForCall(i int) (context.Context, runtime.Object, []clienta.UpdateOption) {
+	fake.updateStatusMutex.RLock()
+	defer fake.updateStatusMutex.RUnlock()
+	argsForCall := fake.updateStatusArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) UpdateStatusReturns(result1 error) {
+	fake.updateStatusMutex.Lock()
+	defer fake.updateStatusMutex.Unlock()
+	fake.UpdateStatusStub = nil
+	fake.updateStatusReturns = struct {
+		result1 error
 	}{result1}
 }
 
-func (fake *FakeClient) StatusReturnsOnCall(i int, result1 clienta.StatusWriter) {
-	fake.statusMutex.Lock()
-	defer fake.statusMutex.Unlock()
-	fake.StatusStub = nil
-	if fake.statusReturnsOnCall == nil {
-		fake.statusReturnsOnCall = make(map[int]struct {
-			result1 clienta.StatusWriter
+func (fake *FakeClient) UpdateStatusReturnsOnCall(i int, result1 error) {
+	fake.updateStatusMutex.Lock()
+	defer fake.updateStatusMutex.Unlock()
+	fake.UpdateStatusStub = nil
+	if fake.updateStatusReturnsOnCall == nil {
+		fake.updateStatusReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.statusReturnsOnCall[i] = struct {
-		result1 clienta.StatusWriter
+	fake.updateStatusReturnsOnCall[i] = struct {
+		result1 error
 	}{result1}
 }
 
@@ -239,8 +252,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteMutex.RUnlock()
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	fake.statusMutex.RLock()
-	defer fake.statusMutex.RUnlock()
+	fake.updateStatusMutex.RLock()
+	defer fake.updateStatusMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

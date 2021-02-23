@@ -97,20 +97,20 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if app.Result.Ready {
 		operation = setConditionStatus(*operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
 		operation.Status.Phase = v1alpha1.StateSuccess
-		if app.Result.Error != nil {
+		if app.Result.Error != nil && *app.Result.Error != "" {
 			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, *app.Result.Error)
 			operation.Status.Phase = v1alpha1.StateFailed
 		}
-		if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
+		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
 	}
 
-	if app.Result.Error != nil {
+	if app.Result.Error != nil && *app.Result.Error != "" {
 		operation = setErrorStatus(*operation, *app.Result.Error)
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
+		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
@@ -142,7 +142,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		switch *webhookEntity.Mode {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
-			if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
+			if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{Requeue: true}, nil
@@ -210,7 +210,7 @@ func (r *OperationReconciler) updateStatusWithError(ctx context.Context, logger 
 
 	operation.Status.Phase = state
 	operation.Status.Webhooks[0].State = state
-	if err := r.k8sClient.Status().Update(ctx, operation); err != nil {
+	if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 		return ctrl.Result{}, err
 	}
 
