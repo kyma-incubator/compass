@@ -26,8 +26,8 @@ import (
 	"github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director/directorfakes"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director/directorfakes"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )

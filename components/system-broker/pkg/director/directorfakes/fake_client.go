@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/machinebox/graphql"
 )
 

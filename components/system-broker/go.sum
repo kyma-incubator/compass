@@ -490,6 +490,7 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+github.com/kyma-incubator/compass v1.2.0 h1:HNF/sUNCcZKfTztGx5Rmnssytlnkmo9FzO2SDC6j1Ps=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210203135116-086a057e4d3c h1:qM08vDpbzsuIu46Ybdg1ZvhrOpdDLScnxf9OBxqWowU=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210203135116-086a057e4d3c/go.mod h1:X6pse3bIefvqtcRmbOZsPuVcrf7lPUMBRR0ZYeBoRus=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210208130236-0bb4624654e4 h1:dFrgNPCwFJcmlJyyerxRhzKN2Hn0UGArFnsbtPQrYoM=

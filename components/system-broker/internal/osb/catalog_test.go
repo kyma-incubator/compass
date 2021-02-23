@@ -8,9 +8,9 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/types/typesfakes"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 )

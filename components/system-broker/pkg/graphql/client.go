@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

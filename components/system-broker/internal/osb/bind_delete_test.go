@@ -7,8 +7,8 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/types/typesfakes"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

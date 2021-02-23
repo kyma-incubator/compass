@@ -19,7 +19,7 @@ package types
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ApplicationLister
