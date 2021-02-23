@@ -50,6 +50,9 @@ var (
 )
 
 func TestSystemBrokerAuthentication(t *testing.T) {
+	testCtx, err := pkg.NewTestContext(config)
+	require.NoError(t, err)
+
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime := director.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
 	defer director.UnregisterRuntimeWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
@@ -57,7 +60,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
 	t.Run("Should successfully call catalog endpoint with certificate secured client", func(t *testing.T) {
-		req := createCatalogRequest(t)
+		req := createCatalogRequest(t, testCtx)
 
 		resp, err := securedClient.Do(req)
 		require.NoError(t, err)
@@ -70,7 +73,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	})
 
 	t.Run("Should fail calling catalog endpoint without certificate", func(t *testing.T) {
-		req := createCatalogRequest(t)
+		req := createCatalogRequest(t, testCtx)
 
 		client := http.Client{
 			Transport: &http.Transport{
@@ -91,7 +94,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, ok, true)
 
-		req := createCatalogRequest(t)
+		req := createCatalogRequest(t, testCtx)
 
 		resp, err := securedClient.Do(req)
 
@@ -103,7 +106,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	})
 
 	t.Run("Should fail calling catalog endpoint with invalid certificate", func(t *testing.T) {
-		req := createCatalogRequest(t)
+		req := createCatalogRequest(t, testCtx)
 
 		fakedClientKey, err := connectorTestkit.GenerateKey()
 		require.NoError(t, err)
@@ -116,24 +119,24 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 }
 
 func TestCallingORDServiceWithCert(t *testing.T) {
-	ORDContext, err := pkg.NewTestContext(config)
+	testContext, err := pkg.NewTestContext(config)
 	require.NoError(t, err)
 
-	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, ORDContext.Tenant)
-	runtime := director.RegisterRuntimeFromInputWithinTenant(t, ORDContext.Context, ORDContext.DexGraphqlClient, ORDContext.Tenant, runtimeInput)
-	defer director.UnregisterRuntimeWithinTenant(t, ORDContext.Context, ORDContext.DexGraphqlClient, ORDContext.Tenant, runtime.ID)
+	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testContext.Tenant)
+	runtime := director.RegisterRuntimeFromInputWithinTenant(t, testContext.Context, testContext.DexGraphqlClient, testContext.Tenant, runtimeInput)
+	defer director.UnregisterRuntimeWithinTenant(t, testContext.Context, testContext.DexGraphqlClient, testContext.Tenant, runtime.ID)
 
-	app, err := director.RegisterApplicationWithinTenant(t, ORDContext.Context, ORDContext.DexGraphqlClient, ORDContext.Tenant, applicationInput)
+	app, err := director.RegisterApplicationWithinTenant(t, testContext.Context, testContext.DexGraphqlClient, testContext.Tenant, applicationInput)
 	require.NoError(t, err)
-	defer director.UnregisterApplication(t, ORDContext.Context, ORDContext.DexGraphqlClient, ORDContext.Tenant, app.ID)
+	defer director.UnregisterApplication(t, testContext.Context, testContext.DexGraphqlClient, testContext.Tenant, app.ID)
 
-	bundle := director.CreateBundle(t, ORDContext.Context, ORDContext.DexGraphqlClient, app.ID, ORDContext.Tenant, testBundleName)
-	api := director.AddAPIToBundleWithInput(t, ORDContext.Context, ORDContext.DexGraphqlClient, bundle.ID, ORDContext.Tenant, apiDefInput)
+	bundle := director.CreateBundle(t, testContext.Context, testContext.DexGraphqlClient, app.ID, testContext.Tenant, testBundleName)
+	api := director.AddAPIToBundleWithInput(t, testContext.Context, testContext.DexGraphqlClient, bundle.ID, testContext.Tenant, apiDefInput)
 
-	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
+	securedClient, configuration, certChain := getSecuredClientByContext(t, testContext, runtime.ID)
 
 	t.Run("Should succeed calling ORD service with the same cert used for calling catalog", func(t *testing.T) {
-		req := createCatalogRequest(t)
+		req := createCatalogRequest(t, testContext)
 		resp, err := securedClient.Do(req)
 
 		require.NoError(t, err)
@@ -144,7 +147,7 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, string(body), "services")
 
-		reqORD := createORDServiceRequest(t, ORDContext, api.ID, api.Spec.ID)
+		reqORD := createORDServiceRequest(t, testContext, api.ID, api.Spec.ID)
 		respORD, err := securedClient.Do(reqORD)
 
 		require.NoError(t, err)
@@ -155,12 +158,12 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 	t.Run("Should fail calling ORD service with revoked cert", func(t *testing.T) {
 
 		logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
-		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
+		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testContext.ClientKey, certChain...)
 		ok, err := connectorClient.RevokeCertificate()
 		require.NoError(t, err)
 		require.Equal(t, ok, true)
 
-		req := createORDServiceRequest(t, ORDContext, api.ID, api.Spec.ID)
+		req := createORDServiceRequest(t, testContext, api.ID, api.Spec.ID)
 
 		resp, err := securedClient.Do(req)
 
@@ -175,8 +178,8 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 
 }
 
-func createCatalogRequest(t *testing.T) *http.Request {
-	req, err := http.NewRequest(http.MethodGet, testCtx.SystemBrokerURL+"/v2/catalog", nil)
+func createCatalogRequest(t *testing.T, ctx *pkg.TestContext) *http.Request {
+	req, err := http.NewRequest(http.MethodGet, ctx.SystemBrokerURL+"/v2/catalog", nil)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json")

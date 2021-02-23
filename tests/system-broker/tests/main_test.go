@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var testCtx *pkg.TestContext
 var config pkg.Config
 
 func TestMain(m *testing.M) {
@@ -19,12 +18,6 @@ func TestMain(m *testing.M) {
 	config, err = pkg.ReadConfig()
 	if err != nil {
 		logrus.Errorf("Failed to read config: %s", err.Error())
-		os.Exit(1)
-	}
-
-	testCtx, err = pkg.NewTestContext(config)
-	if err != nil {
-		logrus.Errorf("Failed to create test context: %s", err.Error())
 		os.Exit(1)
 	}
 
