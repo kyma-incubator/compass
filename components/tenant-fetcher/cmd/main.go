@@ -17,13 +17,18 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -33,7 +38,7 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const compassURL = "https://github.com/kyma-incubator/compass"
+const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
@@ -45,8 +50,9 @@ type config struct {
 
 	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
-	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
-	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	Handler tenant.Config
+
+	Database persistence.DatabaseConfig
 }
 
 func main() {
@@ -61,38 +67,58 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	if cfg.HandlerEndpoint == "" || cfg.TenantPathParam == "" {
+	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
 		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
 	}
 
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
+	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
+	exitOnError(err, "Failed to retrieve authenticators config")
+
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
-	logger := log.C(ctx)
 
-	mainRouter := mux.NewRouter()
-	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	handler, err := initAPIHandler(ctx, cfg, authenticatorsConfig, transact)
+	exitOnError(err, "Failed to init tenant fetcher handlers")
 
-	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodPut)
-
-	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodDelete)
-
-	logger.Infof("Registering readiness endpoint...")
-	subrouter.HandleFunc("/readyz", newReadinessHandler())
-
-	logger.Infof("Registering liveness endpoint...")
-	subrouter.HandleFunc("/healthz", newReadinessHandler())
-
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, subrouter, "main")
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
 		<-ctx.Done()
+
 		// Interrupt signal received - shut down the servers
 		shutdownMainSrv()
 	}()
 
 	runMainSrv()
+}
+
+func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Config, transact persistence.Transactioner) (http.Handler, error) {
+	logger := log.C(ctx)
+	mainRouter := mux.NewRouter()
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+
+	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+
+	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg, transact); err != nil {
+		return nil, err
+	}
+
+	logger.Infof("Registering readiness endpoint...")
+	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
+
+	logger.Infof("Registering liveness endpoint...")
+	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
+
+	return mainRouter, nil
 }
 
 func exitOnError(err error, context string) {
@@ -132,69 +158,6 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	}
 
 	return runFn, shutdownFn
-}
-
-func getOnboardingHandlerFunc(tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		logger := log.C(request.Context())
-
-		logHandlerRequest("onboarding", tenantPathParam, request)
-		if err := logBody(request, writer); err != nil {
-			logger.Error(errors.Wrapf(err, "while logging request body"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		writer.Header().Set("Content-Type", "text/plain")
-		writer.WriteHeader(http.StatusOK)
-		if _, err := writer.Write([]byte(compassURL)); err != nil {
-			logger.Error(errors.Wrapf(err, "while writing response body"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func getDecommissioningHandlerFunc(tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		logger := log.C(request.Context())
-
-		logHandlerRequest("decommissioning", tenantPathParam, request)
-		if err := logBody(request, writer); err != nil {
-			logger.Error(errors.Wrapf(err, "while logging request body"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		writer.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(writer).Encode(map[string]interface{}{})
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "while writing to response body"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func logHandlerRequest(operation, tenantPathParam string, request *http.Request) {
-	tenantID := mux.Vars(request)[tenantPathParam]
-	log.C(request.Context()).Infof("Performing %s for tenant with id %q", operation, tenantID)
-}
-
-func logBody(r *http.Request, w http.ResponseWriter) error {
-	logger := log.C(r.Context())
-
-	buf, bodyErr := ioutil.ReadAll(r.Body)
-	if bodyErr != nil {
-		logger.Info("Body Error: ", bodyErr.Error())
-		http.Error(w, bodyErr.Error(), http.StatusInternalServerError)
-		return nil
-	}
-
-	rdr1 := ioutil.NopCloser(bytes.NewBuffer(buf))
-	rdr2 := ioutil.NopCloser(bytes.NewBuffer(buf))
-	logger.Infof("Body: %q", rdr1)
-	r.Body = rdr2
-
-	return nil
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

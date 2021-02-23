@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -32,10 +34,10 @@ var (
 	initializedComputedColumn = "initialized"
 )
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in *model.BusinessTenantMapping) *Entity
-	FromEntity(in *Entity) *model.BusinessTenantMapping
+	ToEntity(in *model.BusinessTenantMapping) *tenant.Entity
+	FromEntity(in *tenant.Entity) *model.BusinessTenantMapping
 }
 
 type pgRepository struct {
@@ -66,10 +68,10 @@ func (r *pgRepository) Create(ctx context.Context, item model.BusinessTenantMapp
 }
 
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
-	var entity Entity
+	var entity tenant.Entity
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(idColumn, id),
-		repo.NewNotEqualCondition(statusColumn, string(Inactive))}
+		repo.NewNotEqualCondition(statusColumn, string(tenant.Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
@@ -78,10 +80,10 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 }
 
 func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
-	var entity Entity
+	var entity tenant.Entity
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(externalTenantColumn, externalTenant),
-		repo.NewNotEqualCondition(statusColumn, string(Inactive))}
+		repo.NewNotEqualCondition(statusColumn, string(tenant.Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
@@ -97,7 +99,7 @@ func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenan
 }
 
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
-	var entityCollection EntityCollection
+	var entityCollection tenant.EntityCollection
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -110,7 +112,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 			WHERE t.%s = $1
 			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
 
-	err = persist.Select(&entityCollection, query, Active)
+	err = persist.Select(&entityCollection, query, tenant.Active)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
