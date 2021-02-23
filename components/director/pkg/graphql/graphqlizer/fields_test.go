@@ -49,7 +49,7 @@ func TestGqlFieldsProvider_OmitCombinedFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.apiDefinitions.spec.fetchRequest", "bundles.eventDefinitions.spec.fetchRequest", "bundles.documents.fetchRequest"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"status":              2,
@@ -68,7 +68,7 @@ func TestGqlFieldsProvider_OmitCombinedFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.apiDefinitions.spec.fetchRequest", "bundles.eventDefinitions.spec.fetchRequest"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"status":              3,
@@ -87,7 +87,7 @@ func TestGqlFieldsProvider_OmitCombinedFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"auths", "webhooks", "status", "bundles.instanceAuths", "bundles.documents", "bundles.apiDefinitions.spec.fetchRequest", "bundles.eventDefinitions.spec.fetchRequest"},
 			expectedProperties: map[string]int{
-				"id":                  4,
+				"id":                  6,
 				"name":                4,
 				"integrationSystemID": 1,
 				"status":              0,
@@ -130,7 +130,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{},
 			expectedProperties: map[string]int{
-				"id":           8,
+				"id":           10,
 				"name":         4,
 				"fetchRequest": 3,
 			},
@@ -140,7 +140,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"integrationSystemID"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 0,
 				"bundles":             1,
@@ -153,7 +153,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"webhooks"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -167,7 +167,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"webhooks.id"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -195,7 +195,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.id"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -209,7 +209,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.instanceAuths.id"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -224,7 +224,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.instanceAuths.status.reason"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -239,7 +239,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.apiDefinitions.id"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -254,7 +254,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.apiDefinitions.spec.fetchRequest"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -269,7 +269,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.apiDefinitions.spec.fetchRequest.filter"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -285,7 +285,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.apiDefinitions.version.forRemoval"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -300,7 +300,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.eventDefinitions.id"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -315,7 +315,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.eventDefinitions.spec.fetchRequest"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -330,7 +330,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.eventDefinitions.spec.fetchRequest.filter"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -346,7 +346,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.eventDefinitions.version.forRemoval"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -361,7 +361,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.documents.id"},
 			expectedProperties: map[string]int{
-				"id":                  7,
+				"id":                  9,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -376,7 +376,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.documents.fetchRequest"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -391,7 +391,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.documents.fetchRequest.filter"},
 			expectedProperties: map[string]int{
-				"id":                  8,
+				"id":                  10,
 				"name":                4,
 				"integrationSystemID": 1,
 				"bundles":             1,
@@ -407,7 +407,7 @@ func TestGqlFieldsProvider_OmitSeparatelyFieldsForApplication(t *testing.T) {
 			fp:   &graphqlizer.GqlFieldsProvider{},
 			omit: []string{"bundles.nonExisting", "idTypo", "bundlesTypo.id", "bundles.apiDefinitions.idTypo"},
 			expectedProperties: map[string]int{
-				"id":               8,
+				"id":               10,
 				"name":             4,
 				"bundles":          1,
 				"fetchRequest":     3,

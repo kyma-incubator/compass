@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TenantMappingRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
 type TenantMappingRepository interface {
 	Create(ctx context.Context, item model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -19,7 +19,7 @@ type TenantMappingRepository interface {
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
