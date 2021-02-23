@@ -71,11 +71,12 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 
 func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	invalidInputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"group\": \"{{.Application.Group}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
 			URLTemplate:   &URLTemplate,
-			InputTemplate: &invalidTemplate,
+			InputTemplate: &invalidInputTemplate,
 		},
 		Data: web_hook.RequestData{Application: app},
 	}
@@ -90,7 +91,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 
 func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
@@ -111,7 +112,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 
 func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
@@ -133,7 +134,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 
 func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
@@ -160,7 +161,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 
 func TestClient_Do_WhenParseOutputTemplateFails_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
@@ -189,7 +190,7 @@ func TestClient_Do_WhenParseOutputTemplateFails_ShouldReturnError(t *testing.T) 
 
 func TestClient_Do_WhenWebhookResponseContainsError_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
@@ -224,7 +225,7 @@ func TestClient_Do_WhenWebhookResponseContainsError_ShouldReturnError(t *testing
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
