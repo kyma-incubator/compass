@@ -24,9 +24,9 @@ type GqlClientForBroker interface {
 	BundleCredentialsDeleteRequester
 }
 
-func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {
+func NewSystemBroker(client GqlClientForBroker, ORDServiceURL string) *SystemBroker {
 	return &SystemBroker{
-		CatalogEndpoint:               NewCatalogEndpoint(client, &CatalogConverter{BaseURL: selfURL}),
+		CatalogEndpoint:               NewCatalogEndpoint(client, &CatalogConverter{ORDServiceURL: ORDServiceURL}),
 		ProvisionEndpoint:             NewProvisionEndpoint(),
 		DeprovisionEndpoint:           NewDeprovisionEndpoint(),
 		UpdateInstanceEndpoint:        NewUpdateInstanceEndpoint(),

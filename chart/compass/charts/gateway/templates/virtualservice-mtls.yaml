@@ -27,6 +27,17 @@ spec:
             {{- end }}
     - match:
       - uri:
+          exact: {{ .Values.global.ordService.staticPrefix }}
+      redirect:
+        uri: {{ .Values.global.ordService.staticPrefix }}/
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+    - match:
+      - uri:
           exact: {{ .Values.global.director.prefix }}
       redirect:
         uri: {{ .Values.global.director.prefix }}/

@@ -20,6 +20,7 @@ func (e *APIDefinition) GetType() resource.Type {
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
+	ID           string      `json:"id"`
 	Data         *CLOB       `json:"data"`
 	Format       SpecFormat  `json:"format"`
 	Type         APISpecType `json:"type"`

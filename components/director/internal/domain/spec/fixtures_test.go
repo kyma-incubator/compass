@@ -77,6 +77,7 @@ func fixGQLAPISpec() *graphql.APISpec {
 	var specData = "specData"
 	clob := graphql.CLOB(specData)
 	return &graphql.APISpec{
+		ID:           specID,
 		Data:         &clob,
 		DefinitionID: apiID,
 		Format:       graphql.SpecFormatXML,
@@ -88,6 +89,7 @@ func fixGQLEventSpec() *graphql.EventSpec {
 	var specData = "specData"
 	clob := graphql.CLOB(specData)
 	return &graphql.EventSpec{
+		ID:           specID,
 		Data:         &clob,
 		DefinitionID: eventID,
 		Format:       graphql.SpecFormatJSON,
