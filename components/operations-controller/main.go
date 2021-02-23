@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
@@ -25,7 +24,6 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"net/http"
-	"net/url"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,13 +74,6 @@ func main() {
 	cfg, err := config.New(env)
 	fatalOnError(err)
 
-	url, err := url.Parse(cfg.GraphQLClient.GraphqlEndpoint)
-	fatalOnError(err)
-
-	directorURL := fmt.Sprintf("%s://%s", url.Scheme, url.Host)
-
-	cfg.GraphQLClient.GraphqlEndpoint = cfg.GraphQLClient.GraphqlEndpoint + "?useBundles=true" // TODO: Delete after bundles are adopted
-
 	err = cfg.Validate()
 	fatalOnError(err)
 
@@ -114,7 +105,7 @@ func main() {
 	fatalOnError(err)
 
 	controller := controllers.NewOperationReconciler(mgr.GetClient(), *cfg.Webhook,
-		director.NewClient(directorURL, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient},
+		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient},
 		ctrl.Log.WithName("controllers").WithName("Operation"), mgr.GetScheme())
 
 	if err = controller.SetupWithManager(mgr); err != nil {
