@@ -52,7 +52,7 @@ global:
       version: "PR-1726"
     console:
       dir:
-      version: "PR-12"
+      version: "PR-19"
     tests:
       director:
         dir:

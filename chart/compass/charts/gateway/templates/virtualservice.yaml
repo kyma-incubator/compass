@@ -72,6 +72,7 @@ spec:
           - "authorization"
           - "content-type"
           - "tenant"
+          - "client_user"
         allowMethods:
           - "GET"
     - match:
@@ -95,6 +96,7 @@ spec:
           - "authorization"
           - "content-type"
           - "tenant"
+          - "client_user"
         allowMethods:
           - "GET"
           - "POST"
