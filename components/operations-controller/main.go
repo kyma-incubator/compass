@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	director_graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
@@ -23,6 +24,8 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"net/http"
 	"os"
 
@@ -105,7 +108,7 @@ func main() {
 	fatalOnError(err)
 
 	controller := controllers.NewOperationReconciler(mgr.GetClient(), *cfg.Webhook,
-		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient},
+		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient, OAuthClientProviderFunc: defaultOAuthClientProviderFunc},
 		ctrl.Log.WithName("controllers").WithName("Operation"), mgr.GetScheme())
 
 	if err = controller.SetupWithManager(mgr); err != nil {
@@ -125,4 +128,18 @@ func fatalOnError(err error) {
 	if err != nil {
 		log.D().Fatal(err.Error())
 	}
+}
+
+func defaultOAuthClientProviderFunc(ctx context.Context, client http.Client, oauthCreds *director_graphql.OAuthCredentialData) *http.Client {
+	conf := &clientcredentials.Config{
+		ClientID:     oauthCreds.ClientID,
+		ClientSecret: oauthCreds.ClientSecret,
+		TokenURL:     oauthCreds.URL,
+		AuthStyle:    oauth2.AuthStyleInParams,
+	}
+
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
+	securedClient := conf.Client(ctx)
+	securedClient.Timeout = client.Timeout
+	return securedClient
 }

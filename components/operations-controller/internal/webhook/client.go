@@ -27,8 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 // Client defines a general purpose Webhook executor
@@ -38,7 +36,8 @@ type Client interface {
 }
 
 type DefaultClient struct {
-	HTTPClient http.Client
+	HTTPClient              http.Client
+	OAuthClientProviderFunc func(ctx context.Context, client http.Client, oauthCreds *graphql.OAuthCredentialData) *http.Client
 }
 
 func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
@@ -89,7 +88,7 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 
 		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
 		if isOAuth {
-			client = oauthClient(ctx, *client, oauthCreds)
+			client = d.OAuthClientProviderFunc(ctx, *client, oauthCreds)
 		}
 	}
 
@@ -147,7 +146,7 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 
 		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
 		if isOAuth {
-			client = oauthClient(ctx, *client, oauthCreds)
+			client = d.OAuthClientProviderFunc(ctx, *client, oauthCreds)
 		}
 	}
 
@@ -167,20 +166,6 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
-}
-
-func oauthClient(ctx context.Context, client http.Client, oauthCreds *graphql.OAuthCredentialData) *http.Client {
-	conf := &clientcredentials.Config{
-		ClientID:     oauthCreds.ClientID,
-		ClientSecret: oauthCreds.ClientSecret,
-		TokenURL:     oauthCreds.URL,
-		AuthStyle:    oauth2.AuthStyleInParams,
-	}
-
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
-	securedClient := conf.Client(ctx)
-	securedClient.Timeout = client.Timeout
-	return securedClient
 }
 
 func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
