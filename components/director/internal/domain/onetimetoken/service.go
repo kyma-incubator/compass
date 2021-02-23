@@ -17,14 +17,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
-
-//go:generate mockery -name=GraphQLClient -output=automock -outpkg=automock -case=underscore
-type GraphQLClient interface {
-	Run(ctx context.Context, req *gcli.Request, resp interface{}) error
-}
 
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
 type SystemAuthService interface {
@@ -55,7 +49,6 @@ type HTTPDoer interface {
 }
 
 type service struct {
-	cli                       GraphQLClient
 	connectorURL              string
 	sysAuthSvc                SystemAuthService
 	intSystemToAdapterMapping map[string]string
