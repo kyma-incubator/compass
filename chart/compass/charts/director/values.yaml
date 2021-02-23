@@ -33,6 +33,6 @@ applicationHideSelectors: |-
 istio:
   rbac:
     enabled: true
-    connectorInternalApi:
+    directorInternalApi:
       compassConnector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector
       compassConnectorTests: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector-tests

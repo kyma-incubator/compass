@@ -45,10 +45,10 @@ spec:
               containerPort: {{ .Values.global.director.graphql.external.port }}
               protocol: TCP
             - name: http-gql-int
-              containerPort: { { .Values.global.director.graphql.internal.port } }
+              containerPort: {{ .Values.global.director.graphql.internal.port }}
               protocol: TCP
             - name: http-validator
-              containerPort: { { .Values.global.director.validator.port } }
+              containerPort: {{ .Values.global.director.validator.port }}
               protocol: TCP
             - name: metrics
               containerPort: {{ .Values.global.director.metrics.port }}
