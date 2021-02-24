@@ -82,6 +82,9 @@ func TestReconcile_FailureToGetOperationCR_ShouldResultNoRequeueNoError(t *testi
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 }
 
 func TestReconcile_MultipleWebhooksRetrievedForExecution_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -112,6 +115,9 @@ func TestReconcile_MultipleWebhooksRetrievedForExecution_ShouldResultNoRequeueNo
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 }
 
 func TestReconcile_ZeroWebhooksRetrievedForExecution_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -142,6 +148,9 @@ func TestReconcile_ZeroWebhooksRetrievedForExecution_ShouldResultNoRequeueNoErro
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 }
 
 func TestReconcile_FailureToParseData_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -176,6 +185,9 @@ func TestReconcile_FailureToParseData_ShouldResultNoRequeueNoError(t *testing.T)
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_But_DeleteOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -220,6 +232,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+
 	require.Equal(t, 1, k8sClient.DeleteCallCount())
 	_, op, _ := k8sClient.DeleteArgsForCall(0)
 	require.Equal(t, operation, op)
@@ -228,6 +242,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -271,6 +287,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+
 	require.Equal(t, 1, k8sClient.DeleteCallCount())
 	_, op, _ := k8sClient.DeleteArgsForCall(0)
 	require.Equal(t, operation, op)
@@ -279,6 +297,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -321,12 +341,15 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
 	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -389,10 +412,14 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperatio
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -454,10 +481,14 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -517,10 +548,14 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperat
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -579,10 +614,14 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -643,10 +682,14 @@ func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRe
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -706,10 +749,14 @@ func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultN
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -755,11 +802,14 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
 	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
 }
 
 func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -808,6 +858,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
 	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
@@ -886,6 +937,8 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
@@ -962,6 +1015,8 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
 	require.Equal(t, appGUID, resourceID)
@@ -1026,6 +1081,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
 	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
@@ -1043,6 +1099,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		Data:    expectedRequestData,
 	}
 	require.Equal(t, expectedRequest, actualRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1093,14 +1151,13 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
 	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
 
 	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
@@ -1126,6 +1183,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		Data:    expectedRequestData,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -1178,8 +1237,6 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.Equal(t, mockedErr, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
@@ -1199,6 +1256,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	expectedOp.Status.Phase = v1alpha1.StateFailed
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
@@ -1224,6 +1283,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		Data:    expectedRequestData,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -1275,8 +1336,6 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
 	require.Equal(t, 1, k8sClient.GetCallCount())
 	_, namespacedName := k8sClient.GetArgsForCall(0)
@@ -1296,6 +1355,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	expectedOp.Status.Phase = v1alpha1.StateFailed
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
@@ -1321,6 +1382,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		Data:    expectedRequestData,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceeds_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -1334,9 +1397,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -1365,9 +1430,41 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	require.Error(t, err)
 	require.Equal(t, mockedErr, err)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StatePolling
+	expectedOp.Status.Webhooks[0].WebhookPollURL = mockedLocationURL
+	expectedOp.Status.Phase = v1alpha1.StatePolling
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
+	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceeds_And_UpdateOperationStatusSucceeds_ShouldResultRequeueNoError(t *testing.T) {
@@ -1381,9 +1478,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -1411,9 +1510,41 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 
 	require.NoError(t, err)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StatePolling
+	expectedOp.Status.Webhooks[0].WebhookPollURL = mockedLocationURL
+	expectedOp.Status.Phase = v1alpha1.StatePolling
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
+	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1427,9 +1558,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -1458,9 +1591,39 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
+	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -1474,9 +1637,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -1506,9 +1671,52 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	require.Error(t, err)
 	require.Equal(t, mockedErr, err)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateSuccess
+	expectedOp.Status.Phase = v1alpha1.StateSuccess
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeReady {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+		}
+	}
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
+	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds_And_UpdateDirectorAndUpdateOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -1522,9 +1730,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -1553,9 +1763,52 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	require.NoError(t, err)
 
-	require.Equal(t, 1, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateSuccess
+	expectedOp.Status.Phase = v1alpha1.StateSuccess
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeReady {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+		}
+	}
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
+	require.Equal(t, 1, webhookClient.DoCallCount())
+	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
+
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -1569,9 +1822,11 @@ func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldR
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}},
@@ -1600,9 +1855,23 @@ func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldR
 	require.NoError(t, err)
 	require.Contains(t, logger.RecordedError.Error(), "cannot parse")
 
-	require.Equal(t, 0, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1616,9 +1885,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL, LastPollTimestamp: time.Now().Format(time.RFC3339Nano)}},
@@ -1646,9 +1917,23 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 
 	require.NoError(t, err)
 
-	require.Equal(t, 0, webhookClient.DoCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+	require.Equal(t, 0, webhookClient.PollCallCount())
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1662,9 +1947,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -1694,10 +1981,33 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
-	require.Equal(t, 0, webhookClient.DoCallCount())
-	require.Equal(t, 1, webhookClient.PollCallCount())
-
 	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+
+	require.Equal(t, 0, webhookClient.DoCallCount())
+
+	require.Equal(t, 1, webhookClient.PollCallCount())
+	_, actualRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedRequest, actualRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1711,9 +2021,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -1749,10 +2061,40 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         mockedErr.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -1766,9 +2108,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -1806,10 +2150,55 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, mockedErr, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateFailed
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeError {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+			expectedOp.Status.Conditions[i].Message = mockedErr.Error()
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateFailed
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         mockedErr.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -1823,9 +2212,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -1862,10 +2253,55 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateFailed
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeError {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+			expectedOp.Status.Conditions[i].Message = mockedErr.Error()
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateFailed
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         mockedErr.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_But_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1879,9 +2315,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -1910,10 +2348,32 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	require.NoError(t, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1927,9 +2387,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -1965,10 +2427,40 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         ErrWebhookTimeoutReached.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -1982,9 +2474,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2021,10 +2515,55 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Error(t, err)
 	require.Equal(t, mockedErr, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateFailed
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeError {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+			expectedOp.Status.Conditions[i].Message = ErrWebhookTimeoutReached.Error()
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateFailed
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         ErrWebhookTimeoutReached.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -2038,9 +2577,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2076,10 +2617,55 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	require.NoError(t, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateFailed
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeError {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+			expectedOp.Status.Conditions[i].Message = ErrWebhookTimeoutReached.Error()
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateFailed
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         ErrWebhookTimeoutReached.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -2093,9 +2679,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2126,10 +2714,39 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -2143,9 +2760,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2177,10 +2796,53 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Error(t, err)
 	require.Equal(t, mockedErr, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateSuccess
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeReady {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateSuccess
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -2194,9 +2856,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2227,10 +2891,53 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	require.NoError(t, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateSuccess
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeReady {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateSuccess
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -2244,9 +2951,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2277,10 +2986,40 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.NoError(t, err)
 	require.Equal(t, mockedErr, logger.RecordedError)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         ErrFailedWebhookStatus.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_But_UpdateOperationStatusFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -2294,9 +3033,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2328,10 +3069,55 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Error(t, err)
 	require.Equal(t, mockedErr, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateFailed
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeError {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+			expectedOp.Status.Conditions[i].Message = ErrFailedWebhookStatus.Error()
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateFailed
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         ErrFailedWebhookStatus.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_And_UpdateDirectorAndOperationStatusSucceed_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -2345,9 +3131,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2378,10 +3166,55 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	require.NoError(t, err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 1, k8sClient.UpdateStatusCallCount())
+	expectedOp := *operation
+	expectedOp.Status = prepareDefaultOperationStatus()
+	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateFailed
+	expectedOp.Status.Webhooks[0].WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+	for i, condition := range expectedOp.Status.Conditions {
+		if condition.Type == v1alpha1.ConditionTypeError {
+			expectedOp.Status.Conditions[i].Status = corev1.ConditionTrue
+			expectedOp.Status.Conditions[i].Message = ErrFailedWebhookStatus.Error()
+		}
+	}
+	expectedOp.Status.Phase = v1alpha1.StateFailed
+	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, &expectedOp, actualOp)
+
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
+	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	expectedDirectorRequest := &ctrl_director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+		Error:         ErrFailedWebhookStatus.Error(),
+	}
+	require.Equal(t, expectedDirectorRequest, actualDirectorRequest)
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsUnknown_And_ShouldResultNoRequeueError(t *testing.T) {
@@ -2395,9 +3228,11 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: "{}",
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			Webhooks: []v1alpha1.Webhook{{WebhookID: webhookGUID, WebhookPollURL: mockedLocationURL}},
@@ -2428,10 +3263,32 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Error(t, err)
 	require.Equal(t, fmt.Errorf("unexpected poll status response: %s", status), err)
 
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, k8sClient.DeleteCallCount())
+
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
-
-	// SPECIFIC CLIENT ASSERTIONS:
+	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
+	expectedRequestData, err := parseRequestData(operation)
+	require.NoError(t, err)
+	expectedWebhookRequest := &webhook.Request{
+		Webhook: application.Result.Webhooks[0],
+		Data:    expectedRequestData,
+		PollURL: &mockedLocationURL,
+	}
+	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
 
 func prepareApplicationOutput(app *graphql.Application, webhooks ...graphql.Webhook) *director.ApplicationOutput {

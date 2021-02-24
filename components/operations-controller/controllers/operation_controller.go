@@ -157,6 +157,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		switch *webhookEntity.Mode {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
+			operation.Status.Webhooks[0].State = v1alpha1.StatePolling
+			operation.Status.Phase = v1alpha1.StatePolling
 			if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 				return ctrl.Result{}, err
 			}
