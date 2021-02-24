@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
+
 	"k8s.io/client-go/kubernetes"
 
 	v1 "k8s.io/api/core/v1"
@@ -37,6 +39,7 @@ const (
 
 	testSecretName    = "test-secret"
 	testConfigMapName = "test-secret"
+	oneTimeTokenURL   = "http://director.com"
 )
 
 var (
@@ -50,6 +53,8 @@ func TestMain(m *testing.M) {
 	exitOnError(err, "Error setting APP_CA_SECRET_NAME env")
 	err = os.Setenv("APP_REVOCATION_CONFIG_MAP_NAME", testConfigMapName)
 	exitOnError(err, "Error setting APP_CA_SECRET_NAME env")
+	err = os.Setenv("APP_ONE_TIME_TOKEN_URL", oneTimeTokenURL)
+	exitOnError(err, "Error setting APP_ONE_TIME_TOKEN_URL env")
 
 	cfg := config.Config{}
 	err = envconfig.InitWithPrefix(&cfg, "APP")
@@ -75,7 +80,8 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	directorGCLI := graphql_client.NewGraphQLClient(cfg.OneTimeTokenURL, cfg.HTTPClientTimeout)
+	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
 
 	go certsLoader.Run(context.TODO())
 	go revokedCertsLoader.Run(context.TODO())
@@ -94,16 +100,12 @@ func TestMain(m *testing.M) {
 
 	authContextTestMiddleware := func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			connectorToken := r.Header.Get(oathkeeper.ConnectorTokenHeader)
-			if connectorToken != "" {
-				tokenData, err := tokenService.Resolve(connectorToken)
-				if err != nil {
-					httputils.RespondWithError(r.Context(), w, http.StatusForbidden, err)
-					return
-				}
-				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, tokenData.ClientId))
+			clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
+			if clientIdFromToken != "" {
+				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, clientIdFromToken))
 
 				handler.ServeHTTP(w, r)
+				return
 			}
 
 			if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
