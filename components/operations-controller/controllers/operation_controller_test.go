@@ -235,8 +235,11 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
 
 	require.Equal(t, 1, k8sClient.DeleteCallCount())
-	_, op, _ := k8sClient.DeleteArgsForCall(0)
-	require.Equal(t, operation, op)
+	_, actualOperation, _ := k8sClient.DeleteArgsForCall(0)
+	expectedOperation := *operation
+	expectedOperation.Status = prepareDefaultOperationStatus()
+	expectedOperation.Status.Phase = ""
+	require.Equal(t, &expectedOperation, actualOperation)
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
@@ -290,8 +293,173 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
 
 	require.Equal(t, 1, k8sClient.DeleteCallCount())
-	_, op, _ := k8sClient.DeleteArgsForCall(0)
-	require.Equal(t, operation, op)
+	_, actualOperation, _ := k8sClient.DeleteArgsForCall(0)
+	expectedOperation := *operation
+	expectedOperation.Status = prepareDefaultOperationStatus()
+	expectedOperation.Status.Phase = ""
+	require.Equal(t, &expectedOperation, actualOperation)
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+}
+
+func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_For_OperationWithDifferentObservedGeneration_ShouldResultNoRequeueNoError(t *testing.T) {
+	// GIVEN:
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{},
+			Generation:        2,
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			ObservedGeneration: 1,
+			Conditions: []v1alpha1.Condition{
+				{
+					Type:   v1alpha1.ConditionTypeReady,
+					Status: corev1.ConditionTrue,
+				},
+				{
+					Type:    v1alpha1.ConditionTypeError,
+					Status:  corev1.ConditionTrue,
+					Message: mockedErr.Error(),
+				},
+			},
+			Webhooks: []v1alpha1.Webhook{
+				{
+					WebhookID:         webhookGUID,
+					RetriesCount:      2,
+					WebhookPollURL:    mockedLocationURL,
+					LastPollTimestamp: time.Now().Format(time.RFC3339Nano),
+					State:             v1alpha1.StateFailed,
+				},
+			},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.DeleteReturns(nil)
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(nil, mockedErr)
+
+	// WHEN:
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+
+	require.Equal(t, 1, k8sClient.DeleteCallCount())
+	_, actualOperation, _ := k8sClient.DeleteArgsForCall(0)
+	expectedOperation := *operation
+	expectedOperation.Status = prepareDefaultOperationStatus()
+	expectedOperation.Status.Phase = ""
+	expectedOperation.Status.ObservedGeneration = operation.ObjectMeta.Generation
+	require.Equal(t, &expectedOperation, actualOperation)
+
+	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
+	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
+	require.Equal(t, appGUID, resourceID)
+	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
+
+	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+}
+
+func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_For_OperationWithSameObservedGeneration_ShouldResultNoRequeueNoError(t *testing.T) {
+	// GIVEN:
+	logger := &mockedLogger{}
+
+	operation := &v1alpha1.Operation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              opName,
+			Namespace:         opNamespace,
+			CreationTimestamp: metav1.Time{},
+			Generation:        2,
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:  appGUID,
+			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:  []string{webhookGUID},
+		},
+		Status: v1alpha1.OperationStatus{
+			ObservedGeneration: 2,
+			Conditions: []v1alpha1.Condition{
+				{
+					Type:   v1alpha1.ConditionTypeReady,
+					Status: corev1.ConditionTrue,
+				},
+				{
+					Type:    v1alpha1.ConditionTypeError,
+					Status:  corev1.ConditionTrue,
+					Message: mockedErr.Error(),
+				},
+			},
+			Webhooks: []v1alpha1.Webhook{
+				{
+					WebhookID:         webhookGUID,
+					RetriesCount:      2,
+					WebhookPollURL:    mockedLocationURL,
+					LastPollTimestamp: time.Now().Format(time.RFC3339Nano),
+					State:             v1alpha1.StateFailed,
+				},
+			},
+		},
+	}
+
+	k8sClient := &clientfakes.FakeClient{}
+	k8sClient.GetReturns(operation, nil)
+	k8sClient.DeleteReturns(nil)
+
+	directorClient := &directorfakes.FakeClient{}
+	directorClient.FetchApplicationReturns(nil, mockedErr)
+
+	// WHEN:
+	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+	require.Equal(t, mockedErr, logger.RecordedError)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	require.Equal(t, 1, k8sClient.GetCallCount())
+	_, namespacedName := k8sClient.GetArgsForCall(0)
+	require.Equal(t, ctrlRequest.NamespacedName, namespacedName)
+
+	require.Equal(t, 0, k8sClient.UpdateStatusCallCount())
+
+	require.Equal(t, 1, k8sClient.DeleteCallCount())
+	_, actualOperation, _ := k8sClient.DeleteArgsForCall(0)
+	require.Equal(t, operation, actualOperation)
 
 	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
 	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)

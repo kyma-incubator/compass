@@ -78,6 +78,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
+	operation = setDefaultStatus(*operation)
+
 	webhookCount := len(operation.Spec.WebhookIDs)
 	if webhookCount == 0 || webhookCount > 1 {
 		logger.Error(fmt.Errorf("expected 1 webhook for execution, found %d", webhookCount), operationError("Invalid operation webhooks provided", operation))
@@ -104,8 +106,6 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
 	}
-
-	operation = setDefaultStatus(*operation)
 
 	if app.Result.Ready {
 		operation = setConditionStatus(*operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
@@ -315,7 +315,7 @@ func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 	if operation.Generation != operation.Status.ObservedGeneration {
 		overrideStatus = true
 		operation.Status.ObservedGeneration = operation.Generation
-		operation.Status.Phase = v1alpha1.StatePolling
+		operation.Status.Phase = ""
 	}
 
 	if operation.Status.Conditions == nil || overrideStatus {
