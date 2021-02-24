@@ -22,7 +22,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Success",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  strToPtrStr("description"),
@@ -54,7 +56,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Success with multiple entities",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  strToPtrStr("description"),
@@ -86,7 +90,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Application with no bundles",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  strToPtrStr("description"),
@@ -118,7 +124,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Application with one bundle without definitions",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  strToPtrStr("description"),
@@ -150,7 +158,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Application description is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  nil,
@@ -182,7 +192,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Error is returned when bundle has invalid schema",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  nil,
@@ -204,7 +216,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Plan description is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  nil,
@@ -242,7 +256,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "ApiDef spec format is invalid",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  nil,
@@ -263,7 +279,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "EventDef spec format is invalid",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  nil,
@@ -284,7 +302,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Application labels are nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  nil,
@@ -316,7 +336,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Bundle instance auth request input schema is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  strToPtrStr("description"),
@@ -354,7 +376,9 @@ func TestConverter_Convert(t *testing.T) {
 			name: "Success for entities containing group and version",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
-					ID:           "id",
+					BaseEntity: &schema.BaseEntity{
+						ID: "id",
+					},
 					Name:         "app1",
 					ProviderName: strToPtrStr("provider"),
 					Description:  strToPtrStr("description"),
@@ -386,7 +410,7 @@ func TestConverter_Convert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := osb.CatalogConverter{
-				BaseURL: "http://specification.com",
+				ORDServiceURL: "http://specification.com",
 			}
 			service, err := c.Convert(tt.app)
 			if tt.expectedErr != "" {
@@ -429,7 +453,7 @@ func generateExpectations(bundlesCount, apiDefCount, eventDefCount int) []domain
 			specification := make(map[string]interface{})
 			specification["type"] = schema.APISpecTypeOdata
 			specification["format"] = "application/json"
-			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&bundle_id=id%d&definition_id=id%d", i, j)
+			specification["url"] = fmt.Sprintf("http://specification.com/api/id%d/specification/apiDef-spec-%d", j, j)
 			apiSpec["specification"] = specification
 
 			apis = append(apis, apiSpec)
@@ -445,7 +469,7 @@ func generateExpectations(bundlesCount, apiDefCount, eventDefCount int) []domain
 			specification := make(map[string]interface{})
 			specification["type"] = schema.EventSpecTypeAsyncAPI
 			specification["format"] = "application/json"
-			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&bundle_id=id%d&definition_id=id%d", i, j)
+			specification["url"] = fmt.Sprintf("http://specification.com/event/id%d/specification/eventDef-spec-%d", j, j)
 			eventSpec["specification"] = specification
 
 			events = append(events, eventSpec)
@@ -521,7 +545,9 @@ func generateBundles(bundlesCount, apiDefCount, eventDefCount int) []*schema.Bun
 		instanceAuthSchema := schema.JSONSchema(`{"param":"string"}`)
 		currentBundle := &schema.BundleExt{
 			Bundle: schema.Bundle{
-				ID:                             fmt.Sprintf("id%d", i),
+				BaseEntity: &schema.BaseEntity{
+					ID: fmt.Sprintf("id%d", i),
+				},
 				Name:                           fmt.Sprintf("bundle%d", i),
 				Description:                    strToPtrStr("description"),
 				InstanceAuthRequestInputSchema: &instanceAuthSchema,
@@ -539,13 +565,16 @@ func generateAPIDefinitions(count int) schema.APIDefinitionPageExt {
 	for i := 0; i < count; i++ {
 		currentAPIDefinition := &schema.APIDefinitionExt{
 			APIDefinition: schema.APIDefinition{
-				ID:          fmt.Sprintf("id%d", i),
+				BaseEntity: &schema.BaseEntity{
+					ID: fmt.Sprintf("id%d", i),
+				},
 				Name:        fmt.Sprintf("apiDef%d", i),
 				TargetURL:   fmt.Sprintf("target-url-%d", i),
 				Description: strToPtrStr(fmt.Sprintf("description%d", i)),
 			},
 			Spec: &schema.APISpecExt{
 				APISpec: schema.APISpec{
+					ID:     fmt.Sprintf("apiDef-spec-%d", i),
 					Format: schema.SpecFormatJSON,
 					Type:   schema.APISpecTypeOdata,
 				},
@@ -563,13 +592,16 @@ func generateEventDefinitions(count int) schema.EventAPIDefinitionPageExt {
 	for i := 0; i < count; i++ {
 		currentEventDefinition := &schema.EventAPIDefinitionExt{
 			EventDefinition: schema.EventDefinition{
-				ID:          fmt.Sprintf("id%d", i),
+				BaseEntity: &schema.BaseEntity{
+					ID: fmt.Sprintf("id%d", i),
+				},
 				Name:        fmt.Sprintf("eventDef%d", i),
 				Description: strToPtrStr(fmt.Sprintf("description%d", i)),
 			},
 
 			Spec: &schema.EventAPISpecExt{
 				EventSpec: schema.EventSpec{
+					ID:     fmt.Sprintf("eventDef-spec-%d", i),
 					Format: schema.SpecFormatJSON,
 					Type:   schema.EventSpecTypeAsyncAPI,
 				},

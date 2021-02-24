@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -44,7 +46,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	jwks, err := FetchJWK(ctx, a.jwksEndpoint)
+	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
