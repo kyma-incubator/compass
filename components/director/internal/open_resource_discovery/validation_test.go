@@ -2,11 +2,13 @@ package open_resource_discovery_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 const (
@@ -16,11 +18,15 @@ const (
 	invalidDescriptionLength     = 256
 	invalidVersion               = "invalidVersion"
 	invalidPolicyLevel           = "invalidPolicyLevel"
-	customPolicyLevel            = "custom"
 	invalidVendor                = "wrongVendor!"
 	invalidType                  = "invalidType"
 	invalidCustomType            = "wrongCustomType"
 	invalidMediaType             = "invalid/type"
+
+	unknownVendorOrdID  = "vendor2"
+	unknownProductOrdID = "ns:UNKNOWN_PRODUCT_ID"
+	unknownPackageOrdID = "ns:package:UNKNOWN_PACKAGE_ID:v1"
+	unknownBundleOrdID  = "ns:consumptionBundle:UNKNOWN_BUNDLE_ID:v1"
 )
 
 var (
@@ -430,14 +436,6 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "`policyLevel` field for Package is set to `custom` but `customPolicyLevel` field is nil",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = customPolicyLevel
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Missing `type` from `PackageLinks` for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -523,6 +521,30 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Links = json.RawMessage(invalidLinkDueToMissingURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is invalid JSON for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it isn't a JSON array for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is an empty JSON array for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage("[]")
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -797,6 +819,26 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+
+		// Test invalid entity relations
+
+		{
+			Name: "Package has a reference to unknown Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Vendor = str.Ptr(unknownVendorOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Package has a reference to unknown Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PartOfProducts = json.RawMessage(fmt.Sprintf(`["%s"]`, unknownProductOrdID))
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1612,29 +1654,11 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
-				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = ""
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
 				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = "foo"
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Missing field `customDescription` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
-				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = ""
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1678,8 +1702,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Invalid `apiResourceLink` field when it is invalid JSON for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1695,8 +1718,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Invalid `apiResourceLink` field when it is an empty JSON array for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1934,6 +1956,34 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+
+		// Test invalid entity relations
+
+		{
+			Name: "API has a reference to an unknown Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = str.Ptr(unknownPackageOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "API has a reference to an unknown Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdBundleID = str.Ptr(unknownBundleOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "API has a reference to an unknown Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfProducts = json.RawMessage(fmt.Sprintf(`["%s"]`, unknownProductOrdID))
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2354,29 +2404,11 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
-				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = ""
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = "foo"
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Missing field `customDescription` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
-				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = ""
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2630,6 +2662,34 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
+
+		// Test invalid entity relations
+
+		{
+			Name: "Event has a reference to unknown Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].OrdPackageID = str.Ptr(unknownPackageOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Event has a reference to unknown Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].OrdBundleID = str.Ptr(unknownBundleOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Event has a reference to unknown Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfProducts = json.RawMessage(fmt.Sprintf(`["%s"]`, unknownProductOrdID))
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -2772,6 +2832,18 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
+
+		// Test invalid entity relations
+
+		{
+			Name: "Product has a reference to unknown Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].Vendor = unknownVendorOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -2870,6 +2942,61 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestDocuments_ValidateTombstone(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
+	}{
+		//TODO: further clarification is needed as what is required by the spec
+		/*{
+			Name: "Missing `ordId` field for Tombstone",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].OrdID = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordId` field for Tombstone",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].OrdID = invalidOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},*/{
+			Name: "Missing `removalDate` field for Tombstone",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].RemovalDate = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `removalDate` field for Tombstone",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].RemovalDate = "0000-00-00T00:00:00Z"
 
 				return []*open_resource_discovery.Document{doc}
 			},

@@ -2,10 +2,10 @@ package model
 
 import (
 	"encoding/json"
-	"github.com/go-ozzo/ozzo-validation/is"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"regexp"
 
+	"github.com/go-ozzo/ozzo-validation/is"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -52,11 +52,11 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	OrdBundleID         *string `json:"partOfConsumptionBundle"`
-	OrdPackageID        *string `json:"partOfPackage"`
-	Name                string  `json:"title"`
-	Description         *string `json:"description"`
-	Group               *string `json:",omitempty"`
+	OrdBundleID         *string         `json:"partOfConsumptionBundle"`
+	OrdPackageID        *string         `json:"partOfPackage"`
+	Name                string          `json:"title"`
+	Description         *string         `json:"description"`
+	Group               *string         `json:",omitempty"`
 	OrdID               *string         `json:"ordId"`
 	ShortDescription    *string         `json:"shortDescription"`
 	SystemInstanceAware *bool           `json:"systemInstanceAware"`
@@ -90,8 +90,8 @@ type EventResourceDefinition struct { // This is the place from where the specif
 func (rd *EventResourceDefinition) Validate() error {
 	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
-		validation.Field(&rd.Type, validation.Required, validation.In(EventSpecTypeAsyncAPIV2, EventSpecTypeCustom)),
-		validation.Field(&rd.CustomType, validation.When(rd.Type == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomTypeRegex))).Else(validation.Empty)),
+		validation.Field(&rd.Type, validation.Required, validation.In(EventSpecTypeAsyncAPIV2, EventSpecTypeCustom), validation.When(rd.CustomType != "", validation.In(EventSpecTypeCustom))),
+		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream)),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
 		validation.Field(&rd.AccessStrategy, validation.Required),

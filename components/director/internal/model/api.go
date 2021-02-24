@@ -2,9 +2,10 @@ package model
 
 import (
 	"encoding/json"
+	"regexp"
+
 	"github.com/go-ozzo/ozzo-validation/is"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -90,8 +91,8 @@ func (rd *APIResourceDefinition) Validate() error {
 	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
 		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
-			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom)),
-		validation.Field(&rd.CustomType, validation.When(rd.Type == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomTypeRegex))).Else(validation.Empty)),
+			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom), validation.When(rd.CustomType != "", validation.In(APISpecTypeCustom))),
+		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
 			validation.When(rd.Type == APISpecTypeOpenAPIV2 || rd.Type == APISpecTypeOpenAPIV3, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML)),
 			validation.When(rd.Type == APISpecTypeRaml, validation.In(SpecFormatTextYAML)),
@@ -125,8 +126,8 @@ type AccessStrategy struct {
 func (as AccessStrategy) Validate() error {
 	return validation.ValidateStruct(&as,
 		validation.Field(&as.Type, validation.Required, validation.In("open", "custom")),
-		validation.Field(&as.CustomType, validation.When(as.Type == "custom", validation.Required).Else(validation.Empty)),
-		validation.Field(&as.CustomDescription, validation.When(as.Type == "custom", validation.Required).Else(validation.Empty)),
+		validation.Field(&as.CustomType, validation.When(as.Type != "custom", validation.Empty)),
+		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
 	)
 }
 

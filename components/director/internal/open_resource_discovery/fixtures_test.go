@@ -3,11 +3,12 @@ package open_resource_discovery_test
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"strings"
 )
 
 const (
@@ -33,7 +34,7 @@ const (
 	event1ID  = "testEvent1"
 	event2ID  = "testEvent2"
 
-	cursor = "cursor"
+	cursor      = "cursor"
 	policyLevel = "sap"
 )
 

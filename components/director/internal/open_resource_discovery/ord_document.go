@@ -2,11 +2,12 @@ package open_resource_discovery
 
 import (
 	"encoding/json"
+	"net/url"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"net/url"
 )
 
 const (
@@ -143,6 +144,11 @@ func (docs Documents) Validate(webhookURL string) error {
 				return errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID)
 			}
 			vendorIDs[vendor.OrdID] = true
+		}
+		for _, tombstone := range doc.Tombstones {
+			if err := validateTombstoneInput(tombstone); err != nil {
+				return errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID)
+			}
 		}
 	}
 

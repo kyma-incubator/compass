@@ -14,11 +14,15 @@ import (
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.
 const (
-	SemVerRegex             = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-	PackageOrdIDRegex       = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	VendorOrdIDRegex        = "^([a-z0-9]+)$"
-	ProductOrdIDRegex       = "^([a-z0-9]+):([a-zA-Z0-9._\\-]+)$"
-	BundleOrdIDRegex        = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	SemVerRegex       = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	VendorOrdIDRegex  = "^([a-z0-9]+)$"
+	ProductOrdIDRegex = "^([a-z0-9]+):([a-zA-Z0-9._\\-]+)$"
+	BundleOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+
+	//TODO: further clarification is needed as what is required by the spec
+	//TombstoneOrdIDRegex     = "^([a-zA-Z0-9._\\-]+):(package|apiResource|eventResource):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+
 	StringArrayElementRegex = "^[a-zA-Z0-9 -\\.\\/]*$"
 	CountryRegex            = "^[A-Z]{2}$"
 	ApiOrdIDRegex           = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
@@ -47,7 +51,7 @@ func validatePackageInput(pkg *model.PackageInput) error {
 		validation.Field(&pkg.Description, validation.Required),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In("sap", "sap-partner", "custom"), validation.When(pkg.CustomPolicyLevel != nil, validation.In("custom"))),
-		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel == "custom", validation.Required)),
+		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != "custom", validation.Empty)),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
 		validation.Field(&pkg.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
@@ -184,6 +188,14 @@ func validateVendorInput(vendor *model.VendorInput) error {
 		validation.Field(&vendor.Type, validation.Required, validation.In("sap", "sap-partner", "client-registration")),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 	)
+}
+
+func validateTombstoneInput(tombstone *model.TombstoneInput) error {
+	return validation.ValidateStruct(tombstone,
+		//TODO: further clarification is needed as what is required by the spec
+		//validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
+
+		validation.Field(&tombstone.RemovalDate, validation.Required, validation.Date("2006-01-02T15:04:05Z")))
 }
 
 func validateORDLabels(val interface{}) error {

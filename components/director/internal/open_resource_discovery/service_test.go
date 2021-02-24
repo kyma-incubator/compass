@@ -2,6 +2,8 @@ package open_resource_discovery_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
@@ -11,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_SyncORDDocuments(t *testing.T) {
@@ -36,13 +37,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 		return appSvc
 	}
-	
+
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("List", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
 		return whSvc
 	}
-	
+
 	successfulBundleUpdate := func() *automock.BundleService {
 		bundlesSvc := &automock.BundleService{}
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
@@ -50,7 +51,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
-	
+
 	successfulBundleCreate := func() *automock.BundleService {
 		bundlesSvc := &automock.BundleService{}
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -58,7 +59,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
-	
+
 	successfulVendorUpdate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
@@ -66,7 +67,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
 		return vendorSvc
 	}
-	
+
 	successfulVendorCreate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -74,7 +75,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
 		return vendorSvc
 	}
-	
+
 	successfulProductUpdate := func() *automock.ProductService {
 		productSvc := &automock.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
@@ -82,7 +83,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
-	
+
 	successfulProductCreate := func() *automock.ProductService {
 		productSvc := &automock.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -90,7 +91,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
-	
+
 	successfulPackageUpdate := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
@@ -98,7 +99,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 		return packagesSvc
 	}
-	
+
 	successfulPackageCreate := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -106,7 +107,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 		return packagesSvc
 	}
-	
+
 	successfulSpecUpdate := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -121,7 +122,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent2SpecInputs()[0], model.EventSpecReference, event2ID).Return("", nil).Once()
 		return specSvc
 	}
-	
+
 	successfulAPISpecUpdate := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -131,7 +132,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
 		return specSvc
 	}
-	
+
 	successfulAPIUpdate := func() *automock.APIService {
 		apiSvc := &automock.APIService{}
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -140,7 +141,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 		return apiSvc
 	}
-	
+
 	successfulAPICreate := func() *automock.APIService {
 		apiSvc := &automock.APIService{}
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -149,7 +150,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 		return apiSvc
 	}
-	
+
 	successfulEventUpdate := func() *automock.EventService {
 		eventSvc := &automock.EventService{}
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
@@ -158,7 +159,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 		return eventSvc
 	}
-	
+
 	successfulEventCreate := func() *automock.EventService {
 		eventSvc := &automock.EventService{}
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -167,13 +168,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 		return eventSvc
 	}
-	
+
 	successfulClientFetch := func() *automock.Client {
 		client := &automock.Client{}
 		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{fixORDDocument()}, nil)
 		return client
 	}
-	
+
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -195,9 +196,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
-			appSvcFn: successfulAppList,
+			appSvcFn:     successfulAppList,
 			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleUpdate,
+			bundleSvcFn:  successfulBundleUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -207,11 +208,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			eventSvcFn: successfulEventUpdate,
-			specSvcFn: successfulSpecUpdate,
+			eventSvcFn:   successfulEventUpdate,
+			specSvcFn:    successfulSpecUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
+			vendorSvcFn:  successfulVendorUpdate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
@@ -222,13 +223,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn: successfulClientFetch,
 		},
 		{
-			Name:            "Success when resources are not in db should Create them",
+			Name: "Success when resources are not in db should Create them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
-			appSvcFn: successfulAppList,
+			appSvcFn:     successfulAppList,
 			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleCreate,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -238,10 +239,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			eventSvcFn: successfulEventCreate,
+			eventSvcFn:   successfulEventCreate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
+			vendorSvcFn:  successfulVendorCreate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -267,7 +268,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:            "Returns error when webhook list fails",
+			Name: "Returns error when webhook list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
@@ -288,8 +289,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Skips app when ORD documents fetch fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(nil, testErr)
@@ -299,8 +300,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources for invalid ORD documents",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -312,8 +313,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if vendor list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -324,8 +325,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if vendor update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
@@ -337,8 +338,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if vendor create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -350,9 +351,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if product list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			vendorSvcFn: successfulVendorUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -363,9 +364,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if product update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			vendorSvcFn: successfulVendorUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
@@ -377,9 +378,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if product create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			vendorSvcFn: successfulVendorUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -391,10 +392,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if package list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -405,10 +406,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if package update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
@@ -420,10 +421,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if package create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -435,11 +436,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if bundle list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -450,11 +451,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if bundle update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
@@ -466,11 +467,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if bundle create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -482,12 +483,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if api list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -498,12 +499,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if api update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -515,12 +516,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if api create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn: successfulBundleCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
+			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -532,12 +533,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if api spec delete fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -554,12 +555,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if api spec create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -577,14 +578,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if event list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
-			apiSvcFn: successfulAPIUpdate,
-			specSvcFn: successfulAPISpecUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn:       successfulAPISpecUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -595,14 +596,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if event update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
-			apiSvcFn: successfulAPIUpdate,
-			specSvcFn: successfulAPISpecUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn:       successfulAPISpecUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
@@ -614,13 +615,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if event create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn: successfulBundleCreate,
-			apiSvcFn: successfulAPICreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -632,13 +633,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if event spec delete fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
-			apiSvcFn: successfulAPIUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -661,13 +662,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if event spec create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
-			apiSvcFn: successfulAPIUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -691,15 +692,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if tombstone list fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
-			apiSvcFn: successfulAPIUpdate,
-			eventSvcFn: successfulEventUpdate,
-			specSvcFn: successfulSpecUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			apiSvcFn:        successfulAPIUpdate,
+			eventSvcFn:      successfulEventUpdate,
+			specSvcFn:       successfulSpecUpdate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -710,15 +711,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if tombstone update fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn: successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn: successfulBundleUpdate,
-			apiSvcFn: successfulAPIUpdate,
-			eventSvcFn: successfulEventUpdate,
-			specSvcFn: successfulSpecUpdate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			apiSvcFn:        successfulAPIUpdate,
+			eventSvcFn:      successfulEventUpdate,
+			specSvcFn:       successfulSpecUpdate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
@@ -730,14 +731,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if tombstone create fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn: successfulBundleCreate,
-			apiSvcFn: successfulAPICreate,
-			eventSvcFn: successfulEventCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
+			eventSvcFn:      successfulEventCreate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -749,9 +750,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if api resource deletion due to tombstone fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -761,10 +762,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(testErr).Once()
 				return apiSvc
 			},
-			eventSvcFn: successfulEventCreate,
+			eventSvcFn:   successfulEventCreate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
+			vendorSvcFn:  successfulVendorCreate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -777,11 +778,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if package resource deletion due to tombstone fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleCreate,
-			apiSvcFn: successfulAPICreate,
-			eventSvcFn: successfulEventCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
+			eventSvcFn:      successfulEventCreate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -791,7 +792,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return packagesSvc
 			},
 			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
+			vendorSvcFn:  successfulVendorCreate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -814,10 +815,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if event resource deletion due to tombstone fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleCreate,
-			apiSvcFn: successfulAPICreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -829,7 +830,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
+			vendorSvcFn:  successfulVendorCreate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -852,13 +853,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if vendor resource deletion due to tombstone fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleCreate,
-			apiSvcFn: successfulAPICreate,
-			eventSvcFn: successfulEventCreate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
+			eventSvcFn:      successfulEventCreate,
+			packageSvcFn:    successfulPackageCreate,
+			productSvcFn:    successfulProductCreate,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -889,12 +890,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if product resource deletion due to tombstone fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn: successfulBundleCreate,
-			apiSvcFn: successfulAPICreate,
-			eventSvcFn: successfulEventCreate,
-			packageSvcFn: successfulPackageCreate,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
+			eventSvcFn:      successfulEventCreate,
+			packageSvcFn:    successfulPackageCreate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -926,8 +927,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Does not resync resources if bundle resource deletion due to tombstone fails",
 			TransactionerFn: secondTransactionNotCommited,
-			appSvcFn: successfulAppList,
-			webhookSvcFn: successfulWebhookList,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -936,11 +937,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("Delete", txtest.CtxWithDBMatcher(), bundleID).Return(testErr).Once()
 				return bundlesSvc
 			},
-			apiSvcFn: successfulAPICreate,
-			eventSvcFn: successfulEventCreate,
+			apiSvcFn:     successfulAPICreate,
+			eventSvcFn:   successfulEventCreate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
-			vendorSvcFn: successfulVendorCreate,
+			vendorSvcFn:  successfulVendorCreate,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()

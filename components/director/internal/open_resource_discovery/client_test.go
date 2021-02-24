@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response
@@ -158,7 +159,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 			},
 			ExpectedResult: open_resource_discovery.Documents{},
-			ExpectedErr: errors.Errorf("error while fetching open resource discovery document %q: status code %d", baseURL + ordDocURI, 500),
+			ExpectedErr:    errors.Errorf("error while fetching open resource discovery document %q: status code %d", baseURL+ordDocURI, 500),
 		},
 		{
 			Name: "Error when document is not proper json",
@@ -180,7 +181,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 			},
 			ExpectedResult: open_resource_discovery.Documents{},
-			ExpectedErr: errors.New("error unmarshaling document"),
+			ExpectedErr:    errors.New("error unmarshaling document"),
 		},
 	}
 
