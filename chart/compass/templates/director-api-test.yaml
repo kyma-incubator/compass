@@ -30,9 +30,9 @@ spec:
           args: ["-c", "/api.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: DIRECTOR_URL
-              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}"
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
             - name: DIRECTOR_HEALTHZ_URL
-              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/healthz"
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
             - name: APP_DB_USER

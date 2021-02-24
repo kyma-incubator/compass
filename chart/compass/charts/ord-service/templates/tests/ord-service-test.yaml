@@ -37,13 +37,13 @@ spec:
             - name: ORD_SERVICE_STATIC_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.staticPrefix }}"
             - name: ORD_SERVICE_HEALTHZ_URL
-              value: "http://compass-ord-service.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/actuator/health"
+              value: "http://compass-ord-service.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
-              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/healthz"
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
             - name: USER_EMAIL
