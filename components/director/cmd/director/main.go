@@ -109,6 +109,7 @@ type config struct {
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
+	ClientIDHttpHeader  string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
 
@@ -190,7 +191,7 @@ func main() {
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeader)
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
