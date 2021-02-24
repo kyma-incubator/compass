@@ -44,6 +44,9 @@ spec:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
               protocol: TCP
+            - name: http-internal
+              containerPort: {{ .Values.global.director.internalPort }}
+              protocol: TCP
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
               protocol: TCP
