@@ -39,6 +39,13 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 )
 
+var (
+	ErrReconciliationTimeoutReached = errors.New("reconciliation timeout reached")
+	ErrWebhookTimeoutReached        = errors.New("webhook timeout reached")
+	ErrFailedWebhookStatus          = errors.New("webhook operation has finished with failed status")
+	ErrUnsupportedWebhookMode       = errors.New("unsupported webhook mode")
+)
+
 // OperationReconciler reconciles a Operation object
 type OperationReconciler struct {
 	k8sClient      client.Client
@@ -71,6 +78,12 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
+	webhookCount := len(operation.Spec.WebhookIDs)
+	if webhookCount == 0 || webhookCount > 1 {
+		logger.Error(fmt.Errorf("expected 1 webhook for execution, found %d", webhookCount), operationError("Invalid operation webhooks provided", operation))
+		return ctrl.Result{}, nil
+	}
+
 	requestData, err := parseRequestData(operation)
 	if err != nil {
 		logger.Error(err, operationError("Unable to parse request data", operation))
@@ -97,9 +110,11 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if app.Result.Ready {
 		operation = setConditionStatus(*operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
 		operation.Status.Phase = v1alpha1.StateSuccess
+		operation.Status.Webhooks[0].State = v1alpha1.StateSuccess
 		if app.Result.Error != nil && *app.Result.Error != "" {
 			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, *app.Result.Error)
 			operation.Status.Phase = v1alpha1.StateFailed
+			operation.Status.Webhooks[0].State = v1alpha1.StateFailed
 		}
 		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
@@ -110,6 +125,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if app.Result.Error != nil && *app.Result.Error != "" {
 		operation = setErrorStatus(*operation, *app.Result.Error)
 		operation.Status.Phase = v1alpha1.StateFailed
+		operation.Status.Webhooks[0].State = v1alpha1.StateFailed
 		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -123,8 +139,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks, r.webhookConfig.WebhookTimeout)) {
-		opErr := errors.New("reconciliation timeout reached")
-		return r.updateStatusWithError(ctx, logger, operation, opErr)
+		return r.updateStatusWithError(ctx, logger, operation, ErrReconciliationTimeoutReached)
 	}
 
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
@@ -149,7 +164,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		case graphql.WebhookModeSync:
 			return r.updateStatus(ctx, logger, operation)
 		default:
-			return ctrl.Result{}, errors.New("unsupported webhook mode")
+			return ctrl.Result{}, ErrUnsupportedWebhookMode
 		}
 	}
 
@@ -174,12 +189,11 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	switch *response.Status {
 	case *response.InProgressStatusIdentifier:
-		return r.handleWebhookTimeoutCheckResponse(ctx, logger, operation, webhookEntity, errors.New("webhook timeout reached"))
+		return r.handleWebhookTimeoutCheckResponse(ctx, logger, operation, webhookEntity, ErrWebhookTimeoutReached)
 	case *response.SuccessStatusIdentifier:
 		return r.updateStatus(ctx, logger, operation)
 	case *response.FailedStatusIdentifier:
-		opErr := errors.New("webhook operation has finished unsuccessfully")
-		return r.updateStatusWithError(ctx, logger, operation, opErr)
+		return r.updateStatusWithError(ctx, logger, operation, ErrFailedWebhookStatus)
 	default:
 		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
 	}
@@ -356,10 +370,10 @@ func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 }
 
 func setConditionStatus(operation v1alpha1.Operation, conditionType v1alpha1.ConditionType, status corev1.ConditionStatus, msg string) *v1alpha1.Operation {
-	for _, condition := range operation.Status.Conditions {
+	for i, condition := range operation.Status.Conditions {
 		if condition.Type == conditionType {
-			condition.Status = status
-			condition.Message = msg
+			operation.Status.Conditions[i].Status = status
+			operation.Status.Conditions[i].Message = msg
 		}
 	}
 	return &operation
@@ -378,14 +392,6 @@ func setErrorStatus(operation v1alpha1.Operation, errorMsg string) *v1alpha1.Ope
 }
 
 func retrieveWebhooks(appWebhooks []graphql.Webhook, opWebhookIDs []string) (map[string]graphql.Webhook, error) {
-	if len(opWebhookIDs) == 0 {
-		return nil, errors.New("no webhooks found for operation")
-	}
-
-	if len(opWebhookIDs) > 1 {
-		return nil, errors.New("multiple webhooks per operation are not supported")
-	}
-
 	webhooks := make(map[string]graphql.Webhook, 0)
 
 	for _, opWebhookID := range opWebhookIDs {

@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// mockedLogger is a mock implementation of the Logger interface to fit the controller tests use case
 type mockedLogger struct {
 	log.NullLogger
 	RecordedError error
@@ -30,10 +31,10 @@ func (ml *mockedLogger) Info(_ string, _ ...interface{}) {}
 
 func (ml *mockedLogger) Enabled() bool { return true }
 
-func (ml *mockedLogger) V(level int) logr.InfoLogger { return nil }
+func (ml *mockedLogger) V(_ int) logr.InfoLogger { return nil }
 
-func (ml *mockedLogger) WithValues(keysAndValues ...interface{}) logr.Logger { return ml }
+func (ml *mockedLogger) WithValues(_ ...interface{}) logr.Logger { return ml }
 
-func (ml *mockedLogger) WithName(name string) logr.Logger { return nil }
+func (ml *mockedLogger) WithName(_ string) logr.Logger { return nil }
 
 func (ml *mockedLogger) Error(err error, _ string, _ ...interface{}) { ml.RecordedError = err }

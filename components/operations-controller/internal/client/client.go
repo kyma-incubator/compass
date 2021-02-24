@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Client is a wrapper of the default kubernetes controller client
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Operation, error)
@@ -34,10 +35,12 @@ type defaultClient struct {
 	client.Client
 }
 
+// New constructs a new defaultClient
 func New(client client.Client) *defaultClient {
 	return &defaultClient{Client: client}
 }
 
+// Get wraps the default kubernetes controller client Get method
 func (dc *defaultClient) Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Operation, error) {
 	var operation = &v1alpha1.Operation{}
 	err := dc.Client.Get(ctx, key, operation)
@@ -47,6 +50,7 @@ func (dc *defaultClient) Get(ctx context.Context, key client.ObjectKey) (*v1alph
 	return operation, nil
 }
 
+// UpdateStatus wraps the default kubernetes controller client Status().Update method
 func (dc *defaultClient) UpdateStatus(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
 	return dc.Status().Update(ctx, obj, opts...)
 }
