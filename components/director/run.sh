@@ -13,7 +13,6 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
-OUTSIDE_CLUSTER=true
 DISABLE_ASYNC_MODE=true
 
 POSITIONAL=()
@@ -150,8 +149,7 @@ export APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
 export APP_URL="http://director.not.configured.url/director"
 export APP_CONNECTOR_URL="http://connector.not.configured.url/connector/graphql"
 export APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
-export APP_LOG_LEVEL=debug 
-export APP_OUTSIDE_CLUSTER=${OUTSIDE_CLUSTER}
+export APP_LOG_LEVEL=debug
 export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
 
 if [[  ${DEBUG} ]]; then

@@ -3,17 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
+	cr "sigs.k8s.io/controller-runtime"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
@@ -135,7 +131,6 @@ type config struct {
 	OperationsNamespace   string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
-	OutsideCluster   bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -524,7 +519,7 @@ func buildScheduler(ctx context.Context, config config) (operation.Scheduler, er
 		return &operation.DisabledScheduler{}, nil
 	}
 
-	cfg, err := getKubeConfig(ctx, config)
+	cfg, err := cr.GetConfig()
 	exitOnError(err, "Failed to get cluster config for operations k8s client")
 
 	cfg.Timeout = config.ClientTimeout
@@ -535,22 +530,4 @@ func buildScheduler(ctx context.Context, config config) (operation.Scheduler, er
 	operationsK8sClient := k8sClient.Operations(config.OperationsNamespace)
 
 	return k8s.NewScheduler(operationsK8sClient), nil
-}
-
-func getKubeConfig(ctx context.Context, config config) (*rest.Config, error) {
-	if !config.OutsideCluster {
-		log.C(ctx).Info("Using in-cluster configuration for k8s client")
-		return rest.InClusterConfig()
-	}
-
-	var kubeconfig *string
-	home := homedir.HomeDir()
-	if home == "" {
-		return nil, errors.New("failed to get home dir in order to build k8s client for scheduler")
-	}
-
-	log.C(ctx).Info("Using local configuration for k8s client")
-	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	flag.Parse()
-	return clientcmd.BuildConfigFromFlags("", *kubeconfig)
 }
