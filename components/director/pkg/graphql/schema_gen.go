@@ -3437,9 +3437,9 @@ enum OperationMode {
 }
 
 enum OperationType {
-	CREATE
-	UPDATE
-	DELETE
+	Create
+	Update
+	Delete
 }
 
 enum RuntimeStatusCondition {

@@ -1109,9 +1109,9 @@ func (e OperationMode) MarshalGQL(w io.Writer) {
 type OperationType string
 
 const (
-	OperationTypeCreate OperationType = "CREATE"
-	OperationTypeUpdate OperationType = "UPDATE"
-	OperationTypeDelete OperationType = "DELETE"
+	OperationTypeCreate OperationType = "Create"
+	OperationTypeUpdate OperationType = "Update"
+	OperationTypeDelete OperationType = "Delete"
 )
 
 var AllOperationType = []OperationType{
