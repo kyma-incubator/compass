@@ -8,7 +8,6 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -32,10 +31,10 @@ global:
       version: "PR-1733"
     tenant_fetcher:
       dir:
-      version: "PR-1720"
+      version: "PR-1718"
     ord_service:
       dir:
-      version: "PR-13"
+      version: "PR-14"
     schema_migrator:
       dir:
       version: "PR-1736"
@@ -56,7 +55,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1732"
+        version: "PR-1738"
       connector:
         dir:
         version: "PR-1715"
@@ -68,10 +67,10 @@ global:
         version: "PR-1717"
       tenant_fetcher:
         dir:
-        version: "PR-1715"
+        version: "PR-1718"
       system_broker:
         dir:
-        version: "PR-1715"
+        version: "PR-1738"
       ord_service:
         dir:
         version: "PR-1719"
@@ -283,6 +282,13 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    authentication:
+      allowJWTSigningNone: true
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      identityZone: "id-zone"
+    tenantProvider:
+      tenantIdProperty: "tenantId"
+      name: "provider"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -338,10 +344,10 @@ global:
 
   authenticators:
     authenticator0:
-      enabled: false
+      enabled: true
       gatewayHost: "compass-gateway-authenticator0"
-      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix"}, {}]'
-      attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
+      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix."}, {}]'
+      attributes: '{"uniqueAttribute": { "key": "key", "value": "val" }, "tenant": { "key": "key" }, "identity": { "key": "key" } }'
 
   externalServicesMock:
     enabled: false

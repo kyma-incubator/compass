@@ -10,12 +10,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=BusinessTenantMappingService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 }
 
-//go:generate mockery -name=BusinessTenantMappingConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
 }

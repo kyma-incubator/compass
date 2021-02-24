@@ -36,7 +36,6 @@ require (
 	github.com/valyala/fasthttp v1.19.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
 	golang.org/x/oauth2 v0.0.0-20210201163806-010130855d6c // indirect
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
