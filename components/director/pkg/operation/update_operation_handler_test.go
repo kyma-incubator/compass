@@ -27,7 +27,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -73,7 +72,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when transaction fails to begin it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, operation.OperationTypeCreate))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
@@ -92,7 +91,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when transaction fails to commit it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, operation.OperationTypeCreate))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -111,7 +110,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when update handler fails on CREATE/UPDATE operation", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, operation.OperationTypeCreate))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -131,7 +130,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when delete handler fails on DELETE operation", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeDelete.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, operation.OperationTypeDelete))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -152,7 +151,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 	t.Run("when operation has finished", func(t *testing.T) {
 		type testCase struct {
 			Name          string
-			OperationType graphql.OperationType
+			OperationType operation.OperationType
 			ExpectedError string
 			Ready         bool
 			UpdateCalled  int
@@ -161,40 +160,40 @@ func TestUpdateOperationHandler(t *testing.T) {
 		cases := []testCase{
 			{
 				Name:          "CREATE with error",
-				OperationType: graphql.OperationTypeCreate,
+				OperationType: operation.OperationTypeCreate,
 				ExpectedError: "operation failed",
 				Ready:         true,
 				UpdateCalled:  1,
 			},
 			{
 				Name:          "CREATE with NO error",
-				OperationType: graphql.OperationTypeCreate,
+				OperationType: operation.OperationTypeCreate,
 				Ready:         true,
 				UpdateCalled:  1,
 			},
 			{
 				Name:          "UPDATE with error",
-				OperationType: graphql.OperationTypeUpdate,
+				OperationType: operation.OperationTypeUpdate,
 				ExpectedError: "operation UPDATE failed",
 				Ready:         true,
 				UpdateCalled:  1,
 			},
 			{
 				Name:          "UPDATE with NO error",
-				OperationType: graphql.OperationTypeUpdate,
+				OperationType: operation.OperationTypeUpdate,
 				Ready:         true,
 				UpdateCalled:  1,
 			},
 			{
 				Name:          "DELETE with error",
-				OperationType: graphql.OperationTypeDelete,
+				OperationType: operation.OperationTypeDelete,
 				ExpectedError: "operation DELETE failed",
 				Ready:         true,
 				UpdateCalled:  1,
 			},
 			{
 				Name:          "DELETE with NO error",
-				OperationType: graphql.OperationTypeDelete,
+				OperationType: operation.OperationTypeDelete,
 				DeleteCalled:  1,
 			},
 		}
@@ -207,7 +206,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				writer := httptest.NewRecorder()
 				expectedErrorMsg := testCase.ExpectedError
-				req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "%s"}`, resourceID, resource.Application, testCase.OperationType.String(), expectedErrorMsg))
+				req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "%s"}`, resourceID, resource.Application, testCase.OperationType, expectedErrorMsg))
 
 				updateCalled := 0
 				deleteCalled := 0

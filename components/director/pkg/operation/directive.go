@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -88,7 +89,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	operation := &Operation{
-		OperationType:     OperationType(operationType),
+		OperationType:     OperationType(str.Title(operationType.String())),
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}

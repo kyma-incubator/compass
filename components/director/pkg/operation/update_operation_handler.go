@@ -31,17 +31,15 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // OperationRequest is the expected request body when updating certain operation status
 type OperationRequest struct {
-	OperationType graphql.OperationType `json:"operation_type,omitempty"`
-	ResourceType  resource.Type         `json:"resource_type"`
-	ResourceID    string                `json:"resource_id"`
-	Error         string                `json:"error"`
+	OperationType OperationType `json:"operation_type,omitempty"`
+	ResourceType  resource.Type `json:"resource_type"`
+	ResourceID    string        `json:"resource_id"`
+	Error         string        `json:"error"`
 }
 
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
@@ -91,7 +89,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 
 	if err := validation.ValidateStruct(operation,
 		validation.Field(&operation.ResourceID, is.UUID),
-		validation.Field(&operation.OperationType, validation.Required, validation.In(graphql.OperationTypeCreate, graphql.OperationTypeUpdate, graphql.OperationTypeDelete)),
+		validation.Field(&operation.OperationType, validation.Required, validation.In(OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete)),
 		validation.Field(&operation.ResourceType, validation.Required, validation.In(resource.Application))); err != nil {
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInvalidDataError("Invalid operation properties: %s", err), http.StatusBadRequest)
 		return
@@ -116,15 +114,15 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	}
 
 	switch operation.OperationType {
-	case graphql.OperationTypeCreate:
+	case OperationTypeCreate:
 		fallthrough
-	case graphql.OperationTypeUpdate:
+	case OperationTypeUpdate:
 		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError); err != nil {
 			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
 			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 			return
 		}
-	case graphql.OperationTypeDelete:
+	case OperationTypeDelete:
 		resourceDeleterFunc := h.resourceDeleterFuncs[operation.ResourceType]
 		if operation.Error != "" {
 			if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError); err != nil {

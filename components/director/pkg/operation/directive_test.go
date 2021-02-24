@@ -563,7 +563,7 @@ func TestHandleOperation(t *testing.T) {
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context and finishes successfully", func(t *testing.T) {
-		operationType := graphql.OperationTypeCreate
+		operationType := operation.OperationTypeCreate
 		operationCategory := "registerApplication"
 
 		// GIVEN
@@ -646,7 +646,7 @@ func TestHandleOperation(t *testing.T) {
 				dummyResolver := &dummyResolver{}
 
 				// WHEN
-				res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, &webhookType, nil)
+				res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &webhookType, nil)
 
 				// THEN
 				require.NoError(t, err)
