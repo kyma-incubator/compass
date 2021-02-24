@@ -88,6 +88,7 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-desc"
 	placeholderDesc := "new-placeholder-desc"
 	providerName := "compass-tests"
+	testURL := "http://url.com"
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &appTemplateDesc,
@@ -100,8 +101,8 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 				"d": []string{"e", "f"},
 			},
 			Webhooks: []*graphql.WebhookInput{{
-				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-				URL:  "http://url.com",
+				Type: graphql.WebhookTypeConfigurationChanged,
+				URL:  &testURL,
 			}},
 			HealthCheckURL: ptr.String("http://url.valid"),
 		},

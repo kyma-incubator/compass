@@ -638,6 +638,7 @@ type APISpec {
 	"""
 	when fetch request specified, data will be automatically populated
 	"""
+	id: ID!
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
@@ -845,6 +846,7 @@ type EventDefinitionPage implements Pageable {
 }
 
 type EventSpec {
+	id: ID!
 	data: CLOB
 	type: EventSpecType!
 	format: SpecFormat!

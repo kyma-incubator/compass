@@ -27,9 +27,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	auths "github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/stretchr/testify/require"
 )
 
 const defaultTenant = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
@@ -68,7 +68,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	//given
 	scopes := "scope-a scope-b"
 
-	privateJWKS, err := authenticator.FetchJWK(context.TODO(), PrivateJWKSURL)
+	privateJWKS, err := auths.FetchJWK(context.TODO(), PrivateJWKSURL)
 	require.NoError(t, err)
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
@@ -162,7 +162,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		privateJWKS2, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS2URL)
+		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
@@ -190,7 +190,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		privateJWKS2, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS2URL)
+		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
@@ -262,7 +262,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware := createMiddleware(t, false)
 		handler := testHandler(t, defaultTenant, scopes)
 
-		privateJWKS2, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS2URL)
+		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
