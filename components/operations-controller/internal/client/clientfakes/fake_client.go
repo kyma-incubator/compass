@@ -191,7 +191,7 @@ func (fake *FakeClient) UpdateStatus(arg1 context.Context, arg2 runtime.Object, 
 		arg2 runtime.Object
 		arg3 []clienta.UpdateOption
 	}{arg1, arg2, arg3})
-	fake.recordInvocation("UpdateStatus", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("UpdateOperation", []interface{}{arg1, arg2, arg3})
 	fake.updateStatusMutex.Unlock()
 	if fake.UpdateStatusStub != nil {
 		return fake.UpdateStatusStub(arg1, arg2, arg3...)

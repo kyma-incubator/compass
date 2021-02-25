@@ -26,7 +26,7 @@ type Config struct {
 // DefaultSettings returns the default values for configuring the System Broker
 func DefaultConfig() *Config {
 	return &Config{
-		InternalAddress: "",
+		InternalAddress: "http://localhost:3002",
 	}
 }
 

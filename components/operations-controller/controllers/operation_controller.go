@@ -25,6 +25,8 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	log "github.com/sirupsen/logrus"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
@@ -34,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/go-logr/logr"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
@@ -75,43 +78,54 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	operation, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
-		return ctrl.Result{}, nil
+		if statusError, ok := err.(*k8s_errors.StatusError); ok && statusError.ErrStatus.Code == http.StatusNotFound {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
 	}
 
-	operation = setDefaultStatus(*operation)
+	operation = prepareInitialStatus(*operation)
+
+	if !isWebhookInProgress(operation) {
+		log.Info(operationResourceMessage("Webhook associated with operation has already been executed. Will return with no requeue", operation))
+		return ctrl.Result{}, err
+	}
 
 	webhookCount := len(operation.Spec.WebhookIDs)
 	if webhookCount == 0 || webhookCount > 1 {
-		logger.Error(fmt.Errorf("expected 1 webhook for execution, found %d", webhookCount), operationError("Invalid operation webhooks provided", operation))
-		return ctrl.Result{}, nil
+		err := fmt.Errorf("expected 1 webhook for execution, found %d", webhookCount)
+		logger.Error(err, operationResourceMessage("Invalid operation webhooks provided", operation))
+		return r.updateStatusWithError(ctx, operation, err)
 	}
 
 	requestData, err := parseRequestData(operation)
 	if err != nil {
-		logger.Error(err, operationError("Unable to parse request data", operation))
-		return ctrl.Result{}, nil
+		logger.Error(err, operationResourceMessage("Unable to parse request data", operation))
+		return r.updateStatusWithError(ctx, operation, err)
 	}
 
 	ctx = tenant.SaveToContext(ctx, requestData.TenantID)
 	app, err := r.directorClient.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
-		logger.Error(err, operationError("Unable to fetch application", operation))
+		logger.Error(err, operationResourceMessage("Unable to fetch application", operation))
 
 		if isReconciliationTimeoutReached(operation, time.Duration(r.webhookConfig.TimeoutFactor)*r.webhookConfig.ReconciliationTimeout) {
 			if err := r.k8sClient.Delete(ctx, operation); err != nil {
 				return ctrl.Result{}, err
 			}
+
+			log.Info(operationResourceMessage("Successfully deleted operation", operation))
 			return ctrl.Result{}, nil
 		}
 
-		return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
+		return ctrl.Result{}, err
 	}
 
 	if app.Result.Ready {
 		operation = setConditionStatus(*operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
 		operation.Status.Phase = v1alpha1.StateSuccess
 		operation.Status.Webhooks[0].State = v1alpha1.StateSuccess
-		if app.Result.Error != nil && *app.Result.Error != "" {
+		if !isStringPointerEmpty(app.Result.Error) {
 			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, *app.Result.Error)
 			operation.Status.Phase = v1alpha1.StateFailed
 			operation.Status.Webhooks[0].State = v1alpha1.StateFailed
@@ -119,93 +133,117 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
+
+		log.Info(operationResourceMessage("Successfully updated operation status", operation))
 		return ctrl.Result{}, nil
 	}
 
-	if app.Result.Error != nil && *app.Result.Error != "" {
+	if !isStringPointerEmpty(app.Result.Error) {
 		operation = setErrorStatus(*operation, *app.Result.Error)
 		operation.Status.Phase = v1alpha1.StateFailed
 		operation.Status.Webhooks[0].State = v1alpha1.StateFailed
 		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
+
+		log.Info(operationResourceMessage("Successfully updated operation status", operation))
 		return ctrl.Result{}, nil
 	}
 
 	webhooks, err := retrieveWebhooks(app.Result.Webhooks, operation.Spec.WebhookIDs)
 	if err != nil {
-		logger.Error(err, operationError("Unable to retrieve webhooks", operation))
-		return ctrl.Result{}, nil
+		logger.Error(err, operationResourceMessage("Unable to retrieve webhooks", operation))
+		return r.updateStatusWithError(ctx, operation, err)
 	}
 
 	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks, r.webhookConfig.WebhookTimeout)) {
-		return r.updateStatusWithError(ctx, logger, operation, ErrReconciliationTimeoutReached)
+		log.Info(operationResourceMessage("Reconciliation timeout reached", operation))
+		return r.updateStatusWithError(ctx, operation, ErrReconciliationTimeoutReached)
 	}
 
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
 	webhookStatus := &operation.Status.Webhooks[0]
 
 	if webhookStatus.WebhookPollURL == "" {
+		log.Info(operationResourceMessage("Webhook Poll URL is not found. Will attempt to execute the webhook", operation))
 		request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
-			logger.Error(err, operationError("Unable to execute Webhook request", operation))
-			return r.handleWebhookTimeoutCheckResponse(ctx, logger, operation, webhookEntity, err)
+			logger.Error(err, operationResourceMessage("Unable to execute Webhook request", operation))
+			return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
 		}
 
 		switch *webhookEntity.Mode {
 		case graphql.WebhookModeAsync:
+			log.Info(operationResourceMessage("Asynchronous webhook initial request has been executed successfully", operation))
+
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
-			operation.Status.Webhooks[0].State = v1alpha1.StatePolling
-			operation.Status.Phase = v1alpha1.StatePolling
+			operation.Status.Webhooks[0].State = v1alpha1.StateInProgress
+			operation.Status.Phase = v1alpha1.StateInProgress
 			if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
 				return ctrl.Result{}, err
 			}
+
+			log.Info(operationResourceMessage("Successfully updated operation status", operation))
 			return ctrl.Result{Requeue: true}, nil
 		case graphql.WebhookModeSync:
-			return r.updateStatus(ctx, logger, operation)
+			log.Info(operationResourceMessage("Synchronous webhook has been executed successfully", operation))
+			return r.updateStatusSuccess(ctx, operation)
 		default:
-			return ctrl.Result{}, ErrUnsupportedWebhookMode
+			logger.Error(ErrUnsupportedWebhookMode, operationResourceMessage("Unable to post-process Webhook response", operation))
+			return ctrl.Result{}, nil
 		}
 	}
 
+	log.Info(operationResourceMessage("Webhook Poll URL is found. Will calculate next poll time", operation))
 	requeueAfter, err := getNextPollTime(&webhookEntity, *webhookStatus, r.webhookConfig.TimeLayout)
 	if err != nil {
-		logger.Error(err, operationError("Unable to calculate next poll time", operation))
-		return ctrl.Result{}, nil
+		logger.Error(err, operationResourceMessage("Unable to calculate next poll time", operation))
+		return r.updateStatusWithError(ctx, operation, err)
 	}
 
-	if requeueAfter > 0 { // poll interval has not passed
+	if requeueAfter > 0 {
+		logger.Info(fmt.Sprintf("Poll interval has not passed. Will requeue after: %d seconds", requeueAfter*time.Second))
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
-
-	request.PollURL = &webhookStatus.WebhookPollURL
+	request := web_hook.NewPollRequest(webhookEntity, requestData, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
-		logger.Error(err, operationError("Unable to execute Webhook Poll request", operation))
-		return r.handleWebhookTimeoutCheckResponse(ctx, logger, operation, webhookEntity, err)
+		logger.Error(err, operationResourceMessage("Unable to execute Webhook Poll request", operation))
+		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
 	}
 
+	log.Info(operationResourceMessage(fmt.Sprintf("Asynchronous webhook polling request has been executed successfully with response status: %s", *response.Status), operation))
 	switch *response.Status {
 	case *response.InProgressStatusIdentifier:
-		return r.handleWebhookTimeoutCheckResponse(ctx, logger, operation, webhookEntity, ErrWebhookTimeoutReached)
+		lastPollTimestamp := time.Now().Format(r.webhookConfig.TimeLayout)
+		operation.Status.Webhooks[0].LastPollTimestamp = lastPollTimestamp
+		if err := r.k8sClient.UpdateStatus(ctx, operation); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info(operationResourceMessage(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), operation))
+		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, ErrWebhookTimeoutReached)
 	case *response.SuccessStatusIdentifier:
-		return r.updateStatus(ctx, logger, operation)
+		return r.updateStatusSuccess(ctx, operation)
 	case *response.FailedStatusIdentifier:
-		return r.updateStatusWithError(ctx, logger, operation, ErrFailedWebhookStatus)
+		return r.updateStatusWithError(ctx, operation, ErrFailedWebhookStatus)
 	default:
 		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
 	}
 }
 
-func (r *OperationReconciler) updateStatus(ctx context.Context, logger logr.Logger, operation *v1alpha1.Operation) (ctrl.Result, error) {
-	return r.updateStatusWithError(ctx, logger, operation, nil)
+func isWebhookInProgress(operation *v1alpha1.Operation) bool {
+	return operation.Status.Webhooks[0].State == v1alpha1.StateInProgress
 }
 
-func (r *OperationReconciler) updateStatusWithError(ctx context.Context, logger logr.Logger, operation *v1alpha1.Operation, opErr error) (ctrl.Result, error) {
+func (r *OperationReconciler) updateStatusSuccess(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
+	return r.updateStatusWithError(ctx, operation, nil)
+}
+
+func (r *OperationReconciler) updateStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error) (ctrl.Result, error) {
 	var state v1alpha1.State
 	var request director.Request
 	if opErr != nil {
@@ -218,10 +256,8 @@ func (r *OperationReconciler) updateStatusWithError(ctx context.Context, logger 
 		request = prepareDirectorRequest(*operation)
 	}
 
-	err := r.directorClient.UpdateStatus(ctx, &request)
-	if err != nil {
-		logger.Error(err, operationError("Unable to notify Director", operation))
-		return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
+	if err := r.directorClient.UpdateOperation(ctx, &request); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	operation.Status.Phase = state
@@ -230,10 +266,11 @@ func (r *OperationReconciler) updateStatusWithError(ctx context.Context, logger 
 		return ctrl.Result{}, err
 	}
 
+	log.Info(operationResourceMessage("Successfully updated operation status", operation))
 	return ctrl.Result{}, nil
 }
 
-func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Context, logger logr.Logger, operation *v1alpha1.Operation, webhook graphql.Webhook, webhookErr error) (ctrl.Result, error) {
+func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhook graphql.Webhook, webhookErr error) (ctrl.Result, error) {
 	if !isWebhookTimeoutReached(r.webhookConfig, webhook, operation.CreationTimestamp.Time) {
 		requeueAfter := r.webhookConfig.RequeueInterval
 		if webhook.RetryInterval != nil {
@@ -241,7 +278,7 @@ func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Cont
 		}
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
-	return r.updateStatusWithError(ctx, logger, operation, webhookErr)
+	return r.updateStatusWithError(ctx, operation, webhookErr)
 }
 
 func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error) {
@@ -307,10 +344,10 @@ func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook, t
 	}
 
 	nextPollTime := lastPollTimestamp.Add(time.Duration(*webhook.RetryInterval) * time.Second)
-	return nextPollTime.Sub(time.Now()), nil
+	return time.Until(nextPollTime), nil
 }
 
-func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
+func prepareInitialStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 	overrideStatus := false
 	if operation.Generation != operation.Status.ObservedGeneration {
 		overrideStatus = true
@@ -363,7 +400,7 @@ func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 		if !webhookExists {
 			operation.Status.Webhooks = append(operation.Status.Webhooks, v1alpha1.Webhook{
 				WebhookID: opWebhookID,
-				State:     v1alpha1.StatePolling,
+				State:     v1alpha1.StateInProgress,
 			})
 		}
 	}
@@ -394,7 +431,7 @@ func setErrorStatus(operation v1alpha1.Operation, errorMsg string) *v1alpha1.Ope
 }
 
 func retrieveWebhooks(appWebhooks []graphql.Webhook, opWebhookIDs []string) (map[string]graphql.Webhook, error) {
-	webhooks := make(map[string]graphql.Webhook, 0)
+	webhooks := make(map[string]graphql.Webhook)
 
 	for _, opWebhookID := range opWebhookIDs {
 		webhookExists := false
@@ -426,8 +463,12 @@ func calculateReconciliationTimeout(webhooks map[string]graphql.Webhook, default
 	return totalTimeout
 }
 
-func operationError(msg string, operation *v1alpha1.Operation) string {
-	return fmt.Sprintf("%s for operation of resource with ID %s and type %s", msg, operation.Spec.ResourceID, operation.Spec.ResourceType)
+func operationResourceMessage(msg string, operation *v1alpha1.Operation) string {
+	return fmt.Sprintf("%s [resource ID: %s, type: %s; conditions: %v]", msg, operation.Spec.ResourceID, operation.Spec.ResourceType, operation.Status.Conditions)
+}
+
+func isStringPointerEmpty(ptr *string) bool {
+	return ptr != nil && len(*ptr) != 0
 }
 
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {

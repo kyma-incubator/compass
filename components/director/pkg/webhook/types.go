@@ -28,11 +28,6 @@ import (
 
 type Mode string
 
-const (
-	ModeSync  Mode = "SYNC"
-	ModeAsync Mode = "ASYNC"
-)
-
 // Resource is used to identify entities which can be part of a webhook's request data
 type Resource interface {
 	Sentinel()
@@ -73,16 +68,16 @@ type ResponseStatus struct {
 	Error                      *string `json:"error"`
 }
 
-func (ot *URL) Validate() error {
-	if ot.Method == nil {
+func (u *URL) Validate() error {
+	if u.Method == nil {
 		return errors.New("missing URL Template method field")
 	}
 
-	if ot.Path == nil {
+	if u.Path == nil {
 		return errors.New("missing URL Template path field")
 	}
 
-	_, err := url.ParseRequestURI(*ot.Path)
+	_, err := url.ParseRequestURI(*u.Path)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse URL Template path field")
 	}
@@ -90,44 +85,44 @@ func (ot *URL) Validate() error {
 	return nil
 }
 
-func (ot *Response) Validate() error {
-	if ot.Location == nil {
+func (r *Response) Validate() error {
+	if r.Location == nil {
 		return errors.New("missing Output Template location field")
 	}
 
-	if ot.SuccessStatusCode == nil {
+	if r.SuccessStatusCode == nil {
 		return errors.New("missing Output Template success status code field")
 	}
 
-	if ot.Error == nil {
+	if r.Error == nil {
 		return errors.New("missing Output Template error field")
 	}
 
 	return nil
 }
 
-func (st *ResponseStatus) Validate() error {
-	if st.Status == nil {
+func (rs *ResponseStatus) Validate() error {
+	if rs.Status == nil {
 		return errors.New("missing Status Template status field")
 	}
 
-	if st.SuccessStatusCode == nil {
+	if rs.SuccessStatusCode == nil {
 		return errors.New("missing Status Template success status code field")
 	}
 
-	if st.SuccessStatusIdentifier == nil {
+	if rs.SuccessStatusIdentifier == nil {
 		return errors.New("missing Status Template success status identifier field")
 	}
 
-	if st.InProgressStatusIdentifier == nil {
+	if rs.InProgressStatusIdentifier == nil {
 		return errors.New("missing Status Template in progress status identifier field")
 	}
 
-	if st.FailedStatusIdentifier == nil {
+	if rs.FailedStatusIdentifier == nil {
 		return errors.New("missing Status Template failed status identifier field")
 	}
 
-	if st.Error == nil {
+	if rs.Error == nil {
 		return errors.New("missing Status Template error field")
 	}
 

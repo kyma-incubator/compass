@@ -26,7 +26,12 @@ type Request struct {
 	Webhook       graphql.Webhook
 	Data          web_hook.RequestData
 	CorrelationID string
-	PollURL       *string
+}
+
+// PollRequest represents a webhook poll request to be executed
+type PollRequest struct {
+	*Request
+	PollURL string
 }
 
 // NewRequest constructs a webhook Request
@@ -35,5 +40,13 @@ func NewRequest(webhook graphql.Webhook, requestData web_hook.RequestData, corre
 		Webhook:       webhook,
 		Data:          requestData,
 		CorrelationID: correlationID,
+	}
+}
+
+// NewPollRequest constructs a webhook Request
+func NewPollRequest(webhook graphql.Webhook, requestData web_hook.RequestData, correlationID string, pollURL string) *PollRequest {
+	return &PollRequest{
+		Request: NewRequest(webhook, requestData, correlationID),
+		PollURL: pollURL,
 	}
 }

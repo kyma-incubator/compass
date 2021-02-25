@@ -32,7 +32,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	types.ApplicationLister
-	UpdateStatus(ctx context.Context, request *Request) error
+	UpdateOperation(ctx context.Context, request *Request) error
 }
 
 // defaultClient is the default implementation of the Client interface
@@ -58,8 +58,8 @@ func NewClient(directorURL string, httpClient http.Client, appLister types.Appli
 	}
 }
 
-// Notify makes an http request to the Director to notify for any state changes related to a given application
-func (dc *defaultClient) UpdateStatus(ctx context.Context, request *Request) error {
+// UpdateOperation makes an http request to the Director to notify about any operation state changes
+func (dc *defaultClient) UpdateOperation(ctx context.Context, request *Request) error {
 	body, err := json.Marshal(request)
 	if err != nil {
 		return err

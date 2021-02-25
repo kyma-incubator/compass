@@ -160,7 +160,7 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.Wrap(err, "failed to retrieve tenant from request")
 	}
 
-	app, ok := res.(webhook.Resource)
+	resource, ok := res.(webhook.Resource)
 	if !ok {
 		return "", errors.New("entity is not a webhook provider")
 	}
@@ -176,7 +176,7 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 	}
 
 	requestData := &webhook.RequestData{
-		Application: app,
+		Application: resource,
 		TenantID:    tenantID,
 		Headers:     headers,
 	}

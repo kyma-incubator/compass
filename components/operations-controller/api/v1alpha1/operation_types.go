@@ -38,9 +38,9 @@ type OperationSpec struct {
 type State string
 
 const (
-	StateSuccess State = "Success"
-	StateFailed  State = "Failed"
-	StatePolling State = "Polling"
+	StateSuccess    State = "Success"
+	StateFailed     State = "Failed"
+	StateInProgress State = "In Progress"
 )
 
 type Webhook struct {

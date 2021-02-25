@@ -33,7 +33,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	Do(ctx context.Context, request *Request) (*web_hook.Response, error)
-	Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error)
+	Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error)
 }
 
 type DefaultClient struct {
@@ -103,23 +103,23 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 		return nil, err
 	}
 
-	mode := web_hook.ModeSync
+	mode := graphql.WebhookModeSync
 	if webhook.Mode != nil {
-		mode = web_hook.Mode(*webhook.Mode)
+		mode = *webhook.Mode
 	}
 	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, *responseData)
 	if err != nil {
 		return nil, err
 	}
 
-	if *response.Location == "" && mode == web_hook.ModeAsync {
+	if *response.Location == "" && mode == graphql.WebhookModeAsync {
 		return nil, errors.New("missing location url after executing async webhook")
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error) {
+func (d *DefaultClient) Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error) {
 	webhook := request.Webhook
 
 	headers, err := web_hook.ParseHeadersTemplate(webhook.HeaderTemplate, request.Data)
@@ -131,7 +131,7 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 		headers.Add(*webhook.CorrelationIDKey, request.CorrelationID)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *request.PollURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, request.PollURL, nil)
 	if err != nil {
 		return nil, err
 	}

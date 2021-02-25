@@ -246,7 +246,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -304,7 +304,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_For_OperationWithDifferentObservedGeneration_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -387,7 +387,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_DeleteOperationSucceeds_For_OperationWithSameObservedGeneration_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -466,7 +466,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -517,7 +517,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -587,7 +587,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperatio
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -656,7 +656,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -723,7 +723,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -789,7 +789,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
@@ -857,7 +857,7 @@ func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRe
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -924,7 +924,7 @@ func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultN
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -977,7 +977,7 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 }
 
 func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_ShouldResultRequeueAfterNoError(t *testing.T) {
@@ -1006,7 +1006,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	// WHEN:
 	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
@@ -1033,8 +1033,8 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1071,7 +1071,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	// WHEN:
 	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
@@ -1112,8 +1112,8 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1150,7 +1150,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	// WHEN:
 	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
@@ -1190,8 +1190,8 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1256,7 +1256,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualRequest := webhookClient.DoArgsForCall(0)
@@ -1298,7 +1298,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &webhookfakes.FakeClient{
 		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
@@ -1332,8 +1332,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1383,7 +1383,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{
 		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
@@ -1432,8 +1432,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1483,7 +1483,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{
 		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
@@ -1531,8 +1531,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1607,9 +1607,9 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	expectedOp := *operation
 	expectedOp.Status = prepareDefaultOperationStatus()
 	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
-	expectedOp.Status.Webhooks[0].State = v1alpha1.StatePolling
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateInProgress
 	expectedOp.Status.Webhooks[0].WebhookPollURL = mockedLocationURL
-	expectedOp.Status.Phase = v1alpha1.StatePolling
+	expectedOp.Status.Phase = v1alpha1.StateInProgress
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
@@ -1620,7 +1620,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
@@ -1687,9 +1687,9 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	expectedOp := *operation
 	expectedOp.Status = prepareDefaultOperationStatus()
 	expectedOp.Status.Webhooks[0].WebhookID = webhookGUID
-	expectedOp.Status.Webhooks[0].State = v1alpha1.StatePolling
+	expectedOp.Status.Webhooks[0].State = v1alpha1.StateInProgress
 	expectedOp.Status.Webhooks[0].WebhookPollURL = mockedLocationURL
-	expectedOp.Status.Phase = v1alpha1.StatePolling
+	expectedOp.Status.Phase = v1alpha1.StateInProgress
 	_, actualOp, _ := k8sClient.UpdateStatusArgsForCall(0)
 	require.Equal(t, &expectedOp, actualOp)
 
@@ -1700,7 +1700,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
@@ -1742,7 +1742,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
@@ -1772,8 +1772,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1822,7 +1822,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
@@ -1865,8 +1865,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -1915,7 +1915,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
@@ -1957,8 +1957,8 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2036,7 +2036,7 @@ func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldR
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 0, webhookClient.PollCallCount())
@@ -2098,7 +2098,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 0, webhookClient.PollCallCount())
@@ -2162,7 +2162,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 0, webhookClient.DoCallCount())
 
@@ -2170,10 +2170,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	_, actualRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedRequest, actualRequest)
 }
@@ -2208,10 +2210,10 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &webhookfakes.FakeClient{
-		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2242,8 +2244,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2257,10 +2259,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2296,10 +2300,10 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{
-		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2346,8 +2350,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2361,10 +2365,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2400,10 +2406,10 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{
-		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2449,8 +2455,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2464,10 +2470,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2529,17 +2537,19 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2574,10 +2584,10 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &webhookfakes.FakeClient{
-		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
 		},
@@ -2608,8 +2618,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2623,10 +2633,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2662,10 +2674,10 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{
-		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
 		},
@@ -2711,8 +2723,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2726,10 +2738,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2765,10 +2779,10 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{
-		PollStub: func(_ context.Context, _ *webhook.Request) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
 		},
@@ -2813,8 +2827,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2828,10 +2842,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2865,7 +2881,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
@@ -2895,8 +2911,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -2909,10 +2925,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -2947,7 +2965,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
@@ -2991,8 +3009,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -3005,10 +3023,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -3043,7 +3063,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
@@ -3086,8 +3106,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -3100,10 +3120,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -3137,7 +3159,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(mockedErr)
+	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
@@ -3167,8 +3189,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -3182,10 +3204,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -3220,7 +3244,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
@@ -3265,8 +3289,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -3280,10 +3304,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -3318,7 +3344,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	directorClient := &directorfakes.FakeClient{}
 	directorClient.FetchApplicationReturns(application, nil)
-	directorClient.UpdateStatusReturns(nil)
+	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &webhookfakes.FakeClient{}
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
@@ -3362,8 +3388,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 1, directorClient.UpdateStatusCallCount())
-	_, actualDirectorRequest := directorClient.UpdateStatusArgsForCall(0)
+	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	_, actualDirectorRequest := directorClient.UpdateOperationArgsForCall(0)
 	expectedDirectorRequest := &ctrl_director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceType),
@@ -3377,10 +3403,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -3443,7 +3471,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, appGUID, resourceID)
 	require.Equal(t, tenantGUID, ctx.Value(tenant.ContextKey))
 
-	require.Equal(t, 0, directorClient.UpdateStatusCallCount())
+	require.Equal(t, 0, directorClient.UpdateOperationCallCount())
 	require.Equal(t, 0, k8sClient.DeleteCallCount())
 
 	require.Equal(t, 0, webhookClient.DoCallCount())
@@ -3451,10 +3479,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
 	expectedRequestData, err := parseRequestData(operation)
 	require.NoError(t, err)
-	expectedWebhookRequest := &webhook.Request{
-		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
-		PollURL: &mockedLocationURL,
+	expectedWebhookRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: application.Result.Webhooks[0],
+			Data:    expectedRequestData,
+		},
+		PollURL: mockedLocationURL,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 }
@@ -3471,7 +3501,7 @@ func prepareDefaultOperationStatus() v1alpha1.OperationStatus {
 		Webhooks: []v1alpha1.Webhook{
 			{
 				WebhookID: webhookGUID,
-				State:     v1alpha1.StatePolling,
+				State:     v1alpha1.StateInProgress,
 			},
 		},
 		Conditions: []v1alpha1.Condition{
@@ -3484,7 +3514,7 @@ func prepareDefaultOperationStatus() v1alpha1.OperationStatus {
 				Status: corev1.ConditionFalse,
 			},
 		},
-		Phase: v1alpha1.StatePolling,
+		Phase: v1alpha1.StateInProgress,
 	}
 }
 
