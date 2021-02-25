@@ -360,10 +360,10 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	}
 
 	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rtmInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
-		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
+		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
 		assertions.AssertScenarios(t, rtmWithScenarios.Labels, scenarios)
 	})
 
@@ -371,19 +371,19 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	t.Run("Scenario is unset when label on runtime changes", func(t *testing.T) {
 		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtm.ID, selector.Key, selector2.Value)
-		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
+		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
 		assertions.AssertScenarios(t, rtmWithScenarios.Labels, scenariosOnlyDefault)
 	})
 
 	t.Run("Scenario is set back when label on runtime matches selector", func(t *testing.T) {
 		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtm.ID, selector.Key, selector.Value)
-		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
+		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
 		assertions.AssertScenarios(t, rtmWithScenarios.Labels, scenarios)
 	})
 
 	t.Run("Scenario is unset when automatic scenario assignment is deleted", func(t *testing.T) {
 		fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenario)
-		rtmWithoutScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
+		rtmWithoutScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
 		assertions.AssertScenarios(t, rtmWithoutScenarios.Labels, scenariosOnlyDefault)
 	})
 

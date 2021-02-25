@@ -37,7 +37,7 @@ func TestTokenGeneration(t *testing.T) {
 
 		//WHEN
 		for i := 0; i < tokenRequestNumber; i++ {
-			token := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, "", runtime.ID)
+			token := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
 		}

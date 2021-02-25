@@ -558,7 +558,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, &expectedLabel, createdLabel)
 
-		actualApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, actualApp.ID, tenant)
+		actualApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, actualApp.ID)
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "aaa")
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "bbb")
 
@@ -569,7 +569,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
-		actualApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, actualApp.ID, pkg.TestTenants.GetDefaultTenantID())
+		actualApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 		assert.Nil(t, actualApp.Labels[expectedLabel.Key])
 
 	})
@@ -599,7 +599,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NotNil(t, id)
 
 		// get all webhooks
-		updatedApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, actualApp.ID, tenant)
+		updatedApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, actualApp.ID)
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
@@ -963,7 +963,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithoutNormalization)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtimeWithoutNormalization.ID)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithoutNormalization.ID, tenantID)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
@@ -992,7 +992,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerUnlabeledRuntimeRequest, &unlabledRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, unlabledRuntime.ID)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, unlabledRuntime.ID, tenantID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, unlabledRuntime.ID)
 
 		deleteLabelRuntimeResp := graphql.Runtime{}
 		deleteLabelRequest := fixtures.FixDeleteRuntimeLabelRequest(unlabledRuntime.ID, IsNormalizedLabel)
@@ -1024,7 +1024,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithNormalization)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtimeWithNormalization.ID)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithNormalization.ID, tenantID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtimeWithNormalization.ID)
 
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
@@ -1146,7 +1146,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithoutNormalizationRuntimeRequest, &runtimeWithoutNormalization)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtimeWithoutNormalization.ID)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithoutNormalization.ID, tenantID)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		//WHEN
@@ -1173,7 +1173,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtimeWithNormalization.ID)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithNormalization.ID, tenantID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtimeWithNormalization.ID)
 
 		//WHEN
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
