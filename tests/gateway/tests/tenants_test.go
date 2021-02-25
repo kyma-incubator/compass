@@ -36,9 +36,11 @@ func TestTenantErrors(t *testing.T) {
 		ProviderName: ptr.String("compass"),
 	}
 	_,err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
+	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
 	_,err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
+	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
 	is := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")

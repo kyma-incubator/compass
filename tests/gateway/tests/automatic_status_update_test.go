@@ -37,6 +37,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
+
 		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
@@ -79,6 +80,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
+
 		defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
@@ -110,6 +112,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
+
 		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")

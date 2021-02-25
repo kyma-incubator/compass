@@ -22,8 +22,8 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn       = "tenant_id"
 )
 
@@ -70,8 +70,8 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 		}
 
 		app.Ready = false
-		if app.DeletedAt.IsZero() { // Needed for the tests but might be useful for the production also
-			app.DeletedAt = time.Now()
+		if app.GetDeletedAt().IsZero() { // Needed for the tests but might be useful for the production also
+			app.SetDeletedAt(time.Now())
 		}
 
 		return r.Update(ctx, app)

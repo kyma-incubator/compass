@@ -47,9 +47,9 @@ func fixGQLVersionInput(value string, deprecated bool, deprecatedSince string, f
 
 func fixVersionEntity(value string, deprecated bool, deprecatedSince string, forRemoval bool) *version.Version {
 	return &version.Version{
-		VersionValue:           repo.NewNullableString(&value),
-		VersionDepracated:      repo.NewNullableBool(&deprecated),
-		VersionDepracatedSince: repo.NewNullableString(&deprecatedSince),
-		VersionForRemoval:      repo.NewNullableBool(&forRemoval),
+		Value:           repo.NewNullableString(&value),
+		Deprecated:      repo.NewNullableBool(&deprecated),
+		DeprecatedSince: repo.NewNullableString(&deprecatedSince),
+		ForRemoval:      repo.NewNullableBool(&forRemoval),
 	}
 }

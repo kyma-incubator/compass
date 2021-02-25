@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 )
 
 type converter struct{}
@@ -12,20 +13,20 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) ToEntity(in *model.BusinessTenantMapping) *Entity {
+func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 	if in == nil {
 		return nil
 	}
-	return &Entity{
+	return &tenant.Entity{
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
 		ProviderName:   in.Provider,
-		Status:         TenantStatus(in.Status),
+		Status:         tenant.TenantStatus(in.Status),
 	}
 }
 
-func (c *converter) FromEntity(in *Entity) *model.BusinessTenantMapping {
+func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 	if in == nil {
 		return nil
 	}

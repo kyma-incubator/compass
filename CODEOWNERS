@@ -29,10 +29,6 @@
 /chart/compass/templates/gateway-auditlog-integration-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @kyma-incubator/cmp_team
 /components/gateway @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @kyma-incubator/cmp_team
 
-# Healthchecker
-/chart/compass/charts/healthchecker @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @kyma-incubator/cmp_team
-/components/healthchecker @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @kyma-incubator/cmp_team
-
 # Pairing Adapter
 /chart/compass/charts/paring-adapter @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @kyma-incubator/cmp_team
 /components/pairing-adapter @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @kyma-incubator/cmp_team

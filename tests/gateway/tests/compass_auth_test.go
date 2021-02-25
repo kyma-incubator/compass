@@ -81,6 +81,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Check if token granted for Integration System is invalid")
 	appByIntSys, err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
+
 	require.Empty(t, appByIntSys.BaseEntity)
 
 	t.Log("Check if token can not be fetched with old client credentials")

@@ -3,10 +3,11 @@ package mp_bundle_test
 import (
 	"database/sql"
 	"database/sql/driver"
-	"testing"
+	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
@@ -19,7 +20,7 @@ var fixedTimestamp = time.Now()
 
 func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
-		BundleID:    bndlID,
+		BundleID:    &bndlID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -65,7 +66,7 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 
 func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:    bundleID,
+		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -169,9 +170,10 @@ const (
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	ordID            = "com.compass.v1"
 )
 
-func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
+func fixBundleModel(name, desc string) *model.Bundle {
 	return &model.Bundle{
 		TenantID:                       tenantID,
 		ApplicationID:                  appID,
@@ -179,13 +181,18 @@ func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
+		OrdID:                          str.Ptr(ordID),
+		ShortDescription:               str.Ptr("short_description"),
+		Links:                          json.RawMessage("[]"),
+		Labels:                         json.RawMessage("[]"),
+		CredentialExchangeStrategies:   json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        bundleID,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -201,9 +208,9 @@ func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 			ID:        id,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(time.Time{}),
-			DeletedAt: graphql.Timestamp(time.Time{}),
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
 		},
 	}
 }
@@ -381,27 +388,32 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 		Description:                   descSQL,
 		InstanceAuthRequestJSONSchema: schemaSQL,
 		DefaultInstanceAuth:           authSQL,
+		OrdID:                         repo.NewValidNullableString(ordID),
+		ShortDescription:              repo.NewValidNullableString("short_description"),
+		Links:                         repo.NewValidNullableString("[]"),
+		Labels:                        repo.NewValidNullableString("[]"),
+		CredentialExchangeStrategies:  repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
-func fixBundleRow(id, _ string) []driver.Value {
-	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+func fixBundleRow(id, placeholder string) []driver.Value {
+	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, tenantID, appID, bndl.Name, bndl.Description, schema, defAuth, bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error}
+	return []driver.Value{bundleID, tenantID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error}
 }
 
 func fixDefaultAuth() string {
@@ -467,4 +479,9 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 		Auth:        fixGQLAuth(),
 		Status:      &status,
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

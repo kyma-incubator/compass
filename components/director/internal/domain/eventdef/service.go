@@ -131,7 +131,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return err
 	}
 
-	event = in.ToEventDefinitionWithinBundle(id, event.BundleID, tnt)
+	event = in.ToEventDefinition(id, event.BundleID, event.PackageID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {

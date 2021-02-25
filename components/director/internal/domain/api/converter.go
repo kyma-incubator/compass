@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/pkg/errors"
 
@@ -42,8 +44,13 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		return nil, err
 	}
 
+	var bundleID string
+	if in.BundleID != nil {
+		bundleID = *in.BundleID
+	}
+
 	return &graphql.APIDefinition{
-		BundleID:    in.BundleID,
+		BundleID:    bundleID,
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
@@ -53,9 +60,9 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: graphql.Timestamp(in.CreatedAt),
-			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
-			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
+			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
+			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}, nil
@@ -122,13 +129,32 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		BundleID:    entity.BndlID,
-		Name:        entity.Name,
-		TargetURL:   entity.TargetURL,
-		Tenant:      entity.TenantID,
-		Description: repo.StringPtrFromNullableString(entity.Description),
-		Group:       repo.StringPtrFromNullableString(entity.Group),
-		Version:     c.version.FromEntity(entity.Version),
+		BundleID:            repo.StringPtrFromNullableString(entity.BndlID),
+		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
+		Tenant:              entity.TenantID,
+		Name:                entity.Name,
+		Description:         repo.StringPtrFromNullableString(entity.Description),
+		TargetURL:           entity.TargetURL,
+		Group:               repo.StringPtrFromNullableString(entity.Group),
+		OrdID:               repo.StringPtrFromNullableString(entity.OrdID),
+		ShortDescription:    repo.StringPtrFromNullableString(entity.ShortDescription),
+		SystemInstanceAware: repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
+		ApiProtocol:         repo.StringPtrFromNullableString(entity.ApiProtocol),
+		Tags:                repo.JSONRawMessageFromNullableString(entity.Tags),
+		Countries:           repo.JSONRawMessageFromNullableString(entity.Countries),
+		Links:               repo.JSONRawMessageFromNullableString(entity.Links),
+		APIResourceLinks:    repo.JSONRawMessageFromNullableString(entity.APIResourceLinks),
+		ReleaseStatus:       repo.StringPtrFromNullableString(entity.ReleaseStatus),
+		SunsetDate:          repo.StringPtrFromNullableString(entity.SunsetDate),
+		Successor:           repo.StringPtrFromNullableString(entity.Successor),
+		ChangeLogEntries:    repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
+		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
+		Visibility:          repo.StringPtrFromNullableString(entity.Visibility),
+		Disabled:            repo.BoolPtrFromNullableBool(entity.Disabled),
+		PartOfProducts:      repo.JSONRawMessageFromNullableString(entity.PartOfProducts),
+		LineOfBusiness:      repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
+		Industry:            repo.JSONRawMessageFromNullableString(entity.Industry),
+		Version:             c.version.FromEntity(entity.Version),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -141,15 +167,33 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 }
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
-
 	return &Entity{
-		TenantID:    apiModel.Tenant,
-		BndlID:      apiModel.BundleID,
-		Name:        apiModel.Name,
-		Description: repo.NewNullableString(apiModel.Description),
-		Group:       repo.NewNullableString(apiModel.Group),
-		TargetURL:   apiModel.TargetURL,
-		Version:     c.convertVersionToEntity(apiModel.Version),
+		TenantID:            apiModel.Tenant,
+		BndlID:              repo.NewNullableString(apiModel.BundleID),
+		PackageID:           repo.NewNullableString(apiModel.PackageID),
+		Name:                apiModel.Name,
+		Description:         repo.NewNullableString(apiModel.Description),
+		Group:               repo.NewNullableString(apiModel.Group),
+		TargetURL:           apiModel.TargetURL,
+		OrdID:               repo.NewNullableString(apiModel.OrdID),
+		ShortDescription:    repo.NewNullableString(apiModel.ShortDescription),
+		SystemInstanceAware: repo.NewNullableBool(apiModel.SystemInstanceAware),
+		ApiProtocol:         repo.NewNullableString(apiModel.ApiProtocol),
+		Tags:                repo.NewNullableStringFromJSONRawMessage(apiModel.Tags),
+		Countries:           repo.NewNullableStringFromJSONRawMessage(apiModel.Countries),
+		Links:               repo.NewNullableStringFromJSONRawMessage(apiModel.Links),
+		APIResourceLinks:    repo.NewNullableStringFromJSONRawMessage(apiModel.APIResourceLinks),
+		ReleaseStatus:       repo.NewNullableString(apiModel.ReleaseStatus),
+		SunsetDate:          repo.NewNullableString(apiModel.SunsetDate),
+		Successor:           repo.NewNullableString(apiModel.Successor),
+		ChangeLogEntries:    repo.NewNullableStringFromJSONRawMessage(apiModel.ChangeLogEntries),
+		Labels:              repo.NewNullableStringFromJSONRawMessage(apiModel.Labels),
+		Visibility:          repo.NewNullableString(apiModel.Visibility),
+		Disabled:            repo.NewNullableBool(apiModel.Disabled),
+		PartOfProducts:      repo.NewNullableStringFromJSONRawMessage(apiModel.PartOfProducts),
+		LineOfBusiness:      repo.NewNullableStringFromJSONRawMessage(apiModel.LineOfBusiness),
+		Industry:            repo.NewNullableStringFromJSONRawMessage(apiModel.Industry),
+		Version:             c.convertVersionToEntity(apiModel.Version),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,
@@ -167,4 +211,13 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	}
 
 	return c.version.ToEntity(*inVer)
+}
+
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
 }

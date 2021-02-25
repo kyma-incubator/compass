@@ -50,7 +50,7 @@ func AssertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 	for _, inWh := range in {
 		found := false
 		for _, actWh := range actual {
-			if inWh.URL == actWh.URL {
+			if urlsAreIdentical(inWh.URL, actWh.URL) {
 				found = true
 				assert.NotNil(t, actWh.ID)
 				assert.Equal(t, inWh.Type, actWh.Type)
@@ -463,4 +463,14 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 	assert.NotNil(t, bndl.APIDefinitions.Data[0])
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec)
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
+}
+
+func urlsAreIdentical(url1, url2 *string) bool {
+	identical := url1 == url2
+	if !identical {
+		if url1 != nil && url2 != nil {
+			identical = *url1 == *url2
+		}
+	}
+	return identical
 }

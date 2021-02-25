@@ -206,3 +206,27 @@ spec:
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-ord-certs
+spec:
+  description: Configuration of oathkeeper for endpoint secured by certificates of compass open resource discovery service
+  upstream:
+    url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
+  match:
+    methods: ["GET"]
+    url: <http|https>://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.ordService.staticPrefix }}/<.*>
+  authenticators:
+  - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}

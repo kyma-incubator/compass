@@ -8,6 +8,8 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"net/http"
 	"testing"
 	"time"
@@ -39,28 +41,28 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		testSuite.checkDirectorGraphQLExample()
 	})
 
-	//t.Run("Access playground via client certificate subdomain", func(t *testing.T) {
-	//	subdomain := cfg.Gateway.ClientCertsSubdomain
-	//	tenant := cfg.DefaultTenant
-	//
-	//	dexToken, err := idtokenprovider.GetDexToken()
-	//	require.NoError(t, err)
-	//	dexGQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-	//
-	//	ctx := context.Background()
-	//	appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
-	//	defer fixtures.UnregisterApplication(t, ctx, dexGQLClient, tenant, appID)
-	//
-	//	oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
-	//	certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
-	//	client := getClientWithCert(certChain, clientKey)
-	//
-	//	testSuite := newPlaygroundTestSuite(t, cfg, subdomain)
-	//	testSuite.setHTTPClient(client)
-	//
-	//	testSuite.checkDirectorPlaygroundWithRedirection()
-	//	testSuite.checkDirectorGraphQLExample()
-	//})
+	t.Run("Access playground via client certificate subdomain", func(t *testing.T) {
+		subdomain := cfg.Gateway.ClientCertsSubdomain
+		tenant := cfg.DefaultTenant
+
+		dexToken, err := idtokenprovider.GetDexToken()
+		require.NoError(t, err)
+		dexGQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+		ctx := context.Background()
+		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
+		defer fixtures.UnregisterApplication(t, ctx, dexGQLClient, tenant, appID)
+
+		oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
+		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
+		client := getClientWithCert(certChain, clientKey)
+
+		testSuite := newPlaygroundTestSuite(t, cfg, subdomain)
+		testSuite.setHTTPClient(client)
+
+		testSuite.checkDirectorPlaygroundWithRedirection()
+		testSuite.checkDirectorGraphQLExample()
+	})
 }
 
 func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *http.Client {
