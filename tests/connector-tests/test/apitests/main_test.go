@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/director"
 
@@ -21,11 +20,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	apiAccessTimeout  = 60 * time.Second
-	apiAccessInterval = 2 * time.Second
 )
 
 var (

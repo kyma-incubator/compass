@@ -40,6 +40,16 @@ spec:
           value: {{ .Values.global.connector.revocation.configmap.name | quote }}
         - name: APP_TENANT
           value: "{{.Values.global.defaultTenant}}"
+        - name: USER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: admin-user
+              key: email
+        - name: USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: admin-user
+              key: password
         command:
         - "/bin/sh"
         args:
