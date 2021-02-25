@@ -34,15 +34,15 @@ type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
 	cachedJWKs          *jwk.Set
-	clientIDHeader      string
+	clientIDHeaderKey   string
 	mux                 sync.Mutex
 }
 
-func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeader string) *Authenticator {
+func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string) *Authenticator {
 	return &Authenticator{
 		jwksEndpoint:        jwksEndpoint,
 		allowJWTSigningNone: allowJWTSigningNone,
-		clientIDHeader:      clientIDHeader,
+		clientIDHeaderKey:   clientIDHeaderKey,
 	}
 }
 
@@ -86,8 +86,8 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 			ctx = a.contextWithClaims(r.Context(), claims)
 
-			if clientUser := r.Header.Get(a.clientIDHeader); clientUser != "" {
-				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeader, clientUser)
+			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
 				ctx = client.SaveToContext(ctx, clientUser)
 			}
 
