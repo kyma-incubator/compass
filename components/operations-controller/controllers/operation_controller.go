@@ -118,8 +118,9 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.updateStatusWithError(ctx, operation, err)
 	}
 
-	if !isWebhookInProgress(operation) {
-		log.Info("Webhook associated with operation has already been executed. Will return with no requeue")
+	webhookStatus := &operation.Status.Webhooks[0]
+	if webhookStatus.State != v1alpha1.StateInProgress {
+		log.Info(fmt.Sprintf("Webhook associated with operation has already been executed and finished with state %q. Will return with no requeue", webhookStatus.State))
 		return ctrl.Result{}, nil
 	}
 
@@ -175,23 +176,20 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	webhooks, err := retrieveWebhooks(app.Result.Webhooks, operation.Spec.WebhookIDs)
+	webhookEntity, err := retrieveWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
 	if err != nil {
 		logger.Error(err, "Unable to retrieve webhooks")
 		return r.updateStatusWithError(ctx, operation, err)
 	}
 
-	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks, r.config.WebhookTimeout)) {
+	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhookEntity, r.config.WebhookTimeout)) {
 		log.Info("Reconciliation timeout reached")
 		return r.updateStatusWithError(ctx, operation, ErrReconciliationTimeoutReached)
 	}
 
-	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
-	webhookStatus := &operation.Status.Webhooks[0]
-
 	if webhookStatus.WebhookPollURL == "" {
 		log.Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-		request := webhook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
+		request := webhook.NewRequest(*webhookEntity, requestData, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
@@ -222,7 +220,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	log.Info("Webhook Poll URL is found. Will calculate next poll time")
-	requeueAfter, err := getNextPollTime(&webhookEntity, *webhookStatus, r.config.TimeLayout)
+	requeueAfter, err := getNextPollTime(webhookEntity, *webhookStatus, r.config.TimeLayout)
 	if err != nil {
 		logger.Error(err, "Unable to calculate next poll time")
 		return r.updateStatusWithError(ctx, operation, err)
@@ -233,7 +231,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := webhook.NewPollRequest(webhookEntity, requestData, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
+	request := webhook.NewPollRequest(*webhookEntity, requestData, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		logger.Error(err, "Unable to execute Webhook Poll request")
@@ -258,10 +256,6 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	default:
 		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
 	}
-}
-
-func isWebhookInProgress(operation *v1alpha1.Operation) bool {
-	return operation.Status.Webhooks[0].State == v1alpha1.StateInProgress
 }
 
 func (r *OperationReconciler) updateStatusSuccess(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
@@ -295,7 +289,7 @@ func (r *OperationReconciler) updateStatusWithError(ctx context.Context, operati
 	return ctrl.Result{}, nil
 }
 
-func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhook graphql.Webhook, webhookErr error) (ctrl.Result, error) {
+func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhook *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
 	if !isWebhookTimeoutReached(r.config, webhook, operation.CreationTimestamp.Time) {
 		requeueAfter := r.config.RequeueInterval
 		if webhook.RetryInterval != nil {
@@ -348,7 +342,7 @@ func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliatio
 	return time.Now().After(operationEndTime)
 }
 
-func isWebhookTimeoutReached(cfg *webhook.Config, webhook graphql.Webhook, creationTime time.Time) bool {
+func isWebhookTimeoutReached(cfg *webhook.Config, webhook *graphql.Webhook, creationTime time.Time) bool {
 	webhookTimeout := cfg.WebhookTimeout
 	if webhook.Timeout != nil {
 		webhookTimeout = time.Duration(*webhook.Timeout)
@@ -377,7 +371,10 @@ func prepareInitialStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 	if operation.Generation != operation.Status.ObservedGeneration {
 		overrideStatus = true
 		operation.Status.ObservedGeneration = operation.Generation
-		operation.Status.Phase = ""
+	}
+
+	if operation.Status.Phase == "" || overrideStatus {
+		operation.Status.Phase = v1alpha1.StateInProgress
 	}
 
 	if operation.Status.Conditions == nil || overrideStatus {
@@ -455,37 +452,21 @@ func setErrorStatus(operation v1alpha1.Operation, errorMsg string) *v1alpha1.Ope
 	return &operation
 }
 
-func retrieveWebhooks(appWebhooks []graphql.Webhook, opWebhookIDs []string) (map[string]graphql.Webhook, error) {
-	webhooks := make(map[string]graphql.Webhook)
-
-	for _, opWebhookID := range opWebhookIDs {
-		webhookExists := false
-		for _, appWebhook := range appWebhooks {
-			if opWebhookID == appWebhook.ID {
-				webhooks[opWebhookID] = appWebhook
-				webhookExists = true
-			}
-		}
-
-		if !webhookExists {
-			return nil, fmt.Errorf("missing webhook with ID: %s", opWebhookID)
+func retrieveWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (*graphql.Webhook, error) {
+	for _, appWebhook := range appWebhooks {
+		if appWebhook.ID == operationWebhookID {
+			return &appWebhook, nil
 		}
 	}
 
-	return webhooks, nil
+	return nil, fmt.Errorf("missing webhook with ID: %s", operationWebhookID)
 }
 
-func calculateReconciliationTimeout(webhooks map[string]graphql.Webhook, defaultWebhookTimeout time.Duration) time.Duration {
-	var totalTimeout time.Duration
-	for _, webhook := range webhooks {
-		if webhook.Timeout == nil {
-			totalTimeout += defaultWebhookTimeout
-		} else {
-			totalTimeout += time.Duration(*webhook.Timeout) * time.Second
-		}
+func calculateReconciliationTimeout(webhook *graphql.Webhook, defaultWebhookTimeout time.Duration) time.Duration {
+	if webhook.Timeout == nil {
+		return defaultWebhookTimeout
 	}
-
-	return totalTimeout
+	return time.Duration(*webhook.Timeout) * time.Second
 }
 
 func isStringPointerEmpty(ptr *string) bool {
