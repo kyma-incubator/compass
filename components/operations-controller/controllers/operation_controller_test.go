@@ -67,7 +67,7 @@ func TestReconcile_FailureToGetOperationCR_ShouldResultNoRequeueNoError(t *testi
 	k8sClient.GetReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, nil, nil, nil, logger)
+	controller := NewOperationReconciler(nil, logger, k8sClient, nil, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -100,7 +100,7 @@ func TestReconcile_MultipleWebhooksRetrievedForExecution_ShouldResultNoRequeueNo
 	k8sClient.GetReturns(operation, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, nil, nil, nil, logger)
+	controller := NewOperationReconciler(nil, logger, k8sClient, nil, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -133,7 +133,7 @@ func TestReconcile_ZeroWebhooksRetrievedForExecution_ShouldResultNoRequeueNoErro
 	k8sClient.GetReturns(operation, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, nil, nil, nil, logger)
+	controller := NewOperationReconciler(nil, logger, k8sClient, nil, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -170,7 +170,7 @@ func TestReconcile_FailureToParseData_ShouldResultNoRequeueNoError(t *testing.T)
 	k8sClient.GetReturns(operation, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, nil, nil, nil, logger)
+	controller := NewOperationReconciler(nil, logger, k8sClient, nil, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -215,7 +215,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -274,7 +274,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -356,7 +356,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -439,7 +439,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -493,7 +493,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -547,7 +547,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperatio
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -617,7 +617,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -686,7 +686,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperat
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -753,7 +753,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -819,7 +819,7 @@ func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRe
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -887,7 +887,7 @@ func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultN
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -953,7 +953,7 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1009,7 +1009,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 	directorClient.UpdateOperationReturns(mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1074,7 +1074,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 	directorClient.UpdateOperationReturns(nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1153,7 +1153,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 	directorClient.UpdateOperationReturns(nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, nil, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, nil)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1232,7 +1232,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	webhookClient.DoReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1308,7 +1308,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1393,7 +1393,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1493,7 +1493,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1587,7 +1587,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1668,7 +1668,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1748,7 +1748,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1828,7 +1828,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -1921,7 +1921,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2012,7 +2012,7 @@ func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldR
 	webhookClient := &webhookfakes.FakeClient{}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2075,7 +2075,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 	webhookClient := &webhookfakes.FakeClient{}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2138,7 +2138,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	webhookClient.PollReturns(nil, mockedErr)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2220,7 +2220,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2310,7 +2310,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2416,7 +2416,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2514,7 +2514,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("IN_PROGRESS"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2594,7 +2594,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2684,7 +2684,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2789,7 +2789,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	}
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2887,7 +2887,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -2971,7 +2971,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -3069,7 +3069,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -3165,7 +3165,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -3250,7 +3250,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -3350,7 +3350,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:
@@ -3448,7 +3448,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	webhookClient.PollReturns(prepareResponseStatus(status), nil)
 
 	// WHEN:
-	controller := NewOperationReconciler(k8sClient, webhook.DefaultConfig(), directorClient, webhookClient, logger)
+	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
 	res, err := controller.Reconcile(ctrlRequest)
 
 	// THEN:

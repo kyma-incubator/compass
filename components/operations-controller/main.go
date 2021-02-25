@@ -108,9 +108,10 @@ func main() {
 	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, unsignedTokenProvider)
 	fatalOnError(err)
 
-	controller := controllers.NewOperationReconciler(client.New(mgr.GetClient()), cfg.Webhook,
-		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient, OAuthClientProviderFunc: defaultOAuthClientProviderFunc},
-		ctrl.Log.WithName("controllers").WithName("Operation"))
+	controller := controllers.NewOperationReconciler(cfg.Webhook, ctrl.Log.WithName("controllers").WithName("Operation"),
+		client.New(mgr.GetClient()),
+		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient),
+		&webhook.DefaultClient{HTTPClient: httpClient, OAuthClientProviderFunc: defaultOAuthClientProviderFunc})
 
 	if err = controller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
