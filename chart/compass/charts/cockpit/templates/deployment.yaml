@@ -35,7 +35,7 @@ spec:
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           env:
-            - name: APP_CLIENT_ID_HTTP_HEADER
+            - name: REACT_APP_CLIENT_ID_HTTP_HEADER
               value: {{ .Values.global.director.clientIDHeaderKey }}
           volumeMounts:
           - name: config
