@@ -28,7 +28,7 @@ import (
 func TestClient_UpdateStatus_WhenNewRequestWithContextFails_ShouldReturnError(t *testing.T) {
 	client := director.NewClient("", http.Client{}, nil)
 
-	err := client.UpdateStatus(nil, &director.Request{})
+	err := client.UpdateOperation(nil, &director.Request{})
 
 	require.Error(t, err)
 }
@@ -41,7 +41,7 @@ func TestClient_UpdateStatus_WhenClientDoFails_ShouldReturnError(t *testing.T) {
 
 	client := director.NewClient("", httpClient, nil)
 
-	err := client.UpdateStatus(context.Background(), &director.Request{})
+	err := client.UpdateOperation(context.Background(), &director.Request{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedErr.Error())
@@ -56,7 +56,7 @@ func TestClient_UpdateStatus_WhenResponseStatusCodeIsNotOK_ShouldReturnError(t *
 
 	client := director.NewClient("", httpClient, nil)
 
-	err := client.UpdateStatus(context.Background(), &director.Request{})
+	err := client.UpdateOperation(context.Background(), &director.Request{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unexpected status code")
@@ -71,7 +71,7 @@ func TestClient_UpdateStatus_WhenRequestIsSuccessful_ShouldNotReturnError(t *tes
 
 	client := director.NewClient("", httpClient, nil)
 
-	err := client.UpdateStatus(context.Background(), &director.Request{})
+	err := client.UpdateOperation(context.Background(), &director.Request{})
 
 	require.NoError(t, err)
 }

@@ -23,12 +23,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/client/clientfakes"
+	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
 	ctrl_director "github.com/kyma-incubator/compass/components/operations-controller/internal/director"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/director/directorfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook/webhookfakes"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -63,7 +61,7 @@ func TestReconcile_FailureToGetOperationCR_ShouldResultNoRequeueNoError(t *testi
 	// GIVEN:
 	logger := &mockedLogger{}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(nil, mockedErr)
 
 	// WHEN:
@@ -96,7 +94,7 @@ func TestReconcile_MultipleWebhooksRetrievedForExecution_ShouldResultNoRequeueNo
 			WebhookIDs: []string{"id1", "id2", "id3"},
 		},
 	}
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	// WHEN:
@@ -129,7 +127,7 @@ func TestReconcile_ZeroWebhooksRetrievedForExecution_ShouldResultNoRequeueNoErro
 			WebhookIDs: []string{},
 		},
 	}
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	// WHEN:
@@ -166,7 +164,7 @@ func TestReconcile_FailureToParseData_ShouldResultNoRequeueNoError(t *testing.T)
 			WebhookIDs: []string{webhookGUID},
 		},
 	}
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	// WHEN:
@@ -207,11 +205,11 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.DeleteReturns(mockedErr)
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
@@ -266,11 +264,11 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.DeleteReturns(nil)
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
@@ -348,11 +346,11 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.DeleteReturns(nil)
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
@@ -431,11 +429,11 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.DeleteReturns(nil)
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
@@ -486,10 +484,10 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(nil, mockedErr)
 
 	// WHEN:
@@ -537,13 +535,13 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperatio
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{Ready: true, Error: strToStrPtr(mockedErr.Error())}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -607,13 +605,13 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{Ready: true, Error: strToStrPtr(mockedErr.Error())}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -676,13 +674,13 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{Ready: true}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -743,13 +741,13 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{Ready: true}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -809,13 +807,13 @@ func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRe
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{Error: strToStrPtr(mockedErr.Error())}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -877,13 +875,13 @@ func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultN
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{Error: strToStrPtr(mockedErr.Error())}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -944,12 +942,12 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	// WHEN:
@@ -999,12 +997,12 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(0)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
@@ -1063,13 +1061,13 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(0)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
@@ -1142,13 +1140,13 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(0)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
@@ -1220,15 +1218,15 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.DoReturns(nil, mockedErr)
 
 	// WHEN:
@@ -1290,17 +1288,17 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
@@ -1374,18 +1372,18 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
@@ -1474,18 +1472,18 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		DoStub: func(_ context.Context, _ *webhook.Request) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
@@ -1573,17 +1571,17 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	mode := graphql.WebhookModeAsync
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
@@ -1654,17 +1652,17 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	mode := graphql.WebhookModeAsync
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
@@ -1734,17 +1732,17 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	mode := graphql.WebhookModeSync
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
@@ -1813,18 +1811,18 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	mode := graphql.WebhookModeSync
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
@@ -1906,18 +1904,18 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	mode := graphql.WebhookModeSync
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
 
 	// WHEN:
@@ -2001,15 +1999,15 @@ func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldR
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 
 	// WHEN:
 	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
@@ -2064,15 +2062,15 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, RetryInterval: intToIntPtr(60)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 
 	// WHEN:
 	controller := NewOperationReconciler(webhook.DefaultConfig(), logger, k8sClient, directorClient, webhookClient)
@@ -2126,15 +2124,15 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(nil, mockedErr)
 
 	// WHEN:
@@ -2202,17 +2200,17 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
@@ -2291,18 +2289,18 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
@@ -2397,18 +2395,18 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
@@ -2502,15 +2500,15 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("IN_PROGRESS"), nil)
 
 	// WHEN:
@@ -2576,17 +2574,17 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
@@ -2665,18 +2663,18 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
@@ -2770,18 +2768,18 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	webhookTimeout := 5
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Timeout: intToIntPtr(webhookTimeout)})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{
+	webhookClient := &controllersfakes.FakeWebhookClient{
 		PollStub: func(_ context.Context, _ *webhook.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
@@ -2874,16 +2872,16 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
 
 	// WHEN:
@@ -2957,17 +2955,17 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
 
 	// WHEN:
@@ -3055,17 +3053,17 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
 
 	// WHEN:
@@ -3152,16 +3150,16 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(mockedErr)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
 
 	// WHEN:
@@ -3236,17 +3234,17 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(mockedErr)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
 
 	// WHEN:
@@ -3336,17 +3334,17 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 	k8sClient.UpdateStatusReturns(nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 	directorClient.UpdateOperationReturns(nil)
 
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus("FAILED"), nil)
 
 	// WHEN:
@@ -3435,16 +3433,16 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 	}
 
-	k8sClient := &clientfakes.FakeClient{}
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(operation, nil)
 
 	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID})
 
-	directorClient := &directorfakes.FakeClient{}
+	directorClient := &controllersfakes.FakeDirectorClient{}
 	directorClient.FetchApplicationReturns(application, nil)
 
 	status := "UNKNOWN"
-	webhookClient := &webhookfakes.FakeClient{}
+	webhookClient := &controllersfakes.FakeWebhookClient{}
 	webhookClient.PollReturns(prepareResponseStatus(status), nil)
 
 	// WHEN:

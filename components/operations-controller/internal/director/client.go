@@ -27,16 +27,8 @@ import (
 	"net/http"
 )
 
-// Client defines a Director client which is capable of fetching an application
-// and notifying Director for state changes of said application
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
-type Client interface {
-	types.ApplicationLister
-	UpdateOperation(ctx context.Context, request *Request) error
-}
-
-// defaultClient is the default implementation of the Client interface
-type defaultClient struct {
+// client implements the DirectorClient interface
+type client struct {
 	types.ApplicationLister
 	HTTPClient  http.Client
 	DirectorURL string
@@ -50,8 +42,8 @@ type Request struct {
 }
 
 // NewClient constructs a default implementation of the Client interface
-func NewClient(directorURL string, httpClient http.Client, appLister types.ApplicationLister) *defaultClient {
-	return &defaultClient{
+func NewClient(directorURL string, httpClient http.Client, appLister types.ApplicationLister) *client {
+	return &client{
 		ApplicationLister: appLister,
 		HTTPClient:        httpClient,
 		DirectorURL:       directorURL,
@@ -59,18 +51,18 @@ func NewClient(directorURL string, httpClient http.Client, appLister types.Appli
 }
 
 // UpdateOperation makes an http request to the Director to notify about any operation state changes
-func (dc *defaultClient) UpdateOperation(ctx context.Context, request *Request) error {
+func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 	body, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, dc.DirectorURL+"/operations", bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.DirectorURL+"/operations", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 
-	resp, err := dc.HTTPClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}

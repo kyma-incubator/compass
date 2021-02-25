@@ -20,13 +20,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/client"
+	webhook_dir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
-	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
 	log "github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
@@ -49,19 +51,42 @@ var (
 	ErrUnsupportedWebhookMode       = errors.New("unsupported webhook mode")
 )
 
-// OperationReconciler reconciles a Operation object
-type OperationReconciler struct {
-	k8sClient      client.Client
-	config         *web_hook.Config
-	directorClient director.Client
-	webhookClient  web_hook.Client
-	log            logr.Logger
+// KubernetesClient is a defines a Kubernetes client capable of retrieving and deleting resources as well as updating their status
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . KubernetesClient
+type KubernetesClient interface {
+	Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Operation, error)
+	UpdateStatus(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error
+	Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error
 }
 
-func NewOperationReconciler(config *web_hook.Config, logger logr.Logger, k8sClient client.Client, directorClient director.Client, webhookClient web_hook.Client) *OperationReconciler {
+// DirectorClient defines a Director client which is capable of fetching an application
+// and notifying Director for operation state changes
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . DirectorClient
+type DirectorClient interface {
+	types.ApplicationLister
+	UpdateOperation(ctx context.Context, request *director.Request) error
+}
+
+// WebhookClient defines a general purpose Webhook executor client
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . WebhookClient
+type WebhookClient interface {
+	Do(ctx context.Context, request *webhook.Request) (*webhook_dir.Response, error)
+	Poll(ctx context.Context, request *webhook.PollRequest) (*webhook_dir.ResponseStatus, error)
+}
+
+// OperationReconciler reconciles a Operation object
+type OperationReconciler struct {
+	config         *webhook.Config
+	logger         logr.Logger
+	k8sClient      KubernetesClient
+	directorClient DirectorClient
+	webhookClient  WebhookClient
+}
+
+func NewOperationReconciler(config *webhook.Config, logger logr.Logger, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient) *OperationReconciler {
 	return &OperationReconciler{
 		config:         config,
-		log:            logger,
+		logger:         logger,
 		k8sClient:      k8sClient,
 		directorClient: directorClient,
 		webhookClient:  webhookClient,
@@ -73,7 +98,7 @@ func NewOperationReconciler(config *web_hook.Config, logger logr.Logger, k8sClie
 
 func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	logger := r.log.WithValues("operation", req.NamespacedName)
+	logger := r.logger.WithValues("operation", req.NamespacedName)
 
 	operation, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {
@@ -166,7 +191,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if webhookStatus.WebhookPollURL == "" {
 		log.Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-		request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
+		request := webhook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
@@ -208,7 +233,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := web_hook.NewPollRequest(webhookEntity, requestData, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
+	request := webhook.NewPollRequest(webhookEntity, requestData, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		logger.Error(err, "Unable to execute Webhook Poll request")
@@ -281,7 +306,7 @@ func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, op
 	return r.updateStatusWithError(ctx, operation, webhookErr)
 }
 
-func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error) {
+func parseRequestData(operation *v1alpha1.Operation) (webhook_dir.RequestData, error) {
 	str := struct {
 		Application graphql.Application
 		TenantID    string
@@ -289,10 +314,10 @@ func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error
 	}{}
 
 	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &str); err != nil {
-		return webhook.RequestData{}, err
+		return webhook_dir.RequestData{}, err
 	}
 
-	return webhook.RequestData{
+	return webhook_dir.RequestData{
 		Application: &str.Application,
 		TenantID:    str.TenantID,
 		Headers:     str.Headers,
@@ -323,7 +348,7 @@ func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliatio
 	return time.Now().After(operationEndTime)
 }
 
-func isWebhookTimeoutReached(cfg *web_hook.Config, webhook graphql.Webhook, creationTime time.Time) bool {
+func isWebhookTimeoutReached(cfg *webhook.Config, webhook graphql.Webhook, creationTime time.Time) bool {
 	webhookTimeout := cfg.WebhookTimeout
 	if webhook.Timeout != nil {
 		webhookTimeout = time.Duration(*webhook.Timeout)

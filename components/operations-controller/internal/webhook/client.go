@@ -29,19 +29,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Client defines a general purpose Webhook executor
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
-type Client interface {
-	Do(ctx context.Context, request *Request) (*web_hook.Response, error)
-	Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error)
+type OAuthClientProviderFunc func(ctx context.Context, client http.Client, oauthCreds *graphql.OAuthCredentialData) *http.Client
+
+type client struct {
+	httpClient              http.Client
+	oAuthClientProviderFunc OAuthClientProviderFunc
 }
 
-type DefaultClient struct {
-	HTTPClient              http.Client
-	OAuthClientProviderFunc func(ctx context.Context, client http.Client, oauthCreds *graphql.OAuthCredentialData) *http.Client
+func NewClient(httpClient http.Client, oAuthClientProviderFunc OAuthClientProviderFunc) *client {
+	return &client{
+		httpClient:              httpClient,
+		oAuthClientProviderFunc: oAuthClientProviderFunc,
+	}
 }
 
-func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
+func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
 	webhook := request.Webhook
 
 	var method string
@@ -80,7 +82,7 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 
 	req.Header = headers
 
-	client := &d.HTTPClient
+	client := &c.httpClient
 	if webhook.Auth != nil {
 		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
 		if isBasicAuth {
@@ -89,7 +91,7 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 
 		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
 		if isOAuth {
-			client = d.OAuthClientProviderFunc(ctx, *client, oauthCreds)
+			client = c.oAuthClientProviderFunc(ctx, *client, oauthCreds)
 		}
 	}
 
@@ -119,7 +121,7 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (d *DefaultClient) Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error) {
+func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error) {
 	webhook := request.Webhook
 
 	headers, err := web_hook.ParseHeadersTemplate(webhook.HeaderTemplate, request.Data)
@@ -138,7 +140,7 @@ func (d *DefaultClient) Poll(ctx context.Context, request *PollRequest) (*web_ho
 
 	req.Header = headers
 
-	client := &d.HTTPClient
+	client := &c.httpClient
 	if webhook.Auth != nil {
 		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
 		if isBasicAuth {
@@ -147,7 +149,7 @@ func (d *DefaultClient) Poll(ctx context.Context, request *PollRequest) (*web_ho
 
 		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
 		if isOAuth {
-			client = d.OAuthClientProviderFunc(ctx, *client, oauthCreds)
+			client = c.oAuthClientProviderFunc(ctx, *client, oauthCreds)
 		}
 	}
 
