@@ -20,9 +20,13 @@ func TestTokenService(t *testing.T) {
 	t.Run("should return the token", func(t *testing.T) {
 
 		gcliMock := &gcliMocks.GraphQLClient{}
-		expected := make(map[string]map[string]interface{})
-		expected["generateCSRToken"] = make(map[string]interface{})
-		expected["generateCSRToken"]["token"] = "tokenValue"
+		expected := CSRTokenResponse{
+			responseData{
+				tokenResponse{
+					TokenValue: "tokenValue",
+				},
+			},
+		}
 		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Run(generateToken(t, expected)).Return(nil).Once()
 		tokenService := NewTokenService(gcliMock)
 
@@ -39,14 +43,15 @@ func TestTokenService(t *testing.T) {
 		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Return(err)
 		tokenService := NewTokenService(gcliMock)
 
-		_, appError := tokenService.GetToken(context.Background(), clientId)
+		token, appError := tokenService.GetToken(context.Background(), clientId)
 		require.Error(t, appError)
+		assert.Equal(t, "", token)
 	})
 }
 
-func generateToken(t *testing.T, generated map[string]map[string]interface{}) func(args mock.Arguments) {
+func generateToken(t *testing.T, generated CSRTokenResponse) func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		arg, ok := args.Get(2).(*map[string]map[string]interface{})
+		arg, ok := args.Get(2).(*CSRTokenResponse)
 		require.True(t, ok)
 		*arg = generated
 	}

@@ -36,6 +36,22 @@ func NewTokenService(cli GraphQLClient) *tokenService {
 	return &tokenService{cli: cli}
 }
 
+type CSRTokenResponse struct {
+	Data responseData `json:"data"`
+}
+
+func (r CSRTokenResponse) GetTokenValue() string {
+	return r.Data.CSRTokenResponse.TokenValue
+}
+
+type responseData struct {
+	CSRTokenResponse tokenResponse `json:"generateCSRToken"`
+}
+
+type tokenResponse struct {
+	TokenValue string `json:"token"`
+}
+
 func (svc *tokenService) GetToken(ctx context.Context, clientId string) (string, apperrors.AppError) {
 	token, err := svc.getOneTimeToken(ctx, clientId)
 	if err != nil {
@@ -48,12 +64,11 @@ func (svc *tokenService) GetToken(ctx context.Context, clientId string) (string,
 func (s *tokenService) getOneTimeToken(ctx context.Context, id string) (string, error) {
 	req := gcli.NewRequest(fmt.Sprintf(requestForCSRToken, id))
 
-	// todo refactor this
-	var resp map[string]map[string]interface{}
+	resp := CSRTokenResponse{}
 	err := s.cli.Run(ctx, req, &resp)
 	if err != nil {
 		return "", errors.Wrapf(err, "while calling director for CSR one time token")
 	}
 
-	return resp["generateCSRToken"]["token"].(string), nil
+	return resp.GetTokenValue(), nil
 }
