@@ -3,18 +3,15 @@ package inputvalidation_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation/inputvalidationtest"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation/inputvalidationtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	dns1123Error = `a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character`
+	dns1123Error = `a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character`
 )
 
 func TestDNSNameValidator_Validate(t *testing.T) {
