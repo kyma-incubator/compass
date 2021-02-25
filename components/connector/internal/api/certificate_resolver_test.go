@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
-	tokensMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/mocks"
+	tokensMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

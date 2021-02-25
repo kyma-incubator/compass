@@ -20,13 +20,7 @@ func TestTokenService(t *testing.T) {
 	t.Run("should return the token", func(t *testing.T) {
 
 		gcliMock := &gcliMocks.GraphQLClient{}
-		expected := CSRTokenResponse{
-			responseData{
-				tokenResponse{
-					TokenValue: "tokenValue",
-				},
-			},
-		}
+		expected := NewCSRTokenResponse("tokenValue")
 		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Run(generateToken(t, expected)).Return(nil).Once()
 		tokenService := NewTokenService(gcliMock)
 
