@@ -122,6 +122,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 }
 
 func TestCallingORDServiceWithCert(t *testing.T) {
+	//testCtx, err := clients.NewSystemBrokerTestContext(config.SystemBrokerTestConfig{})
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
 	defer fixtures.UnregisterRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)

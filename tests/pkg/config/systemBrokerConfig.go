@@ -5,4 +5,5 @@ type SystemBrokerTestConfig struct {
 	SystemBrokerURL string
 	DirectorURL     string
 	ConnectorURL    string
+	ORDServiceURL   string
 }

@@ -42,6 +42,7 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		Context:                     context.Background(),
 		SystemBrokerURL:             cfg.SystemBrokerURL,
 		DirectorURL:                 cfg.DirectorURL,
+		ORDServiceURL:               cfg.ORDServiceURL,
 		ClientKey:                   clientKey,
 		ConnectorTokenSecuredClient: NewTokenSecuredClient(cfg.ConnectorURL),
 		DexGraphqlClient:            gql.NewAuthorizedGraphQLClientWithCustomURL(token, cfg.DirectorURL),
