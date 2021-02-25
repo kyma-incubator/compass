@@ -298,6 +298,14 @@ global:
     port: 3000
     defaultResponseType: "xml"
 
+  ordAggregator:
+    enabled: true
+    providerName: compass
+    schedule: "*/5 * * * *"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
+
   tenantFetchers:
     job1:
       enabled: false
