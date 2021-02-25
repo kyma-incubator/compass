@@ -22,14 +22,14 @@ func TestHydrators(t *testing.T) {
 	for _, testCase := range []struct {
 		clientType           string
 		clientId             string
-		tokenGenerationFunc  func(id string) (externalschema.Token, error)
+		tokenGenerationFunc  func(t *testing.T, id string) (externalschema.Token, error)
 		expectedTokenHeaders http.Header
 		expectedCertsHeaders http.Header
 	}{
 		{
 			clientType:          "Application",
 			clientId:            appID,
-			tokenGenerationFunc: internalClient.GenerateApplicationToken,
+			tokenGenerationFunc: directorClient.GenerateApplicationToken,
 			expectedTokenHeaders: http.Header{
 				oathkeeper.ClientIdFromTokenHeader: []string{appID},
 			},
@@ -41,7 +41,7 @@ func TestHydrators(t *testing.T) {
 		{
 			clientType:          "Runtime",
 			clientId:            runtimeID,
-			tokenGenerationFunc: internalClient.GenerateRuntimeToken,
+			tokenGenerationFunc: directorClient.GenerateRuntimeToken,
 			expectedTokenHeaders: http.Header{
 				oathkeeper.ClientIdFromTokenHeader: []string{runtimeID},
 			},
@@ -53,7 +53,7 @@ func TestHydrators(t *testing.T) {
 	} {
 		t.Run("should resolve one-time token for "+testCase.clientType, func(t *testing.T) {
 			//given
-			token, err := testCase.tokenGenerationFunc(testCase.clientId)
+			token, err := testCase.tokenGenerationFunc(t, testCase.clientId)
 			require.NoError(t, err)
 			require.NotEmpty(t, token.Token)
 
@@ -62,7 +62,7 @@ func TestHydrators(t *testing.T) {
 			}
 
 			//when
-			authSession := hydratorClient.ResolveToken(t, headers)
+			authSession := directorHydratorClient.ResolveToken(t, headers)
 
 			//then
 			assert.Equal(t, testCase.expectedTokenHeaders, authSession.Header)
@@ -70,7 +70,7 @@ func TestHydrators(t *testing.T) {
 
 		t.Run("should resolve certificate for "+testCase.clientType, func(t *testing.T) {
 			//given
-			token, err := testCase.tokenGenerationFunc(testCase.clientId)
+			token, err := testCase.tokenGenerationFunc(t, testCase.clientId)
 			require.NoError(t, err)
 			require.NotEmpty(t, token.Token)
 
@@ -84,7 +84,7 @@ func TestHydrators(t *testing.T) {
 			}
 
 			//when
-			authSession := hydratorClient.ResolveCertificateData(t, headers)
+			authSession := connectorHydratorClient.ResolveCertificateData(t, headers)
 
 			//then
 			assert.Equal(t, testCase.expectedCertsHeaders, authSession.Header)
@@ -92,12 +92,12 @@ func TestHydrators(t *testing.T) {
 
 		t.Run("should return empty Authentication Session when no valid headers found", func(t *testing.T) {
 			//given
-			token, err := testCase.tokenGenerationFunc(testCase.clientId)
+			token, err := testCase.tokenGenerationFunc(t, testCase.clientId)
 			require.NoError(t, err)
 			require.NotEmpty(t, token.Token)
 
 			//when
-			authSession := hydratorClient.ResolveToken(t, nil)
+			authSession := directorHydratorClient.ResolveToken(t, nil)
 
 			//then
 			assert.Empty(t, authSession)
