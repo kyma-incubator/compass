@@ -136,21 +136,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CertificationResult.ClientCertificate(childComplexity), true
 
-	case "Configuration.certificateSigningRequestInfo":
+	case "configuration.certificateSigningRequestInfo":
 		if e.complexity.Configuration.CertificateSigningRequestInfo == nil {
 			break
 		}
 
 		return e.complexity.Configuration.CertificateSigningRequestInfo(childComplexity), true
 
-	case "Configuration.managementPlaneInfo":
+	case "configuration.managementPlaneInfo":
 		if e.complexity.Configuration.ManagementPlaneInfo == nil {
 			break
 		}
 
 		return e.complexity.Configuration.ManagementPlaneInfo(childComplexity), true
 
-	case "Configuration.token":
+	case "configuration.token":
 		if e.complexity.Configuration.Token == nil {
 			break
 		}
@@ -285,7 +285,7 @@ type ManagementPlaneInfo {
     certificateSecuredConnectorURL: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
 }
 
-type Configuration {
+type configuration {
     token: Token
     certificateSigningRequestInfo: CertificateSigningRequestInfo
     managementPlaneInfo: ManagementPlaneInfo
@@ -301,7 +301,7 @@ type Query {
     # Client-Certificates
 
     """returns configuration information like subject that should be placed in the signing request or Director URL"""
-    configuration: Configuration!
+    configuration: configuration!
 }
 
 type Mutation {
@@ -577,7 +577,7 @@ func (ec *executionContext) _Configuration_token(ctx context.Context, field grap
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "Configuration",
+		Object:   "configuration",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -611,7 +611,7 @@ func (ec *executionContext) _Configuration_certificateSigningRequestInfo(ctx con
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "Configuration",
+		Object:   "configuration",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -645,7 +645,7 @@ func (ec *executionContext) _Configuration_managementPlaneInfo(ctx context.Conte
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "Configuration",
+		Object:   "configuration",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2195,7 +2195,7 @@ func (ec *executionContext) _CertificationResult(ctx context.Context, sel ast.Se
 	return out
 }
 
-var configurationImplementors = []string{"Configuration"}
+var configurationImplementors = []string{"configuration"}
 
 func (ec *executionContext) _Configuration(ctx context.Context, sel ast.SelectionSet, obj *Configuration) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, configurationImplementors)
@@ -2205,7 +2205,7 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Configuration")
+			out.Values[i] = graphql.MarshalString("configuration")
 		case "token":
 			out.Values[i] = ec._Configuration_token(ctx, field, obj)
 		case "certificateSigningRequestInfo":

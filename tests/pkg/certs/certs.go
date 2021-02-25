@@ -1,4 +1,4 @@
-package connectivity_adapter
+package certs
 
 import (
 	"crypto/rand"
@@ -9,6 +9,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"strings"
 	"testing"
 
@@ -17,19 +19,24 @@ import (
 
 const (
 	rsaKeySize = 2048
+	RSAKey     = "rsa2048"
 )
 
 // Create Key generates rsa.PrivateKey
 func CreateKey(t *testing.T) *rsa.PrivateKey {
-	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
+	key, err := GenerateKey()
 	require.NoError(t, err)
 
 	return key
 }
 
+func GenerateKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, rsaKeySize)
+}
+
 // CreateCsr creates CSR request
 func CreateCsr(t *testing.T, strSubject string, keys *rsa.PrivateKey) []byte {
-	subject := parseSubject(strSubject)
+	subject := ParseSubject(strSubject)
 
 	var csrTemplate = x509.CertificateRequest{
 		Subject: subject,
@@ -73,7 +80,7 @@ func encodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
 }
 
 // DecodeAndParseCerts decodes base64 encoded certificates chain and parses it
-func DecodeAndParseCerts(t *testing.T, crtResponse *CrtResponse) DecodedCrtResponse {
+func DecodeAndParseCerts(t *testing.T, crtResponse *pkg.CrtResponse) pkg.DecodedCrtResponse {
 	certChainBytes := encodedCertChainToPemBytes(t, crtResponse.CRTChain)
 	certificateChain, err := x509.ParseCertificates(certChainBytes)
 	require.NoError(t, err)
@@ -86,7 +93,7 @@ func DecodeAndParseCerts(t *testing.T, crtResponse *CrtResponse) DecodedCrtRespo
 	caCertificate, err := x509.ParseCertificate(caCertificateBytes)
 	require.NoError(t, err)
 
-	return DecodedCrtResponse{
+	return pkg.DecodedCrtResponse{
 		CRTChain:  certificateChain,
 		ClientCRT: clientCertificate,
 		CaCRT:     caCertificate,
@@ -116,11 +123,61 @@ func CheckIfCertIsSigned(t *testing.T, certificates []*x509.Certificate) {
 	require.NoError(t, err)
 }
 
+func CheckIfChainContainsTwoCertificates(t *testing.T, certChain string) {
+	certificates := DecodeCertChain(t, certChain)
+	require.Equal(t, 2, len(certificates))
+}
+
+// Certificate chain starts from leaf certificate and ends with a root certificate (https://tools.ietf.org/html/rfc5246#section-7.4.2).
+// The correct certificate chain holds the following property: ith certificate in the chain is issued by (i+1)th certificate
+func CheckCertificateChainOrder(t *testing.T, chain string) {
+	certChain := DecodeCertChain(t, chain)
+
+	for i := 0; i < len(certChain)-1; i++ {
+		issuer := certChain[i].Issuer
+		nextCertSubject := certChain[i+1].Subject
+
+		require.Equal(t, nextCertSubject, issuer)
+	}
+}
+
+func GetCertificateHash(t *testing.T, certificateStr string) string {
+	cert := DecodeCert(t, certificateStr)
+	sha := sha256.Sum256(cert.Raw)
+	return hex.EncodeToString(sha[:])
+}
+
+func DecodeCert(t *testing.T, certificateStr string) *x509.Certificate {
+	crtBytes := decodeBase64Cert(t, certificateStr)
+
+	clientCrtPem, _ := pem.Decode(crtBytes)
+	require.NotNil(t, clientCrtPem)
+
+	certificate, e := x509.ParseCertificate(clientCrtPem.Bytes)
+	require.NoError(t, e)
+	return certificate
+}
+
+func DecodeCertChain(t *testing.T, certificateChain string) []*x509.Certificate {
+	crtBytes := decodeBase64Cert(t, certificateChain)
+
+	clientCrtPem, rest := pem.Decode(crtBytes)
+	require.NotNil(t, clientCrtPem)
+
+	caCertPem, _ := pem.Decode(rest)
+	require.NotNil(t, caCertPem)
+
+	certificates, e := x509.ParseCertificates(append(clientCrtPem.Bytes, caCertPem.Bytes...))
+	require.NoError(t, e)
+
+	return certificates
+}
+
 func EncodeBase64(src []byte) string {
 	return base64.StdEncoding.EncodeToString(src)
 }
 
-func parseSubject(subject string) pkix.Name {
+func ParseSubject(subject string) pkix.Name {
 	subjectInfo := extractSubject(subject)
 
 	return pkix.Name{
@@ -152,53 +209,26 @@ func extractSubject(subject string) map[string]string {
 	return result
 }
 
-func CheckIfChainContainsTwoCertificates(t *testing.T, certChain string) {
-	certificates := DecodeCertChain(t, certChain)
-	require.Equal(t, 2, len(certificates))
+func AssertConfiguration(t *testing.T, configuration externalschema.Configuration) {
+	require.NotEmpty(t, configuration)
+	require.NotNil(t, configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL)
+	require.NotNil(t, configuration.ManagementPlaneInfo.DirectorURL)
+
+	require.Equal(t, RSAKey, configuration.CertificateSigningRequestInfo.KeyAlgorithm)
 }
 
+func AssertCertificate(t *testing.T, expectedSubject string, certificationResult externalschema.CertificationResult) {
+	clientCert := certificationResult.ClientCertificate
+	certChain := certificationResult.CertificateChain
+	caCert := certificationResult.CaCertificate
 
-// Certificate chain starts from leaf certificate and ends with a root certificate (https://tools.ietf.org/html/rfc5246#section-7.4.2).
-// The correct certificate chain holds the following property: ith certificate in the chain is issued by (i+1)th certificate
-func CheckCertificateChainOrder(t *testing.T, chain string) {
-	certChain := DecodeCertChain(t, chain)
+	require.NotEmpty(t, clientCert)
+	require.NotEmpty(t, certChain)
+	require.NotEmpty(t, caCert)
 
-	for i := 0; i < len(certChain)-1; i++ {
-		issuer := certChain[i].Issuer
-		nextCertSubject := certChain[i+1].Subject
-
-		require.Equal(t, nextCertSubject, issuer)
-	}
-}
-
-func GetCertificateHash(t *testing.T, certificateStr string) string {
-	cert := DecodeCert(t, certificateStr)
-	sha := sha256.Sum256(cert.Raw)
-	return hex.EncodeToString(sha[:])
-}
-
-func DecodeCert(t *testing.T, certificateStr string) *x509.Certificate {
-	crtBytes := decodeBase64Cert(t,certificateStr)
-
-	clientCrtPem, _ := pem.Decode(crtBytes)
-	require.NotNil(t, clientCrtPem)
-
-	certificate, e := x509.ParseCertificate(clientCrtPem.Bytes)
-	require.NoError(t, e)
-	return certificate
-}
-
-func DecodeCertChain(t *testing.T, certificateChain string) []*x509.Certificate {
-	crtBytes := decodeBase64Cert(t,certificateChain)
-
-	clientCrtPem, rest := pem.Decode(crtBytes)
-	require.NotNil(t, clientCrtPem)
-
-	caCertPem, _ := pem.Decode(rest)
-	require.NotNil(t, caCertPem)
-
-	certificates, e := x509.ParseCertificates(append(clientCrtPem.Bytes, caCertPem.Bytes...))
-	require.NoError(t, e)
-
-	return certificates
+	CheckIfSubjectEquals(t, expectedSubject, DecodeCert(t,clientCert))
+	CheckIfChainContainsTwoCertificates(t, certChain)
+	CheckCertificateChainOrder(t, certChain)
+	certificates := []*x509.Certificate{DecodeCert(t,clientCert), DecodeCert(t,caCert)}
+	CheckIfCertIsSigned(t, certificates)
 }

@@ -2,6 +2,11 @@ package tests
 
 import (
 	"crypto/rsa"
+	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	config2 "github.com/kyma-incubator/compass/tests/pkg/config"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,13 +15,11 @@ import (
 	"github.com/pkg/errors"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector/connector"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,40 +29,41 @@ const (
 )
 
 var (
-	config           testkit_connector.TestConfig
-	internalClient   *connector.InternalClient
-	hydratorClient   *connector.HydratorClient
-	connectorClient  *connector.TokenSecuredClient
-	configmapCleaner *testkit_connector.ConfigmapCleaner
+	config           config2.ConnectorTestConfig
+	internalClient   *clients.InternalClient
+	hydratorClient   *clients.HydratorClient
+	connectorClient  *clients.TokenSecuredClient
+	configmapCleaner *pkg.ConfigmapCleaner
 
 	clientKey *rsa.PrivateKey
 )
 
 func TestMain(m *testing.M) {
 	logrus.Info("Starting Connector Test")
-
-	cfg, err := testkit_connector.ReadConfig()
+	cfg := config2.ConnectorTestConfig{}
+	err := config2.ReadConfig(&cfg)
 	if err != nil {
 		logrus.Errorf("Failed to read config: %s", err.Error())
 		os.Exit(1)
 	}
 
 	config = cfg
-	clientKey, err = testkit_connector.GenerateKey()
+	clientKey, err = certs.GenerateKey()
 	if err != nil {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	internalClient = connector.NewInternalClient(config.InternalConnectorURL)
-	hydratorClient = connector.NewHydratorClient(config.HydratorURL)
-	connectorClient = connector.NewConnectorClient(config.ConnectorURL)
+	fmt.Println("************************ :", config.InternalConnectorURL)
+	internalClient = clients.NewInternalClient(config.InternalConnectorURL)
+	hydratorClient = clients.NewHydratorClient(config.HydratorURL)
+	connectorClient = clients.NewTokenSecuredClient(config.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()
 	if err != nil {
 		logrus.Errorf("Failed to create config map interface: %s", err.Error())
 		os.Exit(1)
 	}
-	configmapCleaner = testkit_connector.NewConfigMapCleaner(configmapInterface, config.RevocationConfigMapName)
+	configmapCleaner = pkg.NewConfigMapCleaner(configmapInterface, config.RevocationConfigMapName)
 
 	exitCode := m.Run()
 

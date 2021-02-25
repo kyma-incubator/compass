@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"fmt"
 	"testing"
@@ -28,12 +29,12 @@ func TestCompassAuth(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Register Integration System with Dex id token")
-	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
 
 	t.Log("Request Client Credentials for Integration System")
-	intSystemAuth := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
-	intSysOauthCredentialData, ok:= intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 
 	t.Log("Issue a Hydra token with Client Credentials")
@@ -47,7 +48,8 @@ func TestCompassAuth(t *testing.T) {
 		Name:                "app-registered-by-integration-system",
 		IntegrationSystemID: &intSys.ID,
 	}
-	appByIntSys := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+	appByIntSys, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+	require.NoError(t, err)
 	require.NotEmpty(t, appByIntSys.ID)
 
 	t.Log("Add Bundle with API Spec to Application")
@@ -55,15 +57,15 @@ func TestCompassAuth(t *testing.T) {
 		Name:      "new-api-name",
 		TargetURL: "https://kyma-project.io",
 	}
-	bndl := pkg.CreateBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID, "bndl")
-	defer pkg.DeleteBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID)
-	pkg.AddAPIToBundleWithInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID, apiInput)
+	bndl := fixtures.CreateBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID, "bndl")
+	defer fixtures.DeleteBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID)
+	fixtures.AddAPIToBundleWithInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID, apiInput)
 
 	t.Log("Try removing Integration System")
-	pkg.UnregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	fixtures.UnregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Check if SystemAuths are still present in the db")
-	auths := pkg.GetSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	auths := fixtures.GetSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 	require.NotEmpty(t, auths)
 	require.NotNil(t, auths[0])
 	credentialDataFromDB, ok := auths[0].Auth.Credential.(*graphql.OAuthCredentialData)
@@ -71,14 +73,15 @@ func TestCompassAuth(t *testing.T) {
 	assert.Equal(t, intSysOauthCredentialData, credentialDataFromDB)
 
 	t.Log("Remove application to check if the oAuth token is still valid")
-	pkg.UnregisterApplication(t, ctx, oauthGraphQLClient, appByIntSys.ID, testConfig.DefaultTenant)
+	fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
-	pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
-	appByIntSys = pkg.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
-	require.Empty(t, appByIntSys.ID)
+	appByIntSys, err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+	require.NoError(t, err)
+	require.Empty(t, appByIntSys.BaseEntity)
 
 	t.Log("Check if token can not be fetched with old client credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)

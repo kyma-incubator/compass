@@ -3,8 +3,11 @@ package tests
 import (
 	"context"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -27,24 +30,24 @@ func TestQueryTenants(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	getTenantsRequest := pkg.FixTenantsRequest()
+	getTenantsRequest := fixtures.FixTenantsRequest()
 	var output []*graphql.Tenant
 	expectedTenants := expectedTenants()
 
 	t.Log("Initializing one of the tenants")
 	initializedTenantID := pkg.TestTenants.GetIDByName(t, pkg.TenantsQueryInitializedTenantName)
-	unregisterApp := pkg.RegisterSimpleApp(t,ctx,dexGraphQLClient, initializedTenantID)
+	unregisterApp := fixtures.RegisterSimpleApp(t,ctx,dexGraphQLClient, initializedTenantID)
 	defer unregisterApp()
 
 	// WHEN
 	t.Log("List tenant")
-	err = pkg.Tc.RunOperation(ctx,dexGraphQLClient, getTenantsRequest, &output)
+	err = testctx.Tc.RunOperation(ctx,dexGraphQLClient, getTenantsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN
 	t.Log("Check if tenants were received")
 
-	assertTenants(t, expectedTenants, output)
+	assertions.AssertTenants(t, expectedTenants, output)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 

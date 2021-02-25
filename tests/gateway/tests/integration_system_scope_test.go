@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -24,12 +25,12 @@ func TestIntegrationSystemScenario(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Register Integration System with Dex id token")
-	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
 
 	t.Log("Request Client Credentials for Integration System")
-	intSystemAuth := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
-	intSysOauthCredentialData, ok:= intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 
 	t.Log("Issue a token with Client Credentials")
@@ -42,16 +43,17 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		appByIntSys := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		appByIntSys, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		require.NoError(t, err)
 		require.NotEmpty(t, appByIntSys.ID)
 
 		t.Log("Get application")
-		app := pkg.GetApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+		app := fixtures.GetApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 		require.NotEmpty(t, app.ID)
 		require.Equal(t, appByIntSys.ID, app.ID)
 
 		t.Log("Unregister application")
-		pkg.UnregisterApplication(t, ctx, oauthGraphQLClient, appByIntSys.ID, testConfig.DefaultTenant)
+		fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 
 	})
 	t.Run("Test application template scopes", func(t *testing.T) {
@@ -66,16 +68,16 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
 		}
-		appTpl := pkg.CreateApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTplInput)
+		appTpl := fixtures.CreateApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTplInput)
 		require.NotEmpty(t, appTpl.ID)
 
 		t.Log("Get application template")
-		gqlAppTpl := pkg.GetApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTpl.ID)
+		gqlAppTpl := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTpl.ID)
 		require.NotEmpty(t, gqlAppTpl.ID)
 		require.Equal(t, appTpl.ID, gqlAppTpl.ID)
 
 		t.Log("Delete application template")
-		pkg.DeleteApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTpl.ID)
+		fixtures.DeleteApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTpl.ID)
 
 	})
 
@@ -84,19 +86,19 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test",
 		}
-		runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
+		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
 		require.NotEmpty(t, runtime.ID)
 
 		t.Log("Get runtime")
-		gqlRuntime := pkg.GetRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		gqlRuntime := fixtures.GetRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 		require.NotEmpty(t, gqlRuntime.ID)
 		require.Equal(t, runtime.ID, gqlRuntime.ID)
 
 		t.Log("Unregister runtime")
-		pkg.UnregisterRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		fixtures.UnregisterRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 
 	})
 
 	t.Log("Unregister Integration System")
-	pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 }

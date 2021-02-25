@@ -1,13 +1,14 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher
   labels:
     app: {{ .Chart.Name }}-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-tenant-fetcher-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: kyma-system
 spec:
   template:
     metadata:
@@ -24,10 +25,10 @@ spec:
       {{ end }}
       containers:
         - name: tenant-fetcher-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.tenant_fetcher.dir }}tenant-fetcher-tests:{{ .Values.global.images.tests.tenant_fetcher.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "/tenant-fetcher.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: TENANT_FETCHER_URL
               value: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.tenantFetcher.port }}"
@@ -36,7 +37,7 @@ spec:
             - name: ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: HANDLER_ENDPOINT
-              value: "{{ .Values.server.handlerEndpoint }}"
+              value: "/v1/callback/{tenantId}"
             - name: TENANT_PATH_PARAM
-              value: "{{ .Values.server.tenantPathParam }}"
+              value: "tenantId"
       restartPolicy: Never

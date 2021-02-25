@@ -3,8 +3,10 @@ package tests
 import (
 	"context"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
 	"github.com/google/uuid"
@@ -39,11 +41,11 @@ func TestScopesAuthorization(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			request := pkg.FixApplicationForRuntimeRequest(id)
+			request := fixtures.FixApplicationForRuntimeRequest(id)
 			response := graphql.ApplicationPage{}
 
 			// when
-			err := pkg.Tc.RunOperationWithCustomScopes(ctx, dexGraphQLClient, tenant, testCase.Scopes, request, &response)
+			err := testctx.Tc.RunOperationWithCustomScopes(ctx, dexGraphQLClient, tenant, testCase.Scopes, request, &response)
 
 			// then
 			require.Error(t, err)

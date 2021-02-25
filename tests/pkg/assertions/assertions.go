@@ -1,8 +1,9 @@
-package tests
+package assertions
 
 import (
 	"encoding/json"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,20 +15,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actualApp graphql.ApplicationExt) {
+func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actualApp graphql.ApplicationExt) {
 	require.NotEmpty(t, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
-	assertLabels(t, *in.Labels, actualApp.Labels, actualApp)
+	AssertLabels(t, *in.Labels, actualApp.Labels, actualApp)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assert.Equal(t, in.ProviderName, actualApp.ProviderName)
-	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
-	assertBundles(t, in.Bundles, actualApp.Bundles.Data)
+	AssertWebhooks(t, in.Webhooks, actualApp.Webhooks)
+	AssertBundles(t, in.Bundles, actualApp.Bundles.Data)
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
-func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
+func AssertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	appNameNormalizier := normalizer.DefaultNormalizator{}
 	for key, value := range actual {
 		if key == "integrationSystemID" {
@@ -44,7 +45,7 @@ func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app gr
 	}
 }
 
-func assertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
+func AssertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inWh := range in {
 		found := false
@@ -53,21 +54,21 @@ func assertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 				found = true
 				assert.NotNil(t, actWh.ID)
 				assert.Equal(t, inWh.Type, actWh.Type)
-				assertAuth(t, inWh.Auth, actWh.Auth)
+				AssertAuth(t, inWh.Auth, actWh.Auth)
 			}
 		}
 		assert.True(t, found)
 	}
 }
 
-func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
+func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	if in == nil {
 		assert.Nil(t, actual)
 		return
 	}
 	require.NotNil(t, actual)
-	assertHttpHeaders(t, in.AdditionalHeadersSerialized, actual.AdditionalHeaders)
-	assertQueryParams(t, in.AdditionalQueryParamsSerialized, actual.AdditionalQueryParams)
+	AssertHttpHeaders(t, in.AdditionalHeadersSerialized, actual.AdditionalHeaders)
+	AssertQueryParams(t, in.AdditionalQueryParamsSerialized, actual.AdditionalQueryParams)
 
 	if in.Credential != nil {
 		if in.Credential.Basic != nil {
@@ -109,7 +110,7 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	}
 }
 
-func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphql.DocumentExt) {
+func AssertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphql.DocumentExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inDocu := range in {
 		found := false
@@ -123,13 +124,13 @@ func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphq
 			assert.Equal(t, inDocu.Data, actDocu.Data)
 			assert.Equal(t, inDocu.Kind, actDocu.Kind)
 			assert.Equal(t, inDocu.Format, actDocu.Format)
-			assertFetchRequest(t, inDocu.FetchRequest, actDocu.FetchRequest)
+			AssertFetchRequest(t, inDocu.FetchRequest, actDocu.FetchRequest)
 		}
 		assert.True(t, found)
 	}
 }
 
-func assertBundles(t *testing.T, in []*graphql.BundleCreateInput, actual []*graphql.BundleExt) {
+func AssertBundles(t *testing.T, in []*graphql.BundleCreateInput, actual []*graphql.BundleExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inBndl := range in {
 		found := false
@@ -139,13 +140,13 @@ func assertBundles(t *testing.T, in []*graphql.BundleCreateInput, actual []*grap
 			}
 			found = true
 
-			assertBundle(t, inBndl, actBndl)
+			AssertBundle(t, inBndl, actBndl)
 		}
 		assert.True(t, found)
 	}
 }
 
-func assertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *graphql.FetchRequest) {
+func AssertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *graphql.FetchRequest) {
 	if in == nil {
 		assert.Nil(t, actual)
 		return
@@ -158,10 +159,10 @@ func assertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *gra
 	} else {
 		assert.Equal(t, graphql.FetchModeSingle, actual.Mode)
 	}
-	assertAuth(t, in.Auth, actual.Auth)
+	AssertAuth(t, in.Auth, actual.Auth)
 }
 
-func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql.APIDefinitionExt) {
+func AssertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql.APIDefinitionExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inApi := range in {
 		found := false
@@ -173,13 +174,13 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 			assert.Equal(t, inApi.Description, actApi.Description)
 			assert.Equal(t, inApi.TargetURL, actApi.TargetURL)
 			assert.Equal(t, inApi.Group, actApi.Group)
-			assertVersion(t, inApi.Version, actApi.Version)
+			AssertVersion(t, inApi.Version, actApi.Version)
 			if inApi.Spec != nil {
 				require.NotNil(t, actApi.Spec)
 				assert.Equal(t, inApi.Spec.Data, actApi.Spec.Data)
 				assert.Equal(t, inApi.Spec.Format, actApi.Spec.Format)
 				assert.Equal(t, inApi.Spec.Type, actApi.Spec.Type)
-				assertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
+				AssertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
 			} else {
 				assert.Nil(t, actApi.Spec)
 			}
@@ -188,7 +189,7 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 	}
 }
 
-func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Version) {
+func AssertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Version) {
 	if in != nil {
 		assert.NotNil(t, actual)
 		assert.Equal(t, in.Value, actual.Value)
@@ -200,7 +201,7 @@ func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Versi
 	}
 }
 
-func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []*graphql.EventAPIDefinitionExt) {
+func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []*graphql.EventAPIDefinitionExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inEv := range in {
 		found := false
@@ -211,13 +212,13 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 			found = true
 			assert.Equal(t, inEv.Group, actEv.Group)
 			assert.Equal(t, inEv.Description, actEv.Description)
-			assertVersion(t, inEv.Version, actEv.Version)
+			AssertVersion(t, inEv.Version, actEv.Version)
 			if inEv.Spec != nil {
 				require.NotNil(t, actEv.Spec)
 				assert.Equal(t, inEv.Spec.Data, actEv.Spec.Data)
 				assert.Equal(t, inEv.Spec.Format, actEv.Spec.Format)
 				assert.Equal(t, inEv.Spec.Type, actEv.Spec.Type)
-				assertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
+				AssertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
 			} else {
 				assert.Nil(t, actEv.Spec)
 			}
@@ -226,98 +227,98 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	}
 }
 
-func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
+func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	assertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
+	AssertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
 }
 
-func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
+func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
 	const (
 		scenariosKey    = "scenarios"
 		isNormalizedKey = "isNormalized"
 	)
 
 	if inLabels == nil {
-		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
-		assertLabel(t, actualLabels, isNormalizedKey, "true")
+		AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+		AssertLabel(t, actualLabels, isNormalizedKey, "true")
 		assert.Equal(t, 2, len(actualLabels))
 		return
 	}
 
 	_, inHasScenarios := (*inLabels)[scenariosKey]
 	if !inHasScenarios {
-		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+		AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
 	}
 
 	_, inHasShouldNomalizeKey := (*inLabels)[isNormalizedKey]
 	if !inHasShouldNomalizeKey {
-		assertLabel(t, actualLabels, isNormalizedKey, "true")
+		AssertLabel(t, actualLabels, isNormalizedKey, "true")
 	}
 
 	for labelKey, labelValues := range *inLabels {
-		assertLabel(t, actualLabels, labelKey, labelValues)
+		AssertLabel(t, actualLabels, labelKey, labelValues)
 	}
 }
 
-func assertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
+func AssertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
 	labelValues, ok := actualLabels[key]
 	assert.True(t, ok)
 	assert.Equal(t, values, labelValues)
 }
 
-func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
+func AssertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
 	assert.Equal(t, in.Name, actualIntegrationSystem.Name)
 	assert.Equal(t, in.Description, actualIntegrationSystem.Description)
 }
 
-func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput, actualApplicationTemplate graphql.ApplicationTemplate) {
+func AssertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput, actualApplicationTemplate graphql.ApplicationTemplate) {
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
 	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
 
 	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
-	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
+	AssertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
 }
 
-func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
+func AssertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
 	for i, _ := range in {
 		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
 		assert.Equal(t, in[i].Description, actualPlaceholders[i].Description)
 	}
 }
 
-func assertBundle(t *testing.T, in *graphql.BundleCreateInput, actual *graphql.BundleExt) {
+func AssertBundle(t *testing.T, in *graphql.BundleCreateInput, actual *graphql.BundleExt) {
 	assert.Equal(t, in.Name, actual.Name)
 	assert.Equal(t, in.Description, actual.Description)
 	assert.Equal(t, in.InstanceAuthRequestInputSchema, actual.InstanceAuthRequestInputSchema)
 
-	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
-	assertDocuments(t, in.Documents, actual.Documents.Data)
-	assertAPI(t, in.APIDefinitions, actual.APIDefinitions.Data)
-	assertEventsAPI(t, in.EventDefinitions, actual.EventDefinitions.Data)
+	AssertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
+	AssertDocuments(t, in.Documents, actual.Documents.Data)
+	AssertAPI(t, in.APIDefinitions, actual.APIDefinitions.Data)
+	AssertEventsAPI(t, in.EventDefinitions, actual.EventDefinitions.Data)
 
-	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
+	AssertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
 }
 
-func assertBundleInstanceAuthInput(t *testing.T, expectedAuth graphql.BundleInstanceAuthRequestInput, actualAuth graphql.BundleInstanceAuth) {
-	assertGraphQLJSON(t, expectedAuth.Context, actualAuth.Context)
-	assertGraphQLJSON(t, expectedAuth.InputParams, actualAuth.InputParams)
+func AssertBundleInstanceAuthInput(t *testing.T, expectedAuth graphql.BundleInstanceAuthRequestInput, actualAuth graphql.BundleInstanceAuth) {
+	AssertGraphQLJSON(t, expectedAuth.Context, actualAuth.Context)
+	AssertGraphQLJSON(t, expectedAuth.InputParams, actualAuth.InputParams)
 }
 
-func assertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceAuth, actualAuth graphql.BundleInstanceAuth) {
+func AssertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceAuth, actualAuth graphql.BundleInstanceAuth) {
 	assert.Equal(t, expectedAuth.ID, actualAuth.ID)
 	assert.Equal(t, expectedAuth.Context, actualAuth.Context)
 	assert.Equal(t, expectedAuth.InputParams, actualAuth.InputParams)
 }
 
-func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {
+func AssertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {
 	inExpectedStr, ok := pkg.UnmarshalJSON(t, inExpected).(string)
 	assert.True(t, ok)
 
@@ -332,7 +333,7 @@ func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql
 	assert.Equal(t, expected, actual)
 }
 
-func assertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inActual *graphql.JSONSchema) {
+func AssertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inActual *graphql.JSONSchema) {
 	inExpectedStr, ok := pkg.UnmarshalJSONSchema(t, inExpected).(string)
 	assert.True(t, ok)
 
@@ -347,7 +348,7 @@ func assertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inAct
 	assert.Equal(t, expected, actual)
 }
 
-func assertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
+func AssertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
 	assert.Equal(t, expected.ScenarioName, actual.ScenarioName)
 	require.NotNil(t, actual.Selector)
 	require.NotNil(t, expected.Selector)
@@ -355,7 +356,7 @@ func assertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticS
 	assert.Equal(t, expected.Selector.Key, actual.Selector.Key)
 }
 
-func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.AutomaticScenarioAssignmentSetInput, actual []*graphql.AutomaticScenarioAssignment) {
+func AssertAutomaticScenarioAssignments(t *testing.T, expected []graphql.AutomaticScenarioAssignmentSetInput, actual []*graphql.AutomaticScenarioAssignment) {
 	assert.Equal(t, len(expected), len(actual))
 	for _, expectedAssignment := range expected {
 		found := false
@@ -363,7 +364,7 @@ func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.Automat
 			require.NotNil(t, actualAssignment)
 			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
 				found = true
-				assertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
+				AssertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
 				break
 			}
 		}
@@ -371,7 +372,7 @@ func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.Automat
 	}
 }
 
-func assertIntegrationSystemNames(t *testing.T, expectedNames []string, actual graphql.IntegrationSystemPageExt) {
+func AssertIntegrationSystemNames(t *testing.T, expectedNames []string, actual graphql.IntegrationSystemPageExt) {
 	for _, intSysName := range expectedNames {
 		found := false
 		require.NotEmpty(t, actual.Data)
@@ -386,7 +387,7 @@ func assertIntegrationSystemNames(t *testing.T, expectedNames []string, actual g
 	}
 }
 
-func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant) {
+func AssertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant) {
 	for _, inTnt := range in {
 		found := false
 		for _, actTnt := range actual {
@@ -405,7 +406,7 @@ func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 	}
 }
 
-func assertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *graphql.HttpHeaders) {
+func AssertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *graphql.HttpHeaders) {
 	if in == nil && actual == nil {
 		return
 	}
@@ -423,7 +424,7 @@ func assertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *
 	require.Equal(t, &headersIn, actual)
 }
 
-func assertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *graphql.QueryParams) {
+func AssertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *graphql.QueryParams) {
 	if in == nil && actual == nil {
 		return
 	}
@@ -441,18 +442,25 @@ func assertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *
 	require.Equal(t, &queryParamsIn, actual)
 }
 
-func assertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
+func AssertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
 	for _, rtm := range runtimes.Data {
 		expectedScenarios, found := expectedScenarios[rtm.ID]
 		require.True(t, found)
-		assertScenarios(t, rtm.Labels, expectedScenarios)
+		AssertScenarios(t, rtm.Labels, expectedScenarios)
 	}
 }
 
-func assertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
+func AssertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
 	val, ok := actual["scenarios"]
 	require.True(t, ok)
 	scenarios, ok := val.([]interface{})
 	require.True(t, ok)
 	assert.ElementsMatch(t, scenarios, expected)
+}
+
+func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
+	assert.True(t, len(bndl.APIDefinitions.Data) > 0)
+	assert.NotNil(t, bndl.APIDefinitions.Data[0])
+	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec)
+	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 }

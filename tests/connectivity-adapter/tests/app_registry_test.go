@@ -18,14 +18,14 @@ package tests
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	config2 "github.com/kyma-incubator/compass/tests/pkg/config"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-adapter"
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-adapter/connectivity-adapter"
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-adapter/director"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,10 +49,11 @@ func TestAppRegistry(t *testing.T) {
 		},
 	}
 
-	config, err := testkit_adapter.ReadConfiguration()
+	config:=config2.ConnectivityAdapterTestConfig{}
+	err := config2.ReadConfig(&config)
 	require.NoError(t, err)
 
-	directorClient, err := director.NewClient(
+	directorClient, err := clients.NewClient(
 		config.DirectorUrl,
 		config.DirectorHealthzUrl,
 		config.Tenant,
@@ -79,16 +80,16 @@ func TestAppRegistry(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("App Registry Service flow for Application", func(t *testing.T) {
-		client := connectivity_adapter.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
-		clientKey := connectivity_adapter.CreateKey(t)
+		client := clients.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+		clientKey := certs.CreateKey(t)
 
 		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
 		require.NotEmpty(t, crtResponse.CRTChain)
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 		require.NotEmpty(t, infoResponse.Certificate)
 
-		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
-		adapterClient := connectivity_adapter.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates := certs.DecodeAndParseCerts(t, crtResponse)
+		adapterClient := clients.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		mgmInfoResponse, errorResponse := adapterClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)

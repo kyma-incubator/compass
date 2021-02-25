@@ -5,14 +5,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
-	connectorTestkit "github.com/kyma-incubator/compass/tests/pkg/testkit-connector"
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector/connector"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -24,16 +24,16 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	}
 
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime := director.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
-	defer director.UnregisterRuntimeWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
+	defer fixtures.UnregisterRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 
 	logrus.Infof("generating one-time token for runtime with id: %s", runtime.ID)
-	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
 	logrus.Infof("generation certificate for runtime with id: %s", runtime.ID)
-	certResult, configuration := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, testCtx.ClientKey)
-	certChain := connectorTestkit.DecodeCertChain(t, certResult.CertificateChain)
+	certResult, configuration := clients.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, testCtx.ClientKey)
+	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := createCertClient(testCtx.ClientKey, certChain...)
 
 	t.Run("Should successfully call catalog endpoint with certificate secured client", func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 
 	t.Run("Should fail calling catalog endpoint with revoked cert", func(t *testing.T) {
 		logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
-		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
+		connectorClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
 		ok, err := connectorClient.RevokeCertificate()
 		require.NoError(t, err)
 		require.Equal(t, ok, true)
@@ -85,7 +85,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	t.Run("Should fail calling catalog endpoint with invalid certificate", func(t *testing.T) {
 		req := createCatalogRequest(t)
 
-		fakedClientKey, err := connectorTestkit.GenerateKey()
+		fakedClientKey, err := certs.GenerateKey()
 		require.NoError(t, err)
 		client := createCertClient(fakedClientKey, certChain...)
 

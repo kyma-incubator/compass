@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"os"
 	"testing"
 
@@ -30,10 +31,11 @@ func TestMain(m *testing.M) {
 
 	pkg.TestTenants.InitializeDB(transact)
 
-	pkg.Tc, err = pkg.NewTestContext()
+	testctx.Tc, err = testctx.NewTestContext()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 
 	exitVal := m.Run()
 

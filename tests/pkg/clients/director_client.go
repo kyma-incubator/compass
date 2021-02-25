@@ -1,7 +1,8 @@
-package director
+package clients
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"net/http"
 	"time"
 
@@ -29,7 +30,7 @@ type Client interface {
 	GetOneTimeTokenUrl(appID string) (string, string, error)
 }
 
-type client struct {
+type DirectorClient struct {
 	scopes       []string
 	tenant       string
 	graphqulizer graphqlizer.Graphqlizer
@@ -77,7 +78,7 @@ func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) 
 		return nil, err
 	}
 
-	return client{
+	return DirectorClient{
 		scopes:       scopes,
 		tenant:       tenant,
 		graphqulizer: graphqlizer.Graphqlizer{},
@@ -114,7 +115,7 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 	}, defaultRetryOptions()...)
 }
 
-func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
+func (c DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
 
 	appGraphql, err := c.graphqulizer.ApplicationRegisterInputToGQL(in)
 	if err != nil {
@@ -122,9 +123,9 @@ func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, e
 	}
 
 	var result ApplicationResponse
-	query := createApplicationQuery(appGraphql)
+	query := fixtures.FixRegisterApplicationRequest(appGraphql)
 
-	err = c.executeWithRetries(query, &result)
+	err = c.executeWithRetries(query.Query(), &result)
 	if err != nil {
 		return "", err
 	}
@@ -132,12 +133,12 @@ func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, e
 	return result.Result.ID, nil
 }
 
-func (c client) DeleteApplication(appID string) error {
+func (c DirectorClient) DeleteApplication(appID string) error {
 
 	var result ApplicationResponse
-	query := deleteApplicationQuery(appID)
+	query := fixtures.FixUnregisterApplicationRequest(appID)
 
-	err := c.executeWithRetries(query, &result)
+	err := c.executeWithRetries(query.Query(), &result)
 	if err != nil {
 		return err
 	}
@@ -145,11 +146,11 @@ func (c client) DeleteApplication(appID string) error {
 	return nil
 }
 
-func (c client) SetApplicationLabel(applicationID, key, value string) error {
-	query := setApplicationLabel(applicationID, key, value)
+func (c DirectorClient) SetApplicationLabel(applicationID, key, value string) error {
+	query := fixtures.FixSetApplicationLabelRequest(applicationID, key, value)
 	var response SetLabelResponse
 
-	err := c.executeWithRetries(query, &response)
+	err := c.executeWithRetries(query.Query(), &response)
 	if err != nil {
 		return err
 	}
@@ -157,11 +158,11 @@ func (c client) SetApplicationLabel(applicationID, key, value string) error {
 	return nil
 }
 
-func (c client) DeleteApplicationLabel(applicationID, key string) error {
-	query := deleteApplicationLabel(applicationID, key)
+func (c DirectorClient) DeleteApplicationLabel(applicationID, key string) error {
+	query := fixtures.FixDeleteApplicationLabelRequest(applicationID, key)
 	var response SetLabelResponse
 
-	err := c.executeWithRetries(query, &response)
+	err := c.executeWithRetries(query.Query(), &response)
 	if err != nil {
 		return err
 	}
@@ -169,14 +170,14 @@ func (c client) DeleteApplicationLabel(applicationID, key string) error {
 	return nil
 }
 
-func (c client) CreateRuntime(in schema.RuntimeInput) (string, error) {
+func (c DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
 
 	runtimeGraphQL, err := c.graphqulizer.RuntimeInputToGQL(in)
 
 	var result RuntimeResponse
-	query := createRuntimeQuery(runtimeGraphQL)
+	query := fixtures.FixRegisterRuntimeRequest(runtimeGraphQL)
 
-	err = c.executeWithRetries(query, &result)
+	err = c.executeWithRetries(query.Query(), &result)
 	if err != nil {
 		return "", err
 	}
@@ -184,12 +185,12 @@ func (c client) CreateRuntime(in schema.RuntimeInput) (string, error) {
 	return result.Result.ID, nil
 }
 
-func (c client) DeleteRuntime(runtimeID string) error {
+func (c DirectorClient) DeleteRuntime(runtimeID string) error {
 
 	var result RuntimeResponse
-	query := deleteRuntimeQuery(runtimeID)
+	query := fixtures.FixUnregisterRuntimeRequest(runtimeID)
 
-	err := c.executeWithRetries(query, &result)
+	err := c.executeWithRetries(query.Query(), &result)
 	if err != nil {
 		return err
 	}
@@ -197,11 +198,11 @@ func (c client) DeleteRuntime(runtimeID string) error {
 	return nil
 }
 
-func (c client) SetRuntimeLabel(runtimeID, key, value string) error {
-	query := setRuntimeLabel(runtimeID, key, value)
+func (c DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
+	query := fixtures.FixSetRuntimeLabelRequest(runtimeID, key, value)
 	var response SetLabelResponse
 
-	err := c.executeWithRetries(query, &response)
+	err := c.executeWithRetries(query.Query(), &response)
 	if err != nil {
 		return err
 	}
@@ -209,23 +210,23 @@ func (c client) SetRuntimeLabel(runtimeID, key, value string) error {
 	return nil
 }
 
-func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
+func (c DirectorClient) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
 
 	{
-		query := setRuntimeLabel(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
+		query := fixtures.FixSetRuntimeLabelRequest(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
 		var response SetLabelResponse
 
-		err := c.executeWithRetries(query, &response)
+		err := c.executeWithRetries(query.Query(), &response)
 		if err != nil {
 			return err
 		}
 	}
 
 	{
-		query := setDefaultEventingQuery(runtimeID, appID)
+		query := fixtures.FixSetDefaultEventingForApplication(appID, runtimeID)
 		var response SetDefaultAppEventingResponse
 
-		err := c.executeWithRetries(query, &response)
+		err := c.executeWithRetries(query.Query(), &response)
 		if err != nil {
 			return err
 		}
@@ -234,12 +235,12 @@ func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL
 	return nil
 }
 
-func (c client) GetOneTimeTokenUrl(appID string) (string, string, error) {
+func (c DirectorClient) GetOneTimeTokenUrl(appID string) (string, string, error) {
 
-	query := getOneTimeTokenQuery(appID)
+	query := fixtures.FixRequestOneTimeTokenForApplication(appID)
 	var response OneTimeTokenResponse
 
-	err := c.executeWithRetries(query, &response)
+	err := c.executeWithRetries(query.Query(), &response)
 	if err != nil {
 		return "", "", err
 	}
@@ -249,9 +250,9 @@ func (c client) GetOneTimeTokenUrl(appID string) (string, string, error) {
 
 func getInternalTenantID(directorURL string, externalTenantID string) (string, error) {
 
-	query := getTenantsQuery()
+	query := fixtures.FixTenantsRequest()
 
-	req := gcli.NewRequest(query)
+	req := gcli.NewRequest(query.Query())
 
 	token, err := getToken(externalTenantID, []string{"tenant:read"})
 	if err != nil {
@@ -278,7 +279,7 @@ func getInternalTenantID(directorURL string, externalTenantID string) (string, e
 	return "", errors.New("Cannot find test tenant.")
 }
 
-func (c client) executeWithRetries(query string, res interface{}) error {
+func (c DirectorClient) executeWithRetries(query string, res interface{}) error {
 	return retry.Do(func() error {
 		req := gcli.NewRequest(query)
 		req.Header.Set("Tenant", c.tenant)

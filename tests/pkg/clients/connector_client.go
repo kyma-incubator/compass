@@ -1,14 +1,13 @@
-package connectivity_adapter
+package clients
 
 import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"net/http"
 	"net/http/httputil"
 	"testing"
-
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-adapter/director"
 
 	"github.com/stretchr/testify/require"
 )
@@ -23,19 +22,19 @@ const (
 )
 
 type ConnectorClient interface {
-	CreateToken(t *testing.T) TokenResponse
-	GetInfo(t *testing.T, url string) (*InfoResponse, *Error)
-	CreateCertChain(t *testing.T, csr, url string) (*CrtResponse, *Error)
+	CreateToken(t *testing.T) pkg.TokenResponse
+	GetInfo(t *testing.T, url string) (*pkg.InfoResponse, *pkg.Error)
+	CreateCertChain(t *testing.T, csr, url string) (*pkg.CrtResponse, *pkg.Error)
 }
 
 type connectorClient struct {
 	httpClient     *http.Client
-	directorClient director.Client
+	directorClient Client
 	appID          string
 	tenant         string
 }
 
-func NewConnectorClient(directorClient director.Client, appID, tenant string, skipVerify bool) ConnectorClient {
+func NewConnectorClient(directorClient Client, appID, tenant string, skipVerify bool) ConnectorClient {
 	client := NewHttpClient(skipVerify)
 
 	return connectorClient{
@@ -54,10 +53,10 @@ func NewHttpClient(skipVerify bool) *http.Client {
 	return client
 }
 
-func (cc connectorClient) CreateToken(t *testing.T) TokenResponse {
+func (cc connectorClient) CreateToken(t *testing.T) pkg.TokenResponse {
 	url, token, err := cc.directorClient.GetOneTimeTokenUrl(cc.appID)
 	require.NoError(t, err)
-	tokenResponse := TokenResponse{
+	tokenResponse := pkg.TokenResponse{
 		URL:   url,
 		Token: token,
 	}
@@ -65,7 +64,7 @@ func (cc connectorClient) CreateToken(t *testing.T) TokenResponse {
 	return tokenResponse
 }
 
-func (cc connectorClient) GetInfo(t *testing.T, url string) (*InfoResponse, *Error) {
+func (cc connectorClient) GetInfo(t *testing.T, url string) (*pkg.InfoResponse, *pkg.Error) {
 	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
 	response, err := cc.httpClient.Do(request)
@@ -81,7 +80,7 @@ func (cc connectorClient) GetInfo(t *testing.T, url string) (*InfoResponse, *Err
 
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
-	infoResponse := &InfoResponse{}
+	infoResponse := &pkg.InfoResponse{}
 
 	err = json.NewDecoder(response.Body).Decode(&infoResponse)
 	require.NoError(t, err)
@@ -89,8 +88,8 @@ func (cc connectorClient) GetInfo(t *testing.T, url string) (*InfoResponse, *Err
 	return infoResponse, nil
 }
 
-func (cc connectorClient) CreateCertChain(t *testing.T, csr, url string) (*CrtResponse, *Error) {
-	body, err := json.Marshal(CsrRequest{Csr: csr})
+func (cc connectorClient) CreateCertChain(t *testing.T, csr, url string) (*pkg.CrtResponse, *pkg.Error) {
+	body, err := json.Marshal(pkg.CsrRequest{Csr: csr})
 	require.NoError(t, err)
 
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
@@ -111,7 +110,7 @@ func (cc connectorClient) CreateCertChain(t *testing.T, csr, url string) (*CrtRe
 
 	require.Equal(t, http.StatusCreated, response.StatusCode)
 
-	crtResponse := &CrtResponse{}
+	crtResponse := &pkg.CrtResponse{}
 
 	err = json.NewDecoder(response.Body).Decode(&crtResponse)
 	require.NoError(t, err)
@@ -136,13 +135,13 @@ func requestWithTenantHeadersAndBody(t *testing.T, tenant, url, method string, r
 	return request
 }
 
-func parseErrorResponse(t *testing.T, response *http.Response) *Error {
+func parseErrorResponse(t *testing.T, response *http.Response) *pkg.Error {
 	logResponse(t, response)
-	errorResponse := ErrorResponse{}
+	errorResponse := pkg.ErrorResponse{}
 	err := json.NewDecoder(response.Body).Decode(&errorResponse)
 	require.NoError(t, err)
 
-	return &Error{response.StatusCode, errorResponse}
+	return &pkg.Error{response.StatusCode, errorResponse}
 }
 
 func logResponse(t *testing.T, resp *http.Response) {

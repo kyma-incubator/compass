@@ -1,14 +1,14 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}
-  namespace: kyma-system
+  name: {{ .Chart.Name }}-e2e-ord-service
   labels:
     app: {{ .Chart.Name }}-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: kyma-system
 spec:
   template:
     metadata:
@@ -27,10 +27,10 @@ spec:
       {{ end }}
       containers:
         - name: ord-service-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.ord_service.dir }}ord-service-tests:{{ .Values.global.images.tests.ord_service.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "/ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"

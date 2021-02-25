@@ -3,10 +3,9 @@ package tests
 import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"net/http"
 	"testing"
-
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector/connector"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -77,7 +76,7 @@ func TestHydrators(t *testing.T) {
 			configuration, err := connectorClient.Configuration(token.Token)
 			require.NoError(t, err)
 
-			certDataHeader := connector.CreateCertDataHeader(configuration.CertificateSigningRequestInfo.Subject, hash)
+			certDataHeader := clients.CreateCertDataHeader(configuration.CertificateSigningRequestInfo.Subject, hash)
 
 			headers := map[string][]string{
 				config.CertificateDataHeader: {certDataHeader},

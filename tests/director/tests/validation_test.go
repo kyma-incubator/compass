@@ -3,8 +3,10 @@ package tests
 import (
 	"context"
 	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"strings"
 	"testing"
 
@@ -30,13 +32,13 @@ func TestCreateRuntime_Validation(t *testing.T) {
 	invalidInput := graphql.RuntimeInput{
 		Name: "0invalid",
 	}
-	inputString, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.Runtime
-	request := pkg.FixRegisterRuntimeRequest(inputString)
+	request := fixtures.FixRegisterRuntimeRequest(inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -55,20 +57,20 @@ func TestUpdateRuntime_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	input := pkg.FixRuntimeInput("validation-test-rtm")
-	rtm := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
+	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
 
 	invalidInput := graphql.RuntimeInput{
 		Name: "0invalid",
 	}
-	inputString, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.Runtime
-	request := pkg.FixUpdateRuntimeRequest(rtm.ID, inputString)
+	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -90,13 +92,13 @@ func TestCreateLabelDefinition_Validation(t *testing.T) {
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}
-	inputString, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.Runtime
-	request := pkg.FixCreateLabelDefinitionRequest(inputString)
+	request := fixtures.FixCreateLabelDefinitionRequest(inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -116,18 +118,18 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
 	key := "test_validation_ld"
-	ld := pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, key, map[string]string{"type": "string"}, tenant)
-	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ld.Key, true, tenant)
+	ld := fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, key, map[string]string{"type": "string"}, tenant)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ld.Key, true, tenant)
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}
-	inputString, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.Runtime
-	request := pkg.FixUpdateLabelDefinitionRequest(inputString)
+	request := fixtures.FixUpdateLabelDefinitionRequest(inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -148,14 +150,14 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "validation-test-app", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "validation-test-app", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
-	request := pkg.FixSetApplicationLabelRequest(app.ID, strings.Repeat("x", 257), "")
+	request := fixtures.FixSetApplicationLabelRequest(app.ID, strings.Repeat("x", 257), "")
 	var result graphql.Label
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -174,15 +176,15 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	input := pkg.FixRuntimeInput("validation-test-rtm")
-	rtm := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
+	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
 
-	request := pkg.FixSetRuntimeLabelRequest(rtm.ID, strings.Repeat("x", 257), "")
+	request := fixtures.FixSetRuntimeLabelRequest(rtm.ID, strings.Repeat("x", 257), "")
 	var result graphql.Label
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -203,16 +205,16 @@ func TestCreateApplication_Validation(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app := pkg.FixSampleApplicationRegisterInputWithNameAndWebhooks("placeholder", "name")
+	app := fixtures.FixSampleApplicationRegisterInputWithNameAndWebhooks("placeholder", "name")
 	longDesc := strings.Repeat("a", 2001)
 	app.Description = &longDesc
 
-	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(app)
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(app)
 	require.NoError(t, err)
-	createRequest := pkg.FixRegisterApplicationRequest(appInputGQL)
+	createRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -231,17 +233,17 @@ func TestUpdateApplication_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-name", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-name", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 	longDesc := strings.Repeat("a", 2001)
 	appUpdate := graphql.ApplicationUpdateInput{ProviderName: str.Ptr("compass"), Description: &longDesc}
-	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationUpdateInputToGQL(appUpdate)
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(appUpdate)
 	require.NoError(t, err)
-	updateRequest := pkg.FixUpdateApplicationRequest(app.ID, appInputGQL)
+	updateRequest := fixtures.FixUpdateApplicationRequest(app.ID, appInputGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -260,19 +262,19 @@ func TestAddDocument_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-name", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
-	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
-	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-name", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	doc := pkg.FixDocumentInput(t)
+	doc := fixtures.FixDocumentInput(t)
 	doc.DisplayName = strings.Repeat("a", 129)
-	docInputGQL, err := pkg.Tc.Graphqlizer.DocumentInputToGQL(&doc)
+	docInputGQL, err := testctx.Tc.Graphqlizer.DocumentInputToGQL(&doc)
 	require.NoError(t, err)
-	createRequest := pkg.FixAddDocumentToBundleRequest(bndl.ID, docInputGQL)
+	createRequest := fixtures.FixAddDocumentToBundleRequest(bndl.ID, docInputGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -293,12 +295,12 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 	longDesc := strings.Repeat("a", 2001)
 	intSys.Description = &longDesc
 
-	isInputGQL, err := pkg.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSys)
+	isInputGQL, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSys)
 	require.NoError(t, err)
-	createRequest := pkg.FixRegisterIntegrationSystemRequest(isInputGQL)
+	createRequest := fixtures.FixRegisterIntegrationSystemRequest(isInputGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -317,16 +319,16 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
-	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 	longDesc := strings.Repeat("a", 2001)
 	intSysUpdate := graphql.IntegrationSystemInput{Name: "name", Description: &longDesc}
-	isUpdateGQL, err := pkg.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
+	isUpdateGQL, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
 	require.NoError(t, err)
-	update := pkg.FixUpdateIntegrationSystemRequest(intSys.ID, isUpdateGQL)
+	update := fixtures.FixUpdateIntegrationSystemRequest(intSys.ID, isUpdateGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, update, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, update, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -345,18 +347,18 @@ func TestAddAPI_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
-	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
-	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma project.io"}
-	apiGQL, err := pkg.Tc.Graphqlizer.APIDefinitionInputToGQL(api)
+	apiGQL, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(api)
 	require.NoError(t, err)
-	addAPIRequest := pkg.FixAddAPIToBundleRequest(bndl.ID, apiGQL)
+	addAPIRequest := fixtures.FixAddAPIToBundleRequest(bndl.ID, apiGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, addAPIRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addAPIRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -375,21 +377,21 @@ func TestUpdateAPI_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
-	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
-	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma-project.io"}
-	pkg.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenant, bndl.ID, api)
+	fixtures.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenant, bndl.ID, api)
 
 	api.TargetURL = "invalid URL"
-	apiGQL, err := pkg.Tc.Graphqlizer.APIDefinitionInputToGQL(api)
+	apiGQL, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(api)
 	require.NoError(t, err)
-	updateAPIRequest := pkg.FixUpdateAPIRequest(app.ID, apiGQL)
+	updateAPIRequest := fixtures.FixUpdateAPIRequest(app.ID, apiGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateAPIRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateAPIRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -408,20 +410,20 @@ func TestAddEventAPI_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
-	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
-	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	eventAPI := pkg.FixEventAPIDefinitionInput()
+	eventAPI := fixtures.FixEventAPIDefinitionInput()
 	longDesc := strings.Repeat("a", 2001)
 	eventAPI.Description = &longDesc
-	evenApiGQL, err := pkg.Tc.Graphqlizer.EventDefinitionInputToGQL(eventAPI)
+	evenApiGQL, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(eventAPI)
 	require.NoError(t, err)
-	addEventAPIRequest := pkg.FixAddEventAPIToBundleRequest(bndl.ID, evenApiGQL)
+	addEventAPIRequest := fixtures.FixAddEventAPIToBundleRequest(bndl.ID, evenApiGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, addEventAPIRequest, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addEventAPIRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -439,22 +441,22 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
-	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
-	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenant)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, app.ID, "bndl")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	eventAPIUpdate := pkg.FixEventAPIDefinitionInput()
-	eventAPI := pkg.AddEventToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, eventAPIUpdate)
+	eventAPIUpdate := fixtures.FixEventAPIDefinitionInput()
+	eventAPI := fixtures.AddEventToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, eventAPIUpdate)
 
 	longDesc := strings.Repeat("a", 2001)
 	eventAPIUpdate.Description = &longDesc
-	evenApiGQL, err := pkg.Tc.Graphqlizer.EventDefinitionInputToGQL(eventAPIUpdate)
+	evenApiGQL, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(eventAPIUpdate)
 	require.NoError(t, err)
-	updateEventAPI := pkg.FixUpdateEventAPIRequest(eventAPI.ID, evenApiGQL)
+	updateEventAPI := fixtures.FixUpdateEventAPIRequest(eventAPI.ID, evenApiGQL)
 
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateEventAPI, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateEventAPI, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -473,20 +475,20 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	appCreateInput := pkg.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
+	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
 		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
 	}
-	inputString, err := pkg.Tc.Graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.ApplicationTemplate
-	request := pkg.FixCreateApplicationTemplateRequest(inputString)
+	request := fixtures.FixCreateApplicationTemplateRequest(inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -505,24 +507,24 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	input := pkg.FixApplicationTemplate("validation-test-app-tpl")
-	appTpl := pkg.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, input)
-	defer pkg.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTpl.ID)
+	input := fixtures.FixApplicationTemplate("validation-test-app-tpl")
+	appTpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, input)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTpl.ID)
 
-	appCreateInput := pkg.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
+	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
 		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
 	}
-	inputString, err := pkg.Tc.Graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.ApplicationTemplate
-	request := pkg.FixUpdateApplicationTemplateRequest(appTpl.ID, inputString)
+	request := fixtures.FixUpdateApplicationTemplateRequest(appTpl.ID, inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -541,16 +543,16 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	input := pkg.FixApplicationTemplate("validation-app")
-	tmpl := pkg.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, input)
-	defer pkg.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, tmpl.ID)
+	input := fixtures.FixApplicationTemplate("validation-app")
+	tmpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, input)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, tmpl.ID)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{}
-	appFromTmplGQL, err := pkg.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
-	registerAppFromTmpl := pkg.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	registerAppFromTmpl := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 	//WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, registerAppFromTmpl, nil)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerAppFromTmpl, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -570,13 +572,13 @@ func TestAddBundle_Validation(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.BundleCreateInput{}
-	inputString, err := pkg.Tc.Graphqlizer.BundleCreateInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.BundleExt
-	request := pkg.FixAddBundleRequest("", inputString)
+	request := fixtures.FixAddBundleRequest("", inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -594,13 +596,13 @@ func TestUpdateBundle_Validation(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.BundleUpdateInput{}
-	inputString, err := pkg.Tc.Graphqlizer.BundleUpdateInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.BundleUpdateInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.BundleExt
-	request := pkg.FixUpdateBundleRequest("", inputString)
+	request := fixtures.FixUpdateBundleRequest("", inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -618,13 +620,13 @@ func TestSetBundleInstanceAuth_Validation(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.BundleInstanceAuthSetInput{}
-	inputString, err := pkg.Tc.Graphqlizer.BundleInstanceAuthSetInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.BundleInstanceAuthSetInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.BundleInstanceAuth
-	request := pkg.FixSetBundleInstanceAuthRequest("", inputString)
+	request := fixtures.FixSetBundleInstanceAuthRequest("", inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -642,13 +644,13 @@ func TestAddAPIDefinitionToBundle_Validation(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.APIDefinitionInput{}
-	inputString, err := pkg.Tc.Graphqlizer.APIDefinitionInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.APIDefinitionExt
-	request := pkg.FixAddAPIToBundleRequest("", inputString)
+	request := fixtures.FixAddAPIToBundleRequest("", inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -666,13 +668,13 @@ func TestAddEventDefinitionToBundle_Validation(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.EventDefinitionInput{}
-	inputString, err := pkg.Tc.Graphqlizer.EventDefinitionInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.EventAPIDefinitionExt
-	request := pkg.FixAddEventAPIToBundleRequest("", inputString)
+	request := fixtures.FixAddEventAPIToBundleRequest("", inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -692,13 +694,13 @@ func TestAddDocumentToBundle_Validation(t *testing.T) {
 	invalidInput := graphql.DocumentInput{
 		Format: graphql.DocumentFormatMarkdown,
 	}
-	inputString, err := pkg.Tc.Graphqlizer.DocumentInputToGQL(&invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.DocumentInputToGQL(&invalidInput)
 	require.NoError(t, err)
 	var result graphql.DocumentExt
-	request := pkg.FixAddDocumentToBundleRequest("", inputString)
+	request := fixtures.FixAddDocumentToBundleRequest("", inputString)
 
 	// WHEN
-	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)

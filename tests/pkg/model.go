@@ -1,4 +1,4 @@
-package connectivity_adapter
+package pkg
 
 import (
 	"crypto/x509"

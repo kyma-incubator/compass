@@ -72,7 +72,7 @@ type ViperEnv struct {
 
 // EmptyFlagSet creates an empty flag set and adds the default set of flags to it
 func EmptyFlagSet() *pflag.FlagSet {
-	set := pflag.NewFlagSet("Configuration Flags", pflag.ExitOnError)
+	set := pflag.NewFlagSet("configuration Flags", pflag.ExitOnError)
 	set.AddFlagSet(pflag.CommandLine)
 	return set
 }
@@ -189,7 +189,7 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 	onConfigChangeHandlers = append(onConfigChangeHandlers, dynamicLogHandler)
 
 	v.Viper.OnConfigChange(func(event fsnotify.Event) {
-		log.C(ctx).Warnf("Configuration file was changed by event %s. Triggering on config changed handlers...", event.String())
+		log.C(ctx).Warnf("configuration file was changed by event %s. Triggering on config changed handlers...", event.String())
 		for _, handler := range onConfigChangeHandlers {
 			handler(v)(event)
 		}

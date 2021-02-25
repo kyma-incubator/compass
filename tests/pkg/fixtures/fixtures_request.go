@@ -1,4 +1,4 @@
-package pkg
+package fixtures
 
 import (
 	"encoding/base64"
@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
@@ -19,7 +21,7 @@ import (
 )
 
 const (
-	auditlogTokenEndpoint        = "audit-log/v2/oauth/Token"
+	auditlogTokenEndpoint        = "audit-log/v2/oauth/token"
 	auditlogSearchEndpoint       = "audit-log/v2/configuration-changes/search"
 	auditlogDeleteEndpointFormat = "audit-log/v2/configuration-changes/%s"
 
@@ -195,11 +197,11 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 func FixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: CreateApplicationTemplate(in: %s) {
+			result: createApplicationTemplate(in: %s) {
 					%s
 				}
 			}`,
-			applicationTemplateInGQL, Tc.GQLFieldsProvider.ForApplicationTemplate()))
+			applicationTemplateInGQL, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func FixApplicationRegisterInputWithBundles(t *testing.T) graphql.ApplicationRegisterInput {
@@ -224,7 +226,7 @@ func FixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			applicationInGQL, Tc.GQLFieldsProvider.ForApplication()))
+			applicationInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixGetApplicationRequest(id string) *gcli.Request {
@@ -233,7 +235,7 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 			result: application(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForApplication()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
@@ -242,16 +244,16 @@ func FixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
   				result: updateApplication(id: "%s", in: %s) {
     					%s
 					}
-				}`, id, updateInputGQL, Tc.GQLFieldsProvider.ForApplication()))
+				}`, id, updateInputGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixUnregisterApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		UnregisterApplication(id: "%s") {
+		unregisterApplication(id: "%s") {
 			%s
 		}	
-	}`, id, Tc.GQLFieldsProvider.ForApplication()))
+	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixApplicationTemplateRequest(id string) *gcli.Request {
@@ -260,7 +262,7 @@ func FixApplicationTemplateRequest(id string) *gcli.Request {
 			result: applicationTemplate(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForApplicationTemplate()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func FixUpdateApplicationTemplateRequest(id, updateInputGQL string) *gcli.Request {
@@ -269,16 +271,16 @@ func FixUpdateApplicationTemplateRequest(id, updateInputGQL string) *gcli.Reques
   				result: updateApplicationTemplate(id: "%s", in: %s) {
     					%s
 					}
-				}`, id, updateInputGQL, Tc.GQLFieldsProvider.ForApplicationTemplate()))
+				}`, id, updateInputGQL, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func FixDeleteApplicationTemplateRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: DeleteApplicationTemplate(id: "%s") {
+			result: deleteApplicationTemplate(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForApplicationTemplate()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func FixRequestClientCredentialsForApplication(id string) *gcli.Request {
@@ -287,7 +289,7 @@ func FixRequestClientCredentialsForApplication(id string) *gcli.Request {
 			result: requestClientCredentialsForApplication(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForSystemAuth()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func FixRequestOneTimeTokenForApplication(id string) *gcli.Request {
@@ -296,7 +298,7 @@ func FixRequestOneTimeTokenForApplication(id string) *gcli.Request {
 			result: requestOneTimeTokenForApplication(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForOneTimeTokenForApplication()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForOneTimeTokenForApplication()))
 }
 
 func FixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
@@ -305,7 +307,7 @@ func FixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
   			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") { 
 					%s 
 				}
-			}`, runtimeID, 4, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForApplication())))
+			}`, runtimeID, 4, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
 func FixGetApplicationsRequestWithPagination() *gcli.Request {
@@ -315,7 +317,7 @@ func FixGetApplicationsRequestWithPagination() *gcli.Request {
 						%s
 					}
 				}`,
-			Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForApplication())))
+			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
 func FixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
@@ -325,7 +327,7 @@ func FixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, 
 						%s
 					}
 				}`,
-			labelFilterInGQL, first, after, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForApplication())))
+			labelFilterInGQL, first, after, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
 func FixApplicationsPageableRequest(first int, after string) *gcli.Request {
@@ -335,7 +337,7 @@ func FixApplicationsPageableRequest(first int, after string) *gcli.Request {
 						%s
 					}
 				}`,
-			first, after, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForApplication())))
+			first, after, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
 func FixGetApplicationTemplatesWithPagination(first int, after string) *gcli.Request {
@@ -345,7 +347,7 @@ func FixGetApplicationTemplatesWithPagination(first int, after string) *gcli.Req
 						%s
 					}
 				}`,
-			first, after, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForApplicationTemplate())))
+			first, after, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplicationTemplate())))
 }
 
 func FixDeleteSystemAuthForApplicationRequest(authID string) *gcli.Request {
@@ -354,7 +356,7 @@ func FixDeleteSystemAuthForApplicationRequest(authID string) *gcli.Request {
 			result: deleteSystemAuthForApplication(authID: "%s") {
 					%s
 				}
-			}`, authID, Tc.GQLFieldsProvider.ForSystemAuth()))
+			}`, authID, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func FixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string) *gcli.Request {
@@ -364,7 +366,7 @@ func FixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string
 					%s
 				}
 			}`,
-			applicationFromTemplateInputInGQL, Tc.GQLFieldsProvider.ForApplication()))
+			applicationFromTemplateInputInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.Request {
@@ -374,7 +376,7 @@ func FixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.R
 					%s
 				}
 			}`,
-			runtimeID, appID, Tc.GQLFieldsProvider.ForEventingConfiguration()))
+			runtimeID, appID, testctx.Tc.GQLFieldsProvider.ForEventingConfiguration()))
 }
 
 func FixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
@@ -384,7 +386,7 @@ func FixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 						%s
 					}
 				}`,
-			appID, Tc.GQLFieldsProvider.ForEventingConfiguration()))
+			appID, testctx.Tc.GQLFieldsProvider.ForEventingConfiguration()))
 }
 
 //API
@@ -395,7 +397,7 @@ func FixUpdateAPIRequest(apiID, APIInputGQL string) *gcli.Request {
 				%s
 			}
 		}
-		`, apiID, APIInputGQL, Tc.GQLFieldsProvider.ForAPIDefinition()))
+		`, apiID, APIInputGQL, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()))
 }
 
 func FixDeleteAPIRequest(apiID string) *gcli.Request {
@@ -414,7 +416,7 @@ func FixUpdateEventAPIRequest(eventAPIID, eventAPIInputGQL string) *gcli.Request
 				%s
 			}
 		}
-		`, eventAPIID, eventAPIInputGQL, Tc.GQLFieldsProvider.ForEventDefinition()))
+		`, eventAPIID, eventAPIInputGQL, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
 func FixDeleteEventAPIRequest(eventAPIID string) *gcli.Request {
@@ -476,7 +478,7 @@ func FixAPIDefinitionInBundleRequest(appID, bndlID, apiID string) *gcli.Request 
 						}					
 					}
 				}
-			}`, appID, bndlID, apiID, Tc.GQLFieldsProvider.ForAPIDefinition()))
+			}`, appID, bndlID, apiID, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()))
 }
 
 func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Request {
@@ -489,7 +491,7 @@ func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Requ
 						}					
 					}
 				}
-			}`, appID, bndlID, eventID, Tc.GQLFieldsProvider.ForEventDefinition()))
+			}`, appID, bndlID, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
 //API Spec
@@ -500,7 +502,7 @@ func FixRefetchAPISpecRequest(id string) *gcli.Request {
 						%s
 					}
 				}`,
-			id, Tc.GQLFieldsProvider.ForApiSpec()))
+			id, testctx.Tc.GQLFieldsProvider.ForApiSpec()))
 }
 
 // External services mock
@@ -567,7 +569,7 @@ func FixAddAPIToBundleRequest(bundleID, APIInputGQL string) *gcli.Request {
 				%s
 			}
 		}
-		`, bundleID, APIInputGQL, Tc.GQLFieldsProvider.ForAPIDefinition()))
+		`, bundleID, APIInputGQL, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()))
 }
 
 func FixBundleInstanceAuthRequestInput(ctx, inputParams *graphql.JSON) graphql.BundleInstanceAuthRequestInput {
@@ -588,7 +590,7 @@ func FixAddBundleRequest(appID, bundleCreateInput string) *gcli.Request {
 		fmt.Sprintf(`mutation {
 			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, bundleCreateInput, Tc.GQLFieldsProvider.ForBundle()))
+			}}`, appID, bundleCreateInput, testctx.Tc.GQLFieldsProvider.ForBundle()))
 }
 
 func FixUpdateBundleRequest(bundleID, bndlUpdateInput string) *gcli.Request {
@@ -597,16 +599,16 @@ func FixUpdateBundleRequest(bundleID, bndlUpdateInput string) *gcli.Request {
 			result: updateBundle(id: "%s", in: %s) {
 				%s
 			}
-		}`, bundleID, bndlUpdateInput, Tc.GQLFieldsProvider.ForBundle()))
+		}`, bundleID, bndlUpdateInput, testctx.Tc.GQLFieldsProvider.ForBundle()))
 }
 
 func FixDeleteBundleRequest(bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: DeleteBundle(id: "%s") {
+			result: deleteBundle(id: "%s") {
 				%s
 			}
-		}`, bundleID, Tc.GQLFieldsProvider.ForBundle()))
+		}`, bundleID, testctx.Tc.GQLFieldsProvider.ForBundle()))
 }
 
 func FixBundleRequest(applicationID string, bundleID string) *gcli.Request {
@@ -615,8 +617,8 @@ func FixBundleRequest(applicationID string, bundleID string) *gcli.Request {
 			result: application(id: "%s") {
 				%s
 				}
-			}`, applicationID, Tc.GQLFieldsProvider.ForApplication(graphqlizer.FieldCtx{
-			"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`, bundleID, Tc.GQLFieldsProvider.ForBundle()),
+			}`, applicationID, testctx.Tc.GQLFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`, bundleID, testctx.Tc.GQLFieldsProvider.ForBundle()),
 		})))
 }
 
@@ -626,7 +628,7 @@ func FixAddDocumentToBundleRequest(bundleID, documentInputInGQL string) *gcli.Re
 		result: addDocumentToBundle(bundleID: "%s", in: %s) {
  				%s
 			}				
-		}`, bundleID, documentInputInGQL, Tc.GQLFieldsProvider.ForDocument()))
+		}`, bundleID, documentInputInGQL, testctx.Tc.GQLFieldsProvider.ForDocument()))
 }
 
 func FixAddEventAPIToBundleRequest(bndlID, eventAPIInputGQL string) *gcli.Request {
@@ -636,7 +638,7 @@ func FixAddEventAPIToBundleRequest(bndlID, eventAPIInputGQL string) *gcli.Reques
 				%s
 			}
 		}
-		`, bndlID, eventAPIInputGQL, Tc.GQLFieldsProvider.ForEventDefinition()))
+		`, bndlID, eventAPIInputGQL, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
 func FixBundleCreateInputWithRelatedObjects(t *testing.T, name string) graphql.BundleCreateInput {
@@ -755,7 +757,7 @@ func FixDocumentInBundleRequest(appID, bndlID, docID string) *gcli.Request {
 						}					
 					}
 				}
-			}`, appID, bndlID, docID, Tc.GQLFieldsProvider.ForDocument()))
+			}`, appID, bndlID, docID, testctx.Tc.GQLFieldsProvider.ForDocument()))
 }
 
 func FixAPIDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
@@ -768,7 +770,7 @@ func FixAPIDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
 						}					
 					}
 				}
-			}`, appID, bndlID, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForAPIDefinition())))
+			}`, appID, bndlID, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForAPIDefinition())))
 
 }
 
@@ -782,7 +784,7 @@ func FixEventDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
 						}					
 					}
 				}
-			}`, appID, bndlID, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForEventDefinition())))
+			}`, appID, bndlID, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForEventDefinition())))
 }
 
 func FixDocumentsInBundleRequest(appID, bndlID string) *gcli.Request {
@@ -795,7 +797,7 @@ func FixDocumentsInBundleRequest(appID, bndlID string) *gcli.Request {
 						}					
 					}
 				}
-			}`, appID, bndlID, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForDocument())))
+			}`, appID, bndlID, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForDocument())))
 }
 
 func FixSetBundleInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
@@ -804,7 +806,7 @@ func FixSetBundleInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request 
 			result: setBundleInstanceAuth(authID: "%s", in: %s) {
 				%s
 			}
-		}`, authID, apiAuthInput, Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+		}`, authID, apiAuthInput, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func FixDeleteBundleInstanceAuthRequest(authID string) *gcli.Request {
@@ -813,7 +815,7 @@ func FixDeleteBundleInstanceAuthRequest(authID string) *gcli.Request {
 			result: deleteBundleInstanceAuth(authID: "%s") {
 				%s
 			}
-		}`, authID, Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+		}`, authID, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func FixRequestBundleInstanceAuthCreationRequest(bundleID, bndlInstanceAuthRequestInput string) *gcli.Request {
@@ -822,7 +824,7 @@ func FixRequestBundleInstanceAuthCreationRequest(bundleID, bndlInstanceAuthReque
 			result: requestBundleInstanceAuthCreation(bundleID: "%s", in: %s) {
 				%s
 			}
-		}`, bundleID, bndlInstanceAuthRequestInput, Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+		}`, bundleID, bndlInstanceAuthRequestInput, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func FixRequestBundleInstanceAuthDeletionRequest(authID string) *gcli.Request {
@@ -831,7 +833,7 @@ func FixRequestBundleInstanceAuthDeletionRequest(authID string) *gcli.Request {
 			result: requestBundleInstanceAuthDeletion(authID: "%s") {
 				%s
 			}
-		}`, authID, Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+		}`, authID, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func FixBundleByInstanceAuthIDRequest(packageInstanceAuthID string) *gcli.Request {
@@ -840,7 +842,7 @@ func FixBundleByInstanceAuthIDRequest(packageInstanceAuthID string) *gcli.Reques
 			result: packageByInstanceAuth(authID: "%s") {
 				%s
 				}
-			}`, packageInstanceAuthID, Tc.GQLFieldsProvider.ForBundle()))
+			}`, packageInstanceAuthID, testctx.Tc.GQLFieldsProvider.ForBundle()))
 }
 
 func FixGetBundleWithInstanceAuthRequest(applicationID string, bundleID string, instanceAuthID string) *gcli.Request {
@@ -850,13 +852,13 @@ func FixGetBundleWithInstanceAuthRequest(applicationID string, bundleID string, 
 				%s
 				}
 			}`, applicationID,
-			Tc.GQLFieldsProvider.ForApplication(
+			testctx.Tc.GQLFieldsProvider.ForApplication(
 				graphqlizer.FieldCtx{"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`,
 					bundleID,
-					Tc.GQLFieldsProvider.ForBundle(graphqlizer.FieldCtx{
+					testctx.Tc.GQLFieldsProvider.ForBundle(graphqlizer.FieldCtx{
 						"Bundle.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
 							instanceAuthID,
-							Tc.GQLFieldsProvider.ForBundleInstanceAuth()),
+							testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()),
 					})),
 				})))
 }
@@ -867,7 +869,7 @@ func FixGetBundlesRequest(applicationID string) *gcli.Request {
 			result: application(id: "%s") {
 				%s
 				}
-			}`, applicationID, Tc.GQLFieldsProvider.ForApplication()))
+			}`, applicationID, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixBundleInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
@@ -876,7 +878,7 @@ func FixBundleInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
 			result: bundleInstanceAuth(id: "%s") {
 					%s
 				}
-			}`, packageInstanceAuthID, Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+			}`, packageInstanceAuthID, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func FixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *graphql.JSON) {
@@ -890,8 +892,8 @@ func FixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *g
 	}
 	var inputParamsData interface{} = inputParamsPayload
 
-	authCtx := MarshalJSON(t, authCtxData)
-	inputParams := MarshalJSON(t, inputParamsData)
+	authCtx := pkg.MarshalJSON(t, authCtxData)
+	inputParams := pkg.MarshalJSON(t, inputParamsData)
 
 	return authCtx, inputParams
 }
@@ -900,11 +902,11 @@ func FixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *g
 func FixRegisterIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: RegisterIntegrationSystem(in: %s) {
+			result: registerIntegrationSystem(in: %s) {
 					%s
 				}
 			}`,
-			integrationSystemInGQL, Tc.GQLFieldsProvider.ForIntegrationSystem()))
+			integrationSystemInGQL, testctx.Tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func FixGetIntegrationSystemRequest(id string) *gcli.Request {
@@ -914,25 +916,25 @@ func FixGetIntegrationSystemRequest(id string) *gcli.Request {
 					%s
 				}
 			}`,
-			id, Tc.GQLFieldsProvider.ForIntegrationSystem()))
+			id, testctx.Tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func FixRequestClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: RequestClientCredentialsForIntegrationSystem(id: "%s") {
+			result: requestClientCredentialsForIntegrationSystem(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForSystemAuth()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func FixUnregisterIntegrationSystem(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: UnregisterIntegrationSystem(id: "%s") {
+			result: unregisterIntegrationSystem(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForIntegrationSystem()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func FixDeleteSystemAuthForIntegrationSystemRequest(authID string) *gcli.Request {
@@ -941,7 +943,7 @@ func FixDeleteSystemAuthForIntegrationSystemRequest(authID string) *gcli.Request
 			result: deleteSystemAuthForIntegrationSystem(authID: "%s") {
 					%s
 				}
-			}`, authID, Tc.GQLFieldsProvider.ForSystemAuth()))
+			}`, authID, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func FixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.Request {
@@ -950,7 +952,7 @@ func FixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.
 			result: updateIntegrationSystem(id: "%s", in: %s) {
 					%s
 				}
-			}`, id, integrationSystemInGQL, Tc.GQLFieldsProvider.ForIntegrationSystem()))
+			}`, id, integrationSystemInGQL, testctx.Tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func FixGetIntegrationSystemsRequestWithPagination(first int, after string) *gcli.Request {
@@ -960,7 +962,7 @@ func FixGetIntegrationSystemsRequestWithPagination(first int, after string) *gcl
 						%s
 					}
 				}`,
-			first, after, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForIntegrationSystem())))
+			first, after, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForIntegrationSystem())))
 }
 
 //Runtime
@@ -979,16 +981,16 @@ func FixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			runtimeInGQL, Tc.GQLFieldsProvider.ForRuntime()))
+			runtimeInGQL, testctx.Tc.GQLFieldsProvider.ForRuntime()))
 }
 
 func FixRequestClientCredentialsForRuntime(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: RequestClientCredentialsForRuntime(id: "%s") {
+			result: requestClientCredentialsForRuntime(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForSystemAuth()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func FixUnregisterRuntimeRequest(id string) *gcli.Request {
@@ -996,7 +998,7 @@ func FixUnregisterRuntimeRequest(id string) *gcli.Request {
 		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				%s
 			}
-		}`, id, Tc.GQLFieldsProvider.ForRuntime()))
+		}`, id, testctx.Tc.GQLFieldsProvider.ForRuntime()))
 }
 
 func FixGetRuntimeRequest(id string) *gcli.Request {
@@ -1004,7 +1006,7 @@ func FixGetRuntimeRequest(id string) *gcli.Request {
 		fmt.Sprintf(`query {
 			result: runtime(id: "%s") {
 					%s
-				}}`, id, Tc.GQLFieldsProvider.ForRuntime()))
+				}}`, id, testctx.Tc.GQLFieldsProvider.ForRuntime()))
 }
 
 func FixRequestOneTimeTokenForRuntime(id string) *gcli.Request {
@@ -1013,7 +1015,7 @@ func FixRequestOneTimeTokenForRuntime(id string) *gcli.Request {
 			result: requestOneTimeTokenForRuntime(id: "%s") {
 					%s
 				}
-			}`, id, Tc.GQLFieldsProvider.ForOneTimeTokenForRuntime()))
+			}`, id, testctx.Tc.GQLFieldsProvider.ForOneTimeTokenForRuntime()))
 }
 
 func FixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
@@ -1023,7 +1025,7 @@ func FixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			id, updateInputInGQL, Tc.GQLFieldsProvider.ForRuntime()))
+			id, updateInputInGQL, testctx.Tc.GQLFieldsProvider.ForRuntime()))
 }
 
 func FixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Request {
@@ -1032,7 +1034,7 @@ func FixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Requ
 			result: runtimes(first:%d, after:"%s") {
 					%s
 				}
-			}`, after, cursor, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForRuntime())))
+			}`, after, cursor, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForRuntime())))
 }
 
 func FixGetRuntimesRequestWithPagination() *gcli.Request {
@@ -1042,7 +1044,7 @@ func FixGetRuntimesRequestWithPagination() *gcli.Request {
 						%s
 					}
 				}`,
-			Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForRuntime())))
+			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForRuntime())))
 }
 
 func FixRuntimesFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
@@ -1052,7 +1054,7 @@ func FixRuntimesFilteredPageableRequest(labelFilterInGQL string, first int, afte
 						%s
 					}
 				}`,
-			labelFilterInGQL, first, after, Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForRuntime())))
+			labelFilterInGQL, first, after, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForRuntime())))
 }
 
 func FixDeleteSystemAuthForRuntimeRequest(authID string) *gcli.Request {
@@ -1061,7 +1063,7 @@ func FixDeleteSystemAuthForRuntimeRequest(authID string) *gcli.Request {
 			result: deleteSystemAuthForRuntime(authID: "%s") {
 					%s
 				}
-			}`, authID, Tc.GQLFieldsProvider.ForSystemAuth()))
+			}`, authID, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 // Viewer
@@ -1072,7 +1074,7 @@ func FixGetViewerRequest() *gcli.Request {
 					%s
 				}
 			}`,
-			Tc.GQLFieldsProvider.ForViewer()))
+			testctx.Tc.GQLFieldsProvider.ForViewer()))
 }
 
 //Label
@@ -1083,7 +1085,7 @@ func FixCreateLabelDefinitionRequest(labelDefinitionInputGQL string) *gcli.Reque
 						%s
 					}
 				}`,
-			labelDefinitionInputGQL, Tc.GQLFieldsProvider.ForLabelDefinition()))
+			labelDefinitionInputGQL, testctx.Tc.GQLFieldsProvider.ForLabelDefinition()))
 }
 
 func FixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
@@ -1092,7 +1094,7 @@ func FixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
 				result: updateLabelDefinition(in: %s) {
 						%s
 					}
-				}`, ldInputGQL, Tc.GQLFieldsProvider.ForLabelDefinition()))
+				}`, ldInputGQL, testctx.Tc.GQLFieldsProvider.ForLabelDefinition()))
 }
 
 func FixSetApplicationLabelRequest(appID, labelKey string, labelValue interface{}) *gcli.Request {
@@ -1108,7 +1110,7 @@ func FixSetApplicationLabelRequest(appID, labelKey string, labelValue interface{
 					%s
 				}
 			}`,
-			appID, labelKey, value, Tc.GQLFieldsProvider.ForLabel()))
+			appID, labelKey, value, testctx.Tc.GQLFieldsProvider.ForLabel()))
 }
 
 func FixSetRuntimeLabelRequest(runtimeID, labelKey string, labelValue interface{}) *gcli.Request {
@@ -1123,7 +1125,7 @@ func FixSetRuntimeLabelRequest(runtimeID, labelKey string, labelValue interface{
 				result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
 						%s
 					}
-				}`, runtimeID, labelKey, value, Tc.GQLFieldsProvider.ForLabel()))
+				}`, runtimeID, labelKey, value, testctx.Tc.GQLFieldsProvider.ForLabel()))
 }
 
 func FixLabelDefinitionRequest(labelKey string) *gcli.Request {
@@ -1133,7 +1135,7 @@ func FixLabelDefinitionRequest(labelKey string) *gcli.Request {
 						%s
 					}
 				}`,
-			labelKey, Tc.GQLFieldsProvider.ForLabelDefinition()))
+			labelKey, testctx.Tc.GQLFieldsProvider.ForLabelDefinition()))
 }
 
 func FixLabelDefinitionsRequest() *gcli.Request {
@@ -1152,7 +1154,7 @@ func FixDeleteLabelDefinitionRequest(labelDefinitionKey string, deleteRelatedLab
 			result: deleteLabelDefinition(key: "%s", deleteRelatedLabels: %t) {
 					%s
 				}
-			}`, labelDefinitionKey, deleteRelatedLabels, Tc.GQLFieldsProvider.ForLabelDefinition()))
+			}`, labelDefinitionKey, deleteRelatedLabels, testctx.Tc.GQLFieldsProvider.ForLabelDefinition()))
 }
 
 func FixDeleteRuntimeLabelRequest(runtimeID, labelKey string) *gcli.Request {
@@ -1161,7 +1163,7 @@ func FixDeleteRuntimeLabelRequest(runtimeID, labelKey string) *gcli.Request {
 			result: deleteRuntimeLabel(runtimeID: "%s", key: "%s") {
 					%s
 				}
-			}`, runtimeID, labelKey, Tc.GQLFieldsProvider.ForLabel()))
+			}`, runtimeID, labelKey, testctx.Tc.GQLFieldsProvider.ForLabel()))
 }
 
 func FixDeleteApplicationLabelRequest(applicationID, labelKey string) *gcli.Request {
@@ -1170,7 +1172,7 @@ func FixDeleteApplicationLabelRequest(applicationID, labelKey string) *gcli.Requ
 			result: deleteApplicationLabel(applicationID: "%s", key: "%s") {
 					%s
 				}
-			}`, applicationID, labelKey, Tc.GQLFieldsProvider.ForLabel()))
+			}`, applicationID, labelKey, testctx.Tc.GQLFieldsProvider.ForLabel()))
 }
 
 //Document
@@ -1191,7 +1193,7 @@ func FixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			applicationID, webhookInGQL, Tc.GQLFieldsProvider.ForWebhooks()))
+			applicationID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
 
 func FixDeleteWebhookRequest(webhookID string) *gcli.Request {
@@ -1200,7 +1202,7 @@ func FixDeleteWebhookRequest(webhookID string) *gcli.Request {
 			result: deleteWebhook(webhookID: "%s") {
 				%s
 			}
-		}`, webhookID, Tc.GQLFieldsProvider.ForWebhooks()))
+		}`, webhookID, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
 
 func FixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
@@ -1210,7 +1212,7 @@ func FixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			webhookID, webhookInGQL, Tc.GQLFieldsProvider.ForWebhooks()))
+			webhookID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
 
 func FixTenantsRequest() *gcli.Request {
@@ -1219,7 +1221,7 @@ func FixTenantsRequest() *gcli.Request {
 				result: tenants {
 						%s
 					}
-				}`, Tc.GQLFieldsProvider.ForTenant()))
+				}`, testctx.Tc.GQLFieldsProvider.ForTenant()))
 }
 
 //Scenario Assignment
@@ -1240,7 +1242,7 @@ func FixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInpu
 						%s
 					}
 				}`,
-			automaticScenarioAssignmentInput, Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
+			automaticScenarioAssignmentInput, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
 func FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario string) *gcli.Request {
@@ -1250,7 +1252,7 @@ func FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario string) *gc
                   %s
                }
             }`,
-			scenario, Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
+			scenario, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
 func FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput string) *gcli.Request {
@@ -1260,7 +1262,7 @@ func FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput 
                   %s
                }
             }`,
-			labelSelectorInput, Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
+			labelSelectorInput, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
 func FixAutomaticScenarioAssignmentsRequest() *gcli.Request {
@@ -1270,7 +1272,7 @@ func FixAutomaticScenarioAssignmentsRequest() *gcli.Request {
 						%s
 					}
 				}`,
-			Tc.GQLFieldsProvider.Page(Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment())))
+			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment())))
 }
 
 func FixAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput string) *gcli.Request {
@@ -1280,7 +1282,7 @@ func FixAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput string
 						%s
 					}
 				}`,
-			labelSelectorInput, Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
+			labelSelectorInput, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
 func FixAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli.Request {
@@ -1290,7 +1292,7 @@ func FixAutomaticScenarioAssignmentForScenarioRequest(scenarioName string) *gcli
 						%s
 					}
 				}`,
-			scenarioName, Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
+			scenarioName, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
 func removeDoubleQuotesFromJSONKeys(in string) string {

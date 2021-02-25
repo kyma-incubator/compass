@@ -1,14 +1,15 @@
-package testkit_connector
+package pkg
 
 import (
+	"context"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 )
 
 type Manager interface {
-	Get(name string, options metav1.GetOptions) (*v1.ConfigMap, error)
-	Update(configmap *v1.ConfigMap) (*v1.ConfigMap, error)
+	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.ConfigMap, error)
+	Update(ctx context.Context, configMap *v1.ConfigMap, opts metav1.UpdateOptions) (*v1.ConfigMap, error)
 }
 
 type ConfigmapCleaner struct {
@@ -24,7 +25,7 @@ func NewConfigMapCleaner(configListManager Manager, configMapName string) *Confi
 }
 
 func (c *ConfigmapCleaner) CleanRevocationList(hash string) error {
-	configMap, err := c.configListManager.Get(c.configMapName, metav1.GetOptions{})
+	configMap, err := c.configListManager.Get(context.Background(), c.configMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -39,7 +40,7 @@ func (c *ConfigmapCleaner) CleanRevocationList(hash string) error {
 	updatedConfigMap.Data = revokedCerts
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		_, err = c.configListManager.Update(updatedConfigMap)
+		_, err = c.configListManager.Update(context.Background(), updatedConfigMap, metav1.UpdateOptions{})
 		return err
 	})
 

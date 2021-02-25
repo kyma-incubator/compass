@@ -2,7 +2,8 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -34,23 +35,23 @@ func TestTenantErrors(t *testing.T) {
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
 	}
-	_ = pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
+	_,err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	_ = pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
+	_,err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
-	is := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
-	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
+	is := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
 
-	req := pkg.FixRequestClientCredentialsForIntegrationSystem(is.ID)
+	req := fixtures.FixRequestClientCredentialsForIntegrationSystem(is.ID)
 
 	var credentials graphql.SystemAuth
-	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
 	require.NoError(t, err)
 	require.NotNil(t, credentials)
 }

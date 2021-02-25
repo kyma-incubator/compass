@@ -1,10 +1,10 @@
 package tests
 
 import (
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector"
-	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector/connector"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,7 +12,7 @@ func TestTokens(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
 	runtimeID := "75f42q66-b340-418d-b653-d25b5ed47d75"
 
-	t.Run("should return valid response on Configuration query for Application token", func(t *testing.T) {
+	t.Run("should return valid response on configuration query for Application token", func(t *testing.T) {
 		//when
 		token, e := internalClient.GenerateApplicationToken(appID)
 
@@ -24,10 +24,10 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.NoError(t, e)
-		connector.AssertConfiguration(t, config)
+		certs.AssertConfiguration(t, config)
 	})
 
-	t.Run("should return valid response on Configuration query for Runtime token", func(t *testing.T) {
+	t.Run("should return valid response on configuration query for Runtime token", func(t *testing.T) {
 		//when
 		token, e := internalClient.GenerateRuntimeToken(runtimeID)
 
@@ -39,10 +39,10 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.NoError(t, e)
-		connector.AssertConfiguration(t, config)
+		certs.AssertConfiguration(t, config)
 	})
 
-	t.Run("should not accept invalid token on Configuration query", func(t *testing.T) {
+	t.Run("should not accept invalid token on configuration query", func(t *testing.T) {
 		//given
 		wrongToken := "incorrectToken"
 
@@ -63,7 +63,7 @@ func TestTokens(t *testing.T) {
 		require.Error(t, e)
 	})
 
-	t.Run("should return error for previously used token on Configuration query", func(t *testing.T) {
+	t.Run("should return error for previously used token on configuration query", func(t *testing.T) {
 		//when
 		token, e := internalClient.GenerateApplicationToken(appID)
 
@@ -90,24 +90,23 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
-		certResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+		certResult, configuration := clients.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
 
 		// then
-		connector.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
+		certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
 	})
 
 	t.Run("should return error when CSR subject is invalid", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		wrongSubject := "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
 
-		csr, e := testkit_connector.CreateCsr(wrongSubject, clientKey)
-		require.NoError(t, e)
+		csr:= certs.CreateCsr(t, wrongSubject, clientKey)
 
 		// when
-		cert, e := connectorClient.SignCSR(csr, certToken)
+		cert, e := connectorClient.SignCSR(certs.EncodeBase64(csr), certToken)
 
 		// then
 		require.Error(t, e)
@@ -116,16 +115,15 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when different Common Name provided", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
-		differentSubject := connector.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
+		differentSubject := clients.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
 
-		csr, e := testkit_connector.CreateCsr(differentSubject, clientKey)
-		require.NoError(t, e)
+		csr:= certs.CreateCsr(t,differentSubject, clientKey)
 
 		// when
-		cert, e := connectorClient.SignCSR(csr, certToken)
+		cert, e := connectorClient.SignCSR(certs.EncodeBase64(csr), certToken)
 
 		// then
 		require.Error(t, e)
@@ -134,16 +132,15 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with invalid token", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
-		csr, e := testkit_connector.CreateCsr(certInfo.Subject, clientKey)
-		require.NoError(t, e)
+		csr:= certs.CreateCsr(t,certInfo.Subject, clientKey)
 
 		wrongToken := "wrongToken"
 
 		// when
-		cert, e := connectorClient.SignCSR(csr, wrongToken)
+		cert, e := connectorClient.SignCSR(certs.EncodeBase64(csr), wrongToken)
 
 		// then
 		require.Error(t, e)
@@ -152,18 +149,17 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with already used token", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
-		csr, err := testkit_connector.CreateCsr(certInfo.Subject, clientKey)
-		require.NoError(t, err)
+		csr:= certs.CreateCsr(t,certInfo.Subject, clientKey)
 
-		cert, err := connectorClient.SignCSR(csr, configuration.Token.Token)
+		cert, err := connectorClient.SignCSR(certs.EncodeBase64(csr), configuration.Token.Token)
 		require.NoError(t, err)
-		connector.AssertCertificate(t, certInfo.Subject, cert)
+		certs.AssertCertificate(t, certInfo.Subject, cert)
 
 		// when
-		secondCert, err := connectorClient.SignCSR(csr, configuration.Token.Token)
+		secondCert, err := connectorClient.SignCSR(certs.EncodeBase64(csr), configuration.Token.Token)
 
 		//then
 		require.Error(t, err)
@@ -172,7 +168,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when invalid CSR provided for signing", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 		certToken := configuration.Token.Token
 		wrongCSR := "wrongCSR"
 
@@ -189,14 +185,14 @@ func TestFullConnectorFlow(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
 
 	t.Log("Generating certificate...")
-	certificationResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
-	connector.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
+	certificationResult, configuration := clients.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+	certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
 
-	defer connector.Cleanup(t, configmapCleaner, certificationResult)
+	defer clients.Cleanup(t, configmapCleaner, certificationResult)
 
 	t.Log("Certificate generated. Creating secured client...")
-	certChain := testkit_connector.DecodeCertChain(t, certificationResult.CertificateChain)
-	securedClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
+	certChain := certs.DecodeCertChain(t, certificationResult.CertificateChain)
+	securedClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 
 	t.Log("Fetching configuration with certificate...")
 	configWithCert, err := securedClient.Configuration()
@@ -204,16 +200,16 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Equal(t, configuration.ManagementPlaneInfo, configWithCert.ManagementPlaneInfo)
 	require.Equal(t, configuration.CertificateSigningRequestInfo, configWithCert.CertificateSigningRequestInfo)
 
-	csr, err := testkit_connector.CreateCsr(configWithCert.CertificateSigningRequestInfo.Subject, clientKey)
+	csr:= certs.CreateCsr(t, configWithCert.CertificateSigningRequestInfo.Subject, clientKey)
 	require.NoError(t, err)
 
-	renewalResult, err := securedClient.SignCSR(csr)
+	renewalResult, err := securedClient.SignCSR(certs.EncodeBase64(csr))
 	require.NoError(t, err)
-	connector.AssertCertificate(t, configWithCert.CertificateSigningRequestInfo.Subject, renewalResult)
+	certs.AssertCertificate(t, configWithCert.CertificateSigningRequestInfo.Subject, renewalResult)
 
 	t.Log("Renewing certificate...")
-	renewedCertChain := testkit_connector.DecodeCertChain(t, certificationResult.CertificateChain)
-	securedClientWithRenewedCert := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, renewedCertChain...)
+	renewedCertChain := certs.DecodeCertChain(t, certificationResult.CertificateChain)
+	securedClientWithRenewedCert := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, renewedCertChain...)
 
 	t.Log("Certificate renewed. Fetching configuration with renewed certificate...")
 	configWithRenewedCert, err := securedClientWithRenewedCert.Configuration()
