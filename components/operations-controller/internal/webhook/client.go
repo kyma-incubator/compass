@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"io/ioutil"
 	"net/http"
@@ -75,9 +76,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		}
 	}
 
-	if webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
-		headers.Add(*webhook.CorrelationIDKey, request.CorrelationID)
-	}
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &request.CorrelationID)
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
 	if err != nil {
@@ -126,9 +125,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 		}
 	}
 
-	if webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
-		headers.Add(*webhook.CorrelationIDKey, request.CorrelationID)
-	}
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &request.CorrelationID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, request.PollURL, nil)
 	if err != nil {
