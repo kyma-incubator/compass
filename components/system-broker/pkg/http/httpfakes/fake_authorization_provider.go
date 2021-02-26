@@ -9,18 +9,18 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 )
 
-type FakeTokenProvider struct {
-	GetAuthorizationTokenStub        func(context.Context) (http.Token, error)
-	getAuthorizationTokenMutex       sync.RWMutex
-	getAuthorizationTokenArgsForCall []struct {
+type FakeAuthorizationProvider struct {
+	GetAuthorizationStub        func(context.Context) (string, error)
+	getAuthorizationMutex       sync.RWMutex
+	getAuthorizationArgsForCall []struct {
 		arg1 context.Context
 	}
-	getAuthorizationTokenReturns struct {
-		result1 http.Token
+	getAuthorizationReturns struct {
+		result1 string
 		result2 error
 	}
-	getAuthorizationTokenReturnsOnCall map[int]struct {
-		result1 http.Token
+	getAuthorizationReturnsOnCall map[int]struct {
+		result1 string
 		result2 error
 	}
 	MatchesStub        func(context.Context) bool
@@ -58,70 +58,70 @@ type FakeTokenProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTokenProvider) GetAuthorizationToken(arg1 context.Context) (http.Token, error) {
-	fake.getAuthorizationTokenMutex.Lock()
-	ret, specificReturn := fake.getAuthorizationTokenReturnsOnCall[len(fake.getAuthorizationTokenArgsForCall)]
-	fake.getAuthorizationTokenArgsForCall = append(fake.getAuthorizationTokenArgsForCall, struct {
+func (fake *FakeAuthorizationProvider) GetAuthorization(arg1 context.Context) (string, error) {
+	fake.getAuthorizationMutex.Lock()
+	ret, specificReturn := fake.getAuthorizationReturnsOnCall[len(fake.getAuthorizationArgsForCall)]
+	fake.getAuthorizationArgsForCall = append(fake.getAuthorizationArgsForCall, struct {
 		arg1 context.Context
 	}{arg1})
-	fake.recordInvocation("GetAuthorizationToken", []interface{}{arg1})
-	fake.getAuthorizationTokenMutex.Unlock()
-	if fake.GetAuthorizationTokenStub != nil {
-		return fake.GetAuthorizationTokenStub(arg1)
+	fake.recordInvocation("GetAuthorization", []interface{}{arg1})
+	fake.getAuthorizationMutex.Unlock()
+	if fake.GetAuthorizationStub != nil {
+		return fake.GetAuthorizationStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getAuthorizationTokenReturns
+	fakeReturns := fake.getAuthorizationReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeTokenProvider) GetAuthorizationTokenCallCount() int {
-	fake.getAuthorizationTokenMutex.RLock()
-	defer fake.getAuthorizationTokenMutex.RUnlock()
-	return len(fake.getAuthorizationTokenArgsForCall)
+func (fake *FakeAuthorizationProvider) GetAuthorizationCallCount() int {
+	fake.getAuthorizationMutex.RLock()
+	defer fake.getAuthorizationMutex.RUnlock()
+	return len(fake.getAuthorizationArgsForCall)
 }
 
-func (fake *FakeTokenProvider) GetAuthorizationTokenCalls(stub func(context.Context) (http.Token, error)) {
-	fake.getAuthorizationTokenMutex.Lock()
-	defer fake.getAuthorizationTokenMutex.Unlock()
-	fake.GetAuthorizationTokenStub = stub
+func (fake *FakeAuthorizationProvider) GetAuthorizationCalls(stub func(context.Context) (string, error)) {
+	fake.getAuthorizationMutex.Lock()
+	defer fake.getAuthorizationMutex.Unlock()
+	fake.GetAuthorizationStub = stub
 }
 
-func (fake *FakeTokenProvider) GetAuthorizationTokenArgsForCall(i int) context.Context {
-	fake.getAuthorizationTokenMutex.RLock()
-	defer fake.getAuthorizationTokenMutex.RUnlock()
-	argsForCall := fake.getAuthorizationTokenArgsForCall[i]
+func (fake *FakeAuthorizationProvider) GetAuthorizationArgsForCall(i int) context.Context {
+	fake.getAuthorizationMutex.RLock()
+	defer fake.getAuthorizationMutex.RUnlock()
+	argsForCall := fake.getAuthorizationArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeTokenProvider) GetAuthorizationTokenReturns(result1 http.Token, result2 error) {
-	fake.getAuthorizationTokenMutex.Lock()
-	defer fake.getAuthorizationTokenMutex.Unlock()
-	fake.GetAuthorizationTokenStub = nil
-	fake.getAuthorizationTokenReturns = struct {
-		result1 http.Token
+func (fake *FakeAuthorizationProvider) GetAuthorizationReturns(result1 string, result2 error) {
+	fake.getAuthorizationMutex.Lock()
+	defer fake.getAuthorizationMutex.Unlock()
+	fake.GetAuthorizationStub = nil
+	fake.getAuthorizationReturns = struct {
+		result1 string
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeTokenProvider) GetAuthorizationTokenReturnsOnCall(i int, result1 http.Token, result2 error) {
-	fake.getAuthorizationTokenMutex.Lock()
-	defer fake.getAuthorizationTokenMutex.Unlock()
-	fake.GetAuthorizationTokenStub = nil
-	if fake.getAuthorizationTokenReturnsOnCall == nil {
-		fake.getAuthorizationTokenReturnsOnCall = make(map[int]struct {
-			result1 http.Token
+func (fake *FakeAuthorizationProvider) GetAuthorizationReturnsOnCall(i int, result1 string, result2 error) {
+	fake.getAuthorizationMutex.Lock()
+	defer fake.getAuthorizationMutex.Unlock()
+	fake.GetAuthorizationStub = nil
+	if fake.getAuthorizationReturnsOnCall == nil {
+		fake.getAuthorizationReturnsOnCall = make(map[int]struct {
+			result1 string
 			result2 error
 		})
 	}
-	fake.getAuthorizationTokenReturnsOnCall[i] = struct {
-		result1 http.Token
+	fake.getAuthorizationReturnsOnCall[i] = struct {
+		result1 string
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeTokenProvider) Matches(arg1 context.Context) bool {
+func (fake *FakeAuthorizationProvider) Matches(arg1 context.Context) bool {
 	fake.matchesMutex.Lock()
 	ret, specificReturn := fake.matchesReturnsOnCall[len(fake.matchesArgsForCall)]
 	fake.matchesArgsForCall = append(fake.matchesArgsForCall, struct {
@@ -139,26 +139,26 @@ func (fake *FakeTokenProvider) Matches(arg1 context.Context) bool {
 	return fakeReturns.result1
 }
 
-func (fake *FakeTokenProvider) MatchesCallCount() int {
+func (fake *FakeAuthorizationProvider) MatchesCallCount() int {
 	fake.matchesMutex.RLock()
 	defer fake.matchesMutex.RUnlock()
 	return len(fake.matchesArgsForCall)
 }
 
-func (fake *FakeTokenProvider) MatchesCalls(stub func(context.Context) bool) {
+func (fake *FakeAuthorizationProvider) MatchesCalls(stub func(context.Context) bool) {
 	fake.matchesMutex.Lock()
 	defer fake.matchesMutex.Unlock()
 	fake.MatchesStub = stub
 }
 
-func (fake *FakeTokenProvider) MatchesArgsForCall(i int) context.Context {
+func (fake *FakeAuthorizationProvider) MatchesArgsForCall(i int) context.Context {
 	fake.matchesMutex.RLock()
 	defer fake.matchesMutex.RUnlock()
 	argsForCall := fake.matchesArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeTokenProvider) MatchesReturns(result1 bool) {
+func (fake *FakeAuthorizationProvider) MatchesReturns(result1 bool) {
 	fake.matchesMutex.Lock()
 	defer fake.matchesMutex.Unlock()
 	fake.MatchesStub = nil
@@ -167,7 +167,7 @@ func (fake *FakeTokenProvider) MatchesReturns(result1 bool) {
 	}{result1}
 }
 
-func (fake *FakeTokenProvider) MatchesReturnsOnCall(i int, result1 bool) {
+func (fake *FakeAuthorizationProvider) MatchesReturnsOnCall(i int, result1 bool) {
 	fake.matchesMutex.Lock()
 	defer fake.matchesMutex.Unlock()
 	fake.MatchesStub = nil
@@ -181,7 +181,7 @@ func (fake *FakeTokenProvider) MatchesReturnsOnCall(i int, result1 bool) {
 	}{result1}
 }
 
-func (fake *FakeTokenProvider) Name() string {
+func (fake *FakeAuthorizationProvider) Name() string {
 	fake.nameMutex.Lock()
 	ret, specificReturn := fake.nameReturnsOnCall[len(fake.nameArgsForCall)]
 	fake.nameArgsForCall = append(fake.nameArgsForCall, struct {
@@ -198,19 +198,19 @@ func (fake *FakeTokenProvider) Name() string {
 	return fakeReturns.result1
 }
 
-func (fake *FakeTokenProvider) NameCallCount() int {
+func (fake *FakeAuthorizationProvider) NameCallCount() int {
 	fake.nameMutex.RLock()
 	defer fake.nameMutex.RUnlock()
 	return len(fake.nameArgsForCall)
 }
 
-func (fake *FakeTokenProvider) NameCalls(stub func() string) {
+func (fake *FakeAuthorizationProvider) NameCalls(stub func() string) {
 	fake.nameMutex.Lock()
 	defer fake.nameMutex.Unlock()
 	fake.NameStub = stub
 }
 
-func (fake *FakeTokenProvider) NameReturns(result1 string) {
+func (fake *FakeAuthorizationProvider) NameReturns(result1 string) {
 	fake.nameMutex.Lock()
 	defer fake.nameMutex.Unlock()
 	fake.NameStub = nil
@@ -219,7 +219,7 @@ func (fake *FakeTokenProvider) NameReturns(result1 string) {
 	}{result1}
 }
 
-func (fake *FakeTokenProvider) NameReturnsOnCall(i int, result1 string) {
+func (fake *FakeAuthorizationProvider) NameReturnsOnCall(i int, result1 string) {
 	fake.nameMutex.Lock()
 	defer fake.nameMutex.Unlock()
 	fake.NameStub = nil
@@ -233,7 +233,7 @@ func (fake *FakeTokenProvider) NameReturnsOnCall(i int, result1 string) {
 	}{result1}
 }
 
-func (fake *FakeTokenProvider) TargetURL() *url.URL {
+func (fake *FakeAuthorizationProvider) TargetURL() *url.URL {
 	fake.targetURLMutex.Lock()
 	ret, specificReturn := fake.targetURLReturnsOnCall[len(fake.targetURLArgsForCall)]
 	fake.targetURLArgsForCall = append(fake.targetURLArgsForCall, struct {
@@ -250,19 +250,19 @@ func (fake *FakeTokenProvider) TargetURL() *url.URL {
 	return fakeReturns.result1
 }
 
-func (fake *FakeTokenProvider) TargetURLCallCount() int {
+func (fake *FakeAuthorizationProvider) TargetURLCallCount() int {
 	fake.targetURLMutex.RLock()
 	defer fake.targetURLMutex.RUnlock()
 	return len(fake.targetURLArgsForCall)
 }
 
-func (fake *FakeTokenProvider) TargetURLCalls(stub func() *url.URL) {
+func (fake *FakeAuthorizationProvider) TargetURLCalls(stub func() *url.URL) {
 	fake.targetURLMutex.Lock()
 	defer fake.targetURLMutex.Unlock()
 	fake.TargetURLStub = stub
 }
 
-func (fake *FakeTokenProvider) TargetURLReturns(result1 *url.URL) {
+func (fake *FakeAuthorizationProvider) TargetURLReturns(result1 *url.URL) {
 	fake.targetURLMutex.Lock()
 	defer fake.targetURLMutex.Unlock()
 	fake.TargetURLStub = nil
@@ -271,7 +271,7 @@ func (fake *FakeTokenProvider) TargetURLReturns(result1 *url.URL) {
 	}{result1}
 }
 
-func (fake *FakeTokenProvider) TargetURLReturnsOnCall(i int, result1 *url.URL) {
+func (fake *FakeAuthorizationProvider) TargetURLReturnsOnCall(i int, result1 *url.URL) {
 	fake.targetURLMutex.Lock()
 	defer fake.targetURLMutex.Unlock()
 	fake.TargetURLStub = nil
@@ -285,11 +285,11 @@ func (fake *FakeTokenProvider) TargetURLReturnsOnCall(i int, result1 *url.URL) {
 	}{result1}
 }
 
-func (fake *FakeTokenProvider) Invocations() map[string][][]interface{} {
+func (fake *FakeAuthorizationProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getAuthorizationTokenMutex.RLock()
-	defer fake.getAuthorizationTokenMutex.RUnlock()
+	fake.getAuthorizationMutex.RLock()
+	defer fake.getAuthorizationMutex.RUnlock()
 	fake.matchesMutex.RLock()
 	defer fake.matchesMutex.RUnlock()
 	fake.nameMutex.RLock()
@@ -303,7 +303,7 @@ func (fake *FakeTokenProvider) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeTokenProvider) recordInvocation(key string, args []interface{}) {
+func (fake *FakeAuthorizationProvider) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -315,4 +315,4 @@ func (fake *FakeTokenProvider) recordInvocation(key string, args []interface{}) 
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ http.TokenProvider = new(FakeTokenProvider)
+var _ http.AuthorizationProvider = new(FakeAuthorizationProvider)

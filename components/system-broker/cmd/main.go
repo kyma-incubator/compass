@@ -55,12 +55,12 @@ func main() {
 	ctx, err = log.Configure(ctx, cfg.Log)
 	fatalOnError(err)
 
-	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
+	tokenAuthorizationProviderFromHeader, err := oauth.NewTokenAuthorizationProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
 	if err != nil {
 		fatalOnError(err)
 	}
 
-	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, tokenProviderFromHeader)
+	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, tokenAuthorizationProviderFromHeader)
 	fatalOnError(err)
 
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.ORD.ServiceURL+cfg.ORD.StaticPath)

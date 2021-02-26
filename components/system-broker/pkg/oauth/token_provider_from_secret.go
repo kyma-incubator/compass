@@ -35,7 +35,7 @@ const (
 	tokensEndpointKey = "tokens_endpoint"
 )
 
-type TokenProviderFromSecret struct {
+type TokenAuthorizationProviderFromSecret struct {
 	targetURL *url.URL
 
 	httpClient        httputils.Client
@@ -55,7 +55,7 @@ type credentials struct {
 	tokensEndpoint string
 }
 
-func NewTokenProviderFromSecret(config *Config, targetURL string, httpClient httputils.Client, tokenTimeout time.Duration, k8sClientConstructor func(time.Duration) (client.Client, error)) (*TokenProviderFromSecret, error) {
+func NewAuthorizationProviderFromSecret(config *Config, targetURL string, httpClient httputils.Client, tokenTimeout time.Duration, k8sClientConstructor func(time.Duration) (client.Client, error)) (*TokenAuthorizationProviderFromSecret, error) {
 	k8sClient, err := k8sClientConstructor(config.WaitKubeMapperTimeout)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func NewTokenProviderFromSecret(config *Config, targetURL string, httpClient htt
 		return nil, err
 	}
 
-	return &TokenProviderFromSecret{
+	return &TokenAuthorizationProviderFromSecret{
 		targetURL: parsedUrl,
 
 		httpClient:        httpClient,
@@ -81,12 +81,12 @@ func NewTokenProviderFromSecret(config *Config, targetURL string, httpClient htt
 	}, nil
 }
 
-func (c *TokenProviderFromSecret) Name() string {
-	return "TokenProviderFromSecret"
+func (c *TokenAuthorizationProviderFromSecret) Name() string {
+	return "TokenAuthorizationProviderFromSecret"
 }
 
-func (c *TokenProviderFromSecret) Matches(ctx context.Context) bool {
-	if _, err := getBearerToken(ctx); err != nil {
+func (c *TokenAuthorizationProviderFromSecret) Matches(ctx context.Context) bool {
+	if _, err := getBearerAuthorizationValue(ctx); err != nil {
 		log.C(ctx).WithError(err).Warn("while obtaining bearer token")
 		return true
 	}
@@ -94,38 +94,42 @@ func (c *TokenProviderFromSecret) Matches(ctx context.Context) bool {
 	return false
 }
 
-func (c *TokenProviderFromSecret) TargetURL() *url.URL {
+func (c *TokenAuthorizationProviderFromSecret) TargetURL() *url.URL {
 	return c.targetURL
 }
 
-func (c *TokenProviderFromSecret) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {
+func (c *TokenAuthorizationProviderFromSecret) GetAuthorization(ctx context.Context) (string, error) {
 	c.lock.RLock()
 	isValidToken := !c.token.EmptyOrExpired(c.tokenTimeout)
 	c.lock.RUnlock()
 	if isValidToken {
-		return c.token, nil
+		return "Bearer " + c.token.AccessToken, nil
 	}
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	if !c.token.EmptyOrExpired(c.tokenTimeout) {
-		return c.token, nil
+		return "Bearer " + c.token.AccessToken, nil
 	}
 
 	log.C(ctx).Debug("Token is invalid, getting a new one...")
 
 	credentials, err := c.extractOAuthClientFromSecret(ctx)
 	if err != nil {
-		return httputils.Token{}, errors.Wrap(err, "while get credentials from secret")
+		return "", errors.Wrap(err, "while get credentials from secret")
 	}
 
 	token, err := c.getAuthorizationToken(ctx, credentials)
+	if err != nil {
+		return "", err
+	}
+
 	c.token = token
-	return token, err
+	return "Bearer " + c.token.AccessToken, err
 }
 
-func (c *TokenProviderFromSecret) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
+func (c *TokenAuthorizationProviderFromSecret) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
 	secret := &v1.Secret{}
 	err := wait.Poll(time.Second*2, c.waitSecretTimeout, func() (bool, error) {
 		err := c.k8sClient.Get(ctx, client.ObjectKey{
@@ -150,7 +154,7 @@ func (c *TokenProviderFromSecret) extractOAuthClientFromSecret(ctx context.Conte
 	}, nil
 }
 
-func (c *TokenProviderFromSecret) getAuthorizationToken(ctx context.Context, credentials credentials) (httputils.Token, error) {
+func (c *TokenAuthorizationProviderFromSecret) getAuthorizationToken(ctx context.Context, credentials credentials) (httputils.Token, error) {
 	log.C(ctx).Infof("Getting authorization token from endpoint: %s", credentials.tokensEndpoint)
 
 	form := url.Values{}

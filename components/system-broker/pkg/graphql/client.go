@@ -40,7 +40,7 @@ type Client struct {
 	logging   bool
 }
 
-func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httputil.TokenProvider) (*director.GraphQLClient, error) {
+func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httputil.AuthorizationProvider) (*director.GraphQLClient, error) {
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(httpCfg)))
 
 	securedTransport := httputil.NewSecuredTransport(httpTransport, providers...)
@@ -51,7 +51,11 @@ func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httput
 
 	// prepare graphql client that uses secured http client as a basis
 	// the provided endpoint in the graphClient will be changed in the secured transport based on the matching token provider
-	graphClient := graphql.NewClient("", graphql.WithHTTPClient(securedClient))
+	return PrepareGqlClientWithHttpClient(cfg, securedClient)
+}
+
+func PrepareGqlClientWithHttpClient(cfg *Config, httpClient *http.Client) (*director.GraphQLClient, error) {
+	graphClient := graphql.NewClient("", graphql.WithHTTPClient(httpClient))
 	gqlClient := NewClient(cfg, graphClient)
 
 	inputGraphqlizer := &graphqlizer.Graphqlizer{}
