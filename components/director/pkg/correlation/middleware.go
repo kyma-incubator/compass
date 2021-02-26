@@ -98,7 +98,23 @@ func HeadersFromContext(ctx context.Context) Headers {
 	return headersFromCtx
 }
 
-// SaveToContext saves the provided headers in the specified context
+// SaveToContext saves the provided headers as correlation ID headers in the specified context
 func SaveToContext(ctx context.Context, headers Headers) context.Context {
 	return context.WithValue(ctx, HeadersContextKey, headers)
+}
+
+// SaveCorrelationIDHeaderToContext saves the header provided key/value pair as a correlation ID header in the specified context
+func SaveCorrelationIDHeaderToContext(ctx context.Context, key, value *string) context.Context {
+	if key == nil || value == nil {
+		return ctx
+	}
+
+	headers := HeadersFromContext(ctx)
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+
+	headers[*key] = *value
+
+	return SaveToContext(ctx, headers)
 }
