@@ -14,10 +14,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery -name=TimeService -output=automock -outpkg=automock -case=underscore
+type TimeService interface {
+	Now() time.Time
+}
+
+type Timer struct {
+}
+
+func (ts Timer) Now() time.Time {
+	return time.Now()
+}
+
 type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 }
 
+//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	InvalidateToken(ctx context.Context, item *model.SystemAuth) error
@@ -29,15 +42,17 @@ type validationHydrator struct {
 	csrTokenExpiration     time.Duration
 	appTokenExpiration     time.Duration
 	runtimeTokenExpiration time.Duration
+	timeService            TimeService
 }
 
-func NewValidationHydrator(tokenService Service, transact persistence.Transactioner, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration time.Duration) ValidationHydrator {
+func NewValidationHydrator(tokenService Service, transact persistence.Transactioner, timeService TimeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration time.Duration) ValidationHydrator {
 	return &validationHydrator{
 		csrTokenExpiration:     csrTokenExpiration,
 		appTokenExpiration:     appTokenExpiration,
 		runtimeTokenExpiration: runtimeTokenExpiration,
 		tokenService:           tokenService,
 		transact:               transact,
+		timeService:            timeService,
 	}
 }
 
@@ -98,7 +113,7 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	log.C(ctx).Infof("Validity time to check for is %s...", expirationTime.String())
 
-	if systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(time.Now()) {
+	if systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(tvh.timeService.Now()) {
 		log.C(ctx).Infof("One Time Token for system auth id %s has expired", systemAuth.ID)
 		respondWithAuthSession(ctx, w, authSession)
 		return
