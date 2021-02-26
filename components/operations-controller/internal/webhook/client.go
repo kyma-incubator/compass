@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"io/ioutil"
 	"net/http"
 
@@ -29,17 +30,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type OAuthClientProviderFunc func(ctx context.Context, client http.Client, oauthCreds *graphql.OAuthCredentialData) *http.Client
-
 type client struct {
-	httpClient              http.Client
-	oAuthClientProviderFunc OAuthClientProviderFunc
+	httpClient *http.Client
 }
 
-func NewClient(httpClient http.Client, oAuthClientProviderFunc OAuthClientProviderFunc) *client {
+func NewClient(httpClient *http.Client) *client {
 	return &client{
-		httpClient:              httpClient,
-		oAuthClientProviderFunc: oAuthClientProviderFunc,
+		httpClient: httpClient,
 	}
 }
 
@@ -89,20 +86,10 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req.Header = headers
 
-	client := &c.httpClient
-	if webhook.Auth != nil {
-		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
-		if isBasicAuth {
-			req.SetBasicAuth(basicCreds.Username, basicCreds.Password)
-		}
+	ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+	req = req.WithContext(ctx)
 
-		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
-		if isOAuth {
-			client = c.oAuthClientProviderFunc(ctx, *client, oauthCreds)
-		}
-	}
-
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -150,20 +137,10 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	req.Header = headers
 
-	client := &c.httpClient
-	if webhook.Auth != nil {
-		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
-		if isBasicAuth {
-			req.SetBasicAuth(basicCreds.Username, basicCreds.Password)
-		}
+	ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+	req = req.WithContext(ctx)
 
-		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
-		if isOAuth {
-			client = c.oAuthClientProviderFunc(ctx, *client, oauthCreds)
-		}
-	}
-
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

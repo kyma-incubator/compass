@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package director
+package auth
 
 import (
 	"context"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
-	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/pkg/errors"
 	"net/url"
 )
 
-const applicationReadScope = "application:read"
+const (
+	UnsignedTokenAuthorizationProviderName = "UnsignedTokenAuthorizationProvider"
+	applicationReadScope                   = "application:read"
+)
 
-// UnsignedTokenProvider presents a TokenProvider implementation which fabricates it's own unsigned tokens
-type UnsignedTokenProvider struct {
+// UnsignedTokenAuthorizationProvider presents a AuthorizationProvider implementation which fabricates it's own unsigned tokens
+type unsignedTokenAuthorizationProvider struct {
 	targetURL *url.URL
 }
 
@@ -39,38 +41,43 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-// NewUnsignedTokenProvider constructs an UnsignedTokenProvider
-func NewUnsignedTokenProvider(targetURL string) (*UnsignedTokenProvider, error) {
+// NewUnsignedTokenAuthorizationProvider constructs an UnsignedTokenAuthorizationProvider
+func NewUnsignedTokenAuthorizationProvider(targetURL string) (*unsignedTokenAuthorizationProvider, error) {
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return &UnsignedTokenProvider{
+	return &unsignedTokenAuthorizationProvider{
 		targetURL: parsedURL,
 	}, nil
 }
 
-// Name specifies the name of the TokenProvider
-func (u UnsignedTokenProvider) Name() string {
-	return "UnsignedTokenProvider"
+// Name specifies the name of the AuthorizationProvider
+func (u unsignedTokenAuthorizationProvider) Name() string {
+	return UnsignedTokenAuthorizationProviderName
 }
 
-// Matches contains the logic for matching the TokenProvider
-func (u UnsignedTokenProvider) Matches(_ context.Context) bool {
-	return true
+// Matches contains the logic for matching the AuthorizationProvider
+func (u unsignedTokenAuthorizationProvider) Matches(ctx context.Context) bool {
+	_, err := LoadFromContext(ctx)
+	if err != nil {
+		return true
+	}
+
+	return false
 }
 
 // TargetURL returns the intented TargetURL for the executing request
-func (u UnsignedTokenProvider) TargetURL() *url.URL {
+func (u unsignedTokenAuthorizationProvider) TargetURL() *url.URL {
 	return u.targetURL
 }
 
 // GetAuthorizationToken crafts an unsigned token to inject in the executing request
-func (u UnsignedTokenProvider) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {
+func (u unsignedTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return httputils.Token{}, err
+		return "", err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
@@ -80,11 +87,8 @@ func (u UnsignedTokenProvider) GetAuthorizationToken(ctx context.Context) (httpu
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
 	if err != nil {
-		return httputils.Token{}, errors.Wrap(err, "while signing token")
+		return "", errors.Wrap(err, "while signing token")
 	}
 
-	return httputils.Token{
-		AccessToken: signedToken,
-		Expiration:  0,
-	}, nil
+	return "Bearer " + signedToken, nil
 }

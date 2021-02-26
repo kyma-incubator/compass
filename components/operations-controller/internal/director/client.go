@@ -30,8 +30,8 @@ import (
 // client implements the DirectorClient interface
 type client struct {
 	types.ApplicationLister
-	HTTPClient  http.Client
-	DirectorURL string
+	httpClient  *http.Client
+	directorURL string
 }
 
 type Request struct {
@@ -42,11 +42,11 @@ type Request struct {
 }
 
 // NewClient constructs a default implementation of the Client interface
-func NewClient(directorURL string, httpClient http.Client, appLister types.ApplicationLister) *client {
+func NewClient(directorURL string, httpClient *http.Client, appLister types.ApplicationLister) *client {
 	return &client{
 		ApplicationLister: appLister,
-		HTTPClient:        httpClient,
-		DirectorURL:       directorURL,
+		httpClient:        httpClient,
+		directorURL:       directorURL,
 	}
 }
 
@@ -57,12 +57,12 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.DirectorURL+"/operations", bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.directorURL+"/operations", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}

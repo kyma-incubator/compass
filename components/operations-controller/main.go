@@ -16,17 +16,15 @@ package main
 
 import (
 	"context"
-	director_graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 	"net/http"
 	"os"
 
@@ -95,23 +93,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient := http.Client{
-		Transport: httputil.NewHTTPTransport(cfg.HttpClient),
-		Timeout:   cfg.HttpClient.Timeout,
-	}
+	httpClient, err := prepareHttpClient(cfg.HttpClient, cfg.GraphQLClient)
+	fatalOnError(err)
 
-	unsignedTokenProvider, err := director.NewUnsignedTokenProvider(cfg.GraphQLClient.GraphqlEndpoint)
-	if err != nil {
-		fatalOnError(err)
-	}
-
-	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, unsignedTokenProvider)
+	graphqlClient, err := graphql.PrepareGqlClientWithHttpClient(cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
 
 	controller := controllers.NewOperationReconciler(cfg.Webhook, ctrl.Log.WithName("controllers").WithName("Operation"),
 		k8s.NewClient(mgr.GetClient()),
-		director.NewClient(cfg.Director.InternalAddress, httpClient, directorGraphQLClient),
-		webhook.NewClient(httpClient, defaultOAuthClientProviderFunc))
+		director.NewClient(cfg.Director.InternalAddress, httpClient, graphqlClient),
+		webhook.NewClient(httpClient))
 
 	if err = controller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
@@ -132,16 +123,27 @@ func fatalOnError(err error) {
 	}
 }
 
-func defaultOAuthClientProviderFunc(ctx context.Context, client http.Client, oauthCreds *director_graphql.OAuthCredentialData) *http.Client {
-	conf := &clientcredentials.Config{
-		ClientID:     oauthCreds.ClientID,
-		ClientSecret: oauthCreds.ClientSecret,
-		TokenURL:     oauthCreds.URL,
-		AuthStyle:    oauth2.AuthStyleInParams,
+func prepareHttpClient(cfg *httputil.Config, graphqlCfg *graphql.Config) (*http.Client, error) {
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg)))
+
+	unsecuredClient := &http.Client{
+		Transport: httpTransport,
+		Timeout:   cfg.Timeout,
 	}
 
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
-	securedClient := conf.Client(ctx)
-	securedClient.Timeout = client.Timeout
-	return securedClient
+	basicProvider := auth.NewBasicAuthorizationProvider()
+	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
+
+	unsignedTokenProvider, err := auth.NewUnsignedTokenAuthorizationProvider(graphqlCfg.GraphqlEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, unsignedTokenProvider)
+	securedClient := &http.Client{
+		Transport: securedTransport,
+		Timeout:   cfg.Timeout,
+	}
+
+	return securedClient, nil
 }
