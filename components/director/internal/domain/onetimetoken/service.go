@@ -8,15 +8,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
-	"github.com/kyma-incubator/compass/components/director/internal/tokens"
-
 	"github.com/avast/retry-go"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/pkg/errors"
 )
 
@@ -57,9 +56,10 @@ type service struct {
 	extTenantsSvc             ExternalTenantsService
 	doer                      HTTPDoer
 	tokenGenerator            TokenGenerator
+	timeService               directorTime.Service
 }
 
-func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, connectorURL string, intSystemToAdapterMapping map[string]string) *service {
+func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, connectorURL string, intSystemToAdapterMapping map[string]string, timeService directorTime.Service) *service {
 	return &service{
 		connectorURL:              connectorURL,
 		sysAuthSvc:                sysAuthSvc,
@@ -69,6 +69,7 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 		extTenantsSvc:             extTenantsSvc,
 		doer:                      doer,
 		tokenGenerator:            tokenGenerator,
+		timeService:               timeService,
 	}
 }
 
@@ -110,7 +111,7 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 	case model.RuntimeReference:
 		oneTimeToken.Type = tokens.RuntimeToken
 	}
-	oneTimeToken.CreatedAt = time.Now()
+	oneTimeToken.CreatedAt = s.timeService.Now()
 	oneTimeToken.Used = false
 	oneTimeToken.UsedAt = time.Time{}
 
@@ -138,7 +139,7 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 		Token:        tokenString,
 		ConnectorURL: s.connectorURL,
 		Type:         tokenType,
-		CreatedAt:    time.Now(),
+		CreatedAt:    s.timeService.Now(),
 		Used:         false,
 		UsedAt:       time.Time{},
 	}

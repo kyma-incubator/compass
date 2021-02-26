@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -52,6 +53,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		tenantSvc                 func() onetimetoken.ExternalTenantsService
 		httpClient                func() onetimetoken.HTTPDoer
 		tokenGenerator            func() onetimetoken.TokenGenerator
+		timeService               directorTime.Service
 	}{
 		{
 			description: "Generate Application token, no int system, should succeed",
@@ -86,6 +88,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:                 model.ApplicationReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
+			timeService:               directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token should fail when no such app found",
@@ -150,6 +153,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			errorMsg:                  "db error",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
+			timeService:               directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, should succeed",
@@ -221,6 +225,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			intSystemToAdapterMapping: map[string]string{
 				integrationSystemID: "https://my-integration-service.url",
 			},
+			timeService: directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, but no adapters defined should succeed",
@@ -258,6 +263,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:                 model.ApplicationReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: map[string]string{},
+			timeService:               directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, should fail when int system fails",
@@ -429,6 +435,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:                 model.RuntimeReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
+			timeService:               directorTime.NewService(),
 		},
 		{
 			description: "Generate Runtime token should fail on token generating error",
@@ -491,6 +498,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			errorMsg:                  "db error",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
+			timeService:               directorTime.NewService(),
 		},
 	}
 
@@ -502,8 +510,9 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		tenantSvc := test.tenantSvc()
 		httpClient := test.httpClient()
 		tokenGenerator := test.tokenGenerator()
+		timeService := test.timeService
 
-		tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, test.connectorURL, test.intSystemToAdapterMapping)
+		tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, test.connectorURL, test.intSystemToAdapterMapping, timeService)
 
 		//WHEN
 		token, err := tokenSvc.GenerateOneTimeToken(context.TODO(), test.objectID, test.tokenType)
