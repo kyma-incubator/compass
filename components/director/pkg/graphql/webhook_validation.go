@@ -3,6 +3,8 @@ package graphql
 import (
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -21,31 +23,49 @@ func (i WebhookInput) Validate() error {
 	if i.URL != nil {
 		_, err := url.ParseRequestURI(*i.URL)
 		if err != nil {
+			log.D().Errorf("failed to parse URI: %s", err.Error())
 			return apperrors.NewInvalidDataError("failed to parse webhook url")
 		}
 	}
 
-	reqData := webhook.RequestData{Application: &Application{BaseEntity: &BaseEntity{}}}
-	if _, err := webhook.ParseURLTemplate(i.URLTemplate, reqData); err != nil {
-		return err
+	requestObject := webhook.RequestObject{Application: &Application{BaseEntity: &BaseEntity{}}}
+	if i.URLTemplate != nil {
+		if _, err := requestObject.ParseURLTemplate(i.URLTemplate); err != nil {
+			log.D().Errorf("failed to parse URL Template: %s", err.Error())
+			return apperrors.NewInvalidDataError("failed to parse webhook url template")
+		}
 	}
 
-	if _, err := webhook.ParseInputTemplate(i.InputTemplate, reqData); err != nil {
-		return err
+	if i.InputTemplate != nil {
+		if _, err := requestObject.ParseInputTemplate(i.InputTemplate); err != nil {
+			log.D().Errorf("failed to parse Input Template: %s", err.Error())
+			return apperrors.NewInvalidDataError("failed to parse webhook input template")
+		}
 	}
 
-	if _, err := webhook.ParseHeadersTemplate(i.HeaderTemplate, reqData); err != nil {
-		return err
+	if i.HeaderTemplate != nil {
+		if _, err := requestObject.ParseHeadersTemplate(i.HeaderTemplate); err != nil {
+			log.D().Errorf("failed to parse Headers Template: %s", err.Error())
+			return apperrors.NewInvalidDataError("failed to parse webhook headers template")
+		}
 	}
 
-	var respData webhook.ResponseData
-	if _, err := webhook.ParseOutputTemplate(i.InputTemplate, i.OutputTemplate, respData); err != nil {
-		return err
+	var responseObject webhook.ResponseObject
+	if i.OutputTemplate != nil {
+		if _, err := responseObject.ParseOutputTemplate(i.OutputTemplate); err != nil {
+			log.D().Errorf("failed to parse Output Template: %s", err.Error())
+			return apperrors.NewInvalidDataError("failed to parse webhook output template")
+		}
 	}
 
 	if i.Mode != nil && *i.Mode == WebhookModeAsync {
-		if _, err := webhook.ParseStatusTemplate(i.StatusTemplate, respData); err != nil {
-			return err
+		if i.StatusTemplate != nil {
+			if _, err := responseObject.ParseStatusTemplate(i.StatusTemplate); err != nil {
+				log.D().Errorf("failed to parse Status Template: %s", err.Error())
+				return apperrors.NewInvalidDataError("failed to parse webhook status template")
+			}
+		} else {
+			return apperrors.NewInvalidDataError("missing webhook status template")
 		}
 	}
 

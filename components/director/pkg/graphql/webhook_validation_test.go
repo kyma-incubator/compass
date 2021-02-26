@@ -447,7 +447,7 @@ func TestWebhookInput_Validate_HeaderTemplate(t *testing.T) {
 		{
 			Name:          "Empty",
 			Value:         stringPtr(""),
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 		{
 			Name:          "Nil",
@@ -636,7 +636,7 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 		{
 			Name:          "Nil",
 			Value:         nil,
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 	}
 
@@ -662,19 +662,6 @@ func TestWebhookInput_Validate_BothURLAndURLTemplate(t *testing.T) {
 	sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	sut.URL = stringPtr("https://my-int-system/api/v1/123/pairing")
 	sut.URLTemplate = stringPtr("https://my-int-system/api/v1/{{.Application.ID}}/pairing")
-	//WHEN
-	err := sut.Validate()
-	//THEN
-	require.Error(t, err)
-}
-
-func TestWebhookInput_Validate_InputTemplateProvided_MissingOutputTemplate_ShouldReturnError(t *testing.T) {
-	sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
-	sut.InputTemplate = stringPtr(`{
-	  "app_id": "{{.Application.ID}}",
-	  "app_name": "{{.Application.Name}}"
-	}`)
-	sut.OutputTemplate = nil
 	//WHEN
 	err := sut.Validate()
 	//THEN

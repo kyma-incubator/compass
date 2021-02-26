@@ -129,13 +129,13 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	operation.WebhookIDs = webhookIDs
 
-	requestData, err := d.prepareRequestData(ctx, err, resp)
+	requestObject, err := d.prepareRequestObject(ctx, err, resp)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while preparing request data: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to prepare webhook request data")
 	}
 
-	operation.RequestData = requestData
+	operation.RequestObject = requestObject
 
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
@@ -154,7 +154,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	return resp, nil
 }
 
-func (d *directive) prepareRequestData(ctx context.Context, err error, res interface{}) (string, error) {
+func (d *directive) prepareRequestObject(ctx context.Context, err error, res interface{}) (string, error) {
 	tenantID, err := d.tenantLoaderFunc(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to retrieve tenant from request")
@@ -175,13 +175,13 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		headers[key] = value[0]
 	}
 
-	requestData := &webhook.RequestData{
+	requestObject := &webhook.RequestObject{
 		Application: resource,
 		TenantID:    tenantID,
 		Headers:     headers,
 	}
 
-	data, err := json.Marshal(requestData)
+	data, err := json.Marshal(requestObject)
 	if err != nil {
 		return "", err
 	}

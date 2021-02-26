@@ -617,16 +617,16 @@ func TestHandleOperation(t *testing.T) {
 					headers[key] = value[0]
 				}
 
-				expectedRequestData := &webhook.RequestData{
+				expectedRequestObject := &webhook.RequestObject{
 					Application: mockedNextResponse().(webhook.Resource),
 					TenantID:    tenantID,
 					Headers:     headers,
 				}
 
-				expectedData, err := json.Marshal(expectedRequestData)
+				expectedData, err := json.Marshal(expectedRequestObject)
 				require.NoError(t, err)
 
-				require.Equal(t, string(expectedData), op.RequestData)
+				require.Equal(t, string(expectedData), op.RequestObject)
 
 				require.Len(t, op.WebhookIDs, len(testCase.ExpectedWebhookIDs))
 				require.Equal(t, testCase.ExpectedWebhookIDs, op.WebhookIDs)

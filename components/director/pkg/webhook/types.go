@@ -23,6 +23,8 @@ import (
 	"net/url"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/pkg/errors"
 )
 
@@ -33,15 +35,15 @@ type Resource interface {
 	Sentinel()
 }
 
-// RequestData struct contains parts of request that might be needed for later processing of a Webhook request
-type RequestData struct {
+// RequestObject struct contains parts of request that might be needed for later processing of a Webhook request
+type RequestObject struct {
 	Application Resource
 	TenantID    string
 	Headers     map[string]string
 }
 
-// ResponseData struct contains parts of response that might be needed for later processing of Webhook response
-type ResponseData struct {
+// ResponseObject struct contains parts of response that might be needed for later processing of Webhook response
+type ResponseObject struct {
 	Body    map[string]string
 	Headers map[string]string
 }
@@ -129,126 +131,49 @@ func (rs *ResponseStatus) Validate() error {
 	return nil
 }
 
-func ParseURLTemplate(tmpl *string, reqData RequestData) (*URL, error) {
-	if tmpl == nil {
-		return nil, nil
-	}
-
-	urlTemplate, err := template.New("url").Option("missingkey=zero").Parse(*tmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	err = urlTemplate.Execute(result, reqData)
-	if err != nil {
-		return nil, err
-	}
-
+func (rd *RequestObject) ParseURLTemplate(tmpl *string) (*URL, error) {
 	var url URL
-	if err := json.Unmarshal(result.Bytes(), &url); err != nil {
-		return nil, err
-	}
-
-	return &url, url.Validate()
+	return &url, parseTemplate(tmpl, *rd, &url)
 }
 
-func ParseInputTemplate(tmpl *string, reqData RequestData) ([]byte, error) {
-	if tmpl == nil {
-		return nil, nil
-	}
-
-	inputTemplate, err := template.New("input").Option("missingkey=zero").Parse(*tmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	if err := inputTemplate.Execute(result, reqData); err != nil {
-		return nil, err
-	}
-
+func (rd *RequestObject) ParseInputTemplate(tmpl *string) ([]byte, error) {
 	res := json.RawMessage{}
-	if err := json.Unmarshal(result.Bytes(), &res); err != nil {
-		return nil, err
-	}
-
-	return result.Bytes(), nil
+	return res, parseTemplate(tmpl, *rd, &res)
 }
 
-func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error) {
-	if tmpl == nil {
-		return nil, nil
-	}
-
-	headerTemplate, err := template.New("header").Option("missingkey=zero").Parse(*tmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	if err := headerTemplate.Execute(result, reqData); err != nil {
-		return nil, err
-	}
-
-	if result.Len() == 0 {
-		return http.Header{}, nil
-	}
-
+func (rd *RequestObject) ParseHeadersTemplate(tmpl *string) (http.Header, error) {
 	var headers http.Header
-	if err := json.Unmarshal(result.Bytes(), &headers); err != nil {
-		return nil, err
-	}
-
-	return headers, nil
+	return headers, parseTemplate(tmpl, *rd, &headers)
 }
 
-func ParseOutputTemplate(inputTmpl, outputTmpl *string, respData ResponseData) (*Response, error) {
-	if outputTmpl == nil && inputTmpl != nil {
-		return nil, errors.New("missing webhook output template")
-	}
-
-	if outputTmpl == nil {
-		return nil, nil
-	}
-
-	outputTemplate, err := template.New("output").Option("missingkey=zero").Parse(*outputTmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	if err := outputTemplate.Execute(result, respData); err != nil {
-		return nil, err
-	}
-
-	var outputTmplResp Response
-	if err := json.Unmarshal(result.Bytes(), &outputTmplResp); err != nil {
-		return nil, err
-	}
-
-	return &outputTmplResp, outputTmplResp.Validate()
+func (rd *ResponseObject) ParseOutputTemplate(tmpl *string) (*Response, error) {
+	var resp Response
+	return &resp, parseTemplate(tmpl, *rd, &resp)
 }
 
-func ParseStatusTemplate(tmpl *string, respData ResponseData) (*ResponseStatus, error) {
-	if tmpl == nil {
-		return nil, nil
-	}
+func (rd *ResponseObject) ParseStatusTemplate(tmpl *string) (*ResponseStatus, error) {
+	var respStatus ResponseStatus
+	return &respStatus, parseTemplate(tmpl, *rd, &respStatus)
+}
 
-	statusTemplate, err := template.New("status").Option("missingkey=zero").Parse(*tmpl)
+func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
+	t, err := template.New("").Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	result := new(bytes.Buffer)
-	if err := statusTemplate.Execute(result, respData); err != nil {
-		return nil, err
+	res := new(bytes.Buffer)
+	if err = t.Execute(res, data); err != nil {
+		return err
 	}
 
-	var statusTmpl ResponseStatus
-	if err := json.Unmarshal(result.Bytes(), &statusTmpl); err != nil {
-		return nil, err
+	if err = json.Unmarshal(res.Bytes(), dest); err != nil {
+		return err
 	}
 
-	return &statusTmpl, statusTmpl.Validate()
+	if validatable, ok := dest.(inputvalidation.Validatable); ok {
+		return validatable.Validate()
+	}
+
+	return nil
 }
