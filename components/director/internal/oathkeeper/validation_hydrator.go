@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -68,7 +69,7 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 	defer tvh.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	var authSession AuthenticationSession
+	var authSession oathkeeper.AuthenticationSession
 	err = json.NewDecoder(r.Body).Decode(&authSession)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to decode request body")
@@ -77,9 +78,9 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 	}
 	defer httputils.Close(ctx, r.Body)
 
-	connectorToken := r.Header.Get(ConnectorTokenHeader)
+	connectorToken := r.Header.Get(oathkeeper.ConnectorTokenHeader)
 	if connectorToken == "" {
-		connectorToken = r.URL.Query().Get(ConnectorTokenQueryParam)
+		connectorToken = r.URL.Query().Get(oathkeeper.ConnectorTokenQueryParam)
 	}
 
 	if connectorToken == "" {
@@ -123,7 +124,7 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 		authSession.Header = map[string][]string{}
 	}
 
-	authSession.Header.Add(ClientIdFromTokenHeader, systemAuth.ID)
+	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
 	if err := tvh.tokenService.InvalidateToken(ctx, systemAuth); err != nil {
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
@@ -141,6 +142,6 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 	respondWithAuthSession(ctx, w, authSession)
 }
 
-func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSession AuthenticationSession) {
+func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSession oathkeeper.AuthenticationSession) {
 	httputils.RespondWithBody(ctx, w, http.StatusOK, authSession)
 }

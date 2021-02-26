@@ -12,7 +12,7 @@ import (
 func TestOathkeeperSecurity(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
 
-	certResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+	certResult, configuration := connector.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certChain := testkit.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 

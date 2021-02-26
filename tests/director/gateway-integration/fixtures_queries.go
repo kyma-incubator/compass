@@ -184,7 +184,7 @@ func requestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Cont
 	return intSysOauthCredentialData
 }
 
-func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenForApplicationExt {
+func GenerateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenForApplicationExt {
 	req := fixGenerateOneTimeTokenForApplication(id)
 	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
 

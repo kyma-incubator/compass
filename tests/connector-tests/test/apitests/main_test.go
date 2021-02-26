@@ -1,11 +1,13 @@
 package apitests
 
 import (
+	"context"
 	"crypto/rsa"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
+
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/director"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -20,17 +22,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	apiAccessTimeout  = 60 * time.Second
-	apiAccessInterval = 2 * time.Second
-)
-
 var (
-	config           testkit.TestConfig
-	internalClient   *connector.InternalClient
-	hydratorClient   *connector.HydratorClient
-	connectorClient  *connector.TokenSecuredClient
-	configmapCleaner *testkit.ConfigmapCleaner
+	config                  testkit.TestConfig
+	directorClient          *director.Client
+	connectorHydratorClient *connector.HydratorClient
+	directorHydratorClient  *director.HydratorClient
+	connectorClient         *connector.TokenSecuredClient
+	configmapCleaner        *testkit.ConfigmapCleaner
 
 	clientKey *rsa.PrivateKey
 )
@@ -50,8 +48,14 @@ func TestMain(m *testing.M) {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	internalClient = connector.NewInternalClient(config.InternalConnectorURL)
-	hydratorClient = connector.NewHydratorClient(config.HydratorURL)
+
+	directorClient, err = director.NewClient(context.Background(), config.DirectorURL, config.Tenant)
+	if err != nil {
+		logrus.Errorf("Failed to create director client: %s", err.Error())
+		os.Exit(1)
+	}
+	connectorHydratorClient = connector.NewHydratorClient(config.ConnectorHydratorURL)
+	directorHydratorClient = director.NewHydratorClient(config.DirectorHydratorURL)
 	connectorClient = connector.NewConnectorClient(config.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()

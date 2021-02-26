@@ -14,7 +14,7 @@ func TestTokens(t *testing.T) {
 
 	t.Run("should return valid response on Configuration query for Application token", func(t *testing.T) {
 		//when
-		token, e := internalClient.GenerateApplicationToken(appID)
+		token, e := directorClient.GenerateApplicationToken(t, appID)
 
 		//then
 		require.NoError(t, e)
@@ -29,7 +29,7 @@ func TestTokens(t *testing.T) {
 
 	t.Run("should return valid response on Configuration query for Runtime token", func(t *testing.T) {
 		//when
-		token, e := internalClient.GenerateRuntimeToken(runtimeID)
+		token, e := directorClient.GenerateRuntimeToken(t, runtimeID)
 
 		//then
 		require.NoError(t, e)
@@ -65,7 +65,7 @@ func TestTokens(t *testing.T) {
 
 	t.Run("should return error for previously used token on Configuration query", func(t *testing.T) {
 		//when
-		token, e := internalClient.GenerateApplicationToken(appID)
+		token, e := directorClient.GenerateApplicationToken(t, appID)
 
 		//then
 		require.NoError(t, e)
@@ -90,7 +90,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
-		certResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+		certResult, configuration := connector.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 
 		// then
 		connector.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
@@ -98,7 +98,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when CSR subject is invalid", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := connector.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		wrongSubject := "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
@@ -116,7 +116,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when different Common Name provided", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := connector.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		differentSubject := connector.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
@@ -134,7 +134,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with invalid token", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := connector.GetConfiguration(t, directorClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
 		csr, e := testkit.CreateCsr(certInfo.Subject, clientKey)
@@ -152,7 +152,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with already used token", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := connector.GetConfiguration(t, directorClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
 		csr, err := testkit.CreateCsr(certInfo.Subject, clientKey)
@@ -172,7 +172,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when invalid CSR provided for signing", func(t *testing.T) {
 		// given
-		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := connector.GetConfiguration(t, directorClient, connectorClient, appID)
 		certToken := configuration.Token.Token
 		wrongCSR := "wrongCSR"
 
@@ -189,7 +189,7 @@ func TestFullConnectorFlow(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
 
 	t.Log("Generating certificate...")
-	certificationResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+	certificationResult, configuration := connector.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	connector.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
 
 	defer connector.Cleanup(t, configmapCleaner, certificationResult)

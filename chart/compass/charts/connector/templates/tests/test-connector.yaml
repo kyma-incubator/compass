@@ -24,20 +24,32 @@ spec:
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}connector-tests:{{ .Values.global.images.tests.connector.version }}
         imagePullPolicy: IfNotPresent
         env:
-        - name: APP_EXTERNAL_CONNECTOR_URL
-          value: 'http://{{ template "fullname" . }}:{{ .Values.global.connector.graphql.external.port }}/graphql'
-        - name: APP_INTERNAL_CONNECTOR_URL
-          value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.internal.port }}/graphql"
         - name: APP_CONNECTOR_URL
           value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
-        - name: APP_HYDRATOR_URL
-          value: 'http://{{ template "fullname" . }}:{{ .Values.global.connector.validator.port }}'
+        - name: APP_DIRECTOR_URL
+          value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
+        - name: APP_CONNECTOR_HYDRATOR_URL
+          value: 'http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.validator.port }}'
+        - name: APP_DIRECTOR_HYDRATOR_URL
+          value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.validator.port }}"
         - name: APP_CERTIFICATE_DATA_HEADER
           value: {{ .Values.global.connector.certificateDataHeader }}
         - name: APP_REVOCATION_CONFIG_MAP_NAMESPACE
           value: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
         - name: APP_REVOCATION_CONFIG_MAP_NAME
           value: {{ .Values.global.connector.revocation.configmap.name | quote }}
+        - name: APP_TENANT
+          value: "{{.Values.global.defaultTenant}}"
+        - name: USER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: admin-user
+              key: email
+        - name: USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: admin-user
+              key: password
         command:
         - "/bin/sh"
         args:
