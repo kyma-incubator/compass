@@ -106,6 +106,8 @@ spec:
               value: /config/config.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.deployment.allowJWTSigningNone | quote }}
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ .Values.global.director.clientIDHeaderKey }}
             - name: APP_OAUTH20_CLIENT_ENDPOINT
               value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/clients
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
