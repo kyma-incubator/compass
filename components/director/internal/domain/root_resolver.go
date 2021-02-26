@@ -42,6 +42,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/time"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -155,7 +156,8 @@ func NewRootResolver(
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
+	timeService := time.NewService()
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
