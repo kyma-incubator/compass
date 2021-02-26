@@ -48,27 +48,22 @@ func NewAggregatorService(transact persistence.Transactioner, appSvc Application
 func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	pageCount := 1
 	pageSize := 200
-	page, err := s.listAppPage(ctx, pageSize, "")
-	if err != nil {
-		return errors.Wrapf(err, "error while fetching application page number %d", pageCount)
-	}
-	for _, app := range page.Data {
-		if err := s.processApp(ctx, app); err != nil {
-			return errors.Wrapf(err, "error while processing app %q", app.ID)
-		}
-	}
-	pageCount++
 
-	for page.PageInfo.HasNextPage {
-		page, err = s.listAppPage(ctx, pageSize, page.PageInfo.EndCursor)
+	pageCursor := ""
+	hasNextPage := true
+
+	for hasNextPage {
+		page, err := s.listAppPage(ctx, pageSize, pageCursor)
 		if err != nil {
-			return errors.Wrapf(err, "error while fetching page number %d", pageCount)
+			return errors.Wrapf(err, "error while fetching application page number %d", pageCount)
 		}
 		for _, app := range page.Data {
 			if err := s.processApp(ctx, app); err != nil {
 				return errors.Wrapf(err, "error while processing app %q", app.ID)
 			}
 		}
+		pageCursor = page.PageInfo.EndCursor
+		hasNextPage = page.PageInfo.HasNextPage
 		pageCount++
 	}
 	return nil
@@ -388,7 +383,7 @@ func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB 
 
 func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput) error {
 	ctx = addFieldToLogger(ctx, "api_ord_id", *api.OrdID)
-	i, found := searchInSlice(len(apisFromDB), func(i int) bool {
+	i, isAPIFound := searchInSlice(len(apisFromDB), func(i int) bool {
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
 	})
 
@@ -412,7 +407,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 		specs = append(specs, resourceDef.ToSpec())
 	}
 
-	if !found {
+	if !isAPIFound {
 		_, err := s.apiSvc.Create(ctx, appID, bundleID, packageID, api, specs)
 		return err
 	}

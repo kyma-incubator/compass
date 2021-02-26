@@ -30,39 +30,23 @@ func NewClient(httpClient *http.Client) *client {
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
 func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error) {
-	resp, err := c.Get(url + WellKnownEndpoint)
+	config, err := c.fetchConfig(ctx, url)
 	if err != nil {
-		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
-	}
-
-	defer closeBody(ctx, resp.Body)
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "error reading response body")
-	}
-
-	config := WellKnownConfig{}
-	if err := json.Unmarshal(bodyBytes, &config); err != nil {
-		return nil, errors.Wrap(err, "error unmarshaling json body")
+		return nil, err
 	}
 
 	docs := make([]*Document, 0, 0)
-	for _, config := range config.OpenResourceDiscoveryV1.Documents {
-		strategy, ok := config.AccessStrategies.GetSupported()
+	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
+		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", url+config.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", url+docDetails.URL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+config.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+docDetails.URL, strategy)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+config.URL)
+			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+docDetails.URL)
 		}
-		doc.SystemInstanceAware = config.SystemInstanceAware
+		doc.SystemInstanceAware = docDetails.SystemInstanceAware
 		docs = append(docs, doc)
 	}
 
@@ -97,4 +81,29 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	if err != nil {
 		log.C(ctx).WithError(err).Warnf("Got error on closing response body")
 	}
+}
+
+func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig, error) {
+	resp, err := c.Get(url + WellKnownEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
+	}
+
+	defer closeBody(ctx, resp.Body)
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "error reading response body")
+	}
+
+	config := WellKnownConfig{}
+	if err := json.Unmarshal(bodyBytes, &config); err != nil {
+		return nil, errors.Wrap(err, "error unmarshaling json body")
+	}
+
+	return &config, nil
 }
