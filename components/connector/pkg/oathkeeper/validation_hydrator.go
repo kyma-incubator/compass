@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
