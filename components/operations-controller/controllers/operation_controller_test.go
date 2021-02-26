@@ -199,9 +199,9 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Bu
 			CreationTimestamp: metav1.Time{},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -258,9 +258,9 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 			CreationTimestamp: metav1.Time{},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -317,9 +317,9 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 			Generation:        2,
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			ObservedGeneration: 1,
@@ -400,9 +400,9 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 			Generation:        2,
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 		Status: v1alpha1.OperationStatus{
 			ObservedGeneration: 2,
@@ -478,9 +478,9 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -529,9 +529,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_But_UpdateOperatio
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -599,9 +599,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -668,9 +668,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_But_UpdateOperat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -735,9 +735,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -801,9 +801,9 @@ func TestReconcile_ApplicationHasError_But_UpdateOperationFails_ShouldResultNoRe
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -869,9 +869,9 @@ func TestReconcile_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultN
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -936,9 +936,9 @@ func TestReconcile_WebhookIsMissing_ShouldResultNoRequeueNoError(t *testing.T) {
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.OperationSpec{
-			ResourceID:  appGUID,
-			RequestData: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
-			WebhookIDs:  []string{webhookGUID},
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			WebhookIDs:    []string{webhookGUID},
 		},
 	}
 
@@ -990,7 +990,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateDirectorStatusFails_Sh
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1054,7 +1054,7 @@ func TestReconcile_ReconciliationTimeoutReached_But_UpdateOperationStatusFails_S
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1133,7 +1133,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_UpdateDirectorAndOperationSt
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1211,7 +1211,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1258,11 +1258,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedRequest, actualRequest)
 
@@ -1281,7 +1281,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1342,11 +1342,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1365,7 +1365,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1442,11 +1442,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1465,7 +1465,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1541,11 +1541,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_WebhookExecutionFails_And_We
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1564,7 +1564,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1622,11 +1622,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1645,7 +1645,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1702,11 +1702,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_AsyncWebhookExecutionSucceed
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1725,7 +1725,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1781,11 +1781,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1804,7 +1804,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1874,11 +1874,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1897,7 +1897,7 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -1966,11 +1966,11 @@ func TestReconcile_OperationHasNoWebhookPollURL_And_SyncWebhookExecutionSucceeds
 
 	require.Equal(t, 1, webhookClient.DoCallCount())
 	_, actualWebhookRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.Request{
 		Webhook: application.Result.Webhooks[0],
-		Data:    expectedRequestData,
+		Object:  expectedRequestObject,
 	}
 	require.Equal(t, expectedWebhookRequest, actualWebhookRequest)
 
@@ -1989,7 +1989,7 @@ func TestReconcile_OperationHasWebhookPollURL_But_TimeLayoutParsingFails_ShouldR
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2052,7 +2052,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2114,7 +2114,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2166,12 +2166,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2190,7 +2190,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2255,12 +2255,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2279,7 +2279,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2361,12 +2361,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2385,7 +2385,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2466,12 +2466,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2490,7 +2490,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2540,12 +2540,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2564,7 +2564,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2629,12 +2629,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2653,7 +2653,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2734,12 +2734,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2758,7 +2758,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2838,12 +2838,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2862,7 +2862,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -2921,12 +2921,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -2945,7 +2945,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -3019,12 +3019,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -3043,7 +3043,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -3116,12 +3116,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -3140,7 +3140,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -3200,12 +3200,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -3224,7 +3224,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -3300,12 +3300,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -3324,7 +3324,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -3399,12 +3399,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -3423,7 +3423,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 		},
 		Spec: v1alpha1.OperationSpec{
 			ResourceID:    appGUID,
-			RequestData:   fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
 			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
 			WebhookIDs:    []string{webhookGUID},
@@ -3475,12 +3475,12 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	require.Equal(t, 0, webhookClient.DoCallCount())
 	require.Equal(t, 1, webhookClient.PollCallCount())
 	_, actualWebhookRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestData, err := parseRequestData(operation)
+	expectedRequestObject, err := parseRequestObject(operation)
 	require.NoError(t, err)
 	expectedWebhookRequest := &webhook.PollRequest{
 		Request: &webhook.Request{
 			Webhook: application.Result.Webhooks[0],
-			Data:    expectedRequestData,
+			Object:  expectedRequestObject,
 		},
 		PollURL: mockedLocationURL,
 	}

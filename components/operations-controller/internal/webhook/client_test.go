@@ -46,7 +46,7 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 		Webhook: graphql.Webhook{
 			URLTemplate: &invalidTemplate,
 		},
-		Data: web_hook.RequestData{},
+		Object: web_hook.RequestObject{},
 	}
 
 	client := webhook.NewClient(*http.DefaultClient, nil)
@@ -62,7 +62,7 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 		Webhook: graphql.Webhook{
 			URLTemplate: nil,
 		},
-		Data: web_hook.RequestData{},
+		Object: web_hook.RequestObject{},
 	}
 
 	client := webhook.NewClient(*http.DefaultClient, nil)
@@ -82,7 +82,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 			URLTemplate:   &URLTemplate,
 			InputTemplate: &invalidInputTemplate,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(*http.DefaultClient, nil)
@@ -103,7 +103,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &invalidTemplate,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(*http.DefaultClient, nil)
@@ -125,7 +125,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(*http.DefaultClient, nil)
@@ -147,7 +147,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -175,7 +175,7 @@ func TestClient_Do_WhenParseOutputTemplateFails_ShouldReturnError(t *testing.T) 
 			HeaderTemplate: &headersTemplate,
 			Mode:           &webhookAsyncMode,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -205,7 +205,7 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -238,7 +238,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -273,7 +273,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -315,7 +315,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 				},
 			},
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -361,7 +361,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 				},
 			},
 		},
-		Data: web_hook.RequestData{Application: app},
+		Object: web_hook.RequestObject{Application: app},
 	}
 
 	client := webhook.NewClient(
@@ -399,7 +399,7 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 			OutputTemplate:   &outputTemplate,
 			Mode:             &webhookAsyncMode,
 		},
-		Data:          web_hook.RequestData{Application: app, Headers: map[string]string{}},
+		Object:        web_hook.RequestObject{Application: app, Headers: map[string]string{}},
 		CorrelationID: correlationID,
 	}
 
@@ -430,7 +430,7 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 			Webhook: graphql.Webhook{
 				HeaderTemplate: &invalidTemplate,
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 	}
 
@@ -450,7 +450,7 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -471,7 +471,7 @@ func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -499,7 +499,7 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -528,7 +528,7 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -562,7 +562,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -603,7 +603,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 					},
 				},
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -648,7 +648,7 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 					},
 				},
 			},
-			Data: web_hook.RequestData{Application: app},
+			Object: web_hook.RequestObject{Application: app},
 		},
 		PollURL: mockedLocationURL,
 	}
@@ -685,7 +685,7 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 				StatusTemplate:   &statusTemplate,
 				Mode:             &webhookAsyncMode,
 			},
-			Data:          web_hook.RequestData{Application: app, Headers: map[string]string{}},
+			Object:        web_hook.RequestObject{Application: app, Headers: map[string]string{}},
 			CorrelationID: correlationID,
 		},
 		PollURL: mockedLocationURL,

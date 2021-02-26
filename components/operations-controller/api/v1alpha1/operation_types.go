@@ -31,7 +31,7 @@ type OperationSpec struct {
 	ResourceID        string        `json:"resource_id"`
 	CorrelationID     string        `json:"correlation_id"`
 	WebhookIDs        []string      `json:"webhook_ids"`
-	RequestData       string        `json:"request_data"`
+	RequestObject     string        `json:"request_object"`
 }
 
 // +kubebuilder:validation:Enum=Success;Failed;Polling

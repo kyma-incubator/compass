@@ -44,12 +44,13 @@ func NewClient(httpClient http.Client, oAuthClientProviderFunc OAuthClientProvid
 }
 
 func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
+	var err error
 	webhook := request.Webhook
 
 	var method string
 	url := webhook.URL
 	if webhook.URLTemplate != nil {
-		resultURL, err := web_hook.ParseURLTemplate(webhook.URLTemplate, request.Data)
+		resultURL, err := request.Object.ParseURLTemplate(webhook.URLTemplate)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook URL")
 		}
@@ -61,14 +62,20 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, errors.New("missing webhook url")
 	}
 
-	body, err := web_hook.ParseInputTemplate(webhook.InputTemplate, request.Data)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse webhook input body")
+	body := []byte("{}")
+	if webhook.InputTemplate != nil {
+		body, err = request.Object.ParseInputTemplate(webhook.InputTemplate)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse webhook input body")
+		}
 	}
 
-	headers, err := web_hook.ParseHeadersTemplate(webhook.HeaderTemplate, request.Data)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse webhook headers")
+	headers := http.Header{}
+	if webhook.HeaderTemplate != nil {
+		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse webhook headers")
+		}
 	}
 
 	if webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
@@ -100,21 +107,20 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, err
 	}
 
-	responseData, err := parseResponseData(resp)
+	responseObject, err := parseResponseObject(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	mode := graphql.WebhookModeSync
-	if webhook.Mode != nil {
-		mode = *webhook.Mode
-	}
-	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, *responseData)
+	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
 	if err != nil {
 		return nil, err
 	}
 
-	if *response.Location == "" && mode == graphql.WebhookModeAsync {
+	isLocationEmpty := response.Location != nil && *response.Location == ""
+	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
+
+	if isLocationEmpty && isAsyncWebhook {
 		return nil, errors.New("missing location url after executing async webhook")
 	}
 
@@ -122,11 +128,15 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 }
 
 func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error) {
+	var err error
 	webhook := request.Webhook
 
-	headers, err := web_hook.ParseHeadersTemplate(webhook.HeaderTemplate, request.Data)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse webhook headers")
+	headers := http.Header{}
+	if webhook.HeaderTemplate != nil {
+		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse webhook headers")
+		}
 	}
 
 	if webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
@@ -158,12 +168,12 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 		return nil, err
 	}
 
-	responseData, err := parseResponseData(resp)
+	responseObject, err := parseResponseObject(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := web_hook.ParseStatusTemplate(webhook.StatusTemplate, *responseData)
+	response, err := responseObject.ParseStatusTemplate(webhook.StatusTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +181,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
+func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) {
 	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -189,7 +199,7 @@ func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
 		headers[key] = value[0]
 	}
 
-	return &web_hook.ResponseData{
+	return &web_hook.ResponseObject{
 		Headers: headers,
 		Body:    body,
 	}, nil

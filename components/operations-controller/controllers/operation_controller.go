@@ -109,8 +109,6 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	operation = prepareInitialStatus(*operation)
-
 	webhookCount := len(operation.Spec.WebhookIDs)
 	if webhookCount != 1 {
 		err := fmt.Errorf("expected 1 webhook for execution, found %d", webhookCount)
@@ -118,19 +116,21 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.updateStatusWithError(ctx, operation, err)
 	}
 
+	prepareInitialStatus(operation)
+
 	webhookStatus := &operation.Status.Webhooks[0]
 	if webhookStatus.State != v1alpha1.StateInProgress {
 		log.Info(fmt.Sprintf("Webhook associated with operation has already been executed and finished with state %q. Will return with no requeue", webhookStatus.State))
 		return ctrl.Result{}, nil
 	}
 
-	requestData, err := parseRequestData(operation)
+	requestObject, err := parseRequestObject(operation)
 	if err != nil {
-		logger.Error(err, "Unable to parse request data")
+		logger.Error(err, "Unable to parse request object")
 		return r.updateStatusWithError(ctx, operation, err)
 	}
 
-	ctx = tenant.SaveToContext(ctx, requestData.TenantID)
+	ctx = tenant.SaveToContext(ctx, requestObject.TenantID)
 	app, err := r.directorClient.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
 		logger.Error(err, "Unable to fetch application")
@@ -189,7 +189,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if webhookStatus.WebhookPollURL == "" {
 		log.Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-		request := webhook.NewRequest(*webhookEntity, requestData, operation.Spec.CorrelationID)
+		request := webhook.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
@@ -231,7 +231,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := webhook.NewPollRequest(*webhookEntity, requestData, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
+	request := webhook.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, webhookStatus.WebhookPollURL)
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		logger.Error(err, "Unable to execute Webhook Poll request")
@@ -300,18 +300,18 @@ func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, op
 	return r.updateStatusWithError(ctx, operation, webhookErr)
 }
 
-func parseRequestData(operation *v1alpha1.Operation) (webhook_dir.RequestData, error) {
+func parseRequestObject(operation *v1alpha1.Operation) (webhook_dir.RequestObject, error) {
 	str := struct {
 		Application graphql.Application
 		TenantID    string
 		Headers     map[string]string
 	}{}
 
-	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &str); err != nil {
-		return webhook_dir.RequestData{}, err
+	if err := json.Unmarshal([]byte(operation.Spec.RequestObject), &str); err != nil {
+		return webhook_dir.RequestObject{}, err
 	}
 
-	return webhook_dir.RequestData{
+	return webhook_dir.RequestObject{
 		Application: &str.Application,
 		TenantID:    str.TenantID,
 		Headers:     str.Headers,
@@ -366,7 +366,7 @@ func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook, t
 	return time.Until(nextPollTime), nil
 }
 
-func prepareInitialStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
+func prepareInitialStatus(operation *v1alpha1.Operation) {
 	overrideStatus := false
 	if operation.Generation != operation.Status.ObservedGeneration {
 		overrideStatus = true
@@ -427,7 +427,7 @@ func prepareInitialStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 		}
 	}
 
-	return &operation
+	return
 }
 
 func setConditionStatus(operation v1alpha1.Operation, conditionType v1alpha1.ConditionType, status corev1.ConditionStatus, msg string) *v1alpha1.Operation {

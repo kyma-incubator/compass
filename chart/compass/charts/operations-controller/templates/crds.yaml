@@ -55,7 +55,7 @@ spec:
               - Update
               - Delete
               type: string
-            request_data:
+            request_object:
               type: string
             resource_id:
               type: string
@@ -70,7 +70,7 @@ spec:
           - operation_category
           - operation_id
           - operation_type
-          - request_data
+          - request_object
           - resource_id
           - resource_type
           - webhook_ids
