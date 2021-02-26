@@ -59,32 +59,6 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name: "System Instance Aware property is propagated from the config to the document",
-			RoundTripFunc: func(req *http.Request) *http.Response {
-				var data []byte
-				var err error
-				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
-					data, err = json.Marshal(fixWellKnownConfig())
-					require.NoError(t, err)
-				} else if strings.Contains(req.URL.String(), ordDocURI) {
-					doc := fixORDDocument()
-					doc.SystemInstanceAware = false
-					data, err = json.Marshal(doc)
-					require.NoError(t, err)
-				} else {
-					statusCode = http.StatusNotFound
-				}
-				return &http.Response{
-					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
-				}
-			},
-			ExpectedResult: open_resource_discovery.Documents{
-				fixORDDocument(),
-			},
-		},
-		{
 			Name: "Error fetching well-known config",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte

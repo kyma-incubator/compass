@@ -46,7 +46,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 		if err != nil {
 			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+docDetails.URL)
 		}
-		doc.SystemInstanceAware = docDetails.SystemInstanceAware
+
 		docs = append(docs, doc)
 	}
 
