@@ -12,20 +12,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/pkg/errors"
 )
-
-//go:generate mockery -name=TimeService -output=automock -outpkg=automock -case=underscore
-type TimeService interface {
-	Now() time.Time
-}
-
-type Timer struct {
-}
-
-func (ts Timer) Now() time.Time {
-	return time.Now()
-}
 
 type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
@@ -43,10 +32,10 @@ type validationHydrator struct {
 	csrTokenExpiration     time.Duration
 	appTokenExpiration     time.Duration
 	runtimeTokenExpiration time.Duration
-	timeService            TimeService
+	timeService            directorTime.Service
 }
 
-func NewValidationHydrator(tokenService Service, transact persistence.Transactioner, timeService TimeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration time.Duration) ValidationHydrator {
+func NewValidationHydrator(tokenService Service, transact persistence.Transactioner, timeService directorTime.Service, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration time.Duration) ValidationHydrator {
 	return &validationHydrator{
 		csrTokenExpiration:     csrTokenExpiration,
 		appTokenExpiration:     appTokenExpiration,

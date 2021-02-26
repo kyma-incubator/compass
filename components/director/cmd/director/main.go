@@ -63,6 +63,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -256,7 +257,7 @@ func main() {
 	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	timeService := oathkeeper.Timer{}
+	timeService := directorTime.NewService()
 	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, timeService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
@@ -548,7 +549,7 @@ func systemAuthSvc() oathkeeper.Service {
 	return systemauth.NewService(systemAuthRepo, uidSvc)
 }
 
-func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService oathkeeper.TimeService, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, timeService, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
 
 	router := mux.NewRouter()

@@ -8,19 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tokens"
-
+	connector "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/stretchr/testify/mock"
-
+	mocks "github.com/kyma-incubator/compass/components/director/internal/oathkeeper/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
+	persistenceMocks "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	timeMock "github.com/kyma-incubator/compass/components/director/pkg/time/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	mocks "github.com/kyma-incubator/compass/components/director/internal/oathkeeper/automock"
-	persistenceMocks "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 )
 
 const (
@@ -38,7 +35,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		require.NoError(t, err)
 		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
 		require.NoError(t, err)
-		req.Header.Add(ConnectorTokenHeader, tokenValue)
+		req.Header.Add(connector.ConnectorTokenHeader, tokenValue)
 		return req
 	}
 
@@ -53,7 +50,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should fail when db transaction open fails", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
@@ -68,7 +65,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should fail when session cannot be decoded", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
@@ -85,11 +82,11 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := AuthenticationSession{
+		authenticationSession := connector.AuthenticationSession{
 			Subject: "",
 			Extra:   nil,
 			Header:  nil,
@@ -106,11 +103,11 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := AuthenticationSession{
+		authenticationSession := connector.AuthenticationSession{
 			Subject: "",
 			Extra:   nil,
 			Header:  nil,
@@ -128,7 +125,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should fail for expired token", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 		now := time.Now()
 		afterOneDay := now.AddDate(0, 0, +1)
 		systemAuth := &model.SystemAuth{
@@ -141,7 +138,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		}
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := AuthenticationSession{
+		authenticationSession := connector.AuthenticationSession{
 			Subject: "",
 			Extra:   nil,
 			Header:  nil,
@@ -161,7 +158,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should fail when invalidating token fails", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 		now := time.Now()
 		beforeOneDay := now.AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
@@ -175,7 +172,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		}
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := AuthenticationSession{
+		authenticationSession := connector.AuthenticationSession{
 			Subject: "",
 			Extra:   nil,
 			Header:  nil,
@@ -196,7 +193,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should fail when db transaction commit fails", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 		now := time.Now()
 		beforeOneDay := now.AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
@@ -210,7 +207,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		}
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := AuthenticationSession{
+		authenticationSession := connector.AuthenticationSession{
 			Subject: "",
 			Extra:   nil,
 			Header:  nil,
@@ -232,7 +229,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	t.Run("should succeed when token is resolved successfully", func(t *testing.T) {
 		tokenSerivce := &mocks.Service{}
 		transact := &persistenceMocks.Transactioner{}
-		timeService := &mocks.TimeService{}
+		timeService := &timeMock.Service{}
 		now := time.Now()
 		beforeOneDay := now.AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
@@ -246,7 +243,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		}
 		validationHydrator := NewValidationHydrator(tokenSerivce, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := AuthenticationSession{
+		authenticationSession := connector.AuthenticationSession{
 			Subject: "",
 			Extra:   nil,
 			Header:  nil,
