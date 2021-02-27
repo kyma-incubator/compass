@@ -75,6 +75,15 @@ func HeadersForRequest(request *http.Request) Headers {
 		}
 	}
 
+	// Context might have been enriched with additional headers (outside of those among the well known header keys array)
+	// which should be attached as well
+	for headerKey, headerValue := range headersFromCtx {
+		if _, ok := reqHeaders[headerKey]; !ok {
+			request.Header.Set(headerKey, headerValue)
+			reqHeaders[headerKey] = headerValue
+		}
+	}
+
 	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
 		newRequestID := uuid.New().String()
 		reqHeaders[RequestIDHeaderKey] = newRequestID
