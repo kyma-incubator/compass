@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
@@ -99,7 +100,8 @@ func main() {
 	graphqlClient, err := graphql.PrepareGqlClientWithHttpClient(cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
 
-	controller := controllers.NewOperationReconciler(cfg.Webhook, ctrl.Log.WithName("controllers").WithName("Operation"),
+	controller := controllers.NewOperationReconciler(cfg.Webhook,
+		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		director.NewClient(cfg.Director.InternalAddress, httpClient, graphqlClient),
 		webhook.NewClient(httpClient))

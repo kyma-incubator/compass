@@ -79,7 +79,7 @@ type OperationStatus struct {
 	Webhooks           []Webhook   `json:"webhooks,omitempty"`
 	Conditions         []Condition `json:"conditions,omitempty"`
 	Phase              State       `json:"phase,omitempty"`
-	ObservedGeneration int64       `json:"observed_generation,omitempty"`
+	ObservedGeneration *int64      `json:"observed_generation,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -107,18 +107,18 @@ type OperationList struct {
 	Items           []Operation `json:"items"`
 }
 
-func (in *Operation) InProgress() bool {
-	if len(in.Status.Webhooks) == 0 {
-		return true
-	}
+type OperationValidationErr struct {
+	error string
+}
 
-	return in.Status.Webhooks[0].State == StateInProgress
+func (o *OperationValidationErr) Error() string {
+	return o.error
 }
 
 func (in *Operation) Validate() error {
 	webhookCount := len(in.Spec.WebhookIDs)
 	if webhookCount != 1 {
-		return fmt.Errorf("expected 1 webhook for execution, found: %d", webhookCount)
+		return &OperationValidationErr{error: fmt.Sprintf("expected 1 webhook for execution, found: %d", webhookCount)}
 	}
 
 	return nil

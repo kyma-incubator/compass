@@ -19,31 +19,25 @@ package k8s
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // client implements KubernetesClient and acts as a wrapper of the default kubernetes controller client
 type client struct {
-	ctrl_client.Client
+	ctrlclient.Client
 }
 
 // New constructs a new client instance
-func NewClient(ctrlClient ctrl_client.Client) *client {
+func NewClient(ctrlClient ctrlclient.Client) *client {
 	return &client{Client: ctrlClient}
 }
 
 // Get wraps the default kubernetes controller client Get method
-func (c *client) Get(ctx context.Context, key ctrl_client.ObjectKey) (*v1alpha1.Operation, error) {
+func (c *client) Get(ctx context.Context, key ctrlclient.ObjectKey) (*v1alpha1.Operation, error) {
 	var operation = &v1alpha1.Operation{}
 	err := c.Client.Get(ctx, key, operation)
 	if err != nil {
 		return nil, err
 	}
 	return operation, nil
-}
-
-// UpdateStatus wraps the default kubernetes controller client Status().Update method
-func (c *client) UpdateStatus(ctx context.Context, obj runtime.Object, opts ...ctrl_client.UpdateOption) error {
-	return c.Status().Update(ctx, obj, opts...)
 }
