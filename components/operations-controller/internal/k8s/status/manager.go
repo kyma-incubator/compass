@@ -39,9 +39,11 @@ func NewManager(k8sClient client.Client) *manager {
 
 func (m *manager) Initialize(ctx context.Context, name types.NamespacedName) error {
 	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
-		if status.ObservedGeneration == nil || operation.ObjectMeta.Generation != *status.ObservedGeneration {
-			status.ObservedGeneration = &operation.Generation
+		if status.ObservedGeneration != nil && operation.ObjectMeta.Generation == *status.ObservedGeneration {
+			return
 		}
+
+		status.ObservedGeneration = &operation.Generation
 
 		status.Phase = v1alpha1.StateInProgress
 		status.Conditions = []v1alpha1.Condition{
