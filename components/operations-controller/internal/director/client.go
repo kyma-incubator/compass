@@ -35,10 +35,10 @@ type client struct {
 }
 
 type Request struct {
-	OperationType graphql.OperationType `json:"operation_type,omitempty"`
+	OperationType graphql.OperationType `json:"operation_type"`
 	ResourceType  resource.Type         `json:"resource_type"`
 	ResourceID    string                `json:"resource_id"`
-	Error         string                `json:"error"`
+	Error         string                `json:"error,omitempty"`
 }
 
 // NewClient constructs a default implementation of the Client interface

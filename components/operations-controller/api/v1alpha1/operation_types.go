@@ -15,9 +15,18 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
+
+func init() {
+	SchemeBuilder.Register(&Operation{}, &OperationList{})
+}
 
 // +kubebuilder:validation:Enum=Create;Update;Delete
 type OperationType string
@@ -34,7 +43,7 @@ type OperationSpec struct {
 	RequestObject     string        `json:"request_object"`
 }
 
-// +kubebuilder:validation:Enum=Success;Failed;Polling
+// +kubebuilder:validation:Enum=Success;Failed;In Progress
 type State string
 
 const (
@@ -98,6 +107,69 @@ type OperationList struct {
 	Items           []Operation `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Operation{}, &OperationList{})
+func (in *Operation) InProgress() bool {
+	if len(in.Status.Webhooks) == 0 {
+		return true
+	}
+
+	return in.Status.Webhooks[0].State == StateInProgress
+}
+
+func (in *Operation) Validate() error {
+	webhookCount := len(in.Spec.WebhookIDs)
+	if webhookCount != 1 {
+		return fmt.Errorf("expected 1 webhook for execution, found: %d", webhookCount)
+	}
+
+	return nil
+}
+
+func (in *Operation) HasPollURL() bool {
+	return in.PollURL() != ""
+}
+
+func (in *Operation) PollURL() string {
+	if len(in.Status.Webhooks) == 0 {
+		return ""
+	}
+
+	return in.Status.Webhooks[0].WebhookPollURL
+}
+
+func (in *Operation) NextPollTime(retryInterval *int, timeLayout string) (time.Duration, error) {
+	if len(in.Status.Webhooks) == 0 || in.Status.Webhooks[0].LastPollTimestamp == "" || retryInterval == nil {
+		return 0, nil
+	}
+
+	lastPollTimestamp, err := time.Parse(timeLayout, in.Status.Webhooks[0].LastPollTimestamp)
+	if err != nil {
+		return 0, err
+	}
+
+	nextPollTime := lastPollTimestamp.Add(time.Duration(*retryInterval) * time.Second)
+	return time.Until(nextPollTime), nil
+}
+
+func (in *Operation) TimeoutReached(timeout time.Duration) bool {
+	operationEndTime := in.ObjectMeta.CreationTimestamp.Time.Add(timeout)
+
+	return time.Now().After(operationEndTime)
+}
+
+func (in *Operation) RequestObject() (webhook.RequestObject, error) {
+	str := struct {
+		Application graphql.Application
+		TenantID    string
+		Headers     map[string]string
+	}{}
+
+	if err := json.Unmarshal([]byte(in.Spec.RequestObject), &str); err != nil {
+		return webhook.RequestObject{}, err
+	}
+
+	return webhook.RequestObject{
+		Application: &str.Application,
+		TenantID:    str.TenantID,
+		Headers:     str.Headers,
+	}, nil
 }

@@ -108,7 +108,7 @@ spec:
               enum:
               - Success
               - Failed
-              - Polling
+              - In Progress
               type: string
             webhooks:
               items:
@@ -122,7 +122,7 @@ spec:
                     enum:
                     - Success
                     - Failed
-                    - Polling
+                    - In Progress
                     type: string
                   webhook_id:
                     type: string
