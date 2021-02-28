@@ -37,6 +37,7 @@ var (
 )
 
 // StatusManager defines an abstraction for managing the status of a given kubernetes resource
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StatusManager
 type StatusManager interface {
 	Initialize(ctx context.Context, name types.NamespacedName) error
 	InProgressWithPollURL(ctx context.Context, name types.NamespacedName, pollURL string) error

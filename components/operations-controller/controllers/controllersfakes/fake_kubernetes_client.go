@@ -40,19 +40,6 @@ type FakeKubernetesClient struct {
 		result1 *v1alpha1.Operation
 		result2 error
 	}
-	UpdateStatusStub        func(context.Context, runtime.Object, ...client.UpdateOption) error
-	updateStatusMutex       sync.RWMutex
-	updateStatusArgsForCall []struct {
-		arg1 context.Context
-		arg2 runtime.Object
-		arg3 []client.UpdateOption
-	}
-	updateStatusReturns struct {
-		result1 error
-	}
-	updateStatusReturnsOnCall map[int]struct {
-		result1 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -183,68 +170,6 @@ func (fake *FakeKubernetesClient) GetReturnsOnCall(i int, result1 *v1alpha1.Oper
 	}{result1, result2}
 }
 
-func (fake *FakeKubernetesClient) UpdateStatus(arg1 context.Context, arg2 runtime.Object, arg3 ...client.UpdateOption) error {
-	fake.updateStatusMutex.Lock()
-	ret, specificReturn := fake.updateStatusReturnsOnCall[len(fake.updateStatusArgsForCall)]
-	fake.updateStatusArgsForCall = append(fake.updateStatusArgsForCall, struct {
-		arg1 context.Context
-		arg2 runtime.Object
-		arg3 []client.UpdateOption
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("UpdateStatus", []interface{}{arg1, arg2, arg3})
-	fake.updateStatusMutex.Unlock()
-	if fake.UpdateStatusStub != nil {
-		return fake.UpdateStatusStub(arg1, arg2, arg3...)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	fakeReturns := fake.updateStatusReturns
-	return fakeReturns.result1
-}
-
-func (fake *FakeKubernetesClient) UpdateStatusCallCount() int {
-	fake.updateStatusMutex.RLock()
-	defer fake.updateStatusMutex.RUnlock()
-	return len(fake.updateStatusArgsForCall)
-}
-
-func (fake *FakeKubernetesClient) UpdateStatusCalls(stub func(context.Context, runtime.Object, ...client.UpdateOption) error) {
-	fake.updateStatusMutex.Lock()
-	defer fake.updateStatusMutex.Unlock()
-	fake.UpdateStatusStub = stub
-}
-
-func (fake *FakeKubernetesClient) UpdateStatusArgsForCall(i int) (context.Context, runtime.Object, []client.UpdateOption) {
-	fake.updateStatusMutex.RLock()
-	defer fake.updateStatusMutex.RUnlock()
-	argsForCall := fake.updateStatusArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
-}
-
-func (fake *FakeKubernetesClient) UpdateStatusReturns(result1 error) {
-	fake.updateStatusMutex.Lock()
-	defer fake.updateStatusMutex.Unlock()
-	fake.UpdateStatusStub = nil
-	fake.updateStatusReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeKubernetesClient) UpdateStatusReturnsOnCall(i int, result1 error) {
-	fake.updateStatusMutex.Lock()
-	defer fake.updateStatusMutex.Unlock()
-	fake.UpdateStatusStub = nil
-	if fake.updateStatusReturnsOnCall == nil {
-		fake.updateStatusReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.updateStatusReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeKubernetesClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -252,8 +177,6 @@ func (fake *FakeKubernetesClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteMutex.RUnlock()
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	fake.updateStatusMutex.RLock()
-	defer fake.updateStatusMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

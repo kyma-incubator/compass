@@ -75,7 +75,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	requestObject, err := operation.RequestObject()
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to parse request object")
-		return r.updateStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err)
 	}
 
 	ctx = tenant.SaveToContext(ctx, requestObject.TenantID)
@@ -85,18 +85,18 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if app.Result.Ready {
-		return r.updateStatusForApplication(ctx, req.NamespacedName, app.Result.Error)
+		return r.finalizeStatusForApplication(ctx, req.NamespacedName, app.Result.Error)
 	}
 
 	webhookEntity, err := retrieveWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to retrieve webhook")
-		return r.updateStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err)
 	}
 
 	if operation.TimeoutReached(calculateTimeout(webhookEntity, r.config.WebhookTimeout)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
-		return r.updateStatusWithError(ctx, operation, ErrReconciliationTimeoutReached)
+		return r.finalizeStatusWithError(ctx, operation, ErrReconciliationTimeoutReached)
 	}
 
 	if !operation.HasPollURL() {
@@ -116,7 +116,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	requeueAfter, err := operation.NextPollTime(webhookEntity.RetryInterval, r.config.TimeLayout)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to calculate next poll time")
-		return r.updateStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err)
 	}
 
 	if requeueAfter > 0 {
@@ -149,7 +149,7 @@ func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *OperationReconciler) handleInitializationError(ctx context.Context, err error, operation *v1alpha1.Operation) (ctrl.Result, error) {
 	log.C(ctx).Error(err, "Failed to initialize operation status")
 	if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
-		return r.updateStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err)
 	}
 	return ctrl.Result{}, err
 }
@@ -191,7 +191,7 @@ func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operati
 		return ctrl.Result{Requeue: true}, nil
 	case graphql.WebhookModeSync:
 		log.C(ctx).Info("Synchronous webhook has been executed successfully")
-		return r.updateStatusSuccess(ctx, operation)
+		return r.finalizeStatusSuccess(ctx, operation)
 	default:
 		log.C(ctx).Error(ErrUnsupportedWebhookMode, "Unable to post-process Webhook response")
 		return ctrl.Result{}, nil
@@ -211,11 +211,12 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
 		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, ErrWebhookTimeoutReached)
 	case *response.SuccessStatusIdentifier:
-		return r.updateStatusSuccess(ctx, operation)
+		return r.finalizeStatusSuccess(ctx, operation)
 	case *response.FailedStatusIdentifier:
-		return r.updateStatusWithError(ctx, operation, ErrFailedWebhookStatus)
+		return r.finalizeStatusWithError(ctx, operation, ErrFailedWebhookStatus)
 	default:
-		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
+		log.C(ctx).Error(fmt.Errorf("unexpected poll status response: %s", *response.Status), "Polling will be stopped due to an unknown status code received")
+		return ctrl.Result{}, nil
 	}
 }
 
@@ -227,10 +228,10 @@ func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, op
 		}
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
-	return r.updateStatusWithError(ctx, operation, webhookErr)
+	return r.finalizeStatusWithError(ctx, operation, webhookErr)
 }
 
-func (r *OperationReconciler) updateStatusForApplication(ctx context.Context, name types.NamespacedName, errorMsg *string) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatusForApplication(ctx context.Context, name types.NamespacedName, errorMsg *string) (ctrl.Result, error) {
 	if errorMsg != nil && *errorMsg != "" {
 		if err := r.statusManager.FailedStatus(ctx, name, *errorMsg); err != nil {
 			return ctrl.Result{}, err
@@ -243,26 +244,30 @@ func (r *OperationReconciler) updateStatusForApplication(ctx context.Context, na
 	return ctrl.Result{}, nil
 }
 
-func (r *OperationReconciler) updateStatusSuccess(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
 	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequest(operation)); err != nil {
 		return ctrl.Result{}, err
 	}
+
 	namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
 	if err := r.statusManager.SuccessStatus(ctx, namespacedName); err != nil {
 		return ctrl.Result{}, err
 	}
+
 	log.C(ctx).Info("Successfully updated operation status", "status", operation.Status)
 	return ctrl.Result{}, nil
 }
 
-func (r *OperationReconciler) updateStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error) (ctrl.Result, error) {
 	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequestWithError(operation, opErr)); err != nil {
 		return ctrl.Result{}, err
 	}
+
 	namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
 	if err := r.statusManager.FailedStatus(ctx, namespacedName, opErr.Error()); err != nil {
 		return ctrl.Result{}, err
 	}
+
 	log.C(ctx).Info("Successfully updated operation status", "status", operation.Status)
 	return ctrl.Result{}, nil
 }

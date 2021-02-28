@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers_test
 
 import (
 	"github.com/go-logr/logr"
@@ -24,7 +24,7 @@ import (
 // mockedLogger is a mock implementation of the Logger interface to fit the controller tests use case
 type mockedLogger struct {
 	log.NullLogger
-	RecordedError error
+	AssertErrorExpectations func(err error, msg string)
 }
 
 func (ml *mockedLogger) Info(_ string, _ ...interface{}) {}
@@ -37,4 +37,6 @@ func (ml *mockedLogger) WithValues(_ ...interface{}) logr.Logger { return ml }
 
 func (ml *mockedLogger) WithName(_ string) logr.Logger { return nil }
 
-func (ml *mockedLogger) Error(err error, _ string, _ ...interface{}) { ml.RecordedError = err }
+func (ml *mockedLogger) Error(err error, msg string, _ ...interface{}) {
+	ml.AssertErrorExpectations(err, msg)
+}

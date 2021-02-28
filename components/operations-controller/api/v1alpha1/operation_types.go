@@ -108,17 +108,17 @@ type OperationList struct {
 }
 
 type OperationValidationErr struct {
-	error string
+	Description string
 }
 
 func (o *OperationValidationErr) Error() string {
-	return o.error
+	return o.Description
 }
 
 func (in *Operation) Validate() error {
 	webhookCount := len(in.Spec.WebhookIDs)
 	if webhookCount != 1 {
-		return &OperationValidationErr{error: fmt.Sprintf("expected 1 webhook for execution, found: %d", webhookCount)}
+		return &OperationValidationErr{Description: fmt.Sprintf("expected 1 webhook for execution, found: %d", webhookCount)}
 	}
 
 	return nil

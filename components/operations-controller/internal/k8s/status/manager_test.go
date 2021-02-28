@@ -47,6 +47,7 @@ func TestStatusManager(t *testing.T) {
 
 	cfg, err := testEnv.Start()
 	require.NoError(t, err)
+	defer testEnv.Stop()
 
 	err = v1alpha1.AddToScheme(scheme.Scheme)
 	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
