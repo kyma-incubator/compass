@@ -19,9 +19,10 @@ package webhook_test
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -49,7 +50,7 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{},
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -65,7 +66,7 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{},
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -85,7 +86,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -106,7 +107,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -128,7 +129,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Do(nil, webhookReq)
 
@@ -150,45 +151,15 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{err: errors.New(mockedError)},
-		},
-		nil)
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{err: errors.New(mockedError)},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedError)
 
-}
-
-func TestClient_Do_WhenParseOutputTemplateFails_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
-	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: graphql.Webhook{
-			URLTemplate:    &URLTemplate,
-			InputTemplate:  &inputTemplate,
-			HeaderTemplate: &headersTemplate,
-			Mode:           &webhookAsyncMode,
-		},
-		Object: web_hook.RequestObject{Application: app},
-	}
-
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
-			},
-		}, nil)
-
-	_, err := client.Do(context.Background(), webhookReq)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "missing webhook output template")
 }
 
 func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnError(t *testing.T) {
@@ -208,15 +179,14 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					StatusCode: http.StatusAccepted,
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				StatusCode: http.StatusAccepted,
 			},
-		}, nil)
+		},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -241,16 +211,15 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusAccepted,
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusAccepted,
 			},
-		}, nil)
+		},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -276,16 +245,15 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusInternalServerError,
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusInternalServerError,
 			},
-		}, nil)
+		},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -298,8 +266,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
-	username := "user"
-	password := "pass"
+	username, password := "user", "pass"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
@@ -318,22 +285,23 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusAccepted,
-				},
-				roundTripExpectations: func(r *http.Request) {
-					auth := username + ":" + password
-					base64Creds := base64.StdEncoding.EncodeToString([]byte(auth))
-					require.NotEmpty(t, r.Header["Authorization"])
-					require.Equal(t, r.Header["Authorization"][0], "Basic "+base64Creds)
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusAccepted,
 			},
-		}, nil)
+			roundTripExpectations: func(r *http.Request) {
+				credentials, err := auth.LoadFromContext(r.Context())
+				require.NoError(t, err)
+				basicCreds, ok := credentials.(*auth.BasicCredentials)
+				require.True(t, ok)
+				require.Equal(t, username, basicCreds.Username)
+				require.Equal(t, password, basicCreds.Password)
+			},
+		},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -345,6 +313,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
@@ -355,27 +324,33 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 			Mode:           &webhookAsyncMode,
 			Auth: &graphql.Auth{
 				Credential: &graphql.OAuthCredentialData{
-					ClientID:     "client-id",
-					ClientSecret: "client-secret",
-					URL:          "https://test-domain.com/oauth/token",
+					ClientID:     clientID,
+					ClientSecret: clientSecret,
+					URL:          tokenURL,
 				},
 			},
 		},
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(
-		*http.DefaultClient,
-		func(_ context.Context, client http.Client, _ *graphql.OAuthCredentialData) *http.Client {
-			client.Transport = mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusAccepted,
-				},
-			}
-			return &client
-		})
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusAccepted,
+			},
+			roundTripExpectations: func(r *http.Request) {
+				credentials, err := auth.LoadFromContext(r.Context())
+				require.NoError(t, err)
+				oAuthCredentials, ok := credentials.(*auth.OAuthCredentials)
+				require.True(t, ok)
+				require.Equal(t, clientID, oAuthCredentials.ClientID)
+				require.Equal(t, clientSecret, oAuthCredentials.ClientSecret)
+				require.Equal(t, tokenURL, oAuthCredentials.TokenURL)
+			},
+		},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -403,20 +378,26 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 		CorrelationID: correlationID,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusAccepted,
-				},
-				roundTripExpectations: func(r *http.Request) {
-					require.NotEmpty(t, r.Header[correlationIDKey])
-					require.Equal(t, r.Header[correlationIDKey][0], correlationID)
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusAccepted,
 			},
-		}, nil)
+			roundTripExpectations: func(r *http.Request) {
+				headers := correlation.HeadersFromContext(r.Context())
+				correlationIDAttached := false
+				for headerKey, headerValue := range headers {
+					if headerKey == correlationIDKey && headerValue == correlationID {
+						correlationIDAttached = true
+						break
+					}
+				}
+				require.True(t, correlationIDAttached)
+			},
+		},
+	})
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -434,7 +415,7 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 		},
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -455,7 +436,7 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(*http.DefaultClient, nil)
+	client := webhook.NewClient(http.DefaultClient)
 
 	_, err := client.Poll(nil, webhookReq)
 
@@ -476,10 +457,9 @@ func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{err: errors.New(mockedError)},
-		}, nil)
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{err: errors.New(mockedError)},
+	})
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -504,12 +484,11 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
-			},
-		}, nil)
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
+		},
+	})
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -533,16 +512,14 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusOK,
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
+				StatusCode: http.StatusOK,
 			},
-		}, nil)
+		},
+	})
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -567,16 +544,14 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusInternalServerError,
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				StatusCode: http.StatusInternalServerError,
 			},
-		}, nil)
+		},
+	})
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -587,8 +562,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
-	username := "user"
-	password := "pass"
+	username, password := "user", "pass"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.PollRequest{
 		Request: &webhook.Request{
@@ -608,22 +582,22 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusOK,
-				},
-				roundTripExpectations: func(r *http.Request) {
-					auth := username + ":" + password
-					base64Creds := base64.StdEncoding.EncodeToString([]byte(auth))
-					require.NotEmpty(t, r.Header["Authorization"])
-					require.Equal(t, r.Header["Authorization"][0], "Basic "+base64Creds)
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				StatusCode: http.StatusOK,
 			},
-		}, nil)
+			roundTripExpectations: func(r *http.Request) {
+				credentials, err := auth.LoadFromContext(r.Context())
+				require.NoError(t, err)
+				basicCreds, ok := credentials.(*auth.BasicCredentials)
+				require.True(t, ok)
+				require.Equal(t, username, basicCreds.Username)
+				require.Equal(t, password, basicCreds.Password)
+			},
+		},
+	})
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -633,6 +607,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.PollRequest{
 		Request: &webhook.Request{
@@ -653,19 +628,23 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		*http.DefaultClient,
-		func(_ context.Context, client http.Client, _ *graphql.OAuthCredentialData) *http.Client {
-			client.Transport = mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusOK,
-				},
-			}
-			return &client
-		})
-
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				StatusCode: http.StatusOK,
+			},
+			roundTripExpectations: func(r *http.Request) {
+				credentials, err := auth.LoadFromContext(r.Context())
+				require.NoError(t, err)
+				oAuthCredentials, ok := credentials.(*auth.OAuthCredentials)
+				require.True(t, ok)
+				require.Equal(t, clientID, oAuthCredentials.ClientID)
+				require.Equal(t, clientSecret, oAuthCredentials.ClientSecret)
+				require.Equal(t, tokenURL, oAuthCredentials.TokenURL)
+			},
+		},
+	})
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
@@ -691,20 +670,25 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(
-		http.Client{
-			Transport: mockedTransport{
-				resp: &http.Response{
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
-					Header:     http.Header{"Location": []string{mockedLocationURL}},
-					StatusCode: http.StatusOK,
-				},
-				roundTripExpectations: func(r *http.Request) {
-					require.NotEmpty(t, r.Header[correlationIDKey])
-					require.Equal(t, r.Header[correlationIDKey][0], correlationID)
-				},
+	client := webhook.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				StatusCode: http.StatusOK,
 			},
-		}, nil)
+			roundTripExpectations: func(r *http.Request) {
+				headers := correlation.HeadersFromContext(r.Context())
+				correlationIDAttached := false
+				for headerKey, headerValue := range headers {
+					if headerKey == correlationIDKey && headerValue == correlationID {
+						correlationIDAttached = true
+						break
+					}
+				}
+				require.True(t, correlationIDAttached)
+			},
+		},
+	})
 
 	_, err := client.Poll(context.Background(), webhookReq)
 

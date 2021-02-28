@@ -36,11 +36,11 @@ var (
 	ErrUnsupportedWebhookMode       = errors.New("unsupported webhook mode")
 )
 
-// StatusManager
+// StatusManager defines an abstraction for managing the status of a given kubernetes resource
 type StatusManager interface {
 	Initialize(ctx context.Context, name types.NamespacedName) error
 	InProgressWithPollURL(ctx context.Context, name types.NamespacedName, pollURL string) error
-	InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, name types.NamespacedName, pollURL, lastPollTimestamp string) error
+	InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, name types.NamespacedName, pollURL, lastPollTimestamp string, retryCount int) error
 	SuccessStatus(ctx context.Context, name types.NamespacedName) error
 	FailedStatus(ctx context.Context, name types.NamespacedName, errorMsg string) error
 }

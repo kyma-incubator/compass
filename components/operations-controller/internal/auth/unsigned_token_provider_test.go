@@ -1,8 +1,25 @@
+/*
+ * Copyright 2020 The Compass Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package auth_test
 
 import (
 	"context"
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"strings"
@@ -24,13 +41,13 @@ const (
 	tenantID  = "b1f5081d-4c67-4eff-90eb-b8ffaf7b590a"
 )
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvider_New() {
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_New() {
 	provider, err := auth.NewUnsignedTokenAuthorizationProvider("%zzz")
 	suite.Require().Error(err)
 	suite.Require().Nil(provider)
 }
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvider_Name() {
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_Name() {
 	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
 	suite.Require().NoError(err)
 
@@ -39,7 +56,7 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvi
 	suite.Require().Equal(name, "UnsignedTokenAuthorizationProvider")
 }
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvider_Matches() {
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_Matches() {
 	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
 	suite.Require().NoError(err)
 
@@ -47,7 +64,23 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvi
 	suite.Require().Equal(matches, true)
 }
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvider_URL() {
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_DoesNotMatchWhenBasicCredentialsInContext() {
+	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
+	suite.Require().NoError(err)
+
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
+	suite.Require().Equal(matches, false)
+}
+
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_DoesNotMatchWhenOAuthCredentialsInContext() {
+	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
+	suite.Require().NoError(err)
+
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
+	suite.Require().Equal(matches, false)
+}
+
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_URL() {
 	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
 	suite.Require().NoError(err)
 
@@ -56,7 +89,7 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvi
 	suite.Require().Equal(url.String(), targetURL)
 }
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvider_GetAuthorizationToken() {
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_GetAuthorization() {
 	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
 	suite.Require().NoError(err)
 
@@ -77,7 +110,7 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvi
 
 }
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenProvider_GetAuthorizationTokenFailsWhenNoTenantInContext() {
+func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_GetAuthorizationFailsWhenNoTenantInContext() {
 	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
 	suite.Require().NoError(err)
 

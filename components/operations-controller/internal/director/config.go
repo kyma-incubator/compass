@@ -30,6 +30,7 @@ func DefaultConfig() *Config {
 	}
 }
 
+// Validate ensures that the director config properties have valid values
 func (c *Config) Validate() error {
 	if len(c.InternalAddress) == 0 {
 		return errors.New("validate director settings: missing internal address")

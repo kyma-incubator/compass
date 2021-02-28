@@ -23,9 +23,7 @@ import (
 	"net/url"
 )
 
-const BasicAuthorizationProviderName = "BasicAuthorizationProvider"
-
-// BasicAuthorizationProvider presents an AuthorizationProvider implementation which crafts Basic Authentication header values
+// BasicAuthorizationProvider presents an AuthorizationProvider implementation which crafts Basic Authentication header values for the Authorization header
 type basicAuthorizationProvider struct{}
 
 // NewBasicAuthorizationProvider constructs a BasicAuthorizationProvider
@@ -35,7 +33,7 @@ func NewBasicAuthorizationProvider() *basicAuthorizationProvider {
 
 // Name specifies the name of the AuthorizationProvider
 func (u basicAuthorizationProvider) Name() string {
-	return BasicAuthorizationProviderName
+	return "BasicAuthorizationProvider"
 }
 
 // Matches contains the logic for matching the AuthorizationProvider
@@ -53,7 +51,7 @@ func (u basicAuthorizationProvider) TargetURL() *url.URL {
 	return nil
 }
 
-// GetAuthorization prepares the Basic Authentication header value for the executing request
+// GetAuthorization prepares the Authorization header Basic Authentication value for the executing request
 func (u basicAuthorizationProvider) GetAuthorization(ctx context.Context) (string, error) {
 	credentials, err := LoadFromContext(ctx)
 	if err != nil {

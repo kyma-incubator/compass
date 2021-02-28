@@ -27,16 +27,22 @@ import (
 
 type statusUpdaterFunc func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus)
 
+// manager implements the StatusManager interface
 type manager struct {
 	k8sClient client.Client
 }
 
+// NewManager constructs a manager instance
 func NewManager(k8sClient client.Client) *manager {
 	return &manager{
 		k8sClient: k8sClient,
 	}
 }
 
+// Initialize sets the initial status of an Operation CR.
+// The method executes only if the generation of the Operation CR mismatches the observed generation in the status,
+// which allows the method to be used on the same resource over and over, for example when consecutive async requests
+// are scheduled on the same Operation CR and the old status should be wiped off.
 func (m *manager) Initialize(ctx context.Context, name types.NamespacedName) error {
 	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
 		if status.ObservedGeneration != nil && operation.ObjectMeta.Generation == *status.ObservedGeneration {
@@ -57,11 +63,14 @@ func (m *manager) Initialize(ctx context.Context, name types.NamespacedName) err
 	})
 }
 
+// InProgressWithPollURL sets the status of an Operation CR to In Progress, ensures that none of the conditions are set to True,
+// and also initializes the slice of webhooks in the status with a single webhook with the provided pollURL.
 func (m *manager) InProgressWithPollURL(ctx context.Context, name types.NamespacedName, pollURL string) error {
-	return m.InProgressWithPollURLAndLastPollTimestamp(ctx, name, pollURL, "")
+	return m.InProgressWithPollURLAndLastPollTimestamp(ctx, name, pollURL, "", 0)
 }
 
-func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, name types.NamespacedName, pollURL, lastPollTimestamp string) error {
+// InProgressWithPollURLAndLastPollTimestamp builds on what InProgressWithPollURL does, but also sets the last poll timestamp and retry count for the given webhook.
+func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, name types.NamespacedName, pollURL, lastPollTimestamp string, retryCount int) error {
 	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
 		status.Phase = v1alpha1.StateInProgress
 		status.Conditions = []v1alpha1.Condition{
@@ -70,11 +79,13 @@ func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context,
 		}
 
 		status.Webhooks = []v1alpha1.Webhook{
-			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress, WebhookPollURL: pollURL, LastPollTimestamp: lastPollTimestamp},
+			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress, WebhookPollURL: pollURL, LastPollTimestamp: lastPollTimestamp, RetriesCount: retryCount},
 		}
 	})
 }
 
+// SuccessStatus sets the status of an Operation CR to Success, ensures that the Ready condition is True, the Error condition is False,
+// and that the webhook part of the webhooks slice in the status is marked with Success.
 func (m *manager) SuccessStatus(ctx context.Context, name types.NamespacedName) error {
 	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
 		status.Phase = v1alpha1.StateSuccess
@@ -89,6 +100,8 @@ func (m *manager) SuccessStatus(ctx context.Context, name types.NamespacedName) 
 	})
 }
 
+// FailedStatus sets the status of an Operation CR to Failed, ensures that the Ready condition is False, the Error condition is True,
+// and that the webhook part of the webhooks slice in the status is marked with Failed.
 func (m *manager) FailedStatus(ctx context.Context, name types.NamespacedName, errorMsg string) error {
 	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
 		status.Phase = v1alpha1.StateFailed

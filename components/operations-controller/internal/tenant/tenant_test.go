@@ -43,7 +43,13 @@ func TestLoadFromContext(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name:               "Error",
+			Name:               "Error empty tenant value",
+			Context:            context.WithValue(context.TODO(), tenant.ContextKey, ""),
+			ExpectedResult:     "",
+			ExpectedErrMessage: "Tenant is required",
+		},
+		{
+			Name:               "Error missing tenant",
 			Context:            context.TODO(),
 			ExpectedResult:     "",
 			ExpectedErrMessage: "cannot read tenant from context",

@@ -35,7 +35,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operationsv1alpha1 "github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
+	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
 	// +kubebuilder:scaffold:imports
@@ -55,7 +55,7 @@ func init() {
 		panic(err)
 	}
 
-	err = operationsv1alpha1.AddToScheme(scheme)
+	err = v1alpha1.AddToScheme(scheme)
 	if err != nil {
 		panic(err)
 	}

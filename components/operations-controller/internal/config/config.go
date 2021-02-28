@@ -30,10 +30,13 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// Validatable defines entities capable of being validated
 type Validatable interface {
 	Validate() error
 }
 
+// Config comprises of all the configurations that are necessary
+// for successful bootstrap and execution of the Operations Controller
 type Config struct {
 	Server        *server.Config   `mapstructure:"server"`
 	HttpClient    *http.Config     `mapstructure:"http_client"`
@@ -42,11 +45,13 @@ type Config struct {
 	Webhook       *webhook.Config  `mapstructure:"webhook"`
 }
 
+// AppPFlags adds pflags for the Config structure and adds them in the provided set
 func AddPFlags(set *pflag.FlagSet) {
 	env.CreatePFlags(set, DefaultConfig())
 	env.CreatePFlagsForConfigFile(set)
 }
 
+// DefaultConfig constructs a Config with default values
 func DefaultConfig() *Config {
 	return &Config{
 		Server:        server.DefaultConfig(),
@@ -57,6 +62,7 @@ func DefaultConfig() *Config {
 	}
 }
 
+// New constructs a Config based on a given Environment
 func New(env env.Environment) (*Config, error) {
 	config := DefaultConfig()
 	if err := env.Unmarshal(config); err != nil {
@@ -66,6 +72,7 @@ func New(env env.Environment) (*Config, error) {
 	return config, nil
 }
 
+// Validate ensures the constructed Config contains valid property values
 func (c *Config) Validate() error {
 	validatableFields := make([]Validatable, 0, 0)
 

@@ -86,8 +86,10 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req.Header = headers
 
-	ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
-	req = req.WithContext(ctx)
+	if webhook.Auth != nil {
+		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+		req = req.WithContext(ctx)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -136,8 +138,10 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	req.Header = headers
 
-	ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
-	req = req.WithContext(ctx)
+	if webhook.Auth != nil {
+		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+		req = req.WithContext(ctx)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

@@ -110,7 +110,6 @@ spec:
                   last_poll_timestamp:
                     type: string
                   retries_count:
-                    format: int32
                     type: integer
                   state:
                     enum:

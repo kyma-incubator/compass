@@ -22,19 +22,19 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-type logKey struct{}
+const ContextKey = "LogCtxKey"
 
 var C = LoggerFromContext
 
 // ContextWithLogger returns a new context with the provided logger
 func ContextWithLogger(ctx context.Context, logger logr.Logger) context.Context {
-	return context.WithValue(ctx, logKey{}, logger)
+	return context.WithValue(ctx, ContextKey, logger)
 }
 
 // LoggerFromContext retrieves the current logger from the context
 func LoggerFromContext(ctx context.Context) logr.Logger {
-	logger, ok := ctx.Value(logKey{}).(logr.Logger)
-	if !ok || logger == nil {
+	logger, ok := ctx.Value(ContextKey).(logr.Logger)
+	if !ok {
 		logger = ctrl.Log
 	}
 	return logger

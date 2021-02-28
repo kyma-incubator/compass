@@ -26,7 +26,7 @@ import (
 )
 
 func TestClient_UpdateStatus_WhenNewRequestWithContextFails_ShouldReturnError(t *testing.T) {
-	client := director.NewClient("", http.Client{}, nil)
+	client := director.NewClient("", &http.Client{}, nil)
 
 	err := client.UpdateOperation(nil, &director.Request{})
 
@@ -39,7 +39,7 @@ func TestClient_UpdateStatus_WhenClientDoFails_ShouldReturnError(t *testing.T) {
 		Transport: mockedTransport{resp: nil, err: mockedErr},
 	}
 
-	client := director.NewClient("", httpClient, nil)
+	client := director.NewClient("", &httpClient, nil)
 
 	err := client.UpdateOperation(context.Background(), &director.Request{})
 
@@ -54,7 +54,7 @@ func TestClient_UpdateStatus_WhenResponseStatusCodeIsNotOK_ShouldReturnError(t *
 		}, err: nil},
 	}
 
-	client := director.NewClient("", httpClient, nil)
+	client := director.NewClient("", &httpClient, nil)
 
 	err := client.UpdateOperation(context.Background(), &director.Request{})
 
@@ -69,7 +69,7 @@ func TestClient_UpdateStatus_WhenRequestIsSuccessful_ShouldNotReturnError(t *tes
 		}, err: nil},
 	}
 
-	client := director.NewClient("", httpClient, nil)
+	client := director.NewClient("", &httpClient, nil)
 
 	err := client.UpdateOperation(context.Background(), &director.Request{})
 

@@ -24,9 +24,7 @@ import (
 	"net/url"
 )
 
-const TokenAuthorizationProviderName = "TokenAuthorizationProvider"
-
-// TokenAuthorizationProvider presents a AuthorizationProvider implementation which crafts Bearer oauth token header values
+// TokenAuthorizationProvider presents a AuthorizationProvider implementation which crafts OAuth Bearer token values for the Authorization header
 type tokenAuthorizationProvider struct {
 	httpClient httputils.Client
 }
@@ -40,7 +38,7 @@ func NewTokenAuthorizationProvider(httpClient httputils.Client) *tokenAuthorizat
 
 // Name specifies the name of the AuthorizationProvider
 func (u tokenAuthorizationProvider) Name() string {
-	return TokenAuthorizationProviderName
+	return "TokenAuthorizationProvider"
 }
 
 // Matches contains the logic for matching the AuthorizationProvider
@@ -58,7 +56,7 @@ func (u tokenAuthorizationProvider) TargetURL() *url.URL {
 	return nil
 }
 
-// GetAuthorizationToken crafts an oauth token to inject as part of the executing request
+// GetAuthorizationToken crafts an OAuth Bearer token to inject as part of the executing request
 func (u tokenAuthorizationProvider) GetAuthorization(ctx context.Context) (string, error) {
 	credentials, err := LoadFromContext(ctx)
 	if err != nil {

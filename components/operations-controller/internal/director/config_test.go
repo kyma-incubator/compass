@@ -29,9 +29,11 @@ func TestConfig_Validate(t *testing.T) {
 		ExpectValid    bool
 	}{
 		{
-			Msg: "Default config should not be valid",
+			Msg: "Internal Address is not set should be invalid",
 			ConfigProvider: func() *director.Config {
-				return director.DefaultConfig()
+				config := director.DefaultConfig()
+				config.InternalAddress = ""
+				return config
 			},
 			ExpectValid: false,
 		},

@@ -54,14 +54,6 @@ func TestConfig_Validate(t *testing.T) {
 			},
 		},
 		{
-			Msg: "Negative ReconciliationTimeout should be invalid",
-			ConfigProvider: func() *webhook.Config {
-				config := webhook.DefaultConfig()
-				config.ReconciliationTimeout = -1
-				return config
-			},
-		},
-		{
 			Msg: "Negative WebhookTimeout should be invalid",
 			ConfigProvider: func() *webhook.Config {
 				config := webhook.DefaultConfig()

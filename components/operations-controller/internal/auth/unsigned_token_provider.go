@@ -24,17 +24,14 @@ import (
 	"net/url"
 )
 
-const (
-	UnsignedTokenAuthorizationProviderName = "UnsignedTokenAuthorizationProvider"
-	applicationReadScope                   = "application:read"
-)
+const applicationReadScope = "application:read"
 
-// UnsignedTokenAuthorizationProvider presents a AuthorizationProvider implementation which fabricates it's own unsigned tokens
+// UnsignedTokenAuthorizationProvider presents an AuthorizationProvider implementation which fabricates its own unsigned tokens for the Authorization header
 type unsignedTokenAuthorizationProvider struct {
 	targetURL *url.URL
 }
 
-// Claims defines the custom claims which shall be placed inside tokens sent to Director
+// Claims defines the custom claims which will be placed inside tokens crafted by the unsignedTokenAuthorizationProvider
 type Claims struct {
 	Scopes string `json:"scopes"`
 	Tenant string `json:"tenant"`
@@ -55,7 +52,7 @@ func NewUnsignedTokenAuthorizationProvider(targetURL string) (*unsignedTokenAuth
 
 // Name specifies the name of the AuthorizationProvider
 func (u unsignedTokenAuthorizationProvider) Name() string {
-	return UnsignedTokenAuthorizationProviderName
+	return "UnsignedTokenAuthorizationProvider"
 }
 
 // Matches contains the logic for matching the AuthorizationProvider

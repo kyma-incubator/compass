@@ -36,7 +36,7 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 )
 
-// OperationReconciler reconciles a Operation object
+// OperationReconciler reconciles an Operation object
 type OperationReconciler struct {
 	config         *webhook.Config
 	statusManager  StatusManager
@@ -58,25 +58,18 @@ func NewOperationReconciler(config *webhook.Config, statusManager StatusManager,
 // +kubebuilder:rbac:groups=operations.compass,resources=operations,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operations.compass,resources=operations/status,verbs=get;update;patch
 
+// Reconcile contains the Operations Controller logic concerned with processing and executing webhooks based on Operation CRs
 func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.Log.WithValues("operation", req.NamespacedName)
 	ctx := log.ContextWithLogger(context.Background(), logger)
 
 	operation, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {
-		log.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
-		if kubeerrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
+		return r.handleGetOperationError(ctx, &req, err)
 	}
 
 	if err := r.statusManager.Initialize(ctx, req.NamespacedName); err != nil {
-		log.C(ctx).Error(err, "Failed to initialize operation status")
-		if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
-			return r.updateStatusWithError(ctx, operation, err)
-		}
-		return ctrl.Result{}, err
+		return r.handleInitializationError(ctx, err, operation)
 	}
 
 	requestObject, err := operation.RequestObject()
@@ -88,15 +81,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx = tenant.SaveToContext(ctx, requestObject.TenantID)
 	app, err := r.directorClient.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
-		log.C(ctx).Error(err, "Unable to fetch application")
-		if operation.TimeoutReached(time.Duration(r.config.TimeoutFactor) * r.config.WebhookTimeout) {
-			if err := r.k8sClient.Delete(ctx, operation); err != nil {
-				return ctrl.Result{}, err
-			}
-			log.C(ctx).Info("Successfully deleted operation")
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
+		return r.handleFetchApplicationError(ctx, operation, err)
 	}
 
 	if app.Result.Ready {
@@ -161,6 +146,34 @@ func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *OperationReconciler) handleInitializationError(ctx context.Context, err error, operation *v1alpha1.Operation) (ctrl.Result, error) {
+	log.C(ctx).Error(err, "Failed to initialize operation status")
+	if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
+		return r.updateStatusWithError(ctx, operation, err)
+	}
+	return ctrl.Result{}, err
+}
+
+func (r *OperationReconciler) handleGetOperationError(ctx context.Context, req *ctrl.Request, err error) (ctrl.Result, error) {
+	log.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
+	if kubeerrors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{}, err
+}
+
+func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, operation *v1alpha1.Operation, err error) (ctrl.Result, error) {
+	log.C(ctx).Error(err, "Unable to fetch application")
+	if operation.TimeoutReached(time.Duration(r.config.TimeoutFactor) * r.config.WebhookTimeout) {
+		if err := r.k8sClient.Delete(ctx, operation); err != nil {
+			return ctrl.Result{}, err
+		}
+		log.C(ctx).Info("Successfully deleted operation")
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{}, err
+}
+
 func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operation *v1alpha1.Operation, webhookMode *graphql.WebhookMode, response *webhookdir.Response) (ctrl.Result, error) {
 	mode := graphql.WebhookModeSync
 	if webhookMode != nil {
@@ -191,7 +204,8 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 	case *response.InProgressStatusIdentifier:
 		namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
 		lastPollTimestamp := time.Now().Format(r.config.TimeLayout)
-		if err := r.statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, namespacedName, operation.PollURL(), lastPollTimestamp); err != nil {
+		retryCount := operation.Status.Webhooks[0].RetriesCount + 1
+		if err := r.statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, namespacedName, operation.PollURL(), lastPollTimestamp, retryCount); err != nil {
 			return ctrl.Result{}, err
 		}
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
