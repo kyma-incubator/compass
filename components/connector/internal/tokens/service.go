@@ -45,11 +45,11 @@ func (svc *tokenService) GetToken(ctx context.Context, clientId string) (string,
 	return token, nil
 }
 
-func (s *tokenService) getOneTimeToken(ctx context.Context, id string) (string, error) {
+func (svc *tokenService) getOneTimeToken(ctx context.Context, id string) (string, error) {
 	req := gcli.NewRequest(fmt.Sprintf(requestForCSRToken, id))
 
 	resp := NewCSRTokenResponse("")
-	err := s.cli.Run(ctx, req, &resp)
+	err := svc.cli.Run(ctx, req, &resp)
 	if err != nil {
 		return "", errors.Wrapf(err, "while calling director for CSR one time token")
 	}
