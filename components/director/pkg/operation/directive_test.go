@@ -396,6 +396,40 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
+			return nil, mockedError()
+		}, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, "Unable to prepare webhooks")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due missing webhooks", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 			return nil, nil
 		}, mockedTenantLoaderFunc, nil)
 

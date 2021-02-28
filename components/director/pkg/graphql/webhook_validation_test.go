@@ -494,23 +494,26 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name: "Invalid - contains only location",
+			Name: "Invalid - missing location",
 			Value: stringPtr(`{
-			   "location": "{{.Headers.Location}}"
-			 }`),
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - contains only success status code",
-			Value: stringPtr(`{
-			   "success_status_code": 202
-			 }`),
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - contains only error",
-			Value: stringPtr(`{
+			   "success_status_code": 202,
 			   "error": "{{.Body.error}}"
+			 }`),
+			ExpectedValid: true,
+		},
+		{
+			Name: "Invalid - missing success status code",
+			Value: stringPtr(`{
+			   "location": "{{.Headers.Location}}",
+			   "error": "{{.Body.error}}"
+			 }`),
+			ExpectedValid: true,
+		},
+		{
+			Name: "Invalid - missing error",
+			Value: stringPtr(`{
+			   "location": "{{.Headers.Location}}",
+			   "success_status_code": 202
 			 }`),
 			ExpectedValid: false,
 		},
