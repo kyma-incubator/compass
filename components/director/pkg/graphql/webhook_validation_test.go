@@ -499,7 +499,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 			   "success_status_code": 202,
 			   "error": "{{.Body.error}}"
 			 }`),
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - missing success status code",
@@ -507,7 +507,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 			   "location": "{{.Headers.Location}}",
 			   "error": "{{.Body.error}}"
 			 }`),
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - missing error",
