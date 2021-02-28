@@ -17,11 +17,12 @@ package v1alpha1
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 func init() {

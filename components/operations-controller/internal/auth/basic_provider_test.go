@@ -19,10 +19,11 @@ package auth_test
 import (
 	"context"
 	"encoding/base64"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
-	"testing"
 
 	"github.com/stretchr/testify/suite"
 )

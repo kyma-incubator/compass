@@ -19,8 +19,9 @@ package auth
 import (
 	"context"
 	"encoding/base64"
-	"github.com/pkg/errors"
 	"net/url"
+
+	"github.com/pkg/errors"
 )
 
 // BasicAuthorizationProvider presents an AuthorizationProvider implementation which crafts Basic Authentication header values for the Authorization header

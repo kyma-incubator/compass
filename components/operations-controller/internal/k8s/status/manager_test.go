@@ -18,6 +18,10 @@ package status_test
 
 import (
 	"context"
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
 	"github.com/stretchr/testify/require"
@@ -25,11 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"testing"
-	"time"
 )
 
 const (

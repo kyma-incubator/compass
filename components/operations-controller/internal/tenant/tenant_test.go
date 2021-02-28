@@ -19,8 +19,9 @@ package tenant_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

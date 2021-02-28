@@ -18,10 +18,11 @@ package auth
 
 import (
 	"context"
+	"net/url"
+
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/pkg/errors"
-	"net/url"
 )
 
 // TokenAuthorizationProvider presents a AuthorizationProvider implementation which crafts OAuth Bearer token values for the Authorization header

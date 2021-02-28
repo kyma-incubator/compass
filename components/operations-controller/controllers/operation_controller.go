@@ -17,6 +17,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
@@ -27,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

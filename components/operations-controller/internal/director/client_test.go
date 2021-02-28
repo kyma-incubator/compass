@@ -18,11 +18,12 @@ package director_test
 
 import (
 	"context"
+	"net/http"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
 )
 
 func TestClient_UpdateStatus_WhenNewRequestWithContextFails_ShouldReturnError(t *testing.T) {

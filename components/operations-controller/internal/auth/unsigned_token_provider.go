@@ -18,10 +18,11 @@ package auth
 
 import (
 	"context"
+	"net/url"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"github.com/pkg/errors"
-	"net/url"
 )
 
 const applicationReadScope = "application:read"

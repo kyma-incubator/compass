@@ -21,11 +21,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"

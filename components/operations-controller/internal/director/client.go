@@ -21,10 +21,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
-	"net/http"
 )
 
 // client implements the DirectorClient interface

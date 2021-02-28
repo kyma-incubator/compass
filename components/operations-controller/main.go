@@ -16,6 +16,9 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
@@ -26,8 +29,6 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"net/http"
-	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

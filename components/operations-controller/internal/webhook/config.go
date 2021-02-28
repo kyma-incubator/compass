@@ -18,8 +18,9 @@ package webhook
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Settings type to be loaded from the environment

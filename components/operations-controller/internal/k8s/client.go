@@ -18,6 +18,7 @@ package k8s
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

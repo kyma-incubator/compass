@@ -19,11 +19,12 @@ package log_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/go-logr/logr"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"testing"
 )
 
 func TestLoadFromContext(t *testing.T) {

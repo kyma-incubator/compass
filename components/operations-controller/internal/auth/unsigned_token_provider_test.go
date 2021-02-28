@@ -18,12 +18,13 @@ package auth_test
 
 import (
 	"context"
+	"strings"
+	"testing"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
-	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/suite"
 )

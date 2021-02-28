@@ -18,6 +18,7 @@ package auth
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )

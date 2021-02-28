@@ -20,13 +20,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	httputilsfakes "github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"net/http"
 
 	"testing"
 
