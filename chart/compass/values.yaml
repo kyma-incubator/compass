@@ -179,7 +179,7 @@ global:
           - "Certificate-Data"
 
   operations_controller:
-    enabled: false
+    enabled: true
 
   connectivity_adapter:
     port: 8080

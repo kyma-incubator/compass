@@ -32,6 +32,12 @@ func init() {
 // +kubebuilder:validation:Enum=Create;Update;Delete
 type OperationType string
 
+const (
+	OperationTypeCreate OperationType = "Create"
+	OperationTypeUpdate OperationType = "Update"
+	OperationTypeDelete OperationType = "Delete"
+)
+
 // OperationSpec defines the desired state of Operation
 type OperationSpec struct {
 	OperationID       string        `json:"operation_id"`
@@ -53,6 +59,8 @@ const (
 	StateInProgress State = "In Progress"
 )
 
+// Webhook is an entity part of the OperationStatus which holds information
+// about the progression of the webhook execution
 type Webhook struct {
 	WebhookID         string `json:"webhook_id"`
 	RetriesCount      int    `json:"retries_count"`
@@ -69,6 +77,7 @@ const (
 	ConditionTypeError ConditionType = "Error"
 )
 
+// Condition defines the states in which the Operation CR can be
 type Condition struct {
 	Type    ConditionType          `json:"type"`
 	Status  corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`
@@ -108,14 +117,17 @@ type OperationList struct {
 	Items           []Operation `json:"items"`
 }
 
+// OperationValidationErr represents an operation error potentially occurring during the intialization and validation of the OperationStatus
 type OperationValidationErr struct {
 	Description string
 }
 
+// Error implements the error interface
 func (o *OperationValidationErr) Error() string {
 	return o.Description
 }
 
+// Validate implements validation logic for the Operation CR
 func (in *Operation) Validate() error {
 	webhookCount := len(in.Spec.WebhookIDs)
 	if webhookCount != 1 {
@@ -125,10 +137,13 @@ func (in *Operation) Validate() error {
 	return nil
 }
 
+// HasPollURL checks whether the current Operation has been provided with a Poll URL
 func (in *Operation) HasPollURL() bool {
 	return in.PollURL() != ""
 }
 
+// PollURL returns the Poll URL for the current Operation
+// and empty string if a URL has not been provided
 func (in *Operation) PollURL() string {
 	if len(in.Status.Webhooks) == 0 {
 		return ""
@@ -137,6 +152,8 @@ func (in *Operation) PollURL() string {
 	return in.Status.Webhooks[0].WebhookPollURL
 }
 
+// NextPollTime calculates the remaining time until the Poll URL associated with
+// the current Operation can be requested/polled again.
 func (in *Operation) NextPollTime(retryInterval *int, timeLayout string) (time.Duration, error) {
 	if len(in.Status.Webhooks) == 0 || in.Status.Webhooks[0].LastPollTimestamp == "" || retryInterval == nil {
 		return 0, nil
@@ -151,12 +168,18 @@ func (in *Operation) NextPollTime(retryInterval *int, timeLayout string) (time.D
 	return time.Until(nextPollTime), nil
 }
 
+// TimeoutReached returns whether the current operation has timed-out or not
+// based on the creation timestamp of the Operation and the provided
+// timeout duration variable.
 func (in *Operation) TimeoutReached(timeout time.Duration) bool {
 	operationEndTime := in.ObjectMeta.CreationTimestamp.Time.Add(timeout)
 
 	return time.Now().After(operationEndTime)
 }
 
+// RequestObject parses and returns the request object associated with
+// the current operation. The request object is essential for the processing of
+// webhook templates as part of the Operation Controller reconcile logic.
 func (in *Operation) RequestObject() (webhook.RequestObject, error) {
 	str := struct {
 		Application graphql.Application

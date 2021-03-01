@@ -23,12 +23,10 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pkg/errors"
@@ -38,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -69,7 +66,7 @@ var (
 			ResourceID:    appGUID,
 			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
-			OperationType: v1alpha1.OperationType(graphql.OperationTypeDelete),
+			OperationType: v1alpha1.OperationTypeDelete,
 			WebhookIDs:    []string{webhookGUID},
 			CorrelationID: correlationGUID,
 		},
@@ -155,7 +152,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -191,7 +188,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_S
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, mockedErr.Error())
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -226,7 +223,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, mockedErr.Error())
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -264,7 +261,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorUpdateOperationFails
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, expectedErr)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -304,7 +301,7 @@ func TestReconcile_FailureToParseRequestObject_When_StatusManagerFailedStatusFai
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, expectedErr)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, expectedErr)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -343,7 +340,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorAndStatusManagerUpda
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, expectedErr)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, expectedErr)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -631,7 +628,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorUpdateOperationFails_ShouldResu
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, expectedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -672,7 +669,7 @@ func TestReconcile_WebhookIsMissing_When_StatusManagerFailedStatusFails_ShouldRe
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, expectedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, expectedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -712,7 +709,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorAndStatusManagerUpdateSucceeds_
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, expectedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, expectedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -747,7 +744,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_DirectorUpdateOperationFail
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -784,7 +781,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_StatusManagerFailedStatusFa
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrReconciliationTimeoutReached.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -820,7 +817,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_DirectorAndStatusManagerUpda
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrReconciliationTimeoutReached.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -910,7 +907,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, mockedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
@@ -962,7 +959,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, mockedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1013,7 +1010,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, mockedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1268,7 +1265,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, expectedErr)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.DoCallCount, webhookClient.PollCallCount)
@@ -1317,7 +1314,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_St
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, expectedErr)
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, expectedErr)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
 		webhookClient.DoCallCount, webhookClient.PollCallCount)
@@ -1365,7 +1362,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, expectedErr)
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, expectedErr)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
 		webhookClient.DoCallCount, webhookClient.PollCallCount)
@@ -1507,7 +1504,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, mockedErr.Error())
 	assertWebhookPollCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
@@ -1562,7 +1559,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, mockedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, mockedErr.Error())
 	assertWebhookPollCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1616,7 +1613,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, mockedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, mockedErr.Error())
 	assertWebhookPollCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1756,7 +1753,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInProgressWithPollURLAndLastTimestampCalled(t, statusMgrClient, ctrlRequest.NamespacedName, operation, operation.Status.Webhooks[0].WebhookPollURL)
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, controllers.ErrWebhookTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, controllers.ErrWebhookTimeoutReached.Error())
 	assertWebhookPollCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
@@ -1809,7 +1806,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	assertStatusManagerInProgressWithPollURLAndLastTimestampCalled(t, statusMgrClient, ctrlRequest.NamespacedName, operation, operation.Status.Webhooks[0].WebhookPollURL)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrWebhookTimeoutReached.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, controllers.ErrWebhookTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, controllers.ErrWebhookTimeoutReached.Error())
 	assertWebhookPollCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.SuccessStatusCallCount, webhookClient.DoCallCount)
@@ -1860,7 +1857,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	assertStatusManagerInProgressWithPollURLAndLastTimestampCalled(t, statusMgrClient, ctrlRequest.NamespacedName, operation, operation.Status.Webhooks[0].WebhookPollURL)
 	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrWebhookTimeoutReached.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, &operation, controllers.ErrWebhookTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, controllers.ErrWebhookTimeoutReached.Error())
 	assertWebhookPollCalled(t, webhookClient, &operation, application)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.SuccessStatusCallCount, webhookClient.DoCallCount)
@@ -2186,111 +2183,6 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.DoCallCount)
-}
-
-func stubLoggerAssertion(t *testing.T, errExpectation, msgExpectation string) {
-	ctrl.Log = log.NewDelegatingLogger(&mockedLogger{
-		AssertErrorExpectations: func(err error, msg string) {
-			require.Contains(t, err.Error(), errExpectation)
-			if len(msgExpectation) != 0 {
-				require.Contains(t, msg, msgExpectation)
-			}
-		},
-	})
-}
-
-func assertZeroInvocations(t *testing.T, callCountFunc ...func() int) {
-	for _, callCount := range callCountFunc {
-		require.Equal(t, callCount(), 0)
-	}
-}
-
-func assertK8sGetCalledWithName(t *testing.T, k8sClient *controllersfakes.FakeKubernetesClient, expectedName types.NamespacedName) {
-	require.Equal(t, 1, k8sClient.GetCallCount())
-	_, namespacedName := k8sClient.GetArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
-}
-
-func assertK8sDeleteCalledWithOperation(t *testing.T, k8sClient *controllersfakes.FakeKubernetesClient, expectedOperation *v1alpha1.Operation) {
-	require.Equal(t, 1, k8sClient.DeleteCallCount())
-	_, actualOperation, _ := k8sClient.DeleteArgsForCall(0)
-	require.Equal(t, expectedOperation, actualOperation)
-}
-
-func assertStatusManagerInitializeCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName) {
-	require.Equal(t, 1, statusManagerClient.InitializeCallCount())
-	_, namespacedName := statusManagerClient.InitializeArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
-}
-
-func assertStatusManagerSuccessStatusCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName) {
-	require.Equal(t, 1, statusManagerClient.SuccessStatusCallCount())
-	_, namespacedName := statusManagerClient.SuccessStatusArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
-}
-
-func assertStatusManagerInProgressWithPollURLCalled(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName, expectedPollURL string) {
-	require.Equal(t, 1, statusManagerClient.InProgressWithPollURLCallCount())
-	_, namespacedName, pollURL := statusManagerClient.InProgressWithPollURLArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
-	require.Equal(t, expectedPollURL, pollURL)
-}
-
-func assertStatusManagerInProgressWithPollURLAndLastTimestampCalled(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName, operation v1alpha1.Operation, expectedPollURL string) {
-	require.Equal(t, 1, statusManagerClient.InProgressWithPollURLAndLastPollTimestampCallCount())
-	_, namespacedName, pollURL, lastPollTimestamp, retryCount := statusManagerClient.InProgressWithPollURLAndLastPollTimestampArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
-	require.Equal(t, expectedPollURL, pollURL)
-
-	timestamp, err := time.Parse(time.RFC3339Nano, lastPollTimestamp)
-	require.NoError(t, err)
-	require.True(t, timestamp.After(operation.CreationTimestamp.Time))
-	require.Equal(t, operation.Status.Webhooks[0].RetriesCount+1, retryCount)
-}
-
-func assertStatusManagerFailedStatusCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName, expectedErrorMsg string) {
-	require.Equal(t, 1, statusManagerClient.FailedStatusCallCount())
-	_, namespacedName, errorMsg := statusManagerClient.FailedStatusArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
-	require.Contains(t, errorMsg, expectedErrorMsg)
-}
-
-func assertDirectorUpdateOperationCalled(t *testing.T, directorClient *controllersfakes.FakeDirectorClient, operation *v1alpha1.Operation) {
-	assertDirectorUpdateOperationCalledWithError(t, directorClient, operation, "")
-}
-
-func assertDirectorUpdateOperationCalledWithError(t *testing.T, directorClient *controllersfakes.FakeDirectorClient, operation *v1alpha1.Operation, errMsg string) {
-	require.Equal(t, 1, directorClient.UpdateOperationCallCount())
-	_, actualRequest := directorClient.UpdateOperationArgsForCall(0)
-	require.Equal(t, graphql.OperationType(operation.Spec.OperationType), actualRequest.OperationType)
-	require.Equal(t, resource.Type(operation.Spec.ResourceType), actualRequest.ResourceType)
-	require.Equal(t, operation.Spec.ResourceID, actualRequest.ResourceID)
-	require.Contains(t, actualRequest.Error, errMsg)
-}
-
-func assertDirectorFetchApplicationCalled(t *testing.T, directorClient *controllersfakes.FakeDirectorClient, expectedResourceID, expectedTenantID string) {
-	require.Equal(t, 1, directorClient.FetchApplicationCallCount())
-	ctx, resourceID := directorClient.FetchApplicationArgsForCall(0)
-	require.Equal(t, expectedResourceID, resourceID)
-	require.Equal(t, expectedTenantID, ctx.Value(tenant.ContextKey))
-}
-
-func assertWebhookDoCalled(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, application *director.ApplicationOutput) {
-	require.Equal(t, 1, webhookClient.DoCallCount())
-	_, actualRequest := webhookClient.DoArgsForCall(0)
-	expectedRequestObject, err := operation.RequestObject()
-	require.NoError(t, err)
-	expectedRequest := webhook.NewRequest(application.Result.Webhooks[0], expectedRequestObject, operation.Spec.CorrelationID)
-	require.Equal(t, expectedRequest, actualRequest)
-}
-
-func assertWebhookPollCalled(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, application *director.ApplicationOutput) {
-	require.Equal(t, 1, webhookClient.PollCallCount())
-	_, actualRequest := webhookClient.PollArgsForCall(0)
-	expectedRequestObject, err := operation.RequestObject()
-	require.NoError(t, err)
-	expectedRequest := webhook.NewPollRequest(application.Result.Webhooks[0], expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
-	require.Equal(t, expectedRequest, actualRequest)
 }
 
 func prepareApplicationOutput(app *graphql.Application, webhooks ...graphql.Webhook) *director.ApplicationOutput {

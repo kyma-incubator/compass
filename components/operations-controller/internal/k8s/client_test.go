@@ -44,7 +44,10 @@ func TestClient(t *testing.T) {
 
 	cfg, err := testEnv.Start()
 	require.NoError(t, err)
-	defer testEnv.Stop()
+	defer func() {
+		err := testEnv.Stop()
+		require.NoError(t, err)
+	}()
 
 	err = v1alpha1.AddToScheme(scheme.Scheme)
 	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})

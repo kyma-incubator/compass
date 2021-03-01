@@ -97,7 +97,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if operation.TimeoutReached(calculateTimeout(webhookEntity, r.config.WebhookTimeout)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
-		return r.finalizeStatusWithError(ctx, operation, ErrReconciliationTimeoutReached)
+		return r.finalizeStatusWithError(ctx, operation, ErrWebhookTimeoutReached)
 	}
 
 	if !operation.HasPollURL() {
@@ -107,7 +107,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
 			log.C(ctx).Error(err, "Unable to execute Webhook request")
-			return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
+			return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, fmt.Errorf("%s: %s", ErrWebhookTimeoutReached, err))
 		}
 
 		return r.handleWebhookResponse(ctx, operation, webhookEntity.Mode, response)
@@ -129,7 +129,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
-		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
+		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, fmt.Errorf("%s: %s", ErrWebhookTimeoutReached, err))
 	}
 
 	return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
@@ -152,6 +152,7 @@ func (r *OperationReconciler) handleInitializationError(ctx context.Context, err
 	if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
 		return r.finalizeStatusWithError(ctx, operation, err)
 	}
+
 	return ctrl.Result{}, err
 }
 
@@ -160,6 +161,7 @@ func (r *OperationReconciler) handleGetOperationError(ctx context.Context, req *
 	if kubeerrors.IsNotFound(err) {
 		return ctrl.Result{}, nil
 	}
+
 	return ctrl.Result{}, err
 }
 
@@ -169,9 +171,11 @@ func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, o
 		if err := r.k8sClient.Delete(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
+
 		log.C(ctx).Info("Successfully deleted operation")
 		return ctrl.Result{}, nil
 	}
+
 	return ctrl.Result{}, err
 }
 
@@ -210,7 +214,7 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 			return ctrl.Result{}, err
 		}
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
-		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, ErrWebhookTimeoutReached)
+		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, fmt.Errorf("%s: %s", ErrWebhookTimeoutReached, "polling time has expired"))
 	case *response.SuccessStatusIdentifier:
 		return r.finalizeStatusSuccess(ctx, operation)
 	case *response.FailedStatusIdentifier:
@@ -227,8 +231,10 @@ func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, op
 		if webhook.RetryInterval != nil {
 			requeueAfter = time.Duration(*webhook.RetryInterval)
 		}
+
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
+
 	return r.finalizeStatusWithError(ctx, operation, webhookErr)
 }
 
@@ -242,6 +248,7 @@ func (r *OperationReconciler) finalizeStatusForApplication(ctx context.Context, 
 			return ctrl.Result{}, err
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -255,7 +262,7 @@ func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operati
 		return ctrl.Result{}, err
 	}
 
-	log.C(ctx).Info("Successfully updated operation status", "status", operation.Status)
+	log.C(ctx).Info("Successfully updated operation status to succeeded")
 	return ctrl.Result{}, nil
 }
 
@@ -269,7 +276,7 @@ func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, opera
 		return ctrl.Result{}, err
 	}
 
-	log.C(ctx).Info("Successfully updated operation status", "status", operation.Status)
+	log.C(ctx).Info("Successfully updated operation status to failed")
 	return ctrl.Result{}, nil
 }
 
@@ -305,5 +312,6 @@ func calculateTimeout(webhook *graphql.Webhook, defaultWebhookTimeout time.Durat
 	if webhook.Timeout == nil {
 		return defaultWebhookTimeout
 	}
+
 	return time.Duration(*webhook.Timeout) * time.Second
 }
