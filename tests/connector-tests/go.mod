@@ -5,7 +5,8 @@ go 1.15
 require (
 	github.com/99designs/gqlgen v0.10.1 // indirect
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20201219152541-d77ebc00ac2d
-	github.com/kyma-incubator/compass/tests/director v0.0.0-20210225132347-455a86db66a2
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210218094621-346bfcbcf1f3
+	github.com/kyma-incubator/compass/tests/director v0.0.0-20210301112213-7203d09d6791
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0

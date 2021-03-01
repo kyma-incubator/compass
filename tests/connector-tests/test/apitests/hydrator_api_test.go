@@ -33,31 +33,23 @@ func TestHydrators(t *testing.T) {
 		clientType           string
 		clientId             string
 		tokenGenerationFunc  func(t *testing.T, id string) (externalschema.Token, error)
-		expectedTokenHeaders http.Header
 		expectedCertsHeaders http.Header
 	}{
 		{
 			clientType:          "Application",
 			clientId:            appID,
 			tokenGenerationFunc: directorClient.GenerateApplicationToken,
-			expectedTokenHeaders: http.Header{
-				oathkeeper.ClientIdFromTokenHeader: []string{appID},
-			},
+
 			expectedCertsHeaders: http.Header{
-				oathkeeper.ClientIdFromCertificateHeader: []string{appID},
-				oathkeeper.ClientCertificateHashHeader:   []string{hash},
+				oathkeeper.ClientCertificateHashHeader: []string{hash},
 			},
 		},
 		{
 			clientType:          "Runtime",
 			clientId:            runtimeID,
 			tokenGenerationFunc: directorClient.GenerateRuntimeToken,
-			expectedTokenHeaders: http.Header{
-				oathkeeper.ClientIdFromTokenHeader: []string{runtimeID},
-			},
 			expectedCertsHeaders: http.Header{
-				oathkeeper.ClientIdFromCertificateHeader: []string{runtimeID},
-				oathkeeper.ClientCertificateHashHeader:   []string{hash},
+				oathkeeper.ClientCertificateHashHeader: []string{hash},
 			},
 		},
 	} {
@@ -74,8 +66,23 @@ func TestHydrators(t *testing.T) {
 			//when
 			authSession := directorHydratorClient.ResolveToken(t, headers)
 
+			var auths []*graphql.SystemAuth
+			if testCase.clientType == "Application" {
+				auths = director.GetApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, testCase.clientId).Auths
+			} else {
+				auths = director.GetRuntime(t, ctx, directorClient.DexGraphqlClient, config.Tenant, testCase.clientId).Auths
+			}
+
+			hasAuth := false
+			for _, auth := range auths {
+				if auth.ID == authSession.Header.Get(oathkeeper.ClientIdFromTokenHeader) {
+					hasAuth = true
+					break
+				}
+			}
+
 			//then
-			assert.Equal(t, testCase.expectedTokenHeaders, authSession.Header)
+			assert.Equal(t, true, hasAuth)
 		})
 
 		t.Run("should resolve certificate for "+testCase.clientType, func(t *testing.T) {
@@ -97,7 +104,23 @@ func TestHydrators(t *testing.T) {
 			authSession := connectorHydratorClient.ResolveCertificateData(t, headers)
 
 			//then
-			assert.Equal(t, testCase.expectedCertsHeaders, authSession.Header)
+			var auths []*graphql.SystemAuth
+			if testCase.clientType == "Application" {
+				auths = director.GetApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, testCase.clientId).Auths
+			} else {
+				auths = director.GetRuntime(t, ctx, directorClient.DexGraphqlClient, config.Tenant, testCase.clientId).Auths
+			}
+
+			hasAuth := false
+			for _, auth := range auths {
+				if auth.ID == authSession.Header.Get(oathkeeper.ClientIdFromCertificateHeader) {
+					hasAuth = true
+					break
+				}
+			}
+
+			assert.Equal(t, true, hasAuth)
+			assert.Equal(t, testCase.expectedCertsHeaders.Get(oathkeeper.ClientCertificateHashHeader), authSession.Header.Get(oathkeeper.ClientCertificateHashHeader))
 		})
 
 		t.Run("should return empty Authentication Session when no valid headers found", func(t *testing.T) {
