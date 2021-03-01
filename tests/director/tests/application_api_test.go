@@ -3,21 +3,17 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"testing"
-
-	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
-
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
@@ -28,9 +24,6 @@ const (
 	deleteWebhookCategory       = "delete webhook"
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
-	webhookURL                  = "https://kyma-project.io"
-	defaultScenario             = "DEFAULT"
-	defaultNormalizationPrefix  = "mp-"
 )
 
 var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
@@ -55,19 +48,17 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	t.Log("Get Dex id_token")
 	dexToken, err := idtokenprovider.GetDexToken()
-	t.Log("TOKEN: ", dexToken)
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 	t.Log("DIRECTOR URL: ", gql.GetDirectorGraphQLURL())
-	// WHEN
 
-	//app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), in)
-	//require.NoError(t, err)
+	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomScopes(ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), testctx.Tc.CurrentScopes, request, &actualApp)
 	t.Log("SCOPES: ", testctx.Tc.CurrentScopes)
+
 	//THEN
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
 	require.NoError(t, err)
@@ -340,10 +331,18 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 				Data []*ApplicationWithPackagesExt `json:"data"`
 			}{}
 			request := fixtures.FixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
-			err = testctx.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-				ID:   runtime.ID,
-				Type: jwtbuilder.RuntimeConsumer,
-			}).Run(request, dexGraphQLClient, &applicationPage)
+
+			rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), runtime.ID)
+			rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+			require.True(t, ok)
+			require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+			require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+			t.Log("Issue a Hydra token with Client Credentials")
+			accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+			oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+			err = testctx.Tc.NewOperation(ctx).Run(request, oauthGraphQLClient, &applicationPage)
 
 			require.NoError(t, err)
 			require.Len(t, applicationPage.Data, 1)
@@ -406,7 +405,7 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp.Name = "before"
 	expectedApp.ProviderName = ptr.String("after")
 	expectedApp.Description = ptr.String("after")
-	expectedApp.HealthCheckURL = ptr.String(webhookURL)
+	expectedApp.HealthCheckURL = ptr.String(conf.WebhookUrl)
 	expectedApp.Status.Condition = updateStatusCond
 	expectedApp.Labels["name"] = "before"
 
@@ -777,16 +776,23 @@ func TestQuerySpecificApplication(t *testing.T) {
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
 
-	scenarios := []string{defaultScenario, "test-scenario"}
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenant, runtime.ID)
+	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	scenarios := []string{conf.DefaultScenario, "test-scenario"}
 
 	// update label definitions
 	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), scenarios)
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), scenarios[:1])
 
-	runtimeConsumer := testctx.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-		ID:   runtime.ID,
-		Type: jwtbuilder.RuntimeConsumer,
-	})
+	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
 		// set application scenarios label
@@ -801,7 +807,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 		// WHEN
 		queryAppReq := fixtures.FixGetApplicationRequest(appID)
-		err = runtimeConsumer.Run(queryAppReq, dexGraphQLClient, &actualApp)
+		err = runtimeConsumer.Run(queryAppReq, oauthGraphQLClient, &actualApp)
 
 		//THEN
 		require.NoError(t, err)
@@ -820,8 +826,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 		// WHEN
 		queryAppReq := fixtures.FixGetApplicationRequest(appID)
-		err = runtimeConsumer.Run(queryAppReq, dexGraphQLClient, &actualApp)
-
+		err = runtimeConsumer.Run(queryAppReq, oauthGraphQLClient, &actualApp)
 		//THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "The operation is not allowed")
@@ -946,7 +951,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
 
 			normalizedApp := application
-			normalizedApp.Name = defaultNormalizationPrefix + normalizedApp.Name
+			normalizedApp.Name = conf.DefaultNormalizationPrefix + normalizedApp.Name
 			tenantNormalizedApplications = append(tenantNormalizedApplications, &normalizedApp)
 		}
 	}
@@ -1042,10 +1047,17 @@ func TestApplicationsForRuntime(t *testing.T) {
 		request := fixtures.FixGetApplicationsRequestWithPagination()
 		applicationPage := graphql.ApplicationPage{}
 
-		err = testctx.Tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
-			ID:   runtimeWithoutNormalization.ID,
-			Type: jwtbuilder.RuntimeConsumer,
-		}).Run(request, dexGraphQLClient, &applicationPage)
+		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
+		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		err = testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
 
 		//THEN
 		require.NoError(t, err)
@@ -1130,7 +1142,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 			expectedApplications = append(expectedApplications, &application)
 
 			normalizedApp := application
-			normalizedApp.Name = defaultNormalizationPrefix + normalizedApp.Name
+			normalizedApp.Name = conf.DefaultNormalizationPrefix + normalizedApp.Name
 			expectedNormalizedApplications = append(expectedNormalizedApplications, &normalizedApp)
 		}
 	}
@@ -1141,11 +1153,13 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	(*runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
 	runtimeWithoutNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
 	require.NoError(t, err)
+
 	registerWithoutNormalizationRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeWithoutNormalizationInputGQL)
 	runtimeWithoutNormalization := graphql.Runtime{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithoutNormalizationRuntimeRequest, &runtimeWithoutNormalization)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtimeWithoutNormalization.ID)
+
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
@@ -1168,11 +1182,13 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		(*runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
 		runtimeWithNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
 		require.NoError(t, err)
+
 		registerWithNormalizationRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeWithNormalizationInputGQL)
 		runtimeWithNormalization := graphql.Runtime{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtimeWithNormalization.ID)
+
 		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtimeWithNormalization.ID)
 
 		//WHEN
@@ -1192,10 +1208,17 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		request := fixtures.FixGetApplicationsRequestWithPagination()
 		applicationPage := graphql.ApplicationPage{}
 
-		err = testctx.Tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
-			ID:   runtimeWithoutNormalization.ID,
-			Type: jwtbuilder.RuntimeConsumer,
-		}).Run(request, dexGraphQLClient, &applicationPage)
+		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
+		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		err = testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
 
 		//THEN
 		require.NoError(t, err)

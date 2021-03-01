@@ -10,8 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
 )
@@ -104,14 +102,21 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	bndlInstanceAuthCreationRequestReq := fixtures.FixRequestBundleInstanceAuthCreationRequest(bndl.ID, bndlInstanceAuthRequestInputStr)
 	output := graphql.BundleInstanceAuth{}
 
-	scenarios := []string{defaultScenario, "test-scenario"}
+	scenarios := []string{conf.DefaultScenario, "test-scenario"}
 	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios)
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios[:1])
 
-	runtimeConsumer := testctx.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-		ID:   runtime.ID,
-		Type: jwtbuilder.RuntimeConsumer,
-	})
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenant, runtime.ID)
+	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:write application:read")
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
@@ -123,7 +128,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
-		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, dexGraphQLClient, &output)
+		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
 
 		// THEN
 		require.NoError(t, err)
@@ -133,7 +138,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
 		bndlFromAPI := graphql.ApplicationExt{}
 
-		err = runtimeConsumer.Run(bundlesForApplicationReq, dexGraphQLClient, &bndlFromAPI)
+		err = runtimeConsumer.Run(bundlesForApplicationReq, oauthGraphQLClient, &bndlFromAPI)
 		require.NoError(t, err)
 
 		// Assert the bundle instance auths exists
@@ -144,7 +149,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
 		bundlesForApplicationWithInstanceAuthReq := fixtures.FixGetBundleWithInstanceAuthRequest(application.ID, bndl.ID, instanceAuthID)
 
-		err = runtimeConsumer.Run(bundlesForApplicationWithInstanceAuthReq, dexGraphQLClient, &bndlFromAPI)
+		err = runtimeConsumer.Run(bundlesForApplicationWithInstanceAuthReq, oauthGraphQLClient, &bndlFromAPI)
 		require.NoError(t, err)
 
 		// Assert the bundle instance auth exist
@@ -161,7 +166,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
-		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, dexGraphQLClient, &output)
+		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
 
 		// THEN
 		require.Error(t, err)
@@ -293,14 +298,21 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	bndlInstanceAuthDeletionRequestReq := fixtures.FixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
 
-	scenarios := []string{defaultScenario, "test-scenario"}
+	scenarios := []string{conf.DefaultScenario, "test-scenario"}
 	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios)
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios[:1])
 
-	runtimeConsumer := testctx.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-		ID:   runtime.ID,
-		Type: jwtbuilder.RuntimeConsumer,
-	})
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenant, runtime.ID)
+	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:write")
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
@@ -314,7 +326,7 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
 		output := graphql.BundleInstanceAuth{}
-		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, dexGraphQLClient, &output)
+		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, oauthGraphQLClient, &output)
 
 		// THEN
 		require.NoError(t, err)
@@ -331,7 +343,7 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
 		output := graphql.BundleInstanceAuth{}
-		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, dexGraphQLClient, &output)
+		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, oauthGraphQLClient, &output)
 
 		// THEN
 		require.Error(t, err)
