@@ -744,7 +744,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_DirectorUpdateOperationFail
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrWebhookTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -779,9 +779,9 @@ func TestReconcile_ReconciliationTimeoutReached_When_StatusManagerFailedStatusFa
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
-	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrReconciliationTimeoutReached.Error())
+	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrWebhookTimeoutReached.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrWebhookTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -815,9 +815,9 @@ func TestReconcile_ReconciliationTimeoutReached_And_DirectorAndStatusManagerUpda
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName)
-	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrReconciliationTimeoutReached.Error())
+	assertStatusManagerFailedStatusCalledWithName(t, statusMgrClient, ctrlRequest.NamespacedName, controllers.ErrWebhookTimeoutReached.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrReconciliationTimeoutReached.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, controllers.ErrWebhookTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }

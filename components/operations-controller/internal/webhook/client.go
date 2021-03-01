@@ -102,12 +102,13 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, err
 	}
 
+	log.C(ctx).Info(fmt.Sprintf("Webhook response object: %v", *responseObject))
+
 	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
 	if err != nil {
 		return nil, err
 	}
 
-	log.C(ctx).Info(fmt.Sprintf("Webhook response object: %v", response))
 	isLocationEmpty := response.Location != nil && *response.Location == ""
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
@@ -154,12 +155,13 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 		return nil, err
 	}
 
+	log.C(ctx).Info(fmt.Sprintf("Webhook response object: %v", *responseObject))
+
 	response, err := responseObject.ParseStatusTemplate(webhook.StatusTemplate)
 	if err != nil {
 		return nil, err
 	}
 
-	log.C(ctx).Info(fmt.Sprintf("Webhook response status object: %v", response))
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
