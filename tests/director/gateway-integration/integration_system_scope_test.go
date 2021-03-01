@@ -84,7 +84,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		require.NotEmpty(t, runtime.ID)
 
 		t.Log("Get runtime")
-		gqlRuntime := getRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		gqlRuntime := GetRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 		require.NotEmpty(t, gqlRuntime.ID)
 		require.Equal(t, runtime.ID, gqlRuntime.ID)
 

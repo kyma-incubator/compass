@@ -94,7 +94,7 @@ func UnregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient 
 	require.NoError(t, err)
 }
 
-func getRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.RuntimeExt {
+func GetRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.RuntimeExt {
 	req := fixRuntimeRequest(id)
 	runtime := graphql.RuntimeExt{}
 
