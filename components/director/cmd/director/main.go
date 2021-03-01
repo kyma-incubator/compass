@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
@@ -59,25 +60,30 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
+	"github.com/kyma-incubator/compass/components/operations-controller/client"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vrischmann/envconfig"
+	cr "sigs.k8s.io/controller-runtime"
 )
 
 const envPrefix = "APP"
 
 type config struct {
-	Address         string `envconfig:"default=127.0.0.1:3000"`
-	InternalAddress string `envconfig:"default=127.0.0.1:3001"`
-	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
+	Address                string `envconfig:"default=127.0.0.1:3000"`
+	InternalGraphQLAddress string `envconfig:"default=127.0.0.1:3001"`
+	HydratorAddress        string `envconfig:"default=127.0.0.1:8080"`
 
-	AppURL string `envconfig:"APP_URL"`
+	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
+	AppURL          string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -94,7 +100,7 @@ type config struct {
 
 	Log log.Config
 
-	MetricsAddress string `envconfig:"default=127.0.0.1:3002"`
+	MetricsAddress string `envconfig:"default=127.0.0.1:3003"`
 
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
@@ -113,6 +119,9 @@ type config struct {
 	Features features.Config
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
+	OperationsNamespace   string `envconfig:"default=compass-system"`
+
+	DisableAsyncMode bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -157,6 +166,8 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
+	appRepo := applicationRepo()
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -172,7 +183,7 @@ func main() {
 			cfg.OneTimeToken.Length,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, webhookService().List, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
+			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -234,7 +245,6 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
-	appRepo := applicationRepo()
 	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}, tenant.LoadFromContext)
@@ -262,15 +272,37 @@ func main() {
 	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, timeService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
+	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
+		resource.Application: func(ctx context.Context, id string, ready bool, error *string) error {
+			app, err := appRepo.GetGlobalByID(ctx, id)
+			if err != nil {
+				return err
+			}
+			app.Ready = ready
+			app.Error = error
+			return appRepo.Update(ctx, app)
+		},
+	}, map[resource.Type]operation.ResourceDeleterFunc{
+		resource.Application: func(ctx context.Context, id string) error {
+			return appRepo.DeleteGlobal(ctx, id)
+		},
+	})
+	internalRouter := mux.NewRouter()
+	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
+
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
 	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.ServerTimeout)
+	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
+		shutdownInternalSrv()
 		shutdownMainSrv()
 		shutdownInternalGQLSrv()
 		shutdownHydratorSrv()
@@ -279,6 +311,7 @@ func main() {
 	go runMetricsSrv()
 	go runInternalGQLSrv()
 	go runHydratorSrv()
+	go runInternalSrv()
 	runMainSrv()
 }
 
@@ -572,4 +605,34 @@ func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transac
 	}
 
 	return handlerWithTimeout, nil
+}
+
+func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
+	resourceFetcherFunc := func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+		return appRepo.GetByID(ctx, tenantID, resourceID)
+	}
+
+	scheduler, err := buildScheduler(ctx, cfg)
+	exitOnError(err, "Error while creating operations scheduler")
+
+	return operation.NewDirective(transact, webhookService().List, resourceFetcherFunc, tenant.LoadFromContext, scheduler).HandleOperation
+}
+
+func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
+	if config.DisableAsyncMode {
+		log.C(ctx).Info("Async operations are disabled")
+		return &operation.DisabledScheduler{}, nil
+	}
+
+	cfg, err := cr.GetConfig()
+	exitOnError(err, "Failed to get cluster config for operations k8s client")
+
+	cfg.Timeout = config.ClientTimeout
+	k8sClient, err := client.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	operationsK8sClient := k8sClient.Operations(config.OperationsNamespace)
+
+	return k8s.NewScheduler(operationsK8sClient), nil
 }

@@ -90,6 +90,7 @@ global:
 
   director:
     prefix: /director
+    internalPort: 3002
     graphql:
       external:
         port: 3000
@@ -98,7 +99,7 @@ global:
     validator:
       port: 8080
     metrics:
-      port: 3002
+      port: 3003
 
     clientIDHeaderKey: client_user
 

@@ -50,6 +50,9 @@ spec:
             - name: http-validator
               containerPort: {{ .Values.global.director.validator.port }}
               protocol: TCP
+            - name: http-internal
+              containerPort: {{ .Values.global.director.internalPort }}
+              protocol: TCP
             - name: metrics
               containerPort: {{ .Values.global.director.metrics.port }}
               protocol: TCP
@@ -62,10 +65,12 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
-            - name: APP_INTERNAL_ADDRESS
+            - name: APP_GRAPHQL_INTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.internal.port }}"
             - name: APP_HYDRATOR_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
+            - name: APP_INTERNAL_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.director.internalPort }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT

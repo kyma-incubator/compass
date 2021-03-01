@@ -136,12 +136,12 @@ func prepareLastOperation(resource model.Entity) *OperationResponse {
 		opResponse.OperationType = OperationTypeCreate
 	}
 
-	if resource.GetReady() {
-		opResponse.Status = OperationStatusSucceeded
-	} else if resource.GetError() != nil {
-		opResponse.Status = OperationStatusFailed
-	} else {
+	if !resource.GetReady() {
 		opResponse.Status = OperationStatusInProgress
+	} else if resource.GetError() == nil {
+		opResponse.Status = OperationStatusSucceeded
+	} else {
+		opResponse.Status = OperationStatusFailed
 	}
 
 	return opResponse
