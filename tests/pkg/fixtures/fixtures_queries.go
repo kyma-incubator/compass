@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 //Application
 func GetApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
 	appRequest := FixGetApplicationRequest(id)
@@ -62,7 +61,7 @@ func RegisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Clie
 	return app
 }
 
-func RegisterApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt,error) {
+func RegisterApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
@@ -101,14 +100,13 @@ func DeleteApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.C
 func SetApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, labelKey string, labelValue interface{}) graphql.Label {
 	setLabelRequest := FixSetApplicationLabelRequest(id, labelKey, labelValue)
 	label := graphql.Label{}
-
 	err := testctx.Tc.RunOperation(ctx, gqlClient, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return label
 }
 
-func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client,id string) graphql.SystemAuth {
+func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) graphql.SystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
 
 	out := graphql.SystemAuth{}
@@ -118,15 +116,15 @@ func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, 
 	return out
 }
 
-func DeleteSystemAuthForApplication(t *testing.T, ctx context.Context,gqlClient *gcli.Client, id string) {
+func DeleteSystemAuthForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
 	req := FixDeleteSystemAuthForApplicationRequest(id)
-	err := testctx.Tc.RunOperation(ctx,gqlClient, req, nil)
+	err := testctx.Tc.RunOperation(ctx, gqlClient, req, nil)
 	require.NoError(t, err)
 }
 
 func SetDefaultEventingForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID string, runtimeID string) {
 	req := FixSetDefaultEventingForApplication(appID, runtimeID)
-	err := testctx.Tc.RunOperation(ctx,gqlClient, req, nil)
+	err := testctx.Tc.RunOperation(ctx, gqlClient, req, nil)
 	require.NoError(t, err)
 }
 
@@ -138,11 +136,11 @@ func RegisterSimpleApp(t *testing.T, ctx context.Context, gqlClient *gcli.Client
 
 	var res graphql.Application
 	req := FixRegisterApplicationRequest(appInputGQL)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, req, &res)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &res)
 	require.NoError(t, err)
 
 	return func() {
-		UnregisterApplication(t,ctx, gqlClient, tenantID, res.ID)
+		UnregisterApplication(t, ctx, gqlClient, tenantID, res.ID)
 	}
 }
 
@@ -196,16 +194,15 @@ func ListRuntimes(t *testing.T, ctx context.Context, gqlClient *gcli.Client, ten
 func SetRuntimeLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
 	setLabelRequest := FixSetRuntimeLabelRequest(runtimeID, labelKey, labelValue)
 	label := graphql.Label{}
-
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenant, setLabelRequest, &label)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return &label
 }
 
-func DeleteSystemAuthForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client,id string) {
+func DeleteSystemAuthForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
 	req := FixDeleteSystemAuthForRuntimeRequest(id)
-	err := testctx.Tc.RunOperation(ctx,gqlClient, req, nil)
+	err := testctx.Tc.RunOperation(ctx, gqlClient, req, nil)
 	require.NoError(t, err)
 }
 
@@ -261,7 +258,7 @@ func AddAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.
 }
 
 func AddAPIToBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.APIDefinitionExt {
-	return AddAPIToBundleWithInput(t, ctx,gqlClient, pkg.TestTenants.GetDefaultTenantID(), bndlID, FixAPIDefinitionInput())
+	return AddAPIToBundleWithInput(t, ctx, gqlClient, pkg.TestTenants.GetDefaultTenantID(), bndlID, FixAPIDefinitionInput())
 }
 
 func AddEventToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
@@ -270,13 +267,13 @@ func AddEventToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcl
 
 	event := graphql.EventDefinition{}
 	req := FixAddEventAPIToBundleRequest(bndlID, inStr)
-	err = testctx.Tc.RunOperation(ctx,gqlClient, req, &event)
+	err = testctx.Tc.RunOperation(ctx, gqlClient, req, &event)
 	require.NoError(t, err)
 	return event
 }
 
 func AddEventToBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.EventDefinition {
-	return AddEventToBundleWithInput(t, ctx,gqlClient, bndlID, FixEventAPIDefinitionInput())
+	return AddEventToBundleWithInput(t, ctx, gqlClient, bndlID, FixEventAPIDefinitionInput())
 }
 
 func AddDocumentToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string, input graphql.DocumentInput) graphql.DocumentExt {
@@ -285,13 +282,13 @@ func AddDocumentToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *
 
 	actualDoc := graphql.DocumentExt{}
 	req := FixAddDocumentToBundleRequest(bndlID, inStr)
-	err = testctx.Tc.RunOperation(ctx,gqlClient, req, &actualDoc)
+	err = testctx.Tc.RunOperation(ctx, gqlClient, req, &actualDoc)
 	require.NoError(t, err)
 	return actualDoc
 }
 
 func AddDocumentToBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.DocumentExt {
-	return AddDocumentToBundleWithInput(t, ctx,gqlClient, bndlID, FixDocumentInput(t))
+	return AddDocumentToBundleWithInput(t, ctx, gqlClient, bndlID, FixDocumentInput(t))
 }
 
 func CreateBundleInstanceAuth(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.BundleInstanceAuth {
@@ -307,7 +304,7 @@ func CreateBundleInstanceAuth(t *testing.T, ctx context.Context, gqlClient *gcli
 
 	var resp graphql.BundleInstanceAuth
 
-	err = testctx.Tc.RunOperation(ctx,gqlClient, req, &resp)
+	err = testctx.Tc.RunOperation(ctx, gqlClient, req, &resp)
 	require.NoError(t, err)
 
 	return resp
@@ -317,11 +314,11 @@ func CreateBundleInstanceAuth(t *testing.T, ctx context.Context, gqlClient *gcli
 func GetIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.IntegrationSystemExt {
 	intSysRequest := FixGetIntegrationSystemRequest(id)
 	intSys := graphql.IntegrationSystemExt{}
-	require.NoError(t, testctx.Tc.RunOperation(ctx,gqlClient, intSysRequest, &intSys))
+	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, intSysRequest, &intSys))
 	return &intSys
 }
 
-func RegisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant , name string) *graphql.IntegrationSystemExt {
+func RegisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, name string) *graphql.IntegrationSystemExt {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(input)
 	if err != nil {
@@ -442,7 +439,7 @@ func CreateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlCli
 	createRequest := FixCreateLabelDefinitionRequest(in)
 
 	output := graphql.LabelDefinition{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, createRequest, &output)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &output)
 	require.NoError(t, err)
 
 	return &output
@@ -459,7 +456,7 @@ func CreateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Contex
 		"uniqueItems": true,
 	}
 
-	return CreateLabelDefinitionWithinTenant(t, ctx,gqlClient, "scenarios", jsonSchema, tenantID)
+	return CreateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
 }
 
 func UpdateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
@@ -476,7 +473,7 @@ func UpdateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlCli
 	updateRequest := FixUpdateLabelDefinitionRequest(in)
 
 	output := graphql.LabelDefinition{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, updateRequest, &output)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, updateRequest, &output)
 	require.NoError(t, err)
 
 	return &output
@@ -493,13 +490,13 @@ func UpdateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Contex
 		"uniqueItems": true,
 	}
 
-	return UpdateLabelDefinitionWithinTenant(t, ctx,gqlClient, "scenarios", jsonSchema, tenantID)
+	return UpdateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
 }
 
 func DeleteLabelDefinition(t *testing.T, ctx context.Context, gqlClient *gcli.Client, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
 	deleteRequest := FixDeleteLabelDefinitionRequest(labelDefinitionKey, deleteRelatedResources)
 
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, deleteRequest, nil))
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, nil))
 }
 
 func ListLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string) ([]*graphql.LabelDefinition, error) {
@@ -507,17 +504,16 @@ func ListLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, gqlClie
 
 	var labelDefinitions []*graphql.LabelDefinition
 
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, labelDefinitionsRequest, &labelDefinitions)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, labelDefinitionsRequest, &labelDefinitions)
 	return labelDefinitions, err
 }
-
 
 //OneTimeToken
 
 func RequestOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) graphql.OneTimeTokenForApplicationExt {
 	tokenRequest := FixRequestOneTimeTokenForApplication(id)
 	token := graphql.OneTimeTokenForApplicationExt{}
-	err := testctx.Tc.RunOperation(ctx,gqlClient, tokenRequest, &token)
+	err := testctx.Tc.RunOperation(ctx, gqlClient, tokenRequest, &token)
 	require.NoError(t, err)
 	return token
 }
@@ -525,7 +521,7 @@ func RequestOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCli
 func RequestOneTimeTokenForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenForRuntimeExt {
 	tokenRequest := FixRequestOneTimeTokenForRuntime(id)
 	token := graphql.OneTimeTokenForRuntimeExt{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient,tenant, tokenRequest, &token)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, tokenRequest, &token)
 	require.NoError(t, err)
 	return token
 }
@@ -538,7 +534,7 @@ func CreateAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context
 
 	assignment := graphql.AutomaticScenarioAssignment{}
 
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, createRequest, &assignment))
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &assignment))
 	require.NotEmpty(t, assignment.ScenarioName)
 	return &assignment
 }
@@ -546,7 +542,7 @@ func CreateAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context
 func ListAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string) graphql.AutomaticScenarioAssignmentPage {
 	assignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
 	req := FixAutomaticScenarioAssignmentsRequest()
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, req, &assignmentsPage)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignmentsPage)
 	require.NoError(t, err)
 	return assignmentsPage
 }
@@ -554,7 +550,7 @@ func ListAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Cont
 func DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
 	assignment := graphql.AutomaticScenarioAssignment{}
 	req := FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, req, &assignment)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
 }
@@ -565,7 +561,7 @@ func DeleteAutomaticScenarioAssigmentForSelector(t *testing.T, ctx context.Conte
 	req := FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(paylaod)
 
 	assignment := []graphql.AutomaticScenarioAssignment{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx,gqlClient, tenantID, req, &assignment)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
 }
