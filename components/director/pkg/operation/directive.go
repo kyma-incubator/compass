@@ -184,10 +184,10 @@ func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationTy
 		return apperrors.NewInternalError("failed to fetch resource with id %s", resourceID)
 	}
 
-	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && (app.GetError() == nil || *app.GetError() == "") { // CREATING
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && isErrored(app) { // CREATING
 		return apperrors.NewConcurrentOperationInProgressError("create operation is in progress")
 	}
-	if !app.GetDeletedAt().IsZero() && (app.GetError() == nil || *app.GetError() == "") { // DELETING
+	if !app.GetDeletedAt().IsZero() && isErrored(app) { // DELETING
 		return apperrors.NewConcurrentOperationInProgressError("delete operation is in progress")
 	}
 	// Note: This will be needed when there is async UPDATE supported
@@ -276,4 +276,8 @@ func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persiste
 	}
 
 	return resp, nil
+}
+
+func isErrored(app model.Entity) bool {
+	return (app.GetError() == nil || *app.GetError() == "")
 }
