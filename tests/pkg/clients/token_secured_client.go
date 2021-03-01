@@ -72,13 +72,13 @@ func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.H
 	return response.Result, nil
 }
 
-func (c *TokenSecuredClient) GenerateAndSignCert(certConfig externalschema.Configuration) (externalschema.CertificationResult, *rsa.PrivateKey, error) {
+func (c *TokenSecuredClient) GenerateAndSignCert(t *testing.T, certConfig externalschema.Configuration) (externalschema.CertificationResult, *rsa.PrivateKey, error) {
 	clientKey, err := certs.GenerateKey()
 	if err != nil {
 		return externalschema.CertificationResult{}, nil, err
 	}
 
-	csr := certs.CreateCsr(nil, certConfig.CertificateSigningRequestInfo.Subject, clientKey)
+	csr := certs.CreateCsr(t, certConfig.CertificateSigningRequestInfo.Subject, clientKey)
 	if err != nil {
 		return externalschema.CertificationResult{}, nil, err
 	}
