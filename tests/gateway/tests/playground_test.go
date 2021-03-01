@@ -108,11 +108,11 @@ func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTime
 	require.NotEmpty(t, clientCertConfig.Token)
 	require.NotEmpty(t, clientCertConfig.CertificateSigningRequestInfo.Subject)
 
-	clientCert, clientKey, err := connectorClient.GenerateAndSignCert(clientCertConfig)
+	clientCert, clientKey, err := connectorClient.GenerateAndSignCert(t, clientCertConfig)
 	require.NoError(t, err)
 	require.NotEmpty(t, clientCert.CertificateChain)
 
-	certChain := certs.DecodeCertChain(nil, clientCert.CertificateChain)
+	certChain := certs.DecodeCertChain(t, clientCert.CertificateChain)
 	require.NoError(t, err)
 
 	return certChain, clientKey
