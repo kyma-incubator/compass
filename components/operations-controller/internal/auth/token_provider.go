@@ -18,7 +18,6 @@ package auth
 
 import (
 	"context"
-	"net/url"
 
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
@@ -50,11 +49,6 @@ func (u tokenAuthorizationProvider) Matches(ctx context.Context) bool {
 	}
 
 	return credentials.Type() == OAuthCredentialType
-}
-
-// TargetURL returns the intended TargetURL for the executing request
-func (u tokenAuthorizationProvider) TargetURL() *url.URL {
-	return nil
 }
 
 // GetAuthorizationToken crafts an OAuth Bearer token to inject as part of the executing request

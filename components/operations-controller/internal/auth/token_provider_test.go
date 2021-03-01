@@ -76,14 +76,6 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 	suite.Require().Equal(matches, false)
 }
 
-func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_URL() {
-	provider := auth.NewTokenAuthorizationProvider(nil)
-
-	url := provider.TargetURL()
-
-	suite.Require().Nil(url)
-}
-
 func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_GetAuthorization() {
 	fakeTkn := "fake-token"
 	fakeClient := &httputilsfakes.FakeClient{}

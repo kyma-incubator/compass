@@ -25,6 +25,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	graphqlbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
 )
 
@@ -43,12 +44,17 @@ type Request struct {
 }
 
 // NewClient constructs a default implementation of the Client interface
-func NewClient(directorURL string, httpClient *http.Client, appLister types.ApplicationLister) *client {
+func NewClient(directorURL string, cfg *graphqlbroker.Config, httpClient *http.Client) (*client, error) {
+	graphqlClient, err := graphqlbroker.PrepareGqlClientWithHttpClient(cfg, httpClient)
+	if err != nil {
+		return nil, err
+	}
+
 	return &client{
-		ApplicationLister: appLister,
+		ApplicationLister: graphqlClient,
 		httpClient:        httpClient,
 		directorURL:       directorURL,
-	}
+	}, nil
 }
 
 // UpdateOperation makes an http request to the Director to notify about any operation state changes

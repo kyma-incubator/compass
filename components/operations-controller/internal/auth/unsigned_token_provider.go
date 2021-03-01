@@ -18,7 +18,6 @@ package auth
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
@@ -28,9 +27,7 @@ import (
 const applicationReadScope = "application:read"
 
 // UnsignedTokenAuthorizationProvider presents an AuthorizationProvider implementation which fabricates its own unsigned tokens for the Authorization header
-type unsignedTokenAuthorizationProvider struct {
-	targetURL *url.URL
-}
+type unsignedTokenAuthorizationProvider struct{}
 
 // Claims defines the custom claims which will be placed inside tokens crafted by the unsignedTokenAuthorizationProvider
 type Claims struct {
@@ -40,15 +37,8 @@ type Claims struct {
 }
 
 // NewUnsignedTokenAuthorizationProvider constructs an UnsignedTokenAuthorizationProvider
-func NewUnsignedTokenAuthorizationProvider(targetURL string) (*unsignedTokenAuthorizationProvider, error) {
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return &unsignedTokenAuthorizationProvider{
-		targetURL: parsedURL,
-	}, nil
+func NewUnsignedTokenAuthorizationProvider() *unsignedTokenAuthorizationProvider {
+	return &unsignedTokenAuthorizationProvider{}
 }
 
 // Name specifies the name of the AuthorizationProvider
@@ -64,11 +54,6 @@ func (u unsignedTokenAuthorizationProvider) Matches(ctx context.Context) bool {
 	}
 
 	return false
-}
-
-// TargetURL returns the intented TargetURL for the executing request
-func (u unsignedTokenAuthorizationProvider) TargetURL() *url.URL {
-	return u.targetURL
 }
 
 // GetAuthorizationToken crafts an unsigned token to inject in the executing request

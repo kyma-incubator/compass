@@ -70,14 +70,6 @@ func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider
 	suite.Require().Equal(matches, false)
 }
 
-func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_URL() {
-	provider := auth.NewBasicAuthorizationProvider()
-
-	url := provider.TargetURL()
-
-	suite.Require().Nil(url)
-}
-
 func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_GetAuthorization() {
 	provider := auth.NewBasicAuthorizationProvider()
 

@@ -37,20 +37,15 @@ type UnsignedTokenAuthorizationProviderTestSuite struct {
 	suite.Suite
 }
 
-const (
-	targetURL = "http://localhost"
-	tenantID  = "b1f5081d-4c67-4eff-90eb-b8ffaf7b590a"
-)
+const tenantID = "b1f5081d-4c67-4eff-90eb-b8ffaf7b590a"
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_New() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider("%zzz")
-	suite.Require().Error(err)
-	suite.Require().Nil(provider)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	suite.Require().NotNil(provider)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_Name() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	name := provider.Name()
 
@@ -58,41 +53,28 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAutho
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_Matches() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	matches := provider.Matches(context.TODO())
 	suite.Require().Equal(matches, true)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_DoesNotMatchWhenBasicCredentialsInContext() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
 	suite.Require().Equal(matches, false)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_DoesNotMatchWhenOAuthCredentialsInContext() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
 	suite.Require().Equal(matches, false)
 }
 
-func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_URL() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
-
-	url := provider.TargetURL()
-
-	suite.Require().Equal(url.String(), targetURL)
-}
-
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_GetAuthorization() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	ctx := tenant.SaveToContext(context.TODO(), tenantID)
 	authorization, err := provider.GetAuthorization(ctx)
@@ -112,8 +94,7 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAutho
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_GetAuthorizationFailsWhenNoTenantInContext() {
-	provider, err := auth.NewUnsignedTokenAuthorizationProvider(targetURL)
-	suite.Require().NoError(err)
+	provider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	authorization, err := provider.GetAuthorization(context.TODO())
 

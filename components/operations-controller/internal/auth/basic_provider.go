@@ -19,7 +19,6 @@ package auth
 import (
 	"context"
 	"encoding/base64"
-	"net/url"
 
 	"github.com/pkg/errors"
 )
@@ -45,11 +44,6 @@ func (u basicAuthorizationProvider) Matches(ctx context.Context) bool {
 	}
 
 	return credentials.Type() == BasicCredentialType
-}
-
-// TargetURL returns the intended TargetURL for the executing request
-func (u basicAuthorizationProvider) TargetURL() *url.URL {
-	return nil
 }
 
 // GetAuthorization prepares the Authorization header Basic Authentication value for the executing request

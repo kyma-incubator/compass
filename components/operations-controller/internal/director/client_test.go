@@ -21,16 +21,18 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_UpdateStatus_WhenNewRequestWithContextFails_ShouldReturnError(t *testing.T) {
-	client := director.NewClient("", &http.Client{}, nil)
+	client, err := director.NewClient("", &graphql.Config{}, &http.Client{})
+	require.NoError(t, err)
 
-	err := client.UpdateOperation(nil, &director.Request{})
-
+	err = client.UpdateOperation(nil, &director.Request{})
 	require.Error(t, err)
 }
 
@@ -40,9 +42,10 @@ func TestClient_UpdateStatus_WhenClientDoFails_ShouldReturnError(t *testing.T) {
 		Transport: mockedTransport{resp: nil, err: mockedErr},
 	}
 
-	client := director.NewClient("", &httpClient, nil)
+	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
+	require.NoError(t, err)
 
-	err := client.UpdateOperation(context.Background(), &director.Request{})
+	err = client.UpdateOperation(context.Background(), &director.Request{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedErr.Error())
@@ -55,9 +58,10 @@ func TestClient_UpdateStatus_WhenResponseStatusCodeIsNotOK_ShouldReturnError(t *
 		}, err: nil},
 	}
 
-	client := director.NewClient("", &httpClient, nil)
+	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
+	require.NoError(t, err)
 
-	err := client.UpdateOperation(context.Background(), &director.Request{})
+	err = client.UpdateOperation(context.Background(), &director.Request{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unexpected status code")
@@ -70,10 +74,10 @@ func TestClient_UpdateStatus_WhenRequestIsSuccessful_ShouldNotReturnError(t *tes
 		}, err: nil},
 	}
 
-	client := director.NewClient("", &httpClient, nil)
+	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
+	require.NoError(t, err)
 
-	err := client.UpdateOperation(context.Background(), &director.Request{})
-
+	err = client.UpdateOperation(context.Background(), &director.Request{})
 	require.NoError(t, err)
 }
 

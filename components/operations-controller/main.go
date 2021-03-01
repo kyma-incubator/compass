@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -95,16 +94,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient, err := prepareHttpClient(cfg.HttpClient, cfg.GraphQLClient)
+	httpClient, err := prepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
 
-	graphqlClient, err := graphql.PrepareGqlClientWithHttpClient(cfg.GraphQLClient, httpClient)
+	directorClient, err := director.NewClient(cfg.Director.InternalAddress, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
 
 	controller := controllers.NewOperationReconciler(cfg.Webhook,
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
-		director.NewClient(cfg.Director.InternalAddress, httpClient, graphqlClient),
+		directorClient,
 		webhook.NewClient(httpClient))
 
 	if err = controller.SetupWithManager(mgr); err != nil {
@@ -126,7 +125,7 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareHttpClient(cfg *httputil.Config, graphqlCfg *graphql.Config) (*http.Client, error) {
+func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg)))
 
 	unsecuredClient := &http.Client{
@@ -136,11 +135,7 @@ func prepareHttpClient(cfg *httputil.Config, graphqlCfg *graphql.Config) (*http.
 
 	basicProvider := auth.NewBasicAuthorizationProvider()
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-
-	unsignedTokenProvider, err := auth.NewUnsignedTokenAuthorizationProvider(graphqlCfg.GraphqlEndpoint)
-	if err != nil {
-		return nil, err
-	}
+	unsignedTokenProvider := auth.NewUnsignedTokenAuthorizationProvider()
 
 	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, unsignedTokenProvider)
 	securedClient := &http.Client{
