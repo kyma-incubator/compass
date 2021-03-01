@@ -21,7 +21,6 @@ spec:
       - source:
           principals:
           - {{ tpl .Values.istio.rbac.directorInternalApi.compassConnector . }}
-          - {{ tpl .Values.istio.rbac.directorInternalApi.compassConnectorTests . }}
     - to:
       - operation:
           ports:
