@@ -19,7 +19,6 @@ package http
 import (
 	"context"
 	"net/http"
-	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -29,7 +28,6 @@ import (
 type AuthorizationProvider interface {
 	Name() string
 	Matches(ctx context.Context) bool
-	TargetURL() *url.URL
 	GetAuthorization(ctx context.Context) (string, error)
 }
 
@@ -48,7 +46,7 @@ func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...Authorizati
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	logger := log.C(request.Context())
 
-	targetURL, authorization, err := c.getAuthorizationFromProvider(request.Context())
+	authorization, err := c.getAuthorizationFromProvider(request.Context())
 	if err != nil {
 		logger.Errorf("Could not prepare authorization for request: %s", err.Error())
 		return nil, err
@@ -57,14 +55,10 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 	logger.Debug("Successfully prepared authorization for request")
 	request.Header.Set("Authorization", authorization)
 
-	if targetURL != nil {
-		request.URL = targetURL
-	}
-
 	return c.roundTripper.RoundTrip(request)
 }
 
-func (c *SecuredTransport) getAuthorizationFromProvider(ctx context.Context) (*url.URL, string, error) {
+func (c *SecuredTransport) getAuthorizationFromProvider(ctx context.Context) (string, error) {
 	for _, authProvider := range c.authorizationProviders {
 		if !authProvider.Matches(ctx) {
 			continue
@@ -73,11 +67,11 @@ func (c *SecuredTransport) getAuthorizationFromProvider(ctx context.Context) (*u
 
 		authorization, err := authProvider.GetAuthorization(ctx)
 		if err != nil {
-			return nil, "", errors.Wrap(err, "error while obtaining authorization")
+			return "", errors.Wrap(err, "error while obtaining authorization")
 		}
 
-		return authProvider.TargetURL(), authorization, nil
+		return authorization, nil
 	}
 
-	return nil, "", errors.New("context did not match any authorization provider")
+	return "", errors.New("context did not match any authorization provider")
 }

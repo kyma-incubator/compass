@@ -55,7 +55,7 @@ func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httput
 }
 
 func PrepareGqlClientWithHttpClient(cfg *Config, httpClient *http.Client) (*director.GraphQLClient, error) {
-	graphClient := graphql.NewClient("", graphql.WithHTTPClient(httpClient))
+	graphClient := graphql.NewClient(cfg.GraphqlEndpoint, graphql.WithHTTPClient(httpClient))
 	gqlClient := NewClient(cfg, graphClient)
 
 	inputGraphqlizer := &graphqlizer.Graphqlizer{}

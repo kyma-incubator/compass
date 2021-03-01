@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -13,26 +12,17 @@ import (
 
 const AuthzHeader = "Authorization"
 
-type TokenAuthorizationProviderFromHeader struct {
-	targetURL *url.URL
+type tokenAuthorizationProviderFromHeader struct{}
+
+func NewTokenAuthorizationProviderFromHeader() *tokenAuthorizationProviderFromHeader {
+	return &tokenAuthorizationProviderFromHeader{}
 }
 
-func NewTokenAuthorizationProviderFromHeader(targetURL string) (*TokenAuthorizationProviderFromHeader, error) {
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return &TokenAuthorizationProviderFromHeader{
-		targetURL: parsedURL,
-	}, nil
-}
-
-func (c *TokenAuthorizationProviderFromHeader) Name() string {
+func (c *tokenAuthorizationProviderFromHeader) Name() string {
 	return "TokenAuthorizationProviderFromHeader"
 }
 
-func (c *TokenAuthorizationProviderFromHeader) Matches(ctx context.Context) bool {
+func (c *tokenAuthorizationProviderFromHeader) Matches(ctx context.Context) bool {
 	if _, err := getBearerAuthorizationValue(ctx); err != nil {
 		log.C(ctx).WithError(err).Warn("while obtaining authorization from header")
 		return false
@@ -41,11 +31,7 @@ func (c *TokenAuthorizationProviderFromHeader) Matches(ctx context.Context) bool
 	return true
 }
 
-func (c *TokenAuthorizationProviderFromHeader) TargetURL() *url.URL {
-	return c.targetURL
-}
-
-func (c *TokenAuthorizationProviderFromHeader) GetAuthorization(ctx context.Context) (string, error) {
+func (c *tokenAuthorizationProviderFromHeader) GetAuthorization(ctx context.Context) (string, error) {
 	authorization, err := getBearerAuthorizationValue(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while obtaining authorization from header %s", AuthzHeader)

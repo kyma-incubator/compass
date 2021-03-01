@@ -3,7 +3,6 @@ package httpfakes
 
 import (
 	"context"
-	"net/url"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
@@ -43,16 +42,6 @@ type FakeAuthorizationProvider struct {
 	}
 	nameReturnsOnCall map[int]struct {
 		result1 string
-	}
-	TargetURLStub        func() *url.URL
-	targetURLMutex       sync.RWMutex
-	targetURLArgsForCall []struct {
-	}
-	targetURLReturns struct {
-		result1 *url.URL
-	}
-	targetURLReturnsOnCall map[int]struct {
-		result1 *url.URL
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -233,58 +222,6 @@ func (fake *FakeAuthorizationProvider) NameReturnsOnCall(i int, result1 string) 
 	}{result1}
 }
 
-func (fake *FakeAuthorizationProvider) TargetURL() *url.URL {
-	fake.targetURLMutex.Lock()
-	ret, specificReturn := fake.targetURLReturnsOnCall[len(fake.targetURLArgsForCall)]
-	fake.targetURLArgsForCall = append(fake.targetURLArgsForCall, struct {
-	}{})
-	fake.recordInvocation("TargetURL", []interface{}{})
-	fake.targetURLMutex.Unlock()
-	if fake.TargetURLStub != nil {
-		return fake.TargetURLStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	fakeReturns := fake.targetURLReturns
-	return fakeReturns.result1
-}
-
-func (fake *FakeAuthorizationProvider) TargetURLCallCount() int {
-	fake.targetURLMutex.RLock()
-	defer fake.targetURLMutex.RUnlock()
-	return len(fake.targetURLArgsForCall)
-}
-
-func (fake *FakeAuthorizationProvider) TargetURLCalls(stub func() *url.URL) {
-	fake.targetURLMutex.Lock()
-	defer fake.targetURLMutex.Unlock()
-	fake.TargetURLStub = stub
-}
-
-func (fake *FakeAuthorizationProvider) TargetURLReturns(result1 *url.URL) {
-	fake.targetURLMutex.Lock()
-	defer fake.targetURLMutex.Unlock()
-	fake.TargetURLStub = nil
-	fake.targetURLReturns = struct {
-		result1 *url.URL
-	}{result1}
-}
-
-func (fake *FakeAuthorizationProvider) TargetURLReturnsOnCall(i int, result1 *url.URL) {
-	fake.targetURLMutex.Lock()
-	defer fake.targetURLMutex.Unlock()
-	fake.TargetURLStub = nil
-	if fake.targetURLReturnsOnCall == nil {
-		fake.targetURLReturnsOnCall = make(map[int]struct {
-			result1 *url.URL
-		})
-	}
-	fake.targetURLReturnsOnCall[i] = struct {
-		result1 *url.URL
-	}{result1}
-}
-
 func (fake *FakeAuthorizationProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -294,8 +231,6 @@ func (fake *FakeAuthorizationProvider) Invocations() map[string][][]interface{} 
 	defer fake.matchesMutex.RUnlock()
 	fake.nameMutex.RLock()
 	defer fake.nameMutex.RUnlock()
-	fake.targetURLMutex.RLock()
-	defer fake.targetURLMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

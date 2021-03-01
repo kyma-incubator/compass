@@ -69,23 +69,15 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 	suite.k8sClientFunc = func(duration time.Duration) (client.Client, error) {
 		return nil, errors.New("error")
 	}
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().EqualError(err, "error")
-	suite.Require().Nil(provider)
-}
-
-func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_New_InvalidURL() {
-	httpClient := &MockClient{}
-
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, "%zzz", httpClient, time.Second, suite.k8sClientFunc)
-	suite.Require().Error(err)
 	suite.Require().Nil(provider)
 }
 
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_Name() {
 	httpClient := &MockClient{}
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	name := provider.Name()
@@ -96,7 +88,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_Matches() {
 	httpClient := &MockClient{}
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	ctx := context.TODO()
@@ -108,23 +100,12 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 	suite.Require().Equal(matches, false)
 }
 
-func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_URL() {
-	httpClient := &MockClient{}
-
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
-	suite.Require().NoError(err)
-
-	url := provider.TargetURL()
-
-	suite.Require().Equal(url.String(), targetURL)
-}
-
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_GetAuthorizationToken() {
 	httpClient := &MockClient{
 		DoFunc: suite.validResponseDoFunc(),
 	}
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	authorization, err := provider.GetAuthorization(context.TODO())
@@ -137,7 +118,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 		DoFunc: suite.validResponseDoFunc(),
 	}
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	// expired token
@@ -166,7 +147,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_GetAuthorizationToken_ShouldReturnErrorIfEmptyBody() {
 	httpClient := &MockClient{}
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	authorization, err := provider.GetAuthorization(context.TODO())
@@ -180,7 +161,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 		DoFunc: suite.validResponseDoFunc(),
 	}
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	authorization, err := provider.GetAuthorization(context.TODO())
@@ -195,7 +176,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 	httpClient := &MockClient{}
 	suite.config.WaitSecretTimeout = 5 * time.Second
 
-	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, targetURL, httpClient, time.Second, suite.k8sClientFunc)
+	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
 	suite.Require().NoError(err)
 
 	authorization, err := provider.GetAuthorization(context.TODO())
