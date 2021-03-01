@@ -20,9 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -37,38 +39,34 @@ import (
 
 const ModeParam = "mode"
 
-// Scheduler is responsible for scheduling any provided Operation entity for later processing
-//go:generate mockery -name=Scheduler -output=automock -outpkg=automock -case=underscore
-type Scheduler interface {
-	Schedule(operation Operation) (string, error)
-}
-
 // ResourceFetcherFunc defines a function which fetches the webhooks for a specific resource ID
 type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.Webhook, error)
 
 type directive struct {
-	transact           persistence.Transactioner
-	webhookFetcherFunc WebhookFetcherFunc
-	tenantLoaderFunc   TenantLoaderFunc
-	scheduler          Scheduler
+	transact            persistence.Transactioner
+	webhookFetcherFunc  WebhookFetcherFunc
+	tenantLoaderFunc    TenantLoaderFunc
+	resourceFetcherFunc ResourceFetcherFunc
+	scheduler           Scheduler
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
 	return &directive{
-		transact:           transact,
-		webhookFetcherFunc: webhookFetcherFunc,
-		tenantLoaderFunc:   tenantLoaderFunc,
-		scheduler:          scheduler,
+		transact:            transact,
+		webhookFetcherFunc:  webhookFetcherFunc,
+		tenantLoaderFunc:    tenantLoaderFunc,
+		resourceFetcherFunc: resourceFetcherFunc,
+		scheduler:           scheduler,
 	}
 }
 
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
-func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType graphql.WebhookType) (res interface{}, err error) {
+func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType *graphql.WebhookType, idField *string) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
-	mode, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
-	if !ok {
-		return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
+	mode, err := getOperationMode(resCtx)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx = SaveModeToContext(ctx, *mode)
@@ -82,32 +80,35 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	if err := d.concurrencyCheck(ctx, operationType, resCtx, idField); err != nil {
+		return nil, err
+	}
+
 	if *mode == graphql.OperationModeSync {
-		resp, err := next(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
-			return nil, apperrors.NewInternalError("Unable to finalize database operation")
-		}
-
-		return resp, nil
+		return executeSyncOperation(ctx, next, tx)
 	}
 
 	operation := &Operation{
-		OperationType:     OperationType(operationType),
+		OperationType:     OperationType(str.Title(operationType.String())),
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}
+
 	ctx = SaveToContext(ctx, &[]*Operation{operation})
+	operationsArr, _ := FromCtx(ctx)
+
+	committed := false
+	defer func() {
+		if !committed {
+			lastIndex := int(math.Max(0, float64(len(*operationsArr)-1)))
+			*operationsArr = (*operationsArr)[:lastIndex]
+		}
+	}()
 
 	resp, err := next(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while processing operation: %s", err.Error())
-		return nil, apperrors.NewInternalError("Unable to process operation")
+		return nil, err
 	}
 
 	entity, ok := resp.(graphql.Entity)
@@ -119,13 +120,15 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	operation.ResourceID = entity.GetID()
 	operation.ResourceType = entity.GetType()
 
-	webhookIDs, err := d.prepareWebhookIDs(ctx, err, operation, webhookType)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
-		return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
-	}
+	if webhookType != nil {
+		webhookIDs, err := d.prepareWebhookIDs(ctx, err, operation, *webhookType)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
+			return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
+		}
 
-	operation.WebhookIDs = webhookIDs
+		operation.WebhookIDs = webhookIDs
+	}
 
 	requestData, err := d.prepareRequestData(ctx, err, resp)
 	if err != nil {
@@ -135,7 +138,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	operation.RequestData = requestData
 
-	operationID, err := d.scheduler.Schedule(*operation)
+	operationID, err := d.scheduler.Schedule(ctx, operation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to schedule operation")
@@ -148,8 +151,51 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to finalize database operation")
 	}
+	committed = true
 
 	return resp, nil
+}
+
+func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationType, resCtx *gqlgen.ResolverContext, idField *string) error {
+	if op == graphql.OperationTypeCreate {
+		return nil
+	}
+
+	if idField == nil {
+		return apperrors.NewInternalError("idField from context should not be empty")
+	}
+
+	resourceID, ok := resCtx.Args[*idField].(string)
+	if !ok {
+		return apperrors.NewInternalError(fmt.Sprintf("could not get idField: %q from request context", *idField))
+	}
+
+	tenant, err := d.tenantLoaderFunc(ctx)
+	if err != nil {
+		return apperrors.NewTenantRequiredError()
+	}
+
+	app, err := d.resourceFetcherFunc(ctx, tenant, resourceID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return err
+		}
+
+		return apperrors.NewInternalError("failed to fetch resource with id %s", resourceID)
+	}
+
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && isErrored(app) { // CREATING
+		return apperrors.NewConcurrentOperationInProgressError("create operation is in progress")
+	}
+	if !app.GetDeletedAt().IsZero() && isErrored(app) { // DELETING
+		return apperrors.NewConcurrentOperationInProgressError("delete operation is in progress")
+	}
+	// Note: This will be needed when there is async UPDATE supported
+	// if app.DeletedAt.IsZero() && app.UpdatedAt.After(app.CreatedAt) && !app.Ready && *app.Error == "" { // UPDATING
+	// 	return nil, apperrors.NewInvalidData	Error("another operation is in progress")
+	// }
+
+	return nil
 }
 
 func (d *directive) prepareRequestData(ctx context.Context, err error, res interface{}) (string, error) {
@@ -163,9 +209,14 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.New("entity is not a webhook provider")
 	}
 
-	headers, ok := ctx.Value(header.ContextKey).(http.Header)
+	reqHeaders, ok := ctx.Value(header.ContextKey).(http.Header)
 	if !ok {
 		return "", errors.New("failed to retrieve request headers")
+	}
+
+	headers := make(map[string]string, 0)
+	for headerKey, headerVal := range reqHeaders {
+		headers[headerKey] = headerVal[0]
 	}
 
 	requestData := &graphql.RequestData{
@@ -195,4 +246,38 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 		}
 	}
 	return webhookIDs, nil
+}
+
+func getOperationMode(resCtx *gqlgen.ResolverContext) (*graphql.OperationMode, error) {
+	var mode graphql.OperationMode
+	if _, found := resCtx.Args[ModeParam]; !found {
+		mode = graphql.OperationModeSync
+	} else {
+		modePointer, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
+		if !ok {
+			return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
+		}
+		mode = *modePointer
+	}
+
+	return &mode, nil
+}
+
+func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persistence.PersistenceTx) (interface{}, error) {
+	resp, err := next(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to finalize database operation")
+	}
+
+	return resp, nil
+}
+
+func isErrored(app model.Entity) bool {
+	return (app.GetError() == nil || *app.GetError() == "")
 }

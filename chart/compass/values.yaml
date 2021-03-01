@@ -22,7 +22,7 @@ global:
       version: "PR-1720"
     director:
       dir:
-      version: "PR-1742"
+      version: "PR-1731"
     gateway:
       dir:
       version: "PR-1720"
@@ -91,6 +91,7 @@ global:
   director:
     prefix: /director
     port: 3000
+    internalPort: 3002
 
     clientIDHeaderKey: client_user
 
