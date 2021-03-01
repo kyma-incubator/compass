@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  namespace: kyma-system
+  namespace: {{ .Values.tests.namespace }}
 spec:
   disableConcurrency: true
   template:
@@ -28,13 +28,13 @@ spec:
         args: ["-c", "./connector.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
         env:
           - name: APP_EXTERNAL_CONNECTOR_URL
-            value: 'http://compass-connector.compass-system.svc.cluster.local:{{ .Values.global.connector.graphql.external.port }}/graphql'
+            value: '{{ .Values.tests.connectorFQDN }}:{{ .Values.global.connector.graphql.external.port }}/graphql'
           - name: APP_INTERNAL_CONNECTOR_URL
-            value: 'http://compass-connector.compass-system.svc.cluster.local:{{ .Values.global.connector.graphql.internal.port }}/graphql'
+            value: '{{ .Values.tests.connectorFQDN }}:{{ .Values.global.connector.graphql.internal.port }}/graphql'
           - name: APP_CONNECTOR_URL
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
           - name: APP_HYDRATOR_URL
-            value: 'http://compass-connector.compass-system.svc.cluster.local:{{ .Values.global.connector.validator.port }}'
+            value: '{{ .Values.tests.connectorFQDN }}:{{ .Values.global.connector.validator.port }}'
           - name: APP_CERTIFICATE_DATA_HEADER
             value: {{ .Values.global.connector.certificateDataHeader }}
           - name: APP_REVOCATION_CONFIG_MAP_NAMESPACE

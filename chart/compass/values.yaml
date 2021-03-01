@@ -365,3 +365,22 @@ global:
 
 pairing-adapter:
   enabled: false
+
+tests:
+  namespace: kyma-system
+  connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
+  directorFQDN: http://compass-director.compass-system.svc.cluster.local
+  connectorFQDN: http://compass-connector.compass-system.svc.cluster.local
+  externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
+  ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
+  systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
+  tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+  webhookURL: https://kyma-project.io
+  handlerEndpoint: /v1/callback/{tenantId}
+  defaultScenario: "DEFAULT"
+  normalizationPrefix: "mp-"
+  tenantPathParam: tenantId
+  tenantProvider: "test-provider"
+  db:
+    maxOpenConnections: 30
+    maxIdleConnections: 2
