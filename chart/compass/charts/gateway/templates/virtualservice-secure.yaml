@@ -49,7 +49,7 @@ spec:
       - "authorization"
       - "content-type"
       - "tenant"
-      - "client_user"
+      - {{ .Values.global.director.clientIDHeaderKey }}
       allowMethods:
       - "GET"
       - "POST"
