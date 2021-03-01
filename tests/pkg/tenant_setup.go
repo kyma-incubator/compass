@@ -1,19 +1,19 @@
 package pkg
 
 import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/vrischmann/envconfig"
 	"log"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
 const (
-	insertQuery       = `INSERT INTO public.business_tenant_mappings (id, external_name, external_tenant, provider_name, status) VALUES ($1, $2, $3, $4, $5)`
-	deleteQuery       = `DELETE FROM public.business_tenant_mappings WHERE provider_name = $1`
 	testProvider      = "Compass Tests"
 	testDefaultTenant = "Test Default"
+	deleteQuery       = `DELETE FROM public.label_definitions WHERE tenant_id = $1`
 )
 
 type Tenant struct {
@@ -40,7 +40,7 @@ type TestTenantsManager struct {
 	tenantsByName map[string]Tenant
 }
 
-func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) {
+func (mgr *TestTenantsManager) Init() {
 	mgr.tenantsByName = map[string]Tenant{
 		"Test Default": {
 			ID:             "5577cf46-4f78-45fa-b55f-a42a3bdba868",
@@ -141,37 +141,35 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			Status:         Active,
 		},
 	}
+}
+
+func (mgr TestTenantsManager) Cleanup() {
+	dbCfg := persistence.DatabaseConfig{}
+	err := envconfig.Init(&dbCfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	transact, closeFunc, err := persistence.Configure(context.TODO(), dbCfg)
+
+	defer func() {
+		err := closeFunc()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	tx, err := transact.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, v := range mgr.tenantsByName {
-		_, err := tx.Exec(insertQuery, v.ID, v.Name, v.ExternalTenant, v.ProviderName, v.Status)
-
+	for _,v := range mgr.tenantsByName {
+		_, err = tx.Exec(deleteQuery, v.ID)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (mgr TestTenantsManager) CleanupDB(transact persistence.Transactioner) {
-
-	tx, err := transact.Begin()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = tx.Exec(deleteQuery, testProvider)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	err = tx.Commit()
 	if err != nil {
