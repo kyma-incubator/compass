@@ -4,18 +4,28 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
-
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHydrators(t *testing.T) {
+	runtime := director.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, &graphql.RuntimeInput{
+		Name: "TestHydrators-runtime",
+	})
+	runtimeID := runtime.ID
+	defer director.UnregisterRuntimeWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, runtimeID)
 
-	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
-	runtimeID := "75f42q66-b340-418d-b653-d25b5ed47d75"
+	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
+		Name: "TestHydrators-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer director.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, appID)
 
 	hash := "df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a"
 

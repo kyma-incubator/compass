@@ -4,13 +4,20 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOathkeeperSecurity(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
+	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
+		Name: "TestOathkeeperSecurity-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer director.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, appID)
 
 	certResult, configuration := connector.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certChain := testkit.DecodeCertChain(t, certResult.CertificateChain)

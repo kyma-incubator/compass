@@ -3,14 +3,26 @@ package apitests
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTokens(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
-	runtimeID := "75f42q66-b340-418d-b653-d25b5ed47d75"
+	runtime := director.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, &graphql.RuntimeInput{
+		Name: "TestTokens-runtime",
+	})
+	runtimeID := runtime.ID
+	defer director.UnregisterRuntimeWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, runtimeID)
+
+	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
+		Name: "TestTokens-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer director.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, appID)
 
 	t.Run("should return valid response on Configuration query for Application token", func(t *testing.T) {
 		//when
