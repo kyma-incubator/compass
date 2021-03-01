@@ -55,7 +55,7 @@ func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Cl
 	return app
 }
 
-func getApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.ApplicationExt {
+func GetApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.ApplicationExt {
 	appRequest := fixGetApplicationRequest(id)
 	app := graphql.ApplicationExt{}
 

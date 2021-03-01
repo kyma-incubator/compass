@@ -15,13 +15,13 @@ import (
 
 func TestHydrators(t *testing.T) {
 	runtime := director.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, &graphql.RuntimeInput{
-		Name: "TestHydrators-runtime",
+		Name: "test-hydrators-runtime",
 	})
 	runtimeID := runtime.ID
 	defer director.UnregisterRuntimeWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, runtimeID)
 
 	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
-		Name: "TestHydrators-app",
+		Name: "test-hydrators-app",
 	})
 	require.NoError(t, err)
 	appID := app.ID

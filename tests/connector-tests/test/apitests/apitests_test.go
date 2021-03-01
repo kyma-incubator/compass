@@ -12,13 +12,13 @@ import (
 
 func TestTokens(t *testing.T) {
 	runtime := director.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, &graphql.RuntimeInput{
-		Name: "TestTokens-runtime",
+		Name: "test-tokens-runtime",
 	})
 	runtimeID := runtime.ID
 	defer director.UnregisterRuntimeWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, runtimeID)
 
 	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
-		Name: "TestTokens-app",
+		Name: "test-tokens-app",
 	})
 	require.NoError(t, err)
 	appID := app.ID
@@ -98,7 +98,12 @@ func TestTokens(t *testing.T) {
 }
 
 func TestCertificateGeneration(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
+	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-cert-gen-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer director.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, appID)
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
@@ -198,7 +203,12 @@ func TestCertificateGeneration(t *testing.T) {
 }
 
 func TestFullConnectorFlow(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
+	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-full-flow-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer director.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, config.Tenant, appID)
 
 	t.Log("Generating certificate...")
 	certificationResult, configuration := connector.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)

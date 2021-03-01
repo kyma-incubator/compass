@@ -33,7 +33,7 @@ var (
 func TestMain(m *testing.M) {
 	logrus.Info("Starting Connector Test")
 
-	ctx := context.Background()
+	ctx = context.Background()
 
 	cfg, err := testkit.ReadConfig()
 	if err != nil {

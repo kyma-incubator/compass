@@ -13,7 +13,7 @@ import (
 
 func TestOathkeeperSecurity(t *testing.T) {
 	app, err := director.RegisterApplicationWithinTenant(t, ctx, directorClient.DexGraphqlClient, config.Tenant, graphql.ApplicationRegisterInput{
-		Name: "TestOathkeeperSecurity-app",
+		Name: "test-oathkeeper-security-app",
 	})
 	require.NoError(t, err)
 	appID := app.ID

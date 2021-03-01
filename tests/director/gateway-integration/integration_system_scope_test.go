@@ -42,7 +42,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		require.NotEmpty(t, appByIntSys.ID)
 
 		t.Log("Get application")
-		app := getApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+		app := GetApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 		require.NotEmpty(t, app.ID)
 		require.Equal(t, appByIntSys.ID, app.ID)
 
