@@ -35,4 +35,3 @@ istio:
     enabled: true
     directorInternalApi:
       compassConnector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector
-      compassConnectorTests: cluster.local/ns/kyma-system/sa/compass-connector-tests

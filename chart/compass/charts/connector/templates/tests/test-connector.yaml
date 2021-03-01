@@ -41,6 +41,8 @@ spec:
           value: {{ .Values.global.connector.revocation.configmap.name | quote }}
         - name: APP_TENANT
           value: "{{.Values.global.defaultTenant}}"
+        - name: DOMAIN
+          value: "{{ .Values.global.ingress.domainName }}"
         - name: USER_EMAIL
           valueFrom:
             secretKeyRef:
