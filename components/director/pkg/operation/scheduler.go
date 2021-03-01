@@ -16,10 +16,16 @@
 
 package operation
 
-// DefaultScheduler defines an initial Scheduler implementation
-type DefaultScheduler struct{}
+import (
+	"context"
 
-// Schedule is responsible for scheduling any provided Operation
-func (d DefaultScheduler) Schedule(_ Operation) (string, error) {
-	return "", nil
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+)
+
+// DisabledScheduler defines a Scheduler implementation that can be used when asynchronous operations are disabled
+type DisabledScheduler struct{}
+
+// Schedule returns an error when called
+func (d *DisabledScheduler) Schedule(ctx context.Context, _ *Operation) (string, error) {
+	return "", apperrors.NewInvalidOperationError("operation scheduling is currently disabled")
 }

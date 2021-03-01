@@ -36,6 +36,8 @@ type EntityConverter interface {
 type pgRepository struct {
 	existQuerier    repo.ExistQuerier
 	singleGetter    repo.SingleGetter
+	globalGetter    repo.SingleGetterGlobal
+	globalDeleter   repo.DeleterGlobal
 	lister          repo.Lister
 	deleter         repo.Deleter
 	pageableQuerier repo.PageableQuerier
@@ -48,6 +50,8 @@ func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:    repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
 		singleGetter:    repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		globalGetter:    repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
+		globalDeleter:   repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:         repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
 		lister:          repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
@@ -69,7 +73,8 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 			return err
 		}
 
-		app.Ready = false
+		app.SetReady(false)
+		app.SetError("")
 		if app.GetDeletedAt().IsZero() { // Needed for the tests but might be useful for the production also
 			app.SetDeletedAt(time.Now())
 		}
@@ -80,9 +85,40 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	opMode := operation.ModeFromCtx(ctx)
+	if opMode == graphql.OperationModeAsync {
+		app, err := r.GetGlobalByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		app.SetReady(false)
+		app.SetError("")
+		if app.DeletedAt.IsZero() { // Needed for the tests but might be useful for the production also
+			app.SetDeletedAt(time.Now())
+		}
+
+		return r.Update(ctx, app)
+	}
+
+	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
+func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
+	var appEnt Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 

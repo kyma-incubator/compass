@@ -1,4 +1,4 @@
-APP_NAME = compass-operations-controller
+APP_NAME = compass-operations-controller-manager
 APP_PATH = components/operations-controller
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-kubebuilder2:v20210216-1.14.0-rc1-535-gb45951c9
 VERIFY_IGNORE := /vendor\|/automock\|/api/v1alpha1/zz_generated.deepcopy.go

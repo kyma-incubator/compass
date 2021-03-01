@@ -162,11 +162,11 @@ func TestResolver_UpdateApplication(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Update", contextParam, applicationID, modelInput).Return(nil).Once()
+				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
+				svc.On("Update", context.TODO(), applicationID, modelInput).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -181,30 +181,11 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name:            "Returns error when commit transaction failed",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			ServiceFn: func() *automock.ApplicationService {
-				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Update", contextParam, applicationID, modelInput).Return(nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationConverter {
-				conv := &automock.ApplicationConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
-				return conv
-			},
-			ApplicationID:       applicationID,
-			Input:               gqlInput,
-			ExpectedApplication: nil,
-			ExpectedErr:         testErr,
-		},
-		{
 			Name:            "Returns error when application update failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Update", contextParam, applicationID, modelInput).Return(testErr).Once()
+				svc.On("Update", context.TODO(), applicationID, modelInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -219,32 +200,16 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Update", contextParam, applicationID, modelInput).Return(nil).Once()
-				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
+				svc.On("Update", context.TODO(), applicationID, modelInput).Return(nil).Once()
+				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
-				return conv
-			},
-			ApplicationID:       applicationID,
-			Input:               gqlInput,
-			ExpectedApplication: nil,
-			ExpectedErr:         testErr,
-		},
-		{
-			Name:            "Returns error when starting transaction failed",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			ServiceFn: func() *automock.ApplicationService {
-				svc := &automock.ApplicationService{}
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationConverter {
-				conv := &automock.ApplicationConverter{}
 				return conv
 			},
 			ApplicationID:       applicationID,

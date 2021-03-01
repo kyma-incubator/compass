@@ -296,7 +296,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: &now, UpdatedAt: &time.Time{}, DeletedAt: &time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: &now, UpdatedAt: &time.Time{}, DeletedAt: &time.Time{}, Ready: true, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -309,7 +309,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed UPDATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: &now, UpdatedAt: timeToTimePtr(now.Add(1 * time.Minute)), DeletedAt: &time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: &now, UpdatedAt: timeToTimePtr(now.Add(1 * time.Minute)), DeletedAt: &time.Time{}, Ready: true, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -322,7 +322,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed DELETE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: &now, UpdatedAt: &now, DeletedAt: timeToTimePtr(now.Add(1 * time.Minute)), Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: &now, UpdatedAt: &now, DeletedAt: timeToTimePtr(now.Add(1 * time.Minute)), Ready: true, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
