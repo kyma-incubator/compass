@@ -18,6 +18,10 @@ package controllers_test
 
 import (
 	"context"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
@@ -34,14 +38,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"strings"
-	"time"
+
+	"testing"
 
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"testing"
 )
 
 const (
@@ -396,7 +398,7 @@ func TestController_Scenarios(t *testing.T) {
 
 		require.Eventually(t, func() bool {
 			var operation = &v1alpha1.Operation{}
-			kubeClient.Get(ctx, namespacedName, operation)
+			err := kubeClient.Get(ctx, namespacedName, operation)
 			require.NoError(t, err)
 
 			var errMsg string
@@ -506,7 +508,7 @@ func TestController_Scenarios(t *testing.T) {
 
 		require.Eventually(t, func() bool {
 			var operation = &v1alpha1.Operation{}
-			kubeClient.Get(ctx, namespacedName, operation)
+			err := kubeClient.Get(ctx, namespacedName, operation)
 			require.NoError(t, err)
 
 			var errMsg string

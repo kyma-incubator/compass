@@ -17,6 +17,9 @@
 package controllers_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
@@ -28,8 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
-	"time"
 )
 
 func stubLoggerAssertion(t *testing.T, errExpectation, msgExpectation string) {
