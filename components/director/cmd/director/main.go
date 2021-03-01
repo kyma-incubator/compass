@@ -294,7 +294,7 @@ func main() {
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
-	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
+	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalGraphQLAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
 	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.ServerTimeout)
 	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
 
