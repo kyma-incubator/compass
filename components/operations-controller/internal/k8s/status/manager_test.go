@@ -82,9 +82,7 @@ func TestStatusManager(t *testing.T) {
 		err = k8sClient.Create(ctx, invalidOperation)
 		require.NoError(t, err)
 
-		invalidOpNamespacedName := types.NamespacedName{Namespace: invalidOperation.ObjectMeta.Namespace, Name: invalidOperation.ObjectMeta.Name}
-
-		err = statusManager.Initialize(ctx, invalidOpNamespacedName)
+		err = statusManager.Initialize(ctx, invalidOperation)
 		require.Error(t, err)
 
 		_, isValErr := err.(*v1alpha1.OperationValidationErr)
@@ -93,38 +91,42 @@ func TestStatusManager(t *testing.T) {
 	})
 
 	t.Run("Test Initialize when generation and observed generation mismatch should initialize status with initial values", func(t *testing.T) {
-		err = statusManager.Initialize(ctx, namespacedName)
+		originOperation := operation.DeepCopy()
+		err = statusManager.Initialize(ctx, originOperation)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, int64(1), *actualOperation.Status.ObservedGeneration)
-		require.Equal(t, v1alpha1.StateInProgress, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{actualOperation, originOperation} {
+			require.Equal(t, int64(1), *op.Status.ObservedGeneration)
+			require.Equal(t, v1alpha1.StateInProgress, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateInProgress, actualOperation.Status.Webhooks[0].State)
-		require.Equal(t, 0, actualOperation.Status.Webhooks[0].RetriesCount)
-		require.Empty(t, actualOperation.Status.Webhooks[0].WebhookPollURL)
-		require.Empty(t, actualOperation.Status.Webhooks[0].LastPollTimestamp)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateInProgress, op.Status.Webhooks[0].State)
+			require.Equal(t, 0, op.Status.Webhooks[0].RetriesCount)
+			require.Empty(t, op.Status.Webhooks[0].WebhookPollURL)
+			require.Empty(t, op.Status.Webhooks[0].LastPollTimestamp)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		require.Equal(t, corev1.ConditionFalse, actualOperation.Status.Conditions[0].Status)
-		require.Equal(t, corev1.ConditionFalse, actualOperation.Status.Conditions[1].Status)
-		require.Empty(t, actualOperation.Status.Conditions[0].Message)
-		require.Empty(t, actualOperation.Status.Conditions[1].Message)
+			require.Len(t, op.Status.Conditions, 2)
+			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[0].Status)
+			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[1].Status)
+			require.Empty(t, op.Status.Conditions[0].Message)
+			require.Empty(t, op.Status.Conditions[1].Message)
+		}
 	})
 
 	t.Run("Test Initialize when generation and observed generation match shouldn not affect status", func(t *testing.T) {
-		err = statusManager.Initialize(ctx, namespacedName)
+		originOperation := operation.DeepCopy()
+		err = statusManager.Initialize(ctx, originOperation)
 		require.NoError(t, err)
 
 		err = statusManager.SuccessStatus(ctx, namespacedName)
 		require.NoError(t, err)
 
-		err = statusManager.Initialize(ctx, namespacedName)
+		err = statusManager.Initialize(ctx, originOperation)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}

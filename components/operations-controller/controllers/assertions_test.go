@@ -84,10 +84,10 @@ func assertK8sDeleteCalledWithOperation(t *testing.T, k8sClient *controllersfake
 	require.Equal(t, expectedOperation, actualOperation)
 }
 
-func assertStatusManagerInitializeCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName) {
+func assertStatusManagerInitializeCalledWithOperation(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation) {
 	require.Equal(t, 1, statusManagerClient.InitializeCallCount())
-	_, namespacedName := statusManagerClient.InitializeArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
+	_, actualOperation := statusManagerClient.InitializeArgsForCall(0)
+	require.Equal(t, expectedOperation, actualOperation)
 }
 
 func assertStatusManagerSuccessStatusCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName) {
@@ -178,4 +178,29 @@ func assertWebhookPollInvocation(t *testing.T, webhookClient *controllersfakes.F
 	require.NoError(t, err)
 	expectedRequest := webhook.NewPollRequest(application.Result.Webhooks[0], expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
 	require.Equal(t, expectedRequest, actualRequest)
+}
+
+func assertStatusEquals(expectedStatus, actualStatus *v1alpha1.OperationStatus) bool {
+	if expectedStatus.Phase != actualStatus.Phase || expectedStatus.ObservedGeneration != expectedStatus.ObservedGeneration ||
+		len(expectedStatus.Webhooks) != len(actualStatus.Webhooks) || len(expectedStatus.Conditions) != len(actualStatus.Conditions) {
+		return false
+	}
+
+	actualWebhooks := webhookSliceToMap(actualStatus.Webhooks)
+	for _, expectedWebhook := range expectedStatus.Webhooks {
+		actualWebhook, exists := actualWebhooks[expectedWebhook.WebhookID]
+		if !exists || (actualWebhook != expectedWebhook) {
+			return false
+		}
+	}
+
+	actualConditions := conditionSliceToMap(actualStatus.Conditions)
+	for _, expectedCondition := range expectedStatus.Conditions {
+		actualCondition, exists := actualConditions[expectedCondition.Type]
+		if !exists || (actualCondition != expectedCondition) {
+			return false
+		}
+	}
+
+	return true
 }

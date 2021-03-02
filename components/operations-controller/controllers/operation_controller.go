@@ -17,8 +17,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -97,7 +99,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
-		return r.finalizeStatusWithError(ctx, operation, ErrWebhookTimeoutReached)
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached)
 	}
 
 	if !operation.HasPollURL() {
@@ -107,7 +109,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
 			log.C(ctx).Error(err, "Unable to execute Webhook request")
-			return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, fmt.Errorf("%s: %s", ErrWebhookTimeoutReached, err))
+			return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
 		}
 
 		return r.handleWebhookResponse(ctx, operation, webhookEntity.Mode, response)
@@ -129,7 +131,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
-		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, fmt.Errorf("%s: %s", ErrWebhookTimeoutReached, err))
+		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
 	}
 
 	return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
@@ -199,7 +201,7 @@ func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operati
 		log.C(ctx).Info("Synchronous webhook has been executed successfully")
 		return r.finalizeStatusSuccess(ctx, operation)
 	default:
-		log.C(ctx).Error(ErrUnsupportedWebhookMode, "Unable to post-process Webhook response")
+		log.C(ctx).Error(errors.ErrUnsupportedWebhookMode, "Unable to post-process Webhook response")
 		return ctrl.Result{}, nil
 	}
 }
@@ -215,25 +217,30 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 			return ctrl.Result{}, err
 		}
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
-		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, fmt.Errorf("%s: %s", ErrWebhookTimeoutReached, "polling time has expired"))
+		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, errors.ErrWebhookPollTimeExpired)
 	case *response.SuccessStatusIdentifier:
 		return r.finalizeStatusSuccess(ctx, operation)
 	case *response.FailedStatusIdentifier:
-		return r.finalizeStatusWithError(ctx, operation, ErrFailedWebhookStatus)
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrFailedWebhookStatus)
 	default:
 		log.C(ctx).Error(fmt.Errorf("unexpected poll status response: %s", *response.Status), "Polling will be stopped due to an unknown status code received")
 		return ctrl.Result{}, nil
 	}
 }
 
-func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhook *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
-	if !operation.TimeoutReached(r.determineTimeout(webhook)) {
+func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
+	_, isFatalErr := webhookErr.(*errors.FatalReconcileErr)
+	if !operation.TimeoutReached(r.determineTimeout(webhookEntity)) && !isFatalErr {
 		requeueAfter := r.config.RequeueInterval
-		if webhook.RetryInterval != nil {
-			requeueAfter = time.Duration(*webhook.RetryInterval)
+		if webhookEntity.RetryInterval != nil {
+			requeueAfter = time.Duration(*webhookEntity.RetryInterval)
 		}
 
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	if !isFatalErr {
+		webhookErr = fmt.Errorf("%s: %s", errors.ErrWebhookTimeoutReached, webhookErr)
 	}
 
 	return r.finalizeStatusWithError(ctx, operation, webhookErr)

@@ -19,9 +19,11 @@ package controllers_test
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"path/filepath"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -339,7 +341,7 @@ func TestController_Scenarios(t *testing.T) {
 			require.NoError(t, err)
 		}()
 
-		expectedStatus := expectedFailedStatus(webhookGUID, controllers.ErrFailedWebhookStatus.Error())
+		expectedStatus := expectedFailedStatus(webhookGUID, errors.ErrFailedWebhookStatus.Error())
 		expectedStatus.Webhooks[0].WebhookPollURL = mockedLocationURL
 		expectedStatus.Webhooks[0].RetriesCount = pollCallCount - 1
 
@@ -397,7 +399,7 @@ func TestController_Scenarios(t *testing.T) {
 			require.NoError(t, err)
 		}()
 
-		expectedStatus := expectedFailedStatus(webhookGUID, controllers.ErrWebhookTimeoutReached.Error())
+		expectedStatus := expectedFailedStatus(webhookGUID, errors.ErrWebhookTimeoutReached.Error())
 		expectedStatus.Webhooks[0].WebhookPollURL = mockedLocationURL
 		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
 
@@ -547,7 +549,7 @@ func TestController_Scenarios(t *testing.T) {
 			require.NoError(t, err)
 		}()
 
-		expectedStatus := expectedFailedStatus(webhookGUID, controllers.ErrWebhookTimeoutReached.Error())
+		expectedStatus := expectedFailedStatus(webhookGUID, errors.ErrWebhookTimeoutReached.Error())
 		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
 
 		require.Eventually(t, func() bool {
@@ -783,31 +785,6 @@ func expectedFailedStatus(webhookID, errorMsg string) *v1alpha1.OperationStatus 
 		ObservedGeneration: &generation,
 	}
 	return status
-}
-
-func assertStatusEquals(expectedStatus, actualStatus *v1alpha1.OperationStatus) bool {
-	if expectedStatus.Phase != actualStatus.Phase || expectedStatus.ObservedGeneration != expectedStatus.ObservedGeneration ||
-		len(expectedStatus.Webhooks) != len(actualStatus.Webhooks) || len(expectedStatus.Conditions) != len(actualStatus.Conditions) {
-		return false
-	}
-
-	actualWebhooks := webhookSliceToMap(actualStatus.Webhooks)
-	for _, expectedWebhook := range expectedStatus.Webhooks {
-		actualWebhook, exists := actualWebhooks[expectedWebhook.WebhookID]
-		if !exists || (actualWebhook != expectedWebhook) {
-			return false
-		}
-	}
-
-	actualConditions := conditionSliceToMap(actualStatus.Conditions)
-	for _, expectedCondition := range expectedStatus.Conditions {
-		actualCondition, exists := actualConditions[expectedCondition.Type]
-		if !exists || (actualCondition != expectedCondition) {
-			return false
-		}
-	}
-
-	return true
 }
 
 func webhookSliceToMap(webhooks []v1alpha1.Webhook) map[string]v1alpha1.Webhook {

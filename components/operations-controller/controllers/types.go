@@ -24,17 +24,9 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	typesbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/types"
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-var (
-	ErrReconciliationTimeoutReached = errors.New("reconciliation timeout reached")
-	ErrWebhookTimeoutReached        = errors.New("webhook timeout reached")
-	ErrFailedWebhookStatus          = errors.New("webhook operation has finished with failed status")
-	ErrUnsupportedWebhookMode       = errors.New("unsupported webhook mode")
 )
 
 // StatusManager defines an abstraction for managing the status of a given kubernetes resource

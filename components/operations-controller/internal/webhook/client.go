@@ -26,12 +26,15 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
+	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 )
+
+const emptyBody = `{}`
 
 type client struct {
 	httpClient *http.Client
@@ -47,26 +50,30 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	var err error
 	webhook := request.Webhook
 
+	if webhook.OutputTemplate == nil {
+		return nil, recerr.NewFatalReconcileError("missing output template")
+	}
+
 	var method string
 	url := webhook.URL
 	if webhook.URLTemplate != nil {
 		resultURL, err := request.Object.ParseURLTemplate(webhook.URLTemplate)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse webhook URL")
+			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook URL"))
 		}
 		url = resultURL.Path
 		method = *resultURL.Method
 	}
 
 	if url == nil {
-		return nil, errors.New("missing webhook url")
+		return nil, recerr.NewFatalReconcileError("missing webhook url")
 	}
 
-	body := []byte("{}")
+	body := []byte(emptyBody)
 	if webhook.InputTemplate != nil {
 		body, err = request.Object.ParseInputTemplate(webhook.InputTemplate)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse webhook input body")
+			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook input body"))
 		}
 	}
 
@@ -74,7 +81,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	if webhook.HeaderTemplate != nil {
 		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse webhook headers")
+			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook headers"))
 		}
 	}
 
@@ -82,7 +89,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
 	}
 
 	req.Header = headers
@@ -106,7 +113,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
 	if err != nil {
-		return nil, err
+		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response into webhook output template"))
 	}
 
 	isLocationEmpty := response.Location != nil && *response.Location == ""
@@ -123,11 +130,15 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	var err error
 	webhook := request.Webhook
 
+	if webhook.StatusTemplate == nil {
+		return nil, recerr.NewFatalReconcileError("missing status template")
+	}
+
 	headers := http.Header{}
 	if webhook.HeaderTemplate != nil {
 		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse webhook headers")
+			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook headers"))
 		}
 	}
 
@@ -135,7 +146,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, request.PollURL, nil)
 	if err != nil {
-		return nil, err
+		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
 	}
 
 	req.Header = headers
@@ -159,7 +170,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	response, err := responseObject.ParseStatusTemplate(webhook.StatusTemplate)
 	if err != nil {
-		return nil, err
+		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response status into status template"))
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)

@@ -38,6 +38,7 @@ import (
 
 var (
 	invalidTemplate   = "invalidTemplate"
+	emptyTemplate     = "{}"
 	mockedError       = "mocked error"
 	mockedLocationURL = "https://test-domain.com/operation"
 	webhookAsyncMode  = graphql.WebhookModeAsync
@@ -46,7 +47,8 @@ var (
 func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
-			URLTemplate: &invalidTemplate,
+			URLTemplate:    &invalidTemplate,
+			OutputTemplate: &emptyTemplate,
 		},
 		Object: web_hook.RequestObject{},
 	}
@@ -62,7 +64,8 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
-			URLTemplate: nil,
+			URLTemplate:    nil,
+			OutputTemplate: &emptyTemplate,
 		},
 		Object: web_hook.RequestObject{},
 	}
@@ -81,8 +84,9 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhook.Request{
 		Webhook: graphql.Webhook{
-			URLTemplate:   &URLTemplate,
-			InputTemplate: &invalidInputTemplate,
+			URLTemplate:    &URLTemplate,
+			InputTemplate:  &invalidInputTemplate,
+			OutputTemplate: &emptyTemplate,
 		},
 		Object: web_hook.RequestObject{Application: app},
 	}
@@ -104,6 +108,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &invalidTemplate,
+			OutputTemplate: &emptyTemplate,
 		},
 		Object: web_hook.RequestObject{Application: app},
 	}
@@ -126,6 +131,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
+			OutputTemplate: &emptyTemplate,
 		},
 		Object: web_hook.RequestObject{Application: app},
 	}
@@ -148,6 +154,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
+			OutputTemplate: &emptyTemplate,
 		},
 		Object: web_hook.RequestObject{Application: app},
 	}
@@ -411,6 +418,7 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 		Request: &webhook.Request{
 			Webhook: graphql.Webhook{
 				HeaderTemplate: &invalidTemplate,
+				StatusTemplate: &emptyTemplate,
 			},
 			Object: web_hook.RequestObject{Application: app},
 		},
@@ -431,6 +439,7 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		Request: &webhook.Request{
 			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
+				StatusTemplate: &emptyTemplate,
 			},
 			Object: web_hook.RequestObject{Application: app},
 		},
@@ -452,6 +461,7 @@ func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 		Request: &webhook.Request{
 			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
+				StatusTemplate: &emptyTemplate,
 			},
 			Object: web_hook.RequestObject{Application: app},
 		},
