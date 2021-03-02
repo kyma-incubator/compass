@@ -170,10 +170,10 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 
 		require.Equal(t, pollInvocations+1, webhookClient.PollCallCount())
-		assertWebhookPollInvocation(t, webhookClient, &operation, application, pollInvocations)
+		assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], pollInvocations)
 	})
 
 	t.Run("Successful Async Webhook flow after polling and requeue a few times", func(t *testing.T) {
@@ -232,12 +232,12 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 
 		require.Equal(t, pollInvocations+pollCallCount, webhookClient.PollCallCount())
-		assertWebhookPollInvocation(t, webhookClient, &operation, application, pollInvocations)
+		//assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], pollInvocations)
 		for i := pollInvocations; i < pollInvocations+pollCallCount; i++ {
-			assertWebhookPollInvocation(t, webhookClient, &operation, application, i)
+			assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], i)
 		}
 	})
 
@@ -305,12 +305,87 @@ func TestController_Scenarios(t *testing.T) {
 
 		require.Equal(t, updateOperationInvocations+2, directorClient.UpdateOperationCallCount())
 		assertDirectorUpdateOperationInvocation(t, directorClient, &createOperation, updateOperationInvocations)
+		assertDirectorUpdateOperationInvocation(t, directorClient, latestOperation, updateOperationInvocations+1)
 
 		require.Equal(t, doInvocations+2, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &createOperation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &createOperation, &application.Result.Webhooks[0], doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, latestOperation, &application.Result.Webhooks[1], doInvocations+1)
 
 		require.Equal(t, pollInvocations+2, webhookClient.PollCallCount())
-		assertWebhookPollInvocation(t, webhookClient, &createOperation, application, pollInvocations)
+		assertWebhookPollInvocation(t, webhookClient, &createOperation, &application.Result.Webhooks[0], pollInvocations)
+		assertWebhookPollInvocation(t, webhookClient, latestOperation, &application.Result.Webhooks[1], pollInvocations+1)
+	})
+
+	t.Run("Successful Async Webhook execution after Operation CR has previously resulted in FAILED state", func(t *testing.T) {
+		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
+
+		expectedErr := errors.NewFatalReconcileError("unable to parse output template")
+		mode := graphql.WebhookModeAsync
+		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}},
+			graphql.Webhook{ID: webhookGUID, Mode: &mode, Timeout: intToIntPtr(120)},
+			graphql.Webhook{ID: webhookGUID, Mode: &mode, Timeout: intToIntPtr(120)})
+
+		directorClient.FetchApplicationReturns(application, nil)
+		directorClient.UpdateOperationReturns(nil)
+
+		webhookClient.DoReturnsOnCall(doInvocations, nil, expectedErr)
+		webhookClient.DoReturnsOnCall(doInvocations+1, &web_hook.Response{Location: &mockedLocationURL}, nil)
+		webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
+
+		operation := *mockedOperation
+		err := kubeClient.Create(ctx, &operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err := kubeClient.Delete(ctx, &operation)
+			require.NoError(t, err)
+		}()
+
+		expectedStatus := expectedFailedStatus(operation.Spec.WebhookIDs[0], expectedErr.Error())
+		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		var latestOperation = &v1alpha1.Operation{}
+		err = kubeClient.Get(ctx, namespacedName, latestOperation)
+		require.NoError(t, err)
+
+		latestOperation.Spec.CorrelationID = anotherCorrelationGUID // we need to updated the spec in order to bump the generation of the resource
+		err = kubeClient.Update(ctx, latestOperation)
+		require.NoError(t, err)
+
+		expectedStatus = expectedSuccessStatus(operation.Spec.WebhookIDs[0])
+		*expectedStatus.ObservedGeneration += 1
+		expectedStatus.Webhooks[0].WebhookPollURL = mockedLocationURL
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		require.Equal(t, fetchApplicationInvocations+3, directorClient.FetchApplicationCallCount())
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations)
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations+1)
+
+		require.Equal(t, updateOperationInvocations+2, directorClient.UpdateOperationCallCount())
+		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
+		assertDirectorUpdateOperationInvocation(t, directorClient, latestOperation, updateOperationInvocations+1)
+
+		require.Equal(t, doInvocations+2, webhookClient.DoCallCount())
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, latestOperation, &application.Result.Webhooks[0], doInvocations+1)
+
+		require.Equal(t, pollInvocations+1, webhookClient.PollCallCount())
+		assertWebhookPollInvocation(t, webhookClient, latestOperation, &application.Result.Webhooks[0], pollInvocations)
 	})
 
 	t.Run("Failed Async Webhook flow after polling and requeue a few times", func(t *testing.T) {
@@ -369,12 +444,12 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 
 		require.Equal(t, pollInvocations+pollCallCount, webhookClient.PollCallCount())
-		assertWebhookPollInvocation(t, webhookClient, &operation, application, pollInvocations)
+		//assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], pollInvocations)
 		for i := pollInvocations; i < pollInvocations+pollCallCount; i++ {
-			assertWebhookPollInvocation(t, webhookClient, &operation, application, i)
+			assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], i)
 		}
 	})
 
@@ -460,7 +535,7 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 	})
 
 	t.Run("Successful consecutive Sync Webhooks on same Operation CR flow", func(t *testing.T) {
@@ -524,9 +599,78 @@ func TestController_Scenarios(t *testing.T) {
 
 		require.Equal(t, updateOperationInvocations+2, directorClient.UpdateOperationCallCount())
 		assertDirectorUpdateOperationInvocation(t, directorClient, &createOperation, updateOperationInvocations)
+		assertDirectorUpdateOperationInvocation(t, directorClient, latestOperation, updateOperationInvocations+1)
 
 		require.Equal(t, doInvocations+2, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &createOperation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &createOperation, &application.Result.Webhooks[0], doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, latestOperation, &application.Result.Webhooks[1], doInvocations+1)
+	})
+
+	t.Run("Successful Sync Webhook execution after Operation CR has previously resulted in FAILED state", func(t *testing.T) {
+		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
+
+		expectedErr := errors.NewFatalReconcileError("unable to parse output template")
+		mode := graphql.WebhookModeSync
+		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}},
+			graphql.Webhook{ID: webhookGUID, Mode: &mode, Timeout: intToIntPtr(120)},
+			graphql.Webhook{ID: webhookGUID, Mode: &mode, Timeout: intToIntPtr(120)})
+
+		directorClient.FetchApplicationReturns(application, nil)
+		directorClient.UpdateOperationReturns(nil)
+
+		webhookClient.DoReturnsOnCall(doInvocations, nil, expectedErr)
+		webhookClient.DoReturnsOnCall(doInvocations+1, &web_hook.Response{Location: &mockedLocationURL}, nil)
+
+		operation := *mockedOperation
+		err := kubeClient.Create(ctx, &operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err := kubeClient.Delete(ctx, mockedOperation)
+			require.NoError(t, err)
+		}()
+
+		expectedStatus := expectedFailedStatus(operation.Spec.WebhookIDs[0], expectedErr.Error())
+		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		var latestOperation = &v1alpha1.Operation{}
+		err = kubeClient.Get(ctx, namespacedName, latestOperation)
+		require.NoError(t, err)
+
+		latestOperation.Spec.CorrelationID = anotherCorrelationGUID
+		err = kubeClient.Update(ctx, latestOperation)
+		require.NoError(t, err)
+
+		expectedStatus = expectedSuccessStatus(operation.Spec.WebhookIDs[0])
+		*expectedStatus.ObservedGeneration += 1
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		require.Equal(t, fetchApplicationInvocations+2, directorClient.FetchApplicationCallCount())
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations)
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations+1)
+
+		require.Equal(t, updateOperationInvocations+2, directorClient.UpdateOperationCallCount())
+		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
+		assertDirectorUpdateOperationInvocation(t, directorClient, latestOperation, updateOperationInvocations+1)
+
+		require.Equal(t, doInvocations+2, webhookClient.DoCallCount())
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, latestOperation, &application.Result.Webhooks[0], doInvocations+1)
 	})
 
 	t.Run("Failed Sync Webhook flow after timeout", func(t *testing.T) {
@@ -617,7 +761,7 @@ func TestController_Scenarios(t *testing.T) {
 		err = kubeClient.Get(ctx, namespacedName, latestOperation)
 		require.NoError(t, err)
 
-		latestOperation.Spec.OperationCategory = "test"
+		latestOperation.Spec.CorrelationID = anotherCorrelationGUID
 
 		err = kubeClient.Update(ctx, latestOperation)
 		require.NoError(t, err)
@@ -630,12 +774,13 @@ func TestController_Scenarios(t *testing.T) {
 
 		require.Equal(t, fetchApplicationInvocations+2, directorClient.FetchApplicationCallCount())
 		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations)
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations+1)
 
 		require.Equal(t, updateOperationInvocations+1, directorClient.UpdateOperationCallCount())
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 	})
 
 	t.Run("Generation Changed Predicate does not allow requeue as a result of status update", func(t *testing.T) {
@@ -686,7 +831,7 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 	})
 
 	t.Run("Deleting Operation CR does not trigger reconciliation loop", func(t *testing.T) {
@@ -739,12 +884,13 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 
 		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
-		assertWebhookDoInvocation(t, webhookClient, &operation, application, doInvocations)
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
 
 	})
 
 	err = testEnv.Stop() // deferring the Stop earlier at the top does not seem to work, this is why the Stop is left here at the bottom
 	require.NoError(t, err)
+
 }
 
 func updateInvocationVars(fetchAppCount, updateOpCount, doCount, pollCount *int, directorClient *controllersfakes.FakeDirectorClient, webhookClient *controllersfakes.FakeWebhookClient) {

@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -154,29 +153,29 @@ func assertDirectorFetchApplicationInvocation(t *testing.T, directorClient *cont
 	require.Equal(t, expectedTenantID, ctx.Value(tenant.ContextKey))
 }
 
-func assertWebhookDoCalled(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, application *director.ApplicationOutput) {
+func assertWebhookDoCalled(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook) {
 	require.Equal(t, 1, webhookClient.DoCallCount())
-	assertWebhookDoInvocation(t, webhookClient, operation, application, 0)
+	assertWebhookDoInvocation(t, webhookClient, operation, webhookEntity, 0)
 }
 
-func assertWebhookDoInvocation(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, application *director.ApplicationOutput, invocation int) {
+func assertWebhookDoInvocation(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, invocation int) {
 	_, actualRequest := webhookClient.DoArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhook.NewRequest(application.Result.Webhooks[0], expectedRequestObject, operation.Spec.CorrelationID)
+	expectedRequest := webhook.NewRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 
-func assertWebhookPollCalled(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, application *director.ApplicationOutput) {
+func assertWebhookPollCalled(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook) {
 	require.Equal(t, 1, webhookClient.PollCallCount())
-	assertWebhookPollInvocation(t, webhookClient, operation, application, 0)
+	assertWebhookPollInvocation(t, webhookClient, operation, webhookEntity, 0)
 }
 
-func assertWebhookPollInvocation(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, application *director.ApplicationOutput, invocation int) {
+func assertWebhookPollInvocation(t *testing.T, webhookClient *controllersfakes.FakeWebhookClient, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, invocation int) {
 	_, actualRequest := webhookClient.PollArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhook.NewPollRequest(application.Result.Webhooks[0], expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
+	expectedRequest := webhook.NewPollRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 
