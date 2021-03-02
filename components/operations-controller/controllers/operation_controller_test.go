@@ -66,7 +66,7 @@ var (
 			ResourceID:    appGUID,
 			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
 			ResourceType:  "application",
-			OperationType: v1alpha1.OperationTypeDelete,
+			OperationType: v1alpha1.OperationTypeCreate,
 			WebhookIDs:    []string{webhookGUID},
 			CorrelationID: correlationGUID,
 		},
@@ -76,11 +76,14 @@ var (
 
 func TestReconcile_FailureToGetOperationCRDueToNotFoundError_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	stubLoggerAssertion(t, "not found", "Unable to retrieve")
+	notFoundErr := kubeerrors.NewNotFound(schema.GroupResource{}, "test-operation")
+	stubLoggerAssertion(t, notFoundErr.Error(),
+		fmt.Sprintf("Unable to retrieve %s resource from API server", ctrlRequest.NamespacedName),
+		fmt.Sprintf("%s resource was not found in API server", ctrlRequest.NamespacedName))
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(nil, kubeerrors.NewNotFound(schema.GroupResource{}, "test-operation"))
+	k8sClient.GetReturns(nil, notFoundErr)
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(nil, nil, k8sClient, nil, nil)

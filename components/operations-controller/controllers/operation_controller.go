@@ -17,6 +17,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -27,7 +28,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -69,7 +69,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.handleGetOperationError(ctx, &req, err)
 	}
 
-	if err := r.statusManager.Initialize(ctx, req.NamespacedName); err != nil {
+	if err := r.statusManager.Initialize(ctx, operation); err != nil {
 		return r.handleInitializationError(ctx, err, operation)
 	}
 
@@ -86,16 +86,16 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if app.Result.Ready {
-		return r.finalizeStatusForApplication(ctx, req.NamespacedName, app.Result.Error)
+		return r.finalizeStatus(ctx, req.NamespacedName, app.Result.Error)
 	}
 
-	webhookEntity, err := retrieveWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
+	webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to retrieve webhook")
 		return r.finalizeStatusWithError(ctx, operation, err)
 	}
 
-	if operation.TimeoutReached(calculateTimeout(webhookEntity, r.config.WebhookTimeout)) {
+	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
 		return r.finalizeStatusWithError(ctx, operation, ErrWebhookTimeoutReached)
 	}
@@ -157,8 +157,9 @@ func (r *OperationReconciler) handleInitializationError(ctx context.Context, err
 }
 
 func (r *OperationReconciler) handleGetOperationError(ctx context.Context, req *ctrl.Request, err error) (ctrl.Result, error) {
-	log.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
+	log.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s resource from API server", req.NamespacedName))
 	if kubeerrors.IsNotFound(err) {
+		log.C(ctx).Error(err, fmt.Sprintf("%s resource was not found in API server", req.NamespacedName))
 		return ctrl.Result{}, nil
 	}
 
@@ -192,7 +193,7 @@ func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operati
 		if err := r.statusManager.InProgressWithPollURL(ctx, namespacedName, *response.Location); err != nil {
 			return ctrl.Result{}, err
 		}
-		log.C(ctx).Info("Successfully updated operation status", "status", operation.Status)
+		log.C(ctx).Info("Successfully updated operation status with poll URL: " + *response.Location)
 		return ctrl.Result{Requeue: true}, nil
 	case graphql.WebhookModeSync:
 		log.C(ctx).Info("Synchronous webhook has been executed successfully")
@@ -226,7 +227,7 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 }
 
 func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhook *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
-	if !operation.TimeoutReached(calculateTimeout(webhook, r.config.WebhookTimeout)) {
+	if !operation.TimeoutReached(r.determineTimeout(webhook)) {
 		requeueAfter := r.config.RequeueInterval
 		if webhook.RetryInterval != nil {
 			requeueAfter = time.Duration(*webhook.RetryInterval)
@@ -238,7 +239,7 @@ func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, op
 	return r.finalizeStatusWithError(ctx, operation, webhookErr)
 }
 
-func (r *OperationReconciler) finalizeStatusForApplication(ctx context.Context, name types.NamespacedName, errorMsg *string) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatus(ctx context.Context, name types.NamespacedName, errorMsg *string) (ctrl.Result, error) {
 	if errorMsg != nil && *errorMsg != "" {
 		if err := r.statusManager.FailedStatus(ctx, name, *errorMsg); err != nil {
 			return ctrl.Result{}, err
@@ -280,6 +281,14 @@ func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, opera
 	return ctrl.Result{}, nil
 }
 
+func (r *OperationReconciler) determineTimeout(webhook *graphql.Webhook) time.Duration {
+	if webhook.Timeout == nil {
+		return r.config.WebhookTimeout
+	}
+
+	return time.Duration(*webhook.Timeout) * time.Second
+}
+
 func prepareDirectorRequest(operation *v1alpha1.Operation) *director.Request {
 	return prepareDirectorRequestWithError(operation, nil)
 }
@@ -298,7 +307,7 @@ func prepareDirectorRequestWithError(operation *v1alpha1.Operation, err error) *
 	return request
 }
 
-func retrieveWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (*graphql.Webhook, error) {
+func extractWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (*graphql.Webhook, error) {
 	for _, appWebhook := range appWebhooks {
 		if appWebhook.ID == operationWebhookID {
 			return &appWebhook, nil
@@ -306,12 +315,4 @@ func retrieveWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (
 	}
 
 	return nil, fmt.Errorf("missing webhook with ID: %s", operationWebhookID)
-}
-
-func calculateTimeout(webhook *graphql.Webhook, defaultWebhookTimeout time.Duration) time.Duration {
-	if webhook.Timeout == nil {
-		return defaultWebhookTimeout
-	}
-
-	return time.Duration(*webhook.Timeout) * time.Second
 }

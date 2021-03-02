@@ -17,6 +17,7 @@
 package controllers_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -33,13 +34,34 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func stubLoggerAssertion(t *testing.T, errExpectation, msgExpectation string) {
+func stubLoggerAssertion(t *testing.T, errExpectation string, msgExpectations ...string) {
 	ctrl.Log = log.NewDelegatingLogger(&mockedLogger{
 		AssertErrorExpectations: func(err error, msg string) {
 			require.Contains(t, err.Error(), errExpectation)
-			if len(msgExpectation) != 0 {
-				require.Contains(t, msg, msgExpectation)
+
+			matchedMsg := false
+			for _, msgExpectation := range msgExpectations {
+				if strings.Contains(msg, msgExpectation) {
+					matchedMsg = true
+				}
 			}
+			require.True(t, matchedMsg)
+		},
+	})
+}
+
+func stubLoggerNotLoggedAssertion(t *testing.T, errExpectation string, msgExpectations ...string) {
+	ctrl.Log = log.NewDelegatingLogger(&mockedLogger{
+		AssertErrorExpectations: func(err error, msg string) {
+			require.NotContains(t, err.Error(), errExpectation)
+
+			matchedMsg := false
+			for _, msgExpectation := range msgExpectations {
+				if strings.Contains(msg, msgExpectation) {
+					matchedMsg = true
+				}
+			}
+			require.False(t, matchedMsg)
 		},
 	})
 }

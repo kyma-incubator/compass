@@ -5,6 +5,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -51,11 +52,11 @@ type FakeStatusManager struct {
 	inProgressWithPollURLAndLastPollTimestampReturnsOnCall map[int]struct {
 		result1 error
 	}
-	InitializeStub        func(context.Context, types.NamespacedName) error
+	InitializeStub        func(context.Context, *v1alpha1.Operation) error
 	initializeMutex       sync.RWMutex
 	initializeArgsForCall []struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 	}
 	initializeReturns struct {
 		result1 error
@@ -267,12 +268,12 @@ func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampReturnsO
 	}{result1}
 }
 
-func (fake *FakeStatusManager) Initialize(arg1 context.Context, arg2 types.NamespacedName) error {
+func (fake *FakeStatusManager) Initialize(arg1 context.Context, arg2 *v1alpha1.Operation) error {
 	fake.initializeMutex.Lock()
 	ret, specificReturn := fake.initializeReturnsOnCall[len(fake.initializeArgsForCall)]
 	fake.initializeArgsForCall = append(fake.initializeArgsForCall, struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 	}{arg1, arg2})
 	fake.recordInvocation("Initialize", []interface{}{arg1, arg2})
 	fake.initializeMutex.Unlock()
@@ -292,13 +293,13 @@ func (fake *FakeStatusManager) InitializeCallCount() int {
 	return len(fake.initializeArgsForCall)
 }
 
-func (fake *FakeStatusManager) InitializeCalls(stub func(context.Context, types.NamespacedName) error) {
+func (fake *FakeStatusManager) InitializeCalls(stub func(context.Context, *v1alpha1.Operation) error) {
 	fake.initializeMutex.Lock()
 	defer fake.initializeMutex.Unlock()
 	fake.InitializeStub = stub
 }
 
-func (fake *FakeStatusManager) InitializeArgsForCall(i int) (context.Context, types.NamespacedName) {
+func (fake *FakeStatusManager) InitializeArgsForCall(i int) (context.Context, *v1alpha1.Operation) {
 	fake.initializeMutex.RLock()
 	defer fake.initializeMutex.RUnlock()
 	argsForCall := fake.initializeArgsForCall[i]

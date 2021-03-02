@@ -44,7 +44,8 @@ func NewManager(k8sClient client.Client) *manager {
 // The method executes only if the generation of the Operation CR mismatches the observed generation in the status,
 // which allows the method to be used on the same resource over and over, for example when consecutive async requests
 // are scheduled on the same Operation CR and the old status should be wiped off.
-func (m *manager) Initialize(ctx context.Context, name types.NamespacedName) error {
+func (m *manager) Initialize(ctx context.Context, originOperation *v1alpha1.Operation) error {
+	name := types.NamespacedName{Namespace: originOperation.ObjectMeta.Namespace, Name: originOperation.ObjectMeta.Name}
 	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
 		if status.ObservedGeneration != nil && operation.ObjectMeta.Generation == *status.ObservedGeneration {
 			return
@@ -61,6 +62,8 @@ func (m *manager) Initialize(ctx context.Context, name types.NamespacedName) err
 		status.Webhooks = []v1alpha1.Webhook{
 			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
 		}
+
+		originOperation.Status = *status
 	})
 }
 

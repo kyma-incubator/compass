@@ -80,6 +80,7 @@ spec:
           properties:
             conditions:
               items:
+                description: Condition defines the states in which the Operation CR can be
                 properties:
                   message:
                     type: string
@@ -106,6 +107,7 @@ spec:
               type: string
             webhooks:
               items:
+                description: Webhook is an entity part of the OperationStatus which holds information about the progression of the webhook execution
                 properties:
                   last_poll_timestamp:
                     type: string
