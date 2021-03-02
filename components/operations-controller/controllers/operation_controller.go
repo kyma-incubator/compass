@@ -109,7 +109,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
 			log.C(ctx).Error(err, "Unable to execute Webhook request")
-			return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
+			return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
 		}
 
 		return r.handleWebhookResponse(ctx, operation, webhookEntity.Mode, response)
@@ -131,7 +131,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
-		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, err)
+		return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
 	}
 
 	return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
@@ -152,6 +152,7 @@ func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *OperationReconciler) handleInitializationError(ctx context.Context, err error, operation *v1alpha1.Operation) (ctrl.Result, error) {
 	log.C(ctx).Error(err, "Failed to initialize operation status")
 	if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
+		log.C(ctx).Error(err, "Validation error occurred during operation status initialization")
 		return r.finalizeStatusWithError(ctx, operation, err)
 	}
 
@@ -217,7 +218,7 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 			return ctrl.Result{}, err
 		}
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
-		return r.requeueIfTimeoutNotReached(ctx, operation, webhookEntity, errors.ErrWebhookPollTimeExpired)
+		return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, errors.ErrWebhookPollTimeExpired)
 	case *response.SuccessStatusIdentifier:
 		return r.finalizeStatusSuccess(ctx, operation)
 	case *response.FailedStatusIdentifier:
@@ -228,7 +229,7 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 	}
 }
 
-func (r *OperationReconciler) requeueIfTimeoutNotReached(ctx context.Context, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
+func (r *OperationReconciler) requeueUnlessTimeoutOrFatalError(ctx context.Context, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
 	_, isFatalErr := webhookErr.(*errors.FatalReconcileErr)
 	if !operation.TimeoutReached(r.determineTimeout(webhookEntity)) && !isFatalErr {
 		requeueAfter := r.config.RequeueInterval
