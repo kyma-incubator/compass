@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
+  replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
