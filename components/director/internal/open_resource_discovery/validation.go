@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -126,7 +127,7 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.Date("2006-01-02T15:04:05+0000"))),
+		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
 		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURL, validation.Required, is.RequestURI),
@@ -162,7 +163,7 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.ResourceDefinitions, validation.Required),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.When(event.SunsetDate != nil, validation.Date("2006-01-02T15:04:05+0000"))),
+		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
 		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
@@ -195,7 +196,7 @@ func validateTombstoneInput(tombstone *model.TombstoneInput) error {
 		//TODO: further clarification is needed as what is required by the spec
 		//validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
 
-		validation.Field(&tombstone.RemovalDate, validation.Required, validation.Date("2006-01-02T15:04:05Z")))
+		validation.Field(&tombstone.RemovalDate, validation.Required, validation.Date(time.RFC3339)))
 }
 
 func validateORDLabels(val interface{}) error {
@@ -406,4 +407,16 @@ func validateCustomDescription(el gjson.Result) error {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
 	return nil
+}
+
+func isValidDate(date *string) validation.RuleFunc {
+	return func(value interface{}) error {
+		var err error
+		if _, err = time.Parse("2006-01-02T15:04:05Z0700", *date); err == nil {
+			return nil
+		} else if _, err = time.Parse("2006-01-02T15:04:05Z07:00", *date); err == nil {
+			return nil
+		}
+		return errors.New("invalid date")
+	}
 }
