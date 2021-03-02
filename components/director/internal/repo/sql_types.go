@@ -103,6 +103,10 @@ func NewNullableInt(i *int) sql.NullInt32 {
 }
 
 func NewValidNullableString(text string) sql.NullString {
+	if text == "" {
+		return sql.NullString{}
+	}
+
 	return sql.NullString{
 		String: text,
 		Valid:  true,

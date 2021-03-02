@@ -91,6 +91,7 @@ global:
   director:
     prefix: /director
     port: 3000
+    internalPort: 3002
 
     clientIDHeaderKey: client_user
 

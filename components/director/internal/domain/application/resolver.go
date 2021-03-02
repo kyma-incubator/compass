@@ -282,29 +282,17 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 	log.C(ctx).Infof("Application with name %s and id %s successfully registered", in.Name, id)
 	return gqlApp, nil
 }
+
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	log.C(ctx).Infof("Updating Application with id %s", id)
 
 	convertedIn := r.appConverter.UpdateInputFromGraphQL(in)
-	err = r.appSvc.Update(ctx, id, convertedIn)
+	err := r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
 	app, err := r.appSvc.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -315,6 +303,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	return gqlApp, nil
 }
+
 func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	log.C(ctx).Infof("Unregistering Application with id %s", id)
 

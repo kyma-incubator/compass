@@ -7,9 +7,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	gqlgen "github.com/99designs/gqlgen/graphql"
+	"github.com/kyma-incubator/compass/components/operations-controller/client"
+	cr "sigs.k8s.io/controller-runtime"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 
@@ -17,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 
@@ -86,8 +91,9 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:3000"`
-	AppURL  string `envconfig:"APP_URL"`
+	Address         string `envconfig:"default=127.0.0.1:3000"`
+	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
+	AppURL          string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -123,6 +129,9 @@ type config struct {
 	Features features.Config
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
+	OperationsNamespace   string `envconfig:"default=compass-system"`
+
+	DisableAsyncMode bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -167,6 +176,8 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
+	appRepo := applicationRepo()
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -181,7 +192,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, webhookService().List, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
+			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -243,7 +254,6 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
-	appRepo := applicationRepo()
 	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}, tenant.LoadFromContext)
@@ -264,17 +274,40 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
+	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
+		resource.Application: func(ctx context.Context, id string, ready bool, error *string) error {
+			app, err := appRepo.GetGlobalByID(ctx, id)
+			if err != nil {
+				return err
+			}
+			app.Ready = ready
+			app.Error = error
+			return appRepo.Update(ctx, app)
+		},
+	}, map[resource.Type]operation.ResourceDeleterFunc{
+		resource.Application: func(ctx context.Context, id string) error {
+			return appRepo.DeleteGlobal(ctx, id)
+		},
+	})
+	internalRouter := mux.NewRouter()
+	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
+
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
+	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
+		shutdownInternalSrv()
 		shutdownMainSrv()
 	}()
 
 	go runMetricsSrv()
+	go runInternalSrv()
 	runMainSrv()
 }
 
@@ -468,4 +501,34 @@ func webhookService() webhook.WebhookService {
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
 	return webhook.NewService(webhookRepo, uidSvc)
+}
+
+func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
+	resourceFetcherFunc := func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+		return appRepo.GetByID(ctx, tenantID, resourceID)
+	}
+
+	scheduler, err := buildScheduler(ctx, cfg)
+	exitOnError(err, "Error while creating operations scheduler")
+
+	return operation.NewDirective(transact, webhookService().List, resourceFetcherFunc, tenant.LoadFromContext, scheduler).HandleOperation
+}
+
+func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
+	if config.DisableAsyncMode {
+		log.C(ctx).Info("Async operations are disabled")
+		return &operation.DisabledScheduler{}, nil
+	}
+
+	cfg, err := cr.GetConfig()
+	exitOnError(err, "Failed to get cluster config for operations k8s client")
+
+	cfg.Timeout = config.ClientTimeout
+	k8sClient, err := client.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	operationsK8sClient := k8sClient.Operations(config.OperationsNamespace)
+
+	return k8s.NewScheduler(operationsK8sClient), nil
 }

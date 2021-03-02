@@ -39,8 +39,9 @@ func New(transact persistence.Transactioner, repo StatusUpdateRepository) *updat
 func (u *update) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			consumerInfo, err := consumer.LoadFromContext(r.Context())
-			logger := log.C(r.Context())
+			ctx := r.Context()
+			consumerInfo, err := consumer.LoadFromContext(ctx)
+			logger := log.C(ctx)
 
 			if err != nil {
 				logger.WithError(err).Error("An error has occurred while fetching consumer info from context.")
@@ -64,9 +65,9 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			defer u.transact.RollbackUnlessCommitted(r.Context(), tx)
+			defer u.transact.RollbackUnlessCommitted(ctx, tx)
 
-			ctxWithDB := persistence.SaveToContext(r.Context(), tx)
+			ctxWithDB := persistence.SaveToContext(ctx, tx)
 
 			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
 			if err != nil {
