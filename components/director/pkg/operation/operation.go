@@ -27,8 +27,9 @@ import (
 )
 
 const (
-	OpCtxKey  = "OperationCtx"
-	OpModeKey = "OperationModeCtx"
+	OpCtxKey    = "OperationCtx"
+	OpModeKey   = "OperationModeCtx"
+	OpErrCtxKey = "OpErrorCtxKey"
 )
 
 // OperationStatus denotes the different statuses that an Operation can be in
@@ -43,9 +44,9 @@ const (
 type OperationType string
 
 const (
-	OperationTypeCreate OperationType = "CREATE"
-	OperationTypeUpdate OperationType = "UPDATE"
-	OperationTypeDelete OperationType = "DELETE"
+	OperationTypeCreate OperationType = "Create"
+	OperationTypeUpdate OperationType = "Update"
+	OperationTypeDelete OperationType = "Delete"
 )
 
 // OperationResponse defines the expected response format for the Operations API

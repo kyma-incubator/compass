@@ -36,7 +36,6 @@ type Document struct {
 	Schema                string `json:"$schema"`
 	OpenResourceDiscovery string `json:"openResourceDiscovery"`
 	Description           string `json:"description"`
-	SystemInstanceAware   bool
 
 	// TODO: In the current state of ORD and it's implementation we are missing system landscape discovery and an id correlation in the system instances. Because of that in the first phase we will rely on:
 	//  - DescribedSystemInstance is the application in our DB and it's baseURL should match with the one in the webhook.
@@ -110,12 +109,6 @@ func (docs Documents) Validate(webhookURL string) error {
 			if err := validateAPIInput(api); err != nil {
 				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
 			}
-			if doc.SystemInstanceAware && (api.SystemInstanceAware == nil || !(*api.SystemInstanceAware)) {
-				return errors.Errorf("found system unaware api %q in system aware document", *api.OrdID)
-			}
-			if !doc.SystemInstanceAware && (api.SystemInstanceAware != nil && *api.SystemInstanceAware) {
-				return errors.Errorf("found system aware api %q in system unaware document", *api.OrdID)
-			}
 			if _, ok := apiIDs[*api.OrdID]; ok {
 				return errors.Errorf("found duplicate api with ord id %q", *api.OrdID)
 			}
@@ -124,12 +117,6 @@ func (docs Documents) Validate(webhookURL string) error {
 		for _, event := range doc.EventResources {
 			if err := validateEventInput(event); err != nil {
 				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
-			}
-			if doc.SystemInstanceAware && (event.SystemInstanceAware == nil || !(*event.SystemInstanceAware)) {
-				return errors.Errorf("found system unaware event %q in system aware document", *event.OrdID)
-			}
-			if !doc.SystemInstanceAware && (event.SystemInstanceAware != nil && *event.SystemInstanceAware) {
-				return errors.Errorf("found system aware event %q in system unaware document", *event.OrdID)
 			}
 			if _, ok := eventIDs[*event.OrdID]; ok {
 				return errors.Errorf("found duplicate event with ord id %q", *event.OrdID)

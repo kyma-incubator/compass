@@ -184,7 +184,6 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0-rc.1",
 		Description:           "Test Document",
-		SystemInstanceAware:   true,
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),
 			Labels:  json.RawMessage(labels),

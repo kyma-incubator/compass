@@ -46,6 +46,20 @@ func (_m *ApplicationRepository) Delete(ctx context.Context, tenant string, id s
 	return r0
 }
 
+// DeleteGlobal provides a mock function with given fields: ctx, id
+func (_m *ApplicationRepository) DeleteGlobal(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Exists provides a mock function with given fields: ctx, tenant, id
 func (_m *ApplicationRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
@@ -83,6 +97,29 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetGlobalByID provides a mock function with given fields: ctx, id
+func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -44,6 +44,9 @@ spec:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
               protocol: TCP
+            - name: http-internal
+              containerPort: {{ .Values.global.director.internalPort }}
+              protocol: TCP
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
               protocol: TCP
@@ -56,6 +59,8 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_INTERNAL_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.director.internalPort }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
@@ -106,6 +111,8 @@ spec:
               value: /config/config.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.deployment.allowJWTSigningNone | quote }}
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ .Values.global.director.clientIDHeaderKey }}
             - name: APP_OAUTH20_CLIENT_ENDPOINT
               value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/clients
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT

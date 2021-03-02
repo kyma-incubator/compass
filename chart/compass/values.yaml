@@ -34,7 +34,7 @@ global:
       version: "PR-1718"
     ord_service:
       dir:
-      version: "PR-13"
+      version: "PR-14"
     schema_migrator:
       dir:
       version: "PR-1743"
@@ -51,7 +51,7 @@ global:
       version: "PR-1726"
     console:
       dir:
-      version: "PR-12"
+      version: "PR-19"
     tests:
       director:
         dir:
@@ -91,6 +91,9 @@ global:
   director:
     prefix: /director
     port: 3000
+    internalPort: 3002
+
+    clientIDHeaderKey: client_user
 
     tests:
       scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"

@@ -277,6 +277,13 @@ func NewUnauthorizedError(msg string) error {
 	}
 }
 
+func NewConcurrentOperationInProgressError(msg string) error {
+	return Error{
+		errorCode: ConcurrentOperation,
+		Message:   ConcurrentOperationMsg,
+		arguments: map[string]string{"reason": msg},
+	}
+}
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == valueNotFoundInConfigMsg

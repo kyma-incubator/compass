@@ -276,7 +276,7 @@ var (
       ]`
 	invalidChangeLogEntriesDueToWrongDate = `[
         {
-		  "date": "wrongValue",
+		  "date": "0000-00-00",
 		  "description": "lorem ipsum dolor sit amet",
 		  "releaseStatus": "active",
 		  "url": "https://example.com/changelog/v1",
@@ -1803,7 +1803,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
-				doc.APIResources[0].SunsetDate = str.Ptr("wrongDate")
+				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
+				doc.APIResources[0].Successor = str.Ptr(api2ORDID)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2641,7 +2642,8 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
-				doc.EventResources[0].SunsetDate = str.Ptr("wrongDate")
+				doc.EventResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
+				doc.EventResources[0].Successor = str.Ptr(event2ORDID)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2996,7 +2998,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 			Name: "Invalid `removalDate` field for Tombstone",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Tombstones[0].RemovalDate = "0000-00-00T00:00:00Z"
+				doc.Tombstones[0].RemovalDate = "0000-00-00T15:04:05Z"
 
 				return []*open_resource_discovery.Document{doc}
 			},
