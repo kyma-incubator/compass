@@ -25,18 +25,17 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	typesbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // StatusManager defines an abstraction for managing the status of a given kubernetes resource
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StatusManager
 type StatusManager interface {
-	Initialize(ctx context.Context, operation *v1alpha1.Operation) error
-	InProgressWithPollURL(ctx context.Context, name types.NamespacedName, pollURL string) error
-	InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, name types.NamespacedName, pollURL, lastPollTimestamp string, retryCount int) error
-	SuccessStatus(ctx context.Context, name types.NamespacedName) error
-	FailedStatus(ctx context.Context, name types.NamespacedName, errorMsg string) error
+	Initialize(operation *v1alpha1.Operation) error
+	InProgressWithPollURL(ctx context.Context, operation *v1alpha1.Operation, pollURL string) error
+	InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, operation *v1alpha1.Operation, pollURL, lastPollTimestamp string, retryCount int) error
+	SuccessStatus(ctx context.Context, operation *v1alpha1.Operation) error
+	FailedStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg string) error
 }
 
 // KubernetesClient is a defines a Kubernetes client capable of retrieving and deleting resources as well as updating their status

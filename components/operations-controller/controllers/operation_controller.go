@@ -29,7 +29,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -71,7 +70,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.handleGetOperationError(ctx, &req, err)
 	}
 
-	if err := r.statusManager.Initialize(ctx, operation); err != nil {
+	if err := r.statusManager.Initialize(operation); err != nil {
 		return r.handleInitializationError(ctx, err, operation)
 	}
 
@@ -88,7 +87,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if app.Result.Ready {
-		return r.finalizeStatus(ctx, req.NamespacedName, app.Result.Error)
+		return r.finalizeStatus(ctx, operation, app.Result.Error)
 	}
 
 	webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
@@ -192,8 +191,7 @@ func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operati
 	switch mode {
 	case graphql.WebhookModeAsync:
 		log.C(ctx).Info("Asynchronous webhook initial request has been executed successfully")
-		namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
-		if err := r.statusManager.InProgressWithPollURL(ctx, namespacedName, *response.Location); err != nil {
+		if err := r.statusManager.InProgressWithPollURL(ctx, operation, *response.Location); err != nil {
 			return ctrl.Result{}, err
 		}
 		log.C(ctx).Info("Successfully updated operation status with poll URL: " + *response.Location)
@@ -211,10 +209,9 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 	log.C(ctx).Info(fmt.Sprintf("Asynchronous webhook polling request has been executed successfully with response status: %s", *response.Status))
 	switch *response.Status {
 	case *response.InProgressStatusIdentifier:
-		namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
 		lastPollTimestamp := time.Now().Format(r.config.TimeLayout)
 		retryCount := operation.Status.Webhooks[0].RetriesCount + 1
-		if err := r.statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, namespacedName, operation.PollURL(), lastPollTimestamp, retryCount); err != nil {
+		if err := r.statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, operation, operation.PollURL(), lastPollTimestamp, retryCount); err != nil {
 			return ctrl.Result{}, err
 		}
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
@@ -247,13 +244,13 @@ func (r *OperationReconciler) requeueUnlessTimeoutOrFatalError(ctx context.Conte
 	return r.finalizeStatusWithError(ctx, operation, webhookErr)
 }
 
-func (r *OperationReconciler) finalizeStatus(ctx context.Context, name types.NamespacedName, errorMsg *string) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg *string) (ctrl.Result, error) {
 	if errorMsg != nil && *errorMsg != "" {
-		if err := r.statusManager.FailedStatus(ctx, name, *errorMsg); err != nil {
+		if err := r.statusManager.FailedStatus(ctx, operation, *errorMsg); err != nil {
 			return ctrl.Result{}, err
 		}
 	} else {
-		if err := r.statusManager.SuccessStatus(ctx, name); err != nil {
+		if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -266,8 +263,7 @@ func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operati
 		return ctrl.Result{}, err
 	}
 
-	namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
-	if err := r.statusManager.SuccessStatus(ctx, namespacedName); err != nil {
+	if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -280,8 +276,7 @@ func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, opera
 		return ctrl.Result{}, err
 	}
 
-	namespacedName := types.NamespacedName{Name: operation.Name, Namespace: operation.Namespace}
-	if err := r.statusManager.FailedStatus(ctx, namespacedName, opErr.Error()); err != nil {
+	if err := r.statusManager.FailedStatus(ctx, operation, opErr.Error()); err != nil {
 		return ctrl.Result{}, err
 	}
 

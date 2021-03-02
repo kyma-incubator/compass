@@ -21,12 +21,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type statusUpdaterFunc func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus)
+type statusUpdaterFunc func(operation *v1alpha1.Operation)
 
 // manager implements the StatusManager interface
 type manager struct {
@@ -44,38 +43,42 @@ func NewManager(k8sClient client.Client) *manager {
 // The method executes only if the generation of the Operation CR mismatches the observed generation in the status,
 // which allows the method to be used on the same resource over and over, for example when consecutive async requests
 // are scheduled on the same Operation CR and the old status should be wiped off.
-func (m *manager) Initialize(ctx context.Context, originOperation *v1alpha1.Operation) error {
-	name := types.NamespacedName{Namespace: originOperation.ObjectMeta.Namespace, Name: originOperation.ObjectMeta.Name}
-	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
-		if status.ObservedGeneration != nil && operation.ObjectMeta.Generation == *status.ObservedGeneration {
-			return
-		}
+func (m *manager) Initialize(operation *v1alpha1.Operation) error {
+	if err := operation.Validate(); err != nil {
+		return err
+	}
 
-		status.ObservedGeneration = &operation.Generation
+	status := &operation.Status
+	if status.ObservedGeneration != nil && operation.ObjectMeta.Generation == *status.ObservedGeneration {
+		return nil
+	}
 
-		status.Phase = v1alpha1.StateInProgress
-		status.Conditions = []v1alpha1.Condition{
-			{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionFalse},
-			{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
-		}
+	status.ObservedGeneration = &operation.Generation
 
-		status.Webhooks = []v1alpha1.Webhook{
-			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
-		}
+	status.Phase = v1alpha1.StateInProgress
+	status.Conditions = []v1alpha1.Condition{
+		{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionFalse},
+		{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
+	}
 
-		originOperation.Status = *status
-	})
+	status.Webhooks = []v1alpha1.Webhook{
+		{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
+	}
+
+	return nil
 }
 
 // InProgressWithPollURL sets the status of an Operation CR to In Progress, ensures that none of the conditions are set to True,
 // and also initializes the slice of webhooks in the status with a single webhook with the provided pollURL.
-func (m *manager) InProgressWithPollURL(ctx context.Context, name types.NamespacedName, pollURL string) error {
-	return m.InProgressWithPollURLAndLastPollTimestamp(ctx, name, pollURL, "", 0)
+func (m *manager) InProgressWithPollURL(ctx context.Context, operation *v1alpha1.Operation, pollURL string) error {
+	return m.InProgressWithPollURLAndLastPollTimestamp(ctx, operation, pollURL, "", 0)
 }
 
 // InProgressWithPollURLAndLastPollTimestamp builds on what InProgressWithPollURL does, but also sets the last poll timestamp and retry count for the given webhook.
-func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, name types.NamespacedName, pollURL, lastPollTimestamp string, retryCount int) error {
-	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
+func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context, operation *v1alpha1.Operation, pollURL, lastPollTimestamp string, retryCount int) error {
+	return m.updateStatusFunc(ctx, operation, func(operation *v1alpha1.Operation) {
+		status := &operation.Status
+
 		status.Phase = v1alpha1.StateInProgress
 		status.Conditions = []v1alpha1.Condition{
 			{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionFalse},
@@ -90,8 +93,10 @@ func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context,
 
 // SuccessStatus sets the status of an Operation CR to Success, ensures that the Ready condition is True, the Error condition is False,
 // and that the webhook part of the webhooks slice in the status is marked with Success.
-func (m *manager) SuccessStatus(ctx context.Context, name types.NamespacedName) error {
-	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
+func (m *manager) SuccessStatus(ctx context.Context, operation *v1alpha1.Operation) error {
+	return m.updateStatusFunc(ctx, operation, func(operation *v1alpha1.Operation) {
+		status := &operation.Status
+
 		status.Phase = v1alpha1.StateSuccess
 		status.Conditions = []v1alpha1.Condition{
 			{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionTrue},
@@ -111,8 +116,10 @@ func (m *manager) SuccessStatus(ctx context.Context, name types.NamespacedName) 
 
 // FailedStatus sets the status of an Operation CR to Failed, ensures that the Ready condition is False, the Error condition is True,
 // and that the webhook part of the webhooks slice in the status is marked with Failed.
-func (m *manager) FailedStatus(ctx context.Context, name types.NamespacedName, errorMsg string) error {
-	return m.updateStatusFunc(ctx, name, func(operation v1alpha1.Operation, status *v1alpha1.OperationStatus) {
+func (m *manager) FailedStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg string) error {
+	return m.updateStatusFunc(ctx, operation, func(operation *v1alpha1.Operation) {
+		status := &operation.Status
+
 		status.Phase = v1alpha1.StateFailed
 		status.Conditions = []v1alpha1.Condition{
 			{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionTrue},
@@ -130,21 +137,14 @@ func (m *manager) FailedStatus(ctx context.Context, name types.NamespacedName, e
 	})
 }
 
-func (m *manager) updateStatusFunc(ctx context.Context, name types.NamespacedName, statusUpdaterFunc statusUpdaterFunc) error {
+func (m *manager) updateStatusFunc(ctx context.Context, operation *v1alpha1.Operation, statusUpdaterFunc statusUpdaterFunc) error {
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var operation v1alpha1.Operation
-		err := m.k8sClient.Get(ctx, name, &operation)
-		if err != nil {
+		if err := operation.Validate(); err != nil {
 			return err
 		}
 
-		if err = operation.Validate(); err != nil {
-			return err
-		}
+		statusUpdaterFunc(operation)
 
-		operationCopy := operation.DeepCopy()
-		statusUpdaterFunc(*operationCopy, &operationCopy.Status)
-
-		return m.k8sClient.Status().Update(ctx, operationCopy)
+		return m.k8sClient.Status().Update(ctx, operation)
 	})
 }

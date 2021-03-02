@@ -85,39 +85,39 @@ func assertK8sDeleteCalledWithOperation(t *testing.T, k8sClient *controllersfake
 
 func assertStatusManagerInitializeCalledWithOperation(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation) {
 	require.Equal(t, 1, statusManagerClient.InitializeCallCount())
-	_, actualOperation := statusManagerClient.InitializeArgsForCall(0)
+	actualOperation := statusManagerClient.InitializeArgsForCall(0)
 	require.Equal(t, expectedOperation, actualOperation)
 }
 
-func assertStatusManagerSuccessStatusCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName) {
+func assertStatusManagerSuccessStatusCalledWithOperation(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation) {
 	require.Equal(t, 1, statusManagerClient.SuccessStatusCallCount())
-	_, namespacedName := statusManagerClient.SuccessStatusArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
+	_, actualOperation := statusManagerClient.SuccessStatusArgsForCall(0)
+	require.Equal(t, expectedOperation, actualOperation)
 }
 
-func assertStatusManagerInProgressWithPollURLCalled(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName, expectedPollURL string) {
+func assertStatusManagerInProgressWithPollURLCalled(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation, expectedPollURL string) {
 	require.Equal(t, 1, statusManagerClient.InProgressWithPollURLCallCount())
-	_, namespacedName, pollURL := statusManagerClient.InProgressWithPollURLArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
+	_, actualOperation, pollURL := statusManagerClient.InProgressWithPollURLArgsForCall(0)
+	require.Equal(t, expectedOperation, actualOperation)
 	require.Equal(t, expectedPollURL, pollURL)
 }
 
-func assertStatusManagerInProgressWithPollURLAndLastTimestampCalled(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName, operation v1alpha1.Operation, expectedPollURL string) {
+func assertStatusManagerInProgressWithPollURLAndLastTimestampCalled(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation, expectedPollURL string) {
 	require.Equal(t, 1, statusManagerClient.InProgressWithPollURLAndLastPollTimestampCallCount())
-	_, namespacedName, pollURL, lastPollTimestamp, retryCount := statusManagerClient.InProgressWithPollURLAndLastPollTimestampArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
+	_, actualOperation, pollURL, lastPollTimestamp, retryCount := statusManagerClient.InProgressWithPollURLAndLastPollTimestampArgsForCall(0)
+	require.Equal(t, expectedOperation, actualOperation)
 	require.Equal(t, expectedPollURL, pollURL)
 
 	timestamp, err := time.Parse(time.RFC3339Nano, lastPollTimestamp)
 	require.NoError(t, err)
-	require.True(t, timestamp.After(operation.CreationTimestamp.Time))
-	require.Equal(t, operation.Status.Webhooks[0].RetriesCount+1, retryCount)
+	require.True(t, timestamp.After(expectedOperation.CreationTimestamp.Time))
+	require.Equal(t, expectedOperation.Status.Webhooks[0].RetriesCount+1, retryCount)
 }
 
-func assertStatusManagerFailedStatusCalledWithName(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedName types.NamespacedName, expectedErrorMsg string) {
+func assertStatusManagerFailedStatusCalledWithOperation(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation, expectedErrorMsg string) {
 	require.Equal(t, 1, statusManagerClient.FailedStatusCallCount())
-	_, namespacedName, errorMsg := statusManagerClient.FailedStatusArgsForCall(0)
-	require.Equal(t, expectedName, namespacedName)
+	_, actualOperation, errorMsg := statusManagerClient.FailedStatusArgsForCall(0)
+	require.Equal(t, expectedOperation, actualOperation)
 	require.Contains(t, errorMsg, expectedErrorMsg)
 }
 

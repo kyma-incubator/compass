@@ -7,15 +7,14 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type FakeStatusManager struct {
-	FailedStatusStub        func(context.Context, types.NamespacedName, string) error
+	FailedStatusStub        func(context.Context, *v1alpha1.Operation, string) error
 	failedStatusMutex       sync.RWMutex
 	failedStatusArgsForCall []struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 		arg3 string
 	}
 	failedStatusReturns struct {
@@ -24,11 +23,11 @@ type FakeStatusManager struct {
 	failedStatusReturnsOnCall map[int]struct {
 		result1 error
 	}
-	InProgressWithPollURLStub        func(context.Context, types.NamespacedName, string) error
+	InProgressWithPollURLStub        func(context.Context, *v1alpha1.Operation, string) error
 	inProgressWithPollURLMutex       sync.RWMutex
 	inProgressWithPollURLArgsForCall []struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 		arg3 string
 	}
 	inProgressWithPollURLReturns struct {
@@ -37,11 +36,11 @@ type FakeStatusManager struct {
 	inProgressWithPollURLReturnsOnCall map[int]struct {
 		result1 error
 	}
-	InProgressWithPollURLAndLastPollTimestampStub        func(context.Context, types.NamespacedName, string, string, int) error
+	InProgressWithPollURLAndLastPollTimestampStub        func(context.Context, *v1alpha1.Operation, string, string, int) error
 	inProgressWithPollURLAndLastPollTimestampMutex       sync.RWMutex
 	inProgressWithPollURLAndLastPollTimestampArgsForCall []struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 		arg3 string
 		arg4 string
 		arg5 int
@@ -52,11 +51,10 @@ type FakeStatusManager struct {
 	inProgressWithPollURLAndLastPollTimestampReturnsOnCall map[int]struct {
 		result1 error
 	}
-	InitializeStub        func(context.Context, *v1alpha1.Operation) error
+	InitializeStub        func(*v1alpha1.Operation) error
 	initializeMutex       sync.RWMutex
 	initializeArgsForCall []struct {
-		arg1 context.Context
-		arg2 *v1alpha1.Operation
+		arg1 *v1alpha1.Operation
 	}
 	initializeReturns struct {
 		result1 error
@@ -64,11 +62,11 @@ type FakeStatusManager struct {
 	initializeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SuccessStatusStub        func(context.Context, types.NamespacedName) error
+	SuccessStatusStub        func(context.Context, *v1alpha1.Operation) error
 	successStatusMutex       sync.RWMutex
 	successStatusArgsForCall []struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 	}
 	successStatusReturns struct {
 		result1 error
@@ -80,12 +78,12 @@ type FakeStatusManager struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeStatusManager) FailedStatus(arg1 context.Context, arg2 types.NamespacedName, arg3 string) error {
+func (fake *FakeStatusManager) FailedStatus(arg1 context.Context, arg2 *v1alpha1.Operation, arg3 string) error {
 	fake.failedStatusMutex.Lock()
 	ret, specificReturn := fake.failedStatusReturnsOnCall[len(fake.failedStatusArgsForCall)]
 	fake.failedStatusArgsForCall = append(fake.failedStatusArgsForCall, struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 		arg3 string
 	}{arg1, arg2, arg3})
 	fake.recordInvocation("FailedStatus", []interface{}{arg1, arg2, arg3})
@@ -106,13 +104,13 @@ func (fake *FakeStatusManager) FailedStatusCallCount() int {
 	return len(fake.failedStatusArgsForCall)
 }
 
-func (fake *FakeStatusManager) FailedStatusCalls(stub func(context.Context, types.NamespacedName, string) error) {
+func (fake *FakeStatusManager) FailedStatusCalls(stub func(context.Context, *v1alpha1.Operation, string) error) {
 	fake.failedStatusMutex.Lock()
 	defer fake.failedStatusMutex.Unlock()
 	fake.FailedStatusStub = stub
 }
 
-func (fake *FakeStatusManager) FailedStatusArgsForCall(i int) (context.Context, types.NamespacedName, string) {
+func (fake *FakeStatusManager) FailedStatusArgsForCall(i int) (context.Context, *v1alpha1.Operation, string) {
 	fake.failedStatusMutex.RLock()
 	defer fake.failedStatusMutex.RUnlock()
 	argsForCall := fake.failedStatusArgsForCall[i]
@@ -142,12 +140,12 @@ func (fake *FakeStatusManager) FailedStatusReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeStatusManager) InProgressWithPollURL(arg1 context.Context, arg2 types.NamespacedName, arg3 string) error {
+func (fake *FakeStatusManager) InProgressWithPollURL(arg1 context.Context, arg2 *v1alpha1.Operation, arg3 string) error {
 	fake.inProgressWithPollURLMutex.Lock()
 	ret, specificReturn := fake.inProgressWithPollURLReturnsOnCall[len(fake.inProgressWithPollURLArgsForCall)]
 	fake.inProgressWithPollURLArgsForCall = append(fake.inProgressWithPollURLArgsForCall, struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 		arg3 string
 	}{arg1, arg2, arg3})
 	fake.recordInvocation("InProgressWithPollURL", []interface{}{arg1, arg2, arg3})
@@ -168,13 +166,13 @@ func (fake *FakeStatusManager) InProgressWithPollURLCallCount() int {
 	return len(fake.inProgressWithPollURLArgsForCall)
 }
 
-func (fake *FakeStatusManager) InProgressWithPollURLCalls(stub func(context.Context, types.NamespacedName, string) error) {
+func (fake *FakeStatusManager) InProgressWithPollURLCalls(stub func(context.Context, *v1alpha1.Operation, string) error) {
 	fake.inProgressWithPollURLMutex.Lock()
 	defer fake.inProgressWithPollURLMutex.Unlock()
 	fake.InProgressWithPollURLStub = stub
 }
 
-func (fake *FakeStatusManager) InProgressWithPollURLArgsForCall(i int) (context.Context, types.NamespacedName, string) {
+func (fake *FakeStatusManager) InProgressWithPollURLArgsForCall(i int) (context.Context, *v1alpha1.Operation, string) {
 	fake.inProgressWithPollURLMutex.RLock()
 	defer fake.inProgressWithPollURLMutex.RUnlock()
 	argsForCall := fake.inProgressWithPollURLArgsForCall[i]
@@ -204,12 +202,12 @@ func (fake *FakeStatusManager) InProgressWithPollURLReturnsOnCall(i int, result1
 	}{result1}
 }
 
-func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestamp(arg1 context.Context, arg2 types.NamespacedName, arg3 string, arg4 string, arg5 int) error {
+func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestamp(arg1 context.Context, arg2 *v1alpha1.Operation, arg3 string, arg4 string, arg5 int) error {
 	fake.inProgressWithPollURLAndLastPollTimestampMutex.Lock()
 	ret, specificReturn := fake.inProgressWithPollURLAndLastPollTimestampReturnsOnCall[len(fake.inProgressWithPollURLAndLastPollTimestampArgsForCall)]
 	fake.inProgressWithPollURLAndLastPollTimestampArgsForCall = append(fake.inProgressWithPollURLAndLastPollTimestampArgsForCall, struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 		arg3 string
 		arg4 string
 		arg5 int
@@ -232,13 +230,13 @@ func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampCallCoun
 	return len(fake.inProgressWithPollURLAndLastPollTimestampArgsForCall)
 }
 
-func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampCalls(stub func(context.Context, types.NamespacedName, string, string, int) error) {
+func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampCalls(stub func(context.Context, *v1alpha1.Operation, string, string, int) error) {
 	fake.inProgressWithPollURLAndLastPollTimestampMutex.Lock()
 	defer fake.inProgressWithPollURLAndLastPollTimestampMutex.Unlock()
 	fake.InProgressWithPollURLAndLastPollTimestampStub = stub
 }
 
-func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampArgsForCall(i int) (context.Context, types.NamespacedName, string, string, int) {
+func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampArgsForCall(i int) (context.Context, *v1alpha1.Operation, string, string, int) {
 	fake.inProgressWithPollURLAndLastPollTimestampMutex.RLock()
 	defer fake.inProgressWithPollURLAndLastPollTimestampMutex.RUnlock()
 	argsForCall := fake.inProgressWithPollURLAndLastPollTimestampArgsForCall[i]
@@ -268,17 +266,16 @@ func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestampReturnsO
 	}{result1}
 }
 
-func (fake *FakeStatusManager) Initialize(arg1 context.Context, arg2 *v1alpha1.Operation) error {
+func (fake *FakeStatusManager) Initialize(arg1 *v1alpha1.Operation) error {
 	fake.initializeMutex.Lock()
 	ret, specificReturn := fake.initializeReturnsOnCall[len(fake.initializeArgsForCall)]
 	fake.initializeArgsForCall = append(fake.initializeArgsForCall, struct {
-		arg1 context.Context
-		arg2 *v1alpha1.Operation
-	}{arg1, arg2})
-	fake.recordInvocation("Initialize", []interface{}{arg1, arg2})
+		arg1 *v1alpha1.Operation
+	}{arg1})
+	fake.recordInvocation("Initialize", []interface{}{arg1})
 	fake.initializeMutex.Unlock()
 	if fake.InitializeStub != nil {
-		return fake.InitializeStub(arg1, arg2)
+		return fake.InitializeStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -293,17 +290,17 @@ func (fake *FakeStatusManager) InitializeCallCount() int {
 	return len(fake.initializeArgsForCall)
 }
 
-func (fake *FakeStatusManager) InitializeCalls(stub func(context.Context, *v1alpha1.Operation) error) {
+func (fake *FakeStatusManager) InitializeCalls(stub func(*v1alpha1.Operation) error) {
 	fake.initializeMutex.Lock()
 	defer fake.initializeMutex.Unlock()
 	fake.InitializeStub = stub
 }
 
-func (fake *FakeStatusManager) InitializeArgsForCall(i int) (context.Context, *v1alpha1.Operation) {
+func (fake *FakeStatusManager) InitializeArgsForCall(i int) *v1alpha1.Operation {
 	fake.initializeMutex.RLock()
 	defer fake.initializeMutex.RUnlock()
 	argsForCall := fake.initializeArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1
 }
 
 func (fake *FakeStatusManager) InitializeReturns(result1 error) {
@@ -329,12 +326,12 @@ func (fake *FakeStatusManager) InitializeReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeStatusManager) SuccessStatus(arg1 context.Context, arg2 types.NamespacedName) error {
+func (fake *FakeStatusManager) SuccessStatus(arg1 context.Context, arg2 *v1alpha1.Operation) error {
 	fake.successStatusMutex.Lock()
 	ret, specificReturn := fake.successStatusReturnsOnCall[len(fake.successStatusArgsForCall)]
 	fake.successStatusArgsForCall = append(fake.successStatusArgsForCall, struct {
 		arg1 context.Context
-		arg2 types.NamespacedName
+		arg2 *v1alpha1.Operation
 	}{arg1, arg2})
 	fake.recordInvocation("SuccessStatus", []interface{}{arg1, arg2})
 	fake.successStatusMutex.Unlock()
@@ -354,13 +351,13 @@ func (fake *FakeStatusManager) SuccessStatusCallCount() int {
 	return len(fake.successStatusArgsForCall)
 }
 
-func (fake *FakeStatusManager) SuccessStatusCalls(stub func(context.Context, types.NamespacedName) error) {
+func (fake *FakeStatusManager) SuccessStatusCalls(stub func(context.Context, *v1alpha1.Operation) error) {
 	fake.successStatusMutex.Lock()
 	defer fake.successStatusMutex.Unlock()
 	fake.SuccessStatusStub = stub
 }
 
-func (fake *FakeStatusManager) SuccessStatusArgsForCall(i int) (context.Context, types.NamespacedName) {
+func (fake *FakeStatusManager) SuccessStatusArgsForCall(i int) (context.Context, *v1alpha1.Operation) {
 	fake.successStatusMutex.RLock()
 	defer fake.successStatusMutex.RUnlock()
 	argsForCall := fake.successStatusArgsForCall[i]

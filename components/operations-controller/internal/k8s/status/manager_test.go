@@ -82,7 +82,7 @@ func TestStatusManager(t *testing.T) {
 		err = k8sClient.Create(ctx, invalidOperation)
 		require.NoError(t, err)
 
-		err = statusManager.Initialize(ctx, invalidOperation)
+		err = statusManager.Initialize(invalidOperation)
 		require.Error(t, err)
 
 		_, isValErr := err.(*v1alpha1.OperationValidationErr)
@@ -92,41 +92,35 @@ func TestStatusManager(t *testing.T) {
 
 	t.Run("Test Initialize when generation and observed generation mismatch should initialize status with initial values", func(t *testing.T) {
 		originOperation := operation.DeepCopy()
-		err = statusManager.Initialize(ctx, originOperation)
+		err = statusManager.Initialize(originOperation)
 		require.NoError(t, err)
 
-		var actualOperation = &v1alpha1.Operation{}
-		err = k8sClient.Get(ctx, namespacedName, actualOperation)
-		require.NoError(t, err)
+		require.Equal(t, int64(1), *originOperation.Status.ObservedGeneration)
+		require.Equal(t, v1alpha1.StateInProgress, originOperation.Status.Phase)
 
-		for _, op := range []*v1alpha1.Operation{actualOperation, originOperation} {
-			require.Equal(t, int64(1), *op.Status.ObservedGeneration)
-			require.Equal(t, v1alpha1.StateInProgress, op.Status.Phase)
+		require.Len(t, originOperation.Status.Webhooks, 1)
+		require.Equal(t, webhookID, originOperation.Status.Webhooks[0].WebhookID)
+		require.Equal(t, v1alpha1.StateInProgress, originOperation.Status.Webhooks[0].State)
+		require.Equal(t, 0, originOperation.Status.Webhooks[0].RetriesCount)
+		require.Empty(t, originOperation.Status.Webhooks[0].WebhookPollURL)
+		require.Empty(t, originOperation.Status.Webhooks[0].LastPollTimestamp)
 
-			require.Len(t, op.Status.Webhooks, 1)
-			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
-			require.Equal(t, v1alpha1.StateInProgress, op.Status.Webhooks[0].State)
-			require.Equal(t, 0, op.Status.Webhooks[0].RetriesCount)
-			require.Empty(t, op.Status.Webhooks[0].WebhookPollURL)
-			require.Empty(t, op.Status.Webhooks[0].LastPollTimestamp)
-
-			require.Len(t, op.Status.Conditions, 2)
-			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[0].Status)
-			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[1].Status)
-			require.Empty(t, op.Status.Conditions[0].Message)
-			require.Empty(t, op.Status.Conditions[1].Message)
-		}
+		require.Len(t, originOperation.Status.Conditions, 2)
+		require.Equal(t, corev1.ConditionFalse, originOperation.Status.Conditions[0].Status)
+		require.Equal(t, corev1.ConditionFalse, originOperation.Status.Conditions[1].Status)
+		require.Empty(t, originOperation.Status.Conditions[0].Message)
+		require.Empty(t, originOperation.Status.Conditions[1].Message)
 	})
 
 	t.Run("Test Initialize when generation and observed generation match shouldn not affect status", func(t *testing.T) {
 		originOperation := operation.DeepCopy()
-		err = statusManager.Initialize(ctx, originOperation)
+		err = statusManager.Initialize(originOperation)
 		require.NoError(t, err)
 
-		err = statusManager.SuccessStatus(ctx, namespacedName)
+		err = statusManager.SuccessStatus(ctx, originOperation)
 		require.NoError(t, err)
 
-		err = statusManager.Initialize(ctx, originOperation)
+		err = statusManager.Initialize(originOperation)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
@@ -154,182 +148,217 @@ func TestStatusManager(t *testing.T) {
 	})
 
 	t.Run("Test In Progress with Poll URL", func(t *testing.T) {
-		err = statusManager.InProgressWithPollURL(ctx, namespacedName, mockedPollURL)
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
+		err = statusManager.InProgressWithPollURL(ctx, originOperation, mockedPollURL)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, v1alpha1.StateInProgress, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{originOperation, actualOperation} {
+			require.Equal(t, v1alpha1.StateInProgress, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateInProgress, actualOperation.Status.Webhooks[0].State)
-		require.Equal(t, 0, actualOperation.Status.Webhooks[0].RetriesCount)
-		require.Equal(t, mockedPollURL, actualOperation.Status.Webhooks[0].WebhookPollURL)
-		require.Empty(t, actualOperation.Status.Webhooks[0].LastPollTimestamp)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateInProgress, op.Status.Webhooks[0].State)
+			require.Equal(t, 0, op.Status.Webhooks[0].RetriesCount)
+			require.Equal(t, mockedPollURL, op.Status.Webhooks[0].WebhookPollURL)
+			require.Empty(t, op.Status.Webhooks[0].LastPollTimestamp)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		require.Equal(t, corev1.ConditionFalse, actualOperation.Status.Conditions[0].Status)
-		require.Equal(t, corev1.ConditionFalse, actualOperation.Status.Conditions[1].Status)
-		require.Empty(t, actualOperation.Status.Conditions[0].Message)
-		require.Empty(t, actualOperation.Status.Conditions[1].Message)
-
+			require.Len(t, op.Status.Conditions, 2)
+			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[0].Status)
+			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[1].Status)
+			require.Empty(t, op.Status.Conditions[0].Message)
+			require.Empty(t, op.Status.Conditions[1].Message)
+		}
 	})
 
 	t.Run("Test In Progress with Poll URL And Last Poll Tiimestamp should succeed", func(t *testing.T) {
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
 		retryCount := 1
 		lastPollTimestamp := time.Now().Format(time.RFC3339Nano)
-		err = statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, namespacedName, mockedPollURL, lastPollTimestamp, retryCount)
+		err = statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, originOperation, mockedPollURL, lastPollTimestamp, retryCount)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, v1alpha1.StateInProgress, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{originOperation, actualOperation} {
+			require.Equal(t, v1alpha1.StateInProgress, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateInProgress, actualOperation.Status.Webhooks[0].State)
-		require.Equal(t, retryCount, actualOperation.Status.Webhooks[0].RetriesCount)
-		require.Equal(t, mockedPollURL, actualOperation.Status.Webhooks[0].WebhookPollURL)
-		require.Equal(t, lastPollTimestamp, actualOperation.Status.Webhooks[0].LastPollTimestamp)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateInProgress, op.Status.Webhooks[0].State)
+			require.Equal(t, retryCount, op.Status.Webhooks[0].RetriesCount)
+			require.Equal(t, mockedPollURL, op.Status.Webhooks[0].WebhookPollURL)
+			require.Equal(t, lastPollTimestamp, op.Status.Webhooks[0].LastPollTimestamp)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		require.Equal(t, corev1.ConditionFalse, actualOperation.Status.Conditions[0].Status)
-		require.Equal(t, corev1.ConditionFalse, actualOperation.Status.Conditions[1].Status)
-		require.Empty(t, actualOperation.Status.Conditions[0].Message)
-		require.Empty(t, actualOperation.Status.Conditions[1].Message)
+			require.Len(t, op.Status.Conditions, 2)
+			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[0].Status)
+			require.Equal(t, corev1.ConditionFalse, op.Status.Conditions[1].Status)
+			require.Empty(t, op.Status.Conditions[0].Message)
+			require.Empty(t, op.Status.Conditions[1].Message)
+		}
 	})
 
 	t.Run("Test Success Status should succeed", func(t *testing.T) {
-		err = statusManager.SuccessStatus(ctx, namespacedName)
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
+		err = statusManager.SuccessStatus(ctx, originOperation)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, v1alpha1.StateSuccess, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{originOperation, actualOperation} {
+			require.Equal(t, v1alpha1.StateSuccess, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateSuccess, actualOperation.Status.Webhooks[0].State)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateSuccess, op.Status.Webhooks[0].State)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		for _, condition := range actualOperation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				require.Equal(t, corev1.ConditionTrue, condition.Status)
-				require.Empty(t, condition.Message)
-			}
+			require.Len(t, op.Status.Conditions, 2)
+			for _, condition := range op.Status.Conditions {
+				if condition.Type == v1alpha1.ConditionTypeReady {
+					require.Equal(t, corev1.ConditionTrue, condition.Status)
+					require.Empty(t, condition.Message)
+				}
 
-			if condition.Type == v1alpha1.ConditionTypeError {
-				require.Equal(t, corev1.ConditionFalse, condition.Status)
-				require.Empty(t, condition.Message)
+				if condition.Type == v1alpha1.ConditionTypeError {
+					require.Equal(t, corev1.ConditionFalse, condition.Status)
+					require.Empty(t, condition.Message)
+				}
 			}
 		}
 	})
 
 	t.Run("Test Success Status after In Progress with Poll URL And Last Poll Timestamp should not discard Poll URL and Last Poll Timestamp from the status", func(t *testing.T) {
-		retryCount := 1
-		lastPollTimestamp := time.Now().Format(time.RFC3339Nano)
-		err = statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, namespacedName, mockedPollURL, lastPollTimestamp, retryCount)
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
 
-		err = statusManager.SuccessStatus(ctx, namespacedName)
+		retryCount := 1
+		lastPollTimestamp := time.Now().Format(time.RFC3339Nano)
+		err = statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, originOperation, mockedPollURL, lastPollTimestamp, retryCount)
+		require.NoError(t, err)
+
+		err = statusManager.SuccessStatus(ctx, originOperation)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, v1alpha1.StateSuccess, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{originOperation, actualOperation} {
+			require.Equal(t, v1alpha1.StateSuccess, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateSuccess, actualOperation.Status.Webhooks[0].State)
-		require.Equal(t, retryCount, actualOperation.Status.Webhooks[0].RetriesCount)
-		require.Equal(t, mockedPollURL, actualOperation.Status.Webhooks[0].WebhookPollURL)
-		require.Equal(t, lastPollTimestamp, actualOperation.Status.Webhooks[0].LastPollTimestamp)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateSuccess, op.Status.Webhooks[0].State)
+			require.Equal(t, retryCount, op.Status.Webhooks[0].RetriesCount)
+			require.Equal(t, mockedPollURL, op.Status.Webhooks[0].WebhookPollURL)
+			require.Equal(t, lastPollTimestamp, op.Status.Webhooks[0].LastPollTimestamp)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		for _, condition := range actualOperation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				require.Equal(t, corev1.ConditionTrue, condition.Status)
-				require.Empty(t, condition.Message)
-			}
+			require.Len(t, op.Status.Conditions, 2)
+			for _, condition := range op.Status.Conditions {
+				if condition.Type == v1alpha1.ConditionTypeReady {
+					require.Equal(t, corev1.ConditionTrue, condition.Status)
+					require.Empty(t, condition.Message)
+				}
 
-			if condition.Type == v1alpha1.ConditionTypeError {
-				require.Equal(t, corev1.ConditionFalse, condition.Status)
-				require.Empty(t, condition.Message)
+				if condition.Type == v1alpha1.ConditionTypeError {
+					require.Equal(t, corev1.ConditionFalse, condition.Status)
+					require.Empty(t, condition.Message)
+				}
 			}
 		}
 	})
 
 	t.Run("Test Failed Status should succeed", func(t *testing.T) {
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
 		errMsg := "test error"
-		err = statusManager.FailedStatus(ctx, namespacedName, errMsg)
+		err = statusManager.FailedStatus(ctx, originOperation, errMsg)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, v1alpha1.StateFailed, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{originOperation, actualOperation} {
+			require.Equal(t, v1alpha1.StateFailed, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateFailed, actualOperation.Status.Webhooks[0].State)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateFailed, op.Status.Webhooks[0].State)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		for _, condition := range actualOperation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				require.Equal(t, corev1.ConditionTrue, condition.Status)
-				require.Empty(t, condition.Message)
-			}
+			require.Len(t, op.Status.Conditions, 2)
+			for _, condition := range op.Status.Conditions {
+				if condition.Type == v1alpha1.ConditionTypeReady {
+					require.Equal(t, corev1.ConditionTrue, condition.Status)
+					require.Empty(t, condition.Message)
+				}
 
-			if condition.Type == v1alpha1.ConditionTypeError {
-				require.Equal(t, corev1.ConditionTrue, condition.Status)
-				require.Equal(t, errMsg, condition.Message)
+				if condition.Type == v1alpha1.ConditionTypeError {
+					require.Equal(t, corev1.ConditionTrue, condition.Status)
+					require.Equal(t, errMsg, condition.Message)
+				}
 			}
 		}
 	})
 
 	t.Run("Test Failed Status after In Progress with Poll URL And Last Poll Timestamp should not discard Poll URL and Last Poll Timestamp from the status", func(t *testing.T) {
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
 		retryCount := 1
 		lastPollTimestamp := time.Now().Format(time.RFC3339Nano)
-		err = statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, namespacedName, mockedPollURL, lastPollTimestamp, retryCount)
+		err = statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, originOperation, mockedPollURL, lastPollTimestamp, retryCount)
 		require.NoError(t, err)
 
 		errMsg := "test error"
-		err = statusManager.FailedStatus(ctx, namespacedName, errMsg)
+		err = statusManager.FailedStatus(ctx, originOperation, errMsg)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, actualOperation)
 		require.NoError(t, err)
 
-		require.Equal(t, v1alpha1.StateFailed, actualOperation.Status.Phase)
+		for _, op := range []*v1alpha1.Operation{originOperation, actualOperation} {
+			require.Equal(t, v1alpha1.StateFailed, op.Status.Phase)
 
-		require.Len(t, actualOperation.Status.Webhooks, 1)
-		require.Equal(t, webhookID, actualOperation.Status.Webhooks[0].WebhookID)
-		require.Equal(t, v1alpha1.StateFailed, actualOperation.Status.Webhooks[0].State)
-		require.Equal(t, retryCount, actualOperation.Status.Webhooks[0].RetriesCount)
-		require.Equal(t, mockedPollURL, actualOperation.Status.Webhooks[0].WebhookPollURL)
-		require.Equal(t, lastPollTimestamp, actualOperation.Status.Webhooks[0].LastPollTimestamp)
+			require.Len(t, op.Status.Webhooks, 1)
+			require.Equal(t, webhookID, op.Status.Webhooks[0].WebhookID)
+			require.Equal(t, v1alpha1.StateFailed, op.Status.Webhooks[0].State)
+			require.Equal(t, retryCount, op.Status.Webhooks[0].RetriesCount)
+			require.Equal(t, mockedPollURL, op.Status.Webhooks[0].WebhookPollURL)
+			require.Equal(t, lastPollTimestamp, op.Status.Webhooks[0].LastPollTimestamp)
 
-		require.Len(t, actualOperation.Status.Conditions, 2)
-		for _, condition := range actualOperation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				require.Equal(t, corev1.ConditionTrue, condition.Status)
-				require.Empty(t, condition.Message)
-			}
+			require.Len(t, op.Status.Conditions, 2)
+			for _, condition := range op.Status.Conditions {
+				if condition.Type == v1alpha1.ConditionTypeReady {
+					require.Equal(t, corev1.ConditionTrue, condition.Status)
+					require.Empty(t, condition.Message)
+				}
 
-			if condition.Type == v1alpha1.ConditionTypeError {
-				require.Equal(t, corev1.ConditionTrue, condition.Status)
-				require.Equal(t, errMsg, condition.Message)
+				if condition.Type == v1alpha1.ConditionTypeError {
+					require.Equal(t, corev1.ConditionTrue, condition.Status)
+					require.Equal(t, errMsg, condition.Message)
+				}
 			}
 		}
 	})
