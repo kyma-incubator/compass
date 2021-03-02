@@ -21,6 +21,10 @@ spec:
         - source:
             principals:
               - {{ tpl .Values.istio.rbac.directorInternalApi.compassOperationsController . }}
+        to:
+          - operation:
+              ports:
+                - "{{ .Values.global.director.operations.port }}"
     - to:
         - operation:
             ports:
