@@ -217,6 +217,9 @@ global:
         - "x-vcap-request-id"
         - "x-broker-api-request-identity"
 
+  ingress:
+    domainName: "kyma.local"
+
   database:
     manageSecrets: true
     embedded:

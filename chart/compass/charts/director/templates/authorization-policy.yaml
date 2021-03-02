@@ -18,16 +18,16 @@ spec:
   action: ALLOW
   rules:
     - from:
-        - source:
-            principals:
-            - {{ tpl .Values.istio.rbac.directorInternalApi.compassOperationsController . }}
-        to:
-          - operation:
-              ports:
-              - "{{ .Values.global.director.operations.port }}"
+      - source:
+          principals:
+          - {{ tpl .Values.istio.rbac.directorInternalApi.compassOperationsController . }}
+      to:
+      - operation:
+          ports:
+          - "{{ .Values.global.director.operations.port }}"
     - to:
-        - operation:
-            ports:
-            - "{{ .Values.global.director.port }}"
-            - "{{ .Values.metrics.port }}"
+      - operation:
+          ports:
+          - "{{ .Values.global.director.port }}"
+          - "{{ .Values.metrics.port }}"
 {{ end }}
