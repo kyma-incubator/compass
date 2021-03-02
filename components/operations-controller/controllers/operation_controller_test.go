@@ -130,7 +130,7 @@ func TestReconcile_FailureToGetOperationCRDueToGeneralError_ShouldResultNoRequeu
 
 func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status")
+	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status", "Validation error occurred during operation status initialization")
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -164,7 +164,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 
 func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status")
+	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status", "Validation error occurred during operation status initialization")
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -200,7 +200,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_S
 
 func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status")
+	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status", "Validation error occurred during operation status initialization")
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
