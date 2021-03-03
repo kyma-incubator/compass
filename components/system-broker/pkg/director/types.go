@@ -28,6 +28,10 @@ type ApplicationsOutput struct {
 	Result *schema.ApplicationPageExt `json:"result"`
 }
 
+type ApplicationOutput struct {
+	Result *schema.ApplicationExt `json:"result"`
+}
+
 type BundleInstanceCredentialsInput struct {
 	BundleID    string `valid:"required"`
 	AuthID      string `valid:"required"`

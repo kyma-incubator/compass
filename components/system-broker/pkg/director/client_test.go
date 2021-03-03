@@ -26,11 +26,75 @@ import (
 	"github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director/directorfakes"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director/directorfakes"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestGraphQLClient_FetchApplication(t *testing.T) {
+	type testCase struct {
+		name               string
+		GQLClient          *directorfakes.FakeClient
+		expectedErr        string
+		expectedProperties map[string]int
+	}
+
+	tests := []testCase{
+		{
+			name:      "success",
+			GQLClient: getGCLI(t, "", nil),
+			expectedProperties: map[string]int{
+				"webhooks":              1,
+				"providerName":          0,
+				"description":           0,
+				"integrationSystemID":   0,
+				"labels":                0,
+				"bundles":               0,
+				"auths":                 0,
+				"status":                0,
+				"instanceAuths":         0,
+				"documents":             0,
+				"fetchRequest":          0,
+				"healthCheckURL":        0,
+				"eventingConfiguration": 0,
+			},
+		},
+		{
+			name:        "when gql client returns an error",
+			GQLClient:   getGCLI(t, "", errors.New("some error")),
+			expectedErr: "while fetching application in gqlclient: some error",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gcli := tt.GQLClient
+			c := director.NewGraphQLClient(
+				gcli,
+				&graphqlizer.Graphqlizer{},
+				&graphqlizer.GqlFieldsProvider{},
+			)
+			_, err := c.FetchApplication(context.TODO(), "test-id")
+			if tt.expectedErr != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedErr)
+			} else {
+				assert.Equal(t, 1, gcli.DoCallCount())
+
+				_, graphqlReq, _ := gcli.DoArgsForCall(0)
+				query := graphqlReq.Query()
+				for expectedProp, expectedCount := range tt.expectedProperties {
+					fieldRegex := regexp.MustCompile(`\b` + expectedProp + `\b`)
+
+					matches := fieldRegex.FindAllStringIndex(query, -1)
+					actualCount := len(matches)
+
+					assert.Equal(t, expectedCount, actualCount, expectedProp)
+				}
+			}
+		})
+	}
+}
 
 func TestGraphQLClient_FetchApplications(t *testing.T) {
 	type testCase struct {

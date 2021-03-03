@@ -20,21 +20,23 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 )
 
 type BindEndpoint struct {
-	credentialsCreator BundleCredentialsCreateRequester
-	credentialsGetter  BundleCredentialsFetcher
+	credentialsCreator types.BundleCredentialsCreateRequester
+	credentialsGetter  types.BundleCredentialsFetcher
 }
 
-func NewBindEndpoint(credentialsCreator BundleCredentialsCreateRequester, credentialsGetter BundleCredentialsFetcher) *BindEndpoint {
+func NewBindEndpoint(credentialsCreator types.BundleCredentialsCreateRequester, credentialsGetter types.BundleCredentialsFetcher) *BindEndpoint {
 	return &BindEndpoint{
 		credentialsCreator: credentialsCreator,
 		credentialsGetter:  credentialsGetter,

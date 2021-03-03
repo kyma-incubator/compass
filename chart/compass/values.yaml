@@ -22,13 +22,13 @@ global:
       version: "PR-1720"
     director:
       dir:
-      version: "PR-1731"
+      version: "PR-1733"
     gateway:
       dir:
       version: "PR-1720"
     operations_controller:
       dir:
-      version: "PR-1717"
+      version: "PR-1733"
     tenant_fetcher:
       dir:
       version: "PR-1718"
@@ -40,7 +40,7 @@ global:
       version: "PR-1736"
     system_broker:
       dir:
-      version: "PR-1738"
+      version: "PR-1733"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -180,7 +180,7 @@ global:
           - "Certificate-Data"
 
   operations_controller:
-    enabled: false
+    enabled: true
 
   connectivity_adapter:
     port: 8080

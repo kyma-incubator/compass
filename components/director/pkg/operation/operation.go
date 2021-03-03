@@ -68,7 +68,7 @@ type Operation struct {
 	ResourceType      resource.Type `json:"resource_type,omitempty"`
 	CorrelationID     string        `json:"correlation_id,omitempty"`
 	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
-	RequestData       string        `json:"request_data,omitempty"`
+	RequestObject     string        `json:"request_object,omitempty"`
 }
 
 // Validate ensures that the constructed Operation has valid properties

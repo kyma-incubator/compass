@@ -236,7 +236,7 @@ func TestApplicationRegisterInput_Validate_HealthCheckURL(t *testing.T) {
 }
 
 func TestApplicationRegisterInput_Validate_Webhooks(t *testing.T) {
-	validObj := fixValidWebhookInput()
+	validObj := fixValidWebhookInput(inputvalidationtest.ValidURL)
 
 	testCases := []struct {
 		Name          string
