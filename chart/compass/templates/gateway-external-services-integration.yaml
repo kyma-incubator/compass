@@ -85,6 +85,7 @@ spec:
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080/"
       restartPolicy: Never
+      serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---
 apiVersion: v1
 kind: ServiceAccount
