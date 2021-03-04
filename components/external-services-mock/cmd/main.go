@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/apispec"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -85,6 +87,9 @@ func initHTTP(cfg config) http.Handler {
 	}
 	basicAuthRouter.Use(h.basicAuthMiddleware)
 	basicAuthRouter.HandleFunc("/spec", apispec.HandleFunc)
+
+	router.HandleFunc("/webhook/delete", webhook.NewDeleteHTTPHandler()).Methods(http.MethodGet)
+	router.HandleFunc("/webhook/delete/operation", webhook.NewWebHookOperationHTTPHandler()).Methods(http.MethodGet, http.MethodPost)
 
 	return router
 }
