@@ -9,4 +9,4 @@ spec:
       app: {{ .Chart.Name }}
   portLevelMtls:
     {{ .Values.metrics.port }}:
-    mode: "PERMISSIVE"
+      mode: "PERMISSIVE"
