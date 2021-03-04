@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	eventuallyTimeout = 6000 * time.Second
+	eventuallyTimeout = 60 * time.Second
 	eventuallyTick    = 1 * time.Second
 )
 
