@@ -145,7 +145,10 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 
 			for it := keys.Iterate(context.Background()); it.Next(context.Background()); {
 				pair := it.Pair()
-				key := pair.Value.(jwk.Key)
+				key, ok := pair.Value.(jwk.Key)
+				if !ok {
+					return nil, apperrors.NewInternalError("unable to parse key")
+				}
 
 				if key.Algorithm() == token.Method.Alg() {
 					var rawKey interface{}
