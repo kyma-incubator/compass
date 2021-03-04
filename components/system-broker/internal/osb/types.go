@@ -17,37 +17,9 @@
 package osb
 
 import (
-	"context"
-
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/pkg/errors"
 )
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . applicationsLister
-type ApplicationsLister interface {
-	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
-}
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcher
-type BundleCredentialsFetcher interface {
-	FetchBundleInstanceAuth(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceAuthOutput, error)
-}
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcherForInstance
-type BundleCredentialsFetcherForInstance interface {
-	FetchBundleInstanceCredentials(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)
-}
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsCreateRequester
-type BundleCredentialsCreateRequester interface {
-	RequestBundleInstanceCredentialsCreation(ctx context.Context, in *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)
-}
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsDeleteRequester
-type BundleCredentialsDeleteRequester interface {
-	RequestBundleInstanceCredentialsDeletion(ctx context.Context, in *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)
-}
 
 type BrokerOperationType string
 

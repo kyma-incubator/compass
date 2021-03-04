@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types/typesfakes"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,13 +18,13 @@ func TestBindGet(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsGetter *osbfakes.FakeBundleCredentialsFetcherForInstance
+		fakeCredentialsGetter *typesfakes.FakeBundleCredentialsFetcherForInstance
 		be                    *osb.GetBindingEndpoint
 		bundleInstanceAuth    *director.BundleInstanceCredentialsOutput
 	)
 
 	setup := func() {
-		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcherForInstance{}
+		fakeCredentialsGetter = &typesfakes.FakeBundleCredentialsFetcherForInstance{}
 
 		be = osb.NewGetBindingEndpoint(fakeCredentialsGetter)
 

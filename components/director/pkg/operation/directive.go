@@ -23,6 +23,8 @@ import (
 	"math"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
@@ -130,13 +132,13 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		operation.WebhookIDs = webhookIDs
 	}
 
-	requestData, err := d.prepareRequestData(ctx, err, resp)
+	requestObject, err := d.prepareRequestObject(ctx, err, resp)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while preparing request data: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to prepare webhook request data")
 	}
 
-	operation.RequestData = requestData
+	operation.RequestObject = requestObject
 
 	operationID, err := d.scheduler.Schedule(ctx, operation)
 	if err != nil {
@@ -198,13 +200,13 @@ func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationTy
 	return nil
 }
 
-func (d *directive) prepareRequestData(ctx context.Context, err error, res interface{}) (string, error) {
+func (d *directive) prepareRequestObject(ctx context.Context, err error, res interface{}) (string, error) {
 	tenantID, err := d.tenantLoaderFunc(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to retrieve tenant from request")
 	}
 
-	app, ok := res.(*graphql.Application)
+	resource, ok := res.(webhook.Resource)
 	if !ok {
 		return "", errors.New("entity is not a webhook provider")
 	}
@@ -215,17 +217,17 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 	}
 
 	headers := make(map[string]string, 0)
-	for headerKey, headerVal := range reqHeaders {
-		headers[headerKey] = headerVal[0]
+	for key, value := range reqHeaders {
+		headers[key] = value[0]
 	}
 
-	requestData := &graphql.RequestData{
-		Application: *app,
+	requestObject := &webhook.RequestObject{
+		Application: resource,
 		TenantID:    tenantID,
 		Headers:     headers,
 	}
 
-	data, err := json.Marshal(requestData)
+	data, err := json.Marshal(requestObject)
 	if err != nil {
 		return "", err
 	}
@@ -245,6 +247,15 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 			webhookIDs = append(webhookIDs, webhook.ID)
 		}
 	}
+
+	if len(webhookIDs) == 0 {
+		return nil, errors.New("no webhooks found for operation")
+	}
+
+	if len(webhookIDs) > 1 {
+		return nil, errors.New("multiple webhooks per operation are not supported")
+	}
+
 	return webhookIDs, nil
 }
 

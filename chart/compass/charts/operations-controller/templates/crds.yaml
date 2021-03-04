@@ -55,7 +55,7 @@ spec:
               - Update
               - Delete
               type: string
-            request_data:
+            request_object:
               type: string
             resource_id:
               type: string
@@ -70,7 +70,7 @@ spec:
           - operation_category
           - operation_id
           - operation_type
-          - request_data
+          - request_object
           - resource_id
           - resource_type
           - webhook_ids
@@ -80,6 +80,7 @@ spec:
           properties:
             conditions:
               items:
+                description: Condition defines the states in which the Operation CR can be
                 properties:
                   message:
                     type: string
@@ -95,21 +96,28 @@ spec:
                 - type
                 type: object
               type: array
+            observed_generation:
+              format: int64
+              type: integer
             phase:
+              enum:
+              - Success
+              - Failed
+              - In Progress
               type: string
             webhooks:
               items:
+                description: Webhook is an entity part of the OperationStatus which holds information about the progression of the webhook execution
                 properties:
                   last_poll_timestamp:
                     type: string
                   retries_count:
-                    format: int32
                     type: integer
                   state:
                     enum:
                     - Success
                     - Failed
-                    - Polling
+                    - In Progress
                     type: string
                   webhook_id:
                     type: string

@@ -16,36 +16,306 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operationsv1alpha1 "github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
+	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 )
 
-// OperationReconciler reconciles a Operation object
+// OperationReconciler reconciles an Operation object
 type OperationReconciler struct {
-	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	config         *webhook.Config
+	statusManager  StatusManager
+	k8sClient      KubernetesClient
+	directorClient DirectorClient
+	webhookClient  WebhookClient
+}
+
+func NewOperationReconciler(config *webhook.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient) *OperationReconciler {
+	return &OperationReconciler{
+		config:         config,
+		statusManager:  statusManager,
+		k8sClient:      k8sClient,
+		directorClient: directorClient,
+		webhookClient:  webhookClient,
+	}
 }
 
 // +kubebuilder:rbac:groups=operations.compass,resources=operations,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operations.compass,resources=operations/status,verbs=get;update;patch
 
+// Reconcile contains the Operations Controller logic concerned with processing and executing webhooks based on Operation CRs
 func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("operation", req.NamespacedName)
+	logger := ctrl.Log.WithValues("operation", req.NamespacedName)
+	ctx := log.ContextWithLogger(context.Background(), logger)
 
-	// your logic here
+	operation, err := r.k8sClient.Get(ctx, req.NamespacedName)
+	if err != nil {
+		return r.handleGetOperationError(ctx, &req, err)
+	}
 
-	return ctrl.Result{}, nil
+	if err := r.statusManager.Initialize(operation); err != nil {
+		return r.handleInitializationError(ctx, err, operation)
+	}
+
+	requestObject, err := operation.RequestObject()
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to parse request object")
+		return r.finalizeStatusWithError(ctx, operation, err)
+	}
+
+	ctx = tenant.SaveToContext(ctx, requestObject.TenantID)
+	app, err := r.directorClient.FetchApplication(ctx, operation.Spec.ResourceID)
+	if err != nil {
+		return r.handleFetchApplicationError(ctx, operation, err)
+	}
+
+	if app.Result.Ready {
+		return r.finalizeStatus(ctx, operation, app.Result.Error)
+	}
+
+	webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to retrieve webhook")
+		return r.finalizeStatusWithError(ctx, operation, err)
+	}
+
+	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
+		log.C(ctx).Info("Reconciliation timeout reached")
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached)
+	}
+
+	if !operation.HasPollURL() {
+		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
+		request := webhook.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
+
+		response, err := r.webhookClient.Do(ctx, request)
+		if err != nil {
+			log.C(ctx).Error(err, "Unable to execute Webhook request")
+			return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
+		}
+
+		return r.handleWebhookResponse(ctx, operation, webhookEntity.Mode, response)
+	}
+
+	log.C(ctx).Info("Webhook Poll URL is found. Will calculate next poll time")
+	requeueAfter, err := operation.NextPollTime(webhookEntity.RetryInterval, r.config.TimeLayout)
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to calculate next poll time")
+		return r.finalizeStatusWithError(ctx, operation, err)
+	}
+
+	if requeueAfter > 0 {
+		log.C(ctx).Info(fmt.Sprintf("Poll interval has not passed. Will requeue after: %d seconds", requeueAfter*time.Second))
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	request := webhook.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
+	response, err := r.webhookClient.Poll(ctx, request)
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
+		return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
+	}
+
+	return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
 }
 
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&operationsv1alpha1.Operation{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		WithEventFilter(predicate.Funcs{
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return false
+			},
+		}).
+		For(&v1alpha1.Operation{}).
 		Complete(r)
+}
+
+func (r *OperationReconciler) handleInitializationError(ctx context.Context, err error, operation *v1alpha1.Operation) (ctrl.Result, error) {
+	log.C(ctx).Error(err, "Failed to initialize operation status")
+	if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
+		log.C(ctx).Error(err, "Validation error occurred during operation status initialization")
+		return r.finalizeStatusWithError(ctx, operation, err)
+	}
+
+	return ctrl.Result{}, err
+}
+
+func (r *OperationReconciler) handleGetOperationError(ctx context.Context, req *ctrl.Request, err error) (ctrl.Result, error) {
+	log.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s resource from API server", req.NamespacedName))
+	if kubeerrors.IsNotFound(err) {
+		log.C(ctx).Error(err, fmt.Sprintf("%s resource was not found in API server", req.NamespacedName))
+		return ctrl.Result{}, nil
+	}
+
+	return ctrl.Result{}, err
+}
+
+func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, operation *v1alpha1.Operation, err error) (ctrl.Result, error) {
+	log.C(ctx).Error(err, "Unable to fetch application")
+	if operation.TimeoutReached(time.Duration(r.config.TimeoutFactor) * r.config.WebhookTimeout) {
+		if err := r.k8sClient.Delete(ctx, operation); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.C(ctx).Info("Successfully deleted operation")
+		return ctrl.Result{}, nil
+	}
+
+	return ctrl.Result{}, err
+}
+
+func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operation *v1alpha1.Operation, webhookMode *graphql.WebhookMode, response *webhookdir.Response) (ctrl.Result, error) {
+	mode := graphql.WebhookModeSync
+	if webhookMode != nil {
+		mode = *webhookMode
+	}
+
+	switch mode {
+	case graphql.WebhookModeAsync:
+		log.C(ctx).Info("Asynchronous webhook initial request has been executed successfully")
+		if err := r.statusManager.InProgressWithPollURL(ctx, operation, *response.Location); err != nil {
+			return ctrl.Result{}, err
+		}
+		log.C(ctx).Info("Successfully updated operation status with poll URL: " + *response.Location)
+		return ctrl.Result{Requeue: true}, nil
+	case graphql.WebhookModeSync:
+		log.C(ctx).Info("Synchronous webhook has been executed successfully")
+		return r.finalizeStatusSuccess(ctx, operation)
+	default:
+		log.C(ctx).Error(errors.ErrUnsupportedWebhookMode, "Unable to post-process Webhook response")
+		return ctrl.Result{}, nil
+	}
+}
+
+func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, response *webhookdir.ResponseStatus) (ctrl.Result, error) {
+	log.C(ctx).Info(fmt.Sprintf("Asynchronous webhook polling request has been executed successfully with response status: %s", *response.Status))
+	switch *response.Status {
+	case *response.InProgressStatusIdentifier:
+		lastPollTimestamp := time.Now().Format(r.config.TimeLayout)
+		retryCount := operation.Status.Webhooks[0].RetriesCount + 1
+		if err := r.statusManager.InProgressWithPollURLAndLastPollTimestamp(ctx, operation, operation.PollURL(), lastPollTimestamp, retryCount); err != nil {
+			return ctrl.Result{}, err
+		}
+		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
+		return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, errors.ErrWebhookPollTimeExpired)
+	case *response.SuccessStatusIdentifier:
+		return r.finalizeStatusSuccess(ctx, operation)
+	case *response.FailedStatusIdentifier:
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrFailedWebhookStatus)
+	default:
+		log.C(ctx).Error(fmt.Errorf("unexpected poll status response: %s", *response.Status), "Polling will be stopped due to an unknown status code received")
+		return ctrl.Result{}, nil
+	}
+}
+
+func (r *OperationReconciler) requeueUnlessTimeoutOrFatalError(ctx context.Context, operation *v1alpha1.Operation, webhookEntity *graphql.Webhook, webhookErr error) (ctrl.Result, error) {
+	_, isFatalErr := webhookErr.(*errors.FatalReconcileErr)
+	if !operation.TimeoutReached(r.determineTimeout(webhookEntity)) && !isFatalErr {
+		requeueAfter := r.config.RequeueInterval
+		if webhookEntity.RetryInterval != nil {
+			requeueAfter = time.Duration(*webhookEntity.RetryInterval)
+		}
+
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	if !isFatalErr {
+		webhookErr = fmt.Errorf("%s: %s", errors.ErrWebhookTimeoutReached, webhookErr)
+	}
+
+	return r.finalizeStatusWithError(ctx, operation, webhookErr)
+}
+
+func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg *string) (ctrl.Result, error) {
+	if errorMsg != nil && *errorMsg != "" {
+		if err := r.statusManager.FailedStatus(ctx, operation, *errorMsg); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
+	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequest(operation)); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	log.C(ctx).Info("Successfully updated operation status to succeeded")
+	return ctrl.Result{}, nil
+}
+
+func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error) (ctrl.Result, error) {
+	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequestWithError(operation, opErr)); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.statusManager.FailedStatus(ctx, operation, opErr.Error()); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	log.C(ctx).Info("Successfully updated operation status to failed")
+	return ctrl.Result{}, nil
+}
+
+func (r *OperationReconciler) determineTimeout(webhook *graphql.Webhook) time.Duration {
+	if webhook.Timeout == nil {
+		return r.config.WebhookTimeout
+	}
+
+	return time.Duration(*webhook.Timeout) * time.Second
+}
+
+func prepareDirectorRequest(operation *v1alpha1.Operation) *director.Request {
+	return prepareDirectorRequestWithError(operation, nil)
+}
+
+func prepareDirectorRequestWithError(operation *v1alpha1.Operation, err error) *director.Request {
+	request := &director.Request{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
+		ResourceID:    operation.Spec.ResourceID,
+	}
+
+	if err != nil {
+		request.Error = err.Error()
+	}
+
+	return request
+}
+
+func extractWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (*graphql.Webhook, error) {
+	for _, appWebhook := range appWebhooks {
+		if appWebhook.ID == operationWebhookID {
+			return &appWebhook, nil
+		}
+	}
+
+	return nil, fmt.Errorf("missing webhook with ID: %s", operationWebhookID)
 }
