@@ -226,7 +226,7 @@ func (g *Graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
 	return g.genericToGQL(in, `{
 		type: {{.Type}},
-		{{- if .URL }} 
+		{{- if .URL }}
 		url: "{{.URL }}",
 		{{- end }}
 		{{- if .Auth }} 
