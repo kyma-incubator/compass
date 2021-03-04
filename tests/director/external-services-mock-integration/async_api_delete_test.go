@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 )
 
-
 func TestAsyncAPIDeleteApplication(t *testing.T) {
 	var (
 		operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, webhook.OperationPath)
