@@ -31,7 +31,7 @@ spec:
           name: https
       - env:
           - name: SERVER_METRIC_ADDRESS
-            value: "127.0.0.1:8080"
+            value: "127.0.0.1:{{ .Values.metrics.port }}"
           - name: SERVER_ENABLE_LEADER_ELECTION
             value: "true"
           - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
@@ -40,6 +40,10 @@ spec:
             value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.operations.port }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: manager
+        ports:
+          - name: metrics
+            containerPort: {{ .Values.metrics.port }}
+            protocol: TCP
         resources:
           limits:
             cpu: 100m
