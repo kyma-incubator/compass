@@ -15,6 +15,8 @@ spec:
   template:
     metadata:
       labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
         control-plane: controller-manager
     spec:
       serviceAccountName: {{ template "fullname" . }}

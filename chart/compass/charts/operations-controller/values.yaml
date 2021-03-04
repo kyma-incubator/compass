@@ -2,4 +2,4 @@ manager:
   replicaCount: 1
 
 metrics:
-  port: 8080
+  port: 3001
