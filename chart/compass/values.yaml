@@ -34,7 +34,7 @@ global:
       version: "PR-1750"
     ord_service:
       dir:
-      version: "PR-1750"
+      version: "PR-14"
     schema_migrator:
       dir:
       version: "PR-1736"
@@ -51,7 +51,7 @@ global:
       version: "PR-1750"
     console:
       dir:
-      version: "PR-19"
+      version: "PR-22"
     tests:
       director:
         dir:
