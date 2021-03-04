@@ -28,7 +28,7 @@ type Error struct {
 
 type Authenticator struct {
 	mux                        sync.Mutex
-	cachedJWKs                 *jwk.Set
+	cachedJWKs                 jwk.Set
 	jwksEndpoint               string
 	zoneId                     string
 	trustedClaimPrefixes       []string
@@ -137,27 +137,23 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 	return func(token *jwt.Token) (interface{}, error) {
 		unsupportedErr := apperrors.NewInternalError("unexpected signing method: %s", token.Method.Alg())
 
-		if token.Method.Alg() == jwt.SigningMethodRS256.Name {
-			a.mux.Lock()
-			keys := a.cachedJWKs.Keys
-			a.mux.Unlock()
-			for _, key := range keys {
-				if key.Algorithm() == token.Method.Alg() {
-					return key.Materialize()
-				}
-			}
-
-			return nil, apperrors.NewInternalError("unable to find key for algorithm %s", token.Method.Alg())
-		}
-
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
 			a.mux.Lock()
-			keys := a.cachedJWKs.Keys
+			keys := a.cachedJWKs
 			a.mux.Unlock()
-			for _, key := range keys {
+
+			for it := keys.Iterate(context.Background()); it.Next(context.Background()); {
+				pair := it.Pair()
+				key := pair.Value.(jwk.Key)
+
 				if key.Algorithm() == token.Method.Alg() {
-					return key.Materialize()
+					var rawKey interface{}
+					if err := key.Raw(&rawKey); err != nil {
+						return nil, err
+					}
+
+					return rawKey, nil
 				}
 			}
 

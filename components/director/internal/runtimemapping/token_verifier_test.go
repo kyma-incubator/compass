@@ -248,7 +248,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to cast the key ID to a string")
 	})
 
-	t.Run("should return error when unable to finad a proper key", func(t *testing.T) {
+	t.Run("should return error when unable to find a proper key", func(t *testing.T) {
 		// GIVEN
 		handler := http.HandlerFunc(mockValidJWKsHandler(t))
 
@@ -291,7 +291,9 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 		tokenVerifier := NewTokenVerifier(jwksCache)
-		token := createSignedToken(t, privateKeys.Keys[0])
+		k, isOkay := privateKeys.Get(0)
+		assert.True(t, isOkay)
+		token := createSignedToken(t, k)
 
 		logger, hook := logrustest.NewNullLogger()
 		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
@@ -319,7 +321,9 @@ func TestTokenVerifier_Verify(t *testing.T) {
 
 		jwksFetch := NewJWKsFetch()
 		tokenVerifier := NewTokenVerifier(jwksFetch)
-		token := createSignedToken(t, privateKeys.Keys[0])
+		k, isOkay := privateKeys.Get(0)
+		assert.True(t, isOkay)
+		token := createSignedToken(t, k)
 
 		// WHEN
 		claims, err := tokenVerifier.Verify(context.TODO(), token)
@@ -414,18 +418,20 @@ func createToken() *jwt.Token {
 func createSignedToken(t *testing.T, key jwk.Key) string {
 	token := createToken()
 
-	materializedKey, err := key.Materialize()
+	var rawkey interface{} // This is the raw key, like *rsa.PrivateKey or *ecdsa.PrivateKey
+	err := key.Raw(&rawkey)
+
 	require.NoError(t, err)
-	signedToken, err := token.SignedString(materializedKey)
+	signedToken, err := token.SignedString(rawkey)
 	require.NoError(t, err)
 
 	return signedToken
 }
 
-func readJWK(t *testing.T, path string) *jwk.Set {
-	jwksPrivateData, err := ioutil.ReadFile("testdata/jwks-private.json")
+func readJWK(t *testing.T, path string) jwk.Set {
+	jwksPrivateData, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
-	jwkSet, err := jwk.ParseBytes(jwksPrivateData)
+	jwkSet, err := jwk.Parse(jwksPrivateData)
 	require.NoError(t, err)
 
 	return jwkSet

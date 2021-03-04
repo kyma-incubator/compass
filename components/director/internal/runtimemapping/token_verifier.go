@@ -88,7 +88,7 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return nil, errors.Wrap(err, "while getting the JWKs URI")
 	}
 
-	jwksSet, err := jwk.Fetch(jwksURI)
+	jwksSet, err := jwk.Fetch(ctx, jwksURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching JWKs")
 	}
@@ -98,10 +98,14 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return nil, errors.Wrap(err, "while getting the key ID")
 	}
 
-	keys := jwksSet.LookupKeyID(keyID)
-	for _, key := range keys {
-		if key.Algorithm() == token.Method.Alg() {
-			return key.Materialize()
+	if keys, isFound := jwksSet.LookupKeyID(keyID); isFound {
+		if keys.Algorithm() == token.Method.Alg() {
+			var rawkey interface{} // This is the raw key, like *rsa.PrivateKey or *ecdsa.PrivateKey
+			if err := keys.Raw(&rawkey); err != nil {
+				return nil, err
+			}
+
+			return rawkey, nil
 		}
 	}
 
