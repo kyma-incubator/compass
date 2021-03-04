@@ -7,7 +7,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/google/uuid v1.2.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210304120518-45b00bff0ac0
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210304120518-45b00bff0ac0
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210304130807-d0d5075bbca0
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210304094417-deb791b48d6a
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225

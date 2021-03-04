@@ -27,15 +27,11 @@ import (
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 )
 
-const (
-	operationPath = "webhook/delete/operation"
-	deletePath    = "webhook/delete"
-)
 
 func TestAsyncAPIDeleteApplication(t *testing.T) {
 	var (
-		operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, operationPath)
-		deleteFullPath    = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, deletePath)
+		operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, webhook.OperationPath)
+		deleteFullPath    = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, webhook.DeletePath)
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
