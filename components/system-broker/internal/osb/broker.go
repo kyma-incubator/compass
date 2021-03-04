@@ -16,17 +16,19 @@
 
 package osb
 
+import "github.com/kyma-incubator/compass/components/system-broker/pkg/types"
+
 type GqlClientForBroker interface {
-	ApplicationsLister
-	BundleCredentialsFetcher
-	BundleCredentialsFetcherForInstance
-	BundleCredentialsCreateRequester
-	BundleCredentialsDeleteRequester
+	types.ApplicationsLister
+	types.BundleCredentialsFetcher
+	types.BundleCredentialsFetcherForInstance
+	types.BundleCredentialsCreateRequester
+	types.BundleCredentialsDeleteRequester
 }
 
-func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {
+func NewSystemBroker(client GqlClientForBroker, ORDServiceURL string) *SystemBroker {
 	return &SystemBroker{
-		CatalogEndpoint:               NewCatalogEndpoint(client, &CatalogConverter{BaseURL: selfURL}),
+		CatalogEndpoint:               NewCatalogEndpoint(client, &CatalogConverter{ORDServiceURL: ORDServiceURL}),
 		ProvisionEndpoint:             NewProvisionEndpoint(),
 		DeprovisionEndpoint:           NewDeprovisionEndpoint(),
 		UpdateInstanceEndpoint:        NewUpdateInstanceEndpoint(),

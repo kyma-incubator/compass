@@ -2,6 +2,7 @@ package str
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -48,4 +49,8 @@ func PrefixStrings(in []string, prefix string) []string {
 	}
 
 	return prefixedFieldNames
+}
+
+func Title(s string) string {
+	return strings.Title(strings.ToLower(s))
 }

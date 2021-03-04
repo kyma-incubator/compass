@@ -35,6 +35,7 @@ var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-p
 
 type Headers map[string]string
 
+// CorrelationIDForRequest returns the correlation ID for the current request
 func CorrelationIDForRequest(request *http.Request) string {
 	return HeadersForRequest(request)[RequestIDHeaderKey]
 }
@@ -45,7 +46,7 @@ func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			if correlationHeaders := HeadersForRequest(r); len(correlationHeaders) != 0 {
-				ctx = context.WithValue(ctx, HeadersContextKey, correlationHeaders)
+				ctx = SaveToContext(ctx, correlationHeaders)
 				r = r.WithContext(ctx)
 			}
 
@@ -59,7 +60,7 @@ func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 // If the x-request-id header does not exists a new one is generated, and set as a header.
 func HeadersForRequest(request *http.Request) Headers {
 	reqHeaders := make(map[string]string)
-	headersFromCtx := headersFromContext(request.Context())
+	headersFromCtx := HeadersFromContext(request.Context())
 
 	for _, headerKey := range headerKeys {
 		headerValue := request.Header.Get(headerKey)
@@ -74,6 +75,15 @@ func HeadersForRequest(request *http.Request) Headers {
 		}
 	}
 
+	// Context might have been enriched with additional headers (outside of those among the well known header keys array)
+	// which should be attached as well
+	for headerKey, headerValue := range headersFromCtx {
+		if _, ok := reqHeaders[headerKey]; !ok {
+			request.Header.Set(headerKey, headerValue)
+			reqHeaders[headerKey] = headerValue
+		}
+	}
+
 	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
 		newRequestID := uuid.New().String()
 		reqHeaders[RequestIDHeaderKey] = newRequestID
@@ -83,7 +93,8 @@ func HeadersForRequest(request *http.Request) Headers {
 	return reqHeaders
 }
 
-func headersFromContext(ctx context.Context) Headers {
+// HeadersFromContext returns the headers for the provided context
+func HeadersFromContext(ctx context.Context) Headers {
 	var headersFromCtx map[string]string
 	if ctx.Value(HeadersContextKey) != nil {
 		var ok bool
@@ -94,4 +105,25 @@ func headersFromContext(ctx context.Context) Headers {
 	}
 
 	return headersFromCtx
+}
+
+// SaveToContext saves the provided headers as correlation ID headers in the specified context
+func SaveToContext(ctx context.Context, headers Headers) context.Context {
+	return context.WithValue(ctx, HeadersContextKey, headers)
+}
+
+// SaveCorrelationIDHeaderToContext saves the header provided key/value pair as a correlation ID header in the specified context
+func SaveCorrelationIDHeaderToContext(ctx context.Context, key, value *string) context.Context {
+	if key == nil || value == nil {
+		return ctx
+	}
+
+	headers := HeadersFromContext(ctx)
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+
+	headers[*key] = *value
+
+	return SaveToContext(ctx, headers)
 }

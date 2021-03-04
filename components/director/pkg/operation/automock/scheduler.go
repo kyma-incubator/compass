@@ -3,6 +3,8 @@
 package automock
 
 import (
+	context "context"
+
 	operation "github.com/kyma-incubator/compass/components/director/pkg/operation"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,20 +14,20 @@ type Scheduler struct {
 	mock.Mock
 }
 
-// Schedule provides a mock function with given fields: _a0
-func (_m *Scheduler) Schedule(_a0 operation.Operation) (string, error) {
-	ret := _m.Called(_a0)
+// Schedule provides a mock function with given fields: ctx, op
+func (_m *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (string, error) {
+	ret := _m.Called(ctx, op)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(operation.Operation) string); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(context.Context, *operation.Operation) string); ok {
+		r0 = rf(ctx, op)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(operation.Operation) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(context.Context, *operation.Operation) error); ok {
+		r1 = rf(ctx, op)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -1,6 +1,6 @@
 APP_NAME = compass-operations-controller
 APP_PATH = components/operations-controller
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-kubebuilder2:v20210225-a8b55dc9
 VERIFY_IGNORE := /vendor\|/automock\|/api/v1alpha1/zz_generated.deepcopy.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 CRD_OPTIONS ?= "crd:trivialVersions=true"
@@ -52,8 +52,6 @@ deploy: manifests
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	kustomize build config/crd > crds.yaml
-	mv crds.yaml ${CHART_PATH}/templates/
 
 # Copy the CRDs into the Compass chart.
 copy-crds-to-chart:

@@ -4,20 +4,21 @@ package apperrors
 type ErrorType int
 
 const (
-	InternalError      ErrorType = 10
-	UnknownError       ErrorType = 11
-	NotFound           ErrorType = 20
-	NotUnique          ErrorType = 21
-	InvalidData        ErrorType = 22
-	InsufficientScopes ErrorType = 23
-	TenantRequired     ErrorType = 24
-	TenantNotFound     ErrorType = 25
-	Unauthorized       ErrorType = 26
-	InvalidOperation   ErrorType = 27
-	OperationTimeout   ErrorType = 28
-	EmptyData          ErrorType = 29
-	InconsistentData   ErrorType = 30
-	NotUniqueName      ErrorType = 31
+	InternalError       ErrorType = 10
+	UnknownError        ErrorType = 11
+	NotFound            ErrorType = 20
+	NotUnique           ErrorType = 21
+	InvalidData         ErrorType = 22
+	InsufficientScopes  ErrorType = 23
+	TenantRequired      ErrorType = 24
+	TenantNotFound      ErrorType = 25
+	Unauthorized        ErrorType = 26
+	InvalidOperation    ErrorType = 27
+	OperationTimeout    ErrorType = 28
+	EmptyData           ErrorType = 29
+	InconsistentData    ErrorType = 30
+	NotUniqueName       ErrorType = 31
+	ConcurrentOperation ErrorType = 32
 )
 
 const (
@@ -40,4 +41,5 @@ const (
 	EmptyDataMsg                 = "Some required data was left out"
 	InconsistentDataMsg          = "Inconsistent or out-of-range data"
 	NotUniqueNameMsg             = "Object name is not unique"
+	ConcurrentOperationMsg       = "Concurrent operation"
 )

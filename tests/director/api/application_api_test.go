@@ -93,7 +93,7 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualSecondApp)
 	//THEN
 	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
-	require.Empty(t, actualSecondApp.ID)
+	require.Empty(t, actualSecondApp.BaseEntity)
 
 	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
 	actualThirdApp := registerApplication(t, ctx, "appwordpress")
@@ -122,7 +122,7 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualFourthApp)
 	//THEN
 	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
-	require.Empty(t, actualFourthApp.ID)
+	require.Empty(t, actualFourthApp.BaseEntity)
 
 	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED
 	fifthAppName := "mp-application"
@@ -172,14 +172,16 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	url := "http://mywordpress.com/webhooks1"
+
 	in := graphql.ApplicationRegisterInput{
 		Name:         "wordpress",
 		ProviderName: ptr.String("compass"),
 		Webhooks: []*graphql.WebhookInput{
 			{
-				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+				Type: graphql.WebhookTypeConfigurationChanged,
 				Auth: fixBasicAuth(t),
-				URL:  "http://mywordpress.com/webhooks1",
+				URL:  &url,
 			},
 		},
 		Labels: &graphql.Labels{
@@ -238,10 +240,10 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		EventingConfiguration graphql.ApplicationEventingConfiguration `json:"eventingConfiguration"`
 	}
 
-	t.Run("Register Application with Packages when useBundles=false", func(t *testing.T) {
+	t.Run("Register Application with Packages should succeed", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
 		request := fixRegisterApplicationWithPackagesRequest(expectedAppName)
-		err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualApp)
+		err := tc.NewOperation(ctx).Run(request, &actualApp)
 
 		appID := actualApp.ID
 		packageID := actualApp.Packages.Data[0].ID
@@ -254,25 +256,14 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		require.NotEmpty(t, packageID)
 		require.Equal(t, expectedAppName, actualApp.Name)
 
-		t.Run("Get Application with Package when useBundles=false should succeed", func(t *testing.T) {
+		t.Run("Get Application with Package should succeed", func(t *testing.T) {
 			var actualAppWithPackage ApplicationWithPackagesExt
 			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualAppWithPackage)
+			err := tc.NewOperation(ctx).Run(request, &actualAppWithPackage)
 
 			require.NoError(t, err)
 			require.NotEmpty(t, actualAppWithPackage.ID)
 			require.NotEmpty(t, actualAppWithPackage.Package.ID)
-		})
-
-		t.Run("Get Application with Package when useBundles=true should fail", func(t *testing.T) {
-			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).
-				WithQueryParam("useBundles", "true").
-				Run(request, &actualAppWithPackage)
-
-			require.Error(t, err)
-			require.Empty(t, actualAppWithPackage.ID)
 		})
 
 		runtimeInput := fixRuntimeInput("test-runtime")
@@ -288,7 +279,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 		defer unregisterRuntime(t, runtime.ID)
 
-		t.Run("Get ApplicationForRuntime with Package when useBundles=false should succeed", func(t *testing.T) {
+		t.Run("Get ApplicationForRuntime with Package should succeed", func(t *testing.T) {
 			applicationPage := struct {
 				Data []*ApplicationWithPackagesExt `json:"data"`
 			}{}
@@ -296,7 +287,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 				ID:   runtime.ID,
 				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "false").Run(request, &applicationPage)
+			}).Run(request, &applicationPage)
 
 			require.NoError(t, err)
 			require.Len(t, applicationPage.Data, 1)
@@ -311,29 +302,6 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			require.Equal(t, len(actualAppWithPackage.Webhooks), len(actualApp.Webhooks))
 			require.Equal(t, len(actualAppWithPackage.Packages.Data), len(actualApp.Packages.Data))
 		})
-
-		t.Run("Get ApplicationForRuntime with Package when useBundles=true should fail", func(t *testing.T) {
-			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
-			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-				ID:   runtime.ID,
-				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "true").Run(request, &actualAppWithPackage)
-
-			require.Error(t, err)
-			require.Empty(t, actualAppWithPackage.ID)
-		})
-	})
-
-	t.Run("Register Application with Packages when useBundles=true should fail", func(t *testing.T) {
-		var actualApp ApplicationWithPackagesExt
-		request := fixRegisterApplicationWithPackagesRequest("failed-app-with-packages")
-		op := tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
-		err := op.Run(request, &actualApp)
-
-		require.Error(t, err)
-		require.Empty(t, actualApp.ID)
-		require.Empty(t, actualApp.Name)
 	})
 }
 
@@ -507,9 +475,11 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
+		url := "http://new-webhook.url"
+		urlUpdated := "http://updated-webhook.url"
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "http://new-webhook.url",
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL:  &url,
+			Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -519,8 +489,9 @@ func TestUpdateApplicationParts(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
-		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+		assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
 
@@ -530,7 +501,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: "http://updated-webhook.url", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL: &urlUpdated, Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -538,7 +509,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, urlUpdated, *actualWebhook.URL)
 
 		// delete
 
@@ -551,7 +523,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, urlUpdated, *actualWebhook.URL)
 
 	})
 
@@ -1083,12 +1056,13 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 }
 
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
+	url := webhookURL
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
 		Webhooks: []*graphql.WebhookInput{{
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  webhookURL},
+			Type: graphql.WebhookTypeConfigurationChanged,
+			URL:  &url},
 		},
 	}
 }

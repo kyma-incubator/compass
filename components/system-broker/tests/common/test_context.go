@@ -19,9 +19,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	gql "github.com/machinebox/graphql"
 
@@ -200,12 +199,11 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 	directorGraphQLClient, err := prepareGQLClient(cfg)
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
-	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
 
 	middlewares := []mux.MiddlewareFunc{
 		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
 	}
-	sbServer := server.New(cfg.Server, middlewares, osbApi, specsApi)
+	sbServer := server.New(cfg.Server, middlewares, osbApi)
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 

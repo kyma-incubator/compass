@@ -32,10 +32,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Name:         "app-static-user",
 			ProviderName: ptr.String("compass"),
 		}
-		app, err := registerApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 
-		defer unregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
@@ -72,10 +72,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		app, err := registerApplicationWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := RegisterApplicationWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 
-		defer unregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
@@ -106,7 +106,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		app := registerApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 
 		t.Logf("Registered Application with [id=%s]", app.ID)
-		defer unregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")
 		appAuth := requestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)

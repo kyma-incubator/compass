@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -13,70 +12,52 @@ import (
 
 const AuthzHeader = "Authorization"
 
-type TokenProviderFromHeader struct {
-	targetURL *url.URL
+type tokenAuthorizationProviderFromHeader struct{}
+
+func NewTokenAuthorizationProviderFromHeader() *tokenAuthorizationProviderFromHeader {
+	return &tokenAuthorizationProviderFromHeader{}
 }
 
-func NewTokenProviderFromHeader(targetURL string) (*TokenProviderFromHeader, error) {
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return &TokenProviderFromHeader{
-		targetURL: parsedURL,
-	}, nil
+func (c *tokenAuthorizationProviderFromHeader) Name() string {
+	return "TokenAuthorizationProviderFromHeader"
 }
 
-func (c *TokenProviderFromHeader) Name() string {
-	return "TokenProviderFromHeader"
-}
-
-func (c *TokenProviderFromHeader) Matches(ctx context.Context) bool {
-	if _, err := getBearerToken(ctx); err != nil {
-		log.C(ctx).WithError(err).Warn("while obtaining bearer token")
+func (c *tokenAuthorizationProviderFromHeader) Matches(ctx context.Context) bool {
+	if _, err := getBearerAuthorizationValue(ctx); err != nil {
+		log.C(ctx).WithError(err).Warn("while obtaining authorization from header")
 		return false
 	}
 
 	return true
 }
 
-func (c *TokenProviderFromHeader) TargetURL() *url.URL {
-	return c.targetURL
-}
-
-func (c *TokenProviderFromHeader) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {
-	token, err := getBearerToken(ctx)
+func (c *tokenAuthorizationProviderFromHeader) GetAuthorization(ctx context.Context) (string, error) {
+	authorization, err := getBearerAuthorizationValue(ctx)
 	if err != nil {
-		return httputils.Token{}, errors.Wrapf(err, "while obtaining bearer token from header %s", AuthzHeader)
+		return "", errors.Wrapf(err, "while obtaining authorization from header %s", AuthzHeader)
 	}
 
-	tokenResponse := httputils.Token{
-		AccessToken: token,
-		Expiration:  0,
-	}
-
-	log.C(ctx).Info("Successfully unmarshal response oauth token for accessing Director")
-	return tokenResponse, nil
+	log.C(ctx).Info("Successfully unmarshal response authorization for accessing Director")
+	return authorization, nil
 }
 
-func getBearerToken(ctx context.Context) (string, error) {
+func getBearerAuthorizationValue(ctx context.Context) (string, error) {
 	headers, err := httputils.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Errorf("cannot read headers from context: %s", err.Error())
 	}
-	reqToken, ok := headers[AuthzHeader]
+	reqAuth, ok := headers[AuthzHeader]
 	if !ok {
 		return "", errors.Errorf("cannot read header %s from context", AuthzHeader)
 	}
 
-	if reqToken == "" {
+	if reqAuth == "" {
 		return "", apperrors.NewUnauthorizedError("missing bearer token")
 	}
 
-	if !strings.HasPrefix(strings.ToLower(reqToken), "bearer ") {
+	if !strings.HasPrefix(strings.ToLower(reqAuth), "bearer ") {
 		return "", apperrors.NewUnauthorizedError("invalid bearer token prefix")
 	}
 
-	return strings.TrimPrefix(reqToken, "Bearer "), nil
+	return reqAuth, nil
 }

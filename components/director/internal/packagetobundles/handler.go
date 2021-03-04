@@ -26,13 +26,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 
-	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
+	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -41,7 +42,7 @@ import (
 	"github.com/vektah/gqlparser/gqlerror"
 )
 
-const useBundlesParam = "useBundles"
+const usesBundlesLabel = "useBundles"
 
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
@@ -71,33 +72,6 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			useBundles := r.URL.Query().Get(useBundlesParam)
-			if useBundles == "true" {
-				consumerInfo, err := consumer.LoadFromContext(ctx)
-				if err != nil {
-					log.C(ctx).WithError(err).Error("Error determining request consumer")
-					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
-					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-					return
-				}
-
-				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
-
-				next.ServeHTTP(w, r)
-
-				if consumerInfo.ConsumerType == consumer.Runtime {
-					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
-						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q", useBundlesParam)
-					}
-				}
-
-				return
-			}
-
-			log.C(ctx).Info("Will rewrite the request body. Bundles are still not adopted")
-
-			recorder := httptest.NewRecorder()
-
 			reqBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				log.C(ctx).WithError(err).Error("Error reading request body")
@@ -107,7 +81,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			}
 
 			body := string(reqBody)
-			body = strings.ReplaceAll(body, "\\n", "") // removes unnecessary complexity from the next regexes
+			unmodifiedBody := body
 
 			// rewrite Query/Mutation names
 			body = strings.ReplaceAll(body, "packageByInstanceAuth", "bundleByInstanceAuth")
@@ -132,22 +106,47 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "PackageUpdateInput", "BundleUpdateInput")
 
 			// rewrite JSON input
-			reqPackagesJSONPattern := regexp.MustCompile(`(\s*)packages(\s*:\s*\[)`) // matches ` packages:  [`
+			reqPackagesJSONPattern := regexp.MustCompile(`([\s\\n]*)packages([\s\\n]*:[\s\\n]*\[)`) // matches ` packages:  [`
 			body = reqPackagesJSONPattern.ReplaceAllString(body, "${1}bundles${2}")
 
 			// rewrite GQL output
-			reqPackagesGraphQLPattern := regexp.MustCompile(`(\s*)packages(\s*\{)`) // matches ` packages {`
+			reqPackagesGraphQLPattern := regexp.MustCompile(`([\s\\n]*)packages([\s\\n]*\{)`) // matches ` packages {`
 			body = reqPackagesGraphQLPattern.ReplaceAllString(body, "${1}bundles${2}")
 
-			reqPackageGraphQLPattern := regexp.MustCompile(`(\s*)package(\s*\(\s*id\s*:\s*)`) // matches ` package ( id : `
+			reqPackageGraphQLPattern := regexp.MustCompile(`([\s\\n]*)package([\s\\n]*\([\s\\n]*id[\s\\n]*:[\s\\n]*)`) // matches ` package ( id : `
 			body = reqPackageGraphQLPattern.ReplaceAllString(body, "${1}bundle${2}")
 
-			reqPackageModeGraphQLPattern := regexp.MustCompile(`(\s*)mode(\s*):(\s*)PACKAGE(\s*)`) // matches ` mode: PACKAGE `
+			reqPackageModeGraphQLPattern := regexp.MustCompile(`([\s\\n]*)mode([\s\\n]*):([\s\\n]*)PACKAGE([\s\\n]*)`) // matches ` mode: PACKAGE `
 			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
 
 			r.Body = ioutil.NopCloser(strings.NewReader(body))
 			r.ContentLength = int64(len(body))
 
+			usingBundles := unmodifiedBody == body
+			if usingBundles {
+				consumerInfo, err := consumer.LoadFromContext(ctx)
+				if err != nil {
+					log.C(ctx).WithError(err).Error("Error determining request consumer")
+					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
+					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
+					return
+				}
+
+				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
+
+				next.ServeHTTP(w, r)
+
+				if strings.Contains(strings.ToLower(body), "bundle") && consumerInfo.ConsumerType == consumer.Runtime {
+					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
+						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q", usesBundlesLabel)
+					}
+				}
+
+				return
+			}
+			log.C(ctx).Info("Will rewrite the request body. Bundles are still not adopted")
+
+			recorder := httptest.NewRecorder()
 			next.ServeHTTP(recorder, r)
 
 			for key, values := range recorder.Header() {
@@ -165,7 +164,6 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			}
 
 			body = string(respBody)
-
 			// rewrite Query/Mutation names
 			body = strings.ReplaceAll(body, "bundleByInstanceAuth", "packageByInstanceAuth")
 			body = strings.ReplaceAll(body, "bundleInstanceAuth", "packageInstanceAuth")
@@ -180,13 +178,13 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "requestBundleInstanceAuthCreation", "requestPackageInstanceAuthCreation")
 			body = strings.ReplaceAll(body, "requestBundleInstanceAuthDeletion", "requestPackageInstanceAuthDeletion")
 
-			respPackagesJSONPattern := regexp.MustCompile(`(\s*\")bundles(\"\s*:\s*\{)`) // matches ` "bundles":  {`
+			respPackagesJSONPattern := regexp.MustCompile(`([\s\\n]*\")bundles(\"[\s\\n]*:[\s\\n]*\{)`) // matches ` "bundles":  {`
 			body = respPackagesJSONPattern.ReplaceAllString(body, "${1}packages${2}")
 
-			respPackageJSONPattern := regexp.MustCompile(`(\s*\")bundle(\"\s*:\s*\{)`) // matches ` "bundle":  {`
+			respPackageJSONPattern := regexp.MustCompile(`([\s\\n]*\")bundle(\"[\s\\n]*:[\s\\n]*\{)`) // matches ` "bundle":  {`
 			body = respPackageJSONPattern.ReplaceAllString(body, "${1}package${2}")
 
-			respPackageModeGraphQLPattern := regexp.MustCompile(`(\s*\")mode(\"\s*):(\s*\")BUNDLE(\"\s*)`) // matches ` "mode": "BUNDLE" `
+			respPackageModeGraphQLPattern := regexp.MustCompile(`([\s\\n]*\")mode(\"[\s\\n]*):([\s\\n]*\")BUNDLE(\"[\s\\n]*)`) // matches ` "mode": "BUNDLE" `
 			body = respPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}PACKAGE${4}")
 
 			w.WriteHeader(recorder.Code)
@@ -214,14 +212,14 @@ func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.C(ctx).Infof("Proceeding with labeling runtime with ID %q with label %q", consumerInfo.ConsumerID, useBundlesParam)
+	log.C(ctx).Infof("Proceeding with labeling runtime with ID %q with label %q", consumerInfo.ConsumerID, usesBundlesLabel)
 	if err := h.labelUpsertService.UpsertLabel(ctx, tenantID, &model.LabelInput{
-		Key:        useBundlesParam,
+		Key:        usesBundlesLabel,
 		Value:      "true",
 		ObjectID:   consumerInfo.ConsumerID,
 		ObjectType: model.LabelableObject(consumerInfo.ConsumerType),
 	}); err != nil {
-		return errors.Wrapf(err, "while upserting %q label", useBundlesParam)
+		return errors.Wrapf(err, "while upserting %q label", usesBundlesLabel)
 	}
 
 	if err = tx.Commit(); err != nil {

@@ -50,7 +50,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType WebhookType) (res interface{}, err error)
+	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
 
 	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
 
@@ -85,6 +85,7 @@ type ComplexityRoot struct {
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
 		Format       func(childComplexity int) int
+		ID           func(childComplexity int) int
 		Type         func(childComplexity int) int
 	}
 
@@ -265,6 +266,7 @@ type ComplexityRoot struct {
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
 		Format       func(childComplexity int) int
+		ID           func(childComplexity int) int
 		Type         func(childComplexity int) int
 	}
 
@@ -793,6 +795,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APISpec.Format(childComplexity), true
+
+	case "APISpec.id":
+		if e.complexity.APISpec.ID == nil {
+			break
+		}
+
+		return e.complexity.APISpec.ID(childComplexity), true
 
 	case "APISpec.type":
 		if e.complexity.APISpec.Type == nil {
@@ -1662,6 +1671,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventSpec.Format(childComplexity), true
+
+	case "EventSpec.id":
+		if e.complexity.EventSpec.ID == nil {
+			break
+		}
+
+		return e.complexity.EventSpec.ID(childComplexity), true
 
 	case "EventSpec.type":
 		if e.complexity.EventSpec.Type == nil {
@@ -3312,7 +3328,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
-directive @async(operationType: OperationType!, webhookType: WebhookType!) on FIELD_DEFINITION
+directive @async(operationType: OperationType!, webhookType: WebhookType, idField: String) on FIELD_DEFINITION
 """
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
@@ -3948,6 +3964,7 @@ type APISpec {
 	"""
 	when fetch request specified, data will be automatically populated
 	"""
+	id: ID!
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
@@ -4155,6 +4172,7 @@ type EventDefinitionPage implements Pageable {
 }
 
 type EventSpec {
+	id: ID!
 	data: CLOB
 	type: EventSpecType!
 	format: SpecFormat!
@@ -4454,12 +4472,12 @@ type Mutation {
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication") @async(operationType: UPDATE, idField: "id")
 	"""
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, webhookType: UNREGISTER_APPLICATION)
+	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, idField: "id", webhookType: UNREGISTER_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -4699,14 +4717,22 @@ func (ec *executionContext) dir_async_args(ctx context.Context, rawArgs map[stri
 		}
 	}
 	args["operationType"] = arg0
-	var arg1 WebhookType
+	var arg1 *WebhookType
 	if tmp, ok := rawArgs["webhookType"]; ok {
-		arg1, err = ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, tmp)
+		arg1, err = ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["webhookType"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["idField"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["idField"] = arg2
 	return args, nil
 }
 
@@ -7185,6 +7211,43 @@ func (ec *executionContext) _APIDefinitionPage_totalCount(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APISpec_id(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "APISpec",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_data(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
@@ -11403,6 +11466,43 @@ func (ec *executionContext) _EventDefinitionPage_totalCount(ctx context.Context,
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _EventSpec_id(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventSpec",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -12561,11 +12661,11 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 			if err != nil {
 				return nil, err
 			}
-			webhookType, err := ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "REGISTER_APPLICATION")
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "REGISTER_APPLICATION")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType)
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, nil)
 		}
 
 		tmp, err := directive2(rctx)
@@ -12631,8 +12731,19 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, operationType, nil, idField)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -12700,11 +12811,15 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			webhookType, err := ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType)
+			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, idField)
 		}
 
 		tmp, err := directive2(rctx)
@@ -22442,6 +22557,11 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("APISpec")
+		case "id":
+			out.Values[i] = ec._APISpec_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "data":
 			out.Values[i] = ec._APISpec_data(ctx, field, obj)
 		case "format":
@@ -23450,6 +23570,11 @@ func (ec *executionContext) _EventSpec(ctx context.Context, sel ast.SelectionSet
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("EventSpec")
+		case "id":
+			out.Values[i] = ec._EventSpec_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "data":
 			out.Values[i] = ec._EventSpec_data(ctx, field, obj)
 		case "type":
@@ -28168,6 +28293,30 @@ func (ec *executionContext) unmarshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincub
 }
 
 func (ec *executionContext) marshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, sel ast.SelectionSet, v *WebhookMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, v interface{}) (WebhookType, error) {
+	var res WebhookType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, sel ast.SelectionSet, v WebhookType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, v interface{}) (*WebhookType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, sel ast.SelectionSet, v *WebhookType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

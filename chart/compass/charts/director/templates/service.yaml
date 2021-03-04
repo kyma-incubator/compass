@@ -12,6 +12,9 @@ spec:
     - port: {{ .Values.global.director.port }}
       protocol: TCP
       name: http
+    - port: {{ .Values.global.director.operations.port }}
+      protocol: TCP
+      name: http-internal
     - port: {{ .Values.global.istio.proxy.port }}
       protocol: TCP
       name: proxy-status
