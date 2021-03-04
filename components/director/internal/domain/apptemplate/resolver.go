@@ -188,7 +188,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	//log.Infof("Registering an Application from Application Template with name %s", in.TemplateName)
+	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
 	log.C(ctx).Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
