@@ -62,7 +62,7 @@ func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK: invalid character '<' looking for beginning of value", fakeJWKSURL))
+		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK set: invalid character '<' looking for beginning of value", fakeJWKSURL))
 	})
 }
 
@@ -78,7 +78,10 @@ func TestMiddleware_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, privateJWKS.Keys[0])
+		key, isOkay := privateJWKS.Get(0)
+		assert.True(t, isOkay)
+
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -106,7 +109,10 @@ func TestMiddleware_Handler(t *testing.T) {
 		privateJWKS2, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, privateJWKS2.Keys[0])
+		key, isOkay := privateJWKS2.Get(0)
+		assert.True(t, isOkay)
+
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -134,7 +140,10 @@ func TestMiddleware_Handler(t *testing.T) {
 		privateJWKS2, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, privateJWKS2.Keys[0])
+		key, isOkay := privateJWKS2.Get(0)
+		assert.True(t, isOkay)
+
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -189,7 +198,10 @@ func TestMiddleware_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, privateJWKS2.Keys[0])
+		key, isOkay := privateJWKS2.Get(0)
+		assert.True(t, isOkay)
+
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -231,7 +243,10 @@ func TestMiddleware_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, scopes, untrustedZoneId, privateJWKS.Keys[0])
+		key, isOkay := privateJWKS.Get(0)
+		assert.True(t, isOkay)
+
+		token := createTokenWithSigningMethod(t, scopes, untrustedZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -257,7 +272,10 @@ func TestMiddleware_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, fakeScopes, ZoneId, privateJWKS.Keys[0])
+		key, isOkay := privateJWKS.Get(0)
+		assert.True(t, isOkay)
+
+		token := createTokenWithSigningMethod(t, fakeScopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -283,10 +301,11 @@ func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, ke
 		ZID:    zone,
 	})
 
-	materializedKey, err := key.Materialize()
+	var rawKey interface{}
+	err := key.Raw(&rawKey)
 	require.NoError(t, err)
 
-	signedToken, err := token.SignedString(materializedKey)
+	signedToken, err := token.SignedString(rawKey)
 	require.NoError(t, err)
 
 	return signedToken
