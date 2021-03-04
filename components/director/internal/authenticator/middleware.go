@@ -33,7 +33,7 @@ const (
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
-	cachedJWKs          *jwk.Set
+	cachedJWKs          jwk.Set
 	clientIDHeaderKey   string
 	mux                 sync.Mutex
 }
@@ -159,11 +159,20 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
 			a.mux.Lock()
-			keys := a.cachedJWKs.Keys
+			keys := a.cachedJWKs
 			a.mux.Unlock()
-			for _, key := range keys {
+
+			for it := keys.Iterate(context.Background()); it.Next(context.Background()); {
+				pair := it.Pair()
+				key := pair.Value.(jwk.Key)
+
 				if key.Algorithm() == token.Method.Alg() {
-					return key.Materialize()
+					var rawkey interface{} // This is the raw key, like *rsa.PrivateKey or *ecdsa.PrivateKey
+					if err := key.Raw(&rawkey); err != nil {
+						return nil, err
+					}
+
+					return rawkey, nil
 				}
 			}
 
