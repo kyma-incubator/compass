@@ -47,6 +47,24 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixAsyncDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		unregisterApplication(id: "%s" mode: ASYNC) {
+			%s
+		}	
+	}`, id, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				ready
+				}	
+			}`, id))
+}
+
 // External services mock
 func getAuditlogMockToken(t *testing.T, client *http.Client, baseURL string) token {
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", baseURL, auditlogTokenEndpoint), nil)
