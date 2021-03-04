@@ -14,6 +14,8 @@ type OperationResponseData struct {
 }
 
 const (
+	OperationPath = "webhook/delete/operation"
+	DeletePath    = "webhook/delete"
 	OperationResponseStatusOK         = "SUCCEEDED"
 	OperationResponseStatusINProgress = "IN_PROGRESS"
 )
