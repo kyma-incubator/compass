@@ -93,6 +93,8 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	t.Log("Verify the application status in director is 'ready:false'")
 	application := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 	require.False(t, application.Ready, "Application is not in status ready:false")
+	require.Empty(t, application.Error, "Application Error is not empty")
+	require.NotEmpty(t, application.DeletedAt, "Application Deletion time is not empty")
 
 	t.Log("Unlock application webhook")
 	unlockWebhook(t, operationFullPath)
