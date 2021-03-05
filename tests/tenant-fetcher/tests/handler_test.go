@@ -75,7 +75,7 @@ type config struct {
 }
 
 type Tenant struct {
-	TenantId string
+	TenantId string `json:"tenantId"`
 }
 
 func TestOnboardingHandler(t *testing.T) {
