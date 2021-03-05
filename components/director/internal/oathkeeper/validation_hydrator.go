@@ -46,21 +46,20 @@ func NewValidationHydrator(tokenService Service, transact persistence.Transactio
 	}
 }
 
-func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
+func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	tx, err := tvh.transact.Begin()
+	tx, err := vh.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to open db transaction")
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
 		return
 	}
-	defer tvh.transact.RollbackUnlessCommitted(ctx, tx)
+	defer vh.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var authSession oathkeeper.AuthenticationSession
-	err = json.NewDecoder(r.Body).Decode(&authSession)
-	if err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&authSession); err != nil {
 		log.C(ctx).WithError(err).Error("Failed to decode request body")
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
@@ -80,30 +79,29 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	log.C(ctx).Info("Trying to resolve token...")
 
-	systemAuth, err := tvh.tokenService.GetByToken(ctx, connectorToken)
+	systemAuth, err := vh.tokenService.GetByToken(ctx, connectorToken)
 	if err != nil {
 		log.C(ctx).Infof("Invalid token provided: %s", err.Error())
 		respondWithAuthSession(ctx, w, authSession)
 		return
 	}
 
-	var expirationTime time.Duration
-	switch systemAuth.Value.OneTimeToken.Type {
-	case tokens.ApplicationToken:
-		expirationTime = tvh.appTokenExpiration
-	case tokens.RuntimeToken:
-		expirationTime = tvh.runtimeTokenExpiration
-	case tokens.CSRToken:
-		expirationTime = tvh.csrTokenExpiration
-	default:
-		log.C(ctx).Errorf("One Time Token for system auth id %s has no valid type", systemAuth.ID)
+	if systemAuth.Value == nil || systemAuth.Value.OneTimeToken == nil {
+		log.C(ctx).Infof("Cannot get OneTimeToken from systemAuth with ID: %s", systemAuth.ID)
 		respondWithAuthSession(ctx, w, authSession)
 		return
 	}
 
-	log.C(ctx).Infof("Validity time to check for is %s...", expirationTime.String())
+	expirationTime, err := vh.getExpirationTimeForToken(systemAuth)
+	if err != nil {
+		log.C(ctx).Error(err)
+		respondWithAuthSession(ctx, w, authSession)
+		return
+	}
 
-	if systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(tvh.timeService.Now()) {
+	log.C(ctx).Infof("One Time Token with validity %s for system auth with ID %q has expired", expirationTime.String(), systemAuth.ID)
+
+	if systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(vh.timeService.Now()) {
 		log.C(ctx).Infof("One Time Token for system auth id %s has expired", systemAuth.ID)
 		respondWithAuthSession(ctx, w, authSession)
 		return
@@ -115,13 +113,12 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
-	if err := tvh.tokenService.InvalidateToken(ctx, systemAuth); err != nil {
+	if err := vh.tokenService.InvalidateToken(ctx, systemAuth); err != nil {
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
 		return
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Error("Failed to commit db transaction")
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
 		return
@@ -131,6 +128,18 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 	respondWithAuthSession(ctx, w, authSession)
 }
 
+func (vh *validationHydrator) getExpirationTimeForToken(systemAuth *model.SystemAuth) (time.Duration, error) {
+	switch systemAuth.Value.OneTimeToken.Type {
+	case tokens.ApplicationToken:
+		return vh.appTokenExpiration, nil
+	case tokens.RuntimeToken:
+		return vh.runtimeTokenExpiration, nil
+	case tokens.CSRToken:
+		return vh.csrTokenExpiration, nil
+	default:
+		return time.Duration(0), errors.Errorf("One Time Token for system auth id %s has no valid type", systemAuth.ID)
+	}
+}
 func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSession oathkeeper.AuthenticationSession) {
 	httputils.RespondWithBody(ctx, w, http.StatusOK, authSession)
 }

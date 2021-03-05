@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,9 +51,7 @@ func (vc *HydratorClient) ExecuteHydratorRequest(t *testing.T, path string, head
 	require.NoError(t, err)
 	defer func() {
 		err := response.Body.Close()
-		if err != nil {
-			logrus.Warnf("Failed to close body: %s", err.Error())
-		}
+		require.NoError(t, err)
 	}()
 	require.Equal(t, http.StatusOK, response.StatusCode)
 

@@ -3,8 +3,10 @@ package tokens
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
 
 	gcli "github.com/machinebox/graphql"
 
@@ -48,11 +50,20 @@ func (svc *tokenService) GetToken(ctx context.Context, clientId string) (string,
 func (svc *tokenService) getOneTimeToken(ctx context.Context, id string) (string, error) {
 	req := gcli.NewRequest(fmt.Sprintf(requestForCSRToken, id))
 
-	resp := NewCSRTokenResponse("")
-	err := svc.cli.Run(ctx, req, &resp)
-	if err != nil {
+	resp := CSRTokenResponse{}
+	if err := svc.cli.Run(ctx, req, &resp); err != nil {
 		return "", errors.Wrapf(err, "while calling director for CSR one time token")
 	}
 
 	return resp.GetTokenValue(), nil
+}
+
+func GenerateTestToken(generated CSRTokenResponse) func(args mock.Arguments) {
+	return func(args mock.Arguments) {
+		arg, ok := args.Get(2).(*CSRTokenResponse)
+		if !ok {
+			log.Fatal("could not cast CSRTokenResponse")
+		}
+		*arg = generated
+	}
 }

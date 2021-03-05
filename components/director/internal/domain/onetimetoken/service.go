@@ -82,7 +82,6 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 			return model.OneTimeToken{}, errors.Wrapf(err, "while getting application [id: %s]", id)
 		}
 
-		// TODO: Do we want to save one time token from int system?
 		if app.IntegrationSystemID != nil {
 			if adapterURL, ok := s.intSystemToAdapterMapping[*app.IntegrationSystemID]; ok {
 				oneTimeToken, err = s.getTokenFromAdapter(ctx, adapterURL, *app)
@@ -94,14 +93,8 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 	}
 
 	if oneTimeToken == nil {
-		var tokenString string
-		tokenString, err = s.tokenGenerator.NewToken()
-		if err != nil {
-			return model.OneTimeToken{}, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
-		}
-		oneTimeToken = &model.OneTimeToken{
-			Token:        tokenString,
-			ConnectorURL: s.connectorURL,
+		if oneTimeToken, err = s.getNewToken(); err != nil {
+			return *oneTimeToken, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
 		}
 	}
 
@@ -125,13 +118,24 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 	return *oneTimeToken, nil
 }
 
+func (s *service) getNewToken() (*model.OneTimeToken, error) {
+	tokenString, err := s.tokenGenerator.NewToken()
+	if err != nil {
+		return &model.OneTimeToken{}, err
+	}
+	oneTimeToken := &model.OneTimeToken{
+		Token:        tokenString,
+		ConnectorURL: s.connectorURL,
+	}
+	return oneTimeToken, nil
+}
+
 func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, tokenType tokens.TokenType) (model.OneTimeToken, error) {
 	sysAuth, err := s.sysAuthSvc.GetByID(ctx, sysAuthID)
 	if err != nil {
 		return model.OneTimeToken{}, err
 	}
-	var tokenString string
-	tokenString, err = s.tokenGenerator.NewToken()
+	tokenString, err := s.tokenGenerator.NewToken()
 	if err != nil {
 		return model.OneTimeToken{}, errors.Wrapf(err, "while generating onetime token")
 	}
@@ -155,7 +159,7 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, app model.Application) (*model.OneTimeToken, error) {
 	extTenant, err := s.extTenantsSvc.GetExternalTenant(ctx, app.Tenant)
 	if err != nil {
-		return &model.OneTimeToken{}, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", app.Tenant)
+		return nil, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", app.Tenant)
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)
@@ -172,7 +176,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 
 	asJSON, err := json.Marshal(data)
 	if err != nil {
-		return &model.OneTimeToken{}, errors.Wrap(err, "while marshaling data for adapter")
+		return nil, errors.Wrap(err, "while marshaling data for adapter")
 	}
 
 	var externalToken string

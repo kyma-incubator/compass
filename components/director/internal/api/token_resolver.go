@@ -49,8 +49,7 @@ func (r *tokenResolver) GenerateCSRToken(ctx context.Context, authID string) (*i
 		return &internalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for CSR")
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
 

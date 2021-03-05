@@ -13,40 +13,34 @@ import (
 
 const (
 	clientId = "client-id"
+	token    = "tokenValue"
 )
 
 func TestTokenService(t *testing.T) {
 
 	t.Run("should return the token", func(t *testing.T) {
-
+		// GIVEN
 		gcliMock := &gcliMocks.GraphQLClient{}
-		expected := NewCSRTokenResponse("tokenValue")
-		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Run(generateToken(t, expected)).Return(nil).Once()
+		expected := NewCSRTokenResponse(token)
+		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Run(GenerateTestToken(expected)).Return(nil).Once()
 		tokenService := NewTokenService(gcliMock)
-
-		token, appError := tokenService.GetToken(context.Background(), clientId)
-		assert.Equal(t, "tokenValue", token)
+		// WHEN
+		actualToken, appError := tokenService.GetToken(context.Background(), clientId)
+		// THEN
+		assert.Equal(t, token, actualToken)
 		require.NoError(t, appError)
-
 	})
 
 	t.Run("should return error when token not found", func(t *testing.T) {
-
+		// GIVEN
 		gcliMock := &gcliMocks.GraphQLClient{}
 		err := errors.New("could not get the token")
 		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Return(err)
 		tokenService := NewTokenService(gcliMock)
-
-		token, appError := tokenService.GetToken(context.Background(), clientId)
+		// WHEN
+		actualToken, appError := tokenService.GetToken(context.Background(), clientId)
+		// THEN
 		require.Error(t, appError)
-		assert.Equal(t, "", token)
+		assert.Equal(t, "", actualToken)
 	})
-}
-
-func generateToken(t *testing.T, generated CSRTokenResponse) func(args mock.Arguments) {
-	return func(args mock.Arguments) {
-		arg, ok := args.Get(2).(*CSRTokenResponse)
-		require.True(t, ok)
-		*arg = generated
-	}
 }
