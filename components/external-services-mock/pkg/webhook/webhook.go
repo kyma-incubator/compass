@@ -5,14 +5,6 @@ import (
 	"net/http"
 )
 
-type OperationStatusRequestData struct {
-	InProgress bool
-}
-
-type OperationResponseData struct {
-	Status string `json:"status"`
-}
-
 const (
 	OperationPath                     = "/webhook/delete/operation"
 	DeletePath                        = "/webhook/delete"
@@ -21,6 +13,14 @@ const (
 )
 
 var isInProgress = true
+
+type OperationStatusRequestData struct {
+	InProgress bool
+}
+
+type OperationResponseData struct {
+	Status string `json:"status"`
+}
 
 func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
