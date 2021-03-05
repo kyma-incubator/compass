@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type OKRequestData struct {
+type OperationStatusRequestData struct {
 	OK bool
 }
 
@@ -33,51 +33,50 @@ func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewWebHookOperationHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
+func NewWebHookOperationPostHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			if isOk {
-				operationResponseDataOK := OperationResponseData{
-					Status: OperationResponseStatusOK,
-				}
-				operationResponseDataOKJSON, err := json.Marshal(operationResponseDataOK)
-				if err != nil {
-					rw.WriteHeader(http.StatusBadRequest)
-					return
-				}
-
-				_, err = rw.Write(operationResponseDataOKJSON)
-				if err != nil {
-					rw.WriteHeader(http.StatusBadRequest)
-					return
-				}
-				rw.WriteHeader(http.StatusOK)
-			} else {
-				operationResponseIPData := OperationResponseData{
-					Status: OperationResponseStatusINProgress,
-				}
-				operationResponseDataIPJSON, err := json.Marshal(operationResponseIPData)
-				if err != nil {
-					rw.WriteHeader(http.StatusBadRequest)
-					return
-				}
-
-				_, err = rw.Write(operationResponseDataIPJSON)
-				if err != nil {
-					rw.WriteHeader(http.StatusBadRequest)
-					return
-				}
-				rw.WriteHeader(http.StatusOK)
-			}
-		} else if r.Method == http.MethodPost {
-			var okReqData OKRequestData
-			err := json.NewDecoder(r.Body).Decode(&okReqData)
-			if err != nil {
-				rw.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			isOk = okReqData.OK
-			rw.WriteHeader(http.StatusOK)
+		if r.Method != http.MethodPost {
+			rw.WriteHeader(http.StatusMethodNotAllowed)
+			return
 		}
+
+		var okReqData OperationStatusRequestData
+		err := json.NewDecoder(r.Body).Decode(&okReqData)
+		if err != nil {
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		isOk = okReqData.OK
+		rw.WriteHeader(http.StatusOK)
+	}
+}
+
+func NewWebHookOperationGetHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			rw.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		body := OperationResponseData{
+			Status: OperationResponseStatusINProgress,
+		}
+		if isOk {
+			body.Status = OperationResponseStatusOK
+		}
+
+		operationResponseDataJSON, err := json.Marshal(body)
+		if err != nil {
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		_, err = rw.Write(operationResponseDataJSON)
+		if err != nil {
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		rw.WriteHeader(http.StatusOK)
 	}
 }

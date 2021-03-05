@@ -90,7 +90,8 @@ func initHTTP(cfg config) http.Handler {
 	basicAuthRouter.HandleFunc("/spec", apispec.HandleFunc)
 
 	router.HandleFunc(fmt.Sprintf("/%s", webhook.DeletePath), webhook.NewDeleteHTTPHandler()).Methods(http.MethodGet)
-	router.HandleFunc(fmt.Sprintf("/%s", webhook.OperationPath), webhook.NewWebHookOperationHTTPHandler()).Methods(http.MethodGet, http.MethodPost)
+	router.HandleFunc(fmt.Sprintf("/%s", webhook.OperationPath), webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("/%s", webhook.OperationPath), webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
 	return router
 }
