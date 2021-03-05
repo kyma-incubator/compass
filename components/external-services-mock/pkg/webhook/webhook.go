@@ -6,7 +6,7 @@ import (
 )
 
 type OperationStatusRequestData struct {
-	OK bool
+	InProgress bool
 }
 
 type OperationResponseData struct {
@@ -20,15 +20,15 @@ const (
 	OperationResponseStatusINProgress = "IN_PROGRESS"
 )
 
-var isOk bool
+var isInProgress = true
 
 func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		if isOk {
-			isOk = false
-			rw.WriteHeader(http.StatusOK)
-		} else {
+		if isInProgress {
 			rw.WriteHeader(http.StatusLocked)
+		} else {
+			isInProgress = true
+			rw.WriteHeader(http.StatusOK)
 		}
 	}
 }
@@ -47,7 +47,7 @@ func NewWebHookOperationPostHTTPHandler() func(rw http.ResponseWriter, r *http.R
 			return
 		}
 
-		isOk = okReqData.OK
+		isInProgress = okReqData.InProgress
 		rw.WriteHeader(http.StatusOK)
 	}
 }
@@ -60,10 +60,10 @@ func NewWebHookOperationGetHTTPHandler() func(rw http.ResponseWriter, r *http.Re
 		}
 
 		body := OperationResponseData{
-			Status: OperationResponseStatusINProgress,
+			Status: OperationResponseStatusOK,
 		}
-		if isOk {
-			body.Status = OperationResponseStatusOK
+		if isInProgress {
+			body.Status = OperationResponseStatusINProgress
 		}
 
 		operationResponseDataJSON, err := json.Marshal(body)

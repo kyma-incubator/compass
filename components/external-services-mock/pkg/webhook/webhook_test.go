@@ -23,12 +23,12 @@ func TestWebhook(t *testing.T) {
 
 	t.Run("should return locked after lock", func(t *testing.T) {
 		// Lock
-		okRequestDataFalse := webhook.OperationStatusRequestData{
-			OK: false,
+		requestData := webhook.OperationStatusRequestData{
+			InProgress: true,
 		}
-		jsonValueoOKRequestDataFalse, err := json.Marshal(okRequestDataFalse)
+		jsonRequestData, err := json.Marshal(requestData)
 		require.NoError(t, err)
-		reqPostFalse, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonValueoOKRequestDataFalse))
+		reqPostFalse, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostFalse := httptest.NewRecorder()
 		handlerPostFalse := http.HandlerFunc(webhook.NewWebHookOperationPostHTTPHandler())
@@ -55,12 +55,12 @@ func TestWebhook(t *testing.T) {
 
 	t.Run("should return unlocked after unlock", func(t *testing.T) {
 		// Unlock
-		okRequestDataTrue := webhook.OperationStatusRequestData{
-			OK: true,
+		requestData := webhook.OperationStatusRequestData{
+			InProgress: false,
 		}
-		jsonValueoOKRequestDataTrue, err := json.Marshal(okRequestDataTrue)
+		jsonRequestData, err := json.Marshal(requestData)
 		require.NoError(t, err)
-		reqPostTrue, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonValueoOKRequestDataTrue))
+		reqPostTrue, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostTrue := httptest.NewRecorder()
 		handlerPostTrue := http.HandlerFunc(webhook.NewWebHookOperationPostHTTPHandler())
@@ -87,12 +87,12 @@ func TestWebhook(t *testing.T) {
 
 	t.Run("should fail when call POST handler with GET", func(t *testing.T) {
 		// Unlock
-		okRequestDataTrue := webhook.OperationStatusRequestData{
-			OK: true,
+		requestData := webhook.OperationStatusRequestData{
+			InProgress: true,
 		}
-		jsonValueoOKRequestDataTrue, err := json.Marshal(okRequestDataTrue)
+		jsonRequestData, err := json.Marshal(requestData)
 		require.NoError(t, err)
-		reqPostTrue, err := http.NewRequest(http.MethodGet, "/webhook/delete/operation", bytes.NewBuffer(jsonValueoOKRequestDataTrue))
+		reqPostTrue, err := http.NewRequest(http.MethodGet, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostTrue := httptest.NewRecorder()
 		handlerPostTrue := http.HandlerFunc(webhook.NewWebHookOperationPostHTTPHandler())
@@ -103,12 +103,12 @@ func TestWebhook(t *testing.T) {
 
 	t.Run("should fail when call GET handler with POST", func(t *testing.T) {
 		// Unlock
-		okRequestDataTrue := webhook.OperationStatusRequestData{
-			OK: true,
+		requestData := webhook.OperationStatusRequestData{
+			InProgress: true,
 		}
-		jsonValueoOKRequestDataTrue, err := json.Marshal(okRequestDataTrue)
+		jsonRequestData, err := json.Marshal(requestData)
 		require.NoError(t, err)
-		reqPostTrue, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonValueoOKRequestDataTrue))
+		reqPostTrue, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostTrue := httptest.NewRecorder()
 		handlerPostTrue := http.HandlerFunc(webhook.NewWebHookOperationGetHTTPHandler())
