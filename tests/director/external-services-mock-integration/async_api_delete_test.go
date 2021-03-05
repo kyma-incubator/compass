@@ -43,7 +43,7 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 			{
 				Type:           graphql.WebhookTypeUnregisterApplication,
 				Mode:           webhookModePtr(graphql.WebhookModeAsync),
-				URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"GET\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
+				URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
 				OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
 				StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
 			},
