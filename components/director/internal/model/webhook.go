@@ -2,7 +2,7 @@ package model
 
 type Webhook struct {
 	ID                    string
-	TenantID              string
+	TenantID              *string
 	ApplicationID         *string
 	ApplicationTemplateID *string
 	RuntimeID             *string
@@ -51,9 +51,9 @@ const (
 	WebhookModeAsync WebhookMode = "ASYNC"
 )
 
-type WebhookConverterFunc func(i WebhookInput, id, tenant, resourceID string) *Webhook
+type WebhookConverterFunc func(i WebhookInput, id string, tenant *string, resourceID string) *Webhook
 
-func (i *WebhookInput) ToApplicationWebhook(id, tenant, applicationID string) *Webhook {
+func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicationID string) *Webhook {
 	if i == nil {
 		return nil
 	}
@@ -63,7 +63,7 @@ func (i *WebhookInput) ToApplicationWebhook(id, tenant, applicationID string) *W
 	return webhook
 }
 
-func (i *WebhookInput) ToApplicationTemplateWebhook(id, tenant, appTemplateID string) *Webhook {
+func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, appTemplateID string) *Webhook {
 	if i == nil {
 		return nil
 	}
@@ -73,7 +73,7 @@ func (i *WebhookInput) ToApplicationTemplateWebhook(id, tenant, appTemplateID st
 	return webhook
 }
 
-func (i *WebhookInput) toGenericWebhook(id, tenant string) *Webhook {
+func (i *WebhookInput) toGenericWebhook(id string, tenant *string) *Webhook {
 	return &Webhook{
 		ID:             id,
 		TenantID:       tenant,

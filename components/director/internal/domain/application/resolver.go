@@ -56,7 +56,7 @@ type EventingService interface {
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.Webhook, error)
 	List(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	Create(ctx context.Context, applicationID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error)
+	Create(ctx context.Context, resourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error)
 	Update(ctx context.Context, id string, in model.WebhookInput) error
 	Delete(ctx context.Context, id string) error
 }

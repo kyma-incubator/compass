@@ -145,7 +145,7 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 
 	return Entity{
 		ID:                    in.ID,
-		TenantID:              in.TenantID,
+		TenantID:              repo.NewNullableString(in.TenantID),
 		ApplicationID:         repo.NewNullableString(in.ApplicationID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
 		RuntimeID:             repo.NewNullableString(in.RuntimeID),
@@ -196,9 +196,9 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 
 	return model.Webhook{
 		ID:                    in.ID,
-		TenantID:              in.TenantID,
+		TenantID:              repo.StringPtrFromNullableString(in.TenantID),
 		ApplicationID:         repo.StringPtrFromNullableString(in.ApplicationID),
-		ApplicationTemplateID: repo.StringPtrFromNullableString(in.ApplicationID),
+		ApplicationTemplateID: repo.StringPtrFromNullableString(in.ApplicationTemplateID),
 		RuntimeID:             repo.StringPtrFromNullableString(in.RuntimeID),
 		IntegrationSystemID:   repo.StringPtrFromNullableString(in.IntegrationSystemID),
 		CorrelationIDKey:      repo.StringPtrFromNullableString(in.CollectionIDKey),

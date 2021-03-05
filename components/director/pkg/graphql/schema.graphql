@@ -685,6 +685,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
+	webhooks: [Webhook!]
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!

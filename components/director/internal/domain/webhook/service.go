@@ -15,9 +15,10 @@ import (
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error)
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
+	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, item *model.Webhook) error
 	Update(ctx context.Context, item *model.Webhook) error
-	Delete(ctx context.Context, tenant, id string) error
+	Delete(ctx context.Context, id string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -58,18 +59,22 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Webh
 	return s.repo.ListByApplicationID(ctx, tnt, applicationID)
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
+func (s *service) ListForTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
+	return s.repo.ListByApplicationTemplateID(ctx, applicationTemplateID)
+}
+
+func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 	id := s.uidSvc.Generate()
-	webhook := converterFunc(in, id, tnt, applicationID)
+	webhook := converterFunc(in, id, &tnt, owningResourceID)
 
 	if err = s.repo.Create(ctx, webhook); err != nil {
-		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
+		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
 	}
-	log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
+	log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
 
 	return webhook.ID, nil
 }
@@ -96,5 +101,12 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	return s.repo.Delete(ctx, webhook.TenantID, webhook.ID)
+	return s.repo.Delete(ctx, webhook.ID)
 }
+
+type OwningResource string
+
+const (
+	ApplicationTemplateWebhookOwner OwningResource = "ApplicationTemplate"
+	ApplicationWebhookOwner         OwningResource = "Application"
+)

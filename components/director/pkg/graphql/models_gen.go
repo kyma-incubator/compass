@@ -96,15 +96,6 @@ type ApplicationStatus struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
-type ApplicationTemplate struct {
-	ID               string                         `json:"id"`
-	Name             string                         `json:"name"`
-	Description      *string                        `json:"description"`
-	ApplicationInput string                         `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinition       `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
-}
-
 // **Validation:** provided placeholders' names are unique and used in applicationInput
 type ApplicationTemplateInput struct {
 	// **Validation:** ASCII printable characters, max=100

@@ -107,7 +107,7 @@ func NewRootResolver(
 	tenantConverter := tenant.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	appTemplateConverter := apptemplate.NewConverter(appConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 
@@ -136,7 +136,7 @@ func NewRootResolver(
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -163,7 +163,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
-		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
+		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter),
 		api:                api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter, specSvc, specConverter),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -194,6 +194,11 @@ func (r *RootResolver) Query() graphql.QueryResolver {
 func (r *RootResolver) Application() graphql.ApplicationResolver {
 	return &applicationResolver{r}
 }
+
+func (r *RootResolver) ApplicationTemplate() graphql.ApplicationTemplateResolver {
+	return &applicationTemplateResolver{r}
+}
+
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
 }
@@ -538,6 +543,14 @@ func (r *applicationResolver) Bundles(ctx context.Context, obj *graphql.Applicat
 }
 func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
 	return r.app.Bundle(ctx, obj, id)
+}
+
+type applicationTemplateResolver struct {
+	*RootResolver
+}
+
+func (r applicationTemplateResolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplate) ([]*graphql.Webhook, error) {
+	return r.appTemplate.Webhooks(ctx, obj)
 }
 
 type runtimeResolver struct {

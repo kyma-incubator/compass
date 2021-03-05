@@ -36,7 +36,7 @@ type ApplicationRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
-	Create(ctx context.Context, item *model.Application) error
+	Create(ctx context.Context, item *model.Application, appTemplateID *string) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -219,79 +219,30 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+type RepoCreator func(ctx context.Context, application *model.Application) error
+
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
-
-	applications, err := s.appRepo.ListAll(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
-	normalizedName := s.appNameNormalizer.Normalize(in.Name)
-	for _, app := range applications {
-		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
-			return "", apperrors.NewNotUniqueNameError(resource.Application)
-		}
-	}
-
-	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
-	if err != nil {
-		return "", errors.Wrap(err, "while ensuring integration system exists")
-	}
-
-	if !exists {
-		return "", apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
-	}
-
-	id := s.uidService.Generate()
-	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
-
-	app := in.ToApplication(s.timestampGen(), id, appTenant)
-
-	err = s.appRepo.Create(ctx, app)
-	if err != nil {
-		return "", errors.Wrapf(err, "while creating Application with name %s", in.Name)
-	}
-
-	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
-
-	if in.Labels == nil {
-		in.Labels = map[string]interface{}{}
-	}
-	in.Labels[intSysKey] = ""
-	if in.IntegrationSystemID != nil {
-		in.Labels[intSysKey] = *in.IntegrationSystemID
-	}
-	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
-	if err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
-	}
-
-	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
-	if err != nil {
-		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
-	}
-
-	if in.Bundles != nil {
-		err = s.bndlService.CreateMultiple(ctx, id, in.Bundles)
+	creator := func(ctx context.Context, application *model.Application) (err error) {
+		err = s.appRepo.Create(ctx, application, nil)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
+			return errors.Wrapf(err, "while creating Application with name %s", application.Name)
 		}
+		return
 	}
 
-	return id, nil
+	return s.genericCreate(ctx, in, creator)
+}
+
+func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateId *string) (string, error) {
+	creator := func(ctx context.Context, application *model.Application) (err error) {
+		err = s.appRepo.Create(ctx, application, appTemplateId)
+		if err != nil {
+			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
+		}
+		return
+	}
+
+	return s.genericCreate(ctx, in, creator)
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
@@ -441,7 +392,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	var err error
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), tenant, applicationID))
+		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), &tenant, applicationID))
 	}
 	err = s.webhookRepo.CreateMany(ctx, webhooks)
 	if err != nil {
@@ -450,6 +401,82 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 
 	return nil
 }
+
+func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegisterInput, creator RepoCreator) (string, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
+
+	applications, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	normalizedName := s.appNameNormalizer.Normalize(in.Name)
+	for _, app := range applications {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
+			return "", apperrors.NewNotUniqueNameError(resource.Application)
+		}
+	}
+
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	if err != nil {
+		return "", errors.Wrap(err, "while ensuring integration system exists")
+	}
+
+	if !exists {
+		return "", apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
+	}
+
+	id := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
+
+	app := in.ToApplication(s.timestampGen(), id, appTenant)
+
+	err = creator(ctx, app)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
+	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
+
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+	in.Labels[intSysKey] = ""
+	if in.IntegrationSystemID != nil {
+		in.Labels[intSysKey] = *in.IntegrationSystemID
+	}
+	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
+	}
+
+	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
+	}
+
+	if in.Bundles != nil {
+		err = s.bndlService.CreateMultiple(ctx, id, in.Bundles)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
+		}
+	}
+
+	return id, nil
+}
+
 func createLabel(key string, value string, objectID string) *model.LabelInput {
 	return &model.LabelInput{
 		Key:        key,

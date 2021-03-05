@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	webhookColumns         = []string{"id", "tenant_id", "app_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	webhookColumns         = []string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 	tenantColumn           = "tenant_id"
@@ -34,22 +34,26 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	singleGetter repo.SingleGetter
-	updater      repo.Updater
-	creator      repo.Creator
-	deleter      repo.Deleter
-	lister       repo.Lister
-	conv         EntityConverter
+	singleGetter  repo.SingleGetter
+	updater       repo.Updater
+	creator       repo.Creator
+	deleterGlobal repo.DeleterGlobal
+	deleter       repo.Deleter
+	lister        repo.Lister
+	listerGlobal  repo.ListerGlobal
+	conv          EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter: repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
-		creator:      repo.NewCreator(resource.Webhook, tableName, webhookColumns),
-		updater:      repo.NewUpdater(resource.Webhook, tableName, updatableColumns, tenantColumn, []string{"id", "app_id"}),
-		deleter:      repo.NewDeleter(resource.Webhook, tableName, tenantColumn),
-		lister:       repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
-		conv:         conv,
+		singleGetter:  repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		creator:       repo.NewCreator(resource.Webhook, tableName, webhookColumns),
+		updater:       repo.NewUpdater(resource.Webhook, tableName, updatableColumns, tenantColumn, []string{"id", "app_id"}),
+		deleterGlobal: repo.NewDeleterGlobal(resource.Webhook, tableName),
+		deleter:       repo.NewDeleter(resource.Webhook, tableName, tenantColumn),
+		lister:        repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		listerGlobal:  repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
+		conv:          conv,
 	}
 }
 
@@ -73,6 +77,29 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 	}
 
 	if err := r.lister.List(ctx, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	var out []*model.Webhook
+	for _, ent := range entities {
+		w, err := r.conv.FromEntity(ent)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Webhook to model")
+		}
+		out = append(out, &w)
+	}
+
+	return out, nil
+}
+
+func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
+	var entities Collection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("app_template_id", applicationTemplateID),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -122,8 +149,8 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
-func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+func (r *repository) Delete(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {

@@ -37,6 +37,7 @@ type Config struct {
 type ResolverRoot interface {
 	APISpec() APISpecResolver
 	Application() ApplicationResolver
+	ApplicationTemplate() ApplicationTemplateResolver
 	Bundle() BundleResolver
 	Document() DocumentResolver
 	EventSpec() EventSpecResolver
@@ -132,6 +133,7 @@ type ComplexityRoot struct {
 		ID               func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Placeholders     func(childComplexity int) int
+		Webhooks         func(childComplexity int) int
 	}
 
 	ApplicationTemplatePage struct {
@@ -536,6 +538,9 @@ type ApplicationResolver interface {
 	Bundle(ctx context.Context, obj *Application, id string) (*Bundle, error)
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
+}
+type ApplicationTemplateResolver interface {
+	Webhooks(ctx context.Context, obj *ApplicationTemplate) ([]*Webhook, error)
 }
 type BundleResolver interface {
 	InstanceAuth(ctx context.Context, obj *Bundle, id string) (*BundleInstanceAuth, error)
@@ -1035,6 +1040,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplate.Placeholders(childComplexity), true
+
+	case "ApplicationTemplate.webhooks":
+		if e.complexity.ApplicationTemplate.Webhooks == nil {
+			break
+		}
+
+		return e.complexity.ApplicationTemplate.Webhooks(childComplexity), true
 
 	case "ApplicationTemplatePage.data":
 		if e.complexity.ApplicationTemplatePage.Data == nil {
@@ -4020,6 +4032,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
+	webhooks: [Webhook!]
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -8383,6 +8396,40 @@ func (ec *executionContext) _ApplicationTemplate_description(ctx context.Context
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationTemplate_webhooks(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ApplicationTemplate().Webhooks(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Webhook)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplate_applicationInput(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
@@ -22888,29 +22935,40 @@ func (ec *executionContext) _ApplicationTemplate(ctx context.Context, sel ast.Se
 		case "id":
 			out.Values[i] = ec._ApplicationTemplate_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._ApplicationTemplate_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._ApplicationTemplate_description(ctx, field, obj)
+		case "webhooks":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ApplicationTemplate_webhooks(ctx, field, obj)
+				return res
+			})
 		case "applicationInput":
 			out.Values[i] = ec._ApplicationTemplate_applicationInput(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "placeholders":
 			out.Values[i] = ec._ApplicationTemplate_placeholders(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "accessLevel":
 			out.Values[i] = ec._ApplicationTemplate_accessLevel(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

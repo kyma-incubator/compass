@@ -41,15 +41,8 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
-type webhookOwnerName string
-
-const (
-	ApplicationWebhookOwner         webhookOwnerName = "Application"
-	ApplicationTemplateWebhookOwner webhookOwnerName = "ApplicationTemplate"
-)
-
 type webhookOwner struct {
-	webhookOwnerName
+	OwningResource
 	id string
 }
 
@@ -95,9 +88,9 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 
 	var owner webhookOwner
 	if appSpecified {
-		owner = webhookOwner{webhookOwnerName: ApplicationWebhookOwner, id: *applicationID}
+		owner = webhookOwner{OwningResource: ApplicationWebhookOwner, id: *applicationID}
 	} else if appTemplateSpecified {
-		owner = webhookOwner{webhookOwnerName: ApplicationTemplateWebhookOwner, id: *applicationTemplateID}
+		owner = webhookOwner{OwningResource: ApplicationTemplateWebhookOwner, id: *applicationTemplateID}
 	}
 
 	id, err := r.checkForExistenceAndCreate(ctx, owner, *convertedIn)
@@ -183,7 +176,7 @@ func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, owningResourc
 		existsFunc    ExistsFunc
 	)
 
-	switch owningResource.webhookOwnerName {
+	switch owningResource.OwningResource {
 	case ApplicationWebhookOwner:
 		converterFunc = model.WebhookInput.ToApplicationWebhook
 		existsFunc = r.appSvc.Exist
@@ -191,7 +184,7 @@ func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, owningResourc
 		converterFunc = model.WebhookInput.ToApplicationTemplateWebhook
 		existsFunc = r.appTemplateSvc.Exists
 	}
-	err := r.genericCheckExistence(ctx, owningResource.id, string(owningResource.webhookOwnerName), existsFunc)
+	err := r.genericCheckExistence(ctx, owningResource.id, string(owningResource.OwningResource), existsFunc)
 	if err != nil {
 		return "", err
 	}

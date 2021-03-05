@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -21,11 +22,12 @@ type AppConverter interface {
 }
 
 type converter struct {
-	appConverter AppConverter
+	appConverter     AppConverter
+	webhookConverter WebhookConverter
 }
 
-func NewConverter(appConverter AppConverter) *converter {
-	return &converter{appConverter: appConverter}
+func NewConverter(appConverter AppConverter, webhookConverter WebhookConverter) *converter {
+	return &converter{appConverter: appConverter, webhookConverter: webhookConverter}
 }
 
 func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error) {
@@ -42,10 +44,16 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 		return nil, errors.Wrapf(err, "while graphqlising application create input")
 	}
 
+	webhooks, err := c.webhooksToGraphql(in.Webhooks)
+	if err != nil {
+		return nil, err
+	}
+
 	return &graphql.ApplicationTemplate{
 		ID:               in.ID,
 		Name:             in.Name,
 		Description:      in.Description,
+		Webhooks:         webhooks,
 		ApplicationInput: gqlAppInput,
 		Placeholders:     c.placeholdersToGraphql(in.Placeholders),
 		AccessLevel:      graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
@@ -78,6 +86,10 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 			return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL input to Application Template model with name %s", in.Name)
 		}
 	}
+	webhooks, err := c.webhookConverter.MultipleInputFromGraphQL(in.Webhooks)
+	if err != nil {
+		return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting webhooks og GraphQL input to Application Template model with name %s", in.Name)
+	}
 
 	return model.ApplicationTemplateInput{
 		Name:                 in.Name,
@@ -85,6 +97,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
+		Webhooks:             webhooks,
 	}, nil
 }
 
@@ -213,4 +226,20 @@ func (c *converter) placeholdersToGraphql(in []model.ApplicationTemplatePlacehol
 	}
 
 	return placeholders
+}
+
+func (c *converter) webhooksToGraphql(in []model.Webhook) ([]graphql.Webhook, error) {
+	webhookPtrs := make([]*model.Webhook, len(in))
+	for i := 0; i < len(in); i++ {
+		webhookPtrs[i] = &in[i]
+	}
+	gqlWebhookPtrs, err := c.webhookConverter.MultipleToGraphQL(webhookPtrs)
+	if err != nil {
+		return nil, fmt.Errorf("while converting webhooks to graphql: %w", err)
+	}
+	gqlWebhooks := make([]graphql.Webhook, len(gqlWebhookPtrs))
+	for i := 0; i < len(gqlWebhookPtrs); i++ {
+		gqlWebhooks[i] = *gqlWebhookPtrs[i]
+	}
+	return gqlWebhooks, nil
 }

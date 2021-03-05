@@ -25,7 +25,7 @@ func NewConverter(webhook WebhookConverter, bndlConverter BundleConverter) *conv
 	return &converter{webhook: webhook, bndl: bndlConverter}
 }
 
-func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
+func (c *converter) ToEntity(in *model.Application, appTemplateId *string) (*Entity, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -35,16 +35,17 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	return &Entity{
-		TenantID:            in.Tenant,
-		Name:                in.Name,
-		ProviderName:        repo.NewNullableString(in.ProviderName),
-		Description:         repo.NewNullableString(in.Description),
-		StatusCondition:     string(in.Status.Condition),
-		StatusTimestamp:     in.Status.Timestamp,
-		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
-		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
-		BaseURL:             repo.NewNullableString(in.BaseURL),
-		Labels:              repo.NewNullableStringFromJSONRawMessage(in.Labels),
+		TenantID:              in.Tenant,
+		ApplicationTemplateID: repo.NewNullableString(appTemplateId),
+		Name:                  in.Name,
+		ProviderName:          repo.NewNullableString(in.ProviderName),
+		Description:           repo.NewNullableString(in.Description),
+		StatusCondition:       string(in.Status.Condition),
+		StatusTimestamp:       in.Status.Timestamp,
+		HealthCheckURL:        repo.NewNullableString(in.HealthCheckURL),
+		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
+		BaseURL:               repo.NewNullableString(in.BaseURL),
+		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,

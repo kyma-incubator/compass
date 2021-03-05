@@ -4,7 +4,7 @@ import "database/sql"
 
 type Entity struct {
 	ID                    string         `db:"id"`
-	TenantID              string         `db:"tenant_id"`
+	TenantID              sql.NullString `db:"tenant_id"`
 	ApplicationID         sql.NullString `db:"app_id"`
 	ApplicationTemplateID sql.NullString `db:"app_template_id"`
 	RuntimeID             sql.NullString `db:"runtime_id"`
