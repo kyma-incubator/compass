@@ -67,8 +67,7 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 
 	t.Log("Unlock the mock application webhook")
 	unlockWebhook(t, operationFullPath)
-	isInDesiredState, webhookResponse := isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK)
-	require.True(t, isInDesiredState, fmt.Sprintf("Webhook responded with: %s. Expected state: %s", webhookResponse, webhook.OperationResponseStatusOK))
+	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
 	t.Log("Start async Delete of application")
 	unregisterAsyncApplicationInTenant(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
@@ -87,16 +86,9 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	require.NotEmpty(t, operation)
 
 	t.Log(fmt.Sprintf("Verify operation CR with name %s is in progress", operationName))
-	counter := 0
-	isInDesiredState, webhookResponse = isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
-	for (!isInDesiredState) && counter < 100 {
-		t.Log(fmt.Sprintf("[%s] Webhook responded with: %s. Expected state: %s", time.Now().Format("06.01.02 15:04:05"), webhookResponse, webhook.OperationResponseStatusINProgress))
-		time.Sleep(time.Second * 5)
-		isInDesiredState, webhookResponse = isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
-		counter++
-	}
-	isInDesiredState, webhookResponse = isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
-	require.True(t, isInDesiredState, fmt.Sprintf("Webhook responded with: %s. Expected state: %s", webhookResponse, webhook.OperationResponseStatusINProgress))
+	require.Eventually(t, func() bool {
+		return isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
+	}, time.Minute*3, time.Second*5, "Waiting for state change timed out.")
 
 	t.Log("Verify the application status in director is 'ready:false'")
 	application := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
@@ -104,21 +96,15 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 
 	t.Log("Unlock application webhook")
 	unlockWebhook(t, operationFullPath)
-	isInDesiredState, webhookResponse = isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK)
-	require.True(t, isInDesiredState, fmt.Sprintf("Webhook responded with: %s. Expected state: %s", webhookResponse, webhook.OperationResponseStatusOK))
+	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
 	t.Log(fmt.Sprintf("Verify operation CR with name %s status condition should be ConditionTypeReady", operationName))
-	operation, err = operationsK8sClient.Get(ctx, operationName, metav1.GetOptions{})
-	require.NoError(t, err)
-	counter = 0
-	for !isOperationDeletionCompleted(operation) && counter < 100 {
-		t.Log(fmt.Sprintf("[%s] Operation deletion is not completed yet. The operation state is: %s", time.Now().Format("06.01.02 15:04:05"), operation.Status.Phase))
-		time.Sleep(time.Second * 5)
+	require.Eventually(t, func() bool {
 		operation, err = operationsK8sClient.Get(ctx, operationName, metav1.GetOptions{})
 		require.NoError(t, err)
-		counter++
-	}
-	t.Log(fmt.Sprintf("The operation state is: %s", operation.Status.Phase))
+		t.Log(fmt.Sprintf("The operation state is: %s", operation.Status.Phase))
+		return isOperationDeletionCompleted(operation)
+	}, time.Minute*3, time.Second*5, "Waiting for operation deletion timed out.")
 
 	t.Log("Verify the deleted application do not exists in director")
 	application = getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
@@ -143,7 +129,7 @@ func unlockWebhook(t *testing.T, operationFullPath string) {
 	require.Equal(t, http.StatusOK, respPost.StatusCode)
 }
 
-func isWebhookOperationInDesiredState(t *testing.T, operationFullPath, desiredState string) (isInState bool, response string) {
+func isWebhookOperationInDesiredState(t *testing.T, operationFullPath, desiredState string) (isInState bool) {
 	httpClient := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, operationFullPath, nil)
 	require.NoError(t, err)
@@ -153,7 +139,11 @@ func isWebhookOperationInDesiredState(t *testing.T, operationFullPath, desiredSt
 	fullBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	fullBodyString := string(fullBody)
-	return strings.Contains(fullBodyString, desiredState), fullBodyString
+	responseState := strings.Contains(fullBodyString, desiredState)
+	if !responseState {
+		t.Log(fullBodyString)
+	}
+	return responseState
 }
 
 func isOperationDeletionCompleted(operation *v1alpha1.Operation) bool {
