@@ -29,8 +29,8 @@ import (
 
 func TestAsyncAPIDeleteApplication(t *testing.T) {
 	var (
-		operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, webhook.OperationPath)
-		deleteFullPath    = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, webhook.DeletePath)
+		operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, "webhook/delete/operation")
+		deleteFullPath    = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, "webhook/delete")
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())

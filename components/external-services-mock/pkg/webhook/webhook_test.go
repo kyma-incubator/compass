@@ -12,11 +12,13 @@ import (
 )
 
 func TestWebhook(t *testing.T) {
+	var handler http.HandlerFunc
+
 	t.Run("should return 423 by default", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, "/webhook/delete", nil)
+		req, err := http.NewRequest(http.MethodDelete, "/webhook/delete", nil)
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(webhook.NewDeleteHTTPHandler())
+		handler = webhook.NewDeleteHTTPHandler()
 		handler.ServeHTTP(rr, req)
 		require.Equal(t, http.StatusLocked, rr.Code)
 	})
@@ -31,24 +33,24 @@ func TestWebhook(t *testing.T) {
 		reqPostFalse, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostFalse := httptest.NewRecorder()
-		handlerPostFalse := http.HandlerFunc(webhook.NewWebHookOperationPostHTTPHandler())
-		handlerPostFalse.ServeHTTP(rrPostFalse, reqPostFalse)
+		handler = webhook.NewWebHookOperationPostHTTPHandler()
+		handler.ServeHTTP(rrPostFalse, reqPostFalse)
 		require.Equal(t, http.StatusOK, rrPostFalse.Code)
 
 		// Verify operation is in progress
 		req, err := http.NewRequest(http.MethodGet, "/webhook/delete/operation", nil)
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(webhook.NewWebHookOperationGetHTTPHandler())
+		handler = webhook.NewWebHookOperationGetHTTPHandler()
 		handler.ServeHTTP(rr, req)
 		require.Equal(t, http.StatusOK, rr.Code)
 		require.Contains(t, rr.Body.String(), webhook.OperationResponseStatusINProgress)
 
 		// Verify is locked
-		req, err = http.NewRequest(http.MethodGet, "/webhook/delete", nil)
+		req, err = http.NewRequest(http.MethodDelete, "/webhook/delete", nil)
 		require.NoError(t, err)
 		rr = httptest.NewRecorder()
-		handler = http.HandlerFunc(webhook.NewDeleteHTTPHandler())
+		handler = webhook.NewDeleteHTTPHandler()
 		handler.ServeHTTP(rr, req)
 		require.Equal(t, http.StatusLocked, rr.Code)
 	})
@@ -63,24 +65,24 @@ func TestWebhook(t *testing.T) {
 		reqPostTrue, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostTrue := httptest.NewRecorder()
-		handlerPostTrue := http.HandlerFunc(webhook.NewWebHookOperationPostHTTPHandler())
-		handlerPostTrue.ServeHTTP(rrPostTrue, reqPostTrue)
+		handler = webhook.NewWebHookOperationPostHTTPHandler()
+		handler.ServeHTTP(rrPostTrue, reqPostTrue)
 		require.Equal(t, http.StatusOK, rrPostTrue.Code)
 
 		// Verify operation is succeeded
 		req, err := http.NewRequest(http.MethodGet, "/webhook/delete/operation", nil)
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(webhook.NewWebHookOperationGetHTTPHandler())
+		handler = webhook.NewWebHookOperationGetHTTPHandler()
 		handler.ServeHTTP(rr, req)
 		require.Equal(t, http.StatusOK, rr.Code)
 		require.Contains(t, rr.Body.String(), webhook.OperationResponseStatusOK)
 
 		// Verify is unlocked
-		req, err = http.NewRequest(http.MethodGet, "/webhook/delete", nil)
+		req, err = http.NewRequest(http.MethodDelete, "/webhook/delete", nil)
 		require.NoError(t, err)
 		rr = httptest.NewRecorder()
-		handler = http.HandlerFunc(webhook.NewDeleteHTTPHandler())
+		handler = webhook.NewDeleteHTTPHandler()
 		handler.ServeHTTP(rr, req)
 		require.Equal(t, http.StatusOK, rr.Code)
 	})
@@ -95,8 +97,8 @@ func TestWebhook(t *testing.T) {
 		reqPostTrue, err := http.NewRequest(http.MethodGet, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostTrue := httptest.NewRecorder()
-		handlerPostTrue := http.HandlerFunc(webhook.NewWebHookOperationPostHTTPHandler())
-		handlerPostTrue.ServeHTTP(rrPostTrue, reqPostTrue)
+		handler = webhook.NewWebHookOperationPostHTTPHandler()
+		handler.ServeHTTP(rrPostTrue, reqPostTrue)
 		require.Equal(t, http.StatusMethodNotAllowed, rrPostTrue.Code)
 
 	})
@@ -111,8 +113,8 @@ func TestWebhook(t *testing.T) {
 		reqPostTrue, err := http.NewRequest(http.MethodPost, "/webhook/delete/operation", bytes.NewBuffer(jsonRequestData))
 		require.NoError(t, err)
 		rrPostTrue := httptest.NewRecorder()
-		handlerPostTrue := http.HandlerFunc(webhook.NewWebHookOperationGetHTTPHandler())
-		handlerPostTrue.ServeHTTP(rrPostTrue, reqPostTrue)
+		handler = webhook.NewWebHookOperationGetHTTPHandler()
+		handler.ServeHTTP(rrPostTrue, reqPostTrue)
 		require.Equal(t, http.StatusMethodNotAllowed, rrPostTrue.Code)
 
 	})

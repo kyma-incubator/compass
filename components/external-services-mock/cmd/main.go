@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -89,9 +88,9 @@ func initHTTP(cfg config) http.Handler {
 	basicAuthRouter.Use(h.basicAuthMiddleware)
 	basicAuthRouter.HandleFunc("/spec", apispec.HandleFunc)
 
-	router.HandleFunc(fmt.Sprintf("/%s", webhook.DeletePath), webhook.NewDeleteHTTPHandler()).Methods(http.MethodGet)
-	router.HandleFunc(fmt.Sprintf("/%s", webhook.OperationPath), webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
-	router.HandleFunc(fmt.Sprintf("/%s", webhook.OperationPath), webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
+	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
 	return router
 }

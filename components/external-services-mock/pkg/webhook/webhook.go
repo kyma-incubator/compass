@@ -14,8 +14,8 @@ type OperationResponseData struct {
 }
 
 const (
-	OperationPath                     = "webhook/delete/operation"
-	DeletePath                        = "webhook/delete"
+	OperationPath                     = "/webhook/delete/operation"
+	DeletePath                        = "/webhook/delete"
 	OperationResponseStatusOK         = "SUCCEEDED"
 	OperationResponseStatusINProgress = "IN_PROGRESS"
 )
@@ -24,6 +24,10 @@ var isInProgress = true
 
 func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			rw.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
 		if isInProgress {
 			rw.WriteHeader(http.StatusLocked)
 		} else {
