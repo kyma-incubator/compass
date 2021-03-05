@@ -131,12 +131,12 @@ func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
 
 func unlockWebhook(t *testing.T, operationFullPath string) {
 	httpClient := http.Client{}
-	okRequestData := webhook.OKRequestData{
-		OK: true,
+	requestData := webhook.OperationStatusRequestData{
+		InProgress: false,
 	}
-	jsonValueoOKRequestData, err := json.Marshal(okRequestData)
+	jsonRequestData, err := json.Marshal(requestData)
 	require.NoError(t, err)
-	reqPost, err := http.NewRequest(http.MethodPost, operationFullPath, bytes.NewBuffer(jsonValueoOKRequestData))
+	reqPost, err := http.NewRequest(http.MethodPost, operationFullPath, bytes.NewBuffer(jsonRequestData))
 	require.NoError(t, err)
 	respPost, err := httpClient.Do(reqPost)
 	require.NoError(t, err)
