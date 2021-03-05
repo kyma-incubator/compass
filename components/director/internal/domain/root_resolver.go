@@ -171,7 +171,7 @@ func NewRootResolver(
 		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		runtimeContext:     runtime_context.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
-		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
+		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
 		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
@@ -357,14 +357,14 @@ func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id str
 func (r *mutationResolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.DeleteApplicationTemplate(ctx, id)
 }
-func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)
+func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	return r.webhook.AddWebhook(ctx, applicationID, applicationTemplateID, in)
 }
 func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	return r.webhook.UpdateApplicationWebhook(ctx, webhookID, in)
+	return r.webhook.UpdateWebhook(ctx, webhookID, in)
 }
 func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
-	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
+	return r.webhook.DeleteWebhook(ctx, webhookID)
 }
 
 func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {

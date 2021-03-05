@@ -27,6 +27,7 @@ type ApplicationTemplateInput struct {
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
+	Webhooks             []*WebhookInput
 }
 
 type ApplicationTemplateAccessLevel string

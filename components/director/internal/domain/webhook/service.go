@@ -58,13 +58,13 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Webh
 	return s.repo.ListByApplicationID(ctx, tnt, applicationID)
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.WebhookInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 	id := s.uidSvc.Generate()
-	webhook := in.ToWebhook(id, tnt, applicationID)
+	webhook := converterFunc(in, id, tnt, applicationID)
 
 	if err = s.repo.Create(ctx, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
@@ -80,7 +80,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	webhook = in.ToWebhook(id, webhook.TenantID, *webhook.ApplicationID)
+	webhook = in.ToApplicationWebhook(id, webhook.TenantID, *webhook.ApplicationID)
 
 	err = s.repo.Update(ctx, webhook)
 	if err != nil {
