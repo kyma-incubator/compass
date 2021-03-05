@@ -20,11 +20,23 @@ spec:
     - from:
       - source:
           principals:
+          - {{ tpl .Values.istio.rbac.directorInternalApi.compassOperationsController . }}
+      to:
+      - operation:
+          ports:
+          - "{{ .Values.global.director.operations.port }}"
+
+    - from:
+      - source:
+          principals:
           - {{ tpl .Values.istio.rbac.directorInternalApi.compassConnector . }}
+      to:
+      - operation:
+          ports:
+          - "{{ .Values.global.director.graphql.internal.port }}"
     - to:
       - operation:
           ports:
-          - "{{ .Values.global.director.metrics.port }}"
-          - "{{ .Values.global.director.validator.port }}"
           - "{{ .Values.global.director.graphql.external.port }}"
-  {{ end }}
+          - "{{ .Values.global.director.metrics.port }}"
+{{ end }}

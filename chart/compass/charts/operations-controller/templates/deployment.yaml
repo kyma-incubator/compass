@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    control-plane: controller-manager
+  name: {{ template "fullname" . }}-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.manager.replicaCount }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: {{ template "fullname" . }}
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+      - env:
+          - name: SERVER_METRIC_ADDRESS
+            value: "127.0.0.1:{{ .Values.metrics.port }}"
+          - name: SERVER_ENABLE_LEADER_ELECTION
+            value: "true"
+          - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
+            value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
+          - name: DIRECTOR_INTERNAL_ADDRESS
+            value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.operations.port }}"
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
+        name: manager
+        ports:
+          - name: metrics
+            containerPort: {{ .Values.metrics.port }}
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      terminationGracePeriodSeconds: 10
