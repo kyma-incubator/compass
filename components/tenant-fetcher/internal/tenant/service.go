@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
