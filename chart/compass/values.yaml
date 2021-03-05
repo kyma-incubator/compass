@@ -31,7 +31,7 @@ global:
       version: "PR-1717"
     tenant_fetcher:
       dir:
-      version: "PR-1752"
+      version: "PR-1753"
     ord_service:
       dir:
       version: "PR-14"
@@ -67,7 +67,7 @@ global:
         version: "PR-1717"
       tenant_fetcher:
         dir:
-        version: "PR-1752"
+        version: "PR-1753"
       system_broker:
         dir:
         version: "PR-1738"
