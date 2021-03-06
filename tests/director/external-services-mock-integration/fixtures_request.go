@@ -60,7 +60,11 @@ func fixApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
+				id
+				name
 				ready
+				deletedAt
+				error
 				}	
 			}`, id))
 }

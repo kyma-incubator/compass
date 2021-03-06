@@ -62,6 +62,7 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	app := graphql.ApplicationExt{}
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
 	require.NoError(t, err)
+	nearCreationTime := time.Now().Add(-1 * time.Second)
 
 	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
 
@@ -91,26 +92,32 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	}, time.Minute*3, time.Second*5, "Waiting for state change timed out.")
 
 	t.Log("Verify the application status in director is 'ready:false'")
-	application := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
-	require.False(t, application.Ready, "Application is not in status ready:false")
-	require.Empty(t, application.Error, "Application Error is not empty")
-	require.NotEmpty(t, application.DeletedAt, "Application Deletion time is not empty")
+	deletedApp := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	require.NoError(t, err)
+	require.False(t, deletedApp.Ready, "Application is not in status ready:false")
+	require.Empty(t, deletedApp.Error, "Application Error is not empty")
+
+	t.Log("Verify DeletedAt in director is set and is in expected range")
+	require.NotEmpty(t, deletedApp.DeletedAt, "Application Deletion time is not empty")
+	deletedAtTime := time.Time(*deletedApp.DeletedAt)
+	require.True(t, nearCreationTime.Before(deletedAtTime), "Deleted time is before creation time")
+	require.True(t, time.Now().After(deletedAtTime), "Deleted time is in the future")
 
 	t.Log("Unlock application webhook")
 	unlockWebhook(t, operationFullPath)
 	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
-	t.Log(fmt.Sprintf("Verify operation CR with name %s status condition should be ConditionTypeReady", operationName))
+	t.Log(fmt.Sprintf("Verify operation CR with name %s status condition is ConditionTypeReady", operationName))
 	require.Eventually(t, func() bool {
 		operation, err = operationsK8sClient.Get(ctx, operationName, metav1.GetOptions{})
 		require.NoError(t, err)
 		t.Log(fmt.Sprintf("The operation state is: %s", operation.Status.Phase))
 		return isOperationDeletionCompleted(operation)
-	}, time.Minute*3, time.Second*5, "Waiting for operation deletion timed out.")
+	}, time.Minute*3, time.Second*10, "Waiting for operation deletion timed out.")
 
 	t.Log("Verify the deleted application do not exists in director")
-	application = getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
-	require.Empty(t, application.Name, "Application is not deleted")
+	missingApp := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	require.Empty(t, missingApp.Name, "Application is not deleted")
 }
 
 func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
