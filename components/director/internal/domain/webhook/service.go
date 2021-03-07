@@ -69,7 +69,7 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 	id := s.uidSvc.Generate()
-	webhook := converterFunc(in, id, &tnt, owningResourceID)
+	webhook := converterFunc(&in, id, &tnt, owningResourceID)
 
 	if err = s.repo.Create(ctx, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
@@ -85,7 +85,13 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	webhook = in.ToApplicationWebhook(id, webhook.TenantID, *webhook.ApplicationID)
+	if webhook.ApplicationID != nil {
+		webhook = in.ToApplicationWebhook(id, webhook.TenantID, *webhook.ApplicationID)
+	} else if webhook.ApplicationTemplateID != nil {
+		webhook = in.ToApplicationTemplateWebhook(id, webhook.TenantID, *webhook.ApplicationTemplateID)
+	} else {
+		return errors.New("while updating Webhook: webhook doesn't have neither of applicaiton_id and applicaiton_template_id")
+	}
 
 	err = s.repo.Update(ctx, webhook)
 	if err != nil {

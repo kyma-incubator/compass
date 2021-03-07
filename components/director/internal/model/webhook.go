@@ -51,7 +51,7 @@ const (
 	WebhookModeAsync WebhookMode = "ASYNC"
 )
 
-type WebhookConverterFunc func(i WebhookInput, id string, tenant *string, resourceID string) *Webhook
+type WebhookConverterFunc func(i *WebhookInput, id string, tenant *string, resourceID string) *Webhook
 
 func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicationID string) *Webhook {
 	if i == nil {

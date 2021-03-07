@@ -158,12 +158,16 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, appli
 }
 
 func PrintOwnerInfo(item *model.Webhook) string {
-	appID := ""
-	runtimeID := ""
-	integrationSystemID := ""
-
+	var (
+		owningResource      OwningResource
+		resourceID          string
+		runtimeID           string
+		integrationSystemID string
+	)
 	if item.ApplicationID != nil {
-		appID = *item.ApplicationID
+		resourceID = *item.ApplicationID
+	} else if item.ApplicationTemplateID != nil {
+		resourceID = *item.ApplicationTemplateID
 	}
 
 	if item.RuntimeID != nil {
@@ -174,5 +178,5 @@ func PrintOwnerInfo(item *model.Webhook) string {
 		integrationSystemID = *item.IntegrationSystemID
 	}
 
-	return fmt.Sprintf("Application ID: %q, Runtime ID: %q, Integration System ID: %q", appID, runtimeID, integrationSystemID)
+	return fmt.Sprintf("%s ID: %q, Runtime ID: %q, Integration System ID: %q", owningResource, resourceID, runtimeID, integrationSystemID)
 }

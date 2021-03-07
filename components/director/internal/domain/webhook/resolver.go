@@ -178,10 +178,10 @@ func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, owningResourc
 
 	switch owningResource.OwningResource {
 	case ApplicationWebhookOwner:
-		converterFunc = model.WebhookInput.ToApplicationWebhook
+		converterFunc = (*model.WebhookInput).ToApplicationWebhook
 		existsFunc = r.appSvc.Exist
 	case ApplicationTemplateWebhookOwner:
-		converterFunc = model.WebhookInput.ToApplicationTemplateWebhook
+		converterFunc = (*model.WebhookInput).ToApplicationTemplateWebhook
 		existsFunc = r.appTemplateSvc.Exists
 	}
 	err := r.genericCheckExistence(ctx, owningResource.id, string(owningResource.OwningResource), existsFunc)
