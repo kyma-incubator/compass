@@ -95,6 +95,11 @@ docker run --name ${DIRECTOR_CONTAINER} -d --network=${NETWORK} \
     -v "${STATIC_GROUPS_PATH}:/data/static-groups.yaml" \
     -v "${HOST_ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
+    -e APP_GRAPHQL_INTERNAL_ADDRESS=0.0.0.0:3001 \
+    -e APP_INTERNAL_ADDRESS=0.0.0.0:3002 \
+    -e APP_HYDRATOR_ADDRESS=0.0.0.0:8080 \
+    -e APP_METRICS_ADDRESS=0.0.0.0:3003 \
+    -e APP_DISABLE_ASYNC_MODE=true \
     -e APP_DB_USER=${APP_DB_USER} \
     -e APP_DB_PASSWORD=${APP_DB_PASSWORD} \
     -e APP_DB_HOST=${POSTGRES_CONTAINER} \
