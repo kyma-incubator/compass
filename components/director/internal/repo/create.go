@@ -56,6 +56,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		now := time.Now()
 		entity.SetCreatedAt(now)
 		entity.SetReady(true)
+		entity.SetError(NewValidNullableString(""))
 
 		if operation.ModeFromCtx(ctx) == graphql.OperationModeAsync {
 			entity.SetReady(false)

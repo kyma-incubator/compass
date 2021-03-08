@@ -1,6 +1,7 @@
 package correlation_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -69,4 +70,51 @@ func TestContextEnrichMiddleware_HeadersForRequest(t *testing.T) {
 			assert.Equal(t, expectedRequestID, actualRequestID)
 		})
 	}
+}
+
+func TestContextEnrichMiddleware_HeadersForRequest_WellKnownCorrelationIDsAreAddedToRequestIfPresentInContextHeaders(t *testing.T) {
+	wellKnownHeaderKey := "x-b3-traceid"
+	wellKnownHeaderValue := "35b74672-9f48-4361-8f47-408832bd5a25"
+
+	ctx := correlation.SaveCorrelationIDHeaderToContext(context.Background(), &wellKnownHeaderKey, &wellKnownHeaderValue)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req = req.WithContext(ctx)
+
+	headers := correlation.HeadersForRequest(req)
+	actualRequestID, ok := headers[correlation.RequestIDHeaderKey]
+	assert.True(t, ok)
+	assert.NotEmpty(t, actualRequestID)
+
+	actualWellKnownRequestIDFromMap, ok := headers[wellKnownHeaderKey]
+	assert.True(t, ok)
+	assert.Equal(t, wellKnownHeaderValue, actualWellKnownRequestIDFromMap)
+
+	wellKnownHeaderKeyTitleCase := "X-B3-Traceid"
+	actualWellKnownRequestIDFromRequest := req.Header[wellKnownHeaderKeyTitleCase][0]
+	assert.True(t, ok)
+	assert.Equal(t, wellKnownHeaderValue, actualWellKnownRequestIDFromRequest)
+}
+
+func TestContextEnrichMiddleware_HeadersForRequest_AdditionalContextHeadersAreAddedToRequest(t *testing.T) {
+	headerKey := "X-Additional-Request-Id"
+	headerValue := "35b74672-9f48-4361-8f47-408832bd5a25"
+
+	ctx := correlation.SaveCorrelationIDHeaderToContext(context.Background(), &headerKey, &headerValue)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req = req.WithContext(ctx)
+
+	headers := correlation.HeadersForRequest(req)
+	actualRequestID, ok := headers[correlation.RequestIDHeaderKey]
+	assert.True(t, ok)
+	assert.NotEmpty(t, actualRequestID)
+
+	actualAdditionalRequestID, ok := headers[headerKey]
+	assert.True(t, ok)
+	assert.Equal(t, headerValue, actualAdditionalRequestID)
+
+	actualAdditionalRequestIDFromRequest := req.Header[headerKey][0]
+	assert.True(t, ok)
+	assert.Equal(t, headerValue, actualAdditionalRequestIDFromRequest)
 }

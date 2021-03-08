@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenFromCorrectTokenProviderAndUsesIt(t *testing.T) {
+func TestSecuredTransport_RoundTripSuccessfullyObtainsAuthorizationFromCorrectAuthorizationProviderAndUsesIt(t *testing.T) {
 	const accessToken = "accessToken"
 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
@@ -22,26 +22,17 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenFromCorrectTokenProvi
 		return nil, nil
 	}
 
-	tokenProviderURL, err := url.Parse("http://url-from-token-provider:8080")
-	require.NoError(t, err)
-	tokenProvider := &httpfakes.FakeTokenProvider{}
-	tokenProvider.MatchesReturns(true)
-	tokenProvider.GetAuthorizationTokenReturns(httputil.Token{
-		AccessToken: accessToken,
-	}, nil)
-	tokenProvider.TargetURLReturns(tokenProviderURL)
+	tokenAuthorizationProvider := &httpfakes.FakeAuthorizationProvider{}
+	tokenAuthorizationProvider.MatchesReturns(true)
+	tokenAuthorizationProvider.GetAuthorizationReturns("Bearer "+accessToken, nil)
 
-	tokenProvider2 := &httpfakes.FakeTokenProvider{}
-	tokenProvider2.MatchesReturns(false)
-	tokenProvider2.GetAuthorizationTokenReturns(httputil.Token{
-		AccessToken: accessToken + "2",
-	}, nil)
+	tokenAuthorizationProvider2 := &httpfakes.FakeAuthorizationProvider{}
+	tokenAuthorizationProvider2.MatchesReturns(false)
+	tokenAuthorizationProvider2.GetAuthorizationReturns("Bearer "+accessToken+"2", nil)
 
-	tokenProvider3 := &httpfakes.FakeTokenProvider{}
-	tokenProvider3.MatchesReturns(true)
-	tokenProvider3.GetAuthorizationTokenReturns(httputil.Token{
-		AccessToken: accessToken + "3",
-	}, nil)
+	tokenAuthorizationProvider3 := &httpfakes.FakeAuthorizationProvider{}
+	tokenAuthorizationProvider3.MatchesReturns(true)
+	tokenAuthorizationProvider3.GetAuthorizationReturns("Bearer "+accessToken+"3", nil)
 
 	testUrl, err := url.Parse("http://localhost:8080")
 	require.NoError(t, err)
@@ -51,34 +42,29 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenFromCorrectTokenProvi
 		Header: map[string][]string{},
 	}
 
-	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
+	securedTransport := httputil.NewSecuredTransport(transport, tokenAuthorizationProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.NoError(t, err)
-	require.Equal(t, request.URL, tokenProviderURL)
 }
 
-func TestSecuredTransport_RoundTripCouldNotObtainTokeWhenNoTokenProviderMatches(t *testing.T) {
+func TestSecuredTransport_RoundTripCouldNotObtainAuthorizationWhenNoAuthorizationProviderMatches(t *testing.T) {
 	const accessToken = "accessToken"
 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripStub = func(req *http.Request) (*http.Response, error) {
 		authHeader := req.Header.Get("Authorization")
-		require.Equal(t, "", authHeader)
+		require.Empty(t, authHeader)
 
 		return nil, nil
 	}
 
-	tokenProvider := &httpfakes.FakeTokenProvider{}
-	tokenProvider.MatchesReturns(false)
-	tokenProvider.GetAuthorizationTokenReturns(httputil.Token{
-		AccessToken: accessToken,
-	}, nil)
+	tokenAuthorizationProvider := &httpfakes.FakeAuthorizationProvider{}
+	tokenAuthorizationProvider.MatchesReturns(false)
+	tokenAuthorizationProvider.GetAuthorizationReturns("Bearer "+accessToken, nil)
 
-	tokenProvider2 := &httpfakes.FakeTokenProvider{}
-	tokenProvider2.MatchesReturns(false)
-	tokenProvider2.GetAuthorizationTokenReturns(httputil.Token{
-		AccessToken: accessToken + "2",
-	}, nil)
+	tokenAuthorizationProvider2 := &httpfakes.FakeAuthorizationProvider{}
+	tokenAuthorizationProvider2.MatchesReturns(false)
+	tokenAuthorizationProvider2.GetAuthorizationReturns("Bearer "+accessToken+"2", nil)
 
 	testUrl, err := url.Parse("http://localhost:8080")
 	require.NoError(t, err)
@@ -88,18 +74,18 @@ func TestSecuredTransport_RoundTripCouldNotObtainTokeWhenNoTokenProviderMatches(
 		Header: map[string][]string{},
 	}
 
-	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
+	securedTransport := httputil.NewSecuredTransport(transport, tokenAuthorizationProvider)
 	_, err = securedTransport.RoundTrip(request)
-	require.EqualError(t, err, "context did not match any token provider")
+	require.EqualError(t, err, "context did not match any authorization provider")
 	require.Equal(t, request.URL, testUrl)
 }
 
-func TestSecuredTransport_RoundTripFailsOnTokenProviderError(t *testing.T) {
+func TestSecuredTransport_RoundTripFailsOnAuthorizationProviderError(t *testing.T) {
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 
-	tokenProvider := &httpfakes.FakeTokenProvider{}
-	tokenProvider.MatchesReturns(true)
-	tokenProvider.GetAuthorizationTokenReturns(httputil.Token{}, errors.New("error"))
+	tokenAuthorizationProvider := &httpfakes.FakeAuthorizationProvider{}
+	tokenAuthorizationProvider.MatchesReturns(true)
+	tokenAuthorizationProvider.GetAuthorizationReturns("", errors.New("error"))
 
 	testUrl, err := url.Parse("http://localhost:8080")
 	require.NoError(t, err)
@@ -109,8 +95,8 @@ func TestSecuredTransport_RoundTripFailsOnTokenProviderError(t *testing.T) {
 		Header: map[string][]string{},
 	}
 
-	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
+	securedTransport := httputil.NewSecuredTransport(transport, tokenAuthorizationProvider)
 	_, err = securedTransport.RoundTrip(request)
-	require.EqualError(t, err, "error while obtaining token: error")
+	require.EqualError(t, err, "error while obtaining authorization: error")
 	require.Equal(t, request.URL, testUrl)
 }

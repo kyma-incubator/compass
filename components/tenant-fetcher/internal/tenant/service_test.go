@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -33,6 +37,8 @@ func TestService_Create(t *testing.T) {
 		TenantProvider: testProviderName,
 	}
 	requestBody, err := json.Marshal(tenantModel)
+	assert.NoError(t, err)
+	invalidRequestBody, err := json.Marshal(model.TenantModel{})
 	assert.NoError(t, err)
 
 	testCases := []struct {
@@ -95,6 +101,30 @@ func TestService_Create(t *testing.T) {
 			ExpectedStatusCode:    500,
 		},
 		{
+			Name: "Error when request body is invalid",
+			TxFn: txGen.ThatSucceeds,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.AssertNotCalled(t, "Create")
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.AssertNotCalled(t, "Generate")
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(invalidRequestBody)),
+			ExpectedErrorOutput:   fmt.Errorf("Property %q not found in body or it is not of String type", tenantProviderTenantIdProperty),
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
 			Name: "Error when beginning transaction",
 			TxFn: txGen.ThatFailsOnBegin,
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -141,6 +171,29 @@ func TestService_Create(t *testing.T) {
 			ExpectedErrorOutput:   testError,
 			ExpectedSuccessOutput: "",
 			ExpectedStatusCode:    500,
+		},
+		{
+			Name: "Object Not Unique error when creating tenant in database should not fail",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(apperrors.NewNotUniqueError(resource.Tenant))
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(testID)
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedSuccessOutput: "https://github.com/kyma-incubator/compass",
+			ExpectedStatusCode:    200,
 		},
 		{
 			Name: "Error when committing transaction in database",
@@ -220,6 +273,8 @@ func TestService_Delete(t *testing.T) {
 	}
 	requestBody, err := json.Marshal(tenantModel)
 	assert.NoError(t, err)
+	invalidRequestBody, err := json.Marshal(model.TenantModel{})
+	assert.NoError(t, err)
 
 	testCases := []struct {
 		Name                  string
@@ -279,6 +334,29 @@ func TestService_Delete(t *testing.T) {
 			ExpectedStatusCode:    500,
 		},
 		{
+			Name: "Error when validating request body",
+			TxFn: txGen.ThatSucceeds,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.AssertNotCalled(t, "DeleteByExternalID")
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(invalidRequestBody)),
+			ExpectedErrorOutput:   fmt.Errorf("Property %q not found in body or it is not of String type", tenantProviderTenantIdProperty),
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
 			Name: "Error when beginning transaction in database",
 			TxFn: txGen.ThatFailsOnBegin,
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -325,6 +403,28 @@ func TestService_Delete(t *testing.T) {
 			ExpectedStatusCode:    500,
 		},
 		{
+			Name: "Object Not Found error when deleting tenant from database should not fail",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(apperrors.NewNotFoundError(resource.Tenant, testID))
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                 testProviderName,
+					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    200,
+		},
+		{
 			Name: "Error when committing transaction in database",
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -367,6 +467,12 @@ func TestService_Delete(t *testing.T) {
 			resp := w.Result()
 			body, err := ioutil.ReadAll(resp.Body)
 			assert.NoError(t, err)
+
+			if testCase.ExpectedErrorOutput != nil {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 
 			if testCase.ExpectedSuccessOutput != "" {
 				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))

@@ -28,18 +28,22 @@ import (
 
 const (
 	AuthorizationHeaderKey = "Authorization"
-	ClientUserHeader       = "client_user"
 )
 
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
 	cachedJWKs          *jwk.Set
+	clientIDHeaderKey   string
 	mux                 sync.Mutex
 }
 
-func New(jwksEndpoint string, allowJWTSigningNone bool) *Authenticator {
-	return &Authenticator{jwksEndpoint: jwksEndpoint, allowJWTSigningNone: allowJWTSigningNone}
+func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string) *Authenticator {
+	return &Authenticator{
+		jwksEndpoint:        jwksEndpoint,
+		allowJWTSigningNone: allowJWTSigningNone,
+		clientIDHeaderKey:   clientIDHeaderKey,
+	}
 }
 
 func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
@@ -82,8 +86,8 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 			ctx = a.contextWithClaims(r.Context(), claims)
 
-			if clientUser := r.Header.Get(ClientUserHeader); clientUser != "" {
-				log.C(ctx).Infof("Found %s header in request with value: %s", ClientUserHeader, clientUser)
+			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
 				ctx = client.SaveToContext(ctx, clientUser)
 			}
 

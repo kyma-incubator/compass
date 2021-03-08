@@ -5,17 +5,19 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types/typesfakes"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 	var (
-		fakeApplicationsLister *osbfakes.FakeApplicationsLister
+		fakeApplicationsLister *typesfakes.FakeApplicationsLister
 		fakeConverter          *osbfakes.FakeConverter
 		endpoint               *osb.CatalogEndpoint
 		app                    *schema.ApplicationExt
@@ -24,7 +26,7 @@ func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 	)
 
 	setup := func() {
-		fakeApplicationsLister = &osbfakes.FakeApplicationsLister{}
+		fakeApplicationsLister = &typesfakes.FakeApplicationsLister{}
 		fakeConverter = &osbfakes.FakeConverter{}
 		endpoint = osb.NewCatalogEndpoint(fakeApplicationsLister, fakeConverter)
 

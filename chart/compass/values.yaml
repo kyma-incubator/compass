@@ -51,16 +51,16 @@ global:
       version: "PR-1720"
     director:
       dir:
-      version: "PR-1738"
+      version: "PR-1733"
     gateway:
       dir:
-      version: "PR-1720"
+      version: "PR-1756"
     operations_controller:
       dir:
-      version: "PR-1717"
+      version: "PR-1747"
     tenant_fetcher:
       dir:
-      version: "PR-1718"
+      version: "PR-1754"
     ord_service:
       dir:
       version: "PR-14"
@@ -69,7 +69,7 @@ global:
       version: "PR-1736"
     system_broker:
       dir:
-      version: "PR-1738"
+      version: "PR-1733"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -80,7 +80,7 @@ global:
       version: "PR-1726"
     console:
       dir:
-      version: "PR-12"
+      version: "PR-19"
     tests:
       e2e:
         dir:
@@ -102,6 +102,10 @@ global:
   director:
     prefix: /director
     port: 3000
+    operations:
+      port: 3002
+
+    clientIDHeaderKey: client_user
 
     tests:
       scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
@@ -188,7 +192,7 @@ global:
           - "Certificate-Data"
 
   operations_controller:
-    enabled: false
+    enabled: true
 
   connectivity_adapter:
     port: 8080
@@ -223,6 +227,9 @@ global:
         - "x-forrequest-id"
         - "x-vcap-request-id"
         - "x-broker-api-request-identity"
+
+  ingress:
+    domainName: "kyma.local"
 
   database:
     manageSecrets: true

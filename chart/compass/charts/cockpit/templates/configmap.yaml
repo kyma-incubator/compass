@@ -17,5 +17,6 @@ data:
         authority: 'https://dex.{{ .Values.global.ingress.domainName }}',
         client_id: 'compass-ui',
         scope: 'audience:server:client_id:compass-ui openid profile email groups',
-      }
+      },
+      clientIDHeaderKey: '{{ .Values.global.director.clientIDHeaderKey }}'
     };

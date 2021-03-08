@@ -22,6 +22,7 @@ import (
 	"time"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
