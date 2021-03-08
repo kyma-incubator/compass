@@ -22,7 +22,7 @@ global:
       version: "PR-1720"
     director:
       dir:
-      version: "PR-1733"
+      version: "PR-1748"
     gateway:
       dir:
       version: "PR-1756"
@@ -48,14 +48,14 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1726"
+      version: "PR-1748"
     console:
       dir:
       version: "PR-19"
     tests:
       director:
         dir:
-        version: "PR-1738"
+        version: "PR-1748"
       connector:
         dir:
         version: "PR-1715"
