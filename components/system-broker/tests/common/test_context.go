@@ -19,8 +19,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	gql "github.com/machinebox/graphql"
 

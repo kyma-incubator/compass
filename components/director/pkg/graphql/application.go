@@ -16,6 +16,8 @@ func (e *Application) GetType() resource.Type {
 	return resource.Application
 }
 
+func (e *Application) Sentinel() {}
+
 // Extended types used by external API
 
 type ApplicationPageExt struct {

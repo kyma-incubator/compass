@@ -84,7 +84,7 @@ func updateOperationSpec(op *operation.Operation, k8sOp *v1alpha1.Operation) *v1
 		ResourceID:        op.ResourceID,
 		CorrelationID:     op.CorrelationID,
 		WebhookIDs:        op.WebhookIDs,
-		RequestData:       op.RequestData,
+		RequestObject:     op.RequestObject,
 	}
 	return k8sOp
 }
