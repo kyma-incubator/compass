@@ -82,9 +82,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
-		key, isOkay := privateJWKS.Get(0)
-		assert.True(t, isOkay)
-		fmt.Printf("-------1------ %v\n", key)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
@@ -122,7 +122,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 		handler := testHandlerWithClientUser(t, defaultTenant, clientUser, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
-		key, _ := privateJWKS.Get(0)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		req.Header.Add(ClientIDHeaderKey, clientUser)
@@ -171,7 +173,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
-		key, _ := privateJWKS2.Get(0)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
@@ -199,7 +203,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
-		key, _ := privateJWKS2.Get(0)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
@@ -274,7 +280,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
-		key, _ := privateJWKS2.Get(0)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
@@ -313,11 +321,12 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key j
 		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
 		ConsumerType: consumer.Runtime,
 	})
-	var k interface{}
-	err := key.Raw(&k)
-	fmt.Printf("-------------2 %v", key.Algorithm())
+
+	var rawKey interface{}
+	err := key.Raw(&rawKey)
 	require.NoError(t, err)
-	signedToken, err := token.SignedString(k)
+
+	signedToken, err := token.SignedString(rawKey)
 	require.NoError(t, err)
 
 	return signedToken

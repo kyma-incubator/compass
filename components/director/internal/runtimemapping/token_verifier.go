@@ -100,12 +100,12 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 
 	if keys, isFound := jwksSet.LookupKeyID(keyID); isFound {
 		if keys.Algorithm() == token.Method.Alg() {
-			var rawkey interface{} // This is the raw key, like *rsa.PrivateKey or *ecdsa.PrivateKey
-			if err := keys.Raw(&rawkey); err != nil {
+			var rawKey interface{}
+			if err := keys.Raw(&rawKey); err != nil {
 				return nil, err
 			}
 
-			return rawkey, nil
+			return rawKey, nil
 		}
 	}
 

@@ -78,8 +78,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		key, isOkay := privateJWKS.Get(0)
-		assert.True(t, isOkay)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
 
 		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -109,8 +109,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		privateJWKS2, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
-		key, isOkay := privateJWKS2.Get(0)
-		assert.True(t, isOkay)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
 		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -140,8 +140,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		privateJWKS2, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
-		key, isOkay := privateJWKS2.Get(0)
-		assert.True(t, isOkay)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
 		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -198,8 +198,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		key, isOkay := privateJWKS2.Get(0)
-		assert.True(t, isOkay)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
 		token := createTokenWithSigningMethod(t, scopes, ZoneId, key)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))

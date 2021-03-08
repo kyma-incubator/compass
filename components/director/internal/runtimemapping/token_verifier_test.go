@@ -291,9 +291,10 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 		tokenVerifier := NewTokenVerifier(jwksCache)
-		k, isOkay := privateKeys.Get(0)
-		assert.True(t, isOkay)
-		token := createSignedToken(t, k)
+		key, ok := privateKeys.Get(0)
+		assert.True(t, ok)
+
+		token := createSignedToken(t, key)
 
 		logger, hook := logrustest.NewNullLogger()
 		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
@@ -321,9 +322,10 @@ func TestTokenVerifier_Verify(t *testing.T) {
 
 		jwksFetch := NewJWKsFetch()
 		tokenVerifier := NewTokenVerifier(jwksFetch)
-		k, isOkay := privateKeys.Get(0)
-		assert.True(t, isOkay)
-		token := createSignedToken(t, k)
+		key, ok := privateKeys.Get(0)
+		assert.True(t, ok)
+
+		token := createSignedToken(t, key)
 
 		// WHEN
 		claims, err := tokenVerifier.Verify(context.TODO(), token)
@@ -418,11 +420,11 @@ func createToken() *jwt.Token {
 func createSignedToken(t *testing.T, key jwk.Key) string {
 	token := createToken()
 
-	var rawkey interface{} // This is the raw key, like *rsa.PrivateKey or *ecdsa.PrivateKey
-	err := key.Raw(&rawkey)
+	var rawKey interface{}
+	err := key.Raw(&rawKey)
 
 	require.NoError(t, err)
-	signedToken, err := token.SignedString(rawkey)
+	signedToken, err := token.SignedString(rawKey)
 	require.NoError(t, err)
 
 	return signedToken
