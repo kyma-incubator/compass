@@ -90,17 +90,14 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, "")
 		w := httptest.NewRecorder()
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
@@ -111,11 +108,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(nil, errors.New("error"))
@@ -123,6 +116,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should fail when can't get OneTimeToken from systemAuth", func(t *testing.T) {
@@ -137,11 +131,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			Value: nil,
 		}
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
@@ -150,6 +140,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should fail when can't compute expiration time", func(t *testing.T) {
@@ -168,11 +159,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			},
 		}
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
@@ -181,6 +168,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should fail for expired token", func(t *testing.T) {
@@ -201,11 +189,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			},
 		}
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
@@ -214,6 +198,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should fail when invalidating token fails", func(t *testing.T) {
@@ -234,11 +219,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			},
 		}
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
@@ -248,6 +229,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		//THEN
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should fail when db transaction commit fails", func(t *testing.T) {
@@ -268,11 +250,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			},
 		}
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
@@ -282,6 +260,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should succeed when token is resolved successfully", func(t *testing.T) {
@@ -303,11 +282,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		}
 		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
 
-		authenticationSession := connector.AuthenticationSession{
-			Subject: "",
-			Extra:   nil,
-			Header:  nil,
-		}
+		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
@@ -317,5 +292,10 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
+}
+
+func emptyAuthSession() connector.AuthenticationSession {
+	return connector.AuthenticationSession{}
 }

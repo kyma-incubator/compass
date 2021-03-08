@@ -3,12 +3,9 @@ package tokens
 import (
 	"context"
 	"fmt"
-	"log"
-
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
 
 	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 )
@@ -56,14 +53,4 @@ func (svc *tokenService) getOneTimeToken(ctx context.Context, id string) (string
 	}
 
 	return resp.GetTokenValue(), nil
-}
-
-func GenerateTestToken(generated CSRTokenResponse) func(args mock.Arguments) {
-	return func(args mock.Arguments) {
-		arg, ok := args.Get(2).(*CSRTokenResponse)
-		if !ok {
-			log.Fatal("could not cast CSRTokenResponse")
-		}
-		*arg = generated
-	}
 }

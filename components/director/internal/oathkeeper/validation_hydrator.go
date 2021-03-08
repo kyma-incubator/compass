@@ -99,10 +99,8 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 		return
 	}
 
-	log.C(ctx).Infof("One Time Token with validity %s for system auth with ID %q has expired", expirationTime.String(), systemAuth.ID)
-
 	if systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(vh.timeService.Now()) {
-		log.C(ctx).Infof("One Time Token for system auth id %s has expired", systemAuth.ID)
+		log.C(ctx).Infof("One Time Token with validity %s for system auth with ID %q has expired", expirationTime.String(), systemAuth.ID)
 		respondWithAuthSession(ctx, w, authSession)
 		return
 	}

@@ -212,7 +212,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		return nil
 	}, retry.Attempts(3))
 	if err != nil {
-		return &model.OneTimeToken{}, errors.Wrapf(err, "while calling adapter [%s] for application [%s] with integration system [%s]", adapterURL, app.ID, *app.IntegrationSystemID)
+		return nil, errors.Wrapf(err, "while calling adapter [%s] for application [%s] with integration system [%s]", adapterURL, app.ID, *app.IntegrationSystemID)
 	}
 	return &model.OneTimeToken{
 		Token: externalToken,

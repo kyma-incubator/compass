@@ -499,6 +499,7 @@ func TestService_GetByID(t *testing.T) {
 	t.Run("success when systemAuth can be fetched from repo", func(t *testing.T) {
 		// GIVEN
 		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
 		repo.On("GetByIDGlobal", context.Background(), authID).Return(&model.SystemAuth{}, nil)
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
@@ -511,6 +512,7 @@ func TestService_GetByID(t *testing.T) {
 	t.Run("error when systemAuth cannot be fetched from repo", func(t *testing.T) {
 		// GIVEN
 		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
 		repo.On("GetByIDGlobal", context.Background(), authID).Return(nil, errors.New("could not fetch"))
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
@@ -533,6 +535,7 @@ func TestService_GetByToken(t *testing.T) {
 	t.Run("success when systemAuth can be fetched from repo", func(t *testing.T) {
 		// GIVEN
 		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
 		repo.On("GetByJSONValue", context.Background(), input).Return(&model.SystemAuth{}, nil)
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
@@ -545,6 +548,7 @@ func TestService_GetByToken(t *testing.T) {
 	t.Run("error when systemAuth cannot be fetched from repo", func(t *testing.T) {
 		// GIVEN
 		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
 		repo.On("GetByJSONValue", context.Background(), input).Return(nil, errors.New("err"))
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
