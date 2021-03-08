@@ -870,7 +870,6 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
-		PageSize           int
 		RepositoryFn       func() *automock.BundleRepository
 		ExpectedResult     []*model.Bundle
 		ExpectedErrMessage string
@@ -882,7 +881,6 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 				repo.On("ListByApplicationIDNoPaging", ctx, tenantID, appID).Return(bundles, nil).Once()
 				return repo
 			},
-			PageSize:           2,
 			ExpectedResult:     bundles,
 			ExpectedErrMessage: "",
 		},
@@ -893,7 +891,6 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 				repo.On("ListByApplicationIDNoPaging", ctx, tenantID, appID).Return(nil, testErr).Once()
 				return repo
 			},
-			PageSize:           2,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},

@@ -303,7 +303,6 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
-		PageSize           int
 		RepositoryFn       func() *automock.EventAPIRepository
 		ExpectedResult     []*model.EventDefinition
 		ExpectedErrMessage string
@@ -315,7 +314,6 @@ func TestService_ListByApplicationID(t *testing.T) {
 				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(apiDefinitions, nil).Once()
 				return repo
 			},
-			PageSize:           2,
 			ExpectedResult:     apiDefinitions,
 			ExpectedErrMessage: "",
 		},
@@ -326,7 +324,6 @@ func TestService_ListByApplicationID(t *testing.T) {
 				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
 				return repo
 			},
-			PageSize:           2,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
