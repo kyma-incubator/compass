@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -36,7 +37,14 @@ func New(targetOrigin, proxyPath string, transport http.RoundTripper) (*httputil
 			req.Header.Set("User-Agent", "")
 		}
 	}
-	return &httputil.ReverseProxy{Director: director, Transport: transport}, nil
+	return &httputil.ReverseProxy{
+		Director:  director,
+		Transport: transport,
+		ErrorHandler: func(rw http.ResponseWriter, req *http.Request, err error) {
+			log.C(req.Context()).WithError(err).Errorf("Error while proxying request to %q", req.URL.String())
+			rw.WriteHeader(http.StatusBadGateway)
+		},
+	}, nil
 }
 
 func requestURL(requestPath, proxyPath string) string {
