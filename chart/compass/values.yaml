@@ -22,16 +22,20 @@ global:
       version: "PR-1720"
     director:
       dir:
+<<<<<<< HEAD
       version: "PR-1741"
+=======
+      version: "PR-1748"
+>>>>>>> master
     gateway:
       dir:
-      version: "PR-1720"
+      version: "PR-1756"
     operations_controller:
       dir:
       version: "PR-1747"
     tenant_fetcher:
       dir:
-      version: "PR-1752"
+      version: "PR-1754"
     ord_service:
       dir:
       version: "PR-14"
@@ -48,14 +52,18 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1726"
+      version: "PR-1748"
     console:
       dir:
       version: "PR-19"
     tests:
       director:
         dir:
+<<<<<<< HEAD
         version: "PR-1741"
+=======
+        version: "PR-1748"
+>>>>>>> master
       connector:
         dir:
         version: "PR-1741"
@@ -67,7 +75,7 @@ global:
         version: "PR-1717"
       tenant_fetcher:
         dir:
-        version: "PR-1752"
+        version: "PR-1754"
       system_broker:
         dir:
         version: "PR-1738"
