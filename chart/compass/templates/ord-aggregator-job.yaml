@@ -23,6 +23,9 @@ spec:
             - name: aggregator
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
               imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: director-config
+                  mountPath: /config
               env:
                 - name: APP_DB_USER
                   valueFrom:
@@ -54,6 +57,8 @@ spec:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-sslMode
+                - name: APP_CONFIGURATION_FILE
+                  value: /config/config.yaml
                 - name: APP_DB_MAX_OPEN_CONNECTIONS
                   value: "{{ .Values.global.ordAggregator.dbPool.maxOpenConnections }}"
                 - name: APP_DB_MAX_IDLE_CONNECTIONS
@@ -82,10 +87,13 @@ spec:
           {{end}}
           restartPolicy: Never
           shareProcessNamespace: true
-          {{if eq $.Values.global.database.embedded.enabled false}}
           volumes:
+            {{if eq $.Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
-  {{end}}
+            {{end}}
+            - name: director-config
+              configMap:
+                name: compass-director-config
   {{ end }}

@@ -22,7 +22,7 @@ global:
       version: "PR-1720"
     director:
       dir:
-      version: "PR-1743"
+      version: "local-test"
     gateway:
       dir:
       version: "PR-1720"
@@ -74,6 +74,9 @@ global:
       ord_service:
         dir:
         version: "PR-1719"
+      ord_aggregator:
+        dir:
+        version: "local-test"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -302,12 +305,16 @@ global:
     defaultResponseType: "xml"
 
   ordAggregator:
+    name: ord-aggregator
     enabled: true
     providerName: compass
     schedule: "*/5 * * * *"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    tests:
+      defaultCheckInterval: 1ms
+      defaultTestTimeout: 10m
 
   tenantFetchers:
     job1:
