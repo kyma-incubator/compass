@@ -10,7 +10,7 @@ require (
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20200429083609-7d80a85180c6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.8.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
