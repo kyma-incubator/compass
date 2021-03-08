@@ -19,63 +19,59 @@ package http
 import (
 	"context"
 	"net/http"
-	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . TokenProvider
-type TokenProvider interface {
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . AuthorizationProvider
+type AuthorizationProvider interface {
 	Name() string
 	Matches(ctx context.Context) bool
-	TargetURL() *url.URL
-	GetAuthorizationToken(ctx context.Context) (Token, error)
+	GetAuthorization(ctx context.Context) (string, error)
 }
 
 type SecuredTransport struct {
-	roundTripper   HTTPRoundTripper
-	tokenProviders []TokenProvider
+	roundTripper           HTTPRoundTripper
+	authorizationProviders []AuthorizationProvider
 }
 
-func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...TokenProvider) *SecuredTransport {
+func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...AuthorizationProvider) *SecuredTransport {
 	return &SecuredTransport{
-		roundTripper:   roundTripper,
-		tokenProviders: providers,
+		roundTripper:           roundTripper,
+		authorizationProviders: providers,
 	}
 }
 
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	logger := log.C(request.Context())
 
-	targetURL, token, err := c.getCredentialsFromProvider(request.Context())
+	authorization, err := c.getAuthorizationFromProvider(request.Context())
 	if err != nil {
-		logger.Errorf("Could not get token for request: %s", err.Error())
+		logger.Errorf("Could not prepare authorization for request: %s", err.Error())
 		return nil, err
 	}
 
-	logger.Debug("Successfully got token for request")
-	request.Header.Set("Authorization", "Bearer "+token.AccessToken)
-
-	request.URL = targetURL
+	logger.Debug("Successfully prepared authorization for request")
+	request.Header.Set("Authorization", authorization)
 
 	return c.roundTripper.RoundTrip(request)
 }
 
-func (c *SecuredTransport) getCredentialsFromProvider(ctx context.Context) (*url.URL, Token, error) {
-	for _, tokenProvider := range c.tokenProviders {
-		if !tokenProvider.Matches(ctx) {
+func (c *SecuredTransport) getAuthorizationFromProvider(ctx context.Context) (string, error) {
+	for _, authProvider := range c.authorizationProviders {
+		if !authProvider.Matches(ctx) {
 			continue
 		}
-		log.C(ctx).Debugf("Successfully matched '%s' token provider", tokenProvider.Name())
+		log.C(ctx).Debugf("Successfully matched '%s' authorization provider", authProvider.Name())
 
-		token, err := tokenProvider.GetAuthorizationToken(ctx)
+		authorization, err := authProvider.GetAuthorization(ctx)
 		if err != nil {
-			return nil, Token{}, errors.Wrap(err, "error while obtaining token")
+			return "", errors.Wrap(err, "error while obtaining authorization")
 		}
 
-		return tokenProvider.TargetURL(), token, nil
+		return authorization, nil
 	}
 
-	return nil, Token{}, errors.New("context did not match any token provider")
+	return "", errors.New("context did not match any authorization provider")
 }

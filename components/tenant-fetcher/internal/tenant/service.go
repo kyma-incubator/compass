@@ -3,8 +3,11 @@ package tenant
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -48,22 +51,28 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 
 	body, err := extractBody(request, writer)
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "while extracting request body"))
+		logger.WithError(err).Error("while extracting request body")
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty).String()
+	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty)
+	if !tenantId.Exists() || tenantId.Type != gjson.String || len(tenantId.String()) == 0 {
+		logger.Errorf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty)
+		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
+		return
+	}
+
 	tenant := model.TenantModel{
 		ID:             s.uidService.Generate(),
-		TenantId:       tenantId,
+		TenantId:       tenantId.String(),
 		TenantProvider: s.config.TenantProvider,
 		Status:         tenantEntity.Active,
 	}
 
 	tx, err := s.transact.Begin()
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "while beginning db transaction"))
+		logger.WithError(err).Error("while beginning db transaction")
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -73,21 +82,23 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if err := s.repository.Create(ctx, tenant); err != nil {
-		logger.Error(errors.Wrapf(err, "while creating tenant"))
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		logger.Error(errors.Wrapf(err, "while committing transaction"))
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		if !apperrors.IsNotUniqueError(err) {
+			logger.WithError(err).Error("while creating tenant")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err := tx.Commit(); err != nil {
+			logger.WithError(err).Error("while committing transaction")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	writer.Header().Set("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
-		logger.Error(errors.Wrapf(err, "while writing response body"))
+		logger.WithError(err).Error("while writing response body")
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -99,16 +110,21 @@ func (s *service) DeleteByExternalID(writer http.ResponseWriter, request *http.R
 
 	body, err := extractBody(request, writer)
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "while extracting request body"))
+		logger.WithError(err).Error("while extracting request body")
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty).String()
+	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty)
+	if !tenantId.Exists() || tenantId.Type != gjson.String || len(tenantId.String()) == 0 {
+		logger.Errorf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty)
+		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
+		return
+	}
 
 	tx, err := s.transact.Begin()
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "while beginning db transaction"))
+		logger.WithError(err).Error("while beginning db transaction")
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -117,22 +133,24 @@ func (s *service) DeleteByExternalID(writer http.ResponseWriter, request *http.R
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.repository.DeleteByExternalID(ctx, tenantId); err != nil {
-		logger.Error(errors.Wrapf(err, "while deleting tenant"))
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		logger.Error(errors.Wrapf(err, "while committing transaction"))
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	if err := s.repository.DeleteByExternalID(ctx, tenantId.String()); err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			logger.WithError(err).Error("while deleting tenant")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err := tx.Commit(); err != nil {
+			logger.WithError(err).Error("while committing transaction")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(map[string]interface{}{})
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "while writing to response body"))
+		logger.WithError(err).Error("while writing to response body")
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}

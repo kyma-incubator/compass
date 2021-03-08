@@ -28,3 +28,9 @@ operatorGroupNames: "runtimeOperator"
 applicationHideSelectors: |-
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"
+
+istio:
+  rbac:
+    enabled: true
+    directorInternalApi:
+      compassOperationsController: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-operations-controller

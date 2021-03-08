@@ -45,7 +45,7 @@ spec:
               containerPort: {{ .Values.deployment.args.containerPort }}
               protocol: TCP
             - name: http-internal
-              containerPort: {{ .Values.global.director.internalPort }}
+              containerPort: {{ .Values.global.director.operations.port }}
               protocol: TCP
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
@@ -60,7 +60,7 @@ spec:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_INTERNAL_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.director.internalPort }}"
+              value: "0.0.0.0:{{ .Values.global.director.operations.port }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
