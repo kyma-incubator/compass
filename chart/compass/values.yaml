@@ -22,11 +22,7 @@ global:
       version: "PR-1720"
     director:
       dir:
-<<<<<<< HEAD
       version: "PR-1741"
-=======
-      version: "PR-1748"
->>>>>>> master
     gateway:
       dir:
       version: "PR-1756"
@@ -59,11 +55,7 @@ global:
     tests:
       director:
         dir:
-<<<<<<< HEAD
         version: "PR-1741"
-=======
-        version: "PR-1748"
->>>>>>> master
       connector:
         dir:
         version: "PR-1741"
