@@ -22,8 +22,10 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	pkg.TestTenants.Cleanup()
 
 	pkg.TestTenants.Init()
+	defer pkg.TestTenants.Cleanup()
 
 	testctx.Tc, err = testctx.NewTestContext()
 	if err != nil {
@@ -33,8 +35,6 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	exitVal := m.Run()
-
-	pkg.TestTenants.Cleanup()
 
 	os.Exit(exitVal)
 }
