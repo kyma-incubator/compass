@@ -25,7 +25,7 @@ global:
       version: "PR-1748"
     gateway:
       dir:
-      version: "PR-1720"
+      version: "PR-1756"
     operations_controller:
       dir:
       version: "PR-1747"
