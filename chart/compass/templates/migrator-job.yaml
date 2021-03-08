@@ -21,7 +21,7 @@ spec:
             containers:
                 {{if eq .Values.global.database.embedded.enabled false}}
                 - name: cloudsql-proxy
-                  image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+                  image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
                   command:
                   - /bin/sh
                   args:
