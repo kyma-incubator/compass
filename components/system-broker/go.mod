@@ -5,7 +5,7 @@ go 1.14
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/andybalholm/brotli v1.0.1 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/fatih/structs v1.1.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gavv/httpexpect/v2 v2.2.0
@@ -35,7 +35,7 @@ require (
 	github.com/tidwall/gjson v1.6.8
 	github.com/valyala/fasthttp v1.22.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
-	golang.org/x/oauth2 v0.0.0-20210201163806-010130855d6c // indirect
+	golang.org/x/oauth2 v0.0.0-20210220000619-9bb904979d93 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
