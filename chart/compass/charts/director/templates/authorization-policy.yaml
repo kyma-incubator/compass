@@ -39,4 +39,5 @@ spec:
           ports:
           - "{{ .Values.global.director.graphql.external.port }}"
           - "{{ .Values.global.director.metrics.port }}"
+          - "{{ .Values.global.director.validator.port }}"
 {{ end }}
