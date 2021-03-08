@@ -174,7 +174,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Object Not Unique error when creating tenant in database should not fail",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
 				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(apperrors.NewNotUniqueError(resource.Tenant))
@@ -404,7 +404,7 @@ func TestService_Delete(t *testing.T) {
 		},
 		{
 			Name: "Object Not Found error when deleting tenant from database should not fail",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
 				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(apperrors.NewNotFoundError(resource.Tenant, testID))
