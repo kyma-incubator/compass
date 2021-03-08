@@ -81,16 +81,18 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.repository.Create(ctx, tenant); err != nil && !apperrors.IsNotUniqueError(err) {
-		logger.WithError(err).Error("while creating tenant")
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		logger.WithError(err).Error("while committing transaction")
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	if err := s.repository.Create(ctx, tenant); err != nil {
+		if !apperrors.IsNotUniqueError(err) {
+			logger.WithError(err).Error("while creating tenant")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err := tx.Commit(); err != nil {
+			logger.WithError(err).Error("while committing transaction")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	writer.Header().Set("Content-Type", "text/plain")
@@ -131,16 +133,18 @@ func (s *service) DeleteByExternalID(writer http.ResponseWriter, request *http.R
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.repository.DeleteByExternalID(ctx, tenantId.String()); err != nil && !apperrors.IsNotFoundError(err) {
-		logger.WithError(err).Error("while deleting tenant")
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		logger.WithError(err).Error("while committing transaction")
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	if err := s.repository.DeleteByExternalID(ctx, tenantId.String()); err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			logger.WithError(err).Error("while deleting tenant")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err := tx.Commit(); err != nil {
+			logger.WithError(err).Error("while committing transaction")
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
