@@ -1,5 +1,5 @@
-APP_NAME = connector-tests
-APP_PATH = tests/connector
+APP_NAME = external-services-mock-tests
+APP_PATH = tests/external-services-mock
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
@@ -23,7 +23,7 @@ dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 test:
-	@sed "s/PLACEHOLDER/connector/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
+	@sed "s/PLACEHOLDER/external-services-mock/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
 
 test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
