@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210304131316-93006a302f52
+	github.com/lestrrat-go/iter v1.0.0
 	github.com/lestrrat-go/jwx v1.1.4
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
