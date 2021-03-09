@@ -3,6 +3,7 @@ package runtimemapping
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"net/http"
 	"net/url"
 	"path"
@@ -100,17 +101,21 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return nil, errors.Wrap(err, "while getting the key ID")
 	}
 
-	keyIterator := &keyIterator{
-		algorithm: token.Method.Alg(),
-		keyID:     keyID,
+	keyIterator := &authenticator.JWTKeyIterator{
+		AlgorithmCriteria: func(alg string) bool {
+			return token.Method.Alg() == alg
+		},
+		IDCriteria: func(id string) bool {
+			return id == keyID
+		},
 	}
 
 	if err := arrayiter.Walk(ctx, jwksSet, keyIterator); err != nil {
 		return nil, err
 	}
 
-	if keyIterator.resultingKey != nil {
-		return keyIterator.resultingKey, nil
+	if keyIterator.ResultingKey != nil {
+		return keyIterator.ResultingKey, nil
 	}
 
 	return nil, apperrors.NewInternalError("unable to find a proper key")
@@ -192,28 +197,4 @@ func getTokenIssuer(claims jwt.MapClaims) (string, error) {
 	}
 
 	return issuerStr, nil
-}
-
-type keyIterator struct {
-	algorithm    string
-	keyID        string
-	resultingKey interface{}
-}
-
-func (keyIterator *keyIterator) Visit(index int, value interface{}) error {
-	key, ok := value.(jwk.Key)
-	if !ok {
-		return apperrors.NewInternalError("unable to parse key")
-	}
-
-	if key.Algorithm() == keyIterator.algorithm && key.KeyID() == keyIterator.keyID {
-		var rawKey interface{}
-		if err := key.Raw(&rawKey); err != nil {
-			return err
-		}
-
-		keyIterator.resultingKey = rawKey
-	}
-
-	return nil
 }

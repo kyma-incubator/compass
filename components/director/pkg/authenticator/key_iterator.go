@@ -21,18 +21,19 @@ import (
  * limitations under the License.
  */
 
-type KeyIterator struct {
-	Algorithm    string
-	ResultingKey interface{}
+type JWTKeyIterator struct {
+	AlgorithmCriteria func(string) bool
+	IDCriteria        func(string) bool
+	ResultingKey      interface{}
 }
 
-func (keyIterator *KeyIterator) Visit(_ int, value interface{}) error {
+func (keyIterator *JWTKeyIterator) Visit(_ int, value interface{}) error {
 	key, ok := value.(jwk.Key)
 	if !ok {
 		return apperrors.NewInternalError("unable to parse key")
 	}
 
-	if key.Algorithm() == keyIterator.Algorithm {
+	if keyIterator.AlgorithmCriteria(key.Algorithm()) && keyIterator.IDCriteria(key.KeyID()) {
 		var rawKey interface{}
 		if err := key.Raw(&rawKey); err != nil {
 			return err
