@@ -29,7 +29,7 @@ var (
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
 type EntityConverter interface {
-	ToEntity(in *model.Application, appTemplateId *string) (*Entity, error)
+	ToEntity(in *model.Application) (*Entity, error)
 	FromEntity(entity *Entity) *model.Application
 }
 
@@ -228,13 +228,13 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		PageInfo:   page}, nil
 }
 
-func (r *pgRepository) Create(ctx context.Context, model *model.Application, appTemplateID *string) error {
+func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
 	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
-	appEnt, err := r.conv.ToEntity(model, appTemplateID)
+	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}
@@ -250,7 +250,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 
 	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	//it is ok to pass nil, bc appTemplateID is not an updatable column
-	appEnt, err := r.conv.ToEntity(model, nil)
+	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}

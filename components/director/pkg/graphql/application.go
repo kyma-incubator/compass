@@ -3,12 +3,13 @@ package graphql
 import "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 type Application struct {
-	Name                string             `json:"name"`
-	ProviderName        *string            `json:"providerName"`
-	IntegrationSystemID *string            `json:"integrationSystemID"`
-	Description         *string            `json:"description"`
-	Status              *ApplicationStatus `json:"status"`
-	HealthCheckURL      *string            `json:"healthCheckURL"`
+	Name                  string             `json:"name"`
+	ProviderName          *string            `json:"providerName"`
+	IntegrationSystemID   *string            `json:"integrationSystemID"`
+	ApplicationTemplateID *string            `json:"applicationTemplateID"`
+	Description           *string            `json:"description"`
+	Status                *ApplicationStatus `json:"status"`
+	HealthCheckURL        *string            `json:"healthCheckURL"`
 	*BaseEntity
 }
 

@@ -184,7 +184,7 @@ func TestConverter_ToEntity(t *testing.T) {
 				ID:             "givenID",
 				ApplicationID:  &givenAppID,
 				URL:            stringPtr("https://test-domain.com"),
-				TenantID:       "givenTenant",
+				TenantID:       stringPtr("givenTenant"),
 				Type:           model.WebhookTypeConfigurationChanged,
 				Mode:           &modelWebhookMode,
 				URLTemplate:    &emptyTemplate,
@@ -196,7 +196,7 @@ func TestConverter_ToEntity(t *testing.T) {
 				ID:             "givenID",
 				ApplicationID:  repo.NewValidNullableString(givenAppID),
 				URL:            repo.NewValidNullableString("https://test-domain.com"),
-				TenantID:       "givenTenant",
+				TenantID:       repo.NewValidNullableString("givenTenant"),
 				Type:           "CONFIGURATION_CHANGED",
 				Auth:           sql.NullString{Valid: false},
 				Mode:           repo.NewValidNullableString("SYNC"),
@@ -242,7 +242,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		"success when Auth not provided": {
 			inEntity: webhook.Entity{
 				ID:             "givenID",
-				TenantID:       "givenTenant",
+				TenantID:       repo.NewValidNullableString("givenTenant"),
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            repo.NewValidNullableString("https://test-domain.com"),
 				ApplicationID:  repo.NewValidNullableString(givenAppID),
@@ -254,7 +254,7 @@ func TestConverter_FromEntity(t *testing.T) {
 			},
 			expectedModel: model.Webhook{
 				ID:             "givenID",
-				TenantID:       "givenTenant",
+				TenantID:       stringPtr("givenTenant"),
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            stringPtr("https://test-domain.com"),
 				ApplicationID:  &givenAppID,

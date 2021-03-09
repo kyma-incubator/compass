@@ -29,6 +29,8 @@ func TestService_Create(t *testing.T) {
 		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL
 	})
 
+	applicationConvererFunc := (*model.WebhookInput).ToApplicationTemplateWebhook
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 
@@ -73,10 +75,10 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 
-			svc := webhook.NewService(repo, uidSvc)
+			svc := webhook.NewService(repo, nil, uidSvc)
 
 			// when
-			result, err := svc.Create(ctx, givenApplicationID(), *modelInput)
+			result, err := svc.Create(ctx, givenApplicationID(), *modelInput, applicationConvererFunc)
 
 			// then
 
@@ -93,9 +95,9 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil)
+		svc := webhook.NewService(nil, nil, nil)
 		// when
-		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput)
+		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, applicationConvererFunc)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
@@ -143,7 +145,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil)
+			svc := webhook.NewService(repo, nil, nil)
 
 			// when
 			actual, err := svc.Get(ctx, id)
@@ -161,7 +163,7 @@ func TestService_Get(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil)
+		svc := webhook.NewService(nil, nil, nil)
 		// when
 		_, err := svc.Get(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -212,10 +214,10 @@ func TestService_List(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil)
+			svc := webhook.NewService(repo, nil, nil)
 
 			// when
-			webhooks, err := svc.List(ctx, applicationID)
+			webhooks, err := svc.ListForApplication(ctx, applicationID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -230,9 +232,9 @@ func TestService_List(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil)
+		svc := webhook.NewService(nil, nil, nil)
 		// when
-		_, err := svc.List(context.TODO(), givenApplicationID())
+		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
@@ -293,7 +295,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil)
+			svc := webhook.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Update(ctx, id, *modelInput)
@@ -310,7 +312,7 @@ func TestService_Update(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil)
+		svc := webhook.NewService(nil, nil, nil)
 		// when
 		err := svc.Update(context.TODO(), givenApplicationID(), *modelInput)
 		assert.EqualError(t, err, fmt.Sprintf("while getting Webhook: %s", apperrors.NewCannotReadTenantError().Error()))
@@ -339,7 +341,7 @@ func TestService_Delete(t *testing.T) {
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", ctx, givenTenant(), id).Return(webhookModel, nil).Once()
-				repo.On("Delete", ctx, webhookModel.TenantID, webhookModel.ID).Return(nil).Once()
+				repo.On("Delete", ctx, webhookModel.ID).Return(nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "",
@@ -349,7 +351,7 @@ func TestService_Delete(t *testing.T) {
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", ctx, givenTenant(), id).Return(webhookModel, nil).Once()
-				repo.On("Delete", ctx, webhookModel.TenantID, webhookModel.ID).Return(testErr).Once()
+				repo.On("Delete", ctx, webhookModel.ID).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -368,7 +370,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil)
+			svc := webhook.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, id)
@@ -385,7 +387,7 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil)
+		svc := webhook.NewService(nil, nil, nil)
 		// when
 		err := svc.Delete(context.TODO(), id)
 		assert.EqualError(t, err, fmt.Sprintf("while getting Webhook: %s", apperrors.NewCannotReadTenantError()))

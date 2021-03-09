@@ -25,7 +25,7 @@ func NewConverter(webhook WebhookConverter, bndlConverter BundleConverter) *conv
 	return &converter{webhook: webhook, bndl: bndlConverter}
 }
 
-func (c *converter) ToEntity(in *model.Application, appTemplateId *string) (*Entity, error) {
+func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -36,7 +36,6 @@ func (c *converter) ToEntity(in *model.Application, appTemplateId *string) (*Ent
 
 	return &Entity{
 		TenantID:              in.Tenant,
-		ApplicationTemplateID: repo.NewNullableString(appTemplateId),
 		Name:                  in.Name,
 		ProviderName:          repo.NewNullableString(in.ProviderName),
 		Description:           repo.NewNullableString(in.Description),
@@ -44,6 +43,7 @@ func (c *converter) ToEntity(in *model.Application, appTemplateId *string) (*Ent
 		StatusTimestamp:       in.Status.Timestamp,
 		HealthCheckURL:        repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
+		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
 		BaseURL:               repo.NewNullableString(in.BaseURL),
 		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		BaseEntity: &repo.BaseEntity{
@@ -71,10 +71,11 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 			Condition: model.ApplicationStatusCondition(entity.StatusCondition),
 			Timestamp: entity.StatusTimestamp,
 		},
-		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
-		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
-		BaseURL:             repo.StringPtrFromNullableString(entity.BaseURL),
-		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
+		HealthCheckURL:        repo.StringPtrFromNullableString(entity.HealthCheckURL),
+		IntegrationSystemID:   repo.StringPtrFromNullableString(entity.IntegrationSystemID),
+		ApplicationTemplateID: repo.StringPtrFromNullableString(entity.ApplicationTemplateID),
+		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
+		Labels:                repo.JSONRawMessageFromNullableString(entity.Labels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,

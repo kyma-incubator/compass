@@ -46,6 +46,7 @@ require (
 	github.com/tidwall/gjson v1.6.8
 	github.com/tidwall/sjson v1.1.4
 	github.com/vektah/gqlparser v1.3.1
+	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0

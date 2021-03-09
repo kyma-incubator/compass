@@ -38,6 +38,8 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn      func() *automock.WebhookService
+		WebhookConvFn     func() *automock.WebhookConverter
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
@@ -133,8 +135,10 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
+			webhookSvc := testCase.WebhookSvcFn()
+			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplate(ctx, testID)
@@ -179,6 +183,8 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn      func() *automock.WebhookService
+		WebhookConvFn     func() *automock.WebhookConverter
 		ExpectedOutput    *graphql.ApplicationTemplatePage
 		ExpectedError     error
 	}{
@@ -260,8 +266,10 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
+			webhookSvc := testCase.WebhookSvcFn()
+			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplates(ctx, &first, &gqlAfter)
@@ -299,6 +307,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn      func() *automock.WebhookService
+		WebhookConvFn     func() *automock.WebhookConverter
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
@@ -417,8 +427,10 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
+			webhookSvc := testCase.WebhookSvcFn()
+			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
 			result, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInput)
@@ -463,6 +475,8 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn      func() *automock.WebhookService
+		WebhookConvFn     func() *automock.WebhookConverter
 		AppSvcFn          func() *automock.ApplicationService
 		AppConvFn         func() *automock.ApplicationConverter
 		ExpectedOutput    *graphql.Application
@@ -715,10 +729,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
+			webhookSvc := testCase.WebhookSvcFn()
+			webhookConverter := testCase.WebhookConvFn()
 			appSvc := testCase.AppSvcFn()
 			appConv := testCase.AppConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
 			result, err := resolver.RegisterApplicationFromTemplate(ctx, gqlAppFromTemplateInput)
@@ -758,6 +774,8 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn      func() *automock.WebhookService
+		WebhookConvFn     func() *automock.WebhookConverter
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
@@ -876,8 +894,10 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
+			webhookSvc := testCase.WebhookSvcFn()
+			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
 			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateInput)
@@ -913,6 +933,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn      func() *automock.WebhookService
+		WebhookConvFn     func() *automock.WebhookConverter
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
@@ -1012,7 +1034,9 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
+			webhookSvc := testCase.WebhookSvcFn()
+			webhookConverter := testCase.WebhookConvFn()
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
 			result, err := resolver.DeleteApplicationTemplate(ctx, testID)

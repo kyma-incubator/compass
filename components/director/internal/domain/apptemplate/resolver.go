@@ -49,10 +49,12 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
+//go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
 type WebhookService interface {
-	ListForTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
+//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
@@ -337,7 +339,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplat
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhooks, err := r.webhookSvc.ListForTemplate(ctx, obj.ID)
+	webhooks, err := r.webhookSvc.ListForApplicationTemplate(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}

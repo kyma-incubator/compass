@@ -77,7 +77,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToWebhook(id, tenant, applicationID)
+			result := testCase.Input.ToApplicationWebhook(id, tenant, applicationID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

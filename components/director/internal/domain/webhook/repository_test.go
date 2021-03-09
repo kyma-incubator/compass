@@ -41,11 +41,11 @@ func TestRepositoryGetByID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth",
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth",
 			"runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}).AddRow(
-			givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil, nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil)
+			givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil, nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE tenant_id = $1 AND id = $2")).
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE tenant_id = $1 AND id = $2")).
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -67,11 +67,11 @@ func TestRepositoryGetByID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth",
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth",
 			"runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}).AddRow(
-			givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", givenAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil)
+			givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", givenAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE tenant_id = $1 AND id = $2")).
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE tenant_id = $1 AND id = $2")).
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -93,9 +93,9 @@ func TestRepositoryGetByID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth",
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth",
 			"runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}).AddRow(
-			givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil, nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil)
+			givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil, nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil)
 
 		dbMock.ExpectQuery("SELECT .*").
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
@@ -135,8 +135,8 @@ func TestRepositoryCreate(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
-			givenID(), givenTenant(), givenApplicationID(), string(model.WebhookTypeConfigurationChanged), "http://kyma.io", nil, nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
+			givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), string(model.WebhookTypeConfigurationChanged), "http://kyma.io", nil, nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -155,8 +155,8 @@ func TestRepositoryCreate(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
-			givenID(), givenTenant(), givenApplicationID(), string(model.WebhookTypeConfigurationChanged), "http://kyma.io", givenAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
+			givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), string(model.WebhookTypeConfigurationChanged), "http://kyma.io", givenAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -200,7 +200,7 @@ func TestRepositoryCreate(t *testing.T) {
 }
 
 func TestRepositoryCreateMany(t *testing.T) {
-	const expectedInsert = "INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
+	const expectedInsert = "INSERT INTO public.webhooks ( id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
 	t.Run(testCaseSuccess, func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.EntityConverter{}
@@ -215,11 +215,11 @@ func TestRepositoryCreateMany(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"one", "", nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"one", nil, nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"two", "", nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"two", nil, nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"three", "", nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"three", nil, nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -329,13 +329,13 @@ func TestRepositoryDelete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("DELETE FROM public.webhooks WHERE tenant_id = $1 AND id = $2")).WithArgs(
-			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta("DELETE FROM public.webhooks WHERE id = $1")).WithArgs(
+			givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(nil)
 		// WHEN
-		err := sut.Delete(ctx, givenTenant(), givenID())
+		err := sut.Delete(ctx, givenID())
 		// THEN
 		require.NoError(t, err)
 	})
@@ -346,12 +346,12 @@ func TestRepositoryDelete(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			givenTenant(), givenID()).WillReturnError(givenError())
+			givenID()).WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(nil)
 		// WHEN
-		err := sut.Delete(ctx, givenTenant(), givenID())
+		err := sut.Delete(ctx, givenID())
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
@@ -397,7 +397,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		defer mockConv.AssertExpectations(t)
 		mockConv.On("FromEntity",
 			webhook.Entity{ID: givenID(),
-				TenantID:      givenTenant(),
+				TenantID:      repo.NewValidNullableString(givenTenant()),
 				ApplicationID: repo.NewValidNullableString(givenApplicationID()),
 				Type:          string(model.WebhookTypeConfigurationChanged),
 				URL:           repo.NewValidNullableString("http://kyma.io")}).
@@ -407,7 +407,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 
 		mockConv.On("FromEntity",
 			webhook.Entity{ID: anotherID(),
-				TenantID:      givenTenant(),
+				TenantID:      repo.NewValidNullableString(givenTenant()),
 				ApplicationID: repo.NewValidNullableString(givenApplicationID()),
 				Type:          string(model.WebhookTypeConfigurationChanged),
 				URL:           repo.NewValidNullableString("http://kyma2.io")}).
@@ -418,11 +418,11 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth"}).
-			AddRow(givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
-			AddRow(anotherID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"}).
+			AddRow(givenID(), givenTenant(), givenApplicationID(), nil, model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
+			AddRow(anotherID(), givenTenant(), givenApplicationID(), nil, model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE tenant_id = $1 AND app_id = $2")).
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE tenant_id = $1 AND app_id = $2")).
 			WithArgs(givenTenant(), givenApplicationID()).
 			WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -442,7 +442,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		noRows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth"})
+		noRows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"})
 
 		dbMock.ExpectQuery("SELECT").WithArgs(givenTenant(), givenApplicationID()).WillReturnRows(noRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -478,8 +478,8 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "type", "url", "auth"}).
-			AddRow(givenID(), givenTenant(), givenApplicationID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil)
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"}).
+			AddRow(givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil)
 
 		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT")).WithArgs(givenTenant(), givenApplicationID()).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -511,18 +511,23 @@ func givenApplicationID() string {
 	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
 }
 
+func givenApplicationTemplateID() string {
+	return "ffffffff-ffff-ffff-ffff-ffffffffffff"
+}
+
 func givenEntity() webhook.Entity {
 	return webhook.Entity{
-		ID:             givenID(),
-		TenantID:       givenTenant(),
-		ApplicationID:  repo.NewValidNullableString(givenApplicationID()),
-		Type:           string(model.WebhookTypeConfigurationChanged),
-		URL:            repo.NewValidNullableString("http://kyma.io"),
-		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
-		URLTemplate:    repo.NewValidNullableString(emptyTemplate),
-		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
-		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
-		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
+		ID:                    givenID(),
+		TenantID:              repo.NewValidNullableString(givenTenant()),
+		ApplicationID:         repo.NewValidNullableString(givenApplicationID()),
+		ApplicationTemplateID: repo.NewValidNullableString(givenApplicationTemplateID()),
+		Type:                  string(model.WebhookTypeConfigurationChanged),
+		URL:                   repo.NewValidNullableString("http://kyma.io"),
+		Mode:                  repo.NewValidNullableString(string(model.WebhookModeSync)),
+		URLTemplate:           repo.NewValidNullableString(emptyTemplate),
+		InputTemplate:         repo.NewValidNullableString(emptyTemplate),
+		HeaderTemplate:        repo.NewValidNullableString(emptyTemplate),
+		OutputTemplate:        repo.NewValidNullableString(emptyTemplate),
 	}
 }
 
@@ -540,18 +545,21 @@ func givenAuthAsAString(t *testing.T) string {
 
 func givenModel() model.Webhook {
 	appID := givenApplicationID()
+	appTemplateId := givenApplicationTemplateID()
 	webhookMode := model.WebhookModeSync
+	tenant := givenTenant()
 	return model.Webhook{
-		ID:             givenID(),
-		TenantID:       givenTenant(),
-		ApplicationID:  &appID,
-		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            stringPtr("http://kyma.io"),
-		Mode:           &webhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
+		ID:                    givenID(),
+		TenantID:              &tenant,
+		ApplicationID:         &appID,
+		ApplicationTemplateID: &appTemplateId,
+		Type:                  model.WebhookTypeConfigurationChanged,
+		URL:                   stringPtr("http://kyma.io"),
+		Mode:                  &webhookMode,
+		URLTemplate:           &emptyTemplate,
+		InputTemplate:         &emptyTemplate,
+		HeaderTemplate:        &emptyTemplate,
+		OutputTemplate:        &emptyTemplate,
 	}
 }
 

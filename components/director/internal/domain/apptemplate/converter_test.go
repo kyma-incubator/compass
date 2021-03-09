@@ -17,7 +17,8 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
 	appConv := &automock.AppConverter{}
-	converter := apptemplate.NewConverter(appConv)
+	webhookConv := &automock.WebhookConverter{}
+	converter := apptemplate.NewConverter(appConv, webhookConv)
 
 	testCases := []struct {
 		Name          string
@@ -73,7 +74,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
-	converter := apptemplate.NewConverter(nil)
+	converter := apptemplate.NewConverter(nil, nil)
 
 	testCases := []struct {
 		Name          string
@@ -187,7 +188,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appConv := testCase.AppConverterFn()
-			converter := apptemplate.NewConverter(appConv)
+			converter := apptemplate.NewConverter(appConv, nil)
 			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
@@ -206,7 +207,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 func TestConverter_ApplicationFromTemplateInputFromGraphQL(t *testing.T) {
 	// GIVEN
-	conv := apptemplate.NewConverter(nil)
+	conv := apptemplate.NewConverter(nil, nil)
 
 	in := fixGQLApplicationFromTemplateInput(testName)
 	expected := fixModelApplicationFromTemplateInput(testName)
@@ -247,7 +248,7 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := apptemplate.NewConverter(nil)
+			conv := apptemplate.NewConverter(nil, nil)
 
 			// when
 			res, err := conv.ToEntity(testCase.Input)
@@ -305,7 +306,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := apptemplate.NewConverter(nil)
+			conv := apptemplate.NewConverter(nil, nil)
 
 			// when
 			res, err := conv.FromEntity(testCase.Input)

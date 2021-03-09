@@ -55,7 +55,7 @@ type EventingService interface {
 //go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.Webhook, error)
-	List(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, resourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error)
 	Update(ctx context.Context, id string, in model.WebhookInput) error
 	Delete(ctx context.Context, id string) error
@@ -416,7 +416,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhooks, err := r.webhookSvc.List(ctx, obj.ID)
+	webhooks, err := r.webhookSvc.ListAllApplicationWebhooks(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}

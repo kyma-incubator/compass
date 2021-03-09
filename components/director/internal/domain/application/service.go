@@ -36,7 +36,7 @@ type ApplicationRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
-	Create(ctx context.Context, item *model.Application, appTemplateID *string) error
+	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -223,7 +223,7 @@ type RepoCreator func(ctx context.Context, application *model.Application) error
 
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
-		err = s.appRepo.Create(ctx, application, nil)
+		err = s.appRepo.Create(ctx, application)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s", application.Name)
 		}
@@ -235,7 +235,8 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateId *string) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
-		err = s.appRepo.Create(ctx, application, appTemplateId)
+		application.ApplicationTemplateID = appTemplateId
+		err = s.appRepo.Create(ctx, application)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}

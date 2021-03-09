@@ -91,6 +91,7 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
+		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
 		Bundle                func(childComplexity int, id string) int
 		Bundles               func(childComplexity int, first *int, after *PageCursor) int
@@ -815,6 +816,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APISpec.Type(childComplexity), true
+
+	case "Application.applicationTemplateID":
+		if e.complexity.Application.ApplicationTemplateID == nil {
+			break
+		}
+
+		return e.complexity.Application.ApplicationTemplateID(childComplexity), true
 
 	case "Application.auths":
 		if e.complexity.Application.Auths == nil {
@@ -3998,6 +4006,7 @@ type Application {
 	providerName: String
 	description: String
 	integrationSystemID: ID
+	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
@@ -7585,6 +7594,40 @@ func (ec *executionContext) _Application_integrationSystemID(ctx context.Context
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.IntegrationSystemID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_applicationTemplateID(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationTemplateID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22728,6 +22771,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_description(ctx, field, obj)
 		case "integrationSystemID":
 			out.Values[i] = ec._Application_integrationSystemID(ctx, field, obj)
+		case "applicationTemplateID":
+			out.Values[i] = ec._Application_applicationTemplateID(ctx, field, obj)
 		case "labels":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

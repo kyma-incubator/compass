@@ -2161,7 +2161,7 @@ func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID str
 
 	var webhooksModel []*model.Webhook
 	for _, item := range in.Webhooks {
-		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), tenant, applicationID))
+		webhooksModel = append(webhooksModel, item.ToApplicationWebhook(uuid.New().String(), &tenant, applicationID))
 	}
 
 	return testModel{

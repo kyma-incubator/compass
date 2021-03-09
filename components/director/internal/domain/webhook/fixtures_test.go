@@ -15,7 +15,7 @@ func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
 		ApplicationID:  &appID,
-		TenantID:       tenant,
+		TenantID:       &tenant,
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &model.Auth{},

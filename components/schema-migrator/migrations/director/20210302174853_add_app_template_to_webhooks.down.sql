@@ -1,9 +1,12 @@
 BEGIN;
 
 ALTER TABLE webhooks
-    DROP CONSTRAINT IF EXISTS app_or_template,
+    DROP CONSTRAINT IF EXISTS webhook_app_id_type_unique,
+    DROP CONSTRAINT IF EXISTS webhook_app_template_id_type_unique,
+    DROP CONSTRAINT IF EXISTS webhook_runtime_id_type_unique,
+    DROP CONSTRAINT IF EXISTS webhook_integration_system_id_type_unique,
+    DROP CONSTRAINT IF EXISTS webhook_owner_id_unique,
     ALTER COLUMN tenant_id SET NOT NULL,
-    ALTER COLUMN app_id SET NOT NULL,
     DROP CONSTRAINT IF EXISTS webhooks_app_template_id_fkey,
     DROP COLUMN IF EXISTS app_template_id;
 
