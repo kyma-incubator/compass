@@ -15,7 +15,7 @@ source $CURRENT_DIR/utils.sh
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
-    
+
     key="$1"
 
     case ${key} in
@@ -87,7 +87,16 @@ if [ ${ADMIN_PASSWORD} ]; then
     COMBO_YAML=$(sed 's/global\.adminPassword: .*/global.adminPassword: '"${ADMIN_PASSWORD}"'/g' <<<"$COMBO_YAML")
 fi
 
-MINIKUBE_IP=$(minikube ip)
+USED_DRIVER=$(minikube profile list -o json | jq -r ".valid[0].Config.Driver")
+if [[ $USED_DRIVER == "docker" ]]; then
+  MINIKUBE_IP=$(minikube ssh egrep "minikube$" /etc/hosts | cut -f1)
+else
+  MINIKUBE_IP=$(minikube ip)
+fi
+echo "----------------------------"
+echo "- ${USED_DRIVER} driver is used - minikube IP is $MINIKUBE_IP"
+echo "----------------------------"
+
 COMBO_YAML=$(sed 's/\.minikubeIP: .*/\.minikubeIP: '"${MINIKUBE_IP}"'/g' <<<"$COMBO_YAML")
 
 echo -e "\nConfiguring sub-components"

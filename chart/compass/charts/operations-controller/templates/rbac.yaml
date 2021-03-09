@@ -131,18 +131,3 @@ subjects:
 - kind: ServiceAccount
   name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    control-plane: controller-manager
-  name: {{ printf "%s-%s" (include "fullname" .) "manager-metrics-service" | trunc 63 | trimSuffix "-" }}
-  namespace: {{ .Release.Namespace }}
-spec:
-  ports:
-  - name: https
-    port: 8443
-    targetPort: https
-  selector:
-    control-plane: controller-manager

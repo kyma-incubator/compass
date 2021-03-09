@@ -19,7 +19,9 @@ package osb
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -28,11 +30,11 @@ import (
 )
 
 type UnbindEndpoint struct {
-	credentialsGetter  BundleCredentialsFetcher
-	credentialsDeleter BundleCredentialsDeleteRequester
+	credentialsGetter  types.BundleCredentialsFetcher
+	credentialsDeleter types.BundleCredentialsDeleteRequester
 }
 
-func NewUnbindEndpoint(credentialsGetter BundleCredentialsFetcher, credentialsDeleter BundleCredentialsDeleteRequester) *UnbindEndpoint {
+func NewUnbindEndpoint(credentialsGetter types.BundleCredentialsFetcher, credentialsDeleter types.BundleCredentialsDeleteRequester) *UnbindEndpoint {
 	return &UnbindEndpoint{
 		credentialsGetter:  credentialsGetter,
 		credentialsDeleter: credentialsDeleter,

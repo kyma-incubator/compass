@@ -33,8 +33,8 @@ To run the test locally, set these environment variables:
 | **DEFAULT_TENANT** | Default tenant value |    `3e64ebae-38b5-46a0-b1ed-9ccee153a0ae` |
 | **DOMAIN** | Kyma domain name |    `kyma.local` |
 | **EXTERNAL_SERVICES_MOCK_BASE_URL** | URL to External Services Mock | None |
-| **APP_CLIENT_SECRET**   | The expected audit log client Secret used to obtain a JWT | `client_id`
-| **APP_CLIENT_ID**       | The expected audit log client ID used to obtain a JWT  | `client_secret`
+| **APP_CLIENT_SECRET**   | The expected audit log client Secret used to obtain a JWT | `client_secret`
+| **APP_CLIENT_ID**       | The expected audit log client ID used to obtain a JWT  | `client_id`
 | **BASIC_USERNAME**      | The expected username from basic credentials | `admin`
 | **BASIC_PASSWORD**      | The expected password from basic credentials | `admin`
 

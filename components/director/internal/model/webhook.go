@@ -75,18 +75,19 @@ func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, a
 
 func (i *WebhookInput) toGenericWebhook(id string, tenant *string) *Webhook {
 	return &Webhook{
-		ID:             id,
-		TenantID:       tenant,
-		Type:           i.Type,
-		URL:            i.URL,
-		Auth:           i.Auth.ToAuth(),
-		Mode:           i.Mode,
-		RetryInterval:  i.RetryInterval,
-		Timeout:        i.Timeout,
-		URLTemplate:    i.URLTemplate,
-		InputTemplate:  i.InputTemplate,
-		HeaderTemplate: i.HeaderTemplate,
-		OutputTemplate: i.OutputTemplate,
-		StatusTemplate: i.StatusTemplate,
+		ID:               id,
+		TenantID:         tenant,
+		CorrelationIDKey: i.CorrelationIDKey,
+		Type:             i.Type,
+		URL:              i.URL,
+		Auth:             i.Auth.ToAuth(),
+		Mode:             i.Mode,
+		RetryInterval:    i.RetryInterval,
+		Timeout:          i.Timeout,
+		URLTemplate:      i.URLTemplate,
+		InputTemplate:    i.InputTemplate,
+		HeaderTemplate:   i.HeaderTemplate,
+		OutputTemplate:   i.OutputTemplate,
+		StatusTemplate:   i.StatusTemplate,
 	}
 }

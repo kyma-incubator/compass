@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types/typesfakes"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +19,8 @@ func TestDeleteBinding(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsDeleter     *osbfakes.FakeBundleCredentialsDeleteRequester
-		fakeCredentialsGetter      *osbfakes.FakeBundleCredentialsFetcher
+		fakeCredentialsDeleter     *typesfakes.FakeBundleCredentialsDeleteRequester
+		fakeCredentialsGetter      *typesfakes.FakeBundleCredentialsFetcher
 		be                         *osb.UnbindEndpoint
 		details                    domain.UnbindDetails
 		bundleInstanceAuth         *director.BundleInstanceAuthOutput
@@ -27,8 +28,8 @@ func TestDeleteBinding(t *testing.T) {
 	)
 
 	setup := func() {
-		fakeCredentialsDeleter = &osbfakes.FakeBundleCredentialsDeleteRequester{}
-		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcher{}
+		fakeCredentialsDeleter = &typesfakes.FakeBundleCredentialsDeleteRequester{}
+		fakeCredentialsGetter = &typesfakes.FakeBundleCredentialsFetcher{}
 
 		be = osb.NewUnbindEndpoint(fakeCredentialsGetter, fakeCredentialsDeleter)
 

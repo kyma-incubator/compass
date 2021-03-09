@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestTokenProviderFromSecretTestSuite(t *testing.T) {
+func TestTokenAuthorizationProviderFromSecretTestSuite(t *testing.T) {
 	suite.Run(t, new(HealthcheckTestSuite))
 }
 
