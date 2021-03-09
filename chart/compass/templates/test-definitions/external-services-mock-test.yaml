@@ -85,4 +85,40 @@ spec:
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.tests.externalServicesMockFQDN }}:8080/"
       restartPolicy: Never
-  {{end}}
+      serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-service-account
+  namespace: kyma-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-operations-role
+  namespace: compass-system
+rules:
+  - apiGroups:
+      - operations.compass
+    resources:
+      - operations
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-operations-role-binding
+  namespace: compass-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Chart.Name }}-operations-tests-operations-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-operations-tests-service-account
+    namespace: kyma-system
+
+{{end}}

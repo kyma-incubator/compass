@@ -91,6 +91,11 @@ func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Cl
 	return app
 }
 
+func UnregisterAsyncApplicationInTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, tenant string) {
+	req := FixAsyncUnregisterApplicationRequest(id)
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
+}
+
 func DeleteApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {
 	deleteRequest := FixDeleteApplicationLabelRequest(id, labelKey)
 

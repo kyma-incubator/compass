@@ -256,6 +256,15 @@ func FixUnregisterApplicationRequest(id string) *gcli.Request {
 	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixAsyncUnregisterApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		unregisterApplication(id: "%s" mode: ASYNC) {
+			%s
+		}	
+	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixApplicationTemplateRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
