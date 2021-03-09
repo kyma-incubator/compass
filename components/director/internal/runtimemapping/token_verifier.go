@@ -3,11 +3,12 @@ package runtimemapping
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/lestrrat-go/iter/arrayiter"
 
