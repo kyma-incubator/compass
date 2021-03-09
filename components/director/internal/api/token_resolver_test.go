@@ -6,8 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql/internalschema"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/stretchr/testify/mock"
@@ -54,7 +52,7 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		token, err := tokenResolver.GenerateCSRToken(context.TODO(), authId)
 		// THEN
 		assert.Error(t, err)
-		assert.Equal(t, &internalschema.Token{}, token)
+		assert.Nil(t, token)
 	})
 
 	t.Run("fails when transaction cannot be commited", func(t *testing.T) {
