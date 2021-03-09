@@ -30,6 +30,7 @@ spec:
         - name: examples
           hostPath:
             path: "/examples"
+            type: DirectoryOrCreate
       containers:
         - name: director-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
