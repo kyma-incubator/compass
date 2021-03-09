@@ -83,7 +83,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("LoadKey", caKeyEncoded).Return(caKey, nil)
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
 		certUtils.On("CheckCSRValues", csr, subjectValues).Return(nil)
-		certUtils.On("signCSR", caCrt, csr, caKey).Return(clientCRT, nil)
+		certUtils.On("SignCSR", caCrt, csr, caKey).Return(clientCRT, nil)
 		certUtils.On("AddCertificateHeaderAndFooter", caCrt.Raw).Return(caCRTBytes)
 		certUtils.On("AddCertificateHeaderAndFooter", clientCRT).Return(clientCRTBytes)
 
@@ -128,7 +128,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("LoadKey", caKeyEncoded).Return(caKey, nil)
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
 		certUtils.On("CheckCSRValues", csr, subjectValues).Return(nil)
-		certUtils.On("signCSR", caCrt, csr, caKey).Return(clientCRT, nil)
+		certUtils.On("SignCSR", caCrt, csr, caKey).Return(clientCRT, nil)
 		certUtils.On("AddCertificateHeaderAndFooter", caCrt.Raw).Return(caCRTBytes).Once().
 			On("AddCertificateHeaderAndFooter", rootCACrt.Raw).Return(rootCACrtBytes)
 		certUtils.On("AddCertificateHeaderAndFooter", clientCRT).Return(clientCRTBytes)
@@ -308,7 +308,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("LoadKey", caKeyEncoded).Return(caKey, nil)
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
 		certUtils.On("CheckCSRValues", csr, subjectValues).Return(nil)
-		certUtils.On("signCSR", caCrt, csr, caKey).Return(nil, apperrors.Internal("error"))
+		certUtils.On("SignCSR", caCrt, csr, caKey).Return(nil, apperrors.Internal("error"))
 
 		certificatesService := certificates.NewCertificateService(
 			cache,
