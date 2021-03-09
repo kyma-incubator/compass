@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+  namespace: kyma-system
 spec:
   disableConcurrency: true
   template:

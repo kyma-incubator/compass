@@ -33,7 +33,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ template "fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: kyma-system
 roleRef:
   kind: Role
   name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.ca.name }}
