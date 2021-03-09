@@ -436,12 +436,18 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210304120518-45b0
 github.com/kyma-incubator/compass/components/director v0.0.0-20210304120518-45b00bff0ac0/go.mod h1:ebSZJ5BEdqq8a2NEYtc9M8U2pwBcJX46PPQxAOhp74w=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210304180146-8ebee1d105ad h1:tYZ4UrllNtYwYk86gt/xiJmp4nX4lgDIsc9PBWv8EJ8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210304180146-8ebee1d105ad/go.mod h1:ebSZJ5BEdqq8a2NEYtc9M8U2pwBcJX46PPQxAOhp74w=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210309182540-3f2ba371a0a6 h1:KCWBAkbndU07aEQVCdMd9HpruBSincUxGNAVs7oYLW4=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210309182540-3f2ba371a0a6/go.mod h1:JE8Qw51hjTeqCQBV+p84tlji0N6shQ9cMU2kcNWq6j0=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210309184807-e3fd20f70c29 h1:h9V+v2Bt6kCNSnMkiCGVYvDhiHRM0cyuJhmHmomJZvA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210309184807-e3fd20f70c29/go.mod h1:JE8Qw51hjTeqCQBV+p84tlji0N6shQ9cMU2kcNWq6j0=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210304120518-45b00bff0ac0 h1:cYO1hWq2Xd1V6mjSWGYvY4UuRNmJ2Qitx0MKCLH3bwU=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210304120518-45b00bff0ac0/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210304130807-d0d5075bbca0 h1:jDI0bzhUOtLXOZHRTdV9sP+0SZwI5s1L93wd6kFy28k=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210304130807-d0d5075bbca0/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210305150713-2817870bb301 h1:2dmiBEOf6Bwc9M9wS7RZgN8DVf/DUda57+bsIYTQEv0=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210305150713-2817870bb301/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14 h1:gEtd9g2Yp5548gzdPcrD7I1yiq4sq0z1/WtwzWgoDu8=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c h1:dUihP0o7rgfq3i5ZY1CegLNrQlszKHx0dR+BagSNPYs=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c/go.mod h1:MeS9gTgdRhKAWcMQSkYSk+ZSpYZJ1QipZeyJ6Cz7hHA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
@@ -698,6 +704,7 @@ github.com/vektah/dataloaden v0.2.1-0.20190515034641-a19b9a6e7c9e/go.mod h1:/HUd
 github.com/vektah/gqlparser v1.1.2/go.mod h1:1ycwN7Ij5njmMkPPAOaRFY4rET2Enx7IkVv3vaXspKw=
 github.com/vektah/gqlparser v1.3.1 h1:8b0IcD3qZKWJQHSzynbDlrtP3IxVydZ2DZepCGofqfU=
 github.com/vektah/gqlparser v1.3.1/go.mod h1:bkVf0FX+Stjg/MHnm8mEyubuaArhNEqfQhF+OTiAL74=
+github.com/vektra/mockery v1.1.2/go.mod h1:VcfZjKaFOPO+MpN4ZvwPjs4c48lkq1o3Ym8yHZJu0jU=
 github.com/vrischmann/envconfig v1.2.0/go.mod h1:c5DuUlkzfsnspy1g7qiqryPCsW+NjsrLsYq4zhwsoHo=
 github.com/vrischmann/envconfig v1.3.0 h1:4XIvQTXznxmWMnjouj0ST5lFo/WAYf5Exgl3x82crEk=
 github.com/vrischmann/envconfig v1.3.0/go.mod h1:bbvxFYJdRSpXrhS63mBFtKJzkDiNkyArOLXtY6q0kuI=
@@ -976,6 +983,7 @@ golang.org/x/tools v0.0.0-20200227222343-706bc42d1f0d/go.mod h1:TB2adYChydJhpapK
 golang.org/x/tools v0.0.0-20200301222351-066e0c02454c/go.mod h1:TB2adYChydJhpapKDTa4BR/hXlZSLoq2Wpct/0txZ28=
 golang.org/x/tools v0.0.0-20200304193943-95d2e580d8eb/go.mod h1:o4KQGtdN14AW+yjsvvwRTJJuXz8XRtIHtEnmAXLyFUw=
 golang.org/x/tools v0.0.0-20200312045724-11d5b4c81c7d/go.mod h1:o4KQGtdN14AW+yjsvvwRTJJuXz8XRtIHtEnmAXLyFUw=
+golang.org/x/tools v0.0.0-20200323144430-8dcfad9e016e/go.mod h1:Sl4aGygMT6LrqrWclx+PTx3U+LnKx/seiNR+3G19Ar8=
 golang.org/x/tools v0.0.0-20200331025713-a30bf2db82d4/go.mod h1:Sl4aGygMT6LrqrWclx+PTx3U+LnKx/seiNR+3G19Ar8=
 golang.org/x/tools v0.0.0-20200501065659-ab2804fb9c9d/go.mod h1:EkVYQZoAsY45+roYkvgYkIh4xh/qjgUK9TdY2XT94GE=
 golang.org/x/tools v0.0.0-20200512131952-2bc93b1c0c88/go.mod h1:EkVYQZoAsY45+roYkvgYkIh4xh/qjgUK9TdY2XT94GE=

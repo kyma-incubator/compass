@@ -56,6 +56,36 @@ func fixAsyncDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixRegisterApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createApplicationTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationTemplateInGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
+func fixRegisterApplicationFromTemplateRequest(applicationFromTemplateInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerApplicationFromTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationFromTemplateInGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixAddApplicationWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(applicationID: %q in: %s) {
+					%s
+				}
+			}`,
+			applicationID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
+
 func fixApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
