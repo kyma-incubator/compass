@@ -19,7 +19,7 @@ func (i ApplicationTemplateInput) Validate() error {
 		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
-		"webhooks":               validation.Validate(i.Webhooks, validation.By(webhookRuleFunc)),
+		"webhooks":               validation.Validate(i.Webhooks, validation.By(webhooksRuleFunc)),
 	}.Filter()
 }
 
@@ -106,10 +106,17 @@ func (i TemplateValueInput) Validate() error {
 	)
 }
 
-func webhookRuleFunc(value interface{}) error {
-	webhookInput, ok := value.(WebhookInput)
+func webhooksRuleFunc(value interface{}) error {
+	webhookInputs, ok := value.([]*WebhookInput)
 	if !ok {
-		return errors.New("value could not be cast to webhookInput")
+		return errors.New("value could not be cast to WebhookInput slice")
 	}
-	return webhookInput.Validate()
+
+	for _, webhookInput := range webhookInputs {
+		if err := webhookInput.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

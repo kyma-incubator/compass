@@ -262,6 +262,48 @@ func TestApplicationTemplateInput_Validate_AccessLevel(t *testing.T) {
 	}
 }
 
+func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
+	webhookInput := fixValidWebhookInput()
+
+	testCases := []struct {
+		Name  string
+		Value []*graphql.WebhookInput
+		Valid bool
+	}{
+		{
+			Name:  "Valid",
+			Value: []*graphql.WebhookInput{&webhookInput},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Empty",
+			Value: []*graphql.WebhookInput{},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - nil",
+			Value: nil,
+			Valid: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateInput()
+			sut.Webhooks = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 // PlaceholderDefinitionInput
 
 func TestPlaceholderDefinitionInput_Validate_Name(t *testing.T) {
@@ -596,6 +638,7 @@ func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 			Name: "valid",
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
+		Webhooks:    []*graphql.WebhookInput{},
 	}
 }
 
