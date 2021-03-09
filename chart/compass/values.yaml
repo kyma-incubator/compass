@@ -84,7 +84,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "latest"
+        version: "PR-1760"
   isLocalEnv: false
   oauth2:
     host: oauth2

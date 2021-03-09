@@ -49,7 +49,7 @@ func TestDirectorClient_CreateBundle(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.BundleExt{Bundle: graphql.Bundle{ID: "resID"}}
+					res.Result = graphql.BundleExt{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "resID"}}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -80,7 +80,7 @@ func TestDirectorClient_CreateBundle(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.BundleExt{Bundle: graphql.Bundle{ID: "resID"}}
+					res.Result = graphql.BundleExt{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "resID"}}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -254,7 +254,7 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 func TestDirectorClient_GetBundle(t *testing.T) {
 	appID := "foo"
 	bundleID := "foo"
-	successResult := graphql.BundleExt{Bundle: graphql.Bundle{ID: "1"}}
+	successResult := graphql.BundleExt{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "1"}}}
 	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
@@ -350,7 +350,7 @@ func TestDirectorClient_GetBundle(t *testing.T) {
 
 func TestDirectorClient_ListBundles(t *testing.T) {
 	appID := "foo"
-	successResult := []*graphql.BundleExt{{Bundle: graphql.Bundle{ID: "1"}}, {Bundle: graphql.Bundle{ID: "2"}}}
+	successResult := []*graphql.BundleExt{{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "1"}}}, {Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "2"}}}}
 	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
@@ -546,7 +546,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.APIDefinition{ID: "resID"}
+					res.Result = graphql.APIDefinition{BaseEntity: &graphql.BaseEntity{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -577,7 +577,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.APIDefinition{ID: "resID"}
+					res.Result = graphql.APIDefinition{BaseEntity: &graphql.BaseEntity{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -747,7 +747,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.EventDefinition{ID: "resID"}
+					res.Result = graphql.EventDefinition{BaseEntity: &graphql.BaseEntity{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -778,7 +778,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.EventDefinition{ID: "resID"}
+					res.Result = graphql.EventDefinition{BaseEntity: &graphql.BaseEntity{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -948,7 +948,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.Document{ID: "resID"}
+					res.Result = graphql.Document{BaseEntity: &graphql.BaseEntity{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -979,7 +979,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 						return
 					}
 
-					res.Result = graphql.Document{ID: "resID"}
+					res.Result = graphql.Document{BaseEntity: &graphql.BaseEntity{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},

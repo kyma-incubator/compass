@@ -81,7 +81,7 @@ func TestHandler_Info(t *testing.T) {
 			},
 		}
 
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -152,7 +152,7 @@ func TestHandler_Info(t *testing.T) {
 			},
 		}
 
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -233,7 +233,7 @@ func TestHandler_Info(t *testing.T) {
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -320,7 +320,7 @@ func TestHandler_Info(t *testing.T) {
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -390,7 +390,7 @@ func TestHandler_Info(t *testing.T) {
 				CertificateSecuredConnectorURL: &certificateSecuredConnectorUrl,
 			},
 		}
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 		r := httptest.NewRecorder()
@@ -408,7 +408,7 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
@@ -453,7 +453,7 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to build response", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
-		connectorClientMock.On("configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
