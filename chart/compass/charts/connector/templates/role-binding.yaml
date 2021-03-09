@@ -32,8 +32,8 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 subjects:
 - kind: ServiceAccount
-  name: compass-connector-tests
-  namespace: kyma-system
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.ca.name }}
