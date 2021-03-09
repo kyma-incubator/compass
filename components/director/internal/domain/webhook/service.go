@@ -31,6 +31,8 @@ type UIDService interface {
 	Generate() string
 }
 
+type OwningResource string
+
 type service struct {
 	webhookRepo WebhookRepository
 	appRepo     ApplicationRepository
@@ -156,10 +158,3 @@ func (s *service) retrieveWebhooks(ctx context.Context, application *model.Appli
 
 	return webhooks, nil
 }
-
-type OwningResource string
-
-const (
-	ApplicationTemplateWebhookOwner OwningResource = "ApplicationTemplate"
-	ApplicationWebhookOwner         OwningResource = "Application"
-)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -42,11 +44,11 @@ type WebhookConverter interface {
 }
 
 type webhookOwner struct {
-	OwningResource
+	resource.Type
 	id string
 }
 
-type ExistsFunc func(ctx context.Context, id string) (bool, error)
+type existsFunc func(ctx context.Context, id string) (bool, error)
 
 type Resolver struct {
 	webhookSvc       WebhookService
@@ -88,9 +90,9 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 
 	var owner webhookOwner
 	if appSpecified {
-		owner = webhookOwner{OwningResource: ApplicationWebhookOwner, id: *applicationID}
+		owner = webhookOwner{Type: resource.Application, id: *applicationID}
 	} else if appTemplateSpecified {
-		owner = webhookOwner{OwningResource: ApplicationTemplateWebhookOwner, id: *applicationTemplateID}
+		owner = webhookOwner{Type: resource.ApplicationTemplate, id: *applicationTemplateID}
 	}
 
 	id, err := r.checkForExistenceAndCreate(ctx, owner, *convertedIn)
@@ -173,25 +175,25 @@ func (r *Resolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphq
 func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, owningResource webhookOwner, input model.WebhookInput) (string, error) {
 	var (
 		converterFunc model.WebhookConverterFunc
-		existsFunc    ExistsFunc
+		existsFunc    existsFunc
 	)
 
-	switch owningResource.OwningResource {
-	case ApplicationWebhookOwner:
+	switch owningResource.Type {
+	case resource.Application:
 		converterFunc = (*model.WebhookInput).ToApplicationWebhook
 		existsFunc = r.appSvc.Exist
-	case ApplicationTemplateWebhookOwner:
+	case resource.ApplicationTemplate:
 		converterFunc = (*model.WebhookInput).ToApplicationTemplateWebhook
 		existsFunc = r.appTemplateSvc.Exists
 	}
-	err := r.genericCheckExistence(ctx, owningResource.id, string(owningResource.OwningResource), existsFunc)
+	err := r.genericCheckExistence(ctx, owningResource.id, string(owningResource.Type), existsFunc)
 	if err != nil {
 		return "", err
 	}
 	return r.webhookSvc.Create(ctx, owningResource.id, input, converterFunc)
 }
 
-func (r *Resolver) genericCheckExistence(ctx context.Context, resourceID, resourceName string, existsFunc ExistsFunc) error {
+func (r *Resolver) genericCheckExistence(ctx context.Context, resourceID, resourceName string, existsFunc existsFunc) error {
 	found, err := existsFunc(ctx, resourceID)
 	if err != nil {
 		return errors.Wrapf(err, "while checking existence of %s", resourceName)

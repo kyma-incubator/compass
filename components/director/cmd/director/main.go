@@ -500,7 +500,7 @@ func webhookService() webhook.WebhookService {
 	webhookConverter := webhook.NewConverter(authConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
-	return webhook.NewService(webhookRepo, nil, uidSvc)
+	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
 func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {

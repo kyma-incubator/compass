@@ -28,6 +28,8 @@ const (
 	nameKey   = "name"
 )
 
+type repoCreatorFunc func(ctx context.Context, application *model.Application) error
+
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -219,8 +221,6 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-type RepoCreator func(ctx context.Context, application *model.Application) error
-
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
 		err = s.appRepo.Create(ctx, application)
@@ -403,7 +403,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	return nil
 }
 
-func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegisterInput, creator RepoCreator) (string, error) {
+func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegisterInput, repoCreatorFunc repoCreatorFunc) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -436,7 +436,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 
 	app := in.ToApplication(s.timestampGen(), id, appTenant)
 
-	err = creator(ctx, app)
+	err = repoCreatorFunc(ctx, app)
 	if err != nil {
 		return "", err
 	}

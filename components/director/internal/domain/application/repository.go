@@ -249,7 +249,6 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 	}
 
 	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
-	//it is ok to pass nil, bc appTemplateID is not an updatable column
 	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
