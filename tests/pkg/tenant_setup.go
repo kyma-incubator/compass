@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	testProvider      = "Compass Tests"
-	testDefaultTenant = "Test Default"
-	deleteQuery       = `DELETE FROM public.label_definitions WHERE tenant_id = $1`
+	testProvider           = "Compass Tests"
+	testDefaultTenant      = "Test Default"
+	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings);`
 )
 
 type Tenant struct {
@@ -163,13 +163,10 @@ func (mgr TestTenantsManager) Cleanup() {
 		log.Fatal(err)
 	}
 
-	for _,v := range mgr.tenantsByName {
-		_, err = tx.Exec(deleteQuery, v.ID)
-		if err != nil {
-			log.Fatal(err)
-		}
+	_, err = tx.Exec(deleteLabelDefinitions)
+	if err != nil {
+		log.Fatal(err)
 	}
-
 
 	err = tx.Commit()
 	if err != nil {

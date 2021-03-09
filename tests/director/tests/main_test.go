@@ -1,15 +1,12 @@
 package tests
 
 import (
-	"fmt"
 	"github.com/kyma-incubator/compass/tests/pkg"
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"testing"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/vrischmann/envconfig"
 
@@ -25,8 +22,6 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 	pkg.TestTenants.Cleanup()
-	fmt.Println("cleaned up")
-	time.Sleep(20*time.Second)
 	pkg.TestTenants.Init()
 	defer pkg.TestTenants.Cleanup()
 
