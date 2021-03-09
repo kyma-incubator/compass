@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	clientID               = "id"
 	token                  = "tokenValue"
 	csrTokenExpiration     = time.Duration(100)
 	appTokenExpiration     = time.Duration(100)
@@ -97,7 +98,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
+
+		var authSession connector.AuthenticationSession
+		err := json.NewDecoder(w.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
@@ -116,7 +122,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
+
+		var authSession connector.AuthenticationSession
+		err := json.NewDecoder(w.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
 	t.Run("should fail when can't get OneTimeToken from systemAuth", func(t *testing.T) {
@@ -140,7 +151,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
+
+		var authSession connector.AuthenticationSession
+		err := json.NewDecoder(w.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
 	t.Run("should fail when can't compute expiration time", func(t *testing.T) {
@@ -168,7 +184,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
+
+		var authSession connector.AuthenticationSession
+		err := json.NewDecoder(w.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
 	t.Run("should fail for expired token", func(t *testing.T) {
@@ -198,7 +219,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
+
+		var authSession connector.AuthenticationSession
+		err := json.NewDecoder(w.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
 	t.Run("should fail when invalidating token fails", func(t *testing.T) {
@@ -210,7 +236,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		defer transact.AssertExpectations(t)
 		beforeOneDay := time.Now().AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
-			ID: "id",
+			ID: clientID,
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
 					CreatedAt: time.Now(),
@@ -229,7 +255,6 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		//THEN
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should fail when db transaction commit fails", func(t *testing.T) {
@@ -241,7 +266,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		defer transact.AssertExpectations(t)
 		beforeOneDay := time.Now().AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
-			ID: "id",
+			ID: clientID,
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
 					CreatedAt: time.Now(),
@@ -260,7 +285,6 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
 	})
 
 	t.Run("should succeed when token is resolved successfully", func(t *testing.T) {
@@ -272,7 +296,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		defer transact.AssertExpectations(t)
 		beforeOneDay := time.Now().AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
-			ID: "id",
+			ID: clientID,
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
 					CreatedAt: time.Now(),
@@ -292,7 +316,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, emptyAuthSession(), authenticationSession)
+
+		var authSession connector.AuthenticationSession
+		err := json.NewDecoder(w.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assert.Equal(t, []string{clientID}, authSession.Header[connector.ClientIdFromTokenHeader])
 	})
 }
 

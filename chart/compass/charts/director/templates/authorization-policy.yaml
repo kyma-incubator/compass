@@ -25,7 +25,6 @@ spec:
       - operation:
           ports:
           - "{{ .Values.global.director.operations.port }}"
-
     - from:
       - source:
           principals:

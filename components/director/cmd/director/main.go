@@ -592,8 +592,6 @@ func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transac
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Use(middlewares...)
-
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 

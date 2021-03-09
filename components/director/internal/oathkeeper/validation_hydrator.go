@@ -112,6 +112,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
 	if err := vh.tokenService.InvalidateToken(ctx, systemAuth); err != nil {
+		log.C(ctx).WithError(err).Error("Failed to invalidate token")
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
 		return
 	}
