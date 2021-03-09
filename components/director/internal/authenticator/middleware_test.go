@@ -65,7 +65,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK: invalid character '<' looking for beginning of value", fakeJWKSURL))
+		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK set: invalid character '<' looking for beginning of value", fakeJWKSURL))
 	})
 }
 
@@ -82,8 +82,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -120,8 +122,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		handler := testHandlerWithClientUser(t, defaultTenant, clientUser, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		req.Header.Add(ClientIDHeaderKey, clientUser)
 
@@ -169,8 +173,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -197,8 +203,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -272,8 +280,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -312,9 +322,11 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key j
 		ConsumerType: consumer.Runtime,
 	})
 
-	materializedKey, err := key.Materialize()
+	var rawKey interface{}
+	err := key.Raw(&rawKey)
 	require.NoError(t, err)
-	signedToken, err := token.SignedString(materializedKey)
+
+	signedToken, err := token.SignedString(rawKey)
 	require.NoError(t, err)
 
 	return signedToken
