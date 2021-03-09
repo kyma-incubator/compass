@@ -145,8 +145,13 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 			keys := a.cachedJWKs
 			a.mux.RUnlock()
 
-			keyIterator := &authenticator.KeyIterator{
-				Algorithm: token.Method.Alg(),
+			keyIterator := &authenticator.JWTKeyIterator{
+				AlgorithmCriteria: func(alg string) bool {
+					return token.Method.Alg() == alg
+				},
+				IDCriteria: func(id string) bool {
+					return true
+				},
 			}
 
 			if err := arrayiter.Walk(ctx, keys, keyIterator); err != nil {
