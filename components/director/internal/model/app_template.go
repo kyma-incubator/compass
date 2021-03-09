@@ -3,8 +3,6 @@ package model
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -67,7 +65,7 @@ type ApplicationTemplateValueInput struct {
 	Value       string
 }
 
-func (a *ApplicationTemplateInput) ToApplicationTemplate(appTemplateID string) ApplicationTemplate {
+func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationTemplate {
 	if a == nil {
 		return ApplicationTemplate{}
 	}
@@ -75,12 +73,12 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(appTemplateID string) A
 	uidService := uid.NewService()
 	webhooks := make([]Webhook, 0, 0)
 	for _, webhookInput := range a.Webhooks {
-		webhook := webhookInput.ToApplicationTemplateWebhook(uidService.Generate(), str.Ptr(""), appTemplateID)
+		webhook := webhookInput.ToApplicationTemplateWebhook(uidService.Generate(), nil, id)
 		webhooks = append(webhooks, *webhook)
 	}
 
 	return ApplicationTemplate{
-		ID:                   appTemplateID,
+		ID:                   id,
 		Name:                 a.Name,
 		Description:          a.Description,
 		ApplicationInputJSON: a.ApplicationInputJSON,

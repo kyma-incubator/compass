@@ -263,7 +263,9 @@ func TestApplicationTemplateInput_Validate_AccessLevel(t *testing.T) {
 }
 
 func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
-	webhookInput := fixValidWebhookInput()
+	webhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	invalidWebhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	invalidWebhookInput.URL = nil
 
 	testCases := []struct {
 		Name  string
@@ -284,6 +286,11 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 			Name:  "Valid - nil",
 			Value: nil,
 			Valid: true,
+		},
+		{
+			Name:  "Invalid - some of the webhooks are in invalid state",
+			Value: []*graphql.WebhookInput{&invalidWebhookInput},
+			Valid: false,
 		},
 	}
 
