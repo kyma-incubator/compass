@@ -24,7 +24,6 @@ import (
 )
 
 func TestAuditlogIntegration(t *testing.T) {
-	testctx.Init()
 	ctx := context.Background()
 	httpClient := http.Client{}
 	appName := "app-for-testing-auditlog-mock"

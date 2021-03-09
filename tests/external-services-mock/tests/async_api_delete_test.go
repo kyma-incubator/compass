@@ -34,7 +34,7 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 		operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, "webhook/delete/operation")
 		deleteFullPath    = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, "webhook/delete")
 	)
-
+fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>", operationFullPath)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
@@ -167,6 +167,6 @@ func isOperationDeletionCompleted(operation *v1alpha1.Operation) bool {
 func deleteApplicationOnExit(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, tenant string) {
 	application := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTenant, id)
 	if application.Name != "" {
-		fixtures.UnregisterApplication(t, ctx, gqlClient, id, tenant)
+		fixtures.UnregisterApplication(t, ctx, gqlClient, tenant, id)
 	}
 }
