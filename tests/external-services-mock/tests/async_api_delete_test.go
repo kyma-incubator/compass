@@ -15,8 +15,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	gcli "github.com/machinebox/graphql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -26,7 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 )
 
 func TestAsyncAPIDeleteApplication(t *testing.T) {
