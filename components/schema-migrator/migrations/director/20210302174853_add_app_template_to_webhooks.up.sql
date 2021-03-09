@@ -19,6 +19,11 @@ ALTER TABLE applications
     ADD COLUMN app_template_id uuid,
     ADD FOREIGN KEY (app_template_id) REFERENCES app_templates(id) ON DELETE SET NULL;
 
---TODO: Fill app_template_id column for apps which were already created by templates
+
+UPDATE applications
+SET app_template_id = (SELECT id FROM app_templates
+                       WHERE to_jsonb(name) = (SElECT value FROM labels
+                                               WHERE app_id = applications.id AND key = 'applicationType'))
+WHERE id = id;
 
 COMMIT;
