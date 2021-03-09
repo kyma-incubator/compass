@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/lestrrat-go/iter/arrayiter"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -98,15 +100,17 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return nil, errors.Wrap(err, "while getting the key ID")
 	}
 
-	if keys, isFound := jwksSet.LookupKeyID(keyID); isFound {
-		if keys.Algorithm() == token.Method.Alg() {
-			var rawKey interface{}
-			if err := keys.Raw(&rawKey); err != nil {
-				return nil, err
-			}
+	keyIterator := &keyIterator{
+		algorithm: token.Method.Alg(),
+		keyID:     keyID,
+	}
 
-			return rawKey, nil
-		}
+	if err := arrayiter.Walk(ctx, jwksSet, keyIterator); err != nil {
+		return nil, err
+	}
+
+	if keyIterator.resultingKey != nil {
+		return keyIterator.resultingKey, nil
 	}
 
 	return nil, apperrors.NewInternalError("unable to find a proper key")
@@ -188,4 +192,28 @@ func getTokenIssuer(claims jwt.MapClaims) (string, error) {
 	}
 
 	return issuerStr, nil
+}
+
+type keyIterator struct {
+	algorithm    string
+	keyID        string
+	resultingKey interface{}
+}
+
+func (keyIterator *keyIterator) Visit(index int, value interface{}) error {
+	key, ok := value.(jwk.Key)
+	if !ok {
+		return apperrors.NewInternalError("unable to parse key")
+	}
+
+	if key.Algorithm() == keyIterator.algorithm && key.KeyID() == keyIterator.keyID {
+		var rawKey interface{}
+		if err := key.Raw(&rawKey); err != nil {
+			return err
+		}
+
+		keyIterator.resultingKey = rawKey
+	}
+
+	return nil
 }

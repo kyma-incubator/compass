@@ -28,6 +28,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892
+	github.com/lestrrat-go/iter v1.0.0
 	github.com/lestrrat-go/jwx v1.1.4
 	github.com/lib/pq v1.9.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225

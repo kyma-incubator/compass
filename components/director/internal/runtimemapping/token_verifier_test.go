@@ -263,6 +263,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 			Header: map[string]interface{}{
 				"kid": "555-666-777",
 			},
+			Method: jwt.GetSigningMethod("RS256"),
 		}
 		jwksFetch := NewJWKsFetch()
 
