@@ -258,6 +258,8 @@ github.com/go-openapi/validate v0.19.2/go.mod h1:1tRCw7m3jtI8eNWEEliiAqUIcBztB2K
 github.com/go-openapi/validate v0.19.5/go.mod h1:8DJv2CVJQ6kGNpFW6eV9N3JviE1C85nY1c2z52x1Gk4=
 github.com/go-ozzo/ozzo-validation v3.6.0+incompatible h1:msy24VGS42fKO9K1vLz82/GeYW1cILu7Nuuj1N3BBkE=
 github.com/go-ozzo/ozzo-validation v3.6.0+incompatible/go.mod h1:gsEKFIVnabGBt6mXmxK0MoFy+cZoTJY6mu5Ll3LVLBU=
+github.com/go-ozzo/ozzo-validation/v4 v4.3.0 h1:byhDUpfEwjsVQb1vBunvIjh2BHQ9ead57VkAEY4V+Es=
+github.com/go-ozzo/ozzo-validation/v4 v4.3.0/go.mod h1:2NKgrcHl3z6cJs+3Oo940FPRiTzuqKbvfrL2RxCj6Ew=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/gogo/googleapis v1.1.0/go.mod h1:gf4bu3Q80BeJ6H1S1vYPm8/ELATdvryBaNFGgqEef3s=
@@ -450,6 +452,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210218094621-346b
 github.com/kyma-incubator/compass/components/director v0.0.0-20210301143156-3b39f117e7bf/go.mod h1:hJ3bgWfwFhdnxZF7Gcok5Rm1zDT4bHtVGHDeXDBvTfg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210304094417-deb791b48d6a h1:8a/FkUjQ1/SSqbwQJQIDg+bJLyzV4KmkHLPwzolhcww=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210304094417-deb791b48d6a/go.mod h1:ebSZJ5BEdqq8a2NEYtc9M8U2pwBcJX46PPQxAOhp74w=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210308122309-da46c18119eb h1:E1P66ZPUPnsyMXBtk6OgsOGqI/XXpBS9R2iXNyAjLkY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210308122309-da46c18119eb/go.mod h1:6Nnf2VXauie7EQkItZ3M6tdNc1FL/ApeitT02FooT3M=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20200429083609-7d80a85180c6/go.mod h1:VJR6u6CONemX/0CsndsUPis8cY7jfkMk8TUH27m2jj8=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=

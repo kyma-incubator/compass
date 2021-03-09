@@ -48,7 +48,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1726"
+      version: "local-test"
     console:
       dir:
       version: "PR-19"
@@ -317,7 +317,7 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     tests:
-      defaultCheckInterval: 1ms
+      defaultCheckInterval: 15s
       defaultTestTimeout: 10m
 
   tenantFetchers:

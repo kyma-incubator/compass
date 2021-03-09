@@ -28,11 +28,12 @@ import (
 )
 
 type config struct {
-	DefaultTenant        string
-	DirectorURL          string
-	ORDServiceURL        string
-	DefaultCheckInterval time.Duration
-	DefaultTestTimeout   time.Duration
+	DefaultTenant               string
+	DirectorURL                 string
+	ORDServiceURL               string
+	DefaultCheckInterval        time.Duration
+	DefaultTestTimeout          time.Duration
+	ExternalServicesMockBaseURL string
 }
 
 var testConfig config

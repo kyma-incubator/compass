@@ -30,22 +30,10 @@ const (
 type TestData struct {
 	tenant    string
 	appInput  directorSchema.ApplicationRegisterInput
-	apisMap   map[string]directorSchema.APIDefinitionInput
-	eventsMap map[string]directorSchema.EventDefinitionInput
 }
 
 func TestORDAggregator(t *testing.T) {
-	appInput := createApp("tenant1")
-
-	apisMap := make(map[string]directorSchema.APIDefinitionInput, 0)
-	for _, apiDefinition := range appInput.Bundles[0].APIDefinitions {
-		apisMap[apiDefinition.Name] = *apiDefinition
-	}
-
-	eventsMap := make(map[string]directorSchema.EventDefinitionInput, 0)
-	for _, eventDefinition := range appInput.Bundles[0].EventDefinitions {
-		eventsMap[eventDefinition.Name] = *eventDefinition
-	}
+	appInput := createApp()
 
 	ctx := context.Background()
 
@@ -54,10 +42,10 @@ func TestORDAggregator(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+	_, err = pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
 
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	//defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 	t.Log("Create integration system")
 	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
@@ -87,32 +75,23 @@ func TestORDAggregator(t *testing.T) {
 	httpClient := conf.Client(ctx)
 	httpClient.Timeout = 10 * time.Second
 
-	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model
-		t.Run(fmt.Sprintf("Requesting %s returns empty", resource), func(t *testing.T) {
-			respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/%s?$format=json", testConfig.ORDServiceURL, resource), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
-			require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
-		})
-	}
-
 	testData := TestData{
 		tenant:    testConfig.DefaultTenant,
 		appInput:  appInput,
-		apisMap:   apisMap,
-		eventsMap: eventsMap,
 	}
 
-	t.Run(fmt.Sprintf("Requesting Bundles for tenant %s returns them as expected", testData.tenant), func(t *testing.T) {
-		err = WaitForFunction(testConfig.DefaultCheckInterval, testConfig.DefaultTestTimeout, func() bool {
+	t.Run(fmt.Sprintf("Verifying ORD Document for tenant %s to be valid", testData.tenant), func(t *testing.T) {
+		err = VerifyORDDocument(testConfig.DefaultCheckInterval, testConfig.DefaultTestTimeout, func() bool {
 			respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testData.tenant}})
 
 			if len(gjson.Get(respBody, "value").Array()) == 0 {
-				//t.Log("Missing Bundles...will try again")
+				t.Log("Missing Bundles...will try again")
 				return false
 			}
 
-			require.Equal(t, len(testData.appInput.Bundles), len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, testData.appInput.Bundles[0].Name, gjson.Get(respBody, "value.0.title").String())
-			require.Equal(t, *testData.appInput.Bundles[0].Description, gjson.Get(respBody, "value.0.description").String())
+			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+			require.Equal(t, "SAP LoB System 3 Cloud Bundle 1", gjson.Get(respBody, "value.0.title").String())
+			require.Equal(t, "SAP LoB System 3 Cloud, our next generation cloud ERP suite designed for in-memory computing, acts as a digital core, connecting your enterprise with people, business networks, the Internet of Things, Big Data, and more.", gjson.Get(respBody, "value.0.description").String())
 
 			return true
 		})
@@ -120,76 +99,18 @@ func TestORDAggregator(t *testing.T) {
 	})
 }
 
-func createApp(suffix string) directorSchema.ApplicationRegisterInput {
-	return generateAppInputForDifferentTenants(directorSchema.ApplicationRegisterInput{
-		Name:        "test-app",
+func createApp() directorSchema.ApplicationRegisterInput {
+	return directorSchema.ApplicationRegisterInput{
+		Name: "test-app-3",
+		ProviderName: ptr.String("testy"),
 		Description: ptr.String("my application"),
-		Bundles: []*directorSchema.BundleCreateInput{
+		Webhooks: []*directorSchema.WebhookInput{
 			{
-				Name:        "foo-bndl",
-				Description: ptr.String("foo-descr"),
-				APIDefinitions: []*directorSchema.APIDefinitionInput{
-					{
-						Name:        "comments-v1",
-						Description: ptr.String("api for adding comments"),
-						TargetURL:   "http://mywordpress.com/comments",
-						Group:       ptr.String("comments"),
-						Version:     pkg.FixDepracatedVersion(),
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOpenAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"openapi":"3.0.2"}`),
-						},
-					},
-					{
-						Name:        "reviews-v1",
-						Description: ptr.String("api for adding reviews"),
-						TargetURL:   "http://mywordpress.com/reviews",
-						Version:     pkg.FixActiveVersion(),
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOdata,
-							Format: directorSchema.SpecFormatJSON,
-							Data:   ptr.CLOB(`{"openapi":"3.0.1"}`),
-						},
-					},
-					{
-						Name:        "xml",
-						Description: ptr.String("xml api"),
-						Version:     pkg.FixDecomissionedVersion(),
-						TargetURL:   "http://mywordpress.com/xml",
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOdata,
-							Format: directorSchema.SpecFormatXML,
-							Data:   ptr.CLOB("odata"),
-						},
-					},
-				},
-				EventDefinitions: []*directorSchema.EventDefinitionInput{
-					{
-						Name:        "comments-v1",
-						Description: ptr.String("comments events"),
-						Version:     pkg.FixDepracatedVersion(),
-						Group:       ptr.String("comments"),
-						Spec: &directorSchema.EventSpecInput{
-							Type:   directorSchema.EventSpecTypeAsyncAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"asyncapi":"1.2.0"}`),
-						},
-					},
-					{
-						Name:        "reviews-v1",
-						Description: ptr.String("review events"),
-						Version:     pkg.FixActiveVersion(),
-						Spec: &directorSchema.EventSpecInput{
-							Type:   directorSchema.EventSpecTypeAsyncAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"asyncapi":"1.1.0"}`),
-						},
-					},
-				},
+				Type: directorSchema.WebhookTypeOpenResourceDiscovery,
+				URL:  &testConfig.ExternalServicesMockBaseURL,
 			},
 		},
-	}, suffix)
+	}
 }
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
@@ -234,23 +155,7 @@ func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client
 	return string(body)
 }
 
-func generateAppInputForDifferentTenants(appInput directorSchema.ApplicationRegisterInput, suffix string) directorSchema.ApplicationRegisterInput {
-	appInput.Name += "-" + suffix
-	for _, bndl := range appInput.Bundles {
-		bndl.Name = bndl.Name + "-" + suffix
-
-		for _, apiDef := range bndl.APIDefinitions {
-			apiDef.Name = apiDef.Name + "-" + suffix
-		}
-
-		for _, eventDef := range bndl.EventDefinitions {
-			eventDef.Name = eventDef.Name + "-" + suffix
-		}
-	}
-	return appInput
-}
-
-func WaitForFunction(interval time.Duration, timeout time.Duration, conditionalFunc func() bool) error {
+func VerifyORDDocument(interval time.Duration, timeout time.Duration, conditionalFunc func() bool) error {
 	done := time.After(timeout)
 
 	for {
