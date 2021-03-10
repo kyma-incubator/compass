@@ -5,14 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
