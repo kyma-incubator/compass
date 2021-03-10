@@ -94,6 +94,9 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		description
 		integrationSystemID
 		labels
+		deletedAt
+		ready
+		error
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL

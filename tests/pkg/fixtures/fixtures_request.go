@@ -234,9 +234,6 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 					%s
-					deletedAt
-					ready
-					error
 				}
 			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
