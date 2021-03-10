@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -13,8 +16,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
 	gcli "github.com/machinebox/graphql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -24,20 +25,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
-)
-
-var (
-	operationFullPath = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, "webhook/delete/operation")
-	deleteFullPath    = fmt.Sprintf("%s%s", testConfig.ExternalServicesMockBaseURL, "webhook/delete")
-
-	mockedWebhookInput = graphql.WebhookInput{
-		Type:           graphql.WebhookTypeUnregisterApplication,
-		Mode:           webhookModePtr(graphql.WebhookModeAsync),
-		URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
-		OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
-		StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
-	}
 )
 
 func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
@@ -47,7 +34,7 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{&mockedWebhookInput},
+		Webhooks:     []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
 	t.Log("Get Dex token")
@@ -58,10 +45,12 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
 	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
 	require.NoError(t, err)
+
 	registerRequest := fixRegisterApplicationRequest(appInputGQL)
 	app := graphql.ApplicationExt{}
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
 	require.NoError(t, err)
+	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
 	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
@@ -80,7 +69,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 			Name: appName,
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{&mockedWebhookInput},
+		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
 	t.Log("Get Dex token")
@@ -95,6 +84,9 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	appTemplate := graphql.ApplicationTemplate{}
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerTemplateRequest, &appTemplate)
 	require.NoError(t, err)
+	require.Len(t, appTemplate.Webhooks, 1)
+
+	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTenant)
 
 	t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
 	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
@@ -124,7 +116,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			Name: appName,
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{&mockedWebhookInput},
+		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
 	t.Log("Get Dex token")
@@ -139,6 +131,9 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	appTemplate := graphql.ApplicationTemplate{}
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerTemplateRequest, &appTemplate)
 	require.NoError(t, err)
+	require.Len(t, appTemplate.Webhooks, 1)
+
+	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTenant)
 
 	t.Log(fmt.Sprintf("Registering application from template: %s", appName))
 	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
@@ -150,10 +145,11 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	app := graphql.ApplicationExt{}
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerAppRequest, &app)
 	require.NoError(t, err)
+	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
 	t.Log(fmt.Sprintf("Registering webhook for application: %s", appName))
-	appWebhookInputGQL, err := tc.Graphqlizer.WebhookInputToGQL(&mockedWebhookInput)
+	appWebhookInputGQL, err := tc.Graphqlizer.WebhookInputToGQL(buildMockedWebhook(testConfig.ExternalServicesMockBaseURL))
 	require.NoError(t, err)
 
 	registerAppWebhookRequest := fixAddApplicationWebhookRequest(app.ID, appWebhookInputGQL)
@@ -166,7 +162,9 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, dexGraphQLClient)
 }
 
-func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.ApplicationExt, appNearCreationTime time.Time, webhookID string, gqlClient *gcli.Client) {
+func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.ApplicationExt, appNearCreationTime time.Time, expectedWebhookID string, gqlClient *gcli.Client) {
+	operationFullPath := buildOperationFullPath(testConfig.ExternalServicesMockBaseURL)
+
 	t.Log("Unlock the mock application webhook")
 	unlockWebhook(t, operationFullPath)
 	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
@@ -188,7 +186,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	require.NotEmpty(t, operation)
 
 	require.Len(t, operation.Spec.WebhookIDs, 1)
-	require.Equal(t, webhookID, operation.Spec.WebhookIDs[0])
+	require.Equal(t, expectedWebhookID, operation.Spec.WebhookIDs[0])
 
 	t.Log(fmt.Sprintf("Verify operation CR with name %s is in progress", operationName))
 	require.Eventually(t, func() bool {
@@ -219,9 +217,30 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 		return isOperationDeletionCompleted(operation)
 	}, time.Minute*3, time.Second*10, "Waiting for operation deletion timed out.")
 
-	t.Log("Verify the deleted application do not exists in director")
+	t.Log("Verify the deleted application does not exist in director")
 	missingApp := getApplication(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
 	require.Empty(t, missingApp.Name, "Application is not deleted")
+}
+
+func buildMockedWebhook(externalSystemURL string) *graphql.WebhookInput {
+	operationFullPath := buildOperationFullPath(externalSystemURL)
+	deleteFullPath := buildDeleteFullPath(externalSystemURL)
+
+	return &graphql.WebhookInput{
+		Type:           graphql.WebhookTypeUnregisterApplication,
+		Mode:           webhookModePtr(graphql.WebhookModeAsync),
+		URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
+		OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
+		StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
+	}
+}
+
+func buildOperationFullPath(externalSystemURL string) string {
+	return fmt.Sprintf("%s%s", externalSystemURL, "webhook/delete/operation")
+}
+
+func buildDeleteFullPath(externalSystemURL string) string {
+	return fmt.Sprintf("%s%s", externalSystemURL, "webhook/delete")
 }
 
 func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
@@ -267,8 +286,15 @@ func isOperationDeletionCompleted(operation *v1alpha1.Operation) bool {
 }
 
 func deleteApplicationOnExit(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, tenant string) {
-	application := getApplication(t, ctx, gqlClient, testConfig.DefaultTenant, id)
+	application := getApplication(t, ctx, gqlClient, tenant, id)
 	if application.Name != "" {
 		unregisterApplicationInTenant(t, ctx, gqlClient, id, tenant)
+	}
+}
+
+func deleteApplicationTemplateOnExit(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appTemplateID string, tenant string) {
+	appTemplate := getAppTemplate(t, ctx, gqlClient, tenant, appTemplateID)
+	if appTemplate.Name != "" {
+		unregisterAppTemplate(t, ctx, gqlClient, appTemplateID, tenant)
 	}
 }

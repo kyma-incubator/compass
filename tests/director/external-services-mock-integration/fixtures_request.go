@@ -47,6 +47,15 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixDeleteAppTemplateRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		deleteApplicationTemplate(id: "%s") {
+			%s
+		}	
+	}`, id, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
 func fixAsyncDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -97,6 +106,15 @@ func fixApplicationRequest(id string) *gcli.Request {
 				error
 				}	
 			}`, id))
+}
+
+func fixAppTemplateRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationTemplate(id: "%s") {
+				%s
+				}	
+			}`, id, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
 // External services mock
