@@ -25,6 +25,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -79,7 +81,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string, appConditionStatus model.ApplicationStatusCondition) error {
 				return nil
 			},
 		}, nil)
@@ -98,7 +100,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string, appConditionStatus model.ApplicationStatusCondition) error {
 				return nil
 			},
 		}, nil)
@@ -117,7 +119,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string, appConditionStatus model.ApplicationStatusCondition) error {
 				return errors.New("failed to update")
 			},
 		}, nil)
@@ -150,46 +152,52 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when operation has finished", func(t *testing.T) {
 		type testCase struct {
-			Name          string
-			OperationType operation.OperationType
-			ExpectedError string
-			Ready         bool
-			UpdateCalled  int
-			DeleteCalled  int
+			Name               string
+			OperationType      operation.OperationType
+			ExpectedError      string
+			Ready              bool
+			AppConditionStatus model.ApplicationStatusCondition
+			UpdateCalled       int
+			DeleteCalled       int
 		}
 		cases := []testCase{
 			{
-				Name:          "CREATE with error",
-				OperationType: operation.OperationTypeCreate,
-				ExpectedError: "operation failed",
-				Ready:         true,
-				UpdateCalled:  1,
+				Name:               "CREATE with error",
+				OperationType:      operation.OperationTypeCreate,
+				ExpectedError:      "operation failed",
+				Ready:              true,
+				AppConditionStatus: model.ApplicationStatusConditionCreateFailed,
+				UpdateCalled:       1,
 			},
 			{
-				Name:          "CREATE with NO error",
-				OperationType: operation.OperationTypeCreate,
-				Ready:         true,
-				UpdateCalled:  1,
+				Name:               "CREATE with NO error",
+				OperationType:      operation.OperationTypeCreate,
+				Ready:              true,
+				AppConditionStatus: model.ApplicationStatusConditionCreateSucceeded,
+				UpdateCalled:       1,
 			},
 			{
-				Name:          "UPDATE with error",
-				OperationType: operation.OperationTypeUpdate,
-				ExpectedError: "operation UPDATE failed",
-				Ready:         true,
-				UpdateCalled:  1,
+				Name:               "UPDATE with error",
+				OperationType:      operation.OperationTypeUpdate,
+				ExpectedError:      "operation UPDATE failed",
+				Ready:              true,
+				AppConditionStatus: model.ApplicationStatusConditionUpdateFailed,
+				UpdateCalled:       1,
 			},
 			{
-				Name:          "UPDATE with NO error",
-				OperationType: operation.OperationTypeUpdate,
-				Ready:         true,
-				UpdateCalled:  1,
+				Name:               "UPDATE with NO error",
+				OperationType:      operation.OperationTypeUpdate,
+				Ready:              true,
+				AppConditionStatus: model.ApplicationStatusConditionUpdateSucceeded,
+				UpdateCalled:       1,
 			},
 			{
-				Name:          "DELETE with error",
-				OperationType: operation.OperationTypeDelete,
-				ExpectedError: "operation DELETE failed",
-				Ready:         true,
-				UpdateCalled:  1,
+				Name:               "DELETE with error",
+				OperationType:      operation.OperationTypeDelete,
+				ExpectedError:      "operation DELETE failed",
+				Ready:              true,
+				AppConditionStatus: model.ApplicationStatusConditionDeleteFailed,
+				UpdateCalled:       1,
 			},
 			{
 				Name:          "DELETE with NO error",
@@ -211,9 +219,10 @@ func TestUpdateOperationHandler(t *testing.T) {
 				updateCalled := 0
 				deleteCalled := 0
 				handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-					resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
+					resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string, appConditionStatus model.ApplicationStatusCondition) error {
 						require.Equal(t, resourceID, id)
 						require.Equal(t, testCase.Ready, ready)
+						require.Equal(t, testCase.AppConditionStatus, appConditionStatus)
 						if expectedErrorMsg == "" {
 							require.Nil(t, errorMsg)
 						} else {

@@ -103,7 +103,7 @@ type config struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
-	OperationEndpoint             string `envconfig:"default=/operations"`
+	OperationEndpoint             string `envconfig:"default=/last_operation"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ConfigurationFile             string
 	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
@@ -260,7 +260,20 @@ func main() {
 
 	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
 	operationsAPIRouter.Use(authMiddleware.Handler())
-	operationsAPIRouter.HandleFunc("", operationHandler.ServeHTTP)
+	operationsAPIRouter.HandleFunc("/{resource_type}/{resource_id}", operationHandler.ServeHTTP)
+
+	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
+		resource.Application: appUpdaterFunc(appRepo),
+	}, map[resource.Type]operation.ResourceDeleterFunc{
+		resource.Application: func(ctx context.Context, id string) error {
+			return appRepo.DeleteGlobal(ctx, id)
+		},
+	})
+
+	internalRouter := mux.NewRouter()
+	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
@@ -273,26 +286,6 @@ func main() {
 
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
-
-	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
-		resource.Application: func(ctx context.Context, id string, ready bool, error *string) error {
-			app, err := appRepo.GetGlobalByID(ctx, id)
-			if err != nil {
-				return err
-			}
-			app.Ready = ready
-			app.Error = error
-			return appRepo.Update(ctx, app)
-		},
-	}, map[resource.Type]operation.ResourceDeleterFunc{
-		resource.Application: func(ctx context.Context, id string) error {
-			return appRepo.DeleteGlobal(ctx, id)
-		},
-	})
-	internalRouter := mux.NewRouter()
-	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
-	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
-	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
@@ -511,7 +504,7 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 	scheduler, err := buildScheduler(ctx, cfg)
 	exitOnError(err, "Error while creating operations scheduler")
 
-	return operation.NewDirective(transact, webhookService().ListAllApplicationWebhooks, resourceFetcherFunc, tenant.LoadFromContext, scheduler).HandleOperation
+	return operation.NewDirective(transact, webhookService().ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler).HandleOperation
 }
 
 func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
@@ -531,4 +524,20 @@ func buildScheduler(ctx context.Context, config config) (operation.Scheduler, er
 	operationsK8sClient := k8sClient.Operations(config.OperationsNamespace)
 
 	return k8s.NewScheduler(operationsK8sClient), nil
+}
+
+func appUpdaterFunc(appRepo application.ApplicationRepository) operation.ResourceUpdaterFunc {
+	return func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
+		app, err := appRepo.GetGlobalByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		app.Status = &model.ApplicationStatus{
+			Condition: appStatusCondition,
+			Timestamp: time.Now(),
+		}
+		app.Ready = ready
+		app.Error = errorMsg
+		return appRepo.Update(ctx, app)
+	}
 }

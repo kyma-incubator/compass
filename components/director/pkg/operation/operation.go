@@ -18,6 +18,7 @@ package operation
 
 import (
 	"context"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -66,6 +67,7 @@ type Operation struct {
 	OperationCategory string        `json:"operation_category,omitempty"`
 	ResourceID        string        `json:"resource_id,omitempty"`
 	ResourceType      resource.Type `json:"resource_type,omitempty"`
+	CreationTime      time.Time     `json:"creation_time,omitempty"`
 	CorrelationID     string        `json:"correlation_id,omitempty"`
 	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
 	RequestObject     string        `json:"request_object,omitempty"`

@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -67,11 +69,13 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	queryParams := request.URL.Query()
+	vars := mux.Vars(request)
+	resourceId := vars[ResourceIDParam]
+	resourceType := vars[ResourceTypeParam]
 
 	op := &Operation{
-		ResourceID:   queryParams.Get(ResourceIDParam),
-		ResourceType: resource.Type(queryParams.Get(ResourceTypeParam)),
+		ResourceID:   resourceId,
+		ResourceType: resource.Type(resourceType),
 	}
 
 	log.C(ctx).Infof("Executing Operation API with resourceType: %s and resourceID: %s", op.ResourceType, op.ResourceID)
@@ -128,6 +132,14 @@ func prepareLastOperation(resource model.Entity) *OperationResponse {
 		Error: resource.GetError(),
 	}
 
+	prepareOperationType(resource, opResponse)
+	prepareOperationStatus(resource, opResponse)
+	prepareCreationTime(resource, opResponse)
+
+	return opResponse
+}
+
+func prepareOperationType(resource model.Entity, opResponse *OperationResponse) {
 	if !resource.GetDeletedAt().IsZero() {
 		opResponse.OperationType = OperationTypeDelete
 	} else if !resource.GetUpdatedAt().IsZero() {
@@ -135,7 +147,9 @@ func prepareLastOperation(resource model.Entity) *OperationResponse {
 	} else {
 		opResponse.OperationType = OperationTypeCreate
 	}
+}
 
+func prepareOperationStatus(resource model.Entity, opResponse *OperationResponse) {
 	if !resource.GetReady() {
 		opResponse.Status = OperationStatusInProgress
 	} else if resource.GetError() == nil {
@@ -143,6 +157,14 @@ func prepareLastOperation(resource model.Entity) *OperationResponse {
 	} else {
 		opResponse.Status = OperationStatusFailed
 	}
+}
 
-	return opResponse
+func prepareCreationTime(resource model.Entity, opResponse *OperationResponse) {
+	if resource.GetDeletedAt().After(resource.GetCreatedAt()) && resource.GetDeletedAt().After(resource.GetUpdatedAt()) {
+		opResponse.CreationTime = resource.GetDeletedAt()
+	} else if resource.GetUpdatedAt().After(resource.GetCreatedAt()) && resource.GetUpdatedAt().After(resource.GetDeletedAt()) {
+		opResponse.CreationTime = resource.GetUpdatedAt()
+	} else {
+		opResponse.CreationTime = resource.GetCreatedAt()
+	}
 }

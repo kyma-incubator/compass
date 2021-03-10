@@ -647,20 +647,38 @@ func (e APISpecType) MarshalGQL(w io.Writer) {
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial   ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
-	ApplicationStatusConditionFailed    ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionInitial         ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionConnected       ApplicationStatusCondition = "CONNECTED"
+	ApplicationStatusConditionFailed          ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionCreating        ApplicationStatusCondition = "CREATING"
+	ApplicationStatusConditionCreateFailed    ApplicationStatusCondition = "CREATE_FAILED"
+	ApplicationStatusConditionCreateSucceeded ApplicationStatusCondition = "CREATE_SUCCEEDED"
+	ApplicationStatusConditionUpdating        ApplicationStatusCondition = "UPDATING"
+	ApplicationStatusConditionUpdateFailed    ApplicationStatusCondition = "UPDATE_FAILED"
+	ApplicationStatusConditionUpdateSucceeded ApplicationStatusCondition = "UPDATE_SUCCEEDED"
+	ApplicationStatusConditionDeleting        ApplicationStatusCondition = "DELETING"
+	ApplicationStatusConditionDeleteFailed    ApplicationStatusCondition = "DELETE_FAILED"
+	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
 )
 
 var AllApplicationStatusCondition = []ApplicationStatusCondition{
 	ApplicationStatusConditionInitial,
 	ApplicationStatusConditionConnected,
 	ApplicationStatusConditionFailed,
+	ApplicationStatusConditionCreating,
+	ApplicationStatusConditionCreateFailed,
+	ApplicationStatusConditionCreateSucceeded,
+	ApplicationStatusConditionUpdating,
+	ApplicationStatusConditionUpdateFailed,
+	ApplicationStatusConditionUpdateSucceeded,
+	ApplicationStatusConditionDeleting,
+	ApplicationStatusConditionDeleteFailed,
+	ApplicationStatusConditionDeleteSucceeded,
 }
 
 func (e ApplicationStatusCondition) IsValid() bool {
 	switch e {
-	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed:
+	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed, ApplicationStatusConditionCreating, ApplicationStatusConditionCreateFailed, ApplicationStatusConditionCreateSucceeded, ApplicationStatusConditionUpdating, ApplicationStatusConditionUpdateFailed, ApplicationStatusConditionUpdateSucceeded, ApplicationStatusConditionDeleting, ApplicationStatusConditionDeleteFailed, ApplicationStatusConditionDeleteSucceeded:
 		return true
 	}
 	return false

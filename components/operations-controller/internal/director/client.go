@@ -64,7 +64,7 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.directorURL+"/operations", bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.directorURL+"/last_operation", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}

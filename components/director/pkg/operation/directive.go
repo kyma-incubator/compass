@@ -49,16 +49,18 @@ type directive struct {
 	webhookFetcherFunc  WebhookFetcherFunc
 	tenantLoaderFunc    TenantLoaderFunc
 	resourceFetcherFunc ResourceFetcherFunc
+	resourceUpdaterFunc ResourceUpdaterFunc
 	scheduler           Scheduler
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, resourceUpdaterFunc ResourceUpdaterFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
 	return &directive{
 		transact:            transact,
 		webhookFetcherFunc:  webhookFetcherFunc,
 		tenantLoaderFunc:    tenantLoaderFunc,
 		resourceFetcherFunc: resourceFetcherFunc,
+		resourceUpdaterFunc: resourceUpdaterFunc,
 		scheduler:           scheduler,
 	}
 }
@@ -117,6 +119,11 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	if !ok {
 		log.C(ctx).WithError(err).Error("An error occurred while casting the response entity")
 		return nil, apperrors.NewInternalError("Failed to process operation")
+	}
+
+	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, determineApplicationInProgressStatus(operationType)); err != nil {
+		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", entity.GetType(), entity.GetID())
+		return nil, apperrors.NewInternalError("Unable to update resource %s with id %s", entity.GetType(), entity.GetID())
 	}
 
 	operation.ResourceID = entity.GetID()
@@ -291,4 +298,17 @@ func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persiste
 
 func isErrored(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
+}
+
+func determineApplicationInProgressStatus(opType graphql.OperationType) model.ApplicationStatusCondition {
+	switch opType {
+	case graphql.OperationTypeCreate:
+		return model.ApplicationStatusConditionCreating
+	case graphql.OperationTypeUpdate:
+		return model.ApplicationStatusConditionUpdating
+	case graphql.OperationTypeDelete:
+		return model.ApplicationStatusConditionDeleting
+	default:
+		return model.ApplicationStatusConditionInitial
+	}
 }
