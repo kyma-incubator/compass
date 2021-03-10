@@ -108,7 +108,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 	} else if webhook.ApplicationTemplateID != nil {
 		webhook = in.ToApplicationTemplateWebhook(id, webhook.TenantID, *webhook.ApplicationTemplateID)
 	} else {
-		return errors.New("while updating Webhook: webhook doesn't have neither of applicaiton_id and applicaiton_template_id")
+		return errors.New("while updating Webhook: webhook doesn't have neither of application_id and application_template_id")
 	}
 
 	err = s.webhookRepo.Update(ctx, webhook)

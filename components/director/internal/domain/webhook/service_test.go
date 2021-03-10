@@ -498,7 +498,11 @@ func TestService_Update(t *testing.T) {
 		return webhook.URL == modelInput.URL
 	})
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	applicationWebhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	applicationTemplateWebhookModel := fixApplicationTemplateModelWebhook("1", id, url)
+	noIDWebhookModel := &model.Webhook{}
+	*noIDWebhookModel = *applicationWebhookModel
+	noIDWebhookModel.ApplicationID = nil
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
@@ -509,10 +513,20 @@ func TestService_Update(t *testing.T) {
 		ExpectedErrMessage  string
 	}{
 		{
-			Name: "Success",
+			Name: "Success when applicationID is present",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(webhookModel, nil).Once()
+				repo.On("GetByID", ctx, givenTenant(), id).Return(applicationWebhookModel, nil).Once()
+				repo.On("Update", ctx, inputWebhookModel).Return(nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success when applicationTemplateID is present",
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByID", ctx, givenTenant(), id).Return(applicationTemplateWebhookModel, nil).Once()
 				repo.On("Update", ctx, inputWebhookModel).Return(nil).Once()
 				return repo
 			},
@@ -522,7 +536,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when webhook update failed",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(webhookModel, nil).Once()
+				repo.On("GetByID", ctx, givenTenant(), id).Return(applicationWebhookModel, nil).Once()
 				repo.On("Update", ctx, inputWebhookModel).Return(testErr).Once()
 				return repo
 			},
@@ -536,6 +550,15 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error application doesn't have any ids",
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByID", ctx, givenTenant(), id).Return(noIDWebhookModel, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: "webhook doesn't have neither of application_id and application_template_id",
 		},
 	}
 
