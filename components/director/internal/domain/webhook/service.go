@@ -144,7 +144,7 @@ func (s *service) retrieveWebhooks(ctx context.Context, application *model.Appli
 
 	webhooksMap := make(map[model.WebhookType]*model.Webhook)
 	for i, webhook := range appTemplateWebhooks {
-		webhooksMap[webhook.Type] = appWebhooks[i]
+		webhooksMap[webhook.Type] = appTemplateWebhooks[i]
 	}
 	//Override values derived from template
 	for i, webhook := range appWebhooks {

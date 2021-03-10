@@ -490,6 +490,104 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 	})
 }
 
+func TestRepositoryListByApplicationTemplateID(t *testing.T) {
+	t.Run(testCaseSuccess, func(t *testing.T) {
+		// GIVEN
+		mockConv := &automock.EntityConverter{}
+		defer mockConv.AssertExpectations(t)
+		mockConv.On("FromEntity",
+			webhook.Entity{ID: givenID(),
+				ApplicationTemplateID: repo.NewValidNullableString(givenApplicationTemplateID()),
+				Type:                  string(model.WebhookTypeConfigurationChanged),
+				URL:                   repo.NewValidNullableString("http://kyma.io")}).
+			Return(model.Webhook{
+				ID: givenID(),
+			}, nil)
+
+		mockConv.On("FromEntity",
+			webhook.Entity{ID: anotherID(),
+				ApplicationTemplateID: repo.NewValidNullableString(givenApplicationTemplateID()),
+				Type:                  string(model.WebhookTypeConfigurationChanged),
+				URL:                   repo.NewValidNullableString("http://kyma2.io")}).
+			Return(model.Webhook{ID: anotherID()}, nil)
+
+		sut := webhook.NewRepository(mockConv)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "app_template_id", "type", "url", "auth"}).
+			AddRow(givenID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
+			AddRow(anotherID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_template_id = $1")).
+			WithArgs(givenApplicationTemplateID()).
+			WillReturnRows(rows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		actual, err := sut.ListByApplicationTemplateID(ctx, givenApplicationTemplateID())
+		// THEN
+		require.NoError(t, err)
+		require.Len(t, actual, 2)
+		assert.Equal(t, givenID(), actual[0].ID)
+		assert.Equal(t, anotherID(), actual[1].ID)
+	})
+
+	t.Run("success if no found", func(t *testing.T) {
+		// GIVE
+		sut := webhook.NewRepository(nil)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		noRows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"})
+
+		dbMock.ExpectQuery("SELECT").WithArgs(givenApplicationTemplateID()).WillReturnRows(noRows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		actual, err := sut.ListByApplicationTemplateID(ctx, givenApplicationTemplateID())
+		// THEN
+		require.NoError(t, err)
+		require.Empty(t, actual)
+	})
+
+	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
+		// GIVEN
+		sut := webhook.NewRepository(nil)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery("SELECT").WillReturnError(givenError())
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := sut.ListByApplicationTemplateID(ctx, givenApplicationTemplateID())
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {
+		// GIVEN
+		mockConv := &automock.EntityConverter{}
+		defer mockConv.AssertExpectations(t)
+		mockConv.On("FromEntity", mock.Anything).Return(model.Webhook{}, givenError())
+
+		sut := webhook.NewRepository(mockConv)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "app_template_id", "type", "url", "auth"}).
+			AddRow(givenID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT")).WithArgs(givenApplicationTemplateID()).WillReturnRows(rows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := sut.ListByApplicationTemplateID(ctx, givenApplicationTemplateID())
+		// THEN
+		require.EqualError(t, err, "while converting Webhook to model: some error")
+	})
+}
+
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }

@@ -32,7 +32,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelWebhook("1", "foo", "", "bar"),
+			Input:    fixApplicationModelWebhook("1", "foo", "", "bar"),
 			Expected: fixGQLWebhook("1", "foo", "bar"),
 		},
 		{
@@ -69,8 +69,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Webhook{
-		fixModelWebhook("1", "foo", "", "baz"),
-		fixModelWebhook("2", "bar", "", "bez"),
+		fixApplicationModelWebhook("1", "foo", "", "baz"),
+		fixApplicationModelWebhook("2", "bar", "", "bez"),
 		{},
 		nil,
 	}
