@@ -57,4 +57,33 @@ SET app_id = (SELECT b.app_id
               FROM bundles b
               WHERE id = (SELECT bundle_id FROM event_api_definitions WHERE id = e.id));
 
+
+ALTER TABLE vendors
+    DROP CONSTRAINT vendors_tenant_id_fkey,
+    ADD CONSTRAINT vendors_application_tenant_fk
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id)
+            ON DELETE CASCADE;
+
+ALTER TABLE products
+    DROP CONSTRAINT products_tenant_id_fkey,
+    ADD CONSTRAINT products_application_tenant_fk
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id)
+            ON DELETE CASCADE;
+
+ALTER TABLE tombstones
+    DROP CONSTRAINT tombstones_tenant_id_fkey,
+    ADD CONSTRAINT tombstones_application_tenant_fk
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id)
+            ON DELETE CASCADE;
+
+ALTER TABLE packages
+    DROP CONSTRAINT packages_apps_fk,
+    ADD CONSTRAINT packages_application_tenant_fk
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id)
+            ON DELETE CASCADE;
+
 COMMIT;
