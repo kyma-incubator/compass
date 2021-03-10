@@ -1042,13 +1042,13 @@ func TestResolver_Webhooks(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.WebhookService
-		ConverterFn     func() *automock.WebhookConverter
-		ExpectedResult  []*graphql.Webhook
-		ExpectedErr     error
+		Name               string
+		PersistenceFn      func() *persistenceautomock.PersistenceTx
+		TransactionerFn    func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn          func() *automock.WebhookService
+		WebhookConverterFn func() *automock.WebhookConverter
+		ExpectedResult     []*graphql.Webhook
+		ExpectedErr        error
 	}{
 		{
 			Name:            "Success",
@@ -1056,10 +1056,10 @@ func TestResolver_Webhooks(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("List", contextParam, applicationID).Return(modelWebhooks, nil).Once()
+				svc.On("ListAllApplicationWebhooks", contextParam, applicationID).Return(modelWebhooks, nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.WebhookConverter {
+			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks, nil).Once()
 				return conv
@@ -1073,10 +1073,10 @@ func TestResolver_Webhooks(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("List", contextParam, applicationID).Return(nil, testErr).Once()
+				svc.On("ListAllApplicationWebhooks", contextParam, applicationID).Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.WebhookConverter {
+			WebhookConverterFn: func() *automock.WebhookConverter {
 				return &automock.WebhookConverter{}
 			},
 			ExpectedResult: nil,
@@ -1093,7 +1093,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			ServiceFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ConverterFn: func() *automock.WebhookConverter {
+			WebhookConverterFn: func() *automock.WebhookConverter {
 				return &automock.WebhookConverter{}
 			},
 			ExpectedErr: testErr,
@@ -1108,10 +1108,10 @@ func TestResolver_Webhooks(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("List", contextParam, applicationID).Return(modelWebhooks, nil).Once()
+				svc.On("ListAllApplicationWebhooks", contextParam, applicationID).Return(modelWebhooks, nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.WebhookConverter {
+			WebhookConverterFn: func() *automock.WebhookConverter {
 				return &automock.WebhookConverter{}
 			},
 			ExpectedErr: testErr,
@@ -1121,7 +1121,7 @@ func TestResolver_Webhooks(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
-			converter := testCase.ConverterFn()
+			converter := testCase.WebhookConverterFn()
 
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)

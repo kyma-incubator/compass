@@ -136,7 +136,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
-			ExpectedWebhook: nil, ExpectedErr: errors.New("cannot add Webhook to not existing Application"),
+			ExpectedWebhook: nil,
+			ExpectedErr:     errors.New("cannot add Webhook to not existing application"),
 		},
 		{
 			Name:            "Returns error when application template does not exist",
@@ -156,7 +157,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
-			ExpectedWebhook: nil, ExpectedErr: errors.New("cannot add Webhook to not existing Application"),
+			ExpectedWebhook: nil,
+			ExpectedErr:     errors.New("cannot add Webhook to not existing applicationTemplate"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",
