@@ -66,4 +66,16 @@ ALTER TABLE packages
         FOREIGN KEY (tenant_id, app_id)
             REFERENCES applications(tenant_id, id);
 
+ALTER TABLE api_definitions
+    DROP CONSTRAINT api_definitions_tenant_bundle_id_fk;
+ALTER TABLE api_definitions
+    ADD CONSTRAINT api_definitions_bundle_id_fk
+        FOREIGN KEY (tenant_id, bundle_id) REFERENCES bundles (tenant_id, id) ON DELETE CASCADE ;
+
+ALTER TABLE event_api_definitions
+    DROP CONSTRAINT event_api_definitions_tenant_bundle_id_fk;
+ALTER TABLE event_api_definitions
+    ADD CONSTRAINT event_api_definitions_bundle_id_fk
+        FOREIGN KEY (tenant_id, bundle_id) REFERENCES bundles (tenant_id, id) ON DELETE CASCADE ;
+
 COMMIT;
