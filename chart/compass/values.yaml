@@ -22,13 +22,13 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1761"
+      version: "PR-1762"
     gateway:
       dir:
       version: "PR-1750"
     operations_controller:
       dir:
-      version: "PR-1750"
+      version: "PR-1762"
     tenant_fetcher:
       dir:
       version: "PR-1750"
