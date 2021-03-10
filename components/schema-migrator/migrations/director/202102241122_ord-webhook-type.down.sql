@@ -42,4 +42,40 @@ ALTER TABLE packages
     ADD CONSTRAINT packages_vendor_fk
         FOREIGN KEY (tenant_id, vendor) REFERENCES vendors (tenant_id, ord_id);
 
+ALTER TABLE vendors
+    DROP CONSTRAINT vendors_application_tenant_fk,
+    ADD CONSTRAINT vendors_tenant_id_fkey
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id);
+
+ALTER TABLE products
+    DROP CONSTRAINT products_application_tenant_fk,
+    ADD CONSTRAINT products_tenant_id_fkey
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id);
+
+ALTER TABLE tombstones
+    DROP CONSTRAINT tombstones_application_tenant_fk,
+    ADD CONSTRAINT tombstones_tenant_id_fkey
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id);
+
+ALTER TABLE packages
+    DROP CONSTRAINT packages_application_tenant_fk,
+    ADD CONSTRAINT packages_apps_fk
+        FOREIGN KEY (tenant_id, app_id)
+            REFERENCES applications(tenant_id, id);
+
+ALTER TABLE api_definitions
+    DROP CONSTRAINT api_definitions_tenant_bundle_id_fk;
+ALTER TABLE api_definitions
+    ADD CONSTRAINT api_definitions_bundle_id_fk
+        FOREIGN KEY (tenant_id, bundle_id) REFERENCES bundles (tenant_id, id) ON DELETE CASCADE ;
+
+ALTER TABLE event_api_definitions
+    DROP CONSTRAINT event_api_definitions_tenant_bundle_id_fk;
+ALTER TABLE event_api_definitions
+    ADD CONSTRAINT event_api_definitions_bundle_id_fk
+        FOREIGN KEY (tenant_id, bundle_id) REFERENCES bundles (tenant_id, id) ON DELETE CASCADE ;
+
 COMMIT;
