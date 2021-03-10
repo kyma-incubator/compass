@@ -37,11 +37,7 @@ global:
       version: "PR-15"
     schema_migrator:
       dir:
-<<<<<<< HEAD
       version: "PR-1743"
-=======
-      version: "PR-1758"
->>>>>>> master
     system_broker:
       dir:
       version: "PR-1750"
