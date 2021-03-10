@@ -10,7 +10,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210309084252-cb1359ea9c14
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.8.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vrischmann/envconfig v1.3.0
 	gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
