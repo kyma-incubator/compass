@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lestrrat-go/iter/arrayiter"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
@@ -33,9 +35,9 @@ const (
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
-	cachedJWKs          *jwk.Set
+	cachedJWKs          jwk.Set
 	clientIDHeaderKey   string
-	mux                 sync.Mutex
+	mux                 sync.RWMutex
 }
 
 func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string) *Authenticator {
@@ -100,7 +102,7 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 	var claims Claims
 	var err error
 
-	claims, err = a.parseClaims(bearerToken)
+	claims, err = a.parseClaims(ctx, bearerToken)
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
 		if !ok || validationErr.Inner != rsa.ErrVerification {
@@ -112,7 +114,7 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKs during parsing token")
 		}
 
-		claims, err = a.parseClaims(bearerToken)
+		claims, err = a.parseClaims(ctx, bearerToken)
 		if err != nil {
 			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
 		}
@@ -123,9 +125,9 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 	return claims, nil
 }
 
-func (a *Authenticator) parseClaims(bearerToken string) (Claims, error) {
+func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (Claims, error) {
 	claims := Claims{}
-	_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
+	_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc(ctx))
 	if err != nil {
 		return Claims{}, err
 	}
@@ -152,22 +154,34 @@ func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) co
 	return ctxWithConsumerInfo
 }
 
-func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error) {
+func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (interface{}, error) {
 	return func(token *jwt.Token) (interface{}, error) {
 		unsupportedErr := fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
 
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
-			a.mux.Lock()
-			keys := a.cachedJWKs.Keys
-			a.mux.Unlock()
-			for _, key := range keys {
-				if key.Algorithm() == token.Method.Alg() {
-					return key.Materialize()
-				}
+			a.mux.RLock()
+			keys := a.cachedJWKs
+			a.mux.RUnlock()
+
+			keyIterator := &authenticator.JWTKeyIterator{
+				AlgorithmCriteria: func(alg string) bool {
+					return token.Method.Alg() == alg
+				},
+				IDCriteria: func(id string) bool {
+					return true
+				},
 			}
 
-			return nil, fmt.Errorf("unable to find key for algorithm %s", token.Method.Alg())
+			if err := arrayiter.Walk(ctx, keys, keyIterator); err != nil {
+				return nil, err
+			}
+
+			if keyIterator.ResultingKey == nil {
+				return nil, fmt.Errorf("unable to find key for algorithm %s", token.Method.Alg())
+			}
+
+			return keyIterator.ResultingKey, nil
 		case jwt.SigningMethodNone.Alg():
 			if !a.allowJWTSigningNone {
 				return nil, unsupportedErr
