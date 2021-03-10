@@ -317,7 +317,7 @@ func TestRepository_Create(t *testing.T) {
 		repo := application.NewRepository(mockConverter)
 
 		// when
-		err := repo.Create(ctx, appModel, nil)
+		err := repo.Create(ctx, appModel)
 
 		// then
 		if operationError != nil {
@@ -371,7 +371,7 @@ func TestRepository_Create(t *testing.T) {
 		repository := application.NewRepository(mockConverter)
 
 		// when
-		err := repository.Create(ctx, appModel, nil)
+		err := repository.Create(ctx, appModel)
 
 		// then
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
@@ -387,7 +387,7 @@ func TestRepository_Create(t *testing.T) {
 		repo := application.NewRepository(mockConverter)
 
 		// when
-		err := repo.Create(context.TODO(), appModel, nil)
+		err := repo.Create(context.TODO(), appModel)
 
 		// then
 		require.EqualError(t, err, "while converting to Application entity: some error")

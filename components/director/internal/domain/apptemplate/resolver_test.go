@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -30,8 +32,8 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	appTemplateSys := fixModelAppTemplate(testID, testName)
-	gqlAppTemplate := fixGQLAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
 		Name              string
@@ -48,13 +50,19 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(appTemplateSys, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ToGraphQL", appTemplateSys).Return(gqlAppTemplate, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: gqlAppTemplate,
 		},
@@ -70,6 +78,12 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: nil,
 		},
 		{
@@ -84,6 +98,12 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -97,6 +117,12 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -104,12 +130,18 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(appTemplateSys, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -118,13 +150,19 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(appTemplateSys, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ToGraphQL", appTemplateSys).Return(nil, testError).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -165,13 +203,13 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	txGen := txtest.NewTransactionContextGenerator(testError)
 	modelAppTemplates := []*model.ApplicationTemplate{
-		fixModelAppTemplate("i1", "n1"),
-		fixModelAppTemplate("i2", "n2"),
+		fixModelAppTemplate("i1", "n1", fixModelApplicationTemplateWebhooks("webhook-id-1", "i1")),
+		fixModelAppTemplate("i2", "n2", fixModelApplicationTemplateWebhooks("webhook-id-2", "i2")),
 	}
 	modelPage := fixModelAppTemplatePage(modelAppTemplates)
 	gqlAppTemplates := []*graphql.ApplicationTemplate{
-		fixGQLAppTemplate("i1", "n1"),
-		fixGQLAppTemplate("i2", "n2"),
+		fixGQLAppTemplate("i1", "n1", fixGQLApplicationTemplateWebhooks("webhook-id-1", "i1")),
+		fixGQLAppTemplate("i2", "n2", fixGQLApplicationTemplateWebhooks("webhook-id-2", "i2")),
 	}
 	gqlPage := fixGQLAppTemplatePage(gqlAppTemplates)
 	first := 2
@@ -201,6 +239,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 				appTemplateConv.On("MultipleToGraphQL", modelAppTemplates).Return(gqlAppTemplates, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: &gqlPage,
 		},
 		{
@@ -215,6 +259,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -227,6 +277,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -242,6 +298,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -256,6 +318,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("MultipleToGraphQL", modelAppTemplates).Return(nil, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -297,9 +365,9 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
-	gqlAppTemplate := fixGQLAppTemplate(testID, testName)
+	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
 
 	testCases := []struct {
@@ -327,6 +395,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -340,6 +414,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(model.ApplicationTemplateInput{}, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -355,6 +435,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -372,6 +458,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -384,6 +476,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -401,6 +499,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -417,6 +521,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -462,7 +572,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
 	gqlAppCreateInput := fixGQLApplicationCreateInput(testName)
 
-	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, jsonAppCreateInput)
+	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, jsonAppCreateInput, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 
 	modelApplication := fixModelApplication(testID, testName)
 	gqlApplication := fixGQLApplication(testID, testName)
@@ -498,7 +608,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Create", txtest.CtxWithDBMatcher(), modelAppCreateInput).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -508,6 +618,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: &gqlApplication,
 			ExpectedError:  nil,
@@ -531,6 +647,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				return appConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
@@ -556,6 +678,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv := &automock.ApplicationConverter{}
 				return appConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -580,6 +708,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				return appConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
@@ -607,6 +741,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
 				return appConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -633,6 +773,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, nil).Once()
 				return appConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: nil,
 			ExpectedError:  errors.New("name=cannot be blank"),
 		},
@@ -652,7 +798,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Create", txtest.CtxWithDBMatcher(), modelAppCreateInput).Return("", testError).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return("", testError).Once()
 				return appSvc
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
@@ -660,6 +806,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
@@ -680,7 +832,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Create", txtest.CtxWithDBMatcher(), modelAppCreateInput).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appSvc
 			},
@@ -689,6 +841,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
@@ -709,7 +867,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Create", txtest.CtxWithDBMatcher(), modelAppCreateInput).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -718,6 +876,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
@@ -764,9 +928,9 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
-	gqlAppTemplate := fixGQLAppTemplate(testID, testName)
+	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
 
 	testCases := []struct {
@@ -794,6 +958,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -807,6 +977,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(model.ApplicationTemplateInput{}, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -822,6 +998,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -839,6 +1021,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -851,6 +1039,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -868,6 +1062,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -884,6 +1084,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -925,8 +1131,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
-	gqlAppTemplate := fixGQLAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
 		Name              string
@@ -952,6 +1158,12 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -965,6 +1177,12 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -981,6 +1199,12 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -993,6 +1217,12 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},
@@ -1009,6 +1239,12 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -1024,6 +1260,12 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
 			},
 			ExpectedError: testError,
 		},

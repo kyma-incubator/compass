@@ -26,7 +26,7 @@ func TestService_Create(t *testing.T) {
 		uidSvc.On("Generate").Return(testID).Once()
 		return uidSvc
 	}
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, []*model.Webhook{})
 
 	testCases := []struct {
 		Name              string
@@ -44,6 +44,11 @@ func TestService_Create(t *testing.T) {
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, []*model.Webhook(nil)).Return(nil).Once()
+				return webhookRepo
+			},
 			ExpectedOutput: testID,
 		},
 		{
@@ -53,6 +58,9 @@ func TestService_Create(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			ExpectedError:  testError,
 			ExpectedOutput: "",
@@ -88,7 +96,7 @@ func TestService_Get(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
 		Name              string
@@ -104,6 +112,9 @@ func TestService_Get(t *testing.T) {
 				appTemplateRepo.On("Get", ctx, testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 			ExpectedOutput: modelAppTemplate,
 		},
 		{
@@ -112,6 +123,9 @@ func TestService_Get(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, testID).Return(nil, testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			ExpectedError: testError,
 		},
@@ -144,7 +158,7 @@ func TestService_GetByName(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
 		Name              string
@@ -160,6 +174,9 @@ func TestService_GetByName(t *testing.T) {
 				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 			ExpectedOutput: modelAppTemplate,
 		},
 		{
@@ -168,6 +185,9 @@ func TestService_GetByName(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			ExpectedError: testError,
 		},
@@ -214,6 +234,9 @@ func TestService_Exists(t *testing.T) {
 				appTemplateRepo.On("Exists", ctx, testID).Return(true, nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 			ExpectedOutput: true,
 		},
 		{
@@ -222,6 +245,9 @@ func TestService_Exists(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Exists", ctx, testID).Return(false, testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			ExpectedError:  testError,
 			ExpectedOutput: false,
@@ -255,8 +281,8 @@ func TestService_List(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	modelAppTemplate := fixModelAppTemplatePage([]*model.ApplicationTemplate{
-		fixModelAppTemplate("foo1", "bar1"),
-		fixModelAppTemplate("foo2", "bar2"),
+		fixModelAppTemplate("foo1", "bar1", fixModelApplicationTemplateWebhooks("webhook-id-1", "foo1")),
+		fixModelAppTemplate("foo2", "bar2", fixModelApplicationTemplateWebhooks("webhook-id-2", "foo2")),
 	})
 
 	testCases := []struct {
@@ -274,6 +300,9 @@ func TestService_List(t *testing.T) {
 				appTemplateRepo.On("List", ctx, 50, testCursor).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 			InputPageSize:  50,
 			ExpectedOutput: modelAppTemplate,
 		},
@@ -283,6 +312,9 @@ func TestService_List(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("List", ctx, 50, testCursor).Return(model.ApplicationTemplatePage{}, testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			InputPageSize:  50,
 			ExpectedError:  testError,
@@ -294,6 +326,9 @@ func TestService_List(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 			InputPageSize:  0,
 			ExpectedError:  errors.New("page size must be between 1 and 200"),
 			ExpectedOutput: model.ApplicationTemplatePage{},
@@ -303,6 +338,9 @@ func TestService_List(t *testing.T) {
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			InputPageSize:  201,
 			ExpectedError:  errors.New("page size must be between 1 and 200"),
@@ -336,7 +374,7 @@ func TestService_List(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
-	modelAppTemplate := fixModelAppTemplate(testID, testName)
+	modelAppTemplate := fixModelAppTemplate(testID, testName, []*model.Webhook{})
 
 	testCases := []struct {
 		Name              string
@@ -353,6 +391,9 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 		},
 		{
 			Name:  "Error when updating application template",
@@ -361,6 +402,9 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			ExpectedError: testError,
 		},
@@ -405,6 +449,9 @@ func TestService_Delete(t *testing.T) {
 				appTemplateRepo.On("Delete", ctx, testID).Return(nil).Once()
 				return appTemplateRepo
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
 		},
 		{
 			Name: "Error when deleting application template",
@@ -412,6 +459,9 @@ func TestService_Delete(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Delete", ctx, testID).Return(testError).Once()
 				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
 			},
 			ExpectedError: testError,
 		},

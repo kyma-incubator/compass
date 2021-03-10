@@ -20,7 +20,8 @@ import (
 func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
@@ -44,7 +45,8 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("Error when converting", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
@@ -62,7 +64,8 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("Error when creating", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
@@ -89,7 +92,8 @@ func TestRepository_Create(t *testing.T) {
 func TestRepository_Get(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
@@ -166,7 +170,8 @@ func TestRepository_Get(t *testing.T) {
 func TestRepository_GetByName(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
@@ -285,10 +290,16 @@ func TestRepository_Exists(t *testing.T) {
 func TestRepository_List(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
+		webhooksModel := [][]*model.Webhook{
+			fixModelApplicationWebhooks("test-webhook-1", "id1"),
+			fixModelApplicationWebhooks("test-webhook-2", "id2"),
+			fixModelApplicationWebhooks("test-webhook-3", "id3"),
+		}
+
 		appTemplateModels := []*model.ApplicationTemplate{
-			fixModelAppTemplate("id1", "name1"),
-			fixModelAppTemplate("id2", "name2"),
-			fixModelAppTemplate("id3", "name3"),
+			fixModelAppTemplate("id1", "name1", webhooksModel[0]),
+			fixModelAppTemplate("id2", "name2", webhooksModel[1]),
+			fixModelAppTemplate("id3", "name3", webhooksModel[2]),
 		}
 
 		appTemplateEntities := []apptemplate.Entity{
@@ -378,7 +389,8 @@ func TestRepository_List(t *testing.T) {
 func TestRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
@@ -402,7 +414,8 @@ func TestRepository_Update(t *testing.T) {
 
 	t.Run("Error when updating", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
@@ -427,7 +440,8 @@ func TestRepository_Update(t *testing.T) {
 
 	t.Run("Error when converting", func(t *testing.T) {
 		// GIVEN
-		appTemplateModel := fixModelAppTemplate(testID, testName)
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelAppTemplate(testID, testName, webhooksModel)
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)

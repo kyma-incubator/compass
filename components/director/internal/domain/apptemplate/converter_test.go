@@ -17,20 +17,26 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
 	appConv := &automock.AppConverter{}
-	webhookConv := &automock.WebhookConverter{}
-	converter := apptemplate.NewConverter(appConv, webhookConv)
+	modelWebhooks := fixModelApplicationWebhooks(testWebhookID, testID)
+	GQLWebhooks := fixGQLApplicationWebhooks(testWebhookID, testID)
 
 	testCases := []struct {
-		Name          string
-		Input         *model.ApplicationTemplate
-		Expected      *graphql.ApplicationTemplate
-		ExpectedError bool
+		Name               string
+		Input              *model.ApplicationTemplate
+		Expected           *graphql.ApplicationTemplate
+		ExpectedError      bool
+		WebhookConverterFn func() *automock.WebhookConverter
 	}{
 		{
 			Name:          "All properties given",
-			Input:         fixModelAppTemplate(testID, testName),
-			Expected:      fixGQLAppTemplate(testID, testName),
+			Input:         fixModelAppTemplate(testID, testName, modelWebhooks),
+			Expected:      fixGQLAppTemplate(testID, testName, GQLWebhooks),
 			ExpectedError: false,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(GQLWebhooks, nil)
+				return conv
+			},
 		},
 		{
 			Name: "Error when graphqlising Application Create Input",
@@ -41,24 +47,42 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			},
 			Expected:      nil,
 			ExpectedError: true,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(GQLWebhooks, nil)
+				return conv
+			},
 		},
 		{
 			Name:          "Empty",
 			Input:         &model.ApplicationTemplate{},
 			Expected:      nil,
 			ExpectedError: true,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(GQLWebhooks, nil)
+				return conv
+			},
 		},
 		{
 			Name:          "Nil",
 			Input:         nil,
 			Expected:      nil,
 			ExpectedError: false,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(GQLWebhooks, nil)
+				return conv
+			},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
+			webhookConverter := testCase.WebhookConverterFn()
+			converter := apptemplate.NewConverter(appConv, webhookConverter)
+
 			res, err := converter.ToGraphQL(testCase.Input)
 			if testCase.ExpectedError {
 				require.Error(t, err)
@@ -74,31 +98,45 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
-	converter := apptemplate.NewConverter(nil, nil)
+	modelWebhooks := [][]*model.Webhook{
+		fixModelApplicationTemplateWebhooks("webhook-id-1", "id1"),
+		fixModelApplicationTemplateWebhooks("webhook-id-2", "id2"),
+	}
+	GQLWebhooks := [][]*graphql.Webhook{
+		fixGQLApplicationTemplateWebhooks("webhook-id-1", "id1"),
+		fixGQLApplicationTemplateWebhooks("webhook-id-2", "id2"),
+	}
 
 	testCases := []struct {
-		Name          string
-		Input         []*model.ApplicationTemplate
-		Expected      []*graphql.ApplicationTemplate
-		ExpectedError bool
+		Name               string
+		Input              []*model.ApplicationTemplate
+		Expected           []*graphql.ApplicationTemplate
+		ExpectedError      bool
+		WebhookConverterFn func() *automock.WebhookConverter
 	}{
 		{
 			Name: "All properties given",
 			Input: []*model.ApplicationTemplate{
-				fixModelAppTemplate("id1", "name1"),
-				fixModelAppTemplate("id2", "name2"),
+				fixModelAppTemplate("id1", "name1", modelWebhooks[0]),
+				fixModelAppTemplate("id2", "name2", modelWebhooks[1]),
 				nil,
 			},
 			Expected: []*graphql.ApplicationTemplate{
-				fixGQLAppTemplate("id1", "name1"),
-				fixGQLAppTemplate("id2", "name2"),
+				fixGQLAppTemplate("id1", "name1", GQLWebhooks[0]),
+				fixGQLAppTemplate("id2", "name2", GQLWebhooks[1]),
 			},
 			ExpectedError: false,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks[0]).Return(GQLWebhooks[0], nil)
+				conv.On("MultipleToGraphQL", modelWebhooks[1]).Return(GQLWebhooks[1], nil)
+				return conv
+			},
 		},
 		{
 			Name: "Error when application input is empty",
 			Input: []*model.ApplicationTemplate{
-				fixModelAppTemplate("id1", "name1"),
+				fixModelAppTemplate("id1", "name1", modelWebhooks[0]),
 				{
 					ID:                   testID,
 					Name:                 testName,
@@ -107,11 +145,16 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			},
 			Expected:      nil,
 			ExpectedError: true,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks[0]).Return(GQLWebhooks[0], nil)
+				return conv
+			},
 		},
 		{
 			Name: "Error when converting application template",
 			Input: []*model.ApplicationTemplate{
-				fixModelAppTemplate("id1", "name1"),
+				fixModelAppTemplate("id1", "name1", modelWebhooks[0]),
 				{
 					ID:                   testID,
 					Name:                 testName,
@@ -120,12 +163,19 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			},
 			Expected:      nil,
 			ExpectedError: true,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks[0]).Return(GQLWebhooks[0], nil)
+				return conv
+			},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
+			webhookConverter := testCase.WebhookConverterFn()
+			converter := apptemplate.NewConverter(nil, webhookConverter)
 			res, err := converter.MultipleToGraphQL(testCase.Input)
 			if testCase.ExpectedError {
 				require.Error(t, err)
@@ -145,11 +195,12 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	appTemplateInputModel := fixModelAppTemplateInput(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\"}")
 
 	testCases := []struct {
-		Name           string
-		AppConverterFn func() *automock.AppConverter
-		Input          graphql.ApplicationTemplateInput
-		Expected       model.ApplicationTemplateInput
-		ExpectedError  error
+		Name               string
+		AppConverterFn     func() *automock.AppConverter
+		WebhookConverterFn func() *automock.WebhookConverter
+		Input              graphql.ApplicationTemplateInput
+		Expected           model.ApplicationTemplateInput
+		ExpectedError      error
 	}{
 		{
 			Name: "All properties given",
@@ -157,6 +208,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				appConverter := automock.AppConverter{}
 				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
 				return &appConverter
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return([]*model.WebhookInput(nil), nil)
+				return conv
 			},
 			Input:         *appTemplateInputGQL,
 			Expected:      *appTemplateInputModel,
@@ -167,6 +223,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
 				return &appConverter
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return([]*model.WebhookInput(nil), nil)
+				return conv
 			},
 			Input:         graphql.ApplicationTemplateInput{},
 			Expected:      model.ApplicationTemplateInput{},
@@ -179,6 +240,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return("", testError).Once()
 				return &appConverter
 			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return([]*model.WebhookInput(nil), nil)
+				return conv
+			},
 			Input:         *appTemplateInputGQL,
 			Expected:      model.ApplicationTemplateInput{},
 			ExpectedError: testError,
@@ -188,7 +254,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appConv := testCase.AppConverterFn()
-			converter := apptemplate.NewConverter(appConv, nil)
+			webhookConv := testCase.WebhookConverterFn()
+			converter := apptemplate.NewConverter(appConv, webhookConv)
 			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
@@ -221,7 +288,7 @@ func TestConverter_ApplicationFromTemplateInputFromGraphQL(t *testing.T) {
 
 func TestConverter_ToEntity(t *testing.T) {
 	// given
-	appTemplateModel := fixModelAppTemplate(testID, testName)
+	appTemplateModel := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks("webhook-id-1", testID))
 	appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
 
 	testCases := []struct {
@@ -266,7 +333,7 @@ func TestConverter_FromEntity(t *testing.T) {
 	name := "bar"
 
 	appTemplateEntity := fixEntityAppTemplate(t, id, name)
-	appTemplateModel := fixModelAppTemplate(id, name)
+	appTemplateModel := fixModelAppTemplate(id, name, nil)
 
 	testCases := []struct {
 		Name               string
