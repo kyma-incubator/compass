@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -23,10 +25,23 @@ func TestService_Create(t *testing.T) {
 
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
-		uidSvc.On("Generate").Return(testID).Once()
+		uidSvc.On("Generate").Return(testID)
 		return uidSvc
 	}
+
 	modelAppTemplate := fixModelAppTemplate(testID, testName, []*model.Webhook{})
+
+	appTemplateInputWithWebhooks := fixModelAppTemplateInput(testName, appInputJSONString)
+	appTemplateInputWithWebhooks.Webhooks = []*model.WebhookInput{
+		{
+			Type: model.WebhookTypeConfigurationChanged,
+			URL:  str.Ptr("foourl"),
+			Auth: &model.AuthInput{},
+		},
+	}
+	appTemplateInputMatcher := func(webhooks []*model.Webhook) bool {
+		return webhooks != nil && len(webhooks) == 1 && *webhooks[0].ApplicationTemplateID == testID && webhooks[0].Type == model.WebhookTypeConfigurationChanged && *webhooks[0].URL == "foourl"
+	}
 
 	testCases := []struct {
 		Name              string
@@ -52,6 +67,21 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: testID,
 		},
 		{
+			Name:  "Success for Applicaiton Template with webhooks",
+			Input: appTemplateInputWithWebhooks,
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Create", ctx, mock.AnythingOfType("model.ApplicationTemplate")).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, mock.MatchedBy(appTemplateInputMatcher)).Return(nil).Once()
+				return webhookRepo
+			},
+			ExpectedOutput: testID,
+		},
+		{
 			Name:  "Error when creating application template",
 			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
@@ -64,6 +94,21 @@ func TestService_Create(t *testing.T) {
 			},
 			ExpectedError:  testError,
 			ExpectedOutput: "",
+		},
+		{
+			Name:  "Error when creating webhooks",
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, mock.AnythingOfType("[]*model.Webhook")).Return(testError).Once()
+				return webhookRepo
+			},
+			ExpectedError: testError,
 		},
 	}
 

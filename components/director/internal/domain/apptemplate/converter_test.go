@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -13,6 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var mockedError = errors.New("test-error")
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
@@ -50,6 +54,17 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleToGraphQL", modelWebhooks).Return(GQLWebhooks, nil)
+				return conv
+			},
+		},
+		{
+			Name:          "Error when converting Webhooks",
+			Input:         fixModelAppTemplate(testID, testName, modelWebhooks),
+			Expected:      nil,
+			ExpectedError: true,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(nil, mockedError)
 				return conv
 			},
 		},
@@ -219,6 +234,21 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
+			Name: "Error when converting Webhook",
+			AppConverterFn: func() *automock.AppConverter {
+				appConverter := automock.AppConverter{}
+				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
+				return &appConverter
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil, mockedError)
+				return conv
+			},
+			Input:         *appTemplateInputGQL,
+			ExpectedError: mockedError,
+		},
+		{
 			Name: "Empty",
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
@@ -246,7 +276,6 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				return conv
 			},
 			Input:         *appTemplateInputGQL,
-			Expected:      model.ApplicationTemplateInput{},
 			ExpectedError: testError,
 		},
 	}

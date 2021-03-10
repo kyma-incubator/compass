@@ -359,6 +359,117 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 	}
 }
 
+func TestResolver_Webhooks(t *testing.T) {
+	// given
+	applicationTemplateID := "fooid"
+	modelWebhooks := fixModelApplicationTemplateWebhooks("test-webhook-1", applicationTemplateID)
+	gqlWebhooks := fixGQLApplicationTemplateWebhooks("test-webhook-1", applicationTemplateID)
+
+	appTemplate := fixGQLAppTemplate(applicationTemplateID, "foo", gqlWebhooks)
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name               string
+		PersistenceFn      func() *persistenceautomock.PersistenceTx
+		TransactionerFn    func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		WebhookServiceFn   func() *automock.WebhookService
+		WebhookConverterFn func() *automock.WebhookConverter
+		ExpectedResult     []*graphql.Webhook
+		ExpectedErr        error
+	}{
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			WebhookServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), applicationTemplateID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks, nil).Once()
+				return conv
+			},
+			ExpectedResult: gqlWebhooks,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns error when webhook listing failed",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			WebhookServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), applicationTemplateID).Return(nil, testErr).Once()
+				return svc
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name: "Returns error on starting transaction",
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(nil, testErr).Once()
+				return transact
+			},
+			PersistenceFn: txtest.PersistenceContextThatDoesntExpectCommit,
+			WebhookServiceFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Returns error on committing transaction",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(testErr).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			WebhookServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), applicationTemplateID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			webhookSvc := testCase.WebhookServiceFn()
+			converter := testCase.WebhookConverterFn()
+
+			mockPersistence := testCase.PersistenceFn()
+			mockTransactioner := testCase.TransactionerFn(mockPersistence)
+
+			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter)
+
+			// when
+			result, err := resolver.Webhooks(context.TODO(), appTemplate)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			webhookSvc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+			mockPersistence.AssertExpectations(t)
+			mockTransactioner.AssertExpectations(t)
+		})
+	}
+}
+
 func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
