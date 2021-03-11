@@ -29,7 +29,7 @@ import (
 )
 
 func TestClient_UpdateStatus_WhenNewRequestWithContextFails_ShouldReturnError(t *testing.T) {
-	client, err := director.NewClient("", "", &graphql.Config{}, &http.Client{})
+	client, err := director.NewClient("", &graphql.Config{}, &http.Client{})
 	require.NoError(t, err)
 
 	err = client.UpdateOperation(nil, &director.Request{})
@@ -42,7 +42,7 @@ func TestClient_UpdateStatus_WhenClientDoFails_ShouldReturnError(t *testing.T) {
 		Transport: mockedTransport{resp: nil, err: mockedErr},
 	}
 
-	client, err := director.NewClient("", "", &graphql.Config{}, &httpClient)
+	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
 	require.NoError(t, err)
 
 	err = client.UpdateOperation(context.Background(), &director.Request{})
@@ -58,7 +58,7 @@ func TestClient_UpdateStatus_WhenResponseStatusCodeIsNotOK_ShouldReturnError(t *
 		}, err: nil},
 	}
 
-	client, err := director.NewClient("", "", &graphql.Config{}, &httpClient)
+	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
 	require.NoError(t, err)
 
 	err = client.UpdateOperation(context.Background(), &director.Request{})
@@ -74,7 +74,7 @@ func TestClient_UpdateStatus_WhenRequestIsSuccessful_ShouldNotReturnError(t *tes
 		}, err: nil},
 	}
 
-	client, err := director.NewClient("", "", &graphql.Config{}, &httpClient)
+	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
 	require.NoError(t, err)
 
 	err = client.UpdateOperation(context.Background(), &director.Request{})

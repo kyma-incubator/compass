@@ -97,7 +97,7 @@ func main() {
 	httpClient, err := prepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
 
-	directorClient, err := director.NewClient(cfg.Director.InternalAddress, cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
+	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
 
 	controller := controllers.NewOperationReconciler(cfg.Webhook,

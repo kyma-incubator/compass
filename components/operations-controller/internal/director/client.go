@@ -45,7 +45,7 @@ type Request struct {
 }
 
 // NewClient constructs a default implementation of the Client interface
-func NewClient(directorURL string, operationEndpoint string, cfg *graphqlbroker.Config, httpClient *http.Client) (*client, error) {
+func NewClient(operationEndpoint string, cfg *graphqlbroker.Config, httpClient *http.Client) (*client, error) {
 	graphqlClient, err := graphqlbroker.PrepareGqlClientWithHttpClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,6 @@ func NewClient(directorURL string, operationEndpoint string, cfg *graphqlbroker.
 	return &client{
 		ApplicationLister: graphqlClient,
 		httpClient:        httpClient,
-		directorURL:       directorURL,
 		operationEndpoint: operationEndpoint,
 	}, nil
 }
@@ -66,7 +65,7 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.directorURL+c.operationEndpoint, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.operationEndpoint, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
