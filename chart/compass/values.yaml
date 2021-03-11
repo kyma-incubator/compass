@@ -101,8 +101,8 @@ global:
       port: 3003
     operations:
       port: 3002
-      endpoint: "/operation"
-      lastOperationEndpoint: "/last_operation"
+      path: "/operation"
+      lastOperationPath: "/last_operation"
 
     clientIDHeaderKey: client_user
 

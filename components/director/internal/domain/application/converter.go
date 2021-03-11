@@ -93,7 +93,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		Status:              c.statusToGraphQL(in.Status),
+		Status:              c.statusModelToGraphQL(in.Status),
 		Name:                in.Name,
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
@@ -141,13 +141,14 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Bundles")
 	}
 
+	statusCondition := model.ApplicationStatusCondition(*in.StatusCondition)
 	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
-		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
+		StatusCondition:     &statusCondition,
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
 		Bundles:             bundles,
@@ -155,12 +156,13 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
+	statusCondition := model.ApplicationStatusCondition(*in.StatusCondition)
 	return model.ApplicationUpdateInput{
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
-		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
+		StatusCondition:     &statusCondition,
 	}
 }
 
@@ -193,7 +195,7 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Tenant:              tenantID,
 		Name:                obj.Name,
 		Description:         obj.Description,
-		Status:              c.statusToModel(obj.Status),
+		Status:              c.statusGraphQLToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
 		BaseEntity: &model.BaseEntity{
@@ -202,125 +204,26 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 	}
 }
 
-func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
+func (c *converter) statusModelToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
 	if in == nil {
 		return &graphql.ApplicationStatus{Condition: graphql.ApplicationStatusConditionInitial}
 	}
 
-	var condition graphql.ApplicationStatusCondition
-
-	switch in.Condition {
-	case model.ApplicationStatusConditionInitial:
-		condition = graphql.ApplicationStatusConditionInitial
-	case model.ApplicationStatusConditionFailed:
-		condition = graphql.ApplicationStatusConditionFailed
-	case model.ApplicationStatusConditionConnected:
-		condition = graphql.ApplicationStatusConditionConnected
-	case model.ApplicationStatusConditionCreating:
-		condition = graphql.ApplicationStatusConditionCreating
-	case model.ApplicationStatusConditionCreateFailed:
-		condition = graphql.ApplicationStatusConditionCreateFailed
-	case model.ApplicationStatusConditionCreateSucceeded:
-		condition = graphql.ApplicationStatusConditionCreateSucceeded
-	case model.ApplicationStatusConditionUpdating:
-		condition = graphql.ApplicationStatusConditionUpdating
-	case model.ApplicationStatusConditionUpdateFailed:
-		condition = graphql.ApplicationStatusConditionUpdateFailed
-	case model.ApplicationStatusConditionUpdateSucceeded:
-		condition = graphql.ApplicationStatusConditionUpdateSucceeded
-	case model.ApplicationStatusConditionDeleting:
-		condition = graphql.ApplicationStatusConditionDeleting
-	case model.ApplicationStatusConditionDeleteFailed:
-		condition = graphql.ApplicationStatusConditionDeleteFailed
-	case model.ApplicationStatusConditionDeleteSucceeded:
-		condition = graphql.ApplicationStatusConditionDeleteSucceeded
-	default:
-		condition = graphql.ApplicationStatusConditionInitial
-	}
-
 	return &graphql.ApplicationStatus{
-		Condition: condition,
+		Condition: graphql.ApplicationStatusCondition(in.Condition),
 		Timestamp: graphql.Timestamp(in.Timestamp),
 	}
 }
 
-func (c *converter) statusToModel(in *graphql.ApplicationStatus) *model.ApplicationStatus {
+func (c *converter) statusGraphQLToModel(in *graphql.ApplicationStatus) *model.ApplicationStatus {
 	if in == nil {
 		return &model.ApplicationStatus{Condition: model.ApplicationStatusConditionInitial}
 	}
 
-	var condition model.ApplicationStatusCondition
-
-	switch in.Condition {
-	case graphql.ApplicationStatusConditionInitial:
-		condition = model.ApplicationStatusConditionInitial
-	case graphql.ApplicationStatusConditionFailed:
-		condition = model.ApplicationStatusConditionFailed
-	case graphql.ApplicationStatusConditionConnected:
-		condition = model.ApplicationStatusConditionConnected
-	case graphql.ApplicationStatusConditionCreating:
-		condition = model.ApplicationStatusConditionCreating
-	case graphql.ApplicationStatusConditionCreateFailed:
-		condition = model.ApplicationStatusConditionCreateFailed
-	case graphql.ApplicationStatusConditionCreateSucceeded:
-		condition = model.ApplicationStatusConditionCreateSucceeded
-	case graphql.ApplicationStatusConditionUpdating:
-		condition = model.ApplicationStatusConditionUpdating
-	case graphql.ApplicationStatusConditionUpdateFailed:
-		condition = model.ApplicationStatusConditionUpdateFailed
-	case graphql.ApplicationStatusConditionUpdateSucceeded:
-		condition = model.ApplicationStatusConditionUpdateSucceeded
-	case graphql.ApplicationStatusConditionDeleting:
-		condition = model.ApplicationStatusConditionDeleting
-	case graphql.ApplicationStatusConditionDeleteFailed:
-		condition = model.ApplicationStatusConditionDeleteFailed
-	case graphql.ApplicationStatusConditionDeleteSucceeded:
-		condition = model.ApplicationStatusConditionDeleteSucceeded
-	default:
-		condition = model.ApplicationStatusConditionInitial
-	}
 	return &model.ApplicationStatus{
-		Condition: condition,
+		Condition: model.ApplicationStatusCondition(in.Condition),
 		Timestamp: time.Time(in.Timestamp),
 	}
-}
-
-func (c *converter) statusConditionToModel(in *graphql.ApplicationStatusCondition) *model.ApplicationStatusCondition {
-	if in == nil {
-		return nil
-	}
-
-	var condition model.ApplicationStatusCondition
-	switch *in {
-	case graphql.ApplicationStatusConditionConnected:
-		condition = model.ApplicationStatusConditionConnected
-	case graphql.ApplicationStatusConditionFailed:
-		condition = model.ApplicationStatusConditionFailed
-	case graphql.ApplicationStatusConditionCreating:
-		condition = model.ApplicationStatusConditionCreating
-	case graphql.ApplicationStatusConditionCreateFailed:
-		condition = model.ApplicationStatusConditionCreateFailed
-	case graphql.ApplicationStatusConditionCreateSucceeded:
-		condition = model.ApplicationStatusConditionCreateSucceeded
-	case graphql.ApplicationStatusConditionUpdating:
-		condition = model.ApplicationStatusConditionUpdating
-	case graphql.ApplicationStatusConditionUpdateFailed:
-		condition = model.ApplicationStatusConditionUpdateFailed
-	case graphql.ApplicationStatusConditionUpdateSucceeded:
-		condition = model.ApplicationStatusConditionUpdateSucceeded
-	case graphql.ApplicationStatusConditionDeleting:
-		condition = model.ApplicationStatusConditionDeleting
-	case graphql.ApplicationStatusConditionDeleteFailed:
-		condition = model.ApplicationStatusConditionDeleteFailed
-	case graphql.ApplicationStatusConditionDeleteSucceeded:
-		condition = model.ApplicationStatusConditionDeleteSucceeded
-	case graphql.ApplicationStatusConditionInitial:
-		fallthrough
-	default:
-		condition = model.ApplicationStatusConditionInitial
-	}
-
-	return &condition
 }
 
 func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {

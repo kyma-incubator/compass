@@ -93,8 +93,8 @@ type config struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
-	OperationEndpoint             string `envconfig:"default=/operation"`
-	LastOperationEndpoint         string `envconfig:"default=/last_operation"`
+	OperationPath                 string `envconfig:"default=/operation"`
+	LastOperationPath             string `envconfig:"default=/last_operation"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ConfigurationFile             string
 	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
@@ -250,7 +250,7 @@ func main() {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}, tenant.LoadFromContext)
 
-	operationsAPIRouter := mainRouter.PathPrefix(cfg.LastOperationEndpoint).Subrouter()
+	operationsAPIRouter := mainRouter.PathPrefix(cfg.LastOperationPath).Subrouter()
 	operationsAPIRouter.Use(authMiddleware.Handler())
 	operationsAPIRouter.HandleFunc("/{resource_type}/{resource_id}", operationHandler.ServeHTTP)
 
@@ -264,7 +264,7 @@ func main() {
 
 	internalRouter := mux.NewRouter()
 	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
-	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())

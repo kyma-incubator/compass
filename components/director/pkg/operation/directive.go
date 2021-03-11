@@ -129,7 +129,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, err
 	}
 
-	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, appConditionStatus); err != nil {
+	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, *appConditionStatus); err != nil {
 		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %s", entity.GetType(), entity.GetID(), appConditionStatus)
 		return nil, apperrors.NewInternalError("Unable to update resource %s with id %s", entity.GetType(), entity.GetID())
 	}
@@ -308,15 +308,18 @@ func isErrored(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
 }
 
-func determineApplicationInProgressStatus(opType graphql.OperationType) (model.ApplicationStatusCondition, error) {
+func determineApplicationInProgressStatus(opType graphql.OperationType) (*model.ApplicationStatusCondition, error) {
+	var appStatusCondition model.ApplicationStatusCondition
 	switch opType {
 	case graphql.OperationTypeCreate:
-		return model.ApplicationStatusConditionCreating, nil
+		appStatusCondition = model.ApplicationStatusConditionCreating
 	case graphql.OperationTypeUpdate:
-		return model.ApplicationStatusConditionUpdating, nil
+		appStatusCondition = model.ApplicationStatusConditionUpdating
 	case graphql.OperationTypeDelete:
-		return model.ApplicationStatusConditionDeleting, nil
+		appStatusCondition = model.ApplicationStatusConditionDeleting
 	default:
-		return model.ApplicationStatusConditionInitial, apperrors.NewInvalidStatusCondition(resource.Application)
+		return nil, apperrors.NewInvalidStatusCondition(resource.Application)
 	}
+
+	return &appStatusCondition, nil
 }

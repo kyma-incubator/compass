@@ -121,10 +121,10 @@ spec:
               value: {{ .Values.deployment.args.token.csrExpiration | quote }}
             - name: APP_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
-            - name: OPERATION_URL
-              value: {{ .Values.global.director.operations.endpoint }}
-            - name: LAST_OPERATION_URL
-              value: {{ .Values.global.director.operations.lastOperationEndpoint }}
+            - name: APP_OPERATION_PATH
+              value: {{ .Values.global.director.operations.path }}
+            - name: APP_LAST_OPERATION_PATH
+              value: {{ .Values.global.director.operations.lastOperationPath }}
             - name: APP_CONNECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_CONFIGURATION_FILE
