@@ -30,31 +30,46 @@ type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	appTemplateRepo ApplicationTemplateRepository
-
-	uidService UIDService
+//go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
+type WebhookRepository interface {
+	CreateMany(ctx context.Context, items []*model.Webhook) error
 }
 
-func NewService(appTemplateRepo ApplicationTemplateRepository, uidService UIDService) *service {
+type service struct {
+	appTemplateRepo ApplicationTemplateRepository
+	webhookRepo     WebhookRepository
+	uidService      UIDService
+}
+
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService) *service {
 	return &service{
 		appTemplateRepo: appTemplateRepo,
+		webhookRepo:     webhookRepo,
 		uidService:      uidService,
 	}
 }
 
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
-	id := s.uidService.Generate()
-	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", id, in.Name)
+	appTemplateID := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
-	appTemplate := in.ToApplicationTemplate(id)
+	appTemplate := in.ToApplicationTemplate(appTemplateID)
 
 	err := s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
 
-	return id, nil
+	var webhooks []*model.Webhook
+	for _, item := range in.Webhooks {
+		webhooks = append(webhooks, item.ToApplicationTemplateWebhook(s.uidService.Generate(), nil, appTemplateID))
+	}
+	err = s.webhookRepo.CreateMany(ctx, webhooks)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+	}
+
+	return appTemplateID, nil
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {

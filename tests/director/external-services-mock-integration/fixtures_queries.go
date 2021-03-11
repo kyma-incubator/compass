@@ -24,6 +24,11 @@ func unregisterAsyncApplicationInTenant(t *testing.T, ctx context.Context, gqlCl
 	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
+func unregisterAppTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, tenant string) {
+	req := fixDeleteAppTemplateRequest(id)
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
+}
+
 func registerApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, name, tenant string) graphql.ApplicationExt {
 	in := fixSampleApplicationRegisterInputWithName("first", name)
 	return registerApplicationFromInputWithinTenant(t, ctx, gqlClient, in, tenant)
@@ -92,4 +97,11 @@ func getApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, t
 	application := graphql.Application{}
 	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &application))
 	return application
+}
+
+func getAppTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appTemplateID string) graphql.ApplicationTemplate {
+	req := fixAppTemplateRequest(appTemplateID)
+	appTemplate := graphql.ApplicationTemplate{}
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTemplate))
+	return appTemplate
 }

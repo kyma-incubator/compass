@@ -248,6 +248,7 @@ input ApplicationTemplateInput {
 	"""
 	**Validation:** max=2000
 	"""
+	webhooks: [WebhookInput!]
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -650,6 +651,7 @@ type Application {
 	providerName: String
 	description: String
 	integrationSystemID: ID
+	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
@@ -684,6 +686,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
+	webhooks: [Webhook!]
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -1023,6 +1026,7 @@ type Viewer {
 type Webhook {
 	id: ID!
 	applicationID: ID
+	applicationTemplateID: ID
 	runtimeID: ID
 	integrationSystemID: ID
 	type: WebhookType!
@@ -1208,7 +1212,7 @@ type Mutation {
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplate: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)

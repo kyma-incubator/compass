@@ -107,7 +107,7 @@ func NewRootResolver(
 	tenantConverter := tenant.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	appTemplateConverter := apptemplate.NewConverter(appConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 
@@ -136,13 +136,13 @@ func NewRootResolver(
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
-	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
@@ -163,7 +163,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
-		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
+		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter),
 		api:                api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter, specSvc, specConverter),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -171,7 +171,7 @@ func NewRootResolver(
 		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		runtimeContext:     runtime_context.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
-		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
+		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
 		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
@@ -194,6 +194,11 @@ func (r *RootResolver) Query() graphql.QueryResolver {
 func (r *RootResolver) Application() graphql.ApplicationResolver {
 	return &applicationResolver{r}
 }
+
+func (r *RootResolver) ApplicationTemplate() graphql.ApplicationTemplateResolver {
+	return &applicationTemplateResolver{r}
+}
+
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
 }
@@ -357,14 +362,14 @@ func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id str
 func (r *mutationResolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.DeleteApplicationTemplate(ctx, id)
 }
-func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)
+func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	return r.webhook.AddWebhook(ctx, applicationID, applicationTemplateID, in)
 }
 func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	return r.webhook.UpdateApplicationWebhook(ctx, webhookID, in)
+	return r.webhook.UpdateWebhook(ctx, webhookID, in)
 }
 func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
-	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
+	return r.webhook.DeleteWebhook(ctx, webhookID)
 }
 
 func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
@@ -538,6 +543,14 @@ func (r *applicationResolver) Bundles(ctx context.Context, obj *graphql.Applicat
 }
 func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
 	return r.app.Bundle(ctx, obj, id)
+}
+
+type applicationTemplateResolver struct {
+	*RootResolver
+}
+
+func (r applicationTemplateResolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplate) ([]*graphql.Webhook, error) {
+	return r.appTemplate.Webhooks(ctx, obj)
 }
 
 type runtimeResolver struct {
