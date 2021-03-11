@@ -96,20 +96,12 @@ type ApplicationStatus struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
-type ApplicationTemplate struct {
-	ID               string                         `json:"id"`
-	Name             string                         `json:"name"`
-	Description      *string                        `json:"description"`
-	ApplicationInput string                         `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinition       `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
-}
-
 // **Validation:** provided placeholders' names are unique and used in applicationInput
 type ApplicationTemplateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
+	Webhooks         []*WebhookInput                `json:"webhooks"`
 	Description      *string                        `json:"description"`
 	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
 	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
@@ -576,22 +568,23 @@ type Viewer struct {
 }
 
 type Webhook struct {
-	ID                  string       `json:"id"`
-	ApplicationID       *string      `json:"applicationID"`
-	RuntimeID           *string      `json:"runtimeID"`
-	IntegrationSystemID *string      `json:"integrationSystemID"`
-	Type                WebhookType  `json:"type"`
-	Mode                *WebhookMode `json:"mode"`
-	CorrelationIDKey    *string      `json:"correlationIdKey"`
-	RetryInterval       *int         `json:"retryInterval"`
-	Timeout             *int         `json:"timeout"`
-	URL                 *string      `json:"url"`
-	Auth                *Auth        `json:"auth"`
-	URLTemplate         *string      `json:"urlTemplate"`
-	InputTemplate       *string      `json:"inputTemplate"`
-	HeaderTemplate      *string      `json:"headerTemplate"`
-	OutputTemplate      *string      `json:"outputTemplate"`
-	StatusTemplate      *string      `json:"statusTemplate"`
+	ID                    string       `json:"id"`
+	ApplicationID         *string      `json:"applicationID"`
+	ApplicationTemplateID *string      `json:"applicationTemplateID"`
+	RuntimeID             *string      `json:"runtimeID"`
+	IntegrationSystemID   *string      `json:"integrationSystemID"`
+	Type                  WebhookType  `json:"type"`
+	Mode                  *WebhookMode `json:"mode"`
+	CorrelationIDKey      *string      `json:"correlationIdKey"`
+	RetryInterval         *int         `json:"retryInterval"`
+	Timeout               *int         `json:"timeout"`
+	URL                   *string      `json:"url"`
+	Auth                  *Auth        `json:"auth"`
+	URLTemplate           *string      `json:"urlTemplate"`
+	InputTemplate         *string      `json:"inputTemplate"`
+	HeaderTemplate        *string      `json:"headerTemplate"`
+	OutputTemplate        *string      `json:"outputTemplate"`
+	StatusTemplate        *string      `json:"statusTemplate"`
 }
 
 type WebhookInput struct {

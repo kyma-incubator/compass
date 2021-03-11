@@ -504,7 +504,7 @@ func webhookService() webhook.WebhookService {
 	webhookConverter := webhook.NewConverter(authConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
-	return webhook.NewService(webhookRepo, uidSvc)
+	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
 func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
@@ -613,7 +613,7 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 	scheduler, err := buildScheduler(ctx, cfg)
 	exitOnError(err, "Error while creating operations scheduler")
 
-	return operation.NewDirective(transact, webhookService().List, resourceFetcherFunc, tenant.LoadFromContext, scheduler).HandleOperation
+	return operation.NewDirective(transact, webhookService().ListAllApplicationWebhooks, resourceFetcherFunc, tenant.LoadFromContext, scheduler).HandleOperation
 }
 
 func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
