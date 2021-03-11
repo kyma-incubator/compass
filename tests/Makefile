@@ -19,7 +19,7 @@ dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 test:
-	yaml2json test-suite.yaml | jq 'del(.spec.selectors)' | kubectl -n kyma-system apply -f -
+	sed '10,13d' test-suite.yaml | kubectl -n kyma-system apply -f -
 
 test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
