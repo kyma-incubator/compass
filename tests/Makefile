@@ -18,11 +18,11 @@ ensure-local:
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-test:
+e2e-test:
 	sed '10,13d' test-suite.yaml | kubectl -n kyma-system apply -f -
 
-test-clean:
+e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
 
-deploy-tests-on-minikube:
+deploy-on-minikube:
 	@eval $$(minikube docker-env) && docker build -t eu.gcr.io/kyma-project/incubator/compass-e2e-tests .
