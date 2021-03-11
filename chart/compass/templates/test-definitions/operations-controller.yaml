@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  namespace: {{ .Values.tests.namespace }}
+  namespace: {{ .Values.global.tests.namespace }}
 spec:
   disableConcurrency: true
   template:

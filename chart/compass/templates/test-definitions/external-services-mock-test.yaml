@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-  namespace: {{ .Values.tests.namespace }}
+  namespace: {{ .Values.global.tests.namespace }}
 spec:
   template:
     metadata:
@@ -39,7 +39,7 @@ spec:
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
-              value: "{{ .Values.tests.directorFQDN }}:{{ .Values.global.director.port }}/healthz"
+              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.port }}/healthz"
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
             - name: USER_EMAIL
@@ -83,7 +83,7 @@ spec:
             - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
               value: "{{ .Values.global.gateway.mtls.host }}"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
-              value: "{{ .Values.tests.externalServicesMockFQDN }}:8080/"
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---
