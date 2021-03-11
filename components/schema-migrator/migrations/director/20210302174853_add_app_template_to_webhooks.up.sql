@@ -16,9 +16,10 @@ ALTER TABLE webhooks
 
 
 ALTER TABLE applications
-    ADD COLUMN app_template_id uuid,
-    ADD FOREIGN KEY (app_template_id) REFERENCES app_templates(id) ON DELETE SET NULL;
+    ADD COLUMN app_template_id uuid;
 
+ALTER TABLE applications
+    ADD CONSTRAINT applications_app_template_id_fkey FOREIGN KEY (app_template_id) REFERENCES app_templates(id) ON DELETE SET NULL;
 
 UPDATE applications
 SET app_template_id = (SELECT id FROM app_templates

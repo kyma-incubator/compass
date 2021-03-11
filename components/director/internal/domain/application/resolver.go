@@ -418,6 +418,9 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 
 	webhooks, err := r.webhookSvc.ListAllApplicationWebhooks(ctx, obj.ID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
 		return nil, err
 	}
 
@@ -446,7 +449,6 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 		if strings.Contains(err.Error(), "doesn't exist") {
 			return nil, tx.Commit()
 		}
-
 		return nil, err
 	}
 

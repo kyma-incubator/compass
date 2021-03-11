@@ -3,7 +3,6 @@ package apptemplate
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
