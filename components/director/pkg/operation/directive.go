@@ -47,9 +47,9 @@ type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.W
 type directive struct {
 	transact            persistence.Transactioner
 	webhookFetcherFunc  WebhookFetcherFunc
-	tenantLoaderFunc    TenantLoaderFunc
 	resourceFetcherFunc ResourceFetcherFunc
 	resourceUpdaterFunc ResourceUpdaterFunc
+	tenantLoaderFunc    TenantLoaderFunc
 	scheduler           Scheduler
 }
 
@@ -58,9 +58,9 @@ func NewDirective(transact persistence.Transactioner, webhookFetcherFunc Webhook
 	return &directive{
 		transact:            transact,
 		webhookFetcherFunc:  webhookFetcherFunc,
-		tenantLoaderFunc:    tenantLoaderFunc,
 		resourceFetcherFunc: resourceFetcherFunc,
 		resourceUpdaterFunc: resourceUpdaterFunc,
+		tenantLoaderFunc:    tenantLoaderFunc,
 		scheduler:           scheduler,
 	}
 }
