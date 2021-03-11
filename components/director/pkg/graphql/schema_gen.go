@@ -37,6 +37,7 @@ type Config struct {
 type ResolverRoot interface {
 	APISpec() APISpecResolver
 	Application() ApplicationResolver
+	ApplicationTemplate() ApplicationTemplateResolver
 	Bundle() BundleResolver
 	Document() DocumentResolver
 	EventSpec() EventSpecResolver
@@ -90,6 +91,7 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
+		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
 		Bundle                func(childComplexity int, id string) int
 		Bundles               func(childComplexity int, first *int, after *PageCursor) int
@@ -132,6 +134,7 @@ type ComplexityRoot struct {
 		ID               func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Placeholders     func(childComplexity int) int
+		Webhooks         func(childComplexity int) int
 	}
 
 	ApplicationTemplatePage struct {
@@ -326,7 +329,7 @@ type ComplexityRoot struct {
 		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
 		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
-		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
+		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplate *string, in WebhookInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
 		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
@@ -504,22 +507,23 @@ type ComplexityRoot struct {
 	}
 
 	Webhook struct {
-		ApplicationID       func(childComplexity int) int
-		Auth                func(childComplexity int) int
-		CorrelationIDKey    func(childComplexity int) int
-		HeaderTemplate      func(childComplexity int) int
-		ID                  func(childComplexity int) int
-		InputTemplate       func(childComplexity int) int
-		IntegrationSystemID func(childComplexity int) int
-		Mode                func(childComplexity int) int
-		OutputTemplate      func(childComplexity int) int
-		RetryInterval       func(childComplexity int) int
-		RuntimeID           func(childComplexity int) int
-		StatusTemplate      func(childComplexity int) int
-		Timeout             func(childComplexity int) int
-		Type                func(childComplexity int) int
-		URL                 func(childComplexity int) int
-		URLTemplate         func(childComplexity int) int
+		ApplicationID         func(childComplexity int) int
+		ApplicationTemplateID func(childComplexity int) int
+		Auth                  func(childComplexity int) int
+		CorrelationIDKey      func(childComplexity int) int
+		HeaderTemplate        func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		InputTemplate         func(childComplexity int) int
+		IntegrationSystemID   func(childComplexity int) int
+		Mode                  func(childComplexity int) int
+		OutputTemplate        func(childComplexity int) int
+		RetryInterval         func(childComplexity int) int
+		RuntimeID             func(childComplexity int) int
+		StatusTemplate        func(childComplexity int) int
+		Timeout               func(childComplexity int) int
+		Type                  func(childComplexity int) int
+		URL                   func(childComplexity int) int
+		URLTemplate           func(childComplexity int) int
 	}
 }
 
@@ -535,6 +539,9 @@ type ApplicationResolver interface {
 	Bundle(ctx context.Context, obj *Application, id string) (*Bundle, error)
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
+}
+type ApplicationTemplateResolver interface {
+	Webhooks(ctx context.Context, obj *ApplicationTemplate) ([]*Webhook, error)
 }
 type BundleResolver interface {
 	InstanceAuth(ctx context.Context, obj *Bundle, id string) (*BundleInstanceAuth, error)
@@ -573,7 +580,7 @@ type MutationResolver interface {
 	RegisterIntegrationSystem(ctx context.Context, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UpdateIntegrationSystem(ctx context.Context, id string, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UnregisterIntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
-	AddWebhook(ctx context.Context, applicationID string, in WebhookInput) (*Webhook, error)
+	AddWebhook(ctx context.Context, applicationID *string, applicationTemplate *string, in WebhookInput) (*Webhook, error)
 	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
 	AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in APIDefinitionInput) (*APIDefinition, error)
@@ -810,6 +817,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.APISpec.Type(childComplexity), true
 
+	case "Application.applicationTemplateID":
+		if e.complexity.Application.ApplicationTemplateID == nil {
+			break
+		}
+
+		return e.complexity.Application.ApplicationTemplateID(childComplexity), true
+
 	case "Application.auths":
 		if e.complexity.Application.Auths == nil {
 			break
@@ -1034,6 +1048,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplate.Placeholders(childComplexity), true
+
+	case "ApplicationTemplate.webhooks":
+		if e.complexity.ApplicationTemplate.Webhooks == nil {
+			break
+		}
+
+		return e.complexity.ApplicationTemplate.Webhooks(childComplexity), true
 
 	case "ApplicationTemplatePage.data":
 		if e.complexity.ApplicationTemplatePage.Data == nil {
@@ -1933,7 +1954,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(string), args["in"].(WebhookInput)), true
+		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(*string), args["applicationTemplate"].(*string), args["in"].(WebhookInput)), true
 
 	case "Mutation.createApplicationTemplate":
 		if e.complexity.Mutation.CreateApplicationTemplate == nil {
@@ -3158,6 +3179,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Webhook.ApplicationID(childComplexity), true
 
+	case "Webhook.applicationTemplateID":
+		if e.complexity.Webhook.ApplicationTemplateID == nil {
+			break
+		}
+
+		return e.complexity.Webhook.ApplicationTemplateID(childComplexity), true
+
 	case "Webhook.auth":
 		if e.complexity.Webhook.Auth == nil {
 			break
@@ -3575,6 +3603,7 @@ input ApplicationTemplateInput {
 	"""
 	**Validation:** max=2000
 	"""
+	webhooks: [WebhookInput!]
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -3977,6 +4006,7 @@ type Application {
 	providerName: String
 	description: String
 	integrationSystemID: ID
+	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
@@ -4011,6 +4041,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
+	webhooks: [Webhook!]
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -4350,6 +4381,7 @@ type Viewer {
 type Webhook {
 	id: ID!
 	applicationID: ID
+	applicationTemplateID: ID
 	runtimeID: ID
 	integrationSystemID: ID
 	type: WebhookType!
@@ -4535,7 +4567,7 @@ type Mutation {
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplate: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
@@ -5099,15 +5131,23 @@ func (ec *executionContext) field_Mutation_addEventDefinitionToBundle_args(ctx c
 func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["applicationID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["applicationID"] = arg0
-	var arg1 WebhookInput
+	var arg1 *string
+	if tmp, ok := rawArgs["applicationTemplate"]; ok {
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationTemplate"] = arg1
+	var arg2 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
 			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
@@ -5121,12 +5161,12 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 			return nil, err
 		}
 		if data, ok := tmp.(WebhookInput); ok {
-			arg1 = data
+			arg2 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.WebhookInput`, tmp)
 		}
 	}
-	args["in"] = arg1
+	args["in"] = arg2
 	return args, nil
 }
 
@@ -7568,6 +7608,40 @@ func (ec *executionContext) _Application_integrationSystemID(ctx context.Context
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Application_applicationTemplateID(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationTemplateID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Application_labels(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8365,6 +8439,40 @@ func (ec *executionContext) _ApplicationTemplate_description(ctx context.Context
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationTemplate_webhooks(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ApplicationTemplate().Webhooks(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Webhook)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplate_applicationInput(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
@@ -13708,7 +13816,7 @@ func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(string), args["in"].(WebhookInput))
+			return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(*string), args["applicationTemplate"].(*string), args["in"].(WebhookInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addWebhook")
@@ -19552,6 +19660,40 @@ func (ec *executionContext) _Webhook_applicationID(ctx context.Context, field gr
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Webhook_applicationTemplateID(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationTemplateID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Webhook_runtimeID(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -21368,6 +21510,12 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "webhooks":
+			var err error
+			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "description":
 			var err error
 			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -22623,6 +22771,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_description(ctx, field, obj)
 		case "integrationSystemID":
 			out.Values[i] = ec._Application_integrationSystemID(ctx, field, obj)
+		case "applicationTemplateID":
+			out.Values[i] = ec._Application_applicationTemplateID(ctx, field, obj)
 		case "labels":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -22830,29 +22980,40 @@ func (ec *executionContext) _ApplicationTemplate(ctx context.Context, sel ast.Se
 		case "id":
 			out.Values[i] = ec._ApplicationTemplate_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._ApplicationTemplate_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._ApplicationTemplate_description(ctx, field, obj)
+		case "webhooks":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ApplicationTemplate_webhooks(ctx, field, obj)
+				return res
+			})
 		case "applicationInput":
 			out.Values[i] = ec._ApplicationTemplate_applicationInput(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "placeholders":
 			out.Values[i] = ec._ApplicationTemplate_placeholders(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "accessLevel":
 			out.Values[i] = ec._ApplicationTemplate_accessLevel(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -25148,6 +25309,8 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "applicationID":
 			out.Values[i] = ec._Webhook_applicationID(ctx, field, obj)
+		case "applicationTemplateID":
+			out.Values[i] = ec._Webhook_applicationTemplateID(ctx, field, obj)
 		case "runtimeID":
 			out.Values[i] = ec._Webhook_runtimeID(ctx, field, obj)
 		case "integrationSystemID":

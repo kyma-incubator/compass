@@ -580,7 +580,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		urlUpdated := "http://updated-webhook.url"
 		webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL:  &url,
-			Type: graphql.WebhookTypeConfigurationChanged,
+			Type: graphql.WebhookTypeUnregisterApplication,
 		})
 
 		require.NoError(t, err)
@@ -593,7 +593,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		assert.NotNil(t, actualWebhook.URL)
 		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
-		assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
+		assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
 
@@ -603,7 +603,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: &urlUpdated, Type: graphql.WebhookTypeConfigurationChanged})
+			URL: &urlUpdated, Type: graphql.WebhookTypeUnregisterApplication})
 
 		require.NoError(t, err)
 		updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)

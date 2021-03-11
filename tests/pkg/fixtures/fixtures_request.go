@@ -204,6 +204,15 @@ func FixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.
 			applicationTemplateInGQL, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
+func FixDeleteApplicationTemplateRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteApplicationTemplate(id: "%s") {
+					%s
+				}
+			}`, id, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
+}
+
 func FixApplicationRegisterInputWithBundles(t *testing.T) graphql.ApplicationRegisterInput {
 	bndl1 := FixBundleCreateInputWithRelatedObjects(t, "foo")
 	bndl2 := FixBundleCreateInputWithRelatedObjects(t, "bar")
@@ -281,15 +290,6 @@ func FixUpdateApplicationTemplateRequest(id, updateInputGQL string) *gcli.Reques
     					%s
 					}
 				}`, id, updateInputGQL, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
-}
-
-func FixDeleteApplicationTemplateRequest(id string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: deleteApplicationTemplate(id: "%s") {
-					%s
-				}
-			}`, id, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func FixRequestClientCredentialsForApplication(id string) *gcli.Request {

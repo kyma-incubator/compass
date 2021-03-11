@@ -61,6 +61,7 @@ func RegisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Clie
 	return app
 }
 
+//todo remove withintenant
 func RegisterApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
@@ -91,6 +92,7 @@ func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Cl
 	return app
 }
 
+//todo swap tenant and id
 func UnregisterAsyncApplicationInTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, tenant string) {
 	req := FixAsyncUnregisterApplicationRequest(id)
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
@@ -244,11 +246,11 @@ func DeleteBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, ten
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
-func GetBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID, bndlID string) graphql.BundleExt {
-	req := FixBundleRequest(appID, bndlID)
-	bndl := graphql.ApplicationExt{}
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &bndl))
-	return bndl.Bundle
+func GetBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID, bundleID string) graphql.BundleExt {
+	req := FixBundleRequest(appID, bundleID)
+	bundle := graphql.ApplicationExt{}
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &bundle))
+	return bundle.Bundle
 }
 
 func AddAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, bndlID string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
