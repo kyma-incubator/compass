@@ -22,6 +22,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -192,27 +194,20 @@ func determineApplicationFinalStatus(opType OperationType, opError *string) mode
 	switch opType {
 	case OperationTypeCreate:
 		appConditionStatus = model.ApplicationStatusConditionCreateSucceeded
-		if opError != nil || ptrStrToStr(opError) != "" {
+		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionCreateFailed
 		}
 	case OperationTypeUpdate:
 		appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
-		if opError != nil || ptrStrToStr(opError) != "" {
+		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionUpdateFailed
 		}
 	case OperationTypeDelete:
 		appConditionStatus = model.ApplicationStatusConditionDeleteSucceeded
-		if opError != nil || ptrStrToStr(opError) != "" {
+		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionDeleteFailed
 		}
 	}
 
 	return appConditionStatus
-}
-
-func ptrStrToStr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }

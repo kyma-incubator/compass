@@ -23,6 +23,8 @@ import (
 	"math"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
@@ -121,8 +123,14 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Failed to process operation")
 	}
 
-	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, determineApplicationInProgressStatus(operationType)); err != nil {
-		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", entity.GetType(), entity.GetID())
+	appConditionStatus, err := determineApplicationInProgressStatus(operationType)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("While determining the application status condition")
+		return nil, err
+	}
+
+	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, appConditionStatus); err != nil {
+		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %s", entity.GetType(), entity.GetID(), appConditionStatus)
 		return nil, apperrors.NewInternalError("Unable to update resource %s with id %s", entity.GetType(), entity.GetID())
 	}
 
@@ -300,15 +308,15 @@ func isErrored(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
 }
 
-func determineApplicationInProgressStatus(opType graphql.OperationType) model.ApplicationStatusCondition {
+func determineApplicationInProgressStatus(opType graphql.OperationType) (model.ApplicationStatusCondition, error) {
 	switch opType {
 	case graphql.OperationTypeCreate:
-		return model.ApplicationStatusConditionCreating
+		return model.ApplicationStatusConditionCreating, nil
 	case graphql.OperationTypeUpdate:
-		return model.ApplicationStatusConditionUpdating
+		return model.ApplicationStatusConditionUpdating, nil
 	case graphql.OperationTypeDelete:
-		return model.ApplicationStatusConditionDeleting
+		return model.ApplicationStatusConditionDeleting, nil
 	default:
-		return model.ApplicationStatusConditionInitial
+		return model.ApplicationStatusConditionInitial, apperrors.NewInvalidStatusCondition(resource.Application)
 	}
 }

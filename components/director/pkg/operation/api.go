@@ -115,7 +115,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	opResponse := prepareLastOperation(res)
+	opResponse := buildLastOperation(res)
 
 	err = json.NewEncoder(writer).Encode(opResponse)
 	if err != nil {
@@ -123,7 +123,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func prepareLastOperation(resource model.Entity) *OperationResponse {
+func buildLastOperation(resource model.Entity) *OperationResponse {
 	opResponse := &OperationResponse{
 		Operation: &Operation{
 			ResourceID:   resource.GetID(),
@@ -132,39 +132,9 @@ func prepareLastOperation(resource model.Entity) *OperationResponse {
 		Error: resource.GetError(),
 	}
 
-	prepareOperationType(resource, opResponse)
-	prepareOperationStatus(resource, opResponse)
-	prepareCreationTime(resource, opResponse)
+	opResponse.initializeOperationType(resource)
+	opResponse.initializeOperationStatus(resource)
+	opResponse.initializeCreationTime(resource)
 
 	return opResponse
-}
-
-func prepareOperationType(resource model.Entity, opResponse *OperationResponse) {
-	if !resource.GetDeletedAt().IsZero() {
-		opResponse.OperationType = OperationTypeDelete
-	} else if !resource.GetUpdatedAt().IsZero() {
-		opResponse.OperationType = OperationTypeUpdate
-	} else {
-		opResponse.OperationType = OperationTypeCreate
-	}
-}
-
-func prepareOperationStatus(resource model.Entity, opResponse *OperationResponse) {
-	if !resource.GetReady() {
-		opResponse.Status = OperationStatusInProgress
-	} else if resource.GetError() == nil {
-		opResponse.Status = OperationStatusSucceeded
-	} else {
-		opResponse.Status = OperationStatusFailed
-	}
-}
-
-func prepareCreationTime(resource model.Entity, opResponse *OperationResponse) {
-	if resource.GetDeletedAt().After(resource.GetCreatedAt()) && resource.GetDeletedAt().After(resource.GetUpdatedAt()) {
-		opResponse.CreationTime = resource.GetDeletedAt()
-	} else if resource.GetUpdatedAt().After(resource.GetCreatedAt()) && resource.GetUpdatedAt().After(resource.GetDeletedAt()) {
-		opResponse.CreationTime = resource.GetUpdatedAt()
-	} else {
-		opResponse.CreationTime = resource.GetCreatedAt()
-	}
 }

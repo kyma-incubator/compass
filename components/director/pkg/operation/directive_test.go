@@ -1044,7 +1044,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, webhookID1, op.WebhookIDs[0])
 	})
 
-	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with invalid operation type should finish successfully and update application status to INITIAL", func(t *testing.T) {
+	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with invalid operation type should return error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
@@ -1061,24 +1061,12 @@ func TestHandleOperation(t *testing.T) {
 		}
 
 		ctx = gqlgen.WithResolverContext(ctx, rCtx)
-		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
-		mockedScheduler := &automock.Scheduler{}
-		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
-		defer mockedScheduler.AssertExpectations(t)
-
-		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
-			require.NotNil(t, ctx)
-			require.Equal(t, resourceID, id)
-			require.Equal(t, false, ready)
-			require.Nil(t, errorMsg)
-			require.Equal(t, model.ApplicationStatusConditionInitial, appStatusCondition)
-			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -1086,38 +1074,13 @@ func TestHandleOperation(t *testing.T) {
 		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, "invalid", &whTypeApplicationRegister, &resourceIdField)
 
 		// THEN
-		require.NoError(t, err)
-		require.Equal(t, mockedNextResponse(), res)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Invalid status condition")
+		require.Nil(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 
 		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
-		operations, ok := opsFromCtx.(*[]*operation.Operation)
-		require.True(t, ok)
-		require.Len(t, *operations, 1)
-
-		op := (*operations)[0]
-		require.Equal(t, operationID, op.OperationID)
-		//require.Equal(t, operation.OperationTypeDelete, op.OperationType) //TODO: Check the operationType is not one of CREATE, UPDATE, DELETE
-		require.Equal(t, operationCategory, op.OperationCategory)
-
-		headers := make(map[string]string, 0)
-		for key, value := range mockedHeaders {
-			headers[key] = value[0]
-		}
-
-		expectedRequestObject := &webhook.RequestObject{
-			Application: mockedNextResponse().(webhook.Resource),
-			TenantID:    tenantID,
-			Headers:     headers,
-		}
-
-		expectedObj, err := json.Marshal(expectedRequestObject)
-		require.NoError(t, err)
-
-		require.Equal(t, string(expectedObj), op.RequestObject)
-
-		require.Len(t, op.WebhookIDs, 1)
-		require.Equal(t, webhookID1, op.WebhookIDs[0])
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 }
 

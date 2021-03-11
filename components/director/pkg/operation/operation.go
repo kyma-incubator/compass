@@ -20,6 +20,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -120,4 +122,36 @@ func ModeFromCtx(ctx context.Context) graphql.OperationMode {
 	}
 
 	return graphql.OperationModeSync
+}
+
+func (opResponse *OperationResponse) initializeOperationType(resource model.Entity) {
+	if !resource.GetDeletedAt().IsZero() {
+		opResponse.OperationType = OperationTypeDelete
+	} else if !resource.GetUpdatedAt().IsZero() {
+		opResponse.OperationType = OperationTypeUpdate
+	} else {
+		opResponse.OperationType = OperationTypeCreate
+	}
+}
+
+func (opResponse *OperationResponse) initializeOperationStatus(resource model.Entity) {
+	if !resource.GetReady() {
+		opResponse.Status = OperationStatusInProgress
+	} else if resource.GetError() == nil {
+		opResponse.Status = OperationStatusSucceeded
+	} else {
+		opResponse.Status = OperationStatusFailed
+	}
+}
+
+func (opResponse *OperationResponse) initializeCreationTime(resource model.Entity) {
+	createdAt, updatedAt, deletedAt := resource.GetCreatedAt(), resource.GetUpdatedAt(), resource.GetDeletedAt()
+
+	if deletedAt.After(createdAt) && deletedAt.After(updatedAt) {
+		opResponse.CreationTime = deletedAt
+	} else if updatedAt.After(createdAt) {
+		opResponse.CreationTime = updatedAt
+	} else {
+		opResponse.CreationTime = createdAt
+	}
 }
