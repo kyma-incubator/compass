@@ -17,15 +17,8 @@ ensure-local:
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-test:
+e2e-test:
 	@sed "s/PLACEHOLDER/ord-service/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
 
-test-clean:
+e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
-
-#sandbox-test:
-#	@../sandbox.sh ord-service
-#
-#sandbox-test-clean:
-#	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
-#	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-$(COMPONENT)-local

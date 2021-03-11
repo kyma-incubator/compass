@@ -18,8 +18,8 @@ dep-status-local:
 
 test-local: ;
 
-test:
+e2e-test:
 	@sed "s/PLACEHOLDER/connectivity-adapter/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
 
-test-clean:
+e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
