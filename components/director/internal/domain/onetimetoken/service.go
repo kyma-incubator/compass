@@ -73,20 +73,20 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 	}
 }
 
-func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (model.OneTimeToken, error) {
+func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	var oneTimeToken *model.OneTimeToken
 	var err error
 	if tokenType == model.ApplicationReference {
 		app, err := s.appSvc.Get(ctx, id)
 		if err != nil {
-			return model.OneTimeToken{}, errors.Wrapf(err, "while getting application [id: %s]", id)
+			return &model.OneTimeToken{}, errors.Wrapf(err, "while getting application [id: %s]", id)
 		}
 
 		if app.IntegrationSystemID != nil {
 			if adapterURL, ok := s.intSystemToAdapterMapping[*app.IntegrationSystemID]; ok {
 				oneTimeToken, err = s.getTokenFromAdapter(ctx, adapterURL, *app)
 				if err != nil {
-					return model.OneTimeToken{}, errors.Wrapf(err, "while getting one time token for %s from adapter with URL %s", tokenType, adapterURL)
+					return &model.OneTimeToken{}, errors.Wrapf(err, "while getting one time token for %s from adapter with URL %s", tokenType, adapterURL)
 				}
 			}
 		}
@@ -94,7 +94,7 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 
 	if oneTimeToken == nil {
 		if oneTimeToken, err = s.getNewToken(); err != nil {
-			return *oneTimeToken, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
+			return nil, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
 		}
 	}
 
@@ -108,26 +108,22 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 	oneTimeToken.Used = false
 	oneTimeToken.UsedAt = time.Time{}
 
-	_, err = s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{
-		OneTimeToken: oneTimeToken,
-	})
-	if err != nil {
-		return model.OneTimeToken{}, errors.Wrap(err, "while creating System Auth")
+	if _, err = s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
+		return &model.OneTimeToken{}, errors.Wrap(err, "while creating System Auth")
 	}
 
-	return *oneTimeToken, nil
+	return oneTimeToken, nil
 }
 
 func (s *service) getNewToken() (*model.OneTimeToken, error) {
 	tokenString, err := s.tokenGenerator.NewToken()
 	if err != nil {
-		return &model.OneTimeToken{}, err
+		return nil, err
 	}
-	oneTimeToken := &model.OneTimeToken{
+	return &model.OneTimeToken{
 		Token:        tokenString,
 		ConnectorURL: s.connectorURL,
-	}
-	return oneTimeToken, nil
+	}, nil
 }
 
 func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, tokenType tokens.TokenType) (model.OneTimeToken, error) {
