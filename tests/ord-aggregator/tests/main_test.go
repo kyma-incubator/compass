@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
+	c "github.com/robfig/cron/v3"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -31,8 +31,7 @@ type config struct {
 	DefaultTenant               string
 	DirectorURL                 string
 	ORDServiceURL               string
-	DefaultCheckInterval        time.Duration
-	DefaultTestTimeout          time.Duration
+	AggregatorSchedule          string
 	ExternalServicesMockBaseURL string
 }
 
@@ -46,4 +45,21 @@ func TestMain(m *testing.M) {
 	exitVal := m.Run()
 	os.Exit(exitVal)
 
+}
+
+func parseCronTime(cronTime string) (time.Duration, error) {
+	parser := c.NewParser(c.Minute | c.Hour | c.Dom | c.Month | c.Dow)
+	scheduleTime, err := parser.Parse(cronTime)
+	if err != nil {
+		return 0, errors.New("error while parsing cron time")
+	}
+
+	// This is the starting time that will be subtracted from the next activation cron time below. This way the cron time duration can be estimated.
+	year, month, day := time.Now().Date()
+	startingTime := time.Date(year, month, day, 0, 0, 0, 0, time.Now().Location())
+
+	nextTime := scheduleTime.Next(startingTime)
+	cronTimeDuration := nextTime.Sub(startingTime)
+
+	return cronTimeDuration, nil
 }

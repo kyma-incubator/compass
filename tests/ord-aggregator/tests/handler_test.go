@@ -100,8 +100,14 @@ func TestORDAggregator(t *testing.T) {
 	httpClient := conf.Client(ctx)
 	httpClient.Timeout = 10 * time.Second
 
+	scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
+	require.NoError(t, err)
+
+	defaultTestTimeout := 2 * scheduleTime
+	defaultCheckInterval := scheduleTime / 20
+
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
-		err = verifyORDDocument(testConfig.DefaultCheckInterval, testConfig.DefaultTestTimeout, func() bool {
+		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
 			var respBody string
 
 			// Verify system instances

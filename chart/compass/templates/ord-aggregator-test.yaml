@@ -45,10 +45,8 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
-            - name: DEFAULT_CHECK_INTERVAL
-              value: "{{ .Values.global.ordAggregator.tests.defaultCheckInterval }}"
-            - name: DEFAULT_TEST_TIMEOUT
-              value: "{{ .Values.global.ordAggregator.tests.defaultTestTimeout }}"
+            - name: AGGREGATOR_SCHEDULE
+              value: "{{ .Values.global.ordAggregator.schedule }}"
             - name: USER_EMAIL
               valueFrom:
                 secretKeyRef:

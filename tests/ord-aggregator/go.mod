@@ -8,6 +8,7 @@ require (
 	github.com/kyma-incubator/compass/tests/ord-service v0.0.0-20210309203806-32c5f062ca73
 
 	github.com/pkg/errors v0.9.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.8
 	github.com/vrischmann/envconfig v1.3.0
