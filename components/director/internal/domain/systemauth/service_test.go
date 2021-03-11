@@ -492,7 +492,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 	})
 }
 
-func TestService_GetByID(t *testing.T) {
+func TestService_GetGlobal(t *testing.T) {
 
 	authID := "authID"
 
@@ -503,7 +503,7 @@ func TestService_GetByID(t *testing.T) {
 		repo.On("GetByIDGlobal", context.Background(), authID).Return(&model.SystemAuth{}, nil)
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
-		item, err := svc.GetByID(context.Background(), authID)
+		item, err := svc.GetGlobal(context.Background(), authID)
 		// THEN
 		assert.Nil(t, err)
 		assert.Equal(t, &model.SystemAuth{}, item)
@@ -516,7 +516,7 @@ func TestService_GetByID(t *testing.T) {
 		repo.On("GetByIDGlobal", context.Background(), authID).Return(nil, errors.New("could not fetch"))
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
-		item, err := svc.GetByID(context.Background(), authID)
+		item, err := svc.GetGlobal(context.Background(), authID)
 		// THEN
 		assert.Nil(t, item)
 		assert.Error(t, err, fmt.Sprintf("while getting SystemAuth with ID %s could not fetch", authID))

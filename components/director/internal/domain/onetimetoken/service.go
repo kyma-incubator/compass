@@ -23,7 +23,7 @@ import (
 type SystemAuthService interface {
 	Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
-	GetByID(ctx context.Context, authID string) (*model.SystemAuth, error)
+	GetGlobal(ctx context.Context, authID string) (*model.SystemAuth, error)
 	Update(ctx context.Context, item *model.SystemAuth) error
 }
 
@@ -127,7 +127,7 @@ func (s *service) getNewToken() (*model.OneTimeToken, error) {
 }
 
 func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, tokenType tokens.TokenType) (model.OneTimeToken, error) {
-	sysAuth, err := s.sysAuthSvc.GetByID(ctx, sysAuthID)
+	sysAuth, err := s.sysAuthSvc.GetGlobal(ctx, sysAuthID)
 	if err != nil {
 		return model.OneTimeToken{}, err
 	}

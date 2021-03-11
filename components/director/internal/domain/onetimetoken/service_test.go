@@ -558,7 +558,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
-		sysAuthSvc.On("GetByID", context.Background(), systemAuthID).Return(nil, errors.New("error while fetching"))
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(nil, errors.New("error while fetching"))
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, appSvc, appConverter, extTenantsSvc, doer, tokenGenerator, connectorURL,
 			intSystemToAdapterMapping, timeService)
 
@@ -577,7 +577,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
-		sysAuthSvc.On("GetByID", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
 		tokenGenerator.On("NewToken").Return("", errors.New("error while token generating"))
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, appSvc, appConverter, extTenantsSvc, doer, tokenGenerator, connectorURL,
@@ -599,7 +599,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
-		sysAuthSvc.On("GetByID", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(errors.New("error while updating"))
 		tokenGenerator.On("NewToken").Return(token, nil)
 		timeService.On("Now").Return(time.Now())
@@ -622,7 +622,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
-		sysAuthSvc.On("GetByID", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
 		tokenGenerator.On("NewToken").Return(token, nil)
 		now := time.Now()

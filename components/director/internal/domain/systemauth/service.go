@@ -108,15 +108,6 @@ func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemA
 	return item, nil
 }
 
-func (s *service) GetByID(ctx context.Context, authID string) (*model.SystemAuth, error) {
-	item, err := s.repo.GetByIDGlobal(ctx, authID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
-	}
-
-	return item, nil
-}
-
 func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	item, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {
