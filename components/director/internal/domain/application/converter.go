@@ -216,6 +216,24 @@ func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.Applic
 		condition = graphql.ApplicationStatusConditionFailed
 	case model.ApplicationStatusConditionConnected:
 		condition = graphql.ApplicationStatusConditionConnected
+	case model.ApplicationStatusConditionCreating:
+		condition = graphql.ApplicationStatusConditionCreating
+	case model.ApplicationStatusConditionCreateFailed:
+		condition = graphql.ApplicationStatusConditionCreateFailed
+	case model.ApplicationStatusConditionCreateSucceeded:
+		condition = graphql.ApplicationStatusConditionCreateSucceeded
+	case model.ApplicationStatusConditionUpdating:
+		condition = graphql.ApplicationStatusConditionUpdating
+	case model.ApplicationStatusConditionUpdateFailed:
+		condition = graphql.ApplicationStatusConditionUpdateFailed
+	case model.ApplicationStatusConditionUpdateSucceeded:
+		condition = graphql.ApplicationStatusConditionUpdateSucceeded
+	case model.ApplicationStatusConditionDeleting:
+		condition = graphql.ApplicationStatusConditionDeleting
+	case model.ApplicationStatusConditionDeleteFailed:
+		condition = graphql.ApplicationStatusConditionDeleteFailed
+	case model.ApplicationStatusConditionDeleteSucceeded:
+		condition = graphql.ApplicationStatusConditionDeleteSucceeded
 	default:
 		condition = graphql.ApplicationStatusConditionInitial
 	}
@@ -240,6 +258,24 @@ func (c *converter) statusToModel(in *graphql.ApplicationStatus) *model.Applicat
 		condition = model.ApplicationStatusConditionFailed
 	case graphql.ApplicationStatusConditionConnected:
 		condition = model.ApplicationStatusConditionConnected
+	case graphql.ApplicationStatusConditionCreating:
+		condition = model.ApplicationStatusConditionCreating
+	case graphql.ApplicationStatusConditionCreateFailed:
+		condition = model.ApplicationStatusConditionCreateFailed
+	case graphql.ApplicationStatusConditionCreateSucceeded:
+		condition = model.ApplicationStatusConditionCreateSucceeded
+	case graphql.ApplicationStatusConditionUpdating:
+		condition = model.ApplicationStatusConditionUpdating
+	case graphql.ApplicationStatusConditionUpdateFailed:
+		condition = model.ApplicationStatusConditionUpdateFailed
+	case graphql.ApplicationStatusConditionUpdateSucceeded:
+		condition = model.ApplicationStatusConditionUpdateSucceeded
+	case graphql.ApplicationStatusConditionDeleting:
+		condition = model.ApplicationStatusConditionDeleting
+	case graphql.ApplicationStatusConditionDeleteFailed:
+		condition = model.ApplicationStatusConditionDeleteFailed
+	case graphql.ApplicationStatusConditionDeleteSucceeded:
+		condition = model.ApplicationStatusConditionDeleteSucceeded
 	default:
 		condition = model.ApplicationStatusConditionInitial
 	}
@@ -260,6 +296,24 @@ func (c *converter) statusConditionToModel(in *graphql.ApplicationStatusConditio
 		condition = model.ApplicationStatusConditionConnected
 	case graphql.ApplicationStatusConditionFailed:
 		condition = model.ApplicationStatusConditionFailed
+	case graphql.ApplicationStatusConditionCreating:
+		condition = model.ApplicationStatusConditionCreating
+	case graphql.ApplicationStatusConditionCreateFailed:
+		condition = model.ApplicationStatusConditionCreateFailed
+	case graphql.ApplicationStatusConditionCreateSucceeded:
+		condition = model.ApplicationStatusConditionCreateSucceeded
+	case graphql.ApplicationStatusConditionUpdating:
+		condition = model.ApplicationStatusConditionUpdating
+	case graphql.ApplicationStatusConditionUpdateFailed:
+		condition = model.ApplicationStatusConditionUpdateFailed
+	case graphql.ApplicationStatusConditionUpdateSucceeded:
+		condition = model.ApplicationStatusConditionUpdateSucceeded
+	case graphql.ApplicationStatusConditionDeleting:
+		condition = model.ApplicationStatusConditionDeleting
+	case graphql.ApplicationStatusConditionDeleteFailed:
+		condition = model.ApplicationStatusConditionDeleteFailed
+	case graphql.ApplicationStatusConditionDeleteSucceeded:
+		condition = model.ApplicationStatusConditionDeleteSucceeded
 	case graphql.ApplicationStatusConditionInitial:
 		fallthrough
 	default:

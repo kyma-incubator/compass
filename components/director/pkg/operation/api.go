@@ -69,9 +69,9 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(request)
-	resourceId := vars[ResourceIDParam]
-	resourceType := vars[ResourceTypeParam]
+	routeVariables := mux.Vars(request)
+	resourceId := routeVariables[ResourceIDParam]
+	resourceType := routeVariables[ResourceTypeParam]
 
 	op := &Operation{
 		ResourceID:   resourceId,
