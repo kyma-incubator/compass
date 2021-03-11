@@ -1116,6 +1116,25 @@ func TestResolver_Webhooks(t *testing.T) {
 			},
 			ExpectedErr: testErr,
 		},
+		{
+			Name: "Webhook service returns not found error",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListAllApplicationWebhooks", contextParam, applicationID).Return(nil, apperrors.NewNotFoundError(resource.Webhook, "foo")).Once()
+				return svc
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    nil,
+		},
 	}
 
 	for _, testCase := range testCases {
