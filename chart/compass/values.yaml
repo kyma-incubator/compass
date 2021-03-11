@@ -55,7 +55,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1761"
+        version: "PR-1762"
       connector:
         dir:
         version: "PR-1715"
@@ -93,6 +93,8 @@ global:
     port: 3000
     operations:
       port: 3002
+      endpoint: "/operation"
+      lastOperationEndpoint: "/last_operation"
 
     clientIDHeaderKey: client_user
 

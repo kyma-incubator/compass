@@ -103,7 +103,8 @@ type config struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
-	OperationEndpoint             string `envconfig:"default=/last_operation"`
+	OperationEndpoint             string `envconfig:"default=/operation"`
+	LastOperationEndpoint         string `envconfig:"default=/last_operation"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ConfigurationFile             string
 	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
@@ -258,7 +259,7 @@ func main() {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}, tenant.LoadFromContext)
 
-	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	operationsAPIRouter := mainRouter.PathPrefix(cfg.LastOperationEndpoint).Subrouter()
 	operationsAPIRouter.Use(authMiddleware.Handler())
 	operationsAPIRouter.HandleFunc("/{resource_type}/{resource_id}", operationHandler.ServeHTTP)
 

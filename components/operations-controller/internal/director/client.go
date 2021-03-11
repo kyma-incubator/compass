@@ -32,8 +32,9 @@ import (
 // client implements the DirectorClient interface
 type client struct {
 	types.ApplicationLister
-	httpClient  *http.Client
-	directorURL string
+	httpClient        *http.Client
+	directorURL       string
+	operationEndpoint string
 }
 
 type Request struct {
@@ -44,7 +45,7 @@ type Request struct {
 }
 
 // NewClient constructs a default implementation of the Client interface
-func NewClient(directorURL string, cfg *graphqlbroker.Config, httpClient *http.Client) (*client, error) {
+func NewClient(directorURL string, operationEndpoint string, cfg *graphqlbroker.Config, httpClient *http.Client) (*client, error) {
 	graphqlClient, err := graphqlbroker.PrepareGqlClientWithHttpClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
@@ -54,6 +55,7 @@ func NewClient(directorURL string, cfg *graphqlbroker.Config, httpClient *http.C
 		ApplicationLister: graphqlClient,
 		httpClient:        httpClient,
 		directorURL:       directorURL,
+		operationEndpoint: operationEndpoint,
 	}, nil
 }
 
@@ -64,7 +66,7 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.directorURL+"/last_operation", bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.directorURL+c.operationEndpoint, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}

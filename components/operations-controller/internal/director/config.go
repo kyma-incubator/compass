@@ -20,7 +20,8 @@ import "github.com/pkg/errors"
 
 // Settings type to be loaded from the environment
 type Config struct {
-	InternalAddress string `mapstructure:"internal_address" description:"the internal address of the Director component"`
+	InternalAddress   string `mapstructure:"internal_address" description:"the internal address of the Director component"`
+	OperationEndpoint string `mapstructure:"operation_endpoint" description:"the operation endpoint of the Director component"`
 }
 
 // DefaultSettings returns the default values for configuring the System Broker
