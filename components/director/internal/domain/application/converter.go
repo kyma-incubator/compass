@@ -141,14 +141,18 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Bundles")
 	}
 
-	statusCondition := model.ApplicationStatusCondition(*in.StatusCondition)
+	var statusCondition *model.ApplicationStatusCondition
+	if in.StatusCondition != nil {
+		condition := model.ApplicationStatusCondition(*in.StatusCondition)
+		statusCondition = &condition
+	}
 	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
-		StatusCondition:     &statusCondition,
+		StatusCondition:     statusCondition,
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
 		Bundles:             bundles,
@@ -156,13 +160,17 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
-	statusCondition := model.ApplicationStatusCondition(*in.StatusCondition)
+	var statusCondition *model.ApplicationStatusCondition
+	if in.StatusCondition != nil {
+		condition := model.ApplicationStatusCondition(*in.StatusCondition)
+		statusCondition = &condition
+	}
 	return model.ApplicationUpdateInput{
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
-		StatusCondition:     &statusCondition,
+		StatusCondition:     statusCondition,
 	}
 }
 

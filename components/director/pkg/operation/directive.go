@@ -130,7 +130,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, *appConditionStatus); err != nil {
-		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %s", entity.GetType(), entity.GetID(), appConditionStatus)
+		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %v", entity.GetType(), entity.GetID(), appConditionStatus)
 		return nil, apperrors.NewInternalError("Unable to update resource %s with id %s", entity.GetType(), entity.GetID())
 	}
 
