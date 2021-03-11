@@ -83,7 +83,7 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		// WHEN
 		token, err := tokenResolver.GenerateCSRToken(context.Background(), authId)
 		// THEN
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, tokenValue, token.Token)
 	})
 

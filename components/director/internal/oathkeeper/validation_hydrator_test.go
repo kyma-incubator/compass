@@ -192,7 +192,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
-	t.Run("should fail for expired token", func(t *testing.T) {
+	t.Run("should fail when the token is expired", func(t *testing.T) {
 		// GIVEN
 		tokenService := &mocks.Service{}
 		timeService := &timeMock.Service{}

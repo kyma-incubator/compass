@@ -28,8 +28,8 @@ func TestTokenService(t *testing.T) {
 		// WHEN
 		actualToken, appError := tokenService.GetToken(context.Background(), clientId)
 		// THEN
-		assert.Equal(t, token, actualToken)
 		require.NoError(t, appError)
+		assert.Equal(t, token, actualToken)
 	})
 
 	t.Run("should return error when token not found", func(t *testing.T) {
