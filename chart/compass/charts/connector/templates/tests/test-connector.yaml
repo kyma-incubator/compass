@@ -19,7 +19,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-tests
     spec:
-      serviceAccountName: compass-connector-tests
+      serviceAccountName: {{ template "fullname" . }}-tests
       containers:
       - name: tests
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}connector-tests:{{ .Values.global.images.tests.connector.version }}
