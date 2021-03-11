@@ -54,8 +54,8 @@ spec:
             - -c
             - |
               MAX_RETRIES=60
-              DIRECTOR_URL=http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql
-              DIRECTOR_HEALTHZ_URL=http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/healthz
+              DIRECTOR_URL=http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
+              DIRECTOR_HEALTHZ_URL=http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz
 
               SCOPES="runtime:write runtime:read integration_system:read integration_system:write"
               TOKEN_PAYLOAD='{"scopes": "'${SCOPES}'","tenant":"{{ .Values.global.defaultTenant }}"}'

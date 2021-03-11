@@ -1,42 +1,39 @@
 package apitests
 
 import (
+	"context"
 	"crypto/rsa"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/pkg/errors"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/director"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-
-	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
-	"github.com/sirupsen/logrus"
-)
-
-const (
-	apiAccessTimeout  = 60 * time.Second
-	apiAccessInterval = 2 * time.Second
 )
 
 var (
-	config           testkit.TestConfig
-	internalClient   *connector.InternalClient
-	hydratorClient   *connector.HydratorClient
-	connectorClient  *connector.TokenSecuredClient
-	configmapCleaner *testkit.ConfigmapCleaner
-
-	clientKey *rsa.PrivateKey
+	config                  testkit.TestConfig
+	directorClient          *director.Client
+	connectorHydratorClient *connector.HydratorClient
+	directorHydratorClient  *director.HydratorClient
+	connectorClient         *connector.TokenSecuredClient
+	configmapCleaner        *testkit.ConfigmapCleaner
+	ctx                     context.Context
+	clientKey               *rsa.PrivateKey
 )
 
 func TestMain(m *testing.M) {
 	logrus.Info("Starting Connector Test")
+
+	ctx = context.Background()
 
 	cfg, err := testkit.ReadConfig()
 	if err != nil {
@@ -50,8 +47,14 @@ func TestMain(m *testing.M) {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	internalClient = connector.NewInternalClient(config.InternalConnectorURL)
-	hydratorClient = connector.NewHydratorClient(config.HydratorURL)
+
+	directorClient, err = director.NewClient(ctx, config.DirectorURL, config.Tenant)
+	if err != nil {
+		logrus.Errorf("Failed to create director client: %s", err.Error())
+		os.Exit(1)
+	}
+	connectorHydratorClient = connector.NewHydratorClient(config.ConnectorHydratorURL)
+	directorHydratorClient = director.NewHydratorClient(config.DirectorHydratorURL)
 	connectorClient = connector.NewConnectorClient(config.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()

@@ -13,7 +13,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1750"
+      version: "PR-1741"
     connectivity_adapter:
       dir:
       version: "PR-1750"
@@ -22,7 +22,7 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1761"
+      version: "PR-1741"
     gateway:
       dir:
       version: "PR-1750"
@@ -55,10 +55,10 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1761"
+        version: "PR-1741"
       connector:
         dir:
-        version: "PR-1715"
+        version: "PR-1741"
       connectivity_adapter:
         dir:
         version: "PR-1693"
@@ -90,7 +90,15 @@ global:
 
   director:
     prefix: /director
-    port: 3000
+    graphql:
+      external:
+        port: 3000
+      internal:
+        port: 3001
+    validator:
+      port: 8080
+    metrics:
+      port: 3003
     operations:
       port: 3002
 
@@ -121,8 +129,6 @@ global:
     graphql:
       external:
         port: 3000
-      internal:
-        port: 3001
     validator:
       port: 8080
     # If secrets do not exist they will be created
@@ -280,7 +286,7 @@ global:
       tokenResolverService:
         config:
           api:
-            url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
+            url: http://compass-director.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
               give_up_after: 3s
               max_delay: 2000ms
