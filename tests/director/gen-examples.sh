@@ -22,7 +22,7 @@ export APP_DB_NAME="compass"
 export APP_DB_PORT="5432"
 export APP_DB_SSL_PARAM="disable"
 export APP_DB_HOST=${POSTGRES_CONTAINER}
-APP_PORT="3002"
+APP_PORT="3000"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIRECTOR_URL="compass-dev-director"
@@ -109,7 +109,6 @@ docker run --name ${DIRECTOR_CONTAINER} -d --network=${NETWORK} \
     -e APP_STATIC_USERS_FILE=/data/static-users.yaml \
     -e APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
     -e APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
-    -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
     -e APP_URL=http://director.not.configured.url/director \
     -e APP_CONNECTOR_URL=http://connector.not.configured.url/connector/graphql \
     -e APP_JWKS_ENDPOINT="file:///app/default-jwks.json" \

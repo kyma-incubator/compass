@@ -1,14 +1,14 @@
-package tokens
+package onetimetoken
 
 import (
 	"crypto/rand"
 	"encoding/base64"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+	"fmt"
 )
 
+//go:generate mockery -name=TokenGenerator -output=automock -outpkg=automock -case=underscore
 type TokenGenerator interface {
-	NewToken() (string, apperrors.AppError)
+	NewToken() (string, error)
 }
 
 type tokenGenerator struct {
@@ -19,21 +19,21 @@ func NewTokenGenerator(tokenLength int) TokenGenerator {
 	return &tokenGenerator{tokenLength: tokenLength}
 }
 
-func (tg *tokenGenerator) NewToken() (string, apperrors.AppError) {
+func (tg *tokenGenerator) NewToken() (string, error) {
 	return generateRandomString(tg.tokenLength)
 }
 
-func generateRandomBytes(number int) ([]byte, apperrors.AppError) {
+func generateRandomBytes(number int) ([]byte, error) {
 	bytes := make([]byte, number)
 	_, err := rand.Read(bytes)
 	if err != nil {
-		return nil, apperrors.Internal("Failed to generate random bytes: %s", err)
+		return nil, fmt.Errorf("Failed to generate random bytes: %s", err)
 	}
 
 	return bytes, nil
 }
 
-func generateRandomString(length int) (string, apperrors.AppError) {
+func generateRandomString(length int) (string, error) {
 	bytes, err := generateRandomBytes(length)
 	return base64.URLEncoding.EncodeToString(bytes), err
 }
