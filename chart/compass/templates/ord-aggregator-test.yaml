@@ -4,8 +4,8 @@ metadata:
   name: {{ .Values.global.ordAggregator.name }}
   namespace: kyma-system
   labels:
-    app: {{ .Chart.Name }}-tests
-    app.kubernetes.io/name: {{ .Chart.Name }}-tests
+    app: {{ .Values.global.ordAggregator.name }}-tests
+    app.kubernetes.io/name: {{ .Values.global.ordAggregator.name }}-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-tests
+        app: {{ .Values.global.ordAggregator.name }}-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

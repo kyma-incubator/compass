@@ -12,12 +12,12 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        cronjob: ord-aggregator
+        cronjob: {{ .Values.global.ordAggregator.name }}
     spec:
       template:
         metadata:
           labels:
-            cronjob: ord-aggregator
+            cronjob: {{ .Values.global.ordAggregator.name }}
         spec:
           containers:
             - name: aggregator
