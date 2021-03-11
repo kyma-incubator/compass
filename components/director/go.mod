@@ -42,8 +42,8 @@ require (
 	golang.org/x/oauth2 v0.0.0-20210220000619-9bb904979d93
 	golang.org/x/sys v0.0.0-20210303074136-134d130e1a04 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
-	k8s.io/api v0.17.3
-	k8s.io/apimachinery v0.17.3
-	k8s.io/client-go v0.17.3
-	sigs.k8s.io/controller-runtime v0.5.0
+	k8s.io/api v0.17.2 // DO NOT BUMP
+	k8s.io/apimachinery v0.17.2 // DO NOT BUMP
+	k8s.io/client-go v0.17.2 // DO NOT BUMP
+	sigs.k8s.io/controller-runtime v0.5.0 // DO NOT BUMP
 )
