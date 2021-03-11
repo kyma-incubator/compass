@@ -235,7 +235,7 @@ func (c *converter) webhooksToGraphql(in []model.Webhook) ([]graphql.Webhook, er
 	}
 	gqlWebhookPtrs, err := c.webhookConverter.MultipleToGraphQL(webhookPtrs)
 	if err != nil {
-		return nil, fmt.Errorf("while converting webhooks to graphql: %w", err)
+		return nil, errors.Wrap(err, "while converting webhooks to graphql")
 	}
 	gqlWebhooks := make([]graphql.Webhook, len(gqlWebhookPtrs))
 	for i := 0; i < len(gqlWebhookPtrs); i++ {

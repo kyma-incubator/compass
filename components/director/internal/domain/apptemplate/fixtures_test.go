@@ -39,7 +39,7 @@ var (
 	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
 
-func fixModelAppTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
+func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
 	desc := testDescription
 	out := model.ApplicationTemplate{
 		ID:                   id,
@@ -55,7 +55,7 @@ func fixModelAppTemplate(id, name string, webhooks []*model.Webhook) *model.Appl
 }
 
 func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string, webhooks []*model.Webhook) *model.ApplicationTemplate {
-	out := fixModelAppTemplate(id, name, webhooks)
+	out := fixModelApplicationTemplate(id, name, webhooks)
 	out.ApplicationInputJSON = appInputJSON
 
 	return out
@@ -126,7 +126,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	}
 }
 
-func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
+func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.Entity {
 	marshalledAppInput := `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
 	placeholders := fixModelPlaceholders()

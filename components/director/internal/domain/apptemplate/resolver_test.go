@@ -32,7 +32,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
@@ -203,8 +203,8 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	txGen := txtest.NewTransactionContextGenerator(testError)
 	modelAppTemplates := []*model.ApplicationTemplate{
-		fixModelAppTemplate("i1", "n1", fixModelApplicationTemplateWebhooks("webhook-id-1", "i1")),
-		fixModelAppTemplate("i2", "n2", fixModelApplicationTemplateWebhooks("webhook-id-2", "i2")),
+		fixModelApplicationTemplate("i1", "n1", fixModelApplicationTemplateWebhooks("webhook-id-1", "i1")),
+		fixModelApplicationTemplate("i2", "n2", fixModelApplicationTemplateWebhooks("webhook-id-2", "i2")),
 	}
 	modelPage := fixModelAppTemplatePage(modelAppTemplates)
 	gqlAppTemplates := []*graphql.ApplicationTemplate{
@@ -476,7 +476,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
@@ -1039,7 +1039,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
@@ -1242,7 +1242,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {

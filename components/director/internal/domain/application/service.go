@@ -456,7 +456,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
 	}
-	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
+	in.Labels[nameKey] = normalizedName
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {

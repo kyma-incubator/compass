@@ -29,7 +29,7 @@ func TestService_Create(t *testing.T) {
 		return uidSvc
 	}
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, []*model.Webhook{})
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, []*model.Webhook{})
 
 	appTemplateInputWithWebhooks := fixModelAppTemplateInput(testName, appInputJSONString)
 	appTemplateInputWithWebhooks.Webhooks = []*model.WebhookInput{
@@ -141,7 +141,7 @@ func TestService_Get(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
 		Name              string
@@ -203,7 +203,7 @@ func TestService_GetByName(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 
 	testCases := []struct {
 		Name              string
@@ -326,8 +326,8 @@ func TestService_List(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	modelAppTemplate := fixModelAppTemplatePage([]*model.ApplicationTemplate{
-		fixModelAppTemplate("foo1", "bar1", fixModelApplicationTemplateWebhooks("webhook-id-1", "foo1")),
-		fixModelAppTemplate("foo2", "bar2", fixModelApplicationTemplateWebhooks("webhook-id-2", "foo2")),
+		fixModelApplicationTemplate("foo1", "bar1", fixModelApplicationTemplateWebhooks("webhook-id-1", "foo1")),
+		fixModelApplicationTemplate("foo2", "bar2", fixModelApplicationTemplateWebhooks("webhook-id-2", "foo2")),
 	})
 
 	testCases := []struct {
@@ -419,7 +419,7 @@ func TestService_List(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
-	modelAppTemplate := fixModelAppTemplate(testID, testName, []*model.Webhook{})
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, []*model.Webhook{})
 
 	testCases := []struct {
 		Name              string

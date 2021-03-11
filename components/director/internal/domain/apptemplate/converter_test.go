@@ -33,7 +33,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:          "All properties given",
-			Input:         fixModelAppTemplate(testID, testName, modelWebhooks),
+			Input:         fixModelApplicationTemplate(testID, testName, modelWebhooks),
 			Expected:      fixGQLAppTemplate(testID, testName, GQLWebhooks),
 			ExpectedError: false,
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -59,7 +59,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 		{
 			Name:          "Error when converting Webhooks",
-			Input:         fixModelAppTemplate(testID, testName, modelWebhooks),
+			Input:         fixModelApplicationTemplate(testID, testName, modelWebhooks),
 			Expected:      nil,
 			ExpectedError: true,
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -132,8 +132,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: []*model.ApplicationTemplate{
-				fixModelAppTemplate("id1", "name1", modelWebhooks[0]),
-				fixModelAppTemplate("id2", "name2", modelWebhooks[1]),
+				fixModelApplicationTemplate("id1", "name1", modelWebhooks[0]),
+				fixModelApplicationTemplate("id2", "name2", modelWebhooks[1]),
 				nil,
 			},
 			Expected: []*graphql.ApplicationTemplate{
@@ -151,7 +151,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		{
 			Name: "Error when application input is empty",
 			Input: []*model.ApplicationTemplate{
-				fixModelAppTemplate("id1", "name1", modelWebhooks[0]),
+				fixModelApplicationTemplate("id1", "name1", modelWebhooks[0]),
 				{
 					ID:                   testID,
 					Name:                 testName,
@@ -169,7 +169,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		{
 			Name: "Error when converting application template",
 			Input: []*model.ApplicationTemplate{
-				fixModelAppTemplate("id1", "name1", modelWebhooks[0]),
+				fixModelApplicationTemplate("id1", "name1", modelWebhooks[0]),
 				{
 					ID:                   testID,
 					Name:                 testName,
@@ -317,8 +317,8 @@ func TestConverter_ApplicationFromTemplateInputFromGraphQL(t *testing.T) {
 
 func TestConverter_ToEntity(t *testing.T) {
 	// given
-	appTemplateModel := fixModelAppTemplate(testID, testName, fixModelApplicationTemplateWebhooks("webhook-id-1", testID))
-	appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
+	appTemplateModel := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks("webhook-id-1", testID))
+	appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
 
 	testCases := []struct {
 		Name     string
@@ -361,8 +361,8 @@ func TestConverter_FromEntity(t *testing.T) {
 	id := "foo"
 	name := "bar"
 
-	appTemplateEntity := fixEntityAppTemplate(t, id, name)
-	appTemplateModel := fixModelAppTemplate(id, name, nil)
+	appTemplateEntity := fixEntityApplicationTemplate(t, id, name)
+	appTemplateModel := fixModelApplicationTemplate(id, name, nil)
 
 	testCases := []struct {
 		Name               string
