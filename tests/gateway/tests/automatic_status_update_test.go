@@ -35,7 +35,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Name:         "app-static-user",
 			ProviderName: ptr.String("compass"),
 		}
-		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 
 		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
@@ -78,7 +78,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 
 		defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID)
@@ -109,7 +109,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Application with Dex id token")
-		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
 

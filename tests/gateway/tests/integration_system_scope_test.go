@@ -43,7 +43,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		appByIntSys, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 		require.NotEmpty(t, appByIntSys.ID)
 

@@ -94,7 +94,7 @@ func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, t
 	appInput := graphql.ApplicationRegisterInput{
 		Name: "cert-playground-test",
 	}
-	app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, cli, tenant, appInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 

@@ -119,7 +119,7 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
 	defer fixtures.UnregisterRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 
-	app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, applicationInput)
+	app, err := fixtures.RegisterApplicationFromInput(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, applicationInput)
 	require.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID)
 

@@ -61,7 +61,7 @@ func TestViewerQuery(t *testing.T) {
 		}
 
 		t.Log("Register Application with Dex id token")
-		app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
 		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)

@@ -48,7 +48,7 @@ func TestCompassAuth(t *testing.T) {
 		Name:                "app-registered-by-integration-system",
 		IntegrationSystemID: &intSys.ID,
 	}
-	appByIntSys, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+	appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, appByIntSys.ID)
 
@@ -79,7 +79,7 @@ func TestCompassAuth(t *testing.T) {
 	fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
-	appByIntSys, err = fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+	appByIntSys, err = fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
 
 	require.Empty(t, appByIntSys.BaseEntity)

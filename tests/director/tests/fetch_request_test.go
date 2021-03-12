@@ -47,7 +47,7 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 		}},
 	}
 
-	app, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, appInput)
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
 	assert.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 

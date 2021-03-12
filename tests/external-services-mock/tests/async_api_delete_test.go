@@ -172,7 +172,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
 	t.Log("Start async Delete of application")
-	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, gqlClient, app.ID, testConfig.DefaultTenant)
+	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
 
 	t.Log("Prepare operation client for compass-system namespace")
 	cfg, err := rest.InClusterConfig()

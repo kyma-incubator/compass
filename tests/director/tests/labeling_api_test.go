@@ -899,7 +899,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 		},
 	}
 
-	application, err := fixtures.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, appInput)
+	application, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantID, appInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
