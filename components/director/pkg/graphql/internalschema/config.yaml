@@ -15,7 +15,3 @@ struct_tag: json
 
 # Tell gqlgen about any existing models you want to reuse for
 # graphql. These normally come from the db or a remote api.
-
-models:	
-  Token:	
-    model: "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema.Token"

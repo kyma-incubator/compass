@@ -35,6 +35,27 @@ func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationRe
 	return r0, r1
 }
 
+// CreateFromTemplate provides a mock function with given fields: ctx, in, appTemplateID
+func (_m *ApplicationService) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
+	ret := _m.Called(ctx, in, appTemplateID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string) string); ok {
+		r0 = rf(ctx, in, appTemplateID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput, *string) error); ok {
+		r1 = rf(ctx, in, appTemplateID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Get provides a mock function with given fields: ctx, id
 func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, id)

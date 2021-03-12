@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/director"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/stretchr/testify/assert"
@@ -15,8 +17,8 @@ func GenerateRuntimeCertificate(t *testing.T, token *externalschema.Token, conne
 	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
 }
 
-func GetConfiguration(t *testing.T, internalClient *InternalClient, connectorClient *TokenSecuredClient, appID string) externalschema.Configuration {
-	token, err := internalClient.GenerateApplicationToken(appID)
+func GetConfiguration(t *testing.T, directorClient *director.Client, connectorClient *TokenSecuredClient, appID string) externalschema.Configuration {
+	token, err := directorClient.GenerateApplicationToken(t, appID)
 	require.NoError(t, err)
 
 	configuration, err := connectorClient.Configuration(token.Token)
@@ -26,8 +28,8 @@ func GetConfiguration(t *testing.T, internalClient *InternalClient, connectorCli
 	return configuration
 }
 
-func GenerateApplicationCertificate(t *testing.T, internalClient *InternalClient, connectorClient *TokenSecuredClient, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
-	token, err := internalClient.GenerateApplicationToken(appID)
+func GenerateApplicationCertificate(t *testing.T, directorClient *director.Client, connectorClient *TokenSecuredClient, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	token, err := directorClient.GenerateApplicationToken(t, appID)
 	require.NoError(t, err)
 
 	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)

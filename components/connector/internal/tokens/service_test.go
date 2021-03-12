@@ -2,98 +2,55 @@ package tokens
 
 import (
 	"context"
+	"errors"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+	gcliMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/automock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 const (
 	clientId = "client-id"
+	token    = "tokenValue"
 )
 
 func TestTokenService(t *testing.T) {
-	for _, testCase := range []struct {
-		description       string
-		tokenType         TokenType
-		expectedTokenData TokenData
-	}{
-		{
-			description: "should save, resolve and delete ApplicationToken",
-			tokenType:   ApplicationToken,
-			expectedTokenData: TokenData{
-				Type:     ApplicationToken,
-				ClientId: clientId,
-			},
-		},
-		{
-			description: "should save, resolve and delete RuntimeToken",
-			tokenType:   RuntimeToken,
-			expectedTokenData: TokenData{
-				Type:     RuntimeToken,
-				ClientId: clientId,
-			},
-		},
-		{
-			description: "should save, resolve and delete CSRToken",
-			tokenType:   CSRToken,
-			expectedTokenData: TokenData{
-				Type:     CSRToken,
-				ClientId: clientId,
-			},
-		},
-	} {
-		t.Run("test case: "+testCase.description, func(t *testing.T) {
-			// given
-			tokenService := newTokenService()
 
-			// when
-			token, err := tokenService.CreateToken(context.TODO(), clientId, testCase.tokenType)
-
-			// then
-			require.NoError(t, err)
-			assert.NotEmpty(t, token)
-
-			// when
-			tokenData, err := tokenService.Resolve(token)
-
-			// then
-			require.NoError(t, err)
-			assert.Equal(t, testCase.expectedTokenData, tokenData)
-
-			// when
-			tokenService.Delete(token)
-
-			// then
-			tokenData, err = tokenService.Resolve(token)
-			assert.Error(t, err)
-			assert.True(t, err.Code() == apperrors.CodeNotFound)
-			assert.Empty(t, tokenData)
-		})
-	}
-}
-
-func TestTokenService_Resolve(t *testing.T) {
+	t.Run("should return the token", func(t *testing.T) {
+		// GIVEN
+		gcliMock := &gcliMocks.GraphQLClient{}
+		defer gcliMock.AssertExpectations(t)
+		expected := NewCSRTokenResponse(token)
+		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Run(GenerateTestToken(t, expected)).Return(nil).Once()
+		tokenService := NewTokenService(gcliMock)
+		// WHEN
+		actualToken, appError := tokenService.GetToken(context.Background(), clientId)
+		// THEN
+		require.NoError(t, appError)
+		assert.Equal(t, token, actualToken)
+	})
 
 	t.Run("should return error when token not found", func(t *testing.T) {
-		// given
-		tokenService := newTokenService()
-
-		// when
-		tokenData, err := tokenService.Resolve("non-existing-token")
-
-		// then
-		assert.Error(t, err)
-		assert.True(t, err.Code() == apperrors.CodeNotFound)
-		assert.Empty(t, tokenData)
+		// GIVEN
+		gcliMock := &gcliMocks.GraphQLClient{}
+		defer gcliMock.AssertExpectations(t)
+		err := errors.New("could not get the token")
+		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Return(err)
+		tokenService := NewTokenService(gcliMock)
+		// WHEN
+		actualToken, appError := tokenService.GetToken(context.Background(), clientId)
+		// THEN
+		require.Error(t, appError)
+		assert.Equal(t, "", actualToken)
 	})
 }
 
-func newTokenService() Service {
-	tokenStore := NewTokenCache(1*time.Minute, 1*time.Minute, 1*time.Minute)
-	generator := NewTokenGenerator(10)
-	return NewTokenService(tokenStore, generator)
+func GenerateTestToken(t *testing.T, generated CSRTokenResponse) func(args mock.Arguments) {
+	return func(args mock.Arguments) {
+		arg, ok := args.Get(2).(*CSRTokenResponse)
+		require.True(t, ok)
+		*arg = generated
+	}
 }
