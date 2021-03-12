@@ -13,7 +13,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1741"
+      version: "PR-1762"
     connectivity_adapter:
       dir:
       version: "PR-1750"
@@ -22,13 +22,13 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1741"
+      version: "PR-1762"
     gateway:
       dir:
       version: "PR-1750"
     operations_controller:
       dir:
-      version: "PR-1750"
+      version: "PR-1762"
     tenant_fetcher:
       dir:
       version: "PR-1750"
@@ -37,7 +37,7 @@ global:
       version: "PR-15"
     schema_migrator:
       dir:
-      version: "PR-1761"
+      version: "PR-1762"
     system_broker:
       dir:
       version: "PR-1750"
@@ -55,7 +55,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1741"
+        version: "PR-1762"
       connector:
         dir:
         version: "PR-1741"
@@ -101,6 +101,8 @@ global:
       port: 3003
     operations:
       port: 3002
+      path: "/operation"
+      lastOperationPath: "/last_operation"
 
     clientIDHeaderKey: client_user
 

@@ -14,7 +14,7 @@ require (
 	github.com/vektah/gqlparser v1.3.1
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/text v0.3.5 // indirect
-	k8s.io/api v0.20.2
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v0.20.2
+	k8s.io/api v0.17.2
+	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v0.17.2
 )

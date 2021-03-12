@@ -101,7 +101,7 @@ func fixApplicationRequest(id string) *gcli.Request {
 			result: application(id: "%s") {
 				id
 				name
-				ready
+				status {condition timestamp}
 				deletedAt
 				error
 				}	
