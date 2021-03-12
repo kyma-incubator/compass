@@ -2,9 +2,9 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -69,7 +69,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		require.True(t, ok)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := pkg.GetAccessToken(t, intSysOauthCredentialData, "application:write")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, "application:write")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Register application as Integration System")
@@ -123,7 +123,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		require.NotEmpty(t, appOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := pkg.GetAccessToken(t, appOauthCredentialData, "application:read")
+		accessToken := token.GetAccessToken(t, appOauthCredentialData, "application:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Get Application as Application")
@@ -162,7 +162,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:read")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:read")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Get Runtime as Runtime")

@@ -19,9 +19,6 @@ resolve-local:
 ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-dep-status-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
 e2e-test:
 	@sed "s/PLACEHOLDER/connector/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
 

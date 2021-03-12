@@ -53,14 +53,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
 	defer fixtures.UnregisterRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 
-	logrus.Infof("generating one-time token for runtime with id: %s", runtime.ID)
-	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
-	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
-
-	logrus.Infof("generation certificate for runtime with id: %s", runtime.ID)
-	certResult, configuration := clients.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, testCtx.ClientKey)
-	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
-	securedClient := createCertClient(testCtx.ClientKey, certChain...)
+	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
 	t.Run("Should successfully call catalog endpoint with certificate secured client", func(t *testing.T) {
 		req := createCatalogRequest(t, testCtx)
@@ -122,7 +115,6 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 }
 
 func TestCallingORDServiceWithCert(t *testing.T) {
-	//testCtx, err := clients.NewSystemBrokerTestContext(config.SystemBrokerTestConfig{})
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
 	defer fixtures.UnregisterRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)

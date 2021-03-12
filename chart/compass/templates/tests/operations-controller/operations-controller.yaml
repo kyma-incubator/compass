@@ -3,10 +3,10 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-operations-controller
   labels:
-    app: {{ .Chart.Name }}-tests
+    app: {{ .Chart.Name }}-operations-controller-tests
     release: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}-tests
+    app.kubernetes.io/name: {{ template "name" . }}-operations-controller-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   namespace: {{ .Values.global.tests.namespace }}
@@ -17,7 +17,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-tests
+        app: {{ .Chart.Name }}-operations-controller-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -29,7 +29,7 @@ spec:
       {{ end }}
       containers:
         - name: operations-controller-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./operations-controller.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]

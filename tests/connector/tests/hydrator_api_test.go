@@ -79,7 +79,7 @@ func TestHydrators(t *testing.T) {
 			certDataHeader := clients.CreateCertDataHeader(configuration.CertificateSigningRequestInfo.Subject, hash)
 
 			headers := map[string][]string{
-				config.CertificateDataHeader: {certDataHeader},
+				cfg.CertificateDataHeader: {certDataHeader},
 			}
 
 			//when

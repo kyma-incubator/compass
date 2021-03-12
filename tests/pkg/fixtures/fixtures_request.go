@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/tests/pkg"
+	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/pkg/errors"
@@ -901,8 +901,8 @@ func FixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *g
 	}
 	var inputParamsData interface{} = inputParamsPayload
 
-	authCtx := pkg.MarshalJSON(t, authCtxData)
-	inputParams := pkg.MarshalJSON(t, inputParamsData)
+	authCtx := json2.MarshalJSON(t, authCtxData)
+	inputParams := json2.MarshalJSON(t, inputParamsData)
 
 	return authCtx, inputParams
 }

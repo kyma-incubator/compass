@@ -2,8 +2,8 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	token2 "github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -34,7 +34,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 	require.True(t, ok)
 
 	t.Log("Issue a token with Client Credentials")
-	token := pkg.GetAccessToken(t, intSysOauthCredentialData, pkg.IntegrationSystemScopes)
+	token := token2.GetAccessToken(t, intSysOauthCredentialData, token2.IntegrationSystemScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, testConfig.DirectorURL)
 	t.Run("Test application scopes", func(t *testing.T) {
 		t.Log("Register an application")

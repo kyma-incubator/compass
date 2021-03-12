@@ -3,11 +3,11 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
@@ -20,7 +20,7 @@ import (
 func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	tenantID := pkg.TestTenants.GetIDByName(t, "ASA1")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.AutomaticScenarioAssignmentQueriesTenantName)
 
 	t.Log("Get Dex id_token")
 	dexToken, err := idtokenprovider.GetDexToken()
@@ -100,7 +100,7 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 
-	tenantID := pkg.TestTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.AutomaticScenarioAssigmentForRuntimeTenantName)
 
 	t.Log("Get Dex id_token")
 	dexToken, err := idtokenprovider.GetDexToken()
@@ -231,7 +231,7 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	}
 
 	scenarios := []string{defaultValue, scenario1, scenario2}
-	tenantID := pkg.TestTenants.GetIDByName(t, "TestDeleteAssignmentsForScenario")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteAutomaticScenarioAssignmentForScenarioTenantName)
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenarios)
 
 	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
@@ -289,7 +289,7 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	scenarios := []string{defaultValue, scenario1, scenario2, scenario3}
 
-	tenantID := pkg.TestTenants.GetIDByName(t, "TestDeleteAssignmentsForSelector")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteAutomaticScenarioAssignmentForSelectorTenantName)
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenarios)
 
 	selector := graphql.LabelSelectorInput{Key: "test-key", Value: "test-value"}
@@ -346,7 +346,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	scenariosOnlyDefault := []interface{}{defaultValue}
 	scenarios := []interface{}{scenario, defaultValue}
-	tenantID := pkg.TestTenants.GetIDByName(t, "TestWholeScenario")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.AutomaticScenarioAssignmentsWholeScenarioTenantName)
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
 
 	selector := graphql.LabelSelectorInput{Key: "testkey", Value: "testvalue"}

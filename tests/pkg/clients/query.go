@@ -4,7 +4,7 @@ import "fmt"
 
 type queryProvider struct{}
 
-func (qp queryProvider) generateApplicationToken(id string) string {
+func (qp *queryProvider) generateApplicationToken(id string) string {
 	return fmt.Sprintf(`mutation {
 	result: generateApplicationToken(authID: "%s") {
 		token
@@ -12,7 +12,7 @@ func (qp queryProvider) generateApplicationToken(id string) string {
 }`, id)
 }
 
-func (qp queryProvider) generateRuntimeToken(id string) string {
+func (qp *queryProvider) generateRuntimeToken(id string) string {
 	return fmt.Sprintf(`mutation {
 	result: generateRuntimeToken(authID: "%s") {
 		token
@@ -20,7 +20,7 @@ func (qp queryProvider) generateRuntimeToken(id string) string {
 }`, id)
 }
 
-func (qp queryProvider) configuration() string {
+func (qp *queryProvider) configuration() string {
 	return fmt.Sprintf(`query {
 	result: configuration() {
 		%s
@@ -28,7 +28,7 @@ func (qp queryProvider) configuration() string {
 }`, configurationResult())
 }
 
-func (qp queryProvider) signCSR(csr string) string {
+func (qp *queryProvider) signCSR(csr string) string {
 	return fmt.Sprintf(`mutation {
 	result: signCertificateSigningRequest(csr: "%s") {
 		%s
@@ -36,7 +36,7 @@ func (qp queryProvider) signCSR(csr string) string {
 }`, csr, certificationResult())
 }
 
-func (qp queryProvider) revokeCert() string {
+func (qp *queryProvider) revokeCert() string {
 	return fmt.Sprintf(`mutation {
 	result: revokeCertificate
 }`)

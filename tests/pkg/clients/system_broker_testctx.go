@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rsa"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	//"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"

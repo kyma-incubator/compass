@@ -8,29 +8,29 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-    - name: Test1
+    - name: TestTenantSeparation
       id: f1c4b5be-b0e1-41f9-b0bc-b378200dcca0
-    - name: Test4
+    - name: TestDeleteLastScenarioForApplication
       id: f739b36c-813f-4fc3-996e-dd03c7d13aa0
-    - name: TestDeleteAssignmentsForSelector
+    - name: Test_DeleteAutomaticScenarioAssignmentForSelector
       id: d9553135-6115-4c67-b4d9-962c00f3725f
-    - name: TestCreateAutomaticScenarioAssignment
+    - name: Test_AutomaticScenarioAssigmentForRuntime
       id: 8c733a45-d988-4472-af10-1256b82c70c0
-    - name: TestWholeScenario
+    - name: TestAutomaticScenarioAssignmentsWholeScenario
       id: 65a63692-c00a-4a7d-8376-8615ee37f45c
     - name: TestTenantsQueryTenantNotInitialized
       id: 72329135-27fd-4284-9bcb-37ea8d6307d0
     - name: Test Default
       id: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: Test3
+    - name: TestListLabelDefinitions
       id: 2bf03de1-23b1-4063-9d3e-67096800accc
-    - name: ASA1
+    - name: Test_AutomaticScenarioAssignmentQueries
       id: 8263cc13-5698-4a2d-9257-e8e76b543e88
     - name: TestGetScenariosLabelDefinitionCreatesOneIfNotExists
       id: 2263cc13-5698-4a2d-9257-e8e76b543e33
-    - name: Test2
+    - name: TestApplicationsForRuntime
       id: 5984a414-1eed-4972-af2c-b2b6a415c7d7
-    - name: TestDeleteAssignments
+    - name: Test_DeleteAutomaticScenarioAssignmentForScenario
       id: d08e4cb6-a77f-4a07-b021-e3317a373597
     - name: TestApplicationsForRuntimeWithHiddenApps
       id: 7e1f2df8-36dc-4e40-8be3-d1555d50c91c
@@ -81,10 +81,9 @@ global:
     console:
       dir:
       version: "PR-22"
-    tests:
-      e2e:
-        dir:
-        version: "PR-1760"
+    e2e_tests:
+      dir:
+      version: "PR-1760"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -379,14 +378,8 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
-    webhookURL: https://kyma-project.io
-    handlerEndpoint: /v1/callback/{tenantId}
-    defaultScenario: "DEFAULT"
-    normalizationPrefix: "mp-"
-    tenantPathParam: tenantId
-    tenantProvider: "test-provider"
     db:
-      maxOpenConnections: 30
-      maxIdleConnections: 2
+      maxOpenConnections: 3
+      maxIdleConnections: 1
 pairing-adapter:
   enabled: false

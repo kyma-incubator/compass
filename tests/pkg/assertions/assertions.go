@@ -2,7 +2,7 @@ package assertions
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/tests/pkg"
+	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"strconv"
 	"strings"
@@ -319,7 +319,7 @@ func AssertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceA
 }
 
 func AssertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {
-	inExpectedStr, ok := pkg.UnmarshalJSON(t, inExpected).(string)
+	inExpectedStr, ok := json2.UnmarshalJSON(t, inExpected).(string)
 	assert.True(t, ok)
 
 	var expected map[string]interface{}
@@ -334,7 +334,7 @@ func AssertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql
 }
 
 func AssertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inActual *graphql.JSONSchema) {
-	inExpectedStr, ok := pkg.UnmarshalJSONSchema(t, inExpected).(string)
+	inExpectedStr, ok := json2.UnmarshalJSONSchema(t, inExpected).(string)
 	assert.True(t, ok)
 
 	var expected map[string]interface{}

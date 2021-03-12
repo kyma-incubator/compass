@@ -48,7 +48,7 @@ func NewCertificateSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, 
 	}
 }
 
-func (c CertificateSecuredClient) Configuration(headers ...http.Header) (externalschema.Configuration, error) {
+func (c *CertificateSecuredClient) Configuration(headers ...http.Header) (externalschema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
 
@@ -61,7 +61,7 @@ func (c CertificateSecuredClient) Configuration(headers ...http.Header) (externa
 	return response.Result, nil
 }
 
-func (c CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (externalschema.CertificationResult, error) {
+func (c *CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (externalschema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
 
@@ -74,7 +74,7 @@ func (c CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (e
 	return response.Result, nil
 }
 
-func (c CertificateSecuredClient) RevokeCertificate() (bool, error) {
+func (c *CertificateSecuredClient) RevokeCertificate() (bool, error) {
 	query := c.queryProvider.revokeCert()
 	req := gcli.NewRequest(query)
 

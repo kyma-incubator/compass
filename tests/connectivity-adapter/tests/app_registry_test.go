@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	config2 "github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
@@ -49,14 +49,13 @@ func TestAppRegistry(t *testing.T) {
 		},
 	}
 
-	config:=config2.ConnectivityAdapterTestConfig{}
-	err := config2.ReadConfig(&config)
-	require.NoError(t, err)
+	cfg:=config.ConnectivityAdapterTestConfig{}
+	config.ReadConfig(&cfg)
 
 	directorClient, err := clients.NewClient(
-		config.DirectorUrl,
-		config.DirectorHealthzUrl,
-		config.Tenant,
+		cfg.DirectorUrl,
+		cfg.DirectorHealthzUrl,
+		cfg.Tenant,
 		[]string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
 	require.NoError(t, err)
 
@@ -76,11 +75,11 @@ func TestAppRegistry(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	err = directorClient.SetDefaultEventing(runtimeID, appID, config.EventsBaseURL)
+	err = directorClient.SetDefaultEventing(runtimeID, appID, cfg.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("App Registry Service flow for Application", func(t *testing.T) {
-		client := clients.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+		client := clients.NewConnectorClient(directorClient, appID, cfg.Tenant, cfg.SkipSslVerify)
 		clientKey := certs.CreateKey(t)
 
 		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
@@ -89,7 +88,7 @@ func TestAppRegistry(t *testing.T) {
 		require.NotEmpty(t, infoResponse.Certificate)
 
 		certificates := certs.DecodeAndParseCerts(t, crtResponse)
-		adapterClient := clients.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		adapterClient := clients.NewSecuredClient(cfg.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, cfg.Tenant)
 
 		mgmInfoResponse, errorResponse := adapterClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)

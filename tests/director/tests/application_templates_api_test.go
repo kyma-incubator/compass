@@ -2,11 +2,11 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
@@ -42,7 +42,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), output.ID)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output.ID)
 
 	require.NotEmpty(t, output.Name)
 	saveExample(t, createApplicationTemplateRequest.Query(), "create application template")
@@ -77,11 +77,11 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, fixtures.FixApplicationTemplate(name))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTemplate.ID)
+	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
 	appTemplateInput := graphql.ApplicationTemplateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
@@ -111,10 +111,10 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, fixtures.FixApplicationTemplate(name))
+	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
 
 	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
 	deleteOutput := graphql.ApplicationTemplate{}
@@ -127,7 +127,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	//THEN
 	t.Log("Check if application template was deleted")
 
-	out := fixtures.GetApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTemplate.ID)
+	out := fixtures.GetApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
 	require.Empty(t, out)
 	saveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
@@ -144,11 +144,11 @@ func TestQueryApplicationTemplate(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, fixtures.FixApplicationTemplate(name))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTemplate.ID)
+	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
 	getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(appTemplate.ID)
 	output := graphql.ApplicationTemplate{}
@@ -176,14 +176,14 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application templates")
-	appTemplate1 := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, fixtures.FixApplicationTemplate(name1))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTemplate1.ID)
+	appTemplate1 := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name1))
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate1.ID)
 
-	appTemplate2 := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, fixtures.FixApplicationTemplate(name2))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTemplate2.ID)
+	appTemplate2 := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name2))
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate2.ID)
 
 	first := 100
 	after := ""
@@ -221,10 +221,10 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	appTmpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTmplInput)
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant, appTmpl.ID)
+	appTmpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTmpl.ID)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: tmplName, Values: []*graphql.TemplateValueInput{
 		{
@@ -240,7 +240,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, outputApp.ID)
+	fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-value", *outputApp.Application.Description)

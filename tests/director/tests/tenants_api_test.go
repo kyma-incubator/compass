@@ -2,11 +2,11 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
@@ -35,13 +35,13 @@ func TestQueryTenants(t *testing.T) {
 	expectedTenants := expectedTenants()
 
 	t.Log("Initializing one of the tenants")
-	initializedTenantID := pkg.TestTenants.GetIDByName(t, pkg.TenantsQueryInitializedTenantName)
-	unregisterApp := fixtures.RegisterSimpleApp(t,ctx,dexGraphQLClient, initializedTenantID)
+	initializedTenantID := tenant.TestTenants.GetIDByName(t, tenant.TenantsQueryInitializedTenantName)
+	unregisterApp := fixtures.RegisterSimpleApp(t, ctx, dexGraphQLClient, initializedTenantID)
 	defer unregisterApp()
 
 	// WHEN
-	t.Log("List tenant")
-	err = testctx.Tc.RunOperation(ctx,dexGraphQLClient, getTenantsRequest, &output)
+	t.Log("List tenants")
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN
@@ -51,10 +51,8 @@ func TestQueryTenants(t *testing.T) {
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
-
-
 func expectedTenants() []*graphql.Tenant {
-	testTnts := pkg.TestTenants.List()
+	testTnts := tenant.TestTenants.List()
 	var expectedTenants []*graphql.Tenant
 
 	for _, tnt := range testTnts {
@@ -71,9 +69,9 @@ func expectedTenants() []*graphql.Tenant {
 
 func expectedInitializedFieldForTenant(name string) *bool {
 	switch name {
-	case pkg.TenantsQueryInitializedTenantName:
+	case tenant.TenantsQueryInitializedTenantName:
 		return &trueVal
-	case pkg.TenantsQueryNotInitializedTenantName:
+	case tenant.TenantsQueryNotInitializedTenantName:
 		return &falseVal
 	}
 

@@ -3,11 +3,12 @@ package tests
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -25,11 +26,11 @@ func TestScopesAuthorization(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixRuntimeInput("runtime-test")
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	id := uuid.New().String()
 
@@ -45,14 +46,14 @@ func TestScopesAuthorization(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenant, runtime.ID)
+			rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
 			rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 			require.True(t, ok)
 			require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
 			require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 			t.Log("Issue a Hydra token with Client Credentials")
-			accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, testCase.Scopes)
+			accessToken := token.GetAccessToken(t, rtmOauthCredentialData, testCase.Scopes)
 			oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 			request := fixtures.FixApplicationForRuntimeRequest(id)

@@ -46,7 +46,7 @@ func TestOathkeeperSecurity(t *testing.T) {
 		certDataHeader := clients.CreateCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
 
 		forbiddenHeaders := map[string][]string{
-			config.CertificateDataHeader: {certDataHeader},
+			cfg.CertificateDataHeader: {certDataHeader},
 		}
 
 		csr:= certs.CreateCsr(t,newSubject, clientKey)

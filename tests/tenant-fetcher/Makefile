@@ -11,9 +11,6 @@ resolve-local:
 ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-dep-status-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
 test-local: ;
 
 e2e-test:

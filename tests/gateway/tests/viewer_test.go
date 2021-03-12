@@ -3,9 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
@@ -39,7 +39,7 @@ func TestViewerQuery(t *testing.T) {
 		require.True(t, ok)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := pkg.GetAccessToken(t, intSysOauthCredentialData, "")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, "")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Requesting Viewer as Integration System")
@@ -74,7 +74,7 @@ func TestViewerQuery(t *testing.T) {
 		require.NotEmpty(t, appOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := pkg.GetAccessToken(t, appOauthCredentialData, "")
+		accessToken := token.GetAccessToken(t, appOauthCredentialData, "")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Requesting Viewer as Application")
@@ -109,7 +109,7 @@ func TestViewerQuery(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Requesting Viewer as Runtime")

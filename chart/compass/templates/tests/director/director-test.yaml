@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-director-api-tests
+        app: {{ .Chart.Name }}-director-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -26,20 +26,12 @@ spec:
             - "dex.{{ .Values.global.ingress.domainName }}"
             - "oauth2.{{ .Values.global.ingress.domainName }}"
       {{ end }}
-      volumes:
-        - name: examples
-          hostPath:
-            path: "/examples"
-            type: DirectoryOrCreate
       containers:
         - name: director-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "/director.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
-          volumeMounts:
-            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
-              name: examples
           env:
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
@@ -100,9 +92,17 @@ spec:
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_WEBHOOK_URL
-              value: "{{ .Values.global.tests.webhookURL }}"
+              value: "https://kyma-project.io"
             - name: APP_DEFAULT_SCENARIO
-              value: {{ .Values.global.tests.defaultScenario }}
+              value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
-              value: {{ .Values.global.tests.normalizationPrefix }}
+              value: "mp-"
+          volumeMounts:
+            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
+              name: examples
+      volumes:
+        - name: examples
+          hostPath:
+            path: "/examples"
+            type: DirectoryOrCreate
       restartPolicy: Never

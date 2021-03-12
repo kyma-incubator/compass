@@ -6,12 +6,11 @@ import (
 	"log"
 )
 
-func ReadConfig(conf interface{})  error {
+func ReadConfig(conf interface{}){
 	err := envconfig.InitWithPrefix(conf, "APP")
 	exitOnError(err, "Error while loading app config")
 
 	log.Printf("Read configuration: %+v", conf)
-	return nil
 }
 
 func exitOnError(err error, context string) {

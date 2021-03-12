@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-tenant-fetcher
   labels:
-    app: {{ .Chart.Name }}-tests
+    app: {{ .Chart.Name }}-tenant-fetcher-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-tenant-fetcher-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-tests
+        app: {{ .Chart.Name }}-tenant-fetcher-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -25,7 +25,7 @@ spec:
       {{ end }}
       containers:
         - name: tenant-fetcher-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
@@ -33,7 +33,7 @@ spec:
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER
-              value: {{ .Values.global.tests.tenantProvider }}
+              value: "test-provider"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
             - name: TENANT_FETCHER_URL
@@ -43,9 +43,9 @@ spec:
             - name: ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: HANDLER_ENDPOINT
-              value: "{{ .Values.global.tests.handlerEndpoint }}"
+              value: "/v1/callback/{tenantId}"
             - name: TENANT_PATH_PARAM
-              value: "{{ .Values.global.tests.tenantPathParam }}"
+              value: "tenantId"
             - name: APP_DIRECTOR_URL
               value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql
             - name: APP_DB_NAME

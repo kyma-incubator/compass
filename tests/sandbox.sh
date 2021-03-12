@@ -12,8 +12,14 @@ jq 'del(.metadata.selfLink)' td_duplicate.json |sponge td_duplicate.json
 jq 'del(.metadata.uid)' td_duplicate.json |sponge td_duplicate.json
 
 kubectl apply -f td_duplicate.json
-#rm td_duplicate.yaml
+
 sed "s/PLACEHOLDER/$COMPONENT-local/" test-suite.yaml | kubectl -n kyma-system apply -f -
-sleep 35
+
+kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-$COMPONENT-local-0 -c $COMPONENT-tests -- apk add go code=$?
+while code != 0
+do
+  sleep 2; kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-$COMPONENT-local-0 -c $COMPONENT-tests -- apk add go code=$?
+done
+
 kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-$COMPONENT-local-0 -c $COMPONENT-tests -- apk add go
 kubectl cp . kyma-system/oct-tp-compass-e2e-tests-compass-e2e-$COMPONENT-local-0:tests -c $COMPONENT-tests

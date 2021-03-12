@@ -4,10 +4,10 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/stretchr/testify/require"
 	"testing"
 
@@ -28,21 +28,21 @@ func TestTokenGeneration(t *testing.T) {
 
 		dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-		tenant := pkg.TestTenants.GetDefaultTenantID()
+		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 		input := fixtures.FixRuntimeInput("test")
-		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 		tokenRequestNumber := 3
 
 		//WHEN
 		for i := 0; i < tokenRequestNumber; i++ {
-			token := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+			token := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
 		}
 		//THEN
-		runtimeExt := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+		runtimeExt := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 		assert.Len(t, runtimeExt.Auths, tokenRequestNumber)
 	})
 
@@ -56,10 +56,10 @@ func TestTokenGeneration(t *testing.T) {
 
 		dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-		tenant := pkg.TestTenants.GetDefaultTenantID()
+		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "test", tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "test", tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 		tokenRequestNumber := 3
 
 		//WHEN
@@ -71,7 +71,7 @@ func TestTokenGeneration(t *testing.T) {
 		}
 
 		//THEN
-		appExt := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		appExt := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 		assert.Len(t, appExt.Auths, tokenRequestNumber)
 	})
 }

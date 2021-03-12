@@ -3,11 +3,12 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-create-update-delete",
@@ -90,7 +91,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, actualApp.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, actualApp.ID)
 
 	// update runtime, check if only simple values are updated
 	//GIVEN
@@ -174,7 +175,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 		},
 	}
 	var schema interface{} = jsonSchema
-	marshalledSchema := pkg.MarshalJSONSchema(t, schema)
+	marshalledSchema := json.MarshalJSONSchema(t, schema)
 
 	givenLabelDef := graphql.LabelDefinitionInput{
 		Key:    ScenariosLabel,
@@ -253,7 +254,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	firstRuntimeName := "unique-name-1"
 	givenInput := graphql.RuntimeInput{
@@ -273,7 +274,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
 	assertions.AssertRuntime(t, givenInput, firstRuntime)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID)
 
 	// try to create second runtime with first runtime name
 	//GIVEN
@@ -313,7 +314,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, secondRuntime.ID)
 	assertions.AssertRuntime(t, givenInput, secondRuntime)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, secondRuntime.ID)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, secondRuntime.ID)
 
 	//Update first runtime with second runtime name, failed
 
@@ -344,13 +345,13 @@ func TestQueryRuntimes(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	idsToRemove := make([]string, 0)
 	defer func() {
 		for _, id := range idsToRemove {
 			if id != "" {
-				fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, id)
+				fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, id)
 			}
 		}
 	}()
@@ -412,7 +413,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	givenInput := graphql.RuntimeInput{
 		Name: "runtime-specific-runtime",
@@ -425,7 +426,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, createdRuntime.ID)
 
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, createdRuntime.ID)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, createdRuntime.ID)
 	queriedRuntime := graphql.Runtime{}
 
 	// WHEN
@@ -450,7 +451,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimes := make(map[string]*graphql.Runtime)
 	runtimesAmount := 10
@@ -468,7 +469,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 		runtimes[runtime.ID] = &runtime
 	}
 
@@ -522,16 +523,16 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "test-create-runtime-without-labels"
 	runtimeInput := graphql.RuntimeInput{Name: name}
 
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &runtimeInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	//WHEN
-	fetchedRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	fetchedRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
@@ -566,7 +567,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "test-create-runtime-without-labels"
 	runtimeInput := graphql.RuntimeInput{
@@ -574,11 +575,11 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 		Labels: &graphql.Labels{IsNormalizedLabel: "false"},
 	}
 
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &runtimeInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	//WHEN
-	fetchedRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	fetchedRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)

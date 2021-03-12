@@ -88,10 +88,10 @@ func TestOnboardingHandler(t *testing.T) {
 			TenantId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 		}
 
-	cleanUp(t, providedTenant, config)
+		cleanUp(t, providedTenant, config)
 
-	oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-	require.NoError(t, err)
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
 
 		// WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
@@ -105,7 +105,6 @@ func TestOnboardingHandler(t *testing.T) {
 
 		httpClient := http.DefaultClient
 		httpClient.Timeout = 15 * time.Second
-
 
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
@@ -128,7 +127,6 @@ func TestOnboardingHandler(t *testing.T) {
 
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
-
 
 		byteTenant, err := json.Marshal(providedTenant)
 		require.NoError(t, err)

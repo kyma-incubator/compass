@@ -3,11 +3,12 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
@@ -28,11 +29,11 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "label-without-label-def"
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	t.Log("Set label on application")
 	labelKey := "test"
@@ -40,7 +41,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 
 	setLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, labelKey, labelValue)
 	label := graphql.Label{}
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenantId)
 	defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, application.ID, labelKey)
 
 	// WHEN
@@ -75,7 +76,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	applicationName := "label-with-existing-label-def"
 
@@ -97,7 +98,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	labelDefinitionInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -108,14 +109,14 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, applicationName, tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+		application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, applicationName, tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 		t.Log("Create label definition")
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
 
 		require.NoError(t, err)
-		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenantId)
 		assert.Equal(t, labelKey, labelDefinition.Key)
 
 		invalidLabelValue := 123
@@ -138,8 +139,8 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, applicationName, tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+		application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, applicationName, tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 		t.Log("Create label definition")
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
@@ -155,7 +156,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
-		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenantId)
 		defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, application.ID, labelKey)
 
 		require.NoError(t, err)
@@ -185,7 +186,7 @@ func TestEditLabelDefinition(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	labelKey := "foo"
 	labelKeyBar := "bar"
@@ -233,7 +234,7 @@ func TestEditLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	labelDefinitionInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -249,8 +250,8 @@ func TestEditLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 		t.Log("Create label definition")
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
@@ -261,13 +262,13 @@ func TestEditLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
-		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenantId)
 		defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey)
 
 		var invalidSchema interface{} = invalidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: pkg.MarshalJSONSchema(t, invalidSchema),
+			Schema: json.MarshalJSONSchema(t, invalidSchema),
 		}
 
 		ldInputGql, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -290,8 +291,8 @@ func TestEditLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 		t.Log("Create label definition")
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
@@ -302,13 +303,13 @@ func TestEditLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
-		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenantId)
 		defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey)
 
 		var newSchema interface{} = newValidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: pkg.MarshalJSONSchema(t, newSchema),
+			Schema: json.MarshalJSONSchema(t, newSchema),
 		}
 
 		ldInputGql, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -323,7 +324,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 
-		schemaVal, ok := (pkg.UnmarshalJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
+		schemaVal, ok := (json.UnmarshalJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
 		require.True(t, ok)
 		actualProperties, ok := schemaVal["properties"].(map[string]interface{})
 		require.True(t, ok)
@@ -347,10 +348,10 @@ func TestCreateScenariosLabel(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 	t.Log("Check if scenarios LabelDefinition exists")
 	labelKey := "scenarios"
@@ -394,11 +395,11 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 	additionalValue := "ADDITIONAL"
@@ -418,7 +419,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	ldInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -464,7 +465,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	labelKey := "foo"
 
@@ -483,7 +484,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	ldInputGql, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -492,8 +493,8 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	t.Run("Try to delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to false - should fail", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 		t.Log("Create LabelDefinition")
 		createLabelDefinitionRequest := fixtures.FixCreateLabelDefinitionRequest(ldInputGql)
@@ -510,7 +511,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
 		require.NoError(t, err)
-		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenantId)
 		defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey)
 
 		t.Log("Try to delete Label Definition while it's being used by some labels")
@@ -532,17 +533,17 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Log("Create application")
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 		t.Log("Create runtime")
 		input := fixtures.FixRuntimeInput("rtm")
-		rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
+		rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 
 		t.Log("Set labels on application and runtime")
 		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey, map[string]interface{}{labelKey: "app"})
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, rtm.ID, labelKey, map[string]interface{}{labelKey: "rtm"})
+		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, rtm.ID, labelKey, map[string]interface{}{labelKey: "rtm"})
 
 		t.Log("Delete Label Definition while it's being used by some labels")
 		deleteLabelDefinitionRequest := fixtures.FixDeleteLabelDefinitionRequest(labelKey, true)
@@ -550,8 +551,8 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Log("Assert labels were deleted from Application and Runtime")
-		app = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
-		runtime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
+		app = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+		runtime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 
 		assert.Empty(t, app.Labels[labelKey])
 		assert.Empty(t, runtime.Labels[labelKey])
@@ -565,8 +566,8 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 		t.Log("Create LabelDefinition")
 		createLabelDefinitionRequest := fixtures.FixCreateLabelDefinitionRequest(ldInputGql)
@@ -610,11 +611,11 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 
@@ -633,7 +634,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	ldInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -662,21 +663,21 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyFoo, false, tenant)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyBar, false, tenant)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyFoo, false, tenantId)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyBar, false, tenantId)
 
-	firstApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "first", tenant)
+	firstApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "first", tenantId)
 	require.NotEmpty(t, firstApp.ID)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, firstApp.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, firstApp.ID)
 
 	//Create second application
-	secondApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "second", tenant)
+	secondApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "second", tenantId)
 	require.NotEmpty(t, secondApp.ID)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, secondApp.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, secondApp.ID)
 
 	//Set label "foo" on both applications
 	labelValueFoo := "val"
@@ -752,37 +753,37 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyFoo, false, tenant)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyBar, false, tenant)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyFoo, false, tenantId)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyBar, false, tenantId)
 
 	inputFirst := fixtures.FixRuntimeInput("first")
-	firstRuntime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &inputFirst)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID)
+	firstRuntime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &inputFirst)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID)
 
 	//Create second runtime
 	inputSecond := fixtures.FixRuntimeInput("second")
-	secondRuntime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &inputSecond)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, secondRuntime.ID)
+	secondRuntime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &inputSecond)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
 
-	firstRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID, labelKeyFoo, labelValueFoo)
+	firstRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, firstRuntimeLabel.Key)
 	require.NotEmpty(t, firstRuntimeLabel.Value)
 
-	secondRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, secondRuntime.ID, labelKeyFoo, labelValueFoo)
+	secondRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, secondRuntime.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, secondRuntimeLabel.Key)
 	require.NotEmpty(t, secondRuntimeLabel.Value)
 
 	//Set label "bar" on first runtime
 	labelValueBar := "barval"
 
-	firstRuntimeBarLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID, labelKeyBar, labelValueBar)
+	firstRuntimeBarLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID, labelKeyBar, labelValueBar)
 	require.NotEmpty(t, firstRuntimeBarLabel.Key)
 	require.NotEmpty(t, firstRuntimeBarLabel.Value)
 
@@ -833,7 +834,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := pkg.TestTenants.GetIDByName(t, "Test3")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	ctx := context.TODO()
 
 	t.Log("Get Dex id_token")
@@ -874,7 +875,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenantID := pkg.TestTenants.GetIDByName(t, "Test4")
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteLastScenarioForApplicationTenantName)
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 
@@ -926,7 +927,7 @@ func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenantID := pkg.TestTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
+	tenantID := tenant.TestTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
 	getLabelDefinitionRequest := fixtures.FixLabelDefinitionRequest(ScenariosLabel)
 	labelDefinition := graphql.LabelDefinition{}
 

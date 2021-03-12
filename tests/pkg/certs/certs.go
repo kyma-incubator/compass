@@ -10,7 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/model"
 	"strings"
 	"testing"
 
@@ -80,7 +80,7 @@ func encodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
 }
 
 // DecodeAndParseCerts decodes base64 encoded certificates chain and parses it
-func DecodeAndParseCerts(t *testing.T, crtResponse *pkg.CrtResponse) pkg.DecodedCrtResponse {
+func DecodeAndParseCerts(t *testing.T, crtResponse *model.CrtResponse) model.DecodedCrtResponse {
 	certChainBytes := encodedCertChainToPemBytes(t, crtResponse.CRTChain)
 	certificateChain, err := x509.ParseCertificates(certChainBytes)
 	require.NoError(t, err)
@@ -93,7 +93,7 @@ func DecodeAndParseCerts(t *testing.T, crtResponse *pkg.CrtResponse) pkg.Decoded
 	caCertificate, err := x509.ParseCertificate(caCertificateBytes)
 	require.NoError(t, err)
 
-	return pkg.DecodedCrtResponse{
+	return model.DecodedCrtResponse{
 		CRTChain:  certificateChain,
 		ClientCRT: clientCertificate,
 		CaCRT:     caCertificate,
@@ -226,9 +226,9 @@ func AssertCertificate(t *testing.T, expectedSubject string, certificationResult
 	require.NotEmpty(t, certChain)
 	require.NotEmpty(t, caCert)
 
-	CheckIfSubjectEquals(t, expectedSubject, DecodeCert(t,clientCert))
+	CheckIfSubjectEquals(t, expectedSubject, DecodeCert(t, clientCert))
 	CheckIfChainContainsTwoCertificates(t, certChain)
 	CheckCertificateChainOrder(t, certChain)
-	certificates := []*x509.Certificate{DecodeCert(t,clientCert), DecodeCert(t,caCert)}
+	certificates := []*x509.Certificate{DecodeCert(t, clientCert), DecodeCert(t, caCert)}
 	CheckIfCertIsSigned(t, certificates)
 }

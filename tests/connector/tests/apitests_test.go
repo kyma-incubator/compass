@@ -103,7 +103,7 @@ func TestCertificateGeneration(t *testing.T) {
 		certToken := configuration.Token.Token
 		wrongSubject := "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
 
-		csr:= certs.CreateCsr(t, wrongSubject, clientKey)
+		csr := certs.CreateCsr(t, wrongSubject, clientKey)
 
 		// when
 		cert, e := connectorClient.SignCSR(certs.EncodeBase64(csr), certToken)
@@ -120,7 +120,7 @@ func TestCertificateGeneration(t *testing.T) {
 		certToken := configuration.Token.Token
 		differentSubject := clients.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
 
-		csr:= certs.CreateCsr(t,differentSubject, clientKey)
+		csr := certs.CreateCsr(t, differentSubject, clientKey)
 
 		// when
 		cert, e := connectorClient.SignCSR(certs.EncodeBase64(csr), certToken)
@@ -135,7 +135,7 @@ func TestCertificateGeneration(t *testing.T) {
 		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
-		csr:= certs.CreateCsr(t,certInfo.Subject, clientKey)
+		csr := certs.CreateCsr(t, certInfo.Subject, clientKey)
 
 		wrongToken := "wrongToken"
 
@@ -152,7 +152,7 @@ func TestCertificateGeneration(t *testing.T) {
 		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
-		csr:= certs.CreateCsr(t,certInfo.Subject, clientKey)
+		csr := certs.CreateCsr(t, certInfo.Subject, clientKey)
 
 		cert, err := connectorClient.SignCSR(certs.EncodeBase64(csr), configuration.Token.Token)
 		require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Equal(t, configuration.ManagementPlaneInfo, configWithCert.ManagementPlaneInfo)
 	require.Equal(t, configuration.CertificateSigningRequestInfo, configWithCert.CertificateSigningRequestInfo)
 
-	csr:= certs.CreateCsr(t, configWithCert.CertificateSigningRequestInfo.Subject, clientKey)
+	csr := certs.CreateCsr(t, configWithCert.CertificateSigningRequestInfo.Subject, clientKey)
 	require.NoError(t, err)
 
 	renewalResult, err := securedClient.SignCSR(certs.EncodeBase64(csr))

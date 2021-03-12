@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-system-broker
   labels:
-    app: {{ .Chart.Name }}-tests
+    app: {{ .Chart.Name }}-system-broker-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-system-broker-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-tests
+        app: {{ .Chart.Name }}-system-broker-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -27,7 +27,7 @@ spec:
       {{ end }}
       containers:
         - name: system-broker-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir}}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir}}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./system-broker.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]

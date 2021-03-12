@@ -2,11 +2,10 @@ package tests
 
 import (
 	"crypto/rsa"
-	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	config2 "github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,41 +28,37 @@ const (
 )
 
 var (
-	config           config2.ConnectorTestConfig
+	cfg              config.ConnectorTestConfig
 	internalClient   *clients.InternalClient
 	hydratorClient   *clients.HydratorClient
 	connectorClient  *clients.TokenSecuredClient
-	configmapCleaner *pkg.ConfigmapCleaner
+	configmapCleaner *k8s.ConfigmapCleaner
 
 	clientKey *rsa.PrivateKey
 )
 
 func TestMain(m *testing.M) {
 	logrus.Info("Starting Connector Test")
-	cfg := config2.ConnectorTestConfig{}
-	err := config2.ReadConfig(&cfg)
-	if err != nil {
-		logrus.Errorf("Failed to read config: %s", err.Error())
-		os.Exit(1)
-	}
+	cfg := config.ConnectorTestConfig{}
+	config.ReadConfig(&cfg)
 
-	config = cfg
-	clientKey, err = certs.GenerateKey()
+	key, err := certs.GenerateKey()
 	if err != nil {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	fmt.Println("************************ :", config.InternalConnectorURL)
-	internalClient = clients.NewInternalClient(config.InternalConnectorURL)
-	hydratorClient = clients.NewHydratorClient(config.HydratorURL)
-	connectorClient = clients.NewTokenSecuredClient(config.ConnectorURL)
+
+	clientKey = key
+	internalClient = clients.NewInternalClient(cfg.InternalConnectorURL)
+	hydratorClient = clients.NewHydratorClient(cfg.HydratorURL)
+	connectorClient = clients.NewTokenSecuredClient(cfg.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()
 	if err != nil {
 		logrus.Errorf("Failed to create config map interface: %s", err.Error())
 		os.Exit(1)
 	}
-	configmapCleaner = pkg.NewConfigMapCleaner(configmapInterface, config.RevocationConfigMapName)
+	configmapCleaner = k8s.NewConfigMapCleaner(configmapInterface, cfg.RevocationConfigMapName)
 
 	exitCode := m.Run()
 
@@ -90,6 +85,6 @@ func newConfigMapInterface() (v1.ConfigMapInterface, error) {
 		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
-	configmapInterface := coreClientSet.CoreV1().ConfigMaps(config.RevocationConfigMapNamespace)
+	configmapInterface := coreClientSet.CoreV1().ConfigMaps(cfg.RevocationConfigMapNamespace)
 	return configmapInterface, nil
 }

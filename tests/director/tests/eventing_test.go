@@ -3,10 +3,10 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
@@ -32,7 +32,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
@@ -41,28 +41,28 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
-	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
+	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, ScenariosLabel, defaultScenarios)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, IsNormalizedLabel, "false")
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, ScenariosLabel, defaultScenarios)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
 	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
 
-	runtime2 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input2)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime2.ID)
+	runtime2 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input2)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime2.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, ScenariosLabel, defaultScenarios)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, ScenariosLabel, defaultScenarios)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
 
 	// WHEN
-	testApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	testApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	// THEN
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
@@ -78,20 +78,20 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtimeEventingURL := "http://eventing.runtime.local"
 
 	input := fixtures.FixRuntimeInput("runtime-eventing")
 
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
 
 	// WHEN
-	testRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	testRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	// THEN
 	require.Equal(t, runtimeEventingURL, testRuntime.EventingConfiguration.DefaultURL)
@@ -107,7 +107,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
@@ -117,29 +117,29 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
-	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
+	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, ScenariosLabel, defaultScenarios)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, IsNormalizedLabel, "false")
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, ScenariosLabel, defaultScenarios)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
 	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
 
-	runtime2 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input2)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime2.ID)
+	runtime2 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input2)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime2.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, ScenariosLabel, defaultScenarios)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, IsNormalizedLabel, "true")
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, ScenariosLabel, defaultScenarios)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, IsNormalizedLabel, "true")
 
 	// WHEN
-	testApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	testApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
@@ -153,7 +153,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, normalizedAppName), actualEventingCfg.DefaultURL)
 
-	testApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	testApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, normalizedAppName), testApp.EventingConfiguration.DefaultURL)
 }
 
@@ -167,18 +167,18 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-eventing", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-eventing", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
-	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
+	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
 
 	//WHEN
-	app := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	app := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	//THEN
 	assert.Equal(t, "", app.EventingConfiguration.DefaultURL)
@@ -194,7 +194,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
@@ -204,33 +204,33 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
-	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
+	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, ScenariosLabel, defaultScenarios)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, IsNormalizedLabel, "false")
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, ScenariosLabel, defaultScenarios)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
 	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
 
-	runtime2 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input2)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime2.ID)
+	runtime2 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input2)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime2.ID)
 
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, ScenariosLabel, defaultScenarios)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, IsNormalizedLabel, "false")
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, ScenariosLabel, defaultScenarios)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime2.ID, IsNormalizedLabel, "false")
 
-	testApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	testApp := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	fixtures.SetDefaultEventingForApplication(t, ctx, dexGraphQLClient, application.ID, runtime2.ID)
 
-	testApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	testApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	// WHEN
@@ -243,6 +243,6 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
 
-	testApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	testApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 }

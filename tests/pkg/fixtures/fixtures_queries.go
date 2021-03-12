@@ -19,9 +19,10 @@ package fixtures
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	gqlTools "github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -265,7 +266,7 @@ func AddAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.
 }
 
 func AddAPIToBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.APIDefinitionExt {
-	return AddAPIToBundleWithInput(t, ctx, gqlClient, pkg.TestTenants.GetDefaultTenantID(), bndlID, FixAPIDefinitionInput())
+	return AddAPIToBundleWithInput(t, ctx, gqlClient, tenant.TestTenants.GetDefaultTenantID(), bndlID, FixAPIDefinitionInput())
 }
 
 func AddEventToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
@@ -435,7 +436,7 @@ func DeleteApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcl
 func CreateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	in, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(input)
@@ -469,7 +470,7 @@ func CreateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Contex
 func UpdateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
-		Schema: pkg.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, schema),
 	}
 
 	in, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(input)

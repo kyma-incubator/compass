@@ -3,8 +3,8 @@ package tests
 import (
 	"context"
 	"encoding/base64"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"fmt"
 	"testing"
@@ -39,7 +39,7 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Issue a Hydra token with Client Credentials")
 
-	accessToken := pkg.GetAccessToken(t, intSysOauthCredentialData, pkg.ApplicationScopes)
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.ApplicationScopes)
 
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
@@ -87,7 +87,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Check if token can not be fetched with old client credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	_, err = pkg.FetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL, pkg.ApplicationScopes)
+	_, err = token.FetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL, token.ApplicationScopes)
 	require.Error(t, err)
 	assert.Equal(t, "response status code is 401", err.Error())
 }

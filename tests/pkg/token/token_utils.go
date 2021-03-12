@@ -1,4 +1,4 @@
-package pkg
+package token
 
 import (
 	"crypto/tls"
@@ -23,8 +23,10 @@ type HydraToken struct {
 	TokenType   string `json:"token_type"`
 }
 
-const ApplicationScopes = "application:read application:write"
-const IntegrationSystemScopes = "application:read application:write application_template:read application_template:write runtime:read runtime:write"
+const (
+	ApplicationScopes       = "application:read application:write"
+	IntegrationSystemScopes = "application:read application:write application_template:read application_template:write runtime:read runtime:write"
+)
 
 func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*HydraToken, error) {
 	form := url.Values{}

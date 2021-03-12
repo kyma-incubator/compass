@@ -72,7 +72,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		KeyAlgorithm: "rsa2048",
 	}
 
-	log.C(ctx).Infof("configuration for client with id %s successfully fetched.", clientId)
+	log.C(ctx).Infof("Configuration for client with id %s successfully fetched.", clientId)
 
 	return &externalschema.Configuration{
 		Token:                         &externalschema.Token{Token: token},

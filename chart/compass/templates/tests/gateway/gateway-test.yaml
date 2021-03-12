@@ -1,10 +1,10 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}-e2e-ord-service
+  name: {{ .Chart.Name }}-e2e-gateway
   labels:
-    app: {{ .Chart.Name }}-tests
-    app.kubernetes.io/name: {{ .Chart.Name }}-tests
+    app: {{ .Chart.Name }}-gateway-tests
+    app.kubernetes.io/name: {{ .Chart.Name }}-gateway-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-tests
+        app: {{ .Chart.Name }}-gateway-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -24,22 +24,16 @@ spec:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
             - "oauth2.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       containers:
-        - name: ord-service-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-e2e-tests:{{ .Values.global.images.tests.e2e.version }}
+        - name: gateway-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "./ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./gateway.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
-            - name: ORD_SERVICE_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_STATIC_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.staticPrefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.port }}/actuator/health"
-            - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
-              value: {{ .Values.global.ordService.defaultResponseType }}
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
@@ -58,8 +52,12 @@ spec:
                   key: password
             - name: DEFAULT_TENANT
               value: "{{.Values.global.defaultTenant}}"
-            - name: TENANT
-              value: "{{ (index .Values.global.tenants 1).id }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
+            - name: GATEWAY_OAUTH20_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.secure.oauth.host }}"
+            - name: GATEWAY_JWT_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.host }}"
+            - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
+              value: "{{ .Values.global.gateway.mtls.host }}"
       restartPolicy: Never

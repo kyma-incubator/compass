@@ -16,17 +16,15 @@ func TestMain(m *testing.M) {
 	logrus.Info("Starting System Broker Tests")
 
 	cfg := config.SystemBrokerTestConfig{}
-	err := config.ReadConfig(&cfg)
-	if err != nil {
-		logrus.Errorf("Failed to read config: %s", err.Error())
-		os.Exit(1)
-	}
+	config.ReadConfig(&cfg)
 
-	testCtx, err = clients.NewSystemBrokerTestContext(cfg)
+	ctx, err := clients.NewSystemBrokerTestContext(cfg)
 	if err != nil {
 		logrus.Errorf("Failed to create test context: %s", err.Error())
 		os.Exit(1)
 	}
+
+	testCtx=ctx
 	testctx.Init()
 	exitCode := m.Run()
 	logrus.Info("Tests finished. Exit code: ", exitCode)

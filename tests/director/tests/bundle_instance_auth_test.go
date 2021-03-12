@@ -2,12 +2,13 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -23,13 +24,13 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
 	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
@@ -81,18 +82,18 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
 	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
@@ -103,17 +104,17 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	output := graphql.BundleInstanceAuth{}
 
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
 
-	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenant, runtime.ID)
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:write application:read")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:write application:read")
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
@@ -124,8 +125,8 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
@@ -162,8 +163,8 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
@@ -183,10 +184,10 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
 	authInput := fixtures.FixBasicAuth(t)
 
@@ -198,7 +199,7 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	bndlAddOutput := graphql.Bundle{}
 
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addBndlRequest, &bndlAddOutput)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndlAddOutput.ID)
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndlAddOutput.ID)
 	require.NoError(t, err)
 
 	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(nil, nil)
@@ -249,13 +250,13 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
 
@@ -281,35 +282,35 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
 
 	bndlInstanceAuthDeletionRequestReq := fixtures.FixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
 
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
 
-	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenant, runtime.ID)
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "runtime:write")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:write")
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
@@ -320,8 +321,8 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 		defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
@@ -337,8 +338,8 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
@@ -360,13 +361,13 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
 
@@ -399,13 +400,13 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	tenant := pkg.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
 

@@ -1,4 +1,4 @@
-package pkg
+package json
 
 import (
 	"encoding/json"
@@ -41,4 +41,3 @@ func UnmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
 
 	return output
 }
-

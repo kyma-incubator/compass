@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg"
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -21,9 +21,8 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pkg.TestTenants.Cleanup()
-	pkg.TestTenants.Init()
-	defer pkg.TestTenants.Cleanup()
+	tenant.TestTenants.Init()
+	defer tenant.TestTenants.Cleanup()
 
 	testctx.Tc, err = testctx.NewTestContext()
 	if err != nil {

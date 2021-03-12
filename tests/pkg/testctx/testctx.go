@@ -2,10 +2,11 @@ package testctx
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/vrischmann/envconfig"
+	"log"
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -16,13 +17,15 @@ import (
 
 	"github.com/avast/retry-go"
 
-	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
 var Tc *TestContext
 
+type ScopesConfig struct {
+	scopes string `envconfig:"default=runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage automatic_scenario_assignment:read automatic_scenario_assignment:write"`
+}
 // TestContext contains dependencies that help executing tests
 type TestContext struct {
 	Graphqlizer       gqlizer.Graphqlizer
@@ -30,8 +33,7 @@ type TestContext struct {
 	CurrentScopes     []string
 }
 
-const defaultScopes = "runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage automatic_scenario_assignment:read automatic_scenario_assignment:write"
-
+//todo rename init
 func Init() {
 	var err error
 	Tc, err = NewTestContext()
@@ -41,12 +43,12 @@ func Init() {
 }
 
 func NewTestContext() (*TestContext, error) {
-	scopesStr := os.Getenv("ALL_SCOPES")
-	if scopesStr == "" {
-		scopesStr = defaultScopes
+	cfg:=ScopesConfig{}
+	if err := envconfig.InitWithPrefix(&cfg, "ALL"); err != nil {
+		log.Fatal(err)
 	}
 
-	currentScopes := strings.Split(scopesStr, " ")
+	currentScopes := strings.Split(cfg.scopes, " ")
 
 	return &TestContext{
 		Graphqlizer:       gqlizer.Graphqlizer{},
@@ -58,10 +60,8 @@ func NewTestContext() (*TestContext, error) {
 func (tc *TestContext) NewOperation(ctx context.Context) *Operation {
 	return &Operation{
 		ctx:         ctx,
-		tenant:      pkg.TestTenants.GetDefaultTenantID(),
+		tenant:      tenant.TestTenants.GetDefaultTenantID(),
 		queryParams: map[string]string{},
-		scopes:      tc.CurrentScopes,
-		consumer:    &jwtbuilder.Consumer{},
 	}
 }
 
@@ -70,22 +70,10 @@ type Operation struct {
 
 	tenant      string
 	queryParams map[string]string
-	scopes      []string
-	consumer    *jwtbuilder.Consumer
 }
 
 func (o *Operation) WithTenant(tenant string) *Operation {
 	o.tenant = tenant
-	return o
-}
-
-func (o *Operation) WithScopes(scopes []string) *Operation {
-	o.scopes = scopes
-	return o
-}
-
-func (o *Operation) WithConsumer(consumer *jwtbuilder.Consumer) *Operation {
-	o.consumer = consumer
 	return o
 }
 
@@ -129,10 +117,6 @@ func (tc *TestContext) RunOperation(ctx context.Context, cli *gcli.Client, req *
 
 func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant string, req *gcli.Request, resp interface{}) error {
 	return tc.NewOperation(ctx).WithTenant(tenant).Run(req, cli, resp)
-}
-
-func (tc *TestContext) RunOperationWithCustomScopes(ctx context.Context, cli *gcli.Client, tenant string, scopes []string, req *gcli.Request, resp interface{}) error {
-	return tc.NewOperation(ctx).WithTenant(tenant).WithScopes(scopes).Run(req, cli, resp)
 }
 
 func (tc *TestContext) RunOperationWithQueryParam(ctx context.Context, key, value, tenant string, req *gcli.Request, resp interface{}) error {

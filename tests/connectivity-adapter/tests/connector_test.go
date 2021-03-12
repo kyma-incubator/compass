@@ -2,10 +2,10 @@ package tests
 
 import (
 	"crypto/rsa"
-	"github.com/kyma-incubator/compass/tests/pkg"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/model"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -48,8 +48,7 @@ func TestConnector(t *testing.T) {
 	}
 
 	cfg := config.ConnectivityAdapterTestConfig{}
-	err := config.ReadConfig(&cfg)
-	require.NoError(t, err)
+	config.ReadConfig(&cfg)
 
 	client, err := clients.NewClient(
 		cfg.DirectorUrl,
@@ -452,7 +451,7 @@ func certificateRevocationSuite(t *testing.T, directorClient clients.Client, app
 	})
 }
 
-func createCertificateChain(t *testing.T, connectorClient clients.ConnectorClient, key *rsa.PrivateKey) (*pkg.CrtResponse, *pkg.InfoResponse) {
+func createCertificateChain(t *testing.T, connectorClient clients.ConnectorClient, key *rsa.PrivateKey) (*model.CrtResponse, *model.InfoResponse) {
 	// when
 	tokenResponse := connectorClient.CreateToken(t)
 

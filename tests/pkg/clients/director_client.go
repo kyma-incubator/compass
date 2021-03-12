@@ -18,6 +18,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	consumerID = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+	consumerType = "USER"
+)
+
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
 	DeleteRuntime(runtimeID string) error
@@ -78,7 +83,7 @@ func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) 
 		return nil, err
 	}
 
-	return DirectorClient{
+	return &DirectorClient{
 		scopes:       scopes,
 		tenant:       tenant,
 		graphqulizer: graphqlizer.Graphqlizer{},
@@ -115,7 +120,7 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 	}, defaultRetryOptions()...)
 }
 
-func (c DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
+func (c *DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
 
 	appGraphql, err := c.graphqulizer.ApplicationRegisterInputToGQL(in)
 	if err != nil {
@@ -133,7 +138,7 @@ func (c DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (s
 	return result.Result.ID, nil
 }
 
-func (c DirectorClient) DeleteApplication(appID string) error {
+func (c *DirectorClient) DeleteApplication(appID string) error {
 
 	var result ApplicationResponse
 	query := fixtures.FixUnregisterApplicationRequest(appID)
@@ -146,7 +151,7 @@ func (c DirectorClient) DeleteApplication(appID string) error {
 	return nil
 }
 
-func (c DirectorClient) SetApplicationLabel(applicationID, key, value string) error {
+func (c *DirectorClient) SetApplicationLabel(applicationID, key, value string) error {
 	query := fixtures.FixSetApplicationLabelRequest(applicationID, key, value)
 	var response SetLabelResponse
 
@@ -158,7 +163,7 @@ func (c DirectorClient) SetApplicationLabel(applicationID, key, value string) er
 	return nil
 }
 
-func (c DirectorClient) DeleteApplicationLabel(applicationID, key string) error {
+func (c *DirectorClient) DeleteApplicationLabel(applicationID, key string) error {
 	query := fixtures.FixDeleteApplicationLabelRequest(applicationID, key)
 	var response SetLabelResponse
 
@@ -170,7 +175,7 @@ func (c DirectorClient) DeleteApplicationLabel(applicationID, key string) error 
 	return nil
 }
 
-func (c DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
+func (c *DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
 
 	runtimeGraphQL, err := c.graphqulizer.RuntimeInputToGQL(in)
 
@@ -185,7 +190,7 @@ func (c DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
 	return result.Result.ID, nil
 }
 
-func (c DirectorClient) DeleteRuntime(runtimeID string) error {
+func (c *DirectorClient) DeleteRuntime(runtimeID string) error {
 
 	var result RuntimeResponse
 	query := fixtures.FixUnregisterRuntimeRequest(runtimeID)
@@ -198,7 +203,7 @@ func (c DirectorClient) DeleteRuntime(runtimeID string) error {
 	return nil
 }
 
-func (c DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
+func (c *DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
 	query := fixtures.FixSetRuntimeLabelRequest(runtimeID, key, value)
 	var response SetLabelResponse
 
@@ -210,7 +215,7 @@ func (c DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
 	return nil
 }
 
-func (c DirectorClient) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
+func (c *DirectorClient) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
 
 	{
 		query := fixtures.FixSetRuntimeLabelRequest(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
@@ -235,7 +240,7 @@ func (c DirectorClient) SetDefaultEventing(runtimeID string, appID string, event
 	return nil
 }
 
-func (c DirectorClient) GetOneTimeTokenUrl(appID string) (string, string, error) {
+func (c *DirectorClient) GetOneTimeTokenUrl(appID string) (string, string, error) {
 
 	query := fixtures.FixRequestOneTimeTokenForApplication(appID)
 	var response OneTimeTokenResponse
@@ -279,7 +284,7 @@ func getInternalTenantID(directorURL string, externalTenantID string) (string, e
 	return "", errors.New("Cannot find test tenant.")
 }
 
-func (c DirectorClient) executeWithRetries(query string, res interface{}) error {
+func (c *DirectorClient) executeWithRetries(query string, res interface{}) error {
 	return retry.Do(func() error {
 		req := gcli.NewRequest(query)
 		req.Header.Set("Tenant", c.tenant)
@@ -305,7 +310,7 @@ func getClient(url string, tenant string, scopes []string) (*gcli.Client, error)
 }
 
 func getToken(tenant string, scopes []string) (string, error) {
-	token, err := jwtbuilder.Build(tenant, scopes, &jwtbuilder.Consumer{ID: "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", Type: "USER"})
+	token, err := jwtbuilder.Build(tenant, scopes, &jwtbuilder.Consumer{ID: consumerID, Type: consumerType})
 	if err != nil {
 		return "", err
 	}

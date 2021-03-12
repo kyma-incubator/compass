@@ -71,7 +71,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 			appName := "app-test-bundle"
 			application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-			defer fixtures.UnregisterApplication(t, ctx,dexGraphQLClient, tenant, application.ID)
+			defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 			bndlName := "test-bundle"
 			bndlInput := graphql.BundleCreateInput{
