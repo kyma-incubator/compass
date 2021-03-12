@@ -14,8 +14,8 @@ type WebhookService struct {
 	mock.Mock
 }
 
-// ListAllApplicationWebhooks provides a mock function with given fields: ctx, applicationID
-func (_m *WebhookService) ListAllApplicationWebhooks(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
+// ListForApplication provides a mock function with given fields: ctx, applicationID
+func (_m *WebhookService) ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, applicationID)
 
 	var r0 []*model.Webhook
