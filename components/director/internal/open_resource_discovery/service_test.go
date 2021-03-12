@@ -40,7 +40,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
-		whSvc.On("List", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
+		whSvc.On("ListAllApplicationWebhooks", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
 		return whSvc
 	}
 
@@ -281,7 +281,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn: successfulAppList,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("List", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				whSvc.On("ListAllApplicationWebhooks", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return whSvc
 			},
 			ExpectedErr: testErr,

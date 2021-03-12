@@ -117,7 +117,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
-	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
