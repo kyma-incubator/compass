@@ -15,9 +15,6 @@ CREATE TYPE webhook_type AS ENUM (
 ALTER TABLE webhooks
     ALTER COLUMN type TYPE webhook_type USING (type::webhook_type);
 
-CREATE UNIQUE INDEX single_ord_webhook ON webhooks (app_id, type)
-    WHERE type = 'OPEN_RESOURCE_DISCOVERY'::webhook_type;
-
 ALTER TABLE packages
     DROP CONSTRAINT packages_vendor_fk;
 

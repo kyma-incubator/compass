@@ -1,7 +1,5 @@
 BEGIN;
 
-DROP INDEX IF EXISTS single_ord_webhook;
-
 ALTER TABLE webhooks
     ALTER COLUMN type TYPE VARCHAR(255);
 
