@@ -51,6 +51,8 @@ const (
 	expectedNumberOfEvents          = 2
 	expectedNumberOfTombstones      = 1
 	expectedNumberOfVendors         = 1
+
+	testTimeoutAdditionalBuffer = 1 * time.Minute
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -103,7 +105,7 @@ func TestORDAggregator(t *testing.T) {
 	scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 	require.NoError(t, err)
 
-	defaultTestTimeout := 2 * scheduleTime
+	defaultTestTimeout :=  scheduleTime + testTimeoutAdditionalBuffer
 	defaultCheckInterval := scheduleTime / 20
 
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {

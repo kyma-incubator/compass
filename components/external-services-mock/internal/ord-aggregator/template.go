@@ -1,5 +1,7 @@
 package ord_aggregator
 
+// This document is created by simply marshalling the returned document from the fixture fixWellKnownConfig located in: /compass/components/director/internal/open_resource_discovery/fixtures_test.go
+// If any breaking/validation change is applied to the fixture's WellKnownConfig structure, it must be applied here as well. Otherwise, the aggregator e2e test will fail.
 const ordConfig = `{
     "$schema": "../spec/v1/generated/Configuration.schema.json",
     "openResourceDiscoveryV1": {
@@ -19,6 +21,8 @@ const ordConfig = `{
     }
 }`
 
+// This document is created by simply marshalling the returned document from the fixture fixORDDocumentWithBaseURL located in: /compass/components/director/internal/open_resource_discovery/fixtures_test.go
+// If any breaking/validation change is applied to the fixture's Document structure, it must be applied here as well. Otherwise, the aggregator e2e test will fail.
 const ordDocument = `{
     "$schema": "./spec/v1/generated/Document.schema.json",
     "openResourceDiscovery": "1.0-rc.1",
