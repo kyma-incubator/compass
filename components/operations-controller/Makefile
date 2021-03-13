@@ -11,7 +11,6 @@ export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 include $(SCRIPTS_DIR)/generic_make_go.mk
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -19,59 +18,34 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manager
+test-local: generate manifests
+	go test ./...
 
-# Build manager
-build-local: manager
+build-local: generate
+	env go build -o bin/manager main.go
 
-# Run tests
-test-local: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+errcheck-local:
+	errcheck -blank -asserts -ignoregenerated ./...
 
-# Build manager binary
-manager: generate fmt vet
-	go build -o bin/manager main.go
+resolve-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet manifests
-	go run ./main.go
+ensure-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-# Install CRDs into a cluster
-install: manifests
-	kustomize build config/crd | kubectl apply -f -
+dep-status-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-# Uninstall CRDs from a cluster
-uninstall: manifests
-	kustomize build config/crd | kubectl delete -f -
-
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests
-	cd config/manager && kustomize edit set image controller=${IMG_NAME}
-	kustomize build config/default | kubectl apply -f -
-
-# Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
-# Copy the CRDs into the Compass chart.
 copy-crds-to-chart:
 	kustomize build config/crd > crds.yaml
 	mv crds.yaml ${CHART_PATH}/templates/
 
-# Run go fmt against code
-fmt:
-	go fmt ./...
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
-# Run go vet against code
-vet:
-	go vet ./...
-
-# Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-# find or download controller-gen
-# download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
@@ -86,15 +60,3 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
-
-errcheck-local:
-	errcheck -blank -asserts -ignoregenerated ./...
-
-resolve-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
-ensure-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
-dep-status-local:
-	@echo ${SKIP_STEP_MESSAGE}
