@@ -47,6 +47,7 @@ type APIService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -61,6 +62,7 @@ type EventService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
 //go:generate mockery -name=EventConverter -output=automock -outpkg=automock -case=underscore
@@ -231,6 +233,16 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	bndl, err := r.bundleSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.apiSvc.DeleteAllByBundleID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.eventSvc.DeleteAllByBundleID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
