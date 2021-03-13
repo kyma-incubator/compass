@@ -11,13 +11,6 @@ export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 include $(SCRIPTS_DIR)/generic_make_go.mk
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
-
 test-local: generate manifests
 	go test ./...
 
@@ -36,10 +29,6 @@ ensure-local:
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-copy-crds-to-chart:
-	kustomize build config/crd > crds.yaml
-	mv crds.yaml ${CHART_PATH}/templates/
-
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
@@ -56,7 +45,11 @@ ifeq (, $(shell which controller-gen))
 	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
+CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+copy-crds-to-chart:
+	kustomize build config/crd > crds.yaml
+	mv crds.yaml ${CHART_PATH}/templates/
