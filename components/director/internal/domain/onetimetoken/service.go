@@ -131,6 +131,10 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 	if err != nil {
 		return model.OneTimeToken{}, err
 	}
+	if sysAuth.Value == nil {
+		sysAuth.Value = &model.Auth{}
+	}
+
 	tokenString, err := s.tokenGenerator.NewToken()
 	if err != nil {
 		return model.OneTimeToken{}, errors.Wrapf(err, "while generating onetime token")
@@ -213,8 +217,4 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	return &model.OneTimeToken{
 		Token: externalToken,
 	}, nil
-}
-
-func (s service) getOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (string, error) {
-	return s.tokenGenerator.NewToken()
 }
