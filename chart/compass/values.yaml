@@ -81,34 +81,9 @@ global:
     console:
       dir:
       version: "PR-22"
-<<<<<<< HEAD
     e2e_tests:
       dir:
       version: "PR-1760"
-=======
-    tests:
-      director:
-        dir:
-        version: "PR-1762"
-      connector:
-        dir:
-        version: "PR-1741"
-      connectivity_adapter:
-        dir:
-        version: "PR-1693"
-      operations_controller:
-        dir:
-        version: "PR-1717"
-      tenant_fetcher:
-        dir:
-        version: "PR-1754"
-      system_broker:
-        dir:
-        version: "PR-1738"
-      ord_service:
-        dir:
-        version: "PR-1719"
->>>>>>> master
   isLocalEnv: false
   oauth2:
     host: oauth2

@@ -37,11 +37,7 @@ spec:
             - name: APP_CONNECTIVITY_ADAPTER_URL
               value: {{ .Values.global.tests.connectivityAdapterFQDN }}:{{ .Values.global.connectivity_adapter.port }}
             - name: APP_DIRECTOR_URL
-<<<<<<< HEAD:chart/compass/templates/tests/connectivity-adapter/connectivity-adapter-test.yaml
-              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.port }}/graphql
-=======
-              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
->>>>>>> master:chart/compass/charts/connectivity-adapter/templates/tests/tests.yaml
+              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/graphql
             - name: APP_SKIP_SSL_VERIFY
               value: "true"
             - name: APP_CONNECTIVITY_ADAPTER_URL
@@ -51,14 +47,5 @@ spec:
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant | quote }}
             - name: APP_DIRECTOR_HEALTHZ_URL
-<<<<<<< HEAD:chart/compass/templates/tests/connectivity-adapter/connectivity-adapter-test.yaml
-              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.port }}/healthz
-=======
-              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz"
-          command:
-            - "/bin/sh"
-          args:
-            - "-c"
-            - "./entrypoint.sh; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
->>>>>>> master:chart/compass/charts/connectivity-adapter/templates/tests/tests.yaml
+              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz
     restartPolicy: Never
