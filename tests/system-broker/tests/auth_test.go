@@ -196,7 +196,7 @@ func getSecuredClientByContext(t *testing.T, ctx *clients.SystemBrokerTestContex
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
 	logrus.Infof("generation certificate for runtime with id: %s", runtimeID)
-	certResult, configuration := certs.GenerateRuntimeCertificate(t, oneTimeToken, ctx.ConnectorTokenSecuredClient, ctx.ClientKey)
+	certResult, configuration := clients.GenerateRuntimeCertificate(t, oneTimeToken, ctx.ConnectorTokenSecuredClient, ctx.ClientKey)
 	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := createCertClient(ctx.ClientKey, certChain...)
 

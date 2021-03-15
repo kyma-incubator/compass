@@ -39,7 +39,7 @@ spec:
             - name: APP_DIRECTOR_URL
               value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/graphql
             - name: APP_SKIP_SSL_VERIFY
-              value: "true"
+              value: {{ .Values.global.tests.skipTLSVerify | quote }}
             - name: APP_CONNECTIVITY_ADAPTER_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_CONNECTIVITY_ADAPTER_MTLS_URL
@@ -47,5 +47,5 @@ spec:
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant | quote }}
             - name: APP_DIRECTOR_HEALTHZ_URL
-              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz"
     restartPolicy: Never

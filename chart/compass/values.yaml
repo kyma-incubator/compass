@@ -389,5 +389,6 @@ global:
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
+    skipTLSVerify: true
 pairing-adapter:
   enabled: false

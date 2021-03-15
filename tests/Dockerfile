@@ -31,4 +31,4 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/operations-c
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher.test .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/licenses ./licenses
+#COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/licenses ./licenses

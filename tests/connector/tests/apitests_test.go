@@ -107,7 +107,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
-		certResult, configuration := certs.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
+		certResult, configuration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 
 		// then
 		certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
@@ -115,7 +115,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when CSR subject is invalid", func(t *testing.T) {
 		// given
-		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		wrongSubject := "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
@@ -132,7 +132,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when different Common Name provided", func(t *testing.T) {
 		// given
-		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		differentSubject := certs.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
@@ -149,7 +149,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with invalid token", func(t *testing.T) {
 		// given
-		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certInfo := configuration.CertificateSigningRequestInfo
 
@@ -167,7 +167,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with already used token", func(t *testing.T) {
 		// given
-		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certInfo := configuration.CertificateSigningRequestInfo
 
@@ -187,7 +187,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when invalid CSR provided for signing", func(t *testing.T) {
 		// given
-		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+		configuration := clients.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		wrongCSR := "wrongCSR"
@@ -210,7 +210,7 @@ func TestFullConnectorFlow(t *testing.T) {
 	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
 	t.Log("Generating certificate...")
-	certificationResult, configuration := certs.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
+	certificationResult, configuration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
 
 	defer certs.Cleanup(t, configmapCleaner, certificationResult)

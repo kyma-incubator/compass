@@ -3,7 +3,6 @@ package tests
 import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"os"
 	"testing"
 
@@ -24,8 +23,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	testCtx=ctx
-	testctx.Init()
+	testCtx = ctx
 	exitCode := m.Run()
 	logrus.Info("Tests finished. Exit code: ", exitCode)
 	os.Exit(exitCode)

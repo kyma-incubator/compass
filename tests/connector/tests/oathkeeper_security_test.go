@@ -18,7 +18,7 @@ func TestOathkeeperSecurity(t *testing.T) {
 	appID := app.ID
 	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
-	certResult, configuration := certs.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
+	certResult, configuration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 

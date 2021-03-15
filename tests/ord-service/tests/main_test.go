@@ -17,7 +17,6 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"log"
 	"os"
 	"testing"
@@ -43,7 +42,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
-	testctx.Init()
 	exitVal := m.Run()
 	os.Exit(exitVal)
 

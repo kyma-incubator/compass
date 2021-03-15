@@ -40,9 +40,8 @@ var (
 
 func TestMain(m *testing.M) {
 	logrus.Info("Starting Connector Test")
-	cfg := config.ConnectorTestConfig{}
+	cfg = config.ConnectorTestConfig{}
 	config.ReadConfig(&cfg)
-
 	ctx = context.Background()
 
 	key, err := certs.GenerateKey()

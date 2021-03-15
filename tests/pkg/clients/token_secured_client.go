@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"net/http"
@@ -84,3 +85,43 @@ func (c *TokenSecuredClient) GenerateAndSignCert(t *testing.T, certConfig extern
 
 	return &certResult, clientKey, nil
 }
+
+func GenerateRuntimeCertificate(t *testing.T, token *externalschema.Token, connectorClient *TokenSecuredClient, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
+}
+
+func GetConfiguration(t *testing.T, staticClient *StaticUserClient, connectorClient *TokenSecuredClient, appID string) externalschema.Configuration {
+	token, err := staticClient.GenerateApplicationToken(t, appID)
+	require.NoError(t, err)
+
+	configuration, err := connectorClient.Configuration(token.Token)
+	require.NoError(t, err)
+	certs.AssertConfiguration(t, configuration)
+
+	return configuration
+}
+
+func GenerateApplicationCertificate(t *testing.T, staticClient *StaticUserClient, connectorClient *TokenSecuredClient, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	token, err := staticClient.GenerateApplicationToken(t, appID)
+	require.NoError(t, err)
+
+	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
+}
+
+func generateCertificateForToken(t *testing.T, connectorClient *TokenSecuredClient, token string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	configuration, err := connectorClient.Configuration(token)
+	require.NoError(t, err)
+	certs.AssertConfiguration(t, configuration)
+
+	certToken := configuration.Token.Token
+	subject := configuration.CertificateSigningRequestInfo.Subject
+
+	csr := certs.CreateCsr(t, subject, clientKey)
+	require.NoError(t, err)
+
+	result, err := connectorClient.SignCSR(certs.EncodeBase64(csr), certToken)
+	require.NoError(t, err)
+
+	return result, configuration
+}
+

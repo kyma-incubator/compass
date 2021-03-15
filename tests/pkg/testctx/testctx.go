@@ -24,7 +24,7 @@ import (
 var Tc *TestContext
 
 type ScopesConfig struct {
-	scopes string `envconfig:"default=runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage automatic_scenario_assignment:read automatic_scenario_assignment:write"`
+	Scopes string `envconfig:"default=runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage automatic_scenario_assignment:read automatic_scenario_assignment:write"`
 }
 // TestContext contains dependencies that help executing tests
 type TestContext struct {
@@ -34,7 +34,7 @@ type TestContext struct {
 }
 
 //todo rename init
-func Init() {
+func init() {
 	var err error
 	Tc, err = NewTestContext()
 	if err != nil {
@@ -48,7 +48,7 @@ func NewTestContext() (*TestContext, error) {
 		log.Fatal(err)
 	}
 
-	currentScopes := strings.Split(cfg.scopes, " ")
+	currentScopes := strings.Split(cfg.Scopes, " ")
 
 	return &TestContext{
 		Graphqlizer:       gqlizer.Graphqlizer{},

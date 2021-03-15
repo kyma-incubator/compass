@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
@@ -16,6 +17,7 @@ func RegisterRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gql
 	registerRuntimeRequest := FixRegisterRuntimeRequest(inputGQL)
 	var runtime graphql.RuntimeExt
 
+	fmt.Println("TENANT : ", tenant)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, registerRuntimeRequest, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
