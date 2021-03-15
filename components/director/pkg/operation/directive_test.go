@@ -927,9 +927,7 @@ func TestHandleOperation(t *testing.T) {
 
 		expectedObj, err := json.Marshal(expectedRequestObject)
 		require.NoError(t, err)
-
 		require.Equal(t, string(expectedObj), op.RequestObject)
-
 		require.Len(t, op.WebhookIDs, 0)
 	})
 
