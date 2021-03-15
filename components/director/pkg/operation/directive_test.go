@@ -931,7 +931,6 @@ func TestHandleOperation(t *testing.T) {
 		require.Len(t, op.WebhookIDs, 0)
 	})
 
-
 	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with UPDATE operation type should finish successfully and update application status to UPDATING", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
