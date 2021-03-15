@@ -12,6 +12,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 	// given
 	id := "foo"
 	bndlID := "bar"
+	appID := "baz"
 	desc := "Sample"
 	name := "sample"
 	targetUrl := "https://foo.bar"
@@ -32,12 +33,13 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 				Group:       &group,
 			},
 			Expected: &model.APIDefinition{
-				BundleID:    &bndlID,
-				Name:        name,
-				Description: &desc,
-				TargetURL:   targetUrl,
-				Group:       &group,
-				Tenant:      tenant,
+				ApplicationID: appID,
+				BundleID:      &bndlID,
+				Name:          name,
+				Description:   &desc,
+				TargetURL:     targetUrl,
+				Group:         &group,
+				Tenant:        tenant,
 				BaseEntity: &model.BaseEntity{
 					ID:    id,
 					Ready: true,
@@ -55,7 +57,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinitionWithinBundle(id, bndlID, tenant)
+			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, bndlID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

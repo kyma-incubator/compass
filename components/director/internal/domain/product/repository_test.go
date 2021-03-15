@@ -199,3 +199,39 @@ func TestPgRepository_GetByID(t *testing.T) {
 		convMock.AssertExpectations(t)
 	})
 }
+
+func TestPgRepository_ListByApplicationID(t *testing.T) {
+	// GIVEN
+	totalCount := 2
+	firstProductEntity := fixEntityProduct()
+	secondProductEntity := fixEntityProduct()
+
+	selectQuery := `^SELECT (.+) FROM public.products 
+		WHERE tenant_id = \$1 AND app_id = \$2`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixProductColumns()).
+			AddRow(fixProductRow()...).
+			AddRow(fixProductRow()...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", firstProductEntity).Return(&model.Product{OrdID: firstProductEntity.OrdID}, nil)
+		convMock.On("FromEntity", secondProductEntity).Return(&model.Product{OrdID: secondProductEntity.OrdID}, nil)
+		pgRepository := product.NewRepository(convMock)
+		// WHEN
+		modelProduct, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelProduct, totalCount)
+		assert.Equal(t, firstProductEntity.OrdID, modelProduct[0].OrdID)
+		assert.Equal(t, secondProductEntity.OrdID, modelProduct[1].OrdID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}

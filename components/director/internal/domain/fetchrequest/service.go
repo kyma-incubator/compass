@@ -81,8 +81,7 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		errMsg := fmt.Sprintf("While fetching Spec status code: %d", resp.StatusCode)
-		log.C(ctx).Errorf(errMsg)
+		log.C(ctx).Errorf("Failed to execute fetch request for %s with id %q: status code: %d", fr.ObjectType, fr.ObjectID, resp.StatusCode)
 		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec status code: %d", resp.StatusCode)), s.timestampGen())
 	}
 

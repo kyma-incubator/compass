@@ -39,9 +39,10 @@ type WebhookInput struct {
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
-	WebhookTypeRegisterApplication  WebhookType = "REGISTER_APPLICATION"
-	WebhookTypeDeleteApplication    WebhookType = "UNREGISTER_APPLICATION"
+	WebhookTypeConfigurationChanged  WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
+	WebhookTypeDeleteApplication     WebhookType = "UNREGISTER_APPLICATION"
+	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
 )
 
 type WebhookMode string

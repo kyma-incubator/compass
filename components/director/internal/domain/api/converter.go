@@ -118,17 +118,18 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}
 
 	return &model.APIDefinitionInput{
-		Name:        in.Name,
-		Description: in.Description,
-		TargetURL:   in.TargetURL,
-		Group:       in.Group,
-		Version:     c.version.InputFromGraphQL(in.Version),
+		Name:         in.Name,
+		Description:  in.Description,
+		TargetURL:    in.TargetURL,
+		Group:        in.Group,
+		VersionInput: c.version.InputFromGraphQL(in.Version),
 	}, spec, nil
 }
 
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
+		ApplicationID:       entity.ApplicationID,
 		BundleID:            repo.StringPtrFromNullableString(entity.BndlID),
 		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
 		Tenant:              entity.TenantID,
@@ -169,6 +170,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 	return &Entity{
 		TenantID:            apiModel.Tenant,
+		ApplicationID:       apiModel.ApplicationID,
 		BndlID:              repo.NewNullableString(apiModel.BundleID),
 		PackageID:           repo.NewNullableString(apiModel.PackageID),
 		Name:                apiModel.Name,

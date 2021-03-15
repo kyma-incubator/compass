@@ -41,12 +41,10 @@ func fixVendorModel() *model.Vendor {
 
 func fixVendorModelInput() *model.VendorInput {
 	return &model.VendorInput{
-		OrdID:         ordID,
-		TenantID:      tenantID,
-		ApplicationID: appID,
-		Title:         "title",
-		Type:          "type",
-		Labels:        json.RawMessage("{}"),
+		OrdID:  ordID,
+		Title:  "title",
+		Type:   "type",
+		Labels: json.RawMessage("{}"),
 	}
 }
 

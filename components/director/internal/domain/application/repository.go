@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -34,30 +35,32 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	globalGetter    repo.SingleGetterGlobal
-	globalDeleter   repo.DeleterGlobal
-	lister          repo.Lister
-	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
-	creator         repo.Creator
-	updater         repo.Updater
-	conv            EntityConverter
+	existQuerier          repo.ExistQuerier
+	singleGetter          repo.SingleGetter
+	globalGetter          repo.SingleGetterGlobal
+	globalDeleter         repo.DeleterGlobal
+	lister                repo.Lister
+	deleter               repo.Deleter
+	pageableQuerier       repo.PageableQuerier
+	globalPageableQuerier repo.PageableQuerierGlobal
+	creator               repo.Creator
+	updater               repo.Updater
+	conv                  EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		globalGetter:    repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
-		globalDeleter:   repo.NewDeleterGlobal(resource.Application, applicationTable),
-		deleter:         repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
-		lister:          repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		creator:         repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:         repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
-		conv:            conv,
+		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
+		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
+		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
+		deleter:               repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
+		lister:                repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
+		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
+		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
+		conv:                  conv,
 	}
 }
 
@@ -156,6 +159,27 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobal(ctx, pageSize, cursor, "id", &appsCollection)
 
 	if err != nil {
 		return nil, err
