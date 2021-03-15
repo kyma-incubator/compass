@@ -96,12 +96,12 @@ func TestRuntimeInput_Validate_Description(t *testing.T) {
 func TestRuntimeInput_Validate_Labels(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *graphql.Labels
+		Value         graphql.Labels
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: &graphql.Labels{
+			Value: graphql.Labels{
 				"test": "ok",
 			},
 			ExpectedValid: true,
@@ -113,21 +113,21 @@ func TestRuntimeInput_Validate_Labels(t *testing.T) {
 		},
 		{
 			Name: "ExpectedValid - Nil map value",
-			Value: &graphql.Labels{
+			Value: graphql.Labels{
 				"test": nil,
 			},
 			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - Empty map key",
-			Value: &graphql.Labels{
+			Value: graphql.Labels{
 				inputvalidationtest.EmptyString: "val",
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - Unsupported characters in key",
-			Value: &graphql.Labels{
+			Value: graphql.Labels{
 				"not/valid": "val",
 			},
 			ExpectedValid: false,

@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/director
 go 1.15
 
 require (
-	github.com/99designs/gqlgen v0.9.3
+	github.com/99designs/gqlgen v0.11.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -15,8 +15,6 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.0
@@ -37,7 +35,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.8
 	github.com/tidwall/sjson v1.1.5
-	github.com/vektah/gqlparser v1.3.1
+	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
@@ -51,3 +49,5 @@ require (
 	k8s.io/kube-openapi v0.0.0-20200410163147-594e756bea31 // indirect
 	sigs.k8s.io/controller-runtime v0.5.0 // DO NOT BUMP
 )
+
+replace github.com/kyma-incubator/compass/components/connector => ../connector

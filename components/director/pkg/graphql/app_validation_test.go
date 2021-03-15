@@ -143,12 +143,12 @@ func TestApplicationRegisterInput_Validate_Description(t *testing.T) {
 func TestApplicationRegisterInput_Validate_Labels(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *graphql.Labels
+		Value         graphql.Labels
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         &graphql.Labels{"key": "value"},
+			Value:         graphql.Labels{"key": "value"},
 			ExpectedValid: true,
 		},
 		{
@@ -158,17 +158,17 @@ func TestApplicationRegisterInput_Validate_Labels(t *testing.T) {
 		},
 		{
 			Name:          "Label with array of strings",
-			Value:         &graphql.Labels{"scenarios": []string{"ABC", "CBA", "TEST"}},
+			Value:         graphql.Labels{"scenarios": []string{"ABC", "CBA", "TEST"}},
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty key",
-			Value:         &graphql.Labels{"": "value"},
+			Value:         graphql.Labels{"": "value"},
 			ExpectedValid: false,
 		},
 		{
 			Name:          "Invalid key",
-			Value:         &graphql.Labels{"not/valid": "value"},
+			Value:         graphql.Labels{"not/valid": "value"},
 			ExpectedValid: false,
 		},
 	}
