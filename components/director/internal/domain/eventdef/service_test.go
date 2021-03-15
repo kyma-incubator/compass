@@ -783,6 +783,74 @@ func TestService_Delete(t *testing.T) {
 	})
 }
 
+func TestService_DeleteAllByBundleID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	id := "foo"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.EventAPIRepository
+		Input        model.EventDefinitionInput
+		InputID      string
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("DeleteAllByBundleID", ctx, tenantID, id).Return(nil).Once()
+				return repo
+			},
+			InputID:     id,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Delete Error",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("DeleteAllByBundleID", ctx, tenantID, id).Return(testErr).Once()
+				return repo
+			},
+			InputID:     id,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			// given
+			repo := testCase.RepositoryFn()
+
+			svc := event.NewService(repo, nil, nil)
+
+			// when
+			err := svc.DeleteAllByBundleID(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := event.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Delete(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_GetFetchRequest(t *testing.T) {
 	// given
 	ctx := context.TODO()

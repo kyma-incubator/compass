@@ -54,3 +54,10 @@ func PrefixStrings(in []string, prefix string) []string {
 func Title(s string) string {
 	return strings.Title(strings.ToLower(s))
 }
+
+func PtrStrToStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

@@ -30,19 +30,19 @@ func TestConfig_Validate(t *testing.T) {
 		ExpectValid    bool
 	}{
 		{
-			Msg: "Internal Address is not set should be invalid",
+			Msg: "Operation endpoint is not set should be invalid",
 			ConfigProvider: func() *director.Config {
 				config := director.DefaultConfig()
-				config.InternalAddress = ""
+				config.OperationEndpoint = ""
 				return config
 			},
 			ExpectValid: false,
 		},
 		{
-			Msg: "Actual Internal Address set should be valid",
+			Msg: "Actual operation endpoint set should be valid",
 			ConfigProvider: func() *director.Config {
 				config := director.DefaultConfig()
-				config.InternalAddress = "http://127.0.0.1:3002"
+				config.OperationEndpoint = "http://127.0.0.1:3002/operation"
 				return config
 			},
 			ExpectValid: true,

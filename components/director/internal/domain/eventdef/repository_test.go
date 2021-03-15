@@ -320,6 +320,22 @@ func TestPgRepository_Delete(t *testing.T) {
 	convMock.AssertExpectations(t)
 }
 
+func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+	deleteQuery := `^DELETE FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND bundle_id = \$2$`
+
+	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
+	convMock := &automock.EventAPIDefinitionConverter{}
+	pgRepository := event.NewRepository(convMock)
+	//WHEN
+	err := pgRepository.DeleteAllByBundleID(ctx, tenantID, bundleID)
+	//THEN
+	require.NoError(t, err)
+	sqlMock.AssertExpectations(t)
+	convMock.AssertExpectations(t)
+}
+
 func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)

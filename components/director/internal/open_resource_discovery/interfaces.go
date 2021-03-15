@@ -8,7 +8,7 @@ import (
 
 //go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
 type WebhookService interface {
-	List(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore

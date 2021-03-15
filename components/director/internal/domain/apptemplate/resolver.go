@@ -45,7 +45,19 @@ type ApplicationConverter interface {
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Get(ctx context.Context, id string) (*model.Application, error)
+}
+
+//go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
+type WebhookService interface {
+	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+}
+
+//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
+type WebhookConverter interface {
+	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
 type Resolver struct {
@@ -55,15 +67,19 @@ type Resolver struct {
 	appConverter         ApplicationConverter
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
+	webhookSvc           WebhookService
+	webhookConverter     WebhookConverter
 }
 
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
 		appSvc:               appSvc,
 		appConverter:         appConverter,
 		appTemplateSvc:       appTemplateSvc,
 		appTemplateConverter: appTemplateConverter,
+		webhookSvc:           webhookService,
+		webhookConverter:     webhookConverter,
 	}
 }
 
@@ -188,7 +204,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	//log.Infof("Registering an Application from Application Template with name %s", in.TemplateName)
+	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
 	log.C(ctx).Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
@@ -225,7 +241,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
-	id, err := r.appSvc.Create(ctx, appCreateInputModel)
+	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
@@ -312,6 +328,27 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	}
 
 	return deletedAppTemplate, nil
+}
+
+func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplate) ([]*graphql.Webhook, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	webhooks, err := r.webhookSvc.ListForApplicationTemplate(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.webhookConverter.MultipleToGraphQL(webhooks)
 }
 
 func extractApplicationNameFromTemplateInput(applicationInputJSON string) (string, error) {

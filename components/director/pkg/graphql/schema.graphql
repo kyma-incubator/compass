@@ -51,6 +51,15 @@ enum ApplicationStatusCondition {
 	INITIAL
 	CONNECTED
 	FAILED
+	CREATING
+	CREATE_FAILED
+	CREATE_SUCCEEDED
+	UPDATING
+	UPDATE_FAILED
+	UPDATE_SUCCEEDED
+	DELETING
+	DELETE_FAILED
+	DELETE_SUCCEEDED
 }
 
 enum ApplicationTemplateAccessLevel {
@@ -249,6 +258,7 @@ input ApplicationTemplateInput {
 	"""
 	**Validation:** max=2000
 	"""
+	webhooks: [WebhookInput!]
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -621,7 +631,6 @@ type APIDefinition {
 	"""
 	group: String
 	version: Version
-	ready: Boolean!
 	created_at: Timestamp
 	updated_at: Timestamp
 	deleted_at: Timestamp
@@ -651,6 +660,7 @@ type Application {
 	providerName: String
 	description: String
 	integrationSystemID: ID
+	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
@@ -659,7 +669,6 @@ type Application {
 	bundle(id: ID!): Bundle
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -685,6 +694,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
+	webhooks: [Webhook!]
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -738,7 +748,6 @@ type Bundle {
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -809,7 +818,6 @@ type Document {
 	kind: String
 	data: CLOB
 	fetchRequest: FetchRequest
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -832,7 +840,6 @@ type EventDefinition {
 	group: String
 	spec: EventSpec
 	version: Version
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -1024,6 +1031,7 @@ type Viewer {
 type Webhook {
 	id: ID!
 	applicationID: ID
+	applicationTemplateID: ID
 	runtimeID: ID
 	integrationSystemID: ID
 	type: WebhookType!
@@ -1209,7 +1217,7 @@ type Mutation {
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplate: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)

@@ -11,11 +11,11 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
+func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
 		ApplicationID:  &appID,
-		TenantID:       tenant,
+		TenantID:       &tenant,
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &model.Auth{},
@@ -24,6 +24,21 @@ func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
+	}
+}
+
+func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.Webhook {
+	return &model.Webhook{
+		ID:                    id,
+		ApplicationTemplateID: &appTemplateID,
+		Type:                  model.WebhookTypeConfigurationChanged,
+		URL:                   &url,
+		Auth:                  &model.Auth{},
+		Mode:                  &modelWebhookMode,
+		URLTemplate:           &emptyTemplate,
+		InputTemplate:         &emptyTemplate,
+		HeaderTemplate:        &emptyTemplate,
+		OutputTemplate:        &emptyTemplate,
 	}
 }
 
@@ -66,4 +81,16 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
 	}
+}
+
+func fixApplicationModelWebhookWithType(id, appID, tenant, url string, webhookType model.WebhookType) (w *model.Webhook) {
+	w = fixApplicationModelWebhook(id, appID, tenant, url)
+	w.Type = webhookType
+	return
+}
+
+func fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url string, webhookType model.WebhookType) (w *model.Webhook) {
+	w = fixApplicationTemplateModelWebhook(id, appTemplateID, url)
+	w.Type = webhookType
+	return
 }

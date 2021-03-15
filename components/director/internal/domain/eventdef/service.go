@@ -24,6 +24,7 @@ type EventAPIRepository interface {
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
 	Update(ctx context.Context, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
+	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -181,6 +182,20 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	err = s.eventAPIRepo.Delete(ctx, tnt, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventDefinition with id %s", id)
+	}
+
+	return nil
+}
+
+func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	err = s.eventAPIRepo.DeleteAllByBundleID(ctx, tnt, bundleID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting EventDefinitions for Bundle with id %q", bundleID)
 	}
 
 	return nil

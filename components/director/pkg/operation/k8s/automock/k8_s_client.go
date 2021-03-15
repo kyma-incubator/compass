@@ -40,20 +40,6 @@ func (_m *K8SClient) Create(ctx context.Context, operation *v1alpha1.Operation) 
 	return r0, r1
 }
 
-// Delete provides a mock function with given fields: ctx, name, opts
-func (_m *K8SClient) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	ret := _m.Called(ctx, name, opts)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, v1.DeleteOptions) error); ok {
-		r0 = rf(ctx, name, opts)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Get provides a mock function with given fields: ctx, name, options
 func (_m *K8SClient) Get(ctx context.Context, name string, options v1.GetOptions) (*v1alpha1.Operation, error) {
 	ret := _m.Called(ctx, name, options)

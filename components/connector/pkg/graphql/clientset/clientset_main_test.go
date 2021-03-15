@@ -5,29 +5,25 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
-
-	"k8s.io/client-go/kubernetes"
-
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"log"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-
 	"github.com/kyma-incubator/compass/components/connector/config"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	gcliMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/automock"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
 	"github.com/vrischmann/envconfig"
-
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -37,11 +33,12 @@ const (
 
 	testSecretName    = "test-secret"
 	testConfigMapName = "test-secret"
+	oneTimeTokenURL   = "http://director.com"
+	clientID          = "abcd-efgh"
 )
 
 var (
 	externalAPIUrl string
-	tokenService   tokens.Service
 	k8sClientSet   kubernetes.Interface
 )
 
@@ -50,6 +47,8 @@ func TestMain(m *testing.M) {
 	exitOnError(err, "Error setting APP_CA_SECRET_NAME env")
 	err = os.Setenv("APP_REVOCATION_CONFIG_MAP_NAME", testConfigMapName)
 	exitOnError(err, "Error setting APP_CA_SECRET_NAME env")
+	err = os.Setenv("APP_ONE_TIME_TOKEN_URL", oneTimeTokenURL)
+	exitOnError(err, "Error setting APP_ONE_TIME_TOKEN_URL env")
 
 	cfg := config.Config{}
 	err = envconfig.InitWithPrefix(&cfg, "APP")
@@ -75,12 +74,14 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	directorGCLI := &gcliMocks.GraphQLClient{}
+	directorGCLI.On("Run", mock.Anything, mock.Anything, mock.Anything).
+		Run(GenerateTestToken(tokens.NewCSRTokenResponse("abcd"))).Return(nil).Twice()
+	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
 
 	go certsLoader.Run(context.TODO())
 	go revokedCertsLoader.Run(context.TODO())
 
-	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)
 
 	certificateResolver := api.NewCertificateResolver(
@@ -96,14 +97,10 @@ func TestMain(m *testing.M) {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			connectorToken := r.Header.Get(oathkeeper.ConnectorTokenHeader)
 			if connectorToken != "" {
-				tokenData, err := tokenService.Resolve(connectorToken)
-				if err != nil {
-					httputils.RespondWithError(r.Context(), w, http.StatusForbidden, err)
-					return
-				}
-				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, tokenData.ClientId))
+				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, clientID))
 
 				handler.ServeHTTP(w, r)
+				return
 			}
 
 			if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
@@ -140,5 +137,15 @@ func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
 		log.Fatal(wrappedError)
+	}
+}
+
+func GenerateTestToken(generated tokens.CSRTokenResponse) func(args mock.Arguments) {
+	return func(args mock.Arguments) {
+		arg, ok := args.Get(2).(*tokens.CSRTokenResponse)
+		if !ok {
+			log.Fatal("could not cast CSRTokenResponse")
+		}
+		*arg = generated
 	}
 }

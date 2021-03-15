@@ -55,7 +55,7 @@ func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Cl
 	return app
 }
 
-func getApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.ApplicationExt {
+func GetApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.ApplicationExt {
 	appRequest := fixGetApplicationRequest(id)
 	app := graphql.ApplicationExt{}
 
@@ -94,7 +94,7 @@ func UnregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient 
 	require.NoError(t, err)
 }
 
-func getRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.RuntimeExt {
+func GetRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.RuntimeExt {
 	req := fixRuntimeRequest(id)
 	runtime := graphql.RuntimeExt{}
 
@@ -184,7 +184,7 @@ func requestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Cont
 	return intSysOauthCredentialData
 }
 
-func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenForApplicationExt {
+func GenerateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenForApplicationExt {
 	req := fixGenerateOneTimeTokenForApplication(id)
 	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
 

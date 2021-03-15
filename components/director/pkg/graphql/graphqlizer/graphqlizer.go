@@ -85,6 +85,12 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 			{{- end }} ],
 		{{- end }}
 		accessLevel: {{.AccessLevel}},
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }} 
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}	
 	}`)
 }
 

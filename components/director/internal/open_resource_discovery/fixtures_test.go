@@ -441,7 +441,7 @@ func fixWebhooks() []*model.Webhook {
 	return []*model.Webhook{
 		{
 			ID:            whID,
-			TenantID:      tenantID,
+			TenantID:      str.Ptr(tenantID),
 			ApplicationID: str.Ptr(appID),
 			Type:          model.WebhookTypeOpenResourceDiscovery,
 			URL:           str.Ptr(baseURL),

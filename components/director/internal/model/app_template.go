@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -13,6 +15,7 @@ type ApplicationTemplate struct {
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
+	Webhooks             []Webhook
 }
 
 type ApplicationTemplatePage struct {
@@ -27,6 +30,7 @@ type ApplicationTemplateInput struct {
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
+	Webhooks             []*WebhookInput
 }
 
 type ApplicationTemplateAccessLevel string
@@ -66,6 +70,13 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 		return ApplicationTemplate{}
 	}
 
+	uidService := uid.NewService()
+	webhooks := make([]Webhook, 0, 0)
+	for _, webhookInput := range a.Webhooks {
+		webhook := webhookInput.ToApplicationTemplateWebhook(uidService.Generate(), nil, id)
+		webhooks = append(webhooks, *webhook)
+	}
+
 	return ApplicationTemplate{
 		ID:                   id,
 		Name:                 a.Name,
@@ -73,5 +84,6 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 		ApplicationInputJSON: a.ApplicationInputJSON,
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
+		Webhooks:             webhooks,
 	}
 }

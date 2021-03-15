@@ -22,7 +22,7 @@ func prep(ctx context.Context, number int) (Cache, *testWatch, *mocks.Manager) {
 	}
 	configListManagerMock := &mocks.Manager{}
 	configListManagerMock.
-		On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).
+		On("Watch", mock.AnythingOfType("v1.ListOptions")).
 		Return(watcher, nil).
 		Times(number)
 	loader := NewRevokedCertificatesLoader(cache, configListManagerMock, configMapName, time.Millisecond)
@@ -192,7 +192,7 @@ func Test_revokedCertificatesLoader(t *testing.T) {
 		newWatcher := &testWatch{
 			events: make(chan watch.Event, 100),
 		}
-		managerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).
+		managerMock.On("Watch", mock.AnythingOfType("v1.ListOptions")).
 			Return(newWatcher, nil).Once()
 
 		newWatcher.putEvent(watch.Event{

@@ -181,3 +181,7 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
+
+func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
+}

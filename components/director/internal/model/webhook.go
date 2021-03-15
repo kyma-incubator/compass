@@ -1,23 +1,24 @@
 package model
 
 type Webhook struct {
-	ID                  string
-	TenantID            string
-	ApplicationID       *string
-	RuntimeID           *string
-	IntegrationSystemID *string
-	CorrelationIDKey    *string
-	Type                WebhookType
-	URL                 *string
-	Auth                *Auth
-	Mode                *WebhookMode
-	RetryInterval       *int
-	Timeout             *int
-	URLTemplate         *string
-	InputTemplate       *string
-	HeaderTemplate      *string
-	OutputTemplate      *string
-	StatusTemplate      *string
+	ID                    string
+	TenantID              *string
+	ApplicationID         *string
+	ApplicationTemplateID *string
+	RuntimeID             *string
+	IntegrationSystemID   *string
+	CorrelationIDKey      *string
+	Type                  WebhookType
+	URL                   *string
+	Auth                  *Auth
+	Mode                  *WebhookMode
+	RetryInterval         *int
+	Timeout               *int
+	URLTemplate           *string
+	InputTemplate         *string
+	HeaderTemplate        *string
+	OutputTemplate        *string
+	StatusTemplate        *string
 }
 
 type WebhookInput struct {
@@ -51,15 +52,32 @@ const (
 	WebhookModeAsync WebhookMode = "ASYNC"
 )
 
-func (i *WebhookInput) ToWebhook(id, tenant, applicationID string) *Webhook {
+type WebhookConverterFunc func(i *WebhookInput, id string, tenant *string, resourceID string) *Webhook
+
+func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicationID string) *Webhook {
 	if i == nil {
 		return nil
 	}
 
+	webhook := i.toGenericWebhook(id, tenant)
+	webhook.ApplicationID = &applicationID
+	return webhook
+}
+
+func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, appTemplateID string) *Webhook {
+	if i == nil {
+		return nil
+	}
+
+	webhook := i.toGenericWebhook(id, tenant)
+	webhook.ApplicationTemplateID = &appTemplateID
+	return webhook
+}
+
+func (i *WebhookInput) toGenericWebhook(id string, tenant *string) *Webhook {
 	return &Webhook{
 		ID:               id,
 		TenantID:         tenant,
-		ApplicationID:    &applicationID,
 		CorrelationIDKey: i.CorrelationIDKey,
 		Type:             i.Type,
 		URL:              i.URL,

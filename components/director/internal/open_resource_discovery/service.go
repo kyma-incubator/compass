@@ -95,7 +95,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 
 	ctx = tenant.SaveToContext(ctx, app.Tenant, "")
 
-	webhooks, err := s.webhookSvc.List(ctx, app.ID)
+	webhooks, err := s.webhookSvc.ListForApplication(ctx, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
 	}

@@ -32,7 +32,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ template "fullname" . }}-tests
-  namespace: {{ .Release.Namespace }}
+  namespace: kyma-system
 roleRef:
   kind: Role
   name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests

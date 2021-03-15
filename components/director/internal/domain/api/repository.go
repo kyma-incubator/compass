@@ -15,6 +15,7 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
+	bundleColumn  = "bundle_id"
 	apiDefColumns = []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
@@ -175,4 +176,8 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
 }
