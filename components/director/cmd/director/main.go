@@ -8,7 +8,9 @@ import (
 	"time"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/handler"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
 	graphqlAPI "github.com/kyma-incubator/compass/components/director/internal/api"
@@ -212,7 +214,7 @@ func main() {
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
-	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
@@ -223,10 +225,14 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
-		handler.RequestMiddleware(operationMiddleware.ExtensionHandler),
-		handler.ErrorPresenter(presenter.Do),
-		handler.RecoverFunc(panic_handler.RecoverFn))))
+
+	gqlServ := handler.New(executableSchema)
+	gqlServ.AddTransport(transport.POST{})
+
+	gqlServ.Use(operationMiddleware)
+	gqlServ.SetErrorPresenter(presenter.Do)
+	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
+	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
@@ -511,8 +517,10 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
 
 	internalRouter := mux.NewRouter()
-	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
+
+	gqlHandler := handler.New(internalExecutableSchema)
+	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
 
 	internalRouter.Use(middlewares...)
 
