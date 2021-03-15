@@ -15,7 +15,7 @@ test-local: generate manifests
 	go test ./...
 
 build-local: generate
-	env go build -o bin/manager main.go
+	env go build -o bin/manager cmd/main.go
 
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
