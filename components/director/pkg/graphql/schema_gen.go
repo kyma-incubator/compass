@@ -12787,6 +12787,9 @@ func (ec *executionContext) _Mutation_unregisterRuntime(ctx context.Context, fie
 		if data, ok := tmp.(*Runtime); ok {
 			return data, nil
 		}
+		if data, ok := tmp.(*Runtime); ok {
+			return data, nil
+		}
 		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime`, tmp)
 	})
 	if err != nil {

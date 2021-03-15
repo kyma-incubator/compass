@@ -49,7 +49,8 @@ func TestInterceptResponse(t *testing.T) {
 		}
 
 		middleware := operation.NewMiddleware(directorURL)
-		resp := middleware.InterceptResponse(context.Background(), dummyResolver.SuccessResolve)
+		ctx := operation.SaveToContext(context.Background(), &[]*operation.Operation{})
+		resp := middleware.InterceptResponse(ctx, dummyResolver.SuccessResolve)
 
 		require.Equal(t, gqlResultResponse(gqlResults[0].resultName), []byte(resp.Data))
 	})
