@@ -28,6 +28,7 @@ type EntityConverter interface {
 type pgRepository struct {
 	conv         EntityConverter
 	existQuerier repo.ExistQuerier
+	lister       repo.Lister
 	singleGetter repo.SingleGetter
 	deleter      repo.Deleter
 	creator      repo.Creator
@@ -39,6 +40,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		conv:         conv,
 		existQuerier: repo.NewExistQuerier(resource.Product, productTable, tenantColumn),
 		singleGetter: repo.NewSingleGetter(resource.Product, productTable, tenantColumn, productColumns),
+		lister:       repo.NewLister(resource.Product, productTable, tenantColumn, productColumns),
 		deleter:      repo.NewDeleter(resource.Product, productTable, tenantColumn),
 		creator:      repo.NewCreator(resource.Product, productTable, productColumns),
 		updater:      repo.NewUpdater(resource.Product, productTable, updatableColumns, tenantColumn, []string{"ord_id"}),
@@ -84,4 +86,26 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 	}
 
 	return productModel, nil
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error) {
+	productCollection := productCollection{}
+	if err := r.lister.List(ctx, tenantID, &productCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	products := make([]*model.Product, 0, productCollection.Len())
+	for _, product := range productCollection {
+		productModel, err := r.conv.FromEntity(&product)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, productModel)
+	}
+	return products, nil
+}
+
+type productCollection []Entity
+
+func (pc productCollection) Len() int {
+	return len(pc)
 }

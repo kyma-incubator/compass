@@ -14,12 +14,10 @@ type Vendor struct {
 }
 
 type VendorInput struct {
-	OrdID         string
-	TenantID      string
-	ApplicationID string
-	Title         string
-	Type          string
-	Labels        json.RawMessage
+	OrdID         string `json:"id"`
+	Title         string `json:"title"`
+	Type          string `json:"type"`
+	Labels        json.RawMessage `json:"labels"`
 }
 
 func (i *VendorInput) ToVendor(tenantID, appID string) *Vendor {

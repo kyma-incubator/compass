@@ -488,3 +488,41 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+
+func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
+	// GIVEN
+	totalCount := 2
+	firstBundleID := "111111111-1111-1111-1111-111111111111"
+	firstBundleEntity := fixEntityBundle(firstBundleID, "foo", "bar")
+	secondBundleID := "222222222-2222-2222-2222-222222222222"
+	secondBundleEntity := fixEntityBundle(secondBundleID, "foo", "bar")
+
+	selectQuery := `^SELECT (.+) FROM public.bundles 
+		WHERE tenant_id = \$1 AND app_id = \$2`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(firstBundleID, "placeholder")...).
+			AddRow(fixBundleRow(secondBundleID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", firstBundleEntity).Return(&model.Bundle{BaseEntity: &model.BaseEntity{ID: firstBundleID}}, nil)
+		convMock.On("FromEntity", secondBundleEntity).Return(&model.Bundle{BaseEntity: &model.BaseEntity{ID: secondBundleID}}, nil)
+		pgRepository := mp_bundle.NewRepository(convMock)
+		// WHEN
+		modelBndl, err := pgRepository.ListByApplicationIDNoPaging(ctx, tenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndl, totalCount)
+		assert.Equal(t, firstBundleID, modelBndl[0].ID)
+		assert.Equal(t, secondBundleID, modelBndl[1].ID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}

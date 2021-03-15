@@ -155,6 +155,29 @@ func (_m *BundleRepository) ListByApplicationID(ctx context.Context, tenantID st
 	return r0, r1
 }
 
+// ListByApplicationIDNoPaging provides a mock function with given fields: ctx, tenantID, appID
+func (_m *BundleRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID string, appID string) ([]*model.Bundle, error) {
+	ret := _m.Called(ctx, tenantID, appID)
+
+	var r0 []*model.Bundle
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Bundle); ok {
+		r0 = rf(ctx, tenantID, appID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Bundle)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantID, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, item
 func (_m *BundleRepository) Update(ctx context.Context, item *model.Bundle) error {
 	ret := _m.Called(ctx, item)
