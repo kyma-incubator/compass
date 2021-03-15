@@ -549,85 +549,98 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 	)
 
 	t.Run("fails when systemAuth cannot be fetched", func(t *testing.T) {
+		// GIVEN
 		sysAuthSvc := &automock.SystemAuthService{}
-		appSvc := &automock.ApplicationService{}
-		appConverter := &automock.ApplicationConverter{}
-		extTenantsSvc := &automock.ExternalTenantsService{}
-		doer := &automock.HTTPDoer{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
 		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(nil, errors.New("error while fetching"))
-		tokenService := onetimetoken.NewTokenService(sysAuthSvc, appSvc, appConverter, extTenantsSvc, doer, tokenGenerator, connectorURL,
-			intSystemToAdapterMapping, timeService)
+		defer sysAuthSvc.AssertExpectations(t)
 
+		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
+			&automock.HTTPDoer{}, tokenGenerator, connectorURL, intSystemToAdapterMapping, timeService)
+
+		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID, tokens.ApplicationToken)
+
+		// THEN
 		assert.Equal(t, model.OneTimeToken{}, token)
-		assert.Error(t, err, "error while fetching")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "error while fetching")
 	})
 
 	t.Run("fails when new token cannot be generated", func(t *testing.T) {
+		// GIVEN
 		sysAuthSvc := &automock.SystemAuthService{}
-		appSvc := &automock.ApplicationService{}
-		appConverter := &automock.ApplicationConverter{}
-		extTenantsSvc := &automock.ExternalTenantsService{}
-		doer := &automock.HTTPDoer{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
 		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
+		defer sysAuthSvc.AssertExpectations(t)
 		tokenGenerator.On("NewToken").Return("", errors.New("error while token generating"))
+		defer tokenGenerator.AssertExpectations(t)
 
-		tokenService := onetimetoken.NewTokenService(sysAuthSvc, appSvc, appConverter, extTenantsSvc, doer, tokenGenerator, connectorURL,
-			intSystemToAdapterMapping, timeService)
+		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
+			&automock.HTTPDoer{}, tokenGenerator, connectorURL, intSystemToAdapterMapping, timeService)
 
+		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID, tokens.ApplicationToken)
 
-		assert.Equal(t, model.OneTimeToken{}, token)
-		assert.Error(t, err, "while generating onetime token error while token generating")
-	})
-
-	t.Run("succeeds when systemAuth cannot be updated", func(t *testing.T) {
-		sysAuthSvc := &automock.SystemAuthService{}
-		appSvc := &automock.ApplicationService{}
-		appConverter := &automock.ApplicationConverter{}
-		extTenantsSvc := &automock.ExternalTenantsService{}
-		doer := &automock.HTTPDoer{}
-		tokenGenerator := &automock.TokenGenerator{}
-		timeService := &timeMocks.Service{}
-		intSystemToAdapterMapping := make(map[string]string)
-
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
-		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(errors.New("error while updating"))
-		tokenGenerator.On("NewToken").Return(token, nil)
-		timeService.On("Now").Return(time.Now())
-		tokenService := onetimetoken.NewTokenService(sysAuthSvc, appSvc, appConverter, extTenantsSvc, doer, tokenGenerator, connectorURL,
-			intSystemToAdapterMapping, timeService)
-
-		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID, tokens.ApplicationToken)
-
+		// THEN
 		assert.Equal(t, model.OneTimeToken{}, token)
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "while generating onetime token: error while token generating")
 	})
 
-	t.Run("succeeds when no errors are thrown", func(t *testing.T) {
+	t.Run("fails when systemAuth cannot be updated", func(t *testing.T) {
+		// GIVEN
+		updateErrMsg := "error while updating"
 		sysAuthSvc := &automock.SystemAuthService{}
-		appSvc := &automock.ApplicationService{}
-		appConverter := &automock.ApplicationConverter{}
-		extTenantsSvc := &automock.ExternalTenantsService{}
-		doer := &automock.HTTPDoer{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
 
+		timeService.On("Now").Return(time.Now())
 		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
-		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
+		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(errors.New(updateErrMsg))
+		defer sysAuthSvc.AssertExpectations(t)
+
 		tokenGenerator.On("NewToken").Return(token, nil)
+		defer tokenGenerator.AssertExpectations(t)
+
+		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
+			&automock.HTTPDoer{}, tokenGenerator, connectorURL, intSystemToAdapterMapping, timeService)
+
+		// WHEN
+		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID, tokens.ApplicationToken)
+
+		// THEN
+		assert.Equal(t, model.OneTimeToken{}, token)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), updateErrMsg)
+	})
+
+	t.Run("succeeds when systemAuth has missing 'value' value", func(t *testing.T) {
+		// GIVEN
+		sysAuthSvc := &automock.SystemAuthService{}
+		tokenGenerator := &automock.TokenGenerator{}
+		timeService := &timeMocks.Service{}
+		intSystemToAdapterMapping := make(map[string]string)
 		now := time.Now()
 		timeService.On("Now").Return(now)
-		expectedToken := &model.OneTimeToken{
+
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{}, nil)
+		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
+		defer sysAuthSvc.AssertExpectations(t)
+
+		tokenGenerator.On("NewToken").Return(token, nil)
+		defer tokenGenerator.AssertExpectations(t)
+
+		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
+			&automock.HTTPDoer{}, tokenGenerator, connectorURL, intSystemToAdapterMapping, timeService)
+		expectedToken := model.OneTimeToken{
 			Token:        token,
 			ConnectorURL: connectorURL,
 			Type:         tokens.ApplicationToken,
@@ -635,12 +648,47 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 			Used:         false,
 			UsedAt:       time.Time{},
 		}
-		tokenService := onetimetoken.NewTokenService(sysAuthSvc, appSvc, appConverter, extTenantsSvc, doer, tokenGenerator, connectorURL,
-			intSystemToAdapterMapping, timeService)
 
+		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID, tokens.ApplicationToken)
 
-		assert.Equal(t, expectedToken, &token)
-		assert.Nil(t, err)
+		// THEN
+		assert.Equal(t, expectedToken, token)
+		assert.NoError(t, err)
+	})
+
+	t.Run("succeeds when no errors are thrown", func(t *testing.T) {
+		// GIVEN
+		sysAuthSvc := &automock.SystemAuthService{}
+		tokenGenerator := &automock.TokenGenerator{}
+		timeService := &timeMocks.Service{}
+		intSystemToAdapterMapping := make(map[string]string)
+		now := time.Now()
+		timeService.On("Now").Return(now)
+
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
+		defer sysAuthSvc.AssertExpectations(t)
+
+		tokenGenerator.On("NewToken").Return(token, nil)
+		defer tokenGenerator.AssertExpectations(t)
+		expectedToken := model.OneTimeToken{
+			Token:        token,
+			ConnectorURL: connectorURL,
+			Type:         tokens.ApplicationToken,
+			CreatedAt:    now,
+			Used:         false,
+			UsedAt:       time.Time{},
+		}
+
+		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
+			&automock.HTTPDoer{}, tokenGenerator, connectorURL, intSystemToAdapterMapping, timeService)
+
+		// WHEN
+		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID, tokens.ApplicationToken)
+
+		// THEN
+		assert.Equal(t, expectedToken, token)
+		assert.NoError(t, err)
 	})
 }
