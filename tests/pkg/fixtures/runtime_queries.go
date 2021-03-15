@@ -75,5 +75,9 @@ func RequestOneTimeTokenForRuntime(t *testing.T, ctx context.Context, gqlClient 
 	token := graphql.OneTimeTokenForRuntimeExt{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, tokenRequest, &token)
 	require.NoError(t, err)
+	require.NotEmpty(t, token.ConnectorURL)
+	require.NotEmpty(t, token.Token)
+	require.NotEmpty(t, token.Raw)
+	require.NotEmpty(t, token.RawEncoded)
 	return token
 }

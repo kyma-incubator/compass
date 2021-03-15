@@ -2,17 +2,23 @@ package tests
 
 import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"testing"
-
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestOathkeeperSecurity(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-oathkeeper-security-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
-	certResult, configuration := clients.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+	certResult, configuration := certs.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 
@@ -42,14 +48,14 @@ func TestOathkeeperSecurity(t *testing.T) {
 		// given
 		changedAppID := "aaabbbcc-b340-418d-b653-d95b5e347d74"
 
-		newSubject := clients.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
-		certDataHeader := clients.CreateCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
+		newSubject := certs.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
+		certDataHeader := certs.CreateCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
 
 		forbiddenHeaders := map[string][]string{
 			cfg.CertificateDataHeader: {certDataHeader},
 		}
 
-		csr:= certs.CreateCsr(t,newSubject, clientKey)
+		csr := certs.CreateCsr(t, newSubject, clientKey)
 
 		t.Run("when calling token-secured API", func(t *testing.T) {
 			// when
@@ -67,11 +73,11 @@ func TestOathkeeperSecurity(t *testing.T) {
 
 		t.Run("when calling certificate-secured API", func(t *testing.T) {
 			// when
-			config, err := securedClient.Configuration(forbiddenHeaders)
+			cfg, err := securedClient.Configuration(forbiddenHeaders)
 
 			// then
 			require.NoError(t, err)
-			require.Equal(t, configuration.CertificateSigningRequestInfo.Subject, config.CertificateSigningRequestInfo.Subject)
+			require.Equal(t, configuration.CertificateSigningRequestInfo.Subject, cfg.CertificateSigningRequestInfo.Subject)
 
 			// when
 			_, err = securedClient.SignCSR(certs.EncodeBase64(csr), forbiddenHeaders)

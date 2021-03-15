@@ -52,6 +52,7 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
 	require.NoError(t, err)
+	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
@@ -100,6 +101,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerAppRequest, &app)
 	require.NoError(t, err)
+	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
 	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
@@ -147,6 +149,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerAppRequest, &app)
 	require.NoError(t, err)
+	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
@@ -198,7 +201,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	t.Log("Verify the application status in director is 'ready:false'")
 	deletedApp := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
 	require.NoError(t, err)
-	require.False(t, deletedApp.Ready, "Application is not in status ready:false")
+	require.Equal(t, deletedApp.Status.Condition, graphql.ApplicationStatusConditionDeleting)
 	require.Empty(t, deletedApp.Error, "Application Error is not empty")
 
 	t.Log("Verify DeletedAt in director is set and is in expected range")

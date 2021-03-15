@@ -54,6 +54,7 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		defer fixtures.UnregisterApplication(t, ctx, dexGQLClient, tenant, appID)
 
 		oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
+
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
 		client := getClientWithCert(certChain, clientKey)
 

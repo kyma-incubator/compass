@@ -49,6 +49,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 		t.Log("Get application")
 		app := fixtures.GetApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+
 		require.NotEmpty(t, app.ID)
 		require.Equal(t, appByIntSys.ID, app.ID)
 
@@ -91,6 +92,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 		t.Log("Get runtime")
 		gqlRuntime := fixtures.GetRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+
 		require.NotEmpty(t, gqlRuntime.ID)
 		require.Equal(t, runtime.ID, gqlRuntime.ID)
 

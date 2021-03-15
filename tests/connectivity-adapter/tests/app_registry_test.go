@@ -52,7 +52,7 @@ func TestAppRegistry(t *testing.T) {
 	cfg:=config.ConnectivityAdapterTestConfig{}
 	config.ReadConfig(&cfg)
 
-	directorClient, err := clients.NewClient(
+	directorClient, err := clients.NewDirectorClient(
 		cfg.DirectorUrl,
 		cfg.DirectorHealthzUrl,
 		cfg.Tenant,

@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"net/http"
 
 	gcli "github.com/machinebox/graphql"
@@ -52,7 +53,7 @@ func (c *CertificateSecuredClient) Configuration(headers ...http.Header) (extern
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
 
-	var response ConfigurationResponse
+	var response certs.ConfigurationResponse
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
@@ -65,7 +66,7 @@ func (c *CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (
 	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
 
-	var response CertificationResponse
+	var response certs.CertificationResponse
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
@@ -78,7 +79,7 @@ func (c *CertificateSecuredClient) RevokeCertificate() (bool, error) {
 	query := c.queryProvider.revokeCert()
 	req := gcli.NewRequest(query)
 
-	var response RevokeResult
+	var response certs.RevokeResult
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {

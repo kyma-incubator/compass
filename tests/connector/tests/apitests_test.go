@@ -3,18 +3,30 @@ package tests
 import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTokens(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
-	runtimeID := "75f42q66-b340-418d-b653-d25b5ed47d75"
+	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
+		Name: "test-tokens-runtime",
+	})
+	runtimeID := runtime.ID
+	defer fixtures.UnregisterRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID)
+
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-tokens-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
 	t.Run("should return valid response on configuration query for Application token", func(t *testing.T) {
 		//when
-		token, e := internalClient.GenerateApplicationToken(appID)
+		token, e := directorClient.GenerateApplicationToken(t, appID)
 
 		//then
 		require.NoError(t, e)
@@ -29,7 +41,7 @@ func TestTokens(t *testing.T) {
 
 	t.Run("should return valid response on configuration query for Runtime token", func(t *testing.T) {
 		//when
-		token, e := internalClient.GenerateRuntimeToken(runtimeID)
+		token, e := directorClient.GenerateRuntimeToken(t, runtimeID)
 
 		//then
 		require.NoError(t, e)
@@ -65,7 +77,7 @@ func TestTokens(t *testing.T) {
 
 	t.Run("should return error for previously used token on configuration query", func(t *testing.T) {
 		//when
-		token, e := internalClient.GenerateApplicationToken(appID)
+		token, e := directorClient.GenerateApplicationToken(t, appID)
 
 		//then
 		require.NoError(t, e)
@@ -86,11 +98,16 @@ func TestTokens(t *testing.T) {
 }
 
 func TestCertificateGeneration(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-cert-gen-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
-		certResult, configuration := clients.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+		certResult, configuration := certs.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 
 		// then
 		certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
@@ -98,7 +115,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when CSR subject is invalid", func(t *testing.T) {
 		// given
-		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		wrongSubject := "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
@@ -115,10 +132,10 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when different Common Name provided", func(t *testing.T) {
 		// given
-		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
-		differentSubject := clients.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
+		differentSubject := certs.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
 
 		csr := certs.CreateCsr(t, differentSubject, clientKey)
 
@@ -132,7 +149,8 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with invalid token", func(t *testing.T) {
 		// given
-		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+
 		certInfo := configuration.CertificateSigningRequestInfo
 
 		csr := certs.CreateCsr(t, certInfo.Subject, clientKey)
@@ -149,7 +167,8 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with already used token", func(t *testing.T) {
 		// given
-		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+
 		certInfo := configuration.CertificateSigningRequestInfo
 
 		csr := certs.CreateCsr(t, certInfo.Subject, clientKey)
@@ -168,7 +187,8 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when invalid CSR provided for signing", func(t *testing.T) {
 		// given
-		configuration := clients.GetConfiguration(t, internalClient, connectorClient, appID)
+		configuration := certs.GetConfiguration(t, directorClient, connectorClient, appID)
+
 		certToken := configuration.Token.Token
 		wrongCSR := "wrongCSR"
 
@@ -182,13 +202,18 @@ func TestCertificateGeneration(t *testing.T) {
 }
 
 func TestFullConnectorFlow(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-full-flow-app",
+	})
+	require.NoError(t, err)
+	appID := app.ID
+	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
 	t.Log("Generating certificate...")
-	certificationResult, configuration := clients.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+	certificationResult, configuration := certs.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
 
-	defer clients.Cleanup(t, configmapCleaner, certificationResult)
+	defer certs.Cleanup(t, configmapCleaner, certificationResult)
 
 	t.Log("Certificate generated. Creating secured client...")
 	certChain := certs.DecodeCertChain(t, certificationResult.CertificateChain)

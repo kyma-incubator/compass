@@ -9,19 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 )
 
 func Test_Clientset(t *testing.T) {
 
-	clientId := "abcd-efgh"
-
 	// given
-	ctx := context.TODO()
 	var err error
-	token, err := tokenService.CreateToken(ctx, clientId, tokens.ApplicationToken)
-	require.NoError(t, err)
+	token := "mock-token"
 
 	clientSet := NewConnectorClientSet(WithSkipTLSVerify(true))
 

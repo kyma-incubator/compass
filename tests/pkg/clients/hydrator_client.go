@@ -6,12 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/stretchr/testify/require"
 )
 
 type HydratorClient struct {
@@ -34,15 +31,7 @@ func NewHydratorClient(validatorURL string) *HydratorClient {
 	}
 }
 
-func (vc *HydratorClient) ResolveToken(t *testing.T, headers map[string][]string) oathkeeper.AuthenticationSession {
-	return vc.executeHydratorRequest(t, "/v1/tokens/resolve", headers)
-}
-
-func (vc *HydratorClient) ResolveCertificateData(t *testing.T, headers map[string][]string) oathkeeper.AuthenticationSession {
-	return vc.executeHydratorRequest(t, "/v1/certificate/data/resolve", headers)
-}
-
-func (vc *HydratorClient) executeHydratorRequest(t *testing.T, path string, headers map[string][]string) oathkeeper.AuthenticationSession {
+func (vc *HydratorClient) ExecuteHydratorRequest(t *testing.T, path string, headers map[string][]string) oathkeeper.AuthenticationSession {
 	authSession := oathkeeper.AuthenticationSession{}
 	marshalledSession, err := json.Marshal(authSession)
 	require.NoError(t, err)
@@ -61,9 +50,7 @@ func (vc *HydratorClient) executeHydratorRequest(t *testing.T, path string, head
 	require.NoError(t, err)
 	defer func() {
 		err := response.Body.Close()
-		if err != nil {
-			logrus.Warnf("Failed to close body: %s", err.Error())
-		}
+		require.NoError(t, err)
 	}()
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
@@ -72,4 +59,12 @@ func (vc *HydratorClient) executeHydratorRequest(t *testing.T, path string, head
 	require.NoError(t, err)
 
 	return authSessionResponse
+}
+
+func (vc *HydratorClient) ResolveCertificateData(t *testing.T, headers map[string][]string) oathkeeper.AuthenticationSession {
+	return vc.ExecuteHydratorRequest(t, "/v1/certificate/data/resolve", headers)
+}
+
+func (vc *HydratorClient) ResolveToken(t *testing.T, headers map[string][]string) oathkeeper.AuthenticationSession {
+	return vc.ExecuteHydratorRequest(t, "/v1/tokens/resolve", headers)
 }

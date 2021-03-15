@@ -74,20 +74,7 @@ func RequestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Cont
 	return &systemAuth
 }
 
-func GenerateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.OneTimeTokenForApplicationExt {
-	req := FixRequestOneTimeTokenForApplication(id)
-	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
 
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
-	require.NoError(t, err)
-
-	require.NotEmpty(t, oneTimeToken.ConnectorURL)
-	require.NotEmpty(t, oneTimeToken.Token)
-	require.NotEmpty(t, oneTimeToken.Raw)
-	require.NotEmpty(t, oneTimeToken.RawEncoded)
-	require.NotEmpty(t, oneTimeToken.LegacyConnectorURL)
-	return oneTimeToken
-}
 
 func DeleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
 	req := FixDeleteSystemAuthForIntegrationSystemRequest(id)

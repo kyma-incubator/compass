@@ -12,7 +12,10 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+=======
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 	"github.com/vektah/gqlparser"
 	"github.com/vektah/gqlparser/ast"
 )
@@ -44,8 +47,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		GenerateApplicationToken func(childComplexity int, authID string) int
-		GenerateRuntimeToken     func(childComplexity int, authID string) int
+		GenerateCSRToken func(childComplexity int, authID string) int
 	}
 
 	Query struct {
@@ -58,8 +60,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	GenerateApplicationToken(ctx context.Context, authID string) (*externalschema.Token, error)
-	GenerateRuntimeToken(ctx context.Context, authID string) (*externalschema.Token, error)
+	GenerateCSRToken(ctx context.Context, authID string) (*Token, error)
 }
 type QueryResolver interface {
 	IsHealthy(ctx context.Context) (bool, error)
@@ -80,29 +81,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Mutation.generateApplicationToken":
-		if e.complexity.Mutation.GenerateApplicationToken == nil {
+	case "Mutation.generateCSRToken":
+		if e.complexity.Mutation.GenerateCSRToken == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_generateApplicationToken_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_generateCSRToken_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.GenerateApplicationToken(childComplexity, args["authID"].(string)), true
-
-	case "Mutation.generateRuntimeToken":
-		if e.complexity.Mutation.GenerateRuntimeToken == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_generateRuntimeToken_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GenerateRuntimeToken(childComplexity, args["authID"].(string)), true
+		return e.complexity.Mutation.GenerateCSRToken(childComplexity, args["authID"].(string)), true
 
 	case "Query.isHealthy":
 		if e.complexity.Query.IsHealthy == nil {
@@ -141,6 +130,7 @@ func (e *executableSchema) Query(ctx context.Context, op *ast.OperationDefinitio
 
 func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefinition) *graphql.Response {
 	ec := executionContext{graphql.GetRequestContext(ctx), e}
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 
 	buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
 		data := ec._Mutation(ctx, op.SelectionSet)
@@ -149,6 +139,16 @@ func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefini
 		return buf.Bytes()
 	})
 
+=======
+
+	buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+		data := ec._Mutation(ctx, op.SelectionSet)
+		var buf bytes.Buffer
+		data.MarshalGQL(&buf)
+		return buf.Bytes()
+	})
+
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 	return &graphql.Response{
 		Data:       buf,
 		Errors:     ec.Errors,
@@ -180,20 +180,27 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 	&ast.Source{Name: "schema.graphql", Input: `# Token
 type Token {
     token: String! # eg.: "1edfc34g"
+=======
+	&ast.Source{Name: "schema.graphql", Input: `type Token {
+	token: String!
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 }
 
-type Query {	
-    isHealthy: Boolean!	
-}	
-
-type Mutation {	
-    # Tokens	
-    generateApplicationToken(authID: ID!): Token!
-    generateRuntimeToken(authID: ID!): Token!
+type Query {
+	isHealthy: Boolean!
 }
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
+=======
+
+type Mutation {
+	generateCSRToken(authID: ID!): Token!
+}
+
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 `},
 )
 
@@ -201,6 +208,7 @@ type Mutation {
 
 // region    ***************************** args.gotpl *****************************
 
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 func (ec *executionContext) field_Mutation_generateApplicationToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -216,6 +224,9 @@ func (ec *executionContext) field_Mutation_generateApplicationToken_args(ctx con
 }
 
 func (ec *executionContext) field_Mutation_generateRuntimeToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+=======
+func (ec *executionContext) field_Mutation_generateCSRToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -279,6 +290,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 func (ec *executionContext) _Mutation_generateApplicationToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -324,6 +336,9 @@ func (ec *executionContext) _Mutation_generateApplicationToken(ctx context.Conte
 }
 
 func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+=======
+func (ec *executionContext) _Mutation_generateCSRToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -340,7 +355,7 @@ func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, 
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_generateRuntimeToken_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_generateCSRToken_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -349,7 +364,7 @@ func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().GenerateRuntimeToken(rctx, args["authID"].(string))
+		return ec.resolvers.Mutation().GenerateCSRToken(rctx, args["authID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -361,10 +376,17 @@ func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, 
 		}
 		return graphql.Null
 	}
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 	res := resTmp.(*externalschema.Token)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx, field.Selections, res)
+=======
+	res := resTmp.(*Token)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚋinternalschemaᚐToken(ctx, field.Selections, res)
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 }
 
 func (ec *executionContext) _Query_isHealthy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -479,7 +501,11 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 func (ec *executionContext) _Token_token(ctx context.Context, field graphql.CollectedField, obj *externalschema.Token) (ret graphql.Marshaler) {
+=======
+func (ec *executionContext) _Token_token(ctx context.Context, field graphql.CollectedField, obj *Token) (ret graphql.Marshaler) {
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1690,13 +1716,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "generateApplicationToken":
-			out.Values[i] = ec._Mutation_generateApplicationToken(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "generateRuntimeToken":
-			out.Values[i] = ec._Mutation_generateRuntimeToken(ctx, field)
+		case "generateCSRToken":
+			out.Values[i] = ec._Mutation_generateCSRToken(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -1757,7 +1778,11 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var tokenImplementors = []string{"Token"}
 
+<<<<<<< HEAD:components/connector/pkg/graphql/internalschema/schema_gen.go
 func (ec *executionContext) _Token(ctx context.Context, sel ast.SelectionSet, obj *externalschema.Token) graphql.Marshaler {
+=======
+func (ec *executionContext) _Token(ctx context.Context, sel ast.SelectionSet, obj *Token) graphql.Marshaler {
+>>>>>>> master:components/director/pkg/graphql/internalschema/schema_gen.go
 	fields := graphql.CollectFields(ec.RequestContext, sel, tokenImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -2069,11 +2094,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v externalschema.Token) graphql.Marshaler {
+func (ec *executionContext) marshalNToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚋinternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v Token) graphql.Marshaler {
 	return ec._Token(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v *externalschema.Token) graphql.Marshaler {
+func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚋinternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v *Token) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

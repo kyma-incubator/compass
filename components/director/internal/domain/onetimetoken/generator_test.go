@@ -1,4 +1,4 @@
-package tokens
+package onetimetoken
 
 import (
 	"encoding/base64"

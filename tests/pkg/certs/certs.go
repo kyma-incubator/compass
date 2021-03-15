@@ -9,8 +9,12 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/model"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 
@@ -231,4 +235,73 @@ func AssertCertificate(t *testing.T, expectedSubject string, certificationResult
 	CheckCertificateChainOrder(t, certChain)
 	certificates := []*x509.Certificate{DecodeCert(t, clientCert), DecodeCert(t, caCert)}
 	CheckIfCertIsSigned(t, certificates)
+}
+
+type ConfigurationResponse struct {
+	Result externalschema.Configuration `json:"result"`
+}
+
+type CertificationResponse struct {
+	Result externalschema.CertificationResult `json:"result"`
+}
+
+type RevokeResult struct {
+	Result bool `json:"result"`
+}
+
+func GenerateRuntimeCertificate(t *testing.T, token *externalschema.Token, connectorClient *clients.TokenSecuredClient, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
+}
+
+func GetConfiguration(t *testing.T, staticClient *clients.StaticUserClient, connectorClient *clients.TokenSecuredClient, appID string) externalschema.Configuration {
+	token, err := staticClient.GenerateApplicationToken(t, appID)
+	require.NoError(t, err)
+
+	configuration, err := connectorClient.Configuration(token.Token)
+	require.NoError(t, err)
+	AssertConfiguration(t, configuration)
+
+	return configuration
+}
+
+func GenerateApplicationCertificate(t *testing.T, staticClient *clients.StaticUserClient, connectorClient *clients.TokenSecuredClient, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	token, err := staticClient.GenerateApplicationToken(t, appID)
+	require.NoError(t, err)
+
+	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
+}
+
+func generateCertificateForToken(t *testing.T, connectorClient *clients.TokenSecuredClient, token string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	configuration, err := connectorClient.Configuration(token)
+	require.NoError(t, err)
+	AssertConfiguration(t, configuration)
+
+	certToken := configuration.Token.Token
+	subject := configuration.CertificateSigningRequestInfo.Subject
+
+	csr := CreateCsr(t, subject, clientKey)
+	require.NoError(t, err)
+
+	result, err := connectorClient.SignCSR(EncodeBase64(csr), certToken)
+	require.NoError(t, err)
+
+	return result, configuration
+}
+
+func ChangeCommonName(subject, commonName string) string {
+	splitSubject := ParseSubject(subject)
+
+	splitSubject.CommonName = commonName
+
+	return splitSubject.String()
+}
+
+func CreateCertDataHeader(subject, hash string) string {
+	return fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=%s;Subject="%s";URI=`, hash, subject)
+}
+
+func Cleanup(t *testing.T, configmapCleaner *k8s.ConfigmapCleaner, certificationResult externalschema.CertificationResult) {
+	hash := GetCertificateHash(t, certificationResult.ClientCertificate)
+	err := configmapCleaner.CleanRevocationList(hash)
+	assert.NoError(t, err)
 }

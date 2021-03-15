@@ -1,5 +1,16 @@
 package fixtures
 
+import (
+	"context"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/require"
+	"testing"
+)
+
 func CreateBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID string, input graphql.BundleCreateInput) graphql.BundleExt {
 	in, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(input)
 	require.NoError(t, err)

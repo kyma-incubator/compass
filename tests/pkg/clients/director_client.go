@@ -66,7 +66,7 @@ type TenantsResponse struct {
 	Result []*schema.Tenant
 }
 
-func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) (Client, error) {
+func NewDirectorClient(directorURL, directorHealthzURL, tenant string, scopes []string) (Client, error) {
 
 	err := waitUntilDirectorIsReady(directorHealthzURL)
 	if err != nil {

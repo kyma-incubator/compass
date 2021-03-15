@@ -39,7 +39,11 @@ spec:
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
+<<<<<<< HEAD:chart/compass/templates/tests/external-services-mock/external-services-mock-test.yaml
               value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.port }}/healthz"
+=======
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz"
+>>>>>>> master:chart/compass/templates/gateway-external-services-integration.yaml
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
             - name: USER_EMAIL

@@ -50,7 +50,7 @@ func TestConnector(t *testing.T) {
 	cfg := config.ConnectivityAdapterTestConfig{}
 	config.ReadConfig(&cfg)
 
-	client, err := clients.NewClient(
+	client, err := clients.NewDirectorClient(
 		cfg.DirectorUrl,
 		cfg.DirectorHealthzUrl,
 		cfg.Tenant,

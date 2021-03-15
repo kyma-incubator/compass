@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"crypto/rsa"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -12,14 +13,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,13 +28,14 @@ const (
 )
 
 var (
-	cfg              config.ConnectorTestConfig
-	internalClient   *clients.InternalClient
-	hydratorClient   *clients.HydratorClient
-	connectorClient  *clients.TokenSecuredClient
-	configmapCleaner *k8s.ConfigmapCleaner
-
-	clientKey *rsa.PrivateKey
+	cfg                     config.ConnectorTestConfig
+	directorClient          *clients.StaticUserClient
+	connectorHydratorClient *clients.HydratorClient
+	directorHydratorClient  *clients.HydratorClient
+	connectorClient         *clients.TokenSecuredClient
+	configmapCleaner        *k8s.ConfigmapCleaner
+	ctx                     context.Context
+	clientKey               *rsa.PrivateKey
 )
 
 func TestMain(m *testing.M) {
@@ -42,15 +43,21 @@ func TestMain(m *testing.M) {
 	cfg := config.ConnectorTestConfig{}
 	config.ReadConfig(&cfg)
 
+	ctx = context.Background()
+
 	key, err := certs.GenerateKey()
 	if err != nil {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-
 	clientKey = key
-	internalClient = clients.NewInternalClient(cfg.InternalConnectorURL)
-	hydratorClient = clients.NewHydratorClient(cfg.HydratorURL)
+	directorClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.Tenant)
+	if err != nil {
+		logrus.Errorf("Failed to create director client: %s", err.Error())
+		os.Exit(1)
+	}
+	connectorHydratorClient = clients.NewHydratorClient(cfg.ConnectorHydratorURL)
+	directorHydratorClient = clients.NewHydratorClient(cfg.DirectorHydratorURL)
 	connectorClient = clients.NewTokenSecuredClient(cfg.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()
