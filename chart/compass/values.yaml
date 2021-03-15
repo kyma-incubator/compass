@@ -324,9 +324,6 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    tests:
-      defaultCheckInterval: 15s
-      defaultTestTimeout: 10m
 
   tenantFetchers:
     job1:
