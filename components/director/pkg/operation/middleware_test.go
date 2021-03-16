@@ -84,7 +84,6 @@ func TestInterceptResponse(t *testing.T) {
 		require.Len(t, ext, len(*operations))
 
 		for _, op := range *operations {
-
 			assertOperationInResponseExtension(t, ext, op)
 		}
 	})
@@ -152,6 +151,7 @@ func TestInterceptResponse(t *testing.T) {
 				ResourceType:      resource.Application,
 			},
 		}
+
 		ctx := gqlContext(gqlResults, operations)
 		dummyResolver := dummyMiddlewareResolver{
 			gqlResults: gqlResults,
