@@ -11,6 +11,10 @@ HasScopes directive is added automatically to every query and mutation by scopes
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
 """
+Sanitize directive marks mutation arguments that will be validated.
+"""
+directive @sanitize(path: String!) on FIELD_DEFINITION
+"""
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
@@ -665,7 +669,7 @@ type APISpec {
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.api_spec.fetch_request")
 }
 
 type Application {
@@ -677,11 +681,11 @@ type Application {
 	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
-	webhooks: [Webhook!]
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
-	auths: [SystemAuth!]
+	auths: [SystemAuth!] @sanitize(path: "graphql.field.application.auths")
 	eventingConfiguration: ApplicationEventingConfiguration
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -708,7 +712,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
-	webhooks: [Webhook!]
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -750,12 +754,12 @@ type Bundle {
 	name: String!
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): BundleInstanceAuth
-	instanceAuths: [BundleInstanceAuth!]!
+	instanceAuth(id: ID!): BundleInstanceAuth @sanitize(path: "graphql.field.bundle.instance_auth")
+	instanceAuths: [BundleInstanceAuth!] @sanitize(path: "graphql.field.bundle.instance_auths")
 	"""
 	When defined, all Auth requests fallback to defaultInstanceAuth.
 	"""
-	defaultInstanceAuth: Auth
+	defaultInstanceAuth: Auth @sanitize(path: "graphql.field.bundle.default_instance_auth")
 	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
 	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
 	documents(first: Int = 200, after: PageCursor): DocumentPage
@@ -831,7 +835,7 @@ type Document {
 	"""
 	kind: String
 	data: CLOB
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.document.fetch_request")
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -871,7 +875,7 @@ type EventSpec {
 	data: CLOB
 	type: EventSpecType!
 	format: SpecFormat!
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.event_spec.fetch_request")
 }
 
 """
@@ -909,7 +913,7 @@ type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!]
+	auths: [SystemAuth!] @sanitize(path: "graphql.field.integration_system.auths")
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -973,7 +977,7 @@ type Runtime {
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!]
+	auths: [SystemAuth!] @sanitize(path: "graphql.field.runtime.auths")
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
