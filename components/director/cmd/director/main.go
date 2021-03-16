@@ -519,6 +519,8 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
 	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
+	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
+
 	internalRouter.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
