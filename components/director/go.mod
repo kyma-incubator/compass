@@ -19,7 +19,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jmoiron/sqlx v1.3.1
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210311194945-173a509b57cc
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210315172259-e186b4cac80b
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892
 	github.com/lestrrat-go/iter v1.0.0
 	github.com/lestrrat-go/jwx v1.1.4
@@ -49,5 +49,3 @@ require (
 	k8s.io/kube-openapi v0.0.0-20200410163147-594e756bea31 // indirect
 	sigs.k8s.io/controller-runtime v0.5.0 // DO NOT BUMP
 )
-
-replace github.com/kyma-incubator/compass/components/connector => ../connector

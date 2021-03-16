@@ -561,7 +561,7 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 	}{
 		{
 			Name: "ExpectedValid",
-			Value:graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},

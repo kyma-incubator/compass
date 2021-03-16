@@ -23,6 +23,7 @@ import (
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 	"github.com/tidwall/sjson"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -40,11 +41,11 @@ func NewMiddleware(directorURL string) *middleware {
 	}
 }
 
-
 // ExtensionName should be a CamelCase string version of the extension which may be shown in stats and logging.
 func (m middleware) ExtensionName() string {
 	return "OperationsExtension"
 }
+
 // Validate is called when adding an extension to the server, it allows validation against the servers schema.
 func (m middleware) Validate(schema gqlgen.ExecutableSchema) error {
 	return nil
@@ -56,7 +57,6 @@ func (m *middleware) InterceptOperation(ctx context.Context, next gqlgen.Operati
 
 	return next(ctx)
 }
-
 
 // InterceptResponse enriches Async mutation responses with Operation URL location information and also empties the data property of the graphql response for such requests
 func (m *middleware) InterceptResponse(ctx context.Context, next gqlgen.ResponseHandler) *gqlgen.Response {
@@ -91,19 +91,31 @@ func (m *middleware) InterceptResponse(ctx context.Context, next gqlgen.Response
 			}
 		}
 
-		bytes, _ := resp.Data.MarshalJSON()
-		for _, prop := range jsonPropsToDelete {
-			var err error
-
-			bytes, err = sjson.DeleteBytes(bytes, prop)
-			if err != nil {
-				log.C(ctx).Errorf("Unable to process and delete unnecessary bytes from response body: %s", err.Error())
-				return gqlgen.ErrorResponse(ctx, "failed to prepare response body")				//return []byte(`{"error": "failed to prepare response body"}`)
-			}
-
+		newData, err := cleanupFields(resp, jsonPropsToDelete)
+		if err != nil {
+			log.C(ctx).Errorf("Unable to process and delete unnecessary bytes from response body: %s", err.Error())
+			return gqlgen.ErrorResponse(ctx, "failed to prepare response body") //return []byte(`{"error": "failed to prepare response body"}`)
 		}
-		resp.Data = bytes
+
+		resp.Data = newData
 	}
 
 	return resp
+}
+
+func cleanupFields(resp *gqlgen.Response, jsonPropsToDelete []string) ([]byte, error) {
+	bytes, err := resp.Data.MarshalJSON()
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling current data body")
+	}
+
+	for _, prop := range jsonPropsToDelete {
+		var err error
+		bytes, err = sjson.DeleteBytes(bytes, prop)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("while removing property %s from data body", prop))
+		}
+	}
+
+	return bytes, nil
 }
