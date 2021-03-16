@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx/broker"
 
 	"io/ioutil"
 	"net/http"
@@ -171,7 +172,7 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 
 }
 
-func createCatalogRequest(t *testing.T, ctx *clients.SystemBrokerTestContext) *http.Request {
+func createCatalogRequest(t *testing.T, ctx *broker.SystemBrokerTestContext) *http.Request {
 	req, err := http.NewRequest(http.MethodGet, ctx.SystemBrokerURL+"/v2/catalog", nil)
 	require.NoError(t, err)
 
@@ -180,7 +181,7 @@ func createCatalogRequest(t *testing.T, ctx *clients.SystemBrokerTestContext) *h
 	return req
 }
 
-func createORDServiceRequest(t *testing.T, ctx *clients.SystemBrokerTestContext, apiId, specId string) *http.Request {
+func createORDServiceRequest(t *testing.T, ctx *broker.SystemBrokerTestContext, apiId, specId string) *http.Request {
 	req, err := http.NewRequest(http.MethodGet, ctx.ORDServiceURL+fmt.Sprintf("/api/%s/specification/%s", apiId, specId), nil)
 	require.NoError(t, err)
 
@@ -190,7 +191,7 @@ func createORDServiceRequest(t *testing.T, ctx *clients.SystemBrokerTestContext,
 	return req
 }
 
-func getSecuredClientByContext(t *testing.T, ctx *clients.SystemBrokerTestContext, runtimeID string) (*http.Client, externalschema.Configuration, []*x509.Certificate) {
+func getSecuredClientByContext(t *testing.T, ctx *broker.SystemBrokerTestContext, runtimeID string) (*http.Client, externalschema.Configuration, []*x509.Certificate) {
 	logrus.Infof("generating one-time token for runtime with id: %s", runtimeID)
 	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx.Context, ctx.DexGraphqlClient, ctx.Tenant, runtimeID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}

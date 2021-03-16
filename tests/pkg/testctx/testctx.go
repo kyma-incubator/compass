@@ -33,7 +33,6 @@ type TestContext struct {
 	CurrentScopes     []string
 }
 
-//todo rename init
 func init() {
 	var err error
 	Tc, err = NewTestContext()

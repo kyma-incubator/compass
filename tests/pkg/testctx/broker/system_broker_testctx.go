@@ -1,9 +1,10 @@
-package clients
+package broker
 
 import (
 	"context"
 	"crypto/rsa"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
@@ -21,7 +22,7 @@ type SystemBrokerTestContext struct {
 
 	ClientKey *rsa.PrivateKey
 
-	ConnectorTokenSecuredClient *TokenSecuredClient
+	ConnectorTokenSecuredClient *clients.TokenSecuredClient
 	DexGraphqlClient            *gcli.Client
 }
 
@@ -43,7 +44,7 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		DirectorURL:                 cfg.DirectorURL,
 		ORDServiceURL:               cfg.ORDServiceURL,
 		ClientKey:                   clientKey,
-		ConnectorTokenSecuredClient: NewTokenSecuredClient(cfg.ConnectorURL),
+		ConnectorTokenSecuredClient: clients.NewTokenSecuredClient(cfg.ConnectorURL),
 		DexGraphqlClient:            gql.NewAuthorizedGraphQLClientWithCustomURL(token, cfg.DirectorURL),
 	}, nil
 }

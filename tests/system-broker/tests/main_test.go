@@ -1,15 +1,15 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx/broker"
 	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 )
 
-var testCtx *clients.SystemBrokerTestContext
+var testCtx *broker.SystemBrokerTestContext
 
 func TestMain(m *testing.M) {
 	logrus.Info("Starting System Broker Tests")
@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 	cfg := config.SystemBrokerTestConfig{}
 	config.ReadConfig(&cfg)
 
-	ctx, err := clients.NewSystemBrokerTestContext(cfg)
+	ctx, err := broker.NewSystemBrokerTestContext(cfg)
 	if err != nil {
 		logrus.Errorf("Failed to create test context: %s", err.Error())
 		os.Exit(1)
