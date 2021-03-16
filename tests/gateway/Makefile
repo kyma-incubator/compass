@@ -11,7 +11,8 @@ VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
 verify:: vet
 
-test-local: ;
+test-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
@@ -20,7 +21,7 @@ ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 e2e-test:
-	@sed "s/PLACEHOLDER/gateway/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
+	@../../installation/scripts/testing.sh gateway
 
 e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests

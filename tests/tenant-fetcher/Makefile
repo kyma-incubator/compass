@@ -2,6 +2,8 @@ APP_NAME = tenant-fetcher-tests
 APP_PATH = tests/tenant-fetcher
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
+export GO111MODULE = on
+export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
@@ -11,10 +13,11 @@ resolve-local:
 ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-test-local: ;
+test-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
 e2e-test:
-	@sed "s/PLACEHOLDER/tenant-fetcher/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
+	@../../installation/scripts/testing.sh tenant-fetcher
 
 e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests

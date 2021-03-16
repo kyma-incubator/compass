@@ -300,6 +300,6 @@ func deleteApplicationOnExit(t *testing.T, ctx context.Context, gqlClient *gcli.
 func deleteApplicationTemplateOnExit(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appTemplateID string, tenant string) {
 	appTemplate := fixtures.GetApplicationTemplate(t, ctx, gqlClient, tenant, appTemplateID)
 	if appTemplate.Name != "" {
-		fixtures.DeleteApplicationTemplate(t, ctx, gqlClient, appTemplateID, tenant)
+		fixtures.DeleteApplicationTemplate(t, ctx, gqlClient, tenant, appTemplateID)
 	}
 }

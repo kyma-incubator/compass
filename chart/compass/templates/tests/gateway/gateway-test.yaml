@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-gateway
   labels:
-    app: {{ .Chart.Name }}-gateway-tests
+    app: {{ .Chart.Name }}-gateway-tests-app
     app.kubernetes.io/name: {{ .Chart.Name }}-gateway-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-gateway-tests
+        app: {{ .Chart.Name }}-gateway-tests-app
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

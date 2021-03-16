@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-system-broker
   labels:
-    app: {{ .Chart.Name }}-system-broker-tests
+    app: {{ .Chart.Name }}-system-broker-tests-app
     app.kubernetes.io/name: {{ .Chart.Name }}-system-broker-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-system-broker-tests
+        app: {{ .Chart.Name }}-system-broker-tests-app
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

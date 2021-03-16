@@ -10,7 +10,8 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 # We have to override test-local, because we need to run director with database as docker containers and connected with custom network
 # and the container itself has to be connected to the network
-test-local: ;
+test-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
@@ -22,7 +23,7 @@ ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 e2e-test:
-	@sed "s/PLACEHOLDER/director/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
+	@../../installation/scripts/testing.sh director
 
 e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests

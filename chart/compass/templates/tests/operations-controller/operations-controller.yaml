@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-operations-controller
   labels:
-    app: {{ .Chart.Name }}-operations-controller-tests
+    app: {{ .Chart.Name }}-operations-controller-tests-app
     release: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" . }}-operations-controller-tests
@@ -17,7 +17,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-operations-controller-tests
+        app: {{ .Chart.Name }}-operations-controller-tests-app
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

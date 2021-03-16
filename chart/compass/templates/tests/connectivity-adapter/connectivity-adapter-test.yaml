@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-connectivity-adapter
   labels:
-    app: {{ .Chart.Name }}-connectivity-adapter-tests
+    app: {{ .Chart.Name }}-connectivity-adapter-tests-app
     release: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" . }}-connectivity-adapter-tests
@@ -17,7 +17,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-connectivity-adapter-tests
+        app: {{ .Chart.Name }}-connectivity-adapter-tests-app
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

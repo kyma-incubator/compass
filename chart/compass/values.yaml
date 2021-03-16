@@ -377,6 +377,11 @@ global:
   externalServicesMock:
     enabled: false
 
+  namespaces:
+    - name: compass-system
+    - name: kyma-system
+    - name: test
+
   tests:
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local

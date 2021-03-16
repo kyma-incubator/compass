@@ -5,7 +5,8 @@ SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-test-local: ;
+test-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
@@ -14,7 +15,7 @@ ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 e2e-test:
-	@sed "s/PLACEHOLDER/system-broker/" ../test-suite.yaml | kubectl -n kyma-system apply -f -
+	@../../installation/scripts/testing.sh system-broker
 
 e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests

@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-connector
   labels:
-    app: {{ .Chart.Name }}-connector-tests
+    app: {{ .Chart.Name }}-connector-tests-app
     release: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" . }}-connector-tests
@@ -16,7 +16,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-connector-tests
+        app: {{ .Chart.Name }}-connector-tests-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-connector-tests
       containers:
