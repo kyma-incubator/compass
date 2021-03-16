@@ -36,8 +36,7 @@ const (
 	operationID = "6188b606-5a60-451a-8065-d2d13b2245ff"
 )
 
-func TestExtensionHandlerOperation(t *testing.T) {
-
+func TestInterceptResponse(t *testing.T) {
 	t.Run("when no operations are found in the context, no location extensions would be attached", func(t *testing.T) {
 		gqlResults := []gqlResult{
 			{
@@ -50,8 +49,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 		}
 
 		middleware := operation.NewMiddleware(directorURL)
-		ctx := operation.SaveToContext(context.Background(), &[]*operation.Operation{})
-		resp := middleware.InterceptResponse(ctx, dummyResolver.SuccessResolve)
+		resp := middleware.InterceptResponse(context.Background(), dummyResolver.SuccessResolve)
 
 		require.Equal(t, gqlResultResponse(gqlResults[0].resultName), []byte(resp.Data))
 	})
@@ -171,6 +169,19 @@ func TestExtensionHandlerOperation(t *testing.T) {
 	})
 }
 
+func TestInterceptOperation(t *testing.T) {
+	t.Run("adds empty operations slice to context", func(t *testing.T) {
+		middleware := operation.NewMiddleware(directorURL)
+		middleware.InterceptOperation(context.Background(), func(ctx context.Context) gqlgen.ResponseHandler {
+			operations, ok := operation.FromCtx(ctx)
+			require.True(t, ok)
+			require.NotNil(t, operations)
+			require.Len(t, *operations, 0)
+			return nil
+		})
+	})
+}
+
 func assertOperationInResponseExtension(t *testing.T, ext interface{}, op *operation.Operation) {
 	extArray, ok := ext.([]string)
 	require.True(t, ok)
@@ -189,7 +200,6 @@ type dummyMiddlewareResolver struct {
 	gqlResults []gqlResult
 }
 
-// TODO remove useless context
 func (d *dummyMiddlewareResolver) SuccessResolve(_ context.Context) *gqlgen.Response {
 	body := ""
 	for i, gqlResult := range d.gqlResults {
