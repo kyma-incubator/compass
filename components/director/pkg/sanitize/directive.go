@@ -1,13 +1,13 @@
-package scope
+package sanitize
 
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 //go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
@@ -25,14 +25,15 @@ func NewDirective(getter ScopesGetter) *directive {
 	}
 }
 
-func (d *directive) VerifyScopes(ctx context.Context, _ interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
-	actualScopes, err := LoadFromContext(ctx)
+func (d *directive) Sanitize(ctx context.Context, obj interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
+	actualScopes, err := scope.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	requiredScopes, err := d.scopesGetter.GetRequiredScopes(scopesDefinition)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting required scopes")
+		log.C(ctx).Warnf("Stripping sensitive data from %T", obj)
+		return nil, nil
 	}
 
 	if !str.Matches(actualScopes, requiredScopes) {
