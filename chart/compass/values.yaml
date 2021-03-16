@@ -13,7 +13,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1767"
+      version: "PR-1768" # TODO remove
     connectivity_adapter:
       dir:
       version: "PR-1750"
@@ -22,13 +22,13 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1767"
+      version: "PR-1768"
     gateway:
       dir:
       version: "PR-1750"
     operations_controller:
       dir:
-      version: "PR-1762"
+      version: "PR-1768"
     tenant_fetcher:
       dir:
       version: "PR-1750"
