@@ -41,5 +41,3 @@ require (
 	k8s.io/client-go v0.17.2 // DO NOT BUMP
 	sigs.k8s.io/controller-runtime v0.5.0 // DO NOT BUMP
 )
-
-replace github.com/kyma-incubator/compass/components/connector => ../connector
