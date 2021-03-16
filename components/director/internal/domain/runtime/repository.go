@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/google/uuid"
@@ -29,6 +28,7 @@ type pgRepository struct {
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
 	pageableQuerier    repo.PageableQuerier
+	lister             repo.Lister
 	creator            repo.Creator
 	updater            repo.Updater
 }
@@ -40,6 +40,7 @@ func NewRepository() *pgRepository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		deleter:            repo.NewDeleter(resource.Runtime, runtimeTable, tenantColumn),
 		pageableQuerier:    repo.NewPageableQuerier(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		lister:             repo.NewLister(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
 		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
 		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 	}
@@ -118,6 +119,44 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	}
 
 	return runtimeModel, nil
+}
+
+func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	var entities RuntimeCollection
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	err = r.lister.List(ctx, tenant, &entities, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *pgRepository) multipleFromEntities(entities RuntimeCollection) ([]*model.Runtime, error) {
+	var items []*model.Runtime
+	for _, ent := range entities {
+		model, err := ent.ToModel()
+		if err != nil {
+			continue
+		}
+		items = append(items, model)
+	}
+	return items, nil
 }
 
 type RuntimeCollection []Runtime
