@@ -34,7 +34,6 @@ func NewRepository(configMapManager Manager, configMapName string, revokedCertsC
 	}
 }
 
-
 func (r *revokedCertifiatesRepository) Insert(hash string) error {
 	configMap, err := r.configMapManager.Get(r.configMapName, metav1.GetOptions{})
 	if err != nil {

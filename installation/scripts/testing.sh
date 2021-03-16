@@ -10,6 +10,7 @@ readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-
 
 suiteName="compass-e2e-tests"
 testDefinitionName=$1
+echo "${1:-All tests}"
 echo "----------------------------"
 echo "- Testing Compass..."
 echo "----------------------------"

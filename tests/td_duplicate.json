@@ -1,0 +1,117 @@
+{
+  "apiVersion": "testing.kyma-project.io/v1alpha1",
+  "kind": "TestDefinition",
+  "metadata": {
+    "annotations": {
+      "meta.helm.sh/release-name": "compass",
+      "meta.helm.sh/release-namespace": "compass-system"
+    },
+    "labels": {
+      "app": "compass-connector-tests",
+      "app.kubernetes.io/instance": "compass",
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/name": "compass-connector-tests",
+      "helm.sh/chart": "compass-0.1.0",
+      "release": "compass"
+    },
+    "name": "compass-e2e-connector-local",
+    "namespace": "kyma-system",
+    "resourceVersion": "15752"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "sidecar.istio.io/inject": "true"
+        },
+        "labels": {
+          "app": "compass-connector-tests"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "-c",
+              "sleep 99999"
+            ],
+            "command": [
+              "/bin/sh"
+            ],
+            "env": [
+              {
+                "name": "APP_CONNECTOR_URL",
+                "value": "https://compass-gateway.kyma.local/connector/graphql"
+              },
+              {
+                "name": "APP_DIRECTOR_URL",
+                "value": "https://compass-gateway.kyma.local/director/graphql"
+              },
+              {
+                "name": "APP_CONNECTOR_HYDRATOR_URL",
+                "value": "http://compass-connector.compass-system.svc.cluster.local:8080"
+              },
+              {
+                "name": "APP_DIRECTOR_HYDRATOR_URL",
+                "value": "http://compass-director.compass-system.svc.cluster.local:8080"
+              },
+              {
+                "name": "APP_CERTIFICATE_DATA_HEADER",
+                "value": "Certificate-Data"
+              },
+              {
+                "name": "APP_REVOCATION_CONFIG_MAP_NAMESPACE",
+                "value": "compass-system"
+              },
+              {
+                "name": "APP_REVOCATION_CONFIG_MAP_NAME",
+                "value": "revocations-config"
+              },
+              {
+                "name": "APP_TENANT",
+                "value": "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+              },
+              {
+                "name": "DOMAIN",
+                "value": "kyma.local"
+              },
+              {
+                "name": "USER_EMAIL",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "email",
+                    "name": "admin-user"
+                  }
+                }
+              },
+              {
+                "name": "USER_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "password",
+                    "name": "admin-user"
+                  }
+                }
+              }
+            ],
+            "image": "eu.gcr.io/kyma-project/incubator/compass-e2e-tests:PR-1760",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "connector-tests"
+          }
+        ],
+        "hostAliases": [
+          {
+            "hostnames": [
+              "dex.kyma.local",
+              "compass-gateway.kyma.local",
+              "compass-gateway-mtls.kyma.local"
+            ],
+            "ip": "192.168.49.2"
+          }
+        ],
+        "restartPolicy": "Never",
+        "serviceAccountName": "compass-connector-tests"
+      }
+    }
+  }
+}
