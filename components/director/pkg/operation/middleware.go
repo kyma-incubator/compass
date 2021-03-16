@@ -47,10 +47,11 @@ func (m middleware) ExtensionName() string {
 }
 
 // Validate is called when adding an extension to the server, it allows validation against the servers schema.
-func (m middleware) Validate(schema gqlgen.ExecutableSchema) error {
+func (m middleware) Validate(_ gqlgen.ExecutableSchema) error {
 	return nil
 }
 
+// InterceptOperation saves an empty slice of async operations into the graphql operation context.
 func (m *middleware) InterceptOperation(ctx context.Context, next gqlgen.OperationHandler) gqlgen.ResponseHandler {
 	operations := make([]*Operation, 0)
 	ctx = SaveToContext(ctx, &operations)
@@ -58,12 +59,16 @@ func (m *middleware) InterceptOperation(ctx context.Context, next gqlgen.Operati
 	return next(ctx)
 }
 
-// InterceptResponse enriches Async mutation responses with Operation URL location information and also empties the data property of the graphql response for such requests
+// InterceptResponse enriches Async mutation responses with Operation URL location information and also empties the data property of the graphql response for such requests.
 func (m *middleware) InterceptResponse(ctx context.Context, next gqlgen.ResponseHandler) *gqlgen.Response {
 	resp := next(ctx)
 
+	operations, ok := FromCtx(ctx)
+	if !ok {
+		return resp
+	}
+
 	locations := make([]string, 0)
-	operations, _ := FromCtx(ctx)
 	for _, operation := range *operations {
 		operationURL := fmt.Sprintf("%s/%s/%s", m.directorURL, operation.ResourceType, operation.ResourceID)
 		locations = append(locations, operationURL)
