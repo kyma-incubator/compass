@@ -84,6 +84,7 @@ func (m *middleware) InterceptResponse(ctx context.Context, next gqlgen.Response
 			for _, gqlSelection := range gqlOperation.SelectionSet {
 				gqlField, ok := gqlSelection.(*ast.Field)
 				if !ok {
+					log.C(ctx).Errorf("Unable to prepare final response: gql field has unexpected type %T instead of *ast.Field", gqlSelection)
 					return gqlgen.ErrorResponse(ctx, "unable to prepare final response")
 				}
 
@@ -98,7 +99,7 @@ func (m *middleware) InterceptResponse(ctx context.Context, next gqlgen.Response
 
 		newData, err := cleanupFields(resp, jsonPropsToDelete)
 		if err != nil {
-			log.C(ctx).Errorf("Unable to process and delete unnecessary bytes from response body: %s", err.Error())
+			log.C(ctx).WithError(err).Errorf("Unable to process and delete unnecessary bytes from response body: %s", err.Error())
 			return gqlgen.ErrorResponse(ctx, "failed to prepare response body")
 		}
 
