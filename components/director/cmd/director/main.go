@@ -9,7 +9,6 @@ import (
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
@@ -226,12 +225,11 @@ func main() {
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 
-	gqlServ := handler.New(executableSchema)
-	gqlServ.AddTransport(transport.POST{})
-
+	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(operationMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
 	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
+
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
@@ -514,13 +512,13 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 		},
 	}
 
-	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
-
 	internalRouter := mux.NewRouter()
-	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	gqlHandler := handler.New(internalExecutableSchema)
+	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
+	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
 	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
+
+	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	internalRouter.Use(middlewares...)
 
