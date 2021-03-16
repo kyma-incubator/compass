@@ -16,6 +16,7 @@ type PackageRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
+	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error)
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -114,4 +115,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.Package, error) {
 	}
 
 	return pkg, nil
+}
+
+func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.pkgRepo.ListByApplicationID(ctx, tnt, appID)
 }

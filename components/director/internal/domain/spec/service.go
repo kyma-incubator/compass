@@ -158,6 +158,15 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	return nil
 }
 
+func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
+}
+
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
