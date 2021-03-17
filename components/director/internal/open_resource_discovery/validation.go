@@ -24,12 +24,13 @@ const (
 	//TODO: further clarification is needed as what is required by the spec
 	//TombstoneOrdIDRegex     = "^([a-zA-Z0-9._\\-]+):(package|apiResource|eventResource):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 
-	StringArrayElementRegex = "^[a-zA-Z0-9 -\\.\\/]*$"
-	CountryRegex            = "^[A-Z]{2}$"
-	ApiOrdIDRegex           = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	EventOrdIDRegex         = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	PPMSObjectIDRegex       = "^([0-9]+)$"
-	LabelsKeyRegex          = "^[a-zA-Z0-9-_.]*$"
+	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
+	CountryRegex                      = "^[A-Z]{2}$"
+	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	EventOrdIDRegex                   = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	PPMSObjectIDRegex                 = "^([0-9]+)$"
+	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
+	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 )
 
 var shortDescriptionRules = []validation.Rule{
@@ -132,6 +133,9 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURL, validation.Required, is.RequestURI),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
+		validation.Field(&api.ImplementationStandard, validation.In("sap:ord-document-api:v1", "cff:open-service-broker:v2", "sap:csn-exposure:v1", "custom")),
+		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required).Else(validation.Empty)),
 	)
 }
 

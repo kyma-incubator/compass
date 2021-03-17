@@ -1960,6 +1960,83 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Invalid `implementationStandard` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr(invalidType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandard` field is valid but `implementationStandard` field is missing for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandard` field is valid but `implementationStandard` field is not set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr(invalidType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},{
+			Name: "Missing `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is missing for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is not `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is not `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `customImplementationStandardDescription` field when `implementationStandard` field is set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
+
+				return []*open_resource_discovery.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
