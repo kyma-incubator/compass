@@ -28,6 +28,39 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
 )
 
+func TestAsyncAPIDeleteApplicationWithNoAppWebhook(t *testing.T) {
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+	appInput := graphql.ApplicationRegisterInput{
+		Name:         appName,
+		ProviderName: ptr.String("compass"),
+		//Webhooks:     []*graphql.WebhookInput{},
+	}
+
+	t.Log("Get Dex token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	t.Log(fmt.Sprintf("Registering application: %s", appName))
+	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
+	require.NoError(t, err)
+
+	registerRequest := fixRegisterApplicationRequest(appInputGQL)
+	app := graphql.ApplicationExt{}
+	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
+	require.NoError(t, err)
+	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
+	require.Len(t, app.Webhooks, 0)
+	nearCreationTime := time.Now().Add(-1 * time.Second)
+
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+
+	triggerAsyncDeletion(t, ctx, app, nearCreationTime, "", dexGraphQLClient)
+}
+
 func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -64,7 +97,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appTemplateName := "test-app-template"
+	appTemplateName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name: appTemplateName,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
@@ -112,7 +145,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appTemplateName := "test-app-template"
+	appTemplateName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name: appTemplateName,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
@@ -189,29 +222,34 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	require.NoError(t, err)
 	require.NotEmpty(t, operation)
 
-	require.Len(t, operation.Spec.WebhookIDs, 1)
-	require.Equal(t, expectedWebhookID, operation.Spec.WebhookIDs[0])
+	if len(expectedWebhookID) == 0 {
+		require.Len(t, operation.Spec.WebhookIDs, 0)
+	} else {
+		require.Len(t, operation.Spec.WebhookIDs, 1)
+		require.Equal(t, expectedWebhookID, operation.Spec.WebhookIDs[0])
 
-	t.Log(fmt.Sprintf("Verify operation CR with name %s is in progress", operationName))
-	require.Eventually(t, func() bool {
-		return isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
-	}, time.Minute*3, time.Second*5, "Waiting for state change timed out.")
+		t.Log(fmt.Sprintf("Verify operation CR with name %s is in progress", operationName))
+		require.Eventually(t, func() bool {
+			return isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
+		}, time.Minute*3, time.Second*5, "Waiting for state change timed out.")
 
-	t.Log("Verify the application status in director is 'ready:false'")
-	deletedApp := getApplication(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
-	require.NoError(t, err)
-	require.Equal(t, deletedApp.Status.Condition, graphql.ApplicationStatusConditionDeleting)
-	require.Empty(t, deletedApp.Error, "Application Error is not empty")
+		t.Log("Verify the application status in director is 'ready:false'")
+		deletedApp := getApplication(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
+		require.NoError(t, err)
+		require.Equal(t, deletedApp.Status.Condition, graphql.ApplicationStatusConditionDeleting)
+		require.Empty(t, deletedApp.Error, "Application Error is not empty")
 
-	t.Log("Verify DeletedAt in director is set and is in expected range")
-	require.NotEmpty(t, deletedApp.DeletedAt, "Application Deletion time is not empty")
-	deletedAtTime := time.Time(*deletedApp.DeletedAt)
-	require.True(t, appNearCreationTime.Before(deletedAtTime), "Deleted time is before creation time")
-	require.True(t, time.Now().After(deletedAtTime), "Deleted time is in the future")
+		t.Log("Verify DeletedAt in director is set and is in expected range")
+		require.NotEmpty(t, deletedApp.DeletedAt, "Application Deletion time is not empty")
+		deletedAtTime := time.Time(*deletedApp.DeletedAt)
+		require.True(t, appNearCreationTime.Before(deletedAtTime), "Deleted time is before creation time")
+		require.True(t, time.Now().After(deletedAtTime), "Deleted time is in the future")
 
-	t.Log("Unlock application webhook")
-	unlockWebhook(t, operationFullPath)
-	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
+		t.Log("Unlock application webhook")
+		unlockWebhook(t, operationFullPath)
+		require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
+
+	}
 
 	t.Log(fmt.Sprintf("Verify operation CR with name %s status condition is ConditionTypeReady", operationName))
 	require.Eventually(t, func() bool {

@@ -22,13 +22,13 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1743"
+      version: "PR-1766"
     gateway:
       dir:
       version: "PR-1750"
     operations_controller:
       dir:
-      version: "PR-1762"
+      version: "PR-1766"
     tenant_fetcher:
       dir:
       version: "PR-1750"
@@ -55,7 +55,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1762"
+        version: "PR-1766"
       connector:
         dir:
         version: "PR-1741"
