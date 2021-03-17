@@ -126,7 +126,6 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []m
 
 func (s *service) ListClients(ctx context.Context) ([]Client, error) {
 	return s.doPageableRequest(ctx, s.clientEndpoint)
-
 }
 
 func (s *service) GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
@@ -271,7 +270,10 @@ func (s *service) doPageableRequest(ctx context.Context, endpoint string) ([]Cli
 
 func getNextLink(resp *http.Response) string {
 	linkHeader := resp.Header.Get("Link")
-	regex := regexp.MustCompile(`<(.+)>; rel="next"`)
+	if linkHeader == "" {
+		return ""
+	}
+	regex := regexp.MustCompile(`<(.+)>; rel=\\"next\\"`)
 	rs := regex.FindStringSubmatch(linkHeader)
 	if len(rs) == 0 {
 		return ""

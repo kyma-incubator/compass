@@ -85,7 +85,9 @@ func main() {
 		scopesFromHydra := clientScopes[clientID]
 		if str.Matches(scopesFromHydra, expectedScopes) {
 			err = oAuth20Svc.UpdateClientCredentials(ctx, clientID, objType)
-			log.C(ctx).WithError(err).Error("Error while getting obj type of client with ID %s: %v", clientID, err)
+			if err != nil {
+				log.C(ctx).WithError(err).Error("Error while getting obj type of client with ID %s: %v", clientID, err)
+			}
 		}
 	}
 	log.C(ctx).Info("Finished synchronization of hydra scopes")
@@ -135,9 +137,9 @@ func getAuthsForUpdate(ctx context.Context, transact persistence.Transactioner) 
 func listOauthAuths(ctx context.Context, persist persistence.PersistenceOp) []model.SystemAuth {
 	var dest systemauth.Collection
 
-	query := "select * from system_auths where (value -> ‘Credential’ -> ‘Oauth’) != ‘null’"
+	query := "select * from system_auths where (value -> 'Credential' -> 'Oauth') is not null"
 	log.D().Debugf("Executing DB query: %s", query)
-	exitOnError(ctx, persist.Select(dest, query), "Error while getting Oauth system auths")
+	exitOnError(ctx, persist.Select(&dest, query), "Error while getting Oauth system auths")
 
 	auths, err := multipleFromEntities(dest)
 	exitOnError(ctx, err, "Error while converting entities")
