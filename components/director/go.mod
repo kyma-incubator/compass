@@ -35,6 +35,7 @@ require (
 	github.com/tidwall/gjson v1.6.8
 	github.com/tidwall/sjson v1.1.5
 	github.com/vektah/gqlparser v1.3.1
+	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
