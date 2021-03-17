@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
