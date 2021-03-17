@@ -799,6 +799,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		require.NotEmpty(t, application.ID)
 
 		defer unregisterApplicationInTenant(t, application.ID, testApp.Tenant)
+		defer updateApplicationScenariosToDefaultStateInTenant(t, ctx, application.ID, testApp.Tenant)
 		if testApp.WithinTenant {
 			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
 
@@ -946,12 +947,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		},
 		{
 			ApplicationName: "second",
-			Scenarios:       []string{"test-scenario"},
-			Hidden:          false,
-		},
-		{
-			ApplicationName: "third",
-			Scenarios:       []string{"test-scenario"},
+			Scenarios:       []string{defaultValue},
 			Hidden:          true,
 		},
 	}
@@ -1114,6 +1110,28 @@ func unregisterApplication(t *testing.T, id string) {
 		}	
 	}`, id))
 	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
+}
+
+func updateApplicationScenariosToDefaultState(t *testing.T, ctx context.Context, id string) {
+	labelKey := "scenarios"
+	defaultValue := "DEFAULT"
+
+	scenarios := []string{defaultValue}
+	var labelValue interface{} = scenarios
+
+	t.Log("Updating Application scenario to a default state")
+	setApplicationLabel(t, ctx, id, labelKey, labelValue)
+}
+
+func updateApplicationScenariosToDefaultStateInTenant(t *testing.T, ctx context.Context, id, tenantID string) {
+	labelKey := "scenarios"
+	defaultValue := "DEFAULT"
+
+	scenarios := []string{defaultValue}
+	var labelValue interface{} = scenarios
+
+	t.Logf("Updating Application scenario to a default state with tenant %s", tenantID)
+	setApplicationLabelInTenant(t, ctx, id, tenantID, labelKey, labelValue)
 }
 
 func deleteAPI(t *testing.T, id string) {

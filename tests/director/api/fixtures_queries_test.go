@@ -56,6 +56,29 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 	return label
 }
 
+func setApplicationLabelInTenant(t *testing.T, ctx context.Context, applicationID string, tenantID string, labelKey string, labelValue interface{}) graphql.Label {
+	setLabelRequest := fixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
+	label := graphql.Label{}
+
+	request := fixApplicationsRequest()
+	applicationPage := graphql.ApplicationPage{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+
+	t.Logf("%+v", applicationPage.Data)
+
+	applicationPage = graphql.ApplicationPage{}
+
+	err = tc.RunOperation(ctx, request, &applicationPage)
+
+	t.Logf("%+v", applicationPage.Data)
+
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, setLabelRequest, &label)
+	require.NoError(t, err)
+
+	return label
+}
+
 func generateClientCredentialsForApplication(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
 	req := fixRequestClientCredentialsForApplication(id)
 	out := graphql.SystemAuth{}

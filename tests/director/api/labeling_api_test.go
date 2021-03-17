@@ -350,6 +350,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	t.Log("Create application")
 	app := registerApplication(t, ctx, "app")
 	defer unregisterApplication(t, app.ID)
+	defer updateApplicationScenariosToDefaultState(t, ctx, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 	additionalValue := "ADDITIONAL"
@@ -391,18 +392,20 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixApplicationRequest(app.ID)
 	app = graphql.ApplicationExt{}
-
+	t.Log("1")
 	err = tc.RunOperation(ctx, appRequest, &app)
 	require.NoError(t, err)
-
+	t.Log("2")
 	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
 	require.True(t, ok)
-
+	t.Log("3")
 	var actualScenariosEnum []string
 	for _, v := range scenariosLabel {
 		actualScenariosEnum = append(actualScenariosEnum, v.(string))
 	}
+	t.Log("4")
 	assert.Equal(t, scenarios, actualScenariosEnum)
+	t.Log("5")
 }
 
 func TestDeleteLabelDefinition(t *testing.T) {
@@ -437,6 +440,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		t.Log("Create application")
 		app := registerApplication(t, ctx, "app")
 		defer unregisterApplication(t, app.ID)
+		defer updateApplicationScenariosToDefaultState(t, ctx, app.ID)
 
 		t.Log("Create LabelDefinition")
 		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
@@ -477,6 +481,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		t.Log("Create application")
 		app := registerApplication(t, ctx, "app")
 		defer unregisterApplication(t, app.ID)
+		defer updateApplicationScenariosToDefaultState(t, ctx, app.ID)
 
 		t.Log("Create runtime")
 		rtm := registerRuntime(t, ctx, "rtm")
@@ -509,6 +514,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		t.Log("Create application")
 		app := registerApplication(t, ctx, "app")
 		defer unregisterApplication(t, app.ID)
+		defer updateApplicationScenariosToDefaultState(t, ctx, app.ID)
 
 		t.Log("Create LabelDefinition")
 		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
@@ -548,6 +554,8 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	t.Log("Create application")
 	app := registerApplication(t, ctx, "app")
 	defer unregisterApplication(t, app.ID)
+	defer updateApplicationScenariosToDefaultState(t, ctx, app.ID)
+
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 
@@ -595,11 +603,13 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	firstApp := registerApplication(t, ctx, "first")
 	require.NotEmpty(t, firstApp.ID)
+	//defer updateApplicationScenariosToDefaultState(t, ctx, firstApp.ID)
 	defer unregisterApplication(t, firstApp.ID)
 
 	//Create second application
 	secondApp := registerApplication(t, ctx, "second")
 	require.NotEmpty(t, secondApp.ID)
+	//defer updateApplicationScenariosToDefaultState(t, ctx, secondApp.ID)
 	defer unregisterApplication(t, secondApp.ID)
 
 	//Set label "foo" on both applications
@@ -800,6 +810,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	application := registerApplicationFromInputWithinTenant(t, ctx, appInput, tenantID)
 	require.NotEmpty(t, application.ID)
 	defer unregisterApplicationInTenant(t, application.ID, tenantID)
+	defer updateApplicationScenariosToDefaultStateInTenant(t, ctx, application.ID, tenantID)
 
 	//WHEN
 	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{"Christmas"})
