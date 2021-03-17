@@ -2,10 +2,11 @@ package tenant
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/vrischmann/envconfig"
 	"log"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/vrischmann/envconfig"
 
 	"github.com/stretchr/testify/require"
 )

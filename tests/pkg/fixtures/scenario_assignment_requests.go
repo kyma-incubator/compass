@@ -2,12 +2,13 @@ package fixtures
 
 import (
 	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
-	"regexp"
-	"testing"
 )
 
 func FixAutomaticScenarioAssigmentInput(automaticScenario, selectorKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
@@ -124,4 +125,3 @@ func FixDocumentInput(t *testing.T) graphql.DocumentInput {
 		},
 	}
 }
-

@@ -2,13 +2,14 @@ package fixtures
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
-	"testing"
 )
 
 func FixBundleCreateInput(name string) graphql.BundleCreateInput {
@@ -352,4 +353,3 @@ func FixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *g
 
 	return authCtx, inputParams
 }
-

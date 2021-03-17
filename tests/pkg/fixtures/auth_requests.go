@@ -1,10 +1,11 @@
 package fixtures
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func FixBasicAuth(t *testing.T) *graphql.AuthInput {
@@ -74,4 +75,3 @@ func FixActiveVersion() *graphql.VersionInput {
 		ForRemoval: ptr.Bool(false),
 	}
 }
-

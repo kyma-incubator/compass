@@ -2,14 +2,15 @@ package tests
 
 import (
 	"crypto/rsa"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/model"
 	"net/http"
 	"net/url"
 	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 

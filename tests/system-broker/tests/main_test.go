@@ -1,10 +1,11 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx/broker"
 	"os"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx/broker"
 
 	"github.com/sirupsen/logrus"
 )

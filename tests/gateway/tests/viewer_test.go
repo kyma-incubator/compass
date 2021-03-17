@@ -3,10 +3,11 @@ package tests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
-	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 

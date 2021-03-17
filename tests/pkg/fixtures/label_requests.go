@@ -3,6 +3,7 @@ package fixtures
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -104,4 +105,3 @@ func FixDeleteApplicationLabelRequest(applicationID, labelKey string) *gcli.Requ
 				}
 			}`, applicationID, labelKey, testctx.Tc.GQLFieldsProvider.ForLabel()))
 }
-

@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )
@@ -34,4 +35,3 @@ func FixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
 			}`,
 			webhookID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
-

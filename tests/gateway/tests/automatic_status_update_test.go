@@ -2,10 +2,11 @@ package tests
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

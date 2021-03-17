@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"net/http"
 
@@ -124,4 +125,3 @@ func generateCertificateForToken(t *testing.T, connectorClient *TokenSecuredClie
 
 	return result, configuration
 }
-

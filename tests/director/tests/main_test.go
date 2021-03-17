@@ -1,12 +1,13 @@
 package tests
 
 import (
+	"os"
+	"testing"
+
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"testing"
 
 	"github.com/vrischmann/envconfig"
 

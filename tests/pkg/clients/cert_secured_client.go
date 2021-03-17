@@ -5,9 +5,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"net/http"
 
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"

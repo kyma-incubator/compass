@@ -2,8 +2,9 @@ package clients
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"

@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"encoding/base64"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 

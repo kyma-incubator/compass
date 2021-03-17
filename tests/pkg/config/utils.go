@@ -1,12 +1,13 @@
 package config
 
 import (
+	"log"
+
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"log"
 )
 
-func ReadConfig(conf interface{}){
+func ReadConfig(conf interface{}) {
 	err := envconfig.InitWithPrefix(conf, "APP")
 	exitOnError(err, "Error while loading app config")
 

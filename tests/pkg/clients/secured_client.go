@@ -6,9 +6,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	model2 "github.com/kyma-incubator/compass/tests/pkg/model"
 	"net/http"
 	"testing"
+
+	model2 "github.com/kyma-incubator/compass/tests/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 

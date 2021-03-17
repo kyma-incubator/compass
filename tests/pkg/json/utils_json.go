@@ -2,10 +2,11 @@ package json
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/require"
 )
 
 func MarshalJSON(t *testing.T, data interface{}) *graphql.JSON {

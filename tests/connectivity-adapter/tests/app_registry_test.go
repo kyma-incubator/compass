@@ -18,10 +18,11 @@ package tests
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -49,7 +50,7 @@ func TestAppRegistry(t *testing.T) {
 		},
 	}
 
-	cfg:=config.ConnectivityAdapterTestConfig{}
+	cfg := config.ConnectivityAdapterTestConfig{}
 	config.ReadConfig(&cfg)
 
 	directorClient, err := clients.NewDirectorClient(

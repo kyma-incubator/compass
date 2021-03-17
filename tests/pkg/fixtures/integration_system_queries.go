@@ -2,12 +2,13 @@ package fixtures
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func GetIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.IntegrationSystemExt {
@@ -74,11 +75,8 @@ func RequestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Cont
 	return &systemAuth
 }
 
-
-
 func DeleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
 	req := FixDeleteSystemAuthForIntegrationSystemRequest(id)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, nil)
 	require.NoError(t, err)
 }
-

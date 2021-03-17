@@ -3,14 +3,15 @@ package tests
 import (
 	"context"
 	"crypto/rsa"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

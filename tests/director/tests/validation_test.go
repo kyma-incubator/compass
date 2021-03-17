@@ -2,13 +2,14 @@ package tests
 
 import (
 	"context"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"strings"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

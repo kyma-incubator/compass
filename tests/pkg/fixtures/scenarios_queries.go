@@ -18,11 +18,12 @@ package fixtures
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	gqlTools "github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

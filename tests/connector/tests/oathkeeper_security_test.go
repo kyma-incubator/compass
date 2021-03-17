@@ -1,13 +1,14 @@
 package tests
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestOathkeeperSecurity(t *testing.T) {

@@ -2,9 +2,10 @@ package clients
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
@@ -19,7 +20,7 @@ import (
 )
 
 const (
-	consumerID = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+	consumerID   = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
 	consumerType = "USER"
 )
 

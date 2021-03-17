@@ -10,13 +10,15 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+
+	"strings"
+	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/model"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 )

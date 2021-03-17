@@ -2,11 +2,12 @@ package assertions
 
 import (
 	"encoding/json"
-	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"strconv"
 	"strings"
 	"testing"
+
+	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 

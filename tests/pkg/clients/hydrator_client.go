@@ -5,10 +5,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/stretchr/testify/require"
 )
 
 type HydratorClient struct {

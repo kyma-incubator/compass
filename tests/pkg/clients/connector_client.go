@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/tests/pkg/model"
 	"net/http"
 	"net/http/httputil"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/model"
 
 	"github.com/stretchr/testify/require"
 )
