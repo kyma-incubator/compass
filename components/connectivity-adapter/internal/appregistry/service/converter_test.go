@@ -114,7 +114,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in YAML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: ptrClob(`openapi: "3.0.0"`),
+					Spec: `openapi: "3.0.0"`,
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -134,7 +134,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in JSON": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: ptrClob(`{"spec":"v0.0.1"}`),
+					Spec: `{"spec":"v0.0.1"}`,
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -154,7 +154,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in XML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: ptrClob(`<spec></spec>"`),
+					Spec: `<spec></spec>"`,
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -458,7 +458,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 			given: model.ServiceDetails{
 				Name: "foo",
 				Events: &model.Events{
-					Spec: ptrClob(`asyncapi: "1.2.0"`),
+					Spec: `asyncapi: "1.2.0"`,
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -770,7 +770,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Events: &model.Events{
-					Spec: ptrClob(`asyncapi: "1.2.0"`),
+					Spec: `asyncapi: "1.2.0"`,
 				},
 				Labels: emptyLabels(),
 			},
@@ -789,7 +789,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Events: &model.Events{
-					Spec: ptrClob(`<xml></xml>`),
+					Spec: `<xml></xml>`,
 				},
 				Labels: emptyLabels(),
 			},
@@ -808,7 +808,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Api: &model.API{
-					Spec: ptrClob(`<xml></xml>`),
+					Spec: `<xml></xml>`,
 				},
 				Labels: emptyLabels(),
 			},

@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 
@@ -57,7 +55,7 @@ func TestServiceDetailsValidator(t *testing.T) {
 			Provider:    "provider",
 			Description: "description",
 			Events: &model.Events{
-				Spec: ptrClob(graphql.CLOB(eventsRawSpec)),
+				Spec: string(eventsRawSpec),
 			},
 		}
 
@@ -80,7 +78,7 @@ func TestServiceDetailsValidator(t *testing.T) {
 				TargetUrl: "http://target.com",
 			},
 			Events: &model.Events{
-				Spec: ptrClob(graphql.CLOB(eventsRawSpec)),
+				Spec: string(eventsRawSpec),
 			},
 		}
 
@@ -634,8 +632,4 @@ func TestServiceDetailsValidator_Specification_Basic(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, apperrors.CodeWrongInput, err.Code())
 	})
-}
-
-func ptrClob(in graphql.CLOB) *graphql.CLOB {
-	return &in
 }
