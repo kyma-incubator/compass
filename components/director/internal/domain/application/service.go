@@ -545,7 +545,7 @@ func (s *service) isInFormationAndRuntime(ctx context.Context, tenant, applicati
 		return nil, nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
-	if len(scenarios) == 0 {
+	if len(scenarios) == 0 || (len(scenarios) == 1 && scenarios[0] == model.ScenariosDefaultValue[0]) {
 		return nil, nil, nil
 	}
 

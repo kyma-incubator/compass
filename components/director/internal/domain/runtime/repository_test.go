@@ -317,6 +317,61 @@ func TestPgRepository_List(t *testing.T) {
 	})
 }
 
+func TestPgRepository_ListAll(t *testing.T) {
+	//GIVEN
+	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+
+	tenantID := uuid.New().String()
+	runtime1ID := uuid.New().String()
+	runtime2ID := uuid.New().String()
+
+	pageableQuery := `^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1$`
+
+	testCases := []struct {
+		Name       string
+		Rows       *sqlmock.Rows
+		TotalCount int
+	}{
+		{
+			Name: "Success listing",
+			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
+				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp).
+				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, timestamp),
+			TotalCount: 2,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sqlxDB, sqlMock := testdb.MockDatabase(t)
+			defer sqlMock.AssertExpectations(t)
+			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+			pgRepository := runtime.NewRepository()
+			expectedQuery := fmt.Sprintf(pageableQuery)
+
+			sqlMock.ExpectQuery(expectedQuery).
+				WithArgs(tenantID).
+				WillReturnRows(testCase.Rows)
+
+			//THEN
+			modelRuntime, err := pgRepository.ListAll(ctx, tenantID, nil)
+
+			//THEN
+			require.NoError(t, err)
+			require.NoError(t, sqlMock.ExpectationsWereMet())
+
+			assert.Equal(t, runtime1ID, modelRuntime[0].ID)
+			assert.Equal(t, tenantID, modelRuntime[0].Tenant)
+
+			assert.Equal(t, runtime2ID, modelRuntime[1].ID)
+			assert.Equal(t, tenantID, modelRuntime[1].Tenant)
+
+			assert.Len(t, modelRuntime, testCase.TotalCount)
+		})
+	}
+}
+
 func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntities(t *testing.T) {
 	// given
 	runtime1ID := uuid.New().String()

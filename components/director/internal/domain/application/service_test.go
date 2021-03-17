@@ -1927,10 +1927,25 @@ func TestService_Update(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
+	formationError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a formation - Easter]")
+	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a formation - Easter and of runtime - test-runtime]")
 	id := "foo"
 	desc := "Lorem ipsum"
 	tnt := "tenant"
 	externalTnt := "external-tnt"
+
+	scenarios := []interface{}{"Easter"}
+	scenarioLabel := &model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: scenarios,
+	}
+
+	emptyScenarioLabel := &model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: []interface{}{},
+	}
 
 	applicationModel := &model.Application{
 		Name:        "foo",
@@ -1939,12 +1954,19 @@ func TestService_Delete(t *testing.T) {
 		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 
+	runtimeModel := &model.Runtime{
+		Name:   "test-runtime",
+		Tenant: tnt,
+	}
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
+		LabelRepoFn        func() *automock.LabelRepository
+		RuntimeRepoFn      func() *automock.RuntimeRepository
 		Input              model.ApplicationRegisterInput
 		InputID            string
 		ExpectedErrMessage string
@@ -1954,6 +1976,17 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID:            id,
@@ -1964,17 +1997,72 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(testErr).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application is part of a scenario",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Delete")
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			InputID:            id,
+			ExpectedErrMessage: formationError.Error(),
+		},
+		{
+			Name: "Returns error when application is part of a scenario and a runtime",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Delete")
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
+				return repo
+			},
+			InputID:            id,
+			ExpectedErrMessage: formationAndRuntimeError.Error(),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			labelRepo := testCase.LabelRepoFn()
+			runtimeRepo := testCase.RuntimeRepoFn()
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
