@@ -19,9 +19,10 @@ package controllers_test
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 
