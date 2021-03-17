@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 func fixAPIOpenAPIYAML() model.API {
@@ -32,7 +31,7 @@ paths:
                   type: string`
 
 	return model.API{
-		Spec: ptrClob(graphql.CLOB(spec)),
+		Spec: spec,
 	}
 }
 
@@ -107,7 +106,7 @@ func fixAPIOpenAPIJSON() model.API {
 }`
 
 	return model.API{
-		Spec: ptrClob(graphql.CLOB(spec)),
+		Spec: spec,
 	}
 }
 
@@ -274,7 +273,7 @@ func fixAPIODataXML() model.API {
 </edmx:Edmx>`
 
 	return model.API{
-		Spec:    ptrClob(graphql.CLOB(spec)),
+		Spec:    spec,
 		ApiType: "odata",
 	}
 }
@@ -313,7 +312,7 @@ components:
           type: string`
 
 	return model.Events{
-		Spec: ptrClob(graphql.CLOB(spec)),
+		Spec: spec,
 	}
 }
 
@@ -343,7 +342,7 @@ func fixEventsAsyncAPIJSON() model.Events {
 }`
 
 	return model.Events{
-		Spec: ptrClob(graphql.CLOB(spec)),
+		Spec: spec,
 	}
 }
 

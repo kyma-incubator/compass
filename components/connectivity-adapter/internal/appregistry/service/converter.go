@@ -128,25 +128,25 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			}
 		}
 
-		if deprecated.Api.Spec != nil {
+		if deprecated.Api.Spec != "" {
 			if apiDef.Spec == nil {
 				apiDef.Spec = &graphql.APISpecInput{}
 			}
-			apiDef.Spec.Data = deprecated.Api.Spec
+			apiDef.Spec.Data = ptrClob(graphql.CLOB(deprecated.Api.Spec))
 			if apiDef.Spec.Type == "" {
 				apiDef.Spec.Type = graphql.APISpecTypeOpenAPI
 			}
 
-			if c.isXML(string(*deprecated.Api.Spec)) {
+			if c.isXML(deprecated.Api.Spec) {
 				apiDef.Spec.Format = graphql.SpecFormatXML
-			} else if c.isJSON(string(*deprecated.Api.Spec)) {
+			} else if c.isJSON(deprecated.Api.Spec) {
 				apiDef.Spec.Format = graphql.SpecFormatJSON
 			} else {
 				apiDef.Spec.Format = graphql.SpecFormatYaml
 			}
 		}
 
-		if deprecated.Api.Spec == nil { // TODO provide test for that
+		if deprecated.Api.Spec == "" { // TODO provide test for that
 
 			lowercaseDeprecatedAPIType := strings.ToLower(deprecated.Api.ApiType)
 			if deprecated.Api.SpecificationUrl != "" || deprecated.Api.SpecificationCredentials != nil || deprecated.Api.SpecificationRequestParameters != nil || lowercaseDeprecatedAPIType == oDataSpecType {
@@ -223,14 +223,14 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 	out.DefaultInstanceAuth = defaultInstanceAuth
 
-	if deprecated.Events != nil && deprecated.Events.Spec != nil {
+	if deprecated.Events != nil && deprecated.Events.Spec != "" {
 		var eventDef *graphql.EventDefinitionInput
 
 		// TODO add tests
 		var format graphql.SpecFormat
-		if c.isXML(string(*deprecated.Events.Spec)) {
+		if c.isXML(deprecated.Events.Spec) {
 			format = graphql.SpecFormatXML
-		} else if c.isJSON(string(*deprecated.Events.Spec)) {
+		} else if c.isJSON(deprecated.Events.Spec) {
 			format = graphql.SpecFormatJSON
 		} else {
 			format = graphql.SpecFormatYaml
@@ -240,7 +240,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			&graphql.EventDefinitionInput{
 				Name: deprecated.Name,
 				Spec: &graphql.EventSpecInput{
-					Data:   deprecated.Events.Spec,
+					Data:   ptrClob(graphql.CLOB(deprecated.Events.Spec)),
 					Type:   graphql.EventSpecTypeAsyncAPI,
 					Format: format,
 				},
@@ -349,7 +349,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		if apiDef.Spec != nil {
 			outDeprecated.Api.ApiType = string(apiDef.Spec.Type)
 			if apiDef.Spec.Data != nil {
-				outDeprecated.Api.Spec = apiDef.Spec.Data
+				outDeprecated.Api.Spec = string(*apiDef.Spec.Data)
 			}
 		}
 
@@ -476,7 +476,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 
 		if eventDef.Spec != nil && eventDef.Spec.Data != nil {
 			outDeprecated.Events = &model.Events{
-				Spec: eventDef.Spec.Data,
+				Spec: string(*eventDef.Spec.Data),
 			}
 		}
 		//TODO: convert also fetchRequest
@@ -534,4 +534,8 @@ func (c *converter) isJSON(content string) bool {
 	out := map[string]interface{}{}
 	err := json.Unmarshal([]byte(content), &out)
 	return err == nil
+}
+
+func ptrClob(in graphql.CLOB) *graphql.CLOB {
+	return &in
 }
