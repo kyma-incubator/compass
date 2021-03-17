@@ -15,8 +15,8 @@ const (
 	ordDocURI     = "/open-resource-discovery/v1/documents/example1"
 	baseURL       = "http://localhost:8080"
 	packageORDID  = "ns:package:PACKAGE_ID:v1"
-	productORDID  = "ns:PRODUCT_ID"
-	product2ORDID = "ns:PRODUCT_ID2"
+	productORDID  = "ns:product:id:"
+	product2ORDID = "ns:product:id2:"
 	bundleORDID   = "ns:consumptionBundle:BUNDLE_ID:v1"
 	vendorORDID   = "sap"
 	api1ORDID     = "ns:apiResource:API_ID:v2"
@@ -228,7 +228,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription: "lorem ipsum",
 				Vendor:           vendorORDID,
 				Parent:           str.Ptr(product2ORDID),
-				PPMSObjectID:     str.Ptr("12391293812"),
+				CorrelationIds:   json.RawMessage(`["foo.bar.baz:123456","foo.bar.baz:654321"]`),
 				Labels:           json.RawMessage(labels),
 			},
 		},
@@ -479,7 +479,7 @@ func fixProducts() []*model.Product {
 			ShortDescription: "lorem ipsum",
 			Vendor:           vendorORDID,
 			Parent:           str.Ptr(product2ORDID),
-			PPMSObjectID:     str.Ptr("12391293812"),
+			CorrelationIds:   json.RawMessage(`["foo.bar.baz:123456"]`),
 			Labels:           json.RawMessage(labels),
 		},
 	}

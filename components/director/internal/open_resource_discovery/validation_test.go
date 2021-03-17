@@ -292,6 +292,9 @@ var (
           "version": "1.0.0"
         }
       ]`
+
+	invalidCorrelationIdsElement = `["foo.bar.baz:123456", "wrongID"]`
+	invalidCorrelationIdsNonStringElement = `["foo.bar.baz:123456", 992]`
 )
 
 func TestDocuments_ValidatePackage(t *testing.T) {
@@ -1994,7 +1997,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},{
+		}, {
 			Name: "Missing `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2863,10 +2866,42 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `ppmsObjectId` field for Product",
+			Name: "Invalid value for `correlationIds` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Products[0].PPMSObjectID = str.Ptr(invalidType)
+				doc.Products[0].CorrelationIds = json.RawMessage(invalidCorrelationIdsElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when the JSON array is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage(invalidCorrelationIdsNonStringElement)
 
 				return []*open_resource_discovery.Document{doc}
 			},

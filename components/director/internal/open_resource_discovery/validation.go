@@ -18,7 +18,7 @@ const (
 	SemVerRegex       = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	VendorOrdIDRegex  = "^([a-z0-9]+)$"
-	ProductOrdIDRegex = "^([a-z0-9]+):([a-zA-Z0-9._\\-]+)$"
+	ProductOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
 	BundleOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 
 	//TODO: further clarification is needed as what is required by the spec
@@ -28,7 +28,7 @@ const (
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	EventOrdIDRegex                   = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	PPMSObjectIDRegex                 = "^([0-9]+)$"
+	CorrelationIDsRegex               = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
 	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
 	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 )
@@ -181,7 +181,9 @@ func validateProductInput(product *model.ProductInput) error {
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
-		validation.Field(&product.PPMSObjectID, validation.When(product.PPMSObjectID != nil, validation.Match(regexp.MustCompile(PPMSObjectIDRegex)))),
+		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(CorrelationIDsRegex))
+		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),
 	)
 }
