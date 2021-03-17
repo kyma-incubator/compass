@@ -36,7 +36,6 @@ func TestAsyncAPIDeleteApplicationWithNoAppWebhook(t *testing.T) {
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
-		//Webhooks:     []*graphql.WebhookInput{},
 	}
 
 	t.Log("Get Dex token")
@@ -97,7 +96,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appTemplateName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+	appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name: appTemplateName,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
@@ -145,7 +144,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appTemplateName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+	appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name: appTemplateName,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
