@@ -64,6 +64,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/sanitize"
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
@@ -188,6 +189,7 @@ func main() {
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
+			Sanitize:    sanitize.NewDirective(cfgProvider).Sanitize,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
 	}
