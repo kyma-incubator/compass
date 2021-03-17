@@ -29,7 +29,6 @@ import (
 )
 
 func TestAsyncAPIDeleteApplicationWithNoAppWebhook(t *testing.T) {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
@@ -58,6 +57,41 @@ func TestAsyncAPIDeleteApplicationWithNoAppWebhook(t *testing.T) {
 	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, "", dexGraphQLClient)
+}
+
+func TestSyncAPIDeleteApplicationWithNoAppWebhook(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	appName := fmt.Sprintf("app-sync-del-%s", time.Now().Format("060102150405"))
+	appInput := graphql.ApplicationRegisterInput{
+		Name:         appName,
+		ProviderName: ptr.String("compass"),
+	}
+
+	t.Log("Get Dex token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	t.Log(fmt.Sprintf("Registering application: %s", appName))
+	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
+	require.NoError(t, err)
+
+	registerRequest := fixRegisterApplicationRequest(appInputGQL)
+	app := graphql.ApplicationExt{}
+	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
+	require.NoError(t, err)
+	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
+	require.Len(t, app.Webhooks, 0)
+
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+
+	t.Log("Start sync Delete of application")
+	unregisterApplicationInTenant(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+
+	t.Log("Verify the deleted application does not exist in director")
+	missingApp := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	require.Empty(t, missingApp.Name, "Application is not deleted")
 }
 
 func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
