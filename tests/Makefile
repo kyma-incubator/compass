@@ -20,6 +20,9 @@ resolve-local:
 ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
+test:
+	@echo ${SKIP_STEP_MESSAGE}
+
 e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh
 
