@@ -324,7 +324,7 @@ type ComplexityRoot struct {
 		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
 		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
-		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplate *string, in WebhookInput) int
+		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplateID *string, in WebhookInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
 		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
@@ -368,7 +368,7 @@ type ComplexityRoot struct {
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
-		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
+		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
 		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
@@ -564,7 +564,7 @@ type MutationResolver interface {
 	UnregisterApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
-	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateInput) (*ApplicationTemplate, error)
+	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	RegisterRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
@@ -575,7 +575,7 @@ type MutationResolver interface {
 	RegisterIntegrationSystem(ctx context.Context, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UpdateIntegrationSystem(ctx context.Context, id string, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UnregisterIntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
-	AddWebhook(ctx context.Context, applicationID *string, applicationTemplate *string, in WebhookInput) (*Webhook, error)
+	AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in WebhookInput) (*Webhook, error)
 	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
 	AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in APIDefinitionInput) (*APIDefinition, error)
@@ -1914,7 +1914,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(*string), args["applicationTemplate"].(*string), args["in"].(WebhookInput)), true
+		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(*string), args["applicationTemplateID"].(*string), args["in"].(WebhookInput)), true
 
 	case "Mutation.createApplicationTemplate":
 		if e.complexity.Mutation.CreateApplicationTemplate == nil {
@@ -2442,7 +2442,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateInput)), true
+		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateUpdateInput)), true
 
 	case "Mutation.updateBundle":
 		if e.complexity.Mutation.UpdateBundle == nil {
@@ -3580,6 +3580,20 @@ input ApplicationTemplateInput {
 	accessLevel: ApplicationTemplateAccessLevel!
 }
 
+input ApplicationTemplateUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	applicationInput: ApplicationRegisterInput!
+	placeholders: [PlaceholderDefinitionInput!]
+	accessLevel: ApplicationTemplateAccessLevel!
+}
+
 input ApplicationUpdateInput {
 	"""
 	**Validation:** max=256
@@ -4489,7 +4503,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
@@ -4532,7 +4546,7 @@ type Mutation {
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID, applicationTemplate: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
@@ -5105,13 +5119,13 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 	}
 	args["applicationID"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["applicationTemplate"]; ok {
+	if tmp, ok := rawArgs["applicationTemplateID"]; ok {
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["applicationTemplate"] = arg1
+	args["applicationTemplateID"] = arg1
 	var arg2 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
@@ -5958,10 +5972,10 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 		}
 	}
 	args["id"] = arg0
-	var arg1 ApplicationTemplateInput
+	var arg1 ApplicationTemplateUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+			return ec.unmarshalNApplicationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateUpdateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5971,10 +5985,10 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(ApplicationTemplateInput); ok {
+		if data, ok := tmp.(ApplicationTemplateUpdateInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateUpdateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -12892,7 +12906,7 @@ func (ec *executionContext) _Mutation_updateApplicationTemplate(ctx context.Cont
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateApplicationTemplate(rctx, args["id"].(string), args["in"].(ApplicationTemplateInput))
+			return ec.resolvers.Mutation().UpdateApplicationTemplate(rctx, args["id"].(string), args["in"].(ApplicationTemplateUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateApplicationTemplate")
@@ -13596,7 +13610,7 @@ func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(*string), args["applicationTemplate"].(*string), args["in"].(WebhookInput))
+			return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(*string), args["applicationTemplateID"].(*string), args["in"].(WebhookInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addWebhook")
@@ -21326,6 +21340,48 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx context.Context, obj interface{}) (ApplicationTemplateUpdateInput, error) {
+	var it ApplicationTemplateUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationInput":
+			var err error
+			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "placeholders":
+			var err error
+			it.Placeholders, err = ec.unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "accessLevel":
+			var err error
+			it.AccessLevel, err = ec.unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Context, obj interface{}) (ApplicationUpdateInput, error) {
 	var it ApplicationUpdateInput
 	var asMap = obj.(map[string]interface{})
@@ -25656,6 +25712,10 @@ func (ec *executionContext) marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋky
 		return graphql.Null
 	}
 	return ec._ApplicationTemplatePage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNApplicationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateUpdateInput(ctx context.Context, v interface{}) (ApplicationTemplateUpdateInput, error) {
+	return ec.unmarshalInputApplicationTemplateUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx context.Context, v interface{}) (ApplicationUpdateInput, error) {

@@ -65,6 +65,29 @@ func (_m *WebhookRepository) GetByID(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
+// GetByIDGlobal provides a mock function with given fields: ctx, id
+func (_m *WebhookRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Webhook); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Webhook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByApplicationID provides a mock function with given fields: ctx, tenant, applicationID
 func (_m *WebhookRepository) ListByApplicationID(ctx context.Context, tenant string, applicationID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, applicationID)

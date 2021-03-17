@@ -107,7 +107,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 	return s.appTemplateRepo.List(ctx, pageSize, cursor)
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
 	appTemplate := in.ToApplicationTemplate(id)
 
 	err := s.appTemplateRepo.Update(ctx, appTemplate)

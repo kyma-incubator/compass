@@ -14,6 +14,7 @@ import (
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, item *model.Webhook) error
@@ -48,11 +49,7 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Webhook, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	webhook, err := s.webhookRepo.GetByID(ctx, tnt, id)
+	webhook, err := s.webhookRepo.GetByIDGlobal(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
 	}

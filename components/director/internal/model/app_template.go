@@ -87,3 +87,26 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 		Webhooks:             webhooks,
 	}
 }
+
+type ApplicationTemplateUpdateInput struct {
+	Name                 string
+	Description          *string
+	ApplicationInputJSON string
+	Placeholders         []ApplicationTemplatePlaceholder
+	AccessLevel          ApplicationTemplateAccessLevel
+}
+
+func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) ApplicationTemplate {
+	if a == nil {
+		return ApplicationTemplate{}
+	}
+
+	return ApplicationTemplate{
+		ID:                   id,
+		Name:                 a.Name,
+		Description:          a.Description,
+		ApplicationInputJSON: a.ApplicationInputJSON,
+		Placeholders:         a.Placeholders,
+		AccessLevel:          a.AccessLevel,
+	}
+}

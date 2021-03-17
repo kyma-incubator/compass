@@ -94,6 +94,23 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 	}`)
 }
 
+func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.ApplicationTemplateUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
+		{{- if .Placeholders }}
+		placeholders: [
+			{{- range $i, $e := .Placeholders }} 
+				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		accessLevel: {{.AccessLevel}},
+	}`)
+}
+
 func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
 	return g.genericToGQL(in, `{
 		title: "{{.Title}}",
