@@ -55,7 +55,7 @@ func TestServiceDetailsValidator(t *testing.T) {
 			Provider:    "provider",
 			Description: "description",
 			Events: &model.Events{
-				Spec: eventsRawSpec,
+				Spec: ptrSpecResponse(model.SpecResponse(eventsRawSpec)),
 			},
 		}
 
@@ -78,7 +78,7 @@ func TestServiceDetailsValidator(t *testing.T) {
 				TargetUrl: "http://target.com",
 			},
 			Events: &model.Events{
-				Spec: eventsRawSpec,
+				Spec: ptrSpecResponse(model.SpecResponse(eventsRawSpec)),
 			},
 		}
 
@@ -632,4 +632,8 @@ func TestServiceDetailsValidator_Specification_Basic(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, apperrors.CodeWrongInput, err.Code())
 	})
+}
+
+func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
+	return &in
 }
