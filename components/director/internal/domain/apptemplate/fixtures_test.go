@@ -111,10 +111,37 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	}
 }
 
+func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.ApplicationTemplateUpdateInput {
+	desc := testDescription
+
+	return &model.ApplicationTemplateUpdateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
 func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescription
 
 	return &graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdateInput {
+	desc := testDescription
+
+	return &graphql.ApplicationTemplateUpdateInput{
 		Name:        name,
 		Description: &desc,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
