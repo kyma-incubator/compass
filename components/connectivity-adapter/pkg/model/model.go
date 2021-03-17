@@ -1,6 +1,6 @@
 package model
 
-import "encoding/json"
+import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 const (
 	TokenFormat                       = "?token=%s"
@@ -40,7 +40,7 @@ type CreateServiceResponse struct {
 type API struct {
 	TargetUrl                      string               `json:"targetUrl" valid:"url,required~targetUrl field cannot be empty."`
 	Credentials                    *CredentialsWithCSRF `json:"credentials,omitempty"`
-	Spec                           json.RawMessage      `json:"spec,omitempty"`
+	Spec                           *graphql.CLOB        `json:"spec,omitempty"`
 	SpecificationUrl               string               `json:"specificationUrl,omitempty"`
 	ApiType                        string               `json:"apiType,omitempty"`
 	RequestParameters              *RequestParameters   `json:"requestParameters,omitempty"`
@@ -103,7 +103,7 @@ type CertificateGenWithCSRF struct {
 }
 
 type Events struct {
-	Spec json.RawMessage `json:"spec" valid:"required~spec cannot be empty"`
+	Spec *graphql.CLOB `json:"spec" valid:"required~spec cannot be empty"`
 }
 
 type Documentation struct {
