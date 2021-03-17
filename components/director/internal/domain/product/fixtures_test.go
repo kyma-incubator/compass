@@ -16,6 +16,7 @@ const (
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
+	correlationIds   = `["id1", "id2"]`
 )
 
 func fixEntityProduct() *product.Entity {
@@ -30,8 +31,8 @@ func fixEntityProduct() *product.Entity {
 			String: "parent",
 			Valid:  true,
 		},
-		PPMSObjectID: sql.NullString{
-			String: "ppms_id",
+		CorrelationIds: sql.NullString{
+			String: correlationIds,
 			Valid:  true,
 		},
 		Labels: repo.NewValidNullableString("{}"),
@@ -40,7 +41,6 @@ func fixEntityProduct() *product.Entity {
 
 func fixProductModel() *model.Product {
 	parent := "parent"
-	ppmsID := "ppms_id"
 	return &model.Product{
 		OrdID:            ordID,
 		TenantID:         tenantID,
@@ -49,34 +49,33 @@ func fixProductModel() *model.Product {
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent:           &parent,
-		PPMSObjectID:     &ppmsID,
+		CorrelationIds:   json.RawMessage(correlationIds),
 		Labels:           json.RawMessage("{}"),
 	}
 }
 
 func fixProductModelInput() *model.ProductInput {
 	parent := "parent"
-	ppmsID := "ppms_id"
 	return &model.ProductInput{
 		OrdID:            ordID,
 		Title:            "title",
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent:           &parent,
-		PPMSObjectID:     &ppmsID,
+		CorrelationIds:   json.RawMessage(correlationIds),
 		Labels:           json.RawMessage("{}"),
 	}
 }
 
 func fixProductColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "title", "short_description", "vendor", "parent", "sap_ppms_object_id", "labels"}
+	return []string{"ord_id", "tenant_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
 }
 
 func fixProductRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "title", "short desc", "vendorID", "parent", "ppms_id",
-		repo.NewValidNullableString("{}")}
+	return []driver.Value{ordID, tenantID, appID, "title", "short desc", "vendorID", "parent",
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIds)}
 }
 
 func fixProductUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "short desc", "vendorID", "parent", "ppms_id", repo.NewValidNullableString("{}")}
+	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIds)}
 }

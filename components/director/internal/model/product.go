@@ -12,17 +12,17 @@ type Product struct {
 	ShortDescription string
 	Vendor           string
 	Parent           *string
-	PPMSObjectID     *string
+	CorrelationIds   json.RawMessage
 	Labels           json.RawMessage
 }
 
 type ProductInput struct {
-	OrdID            string          `json:"id"`
+	OrdID            string          `json:"ordId"`
 	Title            string          `json:"title"`
 	ShortDescription string          `json:"shortDescription"`
 	Vendor           string          `json:"vendor"`
 	Parent           *string         `json:"parent"`
-	PPMSObjectID     *string         `json:"sapPpmsObjectId"`
+	CorrelationIds   json.RawMessage `json:"correlationIds"`
 	Labels           json.RawMessage `json:"labels"`
 }
 
@@ -39,7 +39,7 @@ func (i *ProductInput) ToProduct(tenantID, appID string) *Product {
 		ShortDescription: i.ShortDescription,
 		Vendor:           i.Vendor,
 		Parent:           i.Parent,
-		PPMSObjectID:     i.PPMSObjectID,
+		CorrelationIds:   i.CorrelationIds,
 		Labels:           i.Labels,
 	}
 }
@@ -49,6 +49,6 @@ func (p *Product) SetFromUpdateInput(update ProductInput) {
 	p.ShortDescription = update.ShortDescription
 	p.Vendor = update.Vendor
 	p.Parent = update.Parent
-	p.PPMSObjectID = update.PPMSObjectID
+	p.CorrelationIds = update.CorrelationIds
 	p.Labels = update.Labels
 }

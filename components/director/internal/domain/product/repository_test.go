@@ -55,7 +55,7 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, sap_ppms_object_id = ?, labels = ? WHERE tenant_id = ? AND ord_id = ?`)
+	updateQuery := regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ? WHERE tenant_id = ? AND ord_id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
