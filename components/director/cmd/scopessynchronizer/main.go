@@ -73,24 +73,26 @@ func main() {
 
 		objType, err := auth.GetReferenceObjectType()
 		if err != nil {
-			log.C(ctx).WithError(err).Error("Error while getting obj type of client with ID %s: %v", clientID, err)
+			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 			continue
 		}
 
 		expectedScopes, err := oAuth20Svc.GetClientCredentialScopes(objType)
 		if err != nil {
-			log.C(ctx).WithError(err).Error("Error while getting client credentials scopes")
+			log.C(ctx).WithError(err).Errorf("Error while getting client credentials scopes for client with ID %s: %v", clientID, err)
 			continue
 		}
+
 		scopesFromHydra := clientScopes[clientID]
 		if str.Matches(scopesFromHydra, expectedScopes) {
 			err = oAuth20Svc.UpdateClientCredentials(ctx, clientID, objType)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("Error while getting obj type of client with ID %s: %v", clientID, err)
+				log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 			}
 		}
 	}
-	log.C(ctx).Info("Finished synchronization of hydra scopes")
+
+	log.C(ctx).Info("Finished synchronization of Hydra scopes")
 }
 
 func convertScopesToMap(clientsFromHydra []oauth20.Client) map[string][]string {
