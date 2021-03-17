@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -30,6 +31,21 @@ type UIDService interface {
 	Generate() string
 }
 
+type clientCredentialsRegistrationBody struct {
+	GrantTypes []string `json:"grant_types"`
+	ClientID   string   `json:"client_id"`
+	Scope      string   `json:"scope"`
+}
+
+type clientCredentialsRegistrationResponse struct {
+	ClientSecret string `json:"client_secret"`
+}
+
+type Client struct {
+	ClientID string `json:"client_id"`
+	Scopes   string `json:"scope"`
+}
+
 type service struct {
 	clientEndpoint            string
 	publicAccessTokenEndpoint string
@@ -49,7 +65,7 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 }
 
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
-	scopes, err := s.getClientCredentialScopes(objectType)
+	scopes, err := s.GetClientCredentialScopes(objectType)
 	if err != nil {
 		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
 			return nil, err
@@ -72,6 +88,22 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 	return credentialData, nil
 }
 
+func (s *service) UpdateClientCredentials(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
+	scopes, err := s.GetClientCredentialScopes(objectType)
+	if err != nil {
+		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
+			return err
+		}
+	}
+	log.C(ctx).Debugf("Fetched Client credential scopes: %s for %s", scopes, objectType)
+
+	if err := s.updateClient(ctx, clientID, scopes); err != nil {
+		return errors.Wrapf(err, "while updating Client with ID %s in Hydra", clientID)
+	}
+
+	return nil
+}
+
 func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) error {
 	return s.unregisterClient(ctx, clientID)
 }
@@ -92,23 +124,18 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []m
 	return nil
 }
 
-func (s *service) getClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
+func (s *service) ListClients(ctx context.Context) ([]Client, error) {
+	return s.doPageableRequest(ctx, s.clientEndpoint)
+
+}
+
+func (s *service) GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scopes for registering Client Credentials for %s", objType)
 	}
 
 	return scopes, nil
-}
-
-type clientCredentialsRegistrationBody struct {
-	GrantTypes []string `json:"grant_types"`
-	ClientID   string   `json:"client_id"`
-	Scope      string   `json:"scope"`
-}
-
-type clientCredentialsRegistrationResponse struct {
-	ClientSecret string `json:"client_secret"`
 }
 
 func (s *service) registerClient(ctx context.Context, clientID string, scopes []string) (string, error) {
@@ -143,6 +170,31 @@ func (s *service) registerClient(ctx context.Context, clientID string, scopes []
 
 	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
 	return registrationResp.ClientSecret, nil
+}
+
+func (s *service) updateClient(ctx context.Context, clientID string, scopes []string) error {
+	log.C(ctx).Debugf("Updating client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
+	reqBody := &clientCredentialsRegistrationBody{
+		Scope: strings.Join(scopes, " "),
+	}
+
+	buffer := &bytes.Buffer{}
+	if err := json.NewEncoder(buffer).Encode(&reqBody); err != nil {
+		return errors.Wrap(err, "while encoding body")
+	}
+
+	resp, closeBody, err := s.doRequest(ctx, http.MethodPut, fmt.Sprintf("%s/%s", s.clientEndpoint, clientID), buffer)
+	if err != nil {
+		return err
+	}
+	defer closeBody(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusOK)
+	}
+
+	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
+	return nil
 }
 
 func (s *service) unregisterClient(ctx context.Context, clientID string) error {
@@ -193,6 +245,38 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 	}
 
 	return resp, closeBodyFn, nil
+}
+
+func (s *service) doPageableRequest(ctx context.Context, endpoint string) ([]Client, error) {
+
+	var resultClients []Client
+	nextLink := endpoint
+	for nextLink != "" {
+		resp, closeBody, err := s.doRequest(ctx, http.MethodGet, nextLink, nil)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusOK)
+		}
+		nextLink = getNextLink(resp)
+		var clients []Client
+		err = json.NewDecoder(resp.Body).Decode(&clients)
+		closeBody(resp.Body)
+		resultClients = append(resultClients, clients...)
+	}
+
+	return resultClients, nil
+}
+
+func getNextLink(resp *http.Response) string {
+	linkHeader := resp.Header.Get("Link")
+	regex := regexp.MustCompile(`<(.+)>; rel="next"`)
+	rs := regex.FindStringSubmatch(linkHeader)
+	if len(rs) == 0 {
+		return ""
+	}
+	return rs[1]
 }
 
 func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {
