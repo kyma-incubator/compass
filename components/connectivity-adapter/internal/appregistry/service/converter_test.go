@@ -114,7 +114,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in YAML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: `openapi: "3.0.0"`,
+					Spec: ptrSpecResponse(`openapi: "3.0.0"`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -134,7 +134,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in JSON": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: `{"spec":"v0.0.1"}`,
+					Spec: ptrSpecResponse(`{"spec":"v0.0.1"}`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -154,7 +154,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in XML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: `<spec></spec>"`,
+					Spec: ptrSpecResponse(`<spec></spec>"`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -458,7 +458,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 			given: model.ServiceDetails{
 				Name: "foo",
 				Events: &model.Events{
-					Spec: `asyncapi: "1.2.0"`,
+					Spec: ptrSpecResponse(`asyncapi: "1.2.0"`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -762,7 +762,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 					Data: []*graphql.EventAPIDefinitionExt{{
 						Spec: &graphql.EventAPISpecExt{
 							EventSpec: graphql.EventSpec{
-								Data: ptrClob(`asyncapi: "1.2.0"`),
+								Data: ptrClob(`{"asyncapi": "1.2.0"}`),
 							},
 						}},
 					},
@@ -770,7 +770,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Events: &model.Events{
-					Spec: `asyncapi: "1.2.0"`,
+					Spec: ptrSpecResponse(`{"asyncapi": "1.2.0"}`),
 				},
 				Labels: emptyLabels(),
 			},
@@ -789,7 +789,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Events: &model.Events{
-					Spec: `<xml></xml>`,
+					Spec: ptrSpecResponse(`<xml></xml>`),
 				},
 				Labels: emptyLabels(),
 			},
@@ -808,7 +808,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Api: &model.API{
-					Spec: `<xml></xml>`,
+					Spec: ptrSpecResponse(`<xml></xml>`),
 				},
 				Labels: emptyLabels(),
 			},
@@ -1002,5 +1002,9 @@ func ptrString(in string) *string {
 }
 
 func ptrClob(in graphql.CLOB) *graphql.CLOB {
+	return &in
+}
+
+func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
 	return &in
 }

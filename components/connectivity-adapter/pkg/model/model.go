@@ -1,5 +1,11 @@
 package model
 
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+)
+
 const (
 	TokenFormat                       = "?token=%s"
 	CertsEndpoint                     = "/v1/applications/certificates"
@@ -9,6 +15,43 @@ const (
 	RenewCertURLFormat                = "%s/v1/applications/certificates/renewals"
 	RevocationCertURLFormat           = "%s/v1/applications/certificates/revocations"
 )
+
+type SpecResponse string
+
+func (sp *SpecResponse) UnmarshalJSON(bytes []byte) error {
+	if sp == nil {
+		sp = new(SpecResponse)
+	}
+
+	if IsXML(string(bytes)) {
+		*sp = SpecResponse(bytes)
+		return nil
+	}
+
+	jsonRawMessage := json.RawMessage{}
+	if err := json.Unmarshal(bytes, &jsonRawMessage); err != nil {
+		return err
+	}
+
+	*sp = SpecResponse(jsonRawMessage)
+
+	return nil
+}
+
+func (sp *SpecResponse) MarshalJSON() ([]byte, error) {
+	if sp == nil {
+		return nil, nil
+	}
+	if IsXML(string(*sp)) {
+		unquote, err := strconv.Unquote(string(*sp))
+		if err == nil {
+			*sp = SpecResponse(unquote)
+		}
+
+		return []byte(strconv.Quote(string(*sp))), nil
+	}
+	return json.Marshal(json.RawMessage(*sp))
+}
 
 type Service struct {
 	ID          string             `json:"id"`
@@ -38,7 +81,7 @@ type CreateServiceResponse struct {
 type API struct {
 	TargetUrl                      string               `json:"targetUrl" valid:"url,required~targetUrl field cannot be empty."`
 	Credentials                    *CredentialsWithCSRF `json:"credentials,omitempty"`
-	Spec                           string               `json:"spec,omitempty"`
+	Spec                           *SpecResponse        `json:"spec,omitempty"`
 	SpecificationUrl               string               `json:"specificationUrl,omitempty"`
 	ApiType                        string               `json:"apiType,omitempty"`
 	RequestParameters              *RequestParameters   `json:"requestParameters,omitempty"`
@@ -101,7 +144,7 @@ type CertificateGenWithCSRF struct {
 }
 
 type Events struct {
-	Spec string `json:"spec" valid:"required~spec cannot be empty"`
+	Spec *SpecResponse `json:"spec" valid:"required~spec cannot be empty"`
 }
 
 type Documentation struct {
@@ -173,4 +216,25 @@ type ClientIdentity struct {
 type TokenResponse struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`
+}
+
+func IsXML(content string) bool {
+	const snippetLength = 512
+
+	if unquoted, err := strconv.Unquote(content); err == nil {
+		content = unquoted
+	}
+
+	var snippet string
+	length := len(content)
+	if length < snippetLength {
+		snippet = content
+	} else {
+		snippet = content[:snippetLength]
+	}
+
+	openingIndex := strings.Index(snippet, "<")
+	closingIndex := strings.Index(snippet, ">")
+
+	return openingIndex == 0 && openingIndex < closingIndex
 }

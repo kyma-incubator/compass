@@ -31,7 +31,7 @@ paths:
                   type: string`
 
 	return model.API{
-		Spec: spec,
+		Spec: ptrSpecResponse(model.SpecResponse(spec)),
 	}
 }
 
@@ -106,7 +106,7 @@ func fixAPIOpenAPIJSON() model.API {
 }`
 
 	return model.API{
-		Spec: spec,
+		Spec: ptrSpecResponse(model.SpecResponse(spec)),
 	}
 }
 
@@ -273,7 +273,7 @@ func fixAPIODataXML() model.API {
 </edmx:Edmx>`
 
 	return model.API{
-		Spec:    spec,
+		Spec:    ptrSpecResponse(model.SpecResponse(spec)),
 		ApiType: "odata",
 	}
 }
@@ -312,7 +312,7 @@ components:
           type: string`
 
 	return model.Events{
-		Spec: spec,
+		Spec: ptrSpecResponse(model.SpecResponse(spec)),
 	}
 }
 
@@ -342,7 +342,7 @@ func fixEventsAsyncAPIJSON() model.Events {
 }`
 
 	return model.Events{
-		Spec: spec,
+		Spec: ptrSpecResponse(model.SpecResponse(spec)),
 	}
 }
 
