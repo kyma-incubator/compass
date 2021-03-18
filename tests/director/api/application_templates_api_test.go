@@ -218,16 +218,25 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application template webhook")
 
 	actualWebhook := graphql.Webhook{}
-	t.Log("Add Webhook to application template")
-	err = tc.RunOperation(ctx, addReq, &actualWebhook)
-	require.NoError(t, err)
-	assert.NotNil(t, actualWebhook.URL)
-	assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
-	assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
-	id := actualWebhook.ID
-	require.NotNil(t, id)
+	t.Run("fails when tenant is present", func(t *testing.T) {
+		t.Log("Trying to Webhook to application template with tenant")
+		err = tc.RunOperation(ctx, addReq, &actualWebhook)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not found")
+	})
+	t.Run("succeeds with no tenant", func(t *testing.T) {
 
-	// get all webhooks
+		t.Log("Add Webhook to application template")
+		err = tc.RunOperationWithoutTenant(ctx, addReq, &actualWebhook)
+		require.NoError(t, err)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+		assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
+		id := actualWebhook.ID
+		require.NotNil(t, id)
+
+	})
+
 	updatedAppTemplate := getApplicationTemplate(t, ctx, appTemplate.ID)
 	assert.Len(t, updatedAppTemplate.Webhooks, 1)
 
@@ -238,7 +247,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 	t.Log("Getting Webhooks for application template")
 	updateReq := fixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-	err = tc.RunOperation(ctx, updateReq, &actualWebhook)
+	err = tc.RunOperationWithoutTenant(ctx, updateReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
@@ -249,7 +258,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	deleteReq := fixDeleteWebhookRequest(actualWebhook.ID)
 
 	//WHEN
-	err = tc.RunOperation(ctx, deleteReq, &actualWebhook)
+	err = tc.RunOperationWithoutTenant(ctx, deleteReq, &actualWebhook)
 
 	//THEN
 	require.NoError(t, err)

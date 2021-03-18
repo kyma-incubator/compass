@@ -87,7 +87,6 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-
 	if apperrors.IsTenantRequired(err) {
 		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
 	} else if err != nil {

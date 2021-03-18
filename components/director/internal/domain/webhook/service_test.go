@@ -34,12 +34,15 @@ func TestService_Create(t *testing.T) {
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+	ctxNoTenant := context.TODO()
+	ctxNoTenant = tenant.SaveToContext(ctx, "", "")
 
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.WebhookRepository
 		UIDServiceFn func() *automock.UIDService
 		ExpectedErr  error
+		Context      context.Context
 	}{
 		{
 			Name: "Success",
@@ -54,6 +57,22 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			ExpectedErr: nil,
+			Context:     ctx,
+		},
+		{
+			Name: "Success when tenant is missing",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("Create", ctxNoTenant, webhookModel).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
+			ExpectedErr: nil,
+			Context:     ctxNoTenant,
 		},
 		{
 			Name: "Returns error when webhook creation failed",
@@ -68,6 +87,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			ExpectedErr: testErr,
+			Context:     ctx,
 		},
 	}
 
@@ -79,7 +99,7 @@ func TestService_Create(t *testing.T) {
 			svc := webhook.NewService(repo, nil, uidSvc)
 
 			// when
-			result, err := svc.Create(ctx, givenApplicationID(), *modelInput, applicationConvererFunc)
+			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, applicationConvererFunc)
 
 			// then
 
