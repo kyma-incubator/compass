@@ -437,7 +437,7 @@ func TestDeleteApplication(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		tenantID := testTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
-		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - DEFAULT, test-scenario]"
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - test-scenario]"
 
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
@@ -486,7 +486,7 @@ func TestDeleteApplication(t *testing.T) {
 
 	t.Run("Error when application is in formation and runtime", func(t *testing.T) {
 		//GIVEN
-		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - DEFAULT, test-scenario and of runtime - one-runtime]"
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - test-scenario and of runtime - one-runtime]"
 		ctx := context.Background()
 		tenantID := testTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
 
