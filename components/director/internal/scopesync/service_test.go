@@ -18,6 +18,8 @@ import (
 
 func TestSyncService_UpdateClientScopes(t *testing.T) {
 
+	selectQuery := "select * from system_auths where (value -> 'Credential' -> 'Oauth') is not null"
+
 	t.Run("fails when oauth service cannot list clients", func(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
@@ -36,6 +38,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -48,9 +51,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		oauthSvc := &automock.OAuthService{}
 		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatDoesntExpectCommit()
-		mockedTx.On("Select", mock.Anything, mock.Anything).Return(errors.New("error while executing query"))
+		mockedTx.On("Select", mock.Anything, selectQuery).Return(errors.New("error while executing query"))
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -69,9 +73,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Value: repo.NewValidNullableString("{\"Credential\":\"invalid\"}"),
 			},
 		}
-		mockedTx.On("Select", mock.Anything, mock.Anything).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
+		mockedTx.On("Select", mock.Anything, selectQuery).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -85,9 +90,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error during transaction commit")).ThatFailsOnCommit()
 		expected := systemauth.Collection{}
-		mockedTx.On("Select", mock.Anything, mock.Anything).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
+		mockedTx.On("Select", mock.Anything, selectQuery).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -105,9 +111,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Value: repo.NewValidNullableString("{\"Credential\":{\"Oauth\":{\"ClientID\":\"client-id\"}}}"),
 			},
 		}
-		mockedTx.On("Select", mock.Anything, mock.Anything).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
+		mockedTx.On("Select", mock.Anything, selectQuery).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -127,9 +134,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Value: repo.NewValidNullableString("{\"Credential\":{\"Oauth\":{\"ClientID\":\"client-id\"}}}"),
 			},
 		}
-		mockedTx.On("Select", mock.Anything, mock.Anything).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
+		mockedTx.On("Select", mock.Anything, selectQuery).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -156,9 +164,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Value: repo.NewValidNullableString("{\"Credential\":{\"Oauth\":{\"ClientID\":\"client-id\"}}}"),
 			},
 		}
-		mockedTx.On("Select", mock.Anything, mock.Anything).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
+		mockedTx.On("Select", mock.Anything, selectQuery).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
@@ -185,9 +194,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Value: repo.NewValidNullableString("{\"Credential\":{\"Oauth\":{\"ClientID\":\"client-id\"}}}"),
 			},
 		}
-		mockedTx.On("Select", mock.Anything, mock.Anything).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
+		mockedTx.On("Select", mock.Anything, selectQuery).Run(GenerateTestCollection(t, expected)).Return(nil).Once()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner)
 		// WHEN
 		err := scopeSyncSvc.UpdateClientScopes(context.TODO())
