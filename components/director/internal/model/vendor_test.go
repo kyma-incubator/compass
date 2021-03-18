@@ -12,7 +12,7 @@ func TestVendorInput_ToVendor(t *testing.T) {
 	// given
 	id := "foo"
 	appID := "bar"
-	vendorType := "Sample"
+	isPartner := true
 	name := "sample"
 	tenant := "tenant"
 	labels := json.RawMessage("{}")
@@ -25,17 +25,17 @@ func TestVendorInput_ToVendor(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.VendorInput{
-				OrdID:  id,
-				Title:  name,
-				Type:   vendorType,
-				Labels: labels,
+				OrdID:      id,
+				Title:      name,
+				SapPartner: &isPartner,
+				Labels:     labels,
 			},
 			Expected: &model.Vendor{
 				OrdID:         id,
 				TenantID:      tenant,
 				ApplicationID: appID,
 				Title:         name,
-				Type:          vendorType,
+				SapPartner:    &isPartner,
 				Labels:        labels,
 			},
 		},
