@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -85,7 +87,10 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
+
+	if apperrors.IsTenantRequired(err) {
+		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
+	} else if err != nil {
 		return "", err
 	}
 	id := s.uidSvc.Generate()
