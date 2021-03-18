@@ -3004,22 +3004,6 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `type` field for Vendor",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Vendors[0].Type = ""
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Invalid `type` field for Vendor",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Vendors[0].Type = invalidType
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Invalid JSON `Labels` field for Product",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()

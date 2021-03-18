@@ -17,7 +17,7 @@ import (
 const (
 	SemVerRegex       = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	VendorOrdIDRegex  = "^([a-z0-9]+)$"
+	VendorOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	ProductOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
 	BundleOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 
@@ -192,7 +192,6 @@ func validateVendorInput(vendor *model.VendorInput) error {
 	return validation.ValidateStruct(vendor,
 		validation.Field(&vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&vendor.Title, validation.Required),
-		validation.Field(&vendor.Type, validation.Required, validation.In("sap", "sap-partner", "client-registration")),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 	)
 }

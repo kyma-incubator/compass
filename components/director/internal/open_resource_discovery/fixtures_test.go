@@ -18,7 +18,7 @@ const (
 	productORDID  = "ns:product:id:"
 	product2ORDID = "ns:product:id2:"
 	bundleORDID   = "ns:consumptionBundle:BUNDLE_ID:v1"
-	vendorORDID   = "sap"
+	vendorORDID   = "ns:vendor:id:"
 	api1ORDID     = "ns:apiResource:API_ID:v2"
 	api2ORDID     = "ns:apiResource:API_ID2:v1"
 	event1ORDID   = "ns:eventResource:EVENT_ID:v1"
@@ -124,6 +124,8 @@ var (
           "version": "1.0.0"
         }
       ]`)
+
+	boolPtr = true
 )
 
 func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
@@ -180,7 +182,6 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 }
 
 func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
-	true := true
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0-rc.1",
@@ -241,7 +242,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
 				TargetURL:                               "https://exmaple.com/test/v1",
 				ShortDescription:                        str.Ptr("lorem ipsum"),
-				SystemInstanceAware:                     &true,
+				SystemInstanceAware:                     &boolPtr,
 				ApiProtocol:                             str.Ptr("odata-v2"),
 				Tags:                                    json.RawMessage(`["apiTestTag"]`),
 				Countries:                               json.RawMessage(`["BG","US"]`),
@@ -253,7 +254,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
 				Visibility:                              str.Ptr("public"),
-				Disabled:                                &true,
+				Disabled:                                &boolPtr,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 				LineOfBusiness:                          json.RawMessage(`["lineOfBusiness2"]`),
 				Industry:                                json.RawMessage(`["automotive","test"]`),
@@ -294,7 +295,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
 				TargetURL:                               fmt.Sprintf("%s/some-api/v1", baseURL),
 				ShortDescription:                        str.Ptr("lorem ipsum"),
-				SystemInstanceAware:                     &true,
+				SystemInstanceAware:                     &boolPtr,
 				ApiProtocol:                             str.Ptr("odata-v2"),
 				Tags:                                    json.RawMessage(`["ZGWSAMPLE"]`),
 				Countries:                               json.RawMessage(`["BR"]`),
@@ -338,7 +339,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Name:                "EVENT TITLE",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
 				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &true,
+				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
@@ -348,7 +349,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Successor:           nil,
 				Labels:              json.RawMessage(labels),
 				Visibility:          str.Ptr("public"),
-				Disabled:            &true,
+				Disabled:            &boolPtr,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
 				Industry:            json.RawMessage(`["automotive","test"]`),
@@ -375,7 +376,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Name:                "EVENT TITLE 2",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
 				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &true,
+				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
 				Tags:                json.RawMessage(`["eventTestTag2"]`),
@@ -414,10 +415,10 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		},
 		Vendors: []*model.VendorInput{
 			{
-				OrdID:  vendorORDID,
-				Title:  "SAP",
-				Type:   "sap",
-				Labels: json.RawMessage(labels),
+				OrdID:      vendorORDID,
+				Title:      "SAP",
+				SapPartner: &boolPtr,
+				Labels:     json.RawMessage(labels),
 			},
 		},
 	}
@@ -463,7 +464,7 @@ func fixVendors() []*model.Vendor {
 			TenantID:      tenantID,
 			ApplicationID: appID,
 			Title:         "SAP",
-			Type:          "sap",
+			SapPartner:          &boolPtr,
 			Labels:        json.RawMessage(labels),
 		},
 	}
@@ -532,7 +533,6 @@ func fixBundles() []*model.Bundle {
 }
 
 func fixAPIs() []*model.APIDefinition {
-	true := true
 	return []*model.APIDefinition{
 		{
 			ApplicationID:                           appID,
@@ -553,7 +553,7 @@ func fixAPIs() []*model.APIDefinition {
 			ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 			Labels:                                  json.RawMessage(mergedLabels),
 			Visibility:                              str.Ptr("public"),
-			Disabled:                                &true,
+			Disabled:                                &boolPtr,
 			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:                          json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
 			Industry:                                json.RawMessage(`["automotive","finance","test"]`),
@@ -607,7 +607,6 @@ func fixAPIs() []*model.APIDefinition {
 }
 
 func fixEvents() []*model.EventDefinition {
-	true := true
 	return []*model.EventDefinition{
 		{
 			Tenant:           tenantID,
@@ -625,7 +624,7 @@ func fixEvents() []*model.EventDefinition {
 			ReleaseStatus:    str.Ptr("active"),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       str.Ptr("public"),
-			Disabled:         &true,
+			Disabled:         &boolPtr,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:   json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
 			Industry:         json.RawMessage(`["automotive","finance","test"]`),

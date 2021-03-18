@@ -14,4 +14,10 @@ ALTER TABLE products
 ALTER TABLE applications
     ADD COLUMN correlation_ids JSONB;
 
+ALTER TABLE vendors
+    DROP COLUMN type;
+
+ALTER TABLE vendors
+    ADD COLUMN sap_partner BOOLEAN;
+
 COMMIT;

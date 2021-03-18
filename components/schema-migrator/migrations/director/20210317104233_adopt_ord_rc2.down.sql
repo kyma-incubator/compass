@@ -14,4 +14,10 @@ ALTER TABLE products
 ALTER TABLE applications
     DROP COLUMN correlation_ids;
 
+ALTER TABLE vendors
+    ADD COLUMN type VARCHAR(256) NOT NULL;
+
+ALTER TABLE vendors
+    DROP COLUMN sap_partner;
+
 COMMIT;
