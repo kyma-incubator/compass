@@ -111,6 +111,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("base_url"),
 		Labels:              json.RawMessage("[]"),
+		CorrelationIds:      json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -162,6 +163,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		BaseURL:             repo.NewValidNullableString("base_url"),
 		Labels:              repo.NewValidNullableString("[]"),
+		CorrelationIds:      repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,

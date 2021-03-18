@@ -11,4 +11,7 @@ ALTER TABLE products
 ALTER TABLE products
     DROP COLUMN correlation_ids;
 
+ALTER TABLE applications
+    DROP COLUMN correlation_ids;
+
 COMMIT;

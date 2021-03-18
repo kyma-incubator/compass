@@ -11,4 +11,7 @@ ALTER TABLE products
 ALTER TABLE products
     ADD COLUMN correlation_ids JSONB;
 
+ALTER TABLE applications
+    ADD COLUMN correlation_ids JSONB;
+
 COMMIT;

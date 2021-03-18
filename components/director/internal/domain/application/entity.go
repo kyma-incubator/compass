@@ -19,6 +19,7 @@ type Entity struct {
 	IntegrationSystemID   sql.NullString `db:"integration_system_id"`
 	BaseURL               sql.NullString `db:"base_url"`
 	Labels                sql.NullString `db:"labels"`
+	CorrelationIds        sql.NullString `db:"correlation_ids"`
 	*repo.BaseEntity
 }
 
