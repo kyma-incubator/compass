@@ -48,13 +48,18 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 	}
 }
 
-func (s *service) Get(ctx context.Context, id string) (*model.Webhook, error) {
-	webhook, err := s.webhookRepo.GetByIDGlobal(ctx, id)
+func (s *service) Get(ctx context.Context, id string) (webhook *model.Webhook, err error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil || tnt == "" {
+		log.C(ctx).Infof("tenant was not loaded while getting Webhook id %s", id)
+		webhook, err = s.webhookRepo.GetByIDGlobal(ctx, id)
+	} else {
+		webhook, err = s.webhookRepo.GetByID(ctx, tnt, id)
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
 	}
-
-	return webhook, nil
+	return
 }
 
 func (s *service) ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error) {

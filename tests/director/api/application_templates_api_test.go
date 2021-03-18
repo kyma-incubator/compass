@@ -196,7 +196,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
-func TestUpdateApplicationTemplateWebhooks(t *testing.T) {
+func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template"
@@ -218,6 +218,7 @@ func TestUpdateApplicationTemplateWebhooks(t *testing.T) {
 	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application template webhook")
 
 	actualWebhook := graphql.Webhook{}
+	t.Log("Add Webhook to application template")
 	err = tc.RunOperation(ctx, addReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
@@ -230,12 +231,12 @@ func TestUpdateApplicationTemplateWebhooks(t *testing.T) {
 	updatedAppTemplate := getApplicationTemplate(t, ctx, appTemplate.ID)
 	assert.Len(t, updatedAppTemplate.Webhooks, 1)
 
-	// update
 	webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 		URL: &urlUpdated, Type: graphql.WebhookTypeUnregisterApplication,
 	})
-
 	require.NoError(t, err)
+
+	t.Log("Getting Webhooks for application template")
 	updateReq := fixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
 	err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 	require.NoError(t, err)
