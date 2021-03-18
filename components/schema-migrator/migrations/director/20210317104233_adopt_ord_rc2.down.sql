@@ -1,5 +1,7 @@
 BEGIN;
 
+DROP VIEW correlation_ids;
+
 ALTER TABLE api_definitions
     DROP COLUMN implementation_standard,
     DROP COLUMN custom_implementation_standard,
