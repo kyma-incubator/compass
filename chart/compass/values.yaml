@@ -22,7 +22,7 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1773"
+      version: "PR-1775"
     gateway:
       dir:
       version: "PR-1750"
@@ -55,7 +55,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1773"
+        version: "PR-1775"
       connector:
         dir:
         version: "PR-1741"
