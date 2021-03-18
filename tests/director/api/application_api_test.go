@@ -410,26 +410,128 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 }
 
 func TestDeleteApplication(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	in := fixSampleApplicationRegisterInput("app")
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		in := fixSampleApplicationRegisterInput("app")
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-	createReq := fixRegisterApplicationRequest(appInputGQL)
-	actualApp := graphql.ApplicationExt{}
-	err = tc.RunOperation(ctx, createReq, &actualApp)
-	require.NoError(t, err)
+		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+		require.NoError(t, err)
+		createReq := fixRegisterApplicationRequest(appInputGQL)
+		actualApp := graphql.ApplicationExt{}
+		err = tc.RunOperation(ctx, createReq, &actualApp)
+		require.NoError(t, err)
 
-	require.NotEmpty(t, actualApp.ID)
+		require.NotEmpty(t, actualApp.ID)
 
-	// WHEN
-	delReq := fixUnregisterApplicationRequest(actualApp.ID)
-	saveExample(t, delReq.Query(), "unregister application")
-	err = tc.RunOperation(ctx, delReq, &actualApp)
+		// WHEN
+		delReq := fixUnregisterApplicationRequest(actualApp.ID)
+		saveExample(t, delReq.Query(), "unregister application")
+		err = tc.RunOperation(ctx, delReq, &actualApp)
 
-	//THEN
-	require.NoError(t, err)
+		//THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when application is in formation", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		tenantID := testTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - DEFAULT, test-scenario]"
+
+		defaultValue := "DEFAULT"
+		scenarios := []string{defaultValue, "test-scenario"}
+
+		jsonSchema := map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": scenarios,
+			},
+		}
+		var schema interface{} = jsonSchema
+
+		createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+
+		applicationInput := fixSampleApplicationRegisterInput("first")
+		applicationInput.Labels = &graphql.Labels{scenariosLabel: scenarios}
+		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, createApplicationReq, &application)
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer unregisterApplicationInTenant(t, application.ID, tenantID)
+		defer updateApplicationScenariosToDefaultStateInTenant(t, ctx, application.ID, tenantID)
+
+		//WHEN
+		req := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+					unregisterApplication(id: "%s") {
+						id
+					}
+				}`, application.ID))
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, nil)
+
+		//THEN
+		require.EqualError(t, err, expectedErrorMsg)
+	})
+
+	t.Run("Error when application is in formation and runtime", func(t *testing.T) {
+		//GIVEN
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - DEFAULT, test-scenario and of runtime - one-runtime]"
+		ctx := context.Background()
+		tenantID := testTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
+
+		runtimeInput := fixRuntimeInput("one-runtime")
+		defaultValue := "DEFAULT"
+		scenarios := []string{defaultValue, "test-scenario"}
+		(*runtimeInput.Labels)[scenariosLabel] = scenarios
+		runtimeInputWithNormalizationGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
+
+		runtime := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+		defer unregisterRuntimeWithinTenant(t, runtime.ID, tenantID)
+
+		applicationInput := fixSampleApplicationRegisterInput("first")
+		applicationInput.Labels = &graphql.Labels{scenariosLabel: scenarios}
+		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, createApplicationReq, &application)
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer unregisterApplicationInTenant(t, application.ID, tenantID)
+		defer updateApplicationScenariosToDefaultStateInTenant(t, ctx, application.ID, tenantID)
+
+		//WHEN
+		req := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+					unregisterApplication(id: "%s") {
+						id
+					}
+				}`, application.ID))
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, nil)
+
+		//THEN
+		require.EqualError(t, err, expectedErrorMsg)
+	})
 }
 
 func TestUpdateApplicationParts(t *testing.T) {
@@ -947,7 +1049,12 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		},
 		{
 			ApplicationName: "second",
-			Scenarios:       []string{defaultValue},
+			Scenarios:       []string{"test-scenario"},
+			Hidden:          false,
+		},
+		{
+			ApplicationName: "third",
+			Scenarios:       []string{"test-scenario"},
 			Hidden:          true,
 		},
 	}
@@ -973,6 +1080,8 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		require.NotEmpty(t, application.ID)
 
 		defer unregisterApplicationInTenant(t, application.ID, tenantID)
+		defer updateApplicationScenariosToDefaultStateInTenant(t, ctx, application.ID, tenantID)
+
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)
 

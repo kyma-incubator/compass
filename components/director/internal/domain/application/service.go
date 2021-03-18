@@ -303,13 +303,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	formations, runtimes, err := s.isInFormationAndRuntime(ctx, appTenant, id)
+	scenarios, runtimes, err := s.isInScenarioAndRuntime(ctx, appTenant, id)
 	if err != nil {
-		return errors.Wrapf(err, "while blah blah")
+		return errors.Wrapf(err, "while checking if application is in formation and runtime")
 	}
 
-	if len(formations) > 0 {
-		msg := fmt.Sprintf("System deletion failed: the system is part of a formation - %s", strings.Join(formations, ", "))
+	if len(scenarios) > 0 {
+		msg := fmt.Sprintf("System deletion failed: the system is part of a formation - %s", strings.Join(scenarios, ", "))
 
 		if len(runtimes) > 0 {
 			msg = fmt.Sprintf("%s and of runtime - %s", msg, strings.Join(runtimes, ", "))
@@ -532,7 +532,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	return true, nil
 }
 
-func (s *service) isInFormationAndRuntime(ctx context.Context, tenant, applicationID string) ([]string, []string, error) {
+func (s *service) isInScenarioAndRuntime(ctx context.Context, tenant, applicationID string) ([]string, []string, error) {
 	log.C(ctx).Infof("Getting formations for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
@@ -545,11 +545,13 @@ func (s *service) isInFormationAndRuntime(ctx context.Context, tenant, applicati
 		return nil, nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
-	if len(scenarios) == 0 || (len(scenarios) == 1 && scenarios[0] == model.ScenariosDefaultValue[0]) {
+	validScenarios := removeDefaultScenario(scenarios)
+
+	if len(validScenarios) == 0 {
 		return nil, nil, nil
 	}
 
-	scenariosQuery := buildQueryForScenarios(scenarios)
+	scenariosQuery := buildQueryForScenarios(validScenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
 	log.C(ctx).Infof("Listing runtimes matching the query %s", scenariosQuery)
@@ -563,7 +565,23 @@ func (s *service) isInFormationAndRuntime(ctx context.Context, tenant, applicati
 		runtimesNames = append(runtimesNames, r.Name)
 	}
 
-	return scenarios, runtimesNames, nil
+	return validScenarios, runtimesNames, nil
+}
+
+func removeDefaultScenario(scenarios []string) []string {
+	defaultScenarioIndex := -1
+	for idx, scenario := range scenarios {
+		if scenario == model.ScenariosDefaultValue[0] {
+			defaultScenarioIndex = idx
+			break
+		}
+	}
+
+	if defaultScenarioIndex >= 0 {
+		return append(scenarios[:defaultScenarioIndex], scenarios[defaultScenarioIndex+1:]...)
+	}
+
+	return scenarios
 }
 
 func buildQueryForScenarios(scenarios []string) string {

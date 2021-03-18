@@ -57,22 +57,17 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 }
 
 func setApplicationLabelInTenant(t *testing.T, ctx context.Context, applicationID string, tenantID string, labelKey string, labelValue interface{}) graphql.Label {
-	setLabelRequest := fixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
-	label := graphql.Label{}
-
 	request := fixApplicationsRequest()
 	applicationPage := graphql.ApplicationPage{}
-
 	err := tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
-
-	t.Logf("%+v", applicationPage.Data)
+	require.NoError(t, err)
 
 	applicationPage = graphql.ApplicationPage{}
-
 	err = tc.RunOperation(ctx, request, &applicationPage)
+	require.NoError(t, err)
 
-	t.Logf("%+v", applicationPage.Data)
-
+	setLabelRequest := fixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
+	label := graphql.Label{}
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, setLabelRequest, &label)
 	require.NoError(t, err)
 

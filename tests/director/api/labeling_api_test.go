@@ -392,20 +392,19 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixApplicationRequest(app.ID)
 	app = graphql.ApplicationExt{}
-	t.Log("1")
+
 	err = tc.RunOperation(ctx, appRequest, &app)
 	require.NoError(t, err)
-	t.Log("2")
+
 	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
 	require.True(t, ok)
-	t.Log("3")
+
 	var actualScenariosEnum []string
 	for _, v := range scenariosLabel {
 		actualScenariosEnum = append(actualScenariosEnum, v.(string))
 	}
-	t.Log("4")
+
 	assert.Equal(t, scenarios, actualScenariosEnum)
-	t.Log("5")
 }
 
 func TestDeleteLabelDefinition(t *testing.T) {
