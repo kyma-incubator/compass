@@ -123,7 +123,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, errors.New("missing location url after executing async webhook")
 	}
 
-	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
+	return response, checkForErr(resp, response.SuccessStatusCode, response.GoneStatusCode, response.Error)
 }
 
 func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error) {
@@ -173,7 +173,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response status into status template"))
 	}
 
-	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
+	return response, checkForErr(resp, response.SuccessStatusCode, nil, response.Error)
 }
 
 func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) {
@@ -200,7 +200,12 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 	}, nil
 }
 
-func checkForErr(resp *http.Response, successStatusCode *int, error *string) error {
+func checkForErr(resp *http.Response, successStatusCode, goneStatusCode *int, error *string) error {
+	//TODO: Check whether this should be done only for delete webhooks
+	if goneStatusCode != nil && resp.StatusCode == *goneStatusCode {
+		return recerr.NewDeleteWebhookStatusGoneErr(fmt.Errorf("gone response status %d from OutputTemplate was met while calling webhook", *goneStatusCode))
+	}
+
 	var errMsg string
 	if *successStatusCode != resp.StatusCode {
 		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *successStatusCode, resp.StatusCode)

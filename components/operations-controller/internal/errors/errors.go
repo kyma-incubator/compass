@@ -45,3 +45,21 @@ func NewFatalReconcileErrorFromExisting(err error) *FatalReconcileErr {
 		error: err,
 	}
 }
+
+// DeleteWebhookStatusGoneErr represents an error type which represents a gone status code
+// returned in response to calling delete webhook.
+type DeleteWebhookStatusGoneErr struct {
+	error
+}
+
+// NewDeleteWebhookStatusGoneErr constructs a new DeleteWebhookStatusGoneErr with the given error message
+func NewDeleteWebhookStatusGoneErr(error error) *DeleteWebhookStatusGoneErr {
+	return &DeleteWebhookStatusGoneErr{error: error}
+}
+
+// IsDeleteWebhookStatusGoneErr check whether an error is a DeleteWebhookStatusGoneErr
+// and returns true if so.
+func IsDeleteWebhookStatusGoneErr(err error) (ok bool) {
+	_, ok = err.(DeleteWebhookStatusGoneErr)
+	return
+}
