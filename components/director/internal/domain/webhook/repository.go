@@ -162,7 +162,10 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+	if item.TenantID == nil {
+		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+	}
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
 func (r *repository) Delete(ctx context.Context, id string) error {
