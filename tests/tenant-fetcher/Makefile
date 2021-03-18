@@ -8,12 +8,6 @@ export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-resolve-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
-ensure-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
 test-local:
 	@echo ${SKIP_STEP_MESSAGE}
 

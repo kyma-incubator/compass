@@ -9,12 +9,6 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 test-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-resolve-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
-ensure-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
 e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh system-broker
 

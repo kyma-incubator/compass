@@ -15,12 +15,6 @@ verify:: vet
 test-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-resolve-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
-ensure-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
 e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh external-services-mock
 
