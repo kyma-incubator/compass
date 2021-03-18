@@ -18,6 +18,8 @@ const (
 	partners         = `["microsoft:vendor:Microsoft:"]`
 )
 
+var boolPtr = true
+
 func fixEntityVendor() *ordvendor.Entity {
 	return &ordvendor.Entity{
 		OrdID:         ordID,
