@@ -42,7 +42,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1768" # TODO remove
+      version: "PR-1768"
     connectivity_adapter:
       dir:
       version: "PR-1770"

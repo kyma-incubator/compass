@@ -17,7 +17,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/beb8e5b6d8f3a644b8380e667a9376bc353e54dd/github-connector/internal/registration/configs/githubopenAPI.json"
+const (
+	OpenAPISpec  = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/beb8e5b6d8f3a644b8380e667a9376bc353e54dd/github-connector/internal/registration/configs/githubopenAPI.json"
+	AsyncAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/2fcc4728f63cdf23656417d9f85679a02367df97/slack-connector/internal/registration/configs/slackasyncapi.json"
+	MDDocumentURL = "https://raw.githubusercontent.com/kyma-incubator/compass/v1.4.2/README.md"
+)
 
 func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 	ctx := context.Background()
