@@ -25,7 +25,7 @@ import (
 	"net/http"
 	"testing"
 
-	errors2 "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
+	internal_errors "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
@@ -239,7 +239,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 }
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_ShouldReturnWebhookStatusGoneError(t *testing.T) {
-	goneCodeString := "410"
+	goneCodeString := "404"
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
@@ -261,7 +261,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
-				StatusCode: http.StatusGone,
+				StatusCode: http.StatusNotFound,
 			},
 		},
 	})
@@ -269,7 +269,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 	_, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
-	require.IsType(t, errors2.WebhookStatusGoneErr{}, err)
+	require.IsType(t, internal_errors.WebhookStatusGoneErr{}, err)
 	require.Contains(t, err.Error(), goneCodeString)
 }
 
