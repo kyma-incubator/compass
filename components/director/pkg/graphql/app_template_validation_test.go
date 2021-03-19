@@ -311,6 +311,256 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
+// ApplicationTemaplteInput
+
+func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testing.T) {
+	testPlaceholderName := "test"
+
+	testCases := []struct {
+		Name  string
+		Value []*graphql.PlaceholderDefinitionInput
+		Valid bool
+	}{
+		{
+			Name: "Valid",
+			Value: []*graphql.PlaceholderDefinitionInput{
+				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+			},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - no placeholders",
+			Value: []*graphql.PlaceholderDefinitionInput{},
+			Valid: true,
+		},
+		{
+			Name: "Invalid - not unique",
+			Value: []*graphql.PlaceholderDefinitionInput{
+				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Different description")},
+			},
+			Valid: false,
+		},
+		{
+			Name: "Invalid - not used",
+			Value: []*graphql.PlaceholderDefinitionInput{
+				{Name: "notused", Description: str.Ptr("Test description")},
+			},
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateUpdateInput()
+			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
+			sut.Placeholders = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestApplicationTemplateUpdateInput_Validate_Name(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         string
+		ExpectedValid bool
+	}{
+		{
+			Name:          "ExpectedValid",
+			Value:         "name-123.com",
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Valid Printable ASCII",
+			Value:         "V1 +=_-)(*&^%$#@!?/>.<,|\\\"':;}{][",
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "String longer than 100 chars",
+			Value:         inputvalidationtest.String129Long,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "String contains invalid ASCII",
+			Value:         "ąćńłóęǖǘǚǜ",
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateUpdateInput()
+			sut.Name = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestApplicationTemplateUpdateInput_Validate_Description(t *testing.T) {
+	testCases := []struct {
+		Name  string
+		Value *string
+		Valid bool
+	}{
+		{
+			Name: "Valid",
+			Value: str.Ptr("valid	valid"),
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Nil",
+			Value: (*string)(nil),
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Empty",
+			Value: str.Ptr(inputvalidationtest.EmptyString),
+			Valid: true,
+		},
+		{
+			Name:  "Invalid - Too long",
+			Value: str.Ptr(inputvalidationtest.String2001Long),
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateUpdateInput()
+			sut.Description = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestApplicationTemplateUpdateInput_Validate_Placeholders(t *testing.T) {
+	testPlaceholderName := "test"
+	testCases := []struct {
+		Name  string
+		Value []*graphql.PlaceholderDefinitionInput
+		Valid bool
+	}{
+		{
+			Name: "Valid",
+			Value: []*graphql.PlaceholderDefinitionInput{
+				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+			},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Empty",
+			Value: []*graphql.PlaceholderDefinitionInput{},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Nil",
+			Value: nil,
+			Valid: true,
+		},
+		{
+			Name: "Invalid - Nil in slice",
+			Value: []*graphql.PlaceholderDefinitionInput{
+				nil,
+			},
+			Valid: false,
+		},
+		{
+			Name: "Invalid - Nested validation error",
+			Value: []*graphql.PlaceholderDefinitionInput{
+				{},
+			},
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateUpdateInput()
+			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
+			sut.Placeholders = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestApplicationTemplateUpdateInput_Validate_AccessLevel(t *testing.T) {
+	testCases := []struct {
+		Name  string
+		Value graphql.ApplicationTemplateAccessLevel
+		Valid bool
+	}{
+		{
+			Name:  "Valid",
+			Value: graphql.ApplicationTemplateAccessLevelGlobal,
+			Valid: true,
+		},
+		{
+			Name:  "Invalid - Empty",
+			Value: inputvalidationtest.EmptyString,
+			Valid: false,
+		},
+		{
+			Name:  "Invalid - Not in enum",
+			Value: "invalid",
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateUpdateInput()
+			sut.AccessLevel = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 // PlaceholderDefinitionInput
 
 func TestPlaceholderDefinitionInput_Validate_Name(t *testing.T) {
@@ -646,6 +896,15 @@ func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 		Webhooks:    []*graphql.WebhookInput{},
+	}
+}
+func fixValidApplicationTemplateUpdateInput() graphql.ApplicationTemplateUpdateInput {
+	return graphql.ApplicationTemplateUpdateInput{
+		Name: "valid",
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name: "valid",
+		},
+		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
 

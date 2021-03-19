@@ -283,6 +283,23 @@ func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
 	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
+
+	assertWebhooks(t, in.Webhooks, actualApplicationTemplate.Webhooks)
+}
+
+func assertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateUpdateInput, actualApplicationTemplate graphql.ApplicationTemplate) {
+	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
+	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
+
+	gqlAppInput, err := tc.graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	require.NoError(t, err)
+
+	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
+	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
+
+	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
+	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
+	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
 }
 
 func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
