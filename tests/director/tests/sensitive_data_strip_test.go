@@ -106,103 +106,88 @@ func TestSensitiveDataStrip(t *testing.T) {
 	instanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
 	require.NotNil(t, instanceAuth)
 
-	type accessRequired struct {
-		appWebhooks               bool
-		appAuths                  bool
-		appTemplateWebhooks       bool
-		bundleInstanceAuth        bool
-		bundleInstanceAuths       bool
-		bundleDefaultInstanceAuth bool
-		documentFetchRequest      bool
-		eventSpecFetchRequest     bool
-		apiSpecFetchRequest       bool
-		integrationSystemAuths    bool
-		runtimeAuths              bool
-	}
-
-	type consumerType string
-	const (
-		applicationConsumer       consumerType = "application"
-		runtimeConsumer           consumerType = "runtime"
-		integrationSystemConsumer consumerType = "integrationSystem"
-	)
-
-	type testCase struct {
-		name              string
-		consumer          *gcli.Client
-		consumerType      consumerType
-		fieldExpectations accessRequired
-	}
-	testCases := []testCase{
-		{
-			name:         "Runtime access",
-			consumer:     runtimeOAuthGraphQLClient,
-			consumerType: runtimeConsumer,
-			fieldExpectations: accessRequired{
-				bundleInstanceAuth:        true,
-				bundleInstanceAuths:       true,
-				bundleDefaultInstanceAuth: true,
-				runtimeAuths:              true,
+	t.Run("Application access", func(t *testing.T) {
+		type accessRequired struct {
+			appWebhooks               bool
+			appAuths                  bool
+			bundleInstanceAuth        bool
+			bundleInstanceAuths       bool
+			bundleDefaultInstanceAuth bool
+			documentFetchRequest      bool
+			eventSpecFetchRequest     bool
+			apiSpecFetchRequest       bool
+		}
+		type testCase struct {
+			name              string
+			consumer          *gcli.Client
+			fieldExpectations accessRequired
+		}
+		testCases := []testCase{
+			{
+				name:     "Runtime consumer",
+				consumer: runtimeOAuthGraphQLClient,
+				fieldExpectations: accessRequired{
+					bundleInstanceAuth:        true,
+					bundleInstanceAuths:       true,
+					bundleDefaultInstanceAuth: true,
+				},
 			},
-		},
-		{
-			name:         "Integration system access",
-			consumer:     intSystemOAuthGraphQLClient,
-			consumerType: integrationSystemConsumer,
-			fieldExpectations: accessRequired{
-				appTemplateWebhooks:    true,
-				integrationSystemAuths: true,
+			{
+				name:              "Integration system consumer",
+				consumer:          intSystemOAuthGraphQLClient,
+				fieldExpectations: accessRequired{},
 			},
-		},
-		{
-			name:         "Application access",
-			consumer:     applicationOAuthGraphQLClient,
-			consumerType: applicationConsumer,
-			fieldExpectations: accessRequired{
-				appWebhooks:               true,
-				appAuths:                  true,
-				bundleInstanceAuth:        true,
-				bundleInstanceAuths:       true,
-				bundleDefaultInstanceAuth: true,
-				documentFetchRequest:      true,
-				eventSpecFetchRequest:     true,
-				apiSpecFetchRequest:       true,
+			{
+				name:     "Application consumer",
+				consumer: applicationOAuthGraphQLClient,
+				fieldExpectations: accessRequired{
+					appWebhooks:               true,
+					appAuths:                  true,
+					bundleInstanceAuth:        true,
+					bundleInstanceAuths:       true,
+					bundleDefaultInstanceAuth: true,
+					documentFetchRequest:      true,
+					eventSpecFetchRequest:     true,
+					apiSpecFetchRequest:       true,
+				},
 			},
-		},
-	}
+		}
 
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			// applications
-			application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
-			require.Equal(t, application.Webhooks != nil, test.fieldExpectations.appWebhooks)
-			require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
-			//=== RUN   TestSensitiveDataStrip/Application_access
-			// X=false true
-			require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.apiSpecFetchRequest)
-			require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.eventSpecFetchRequest)
-			require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil, test.fieldExpectations.documentFetchRequest)
+		for _, test := range testCases {
+			t.Run(test.name, func(t *testing.T) {
+				application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
+				require.Equal(t, application.Webhooks != nil, test.fieldExpectations.appWebhooks)
+				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
+				require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.apiSpecFetchRequest)
+				require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.eventSpecFetchRequest)
+				require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil, test.fieldExpectations.documentFetchRequest)
+				require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
+			})
+		}
+	})
 
-			require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
+	t.Run("Integration system access from integration system", func(t *testing.T) {
+		is := fixtures.GetIntegrationSystem(t, ctx, intSystemOAuthGraphQLClient, integrationSystem.ID)
+		require.NotNil(t, is.Auths)
+	})
 
-			// TODO app templates
-			if test.consumerType == integrationSystemConsumer {
-				// integration systems
-				is := fixtures.GetIntegrationSystem(t, ctx, test.consumer, integrationSystem.ID)
-				require.Equal(t, is.Auths != nil, test.fieldExpectations.integrationSystemAuths)
+	t.Run("Application access from integration system", func(t *testing.T) {
+		appTemplate := fixtures.GetApplicationTemplate(t, ctx, intSystemOAuthGraphQLClient, tenantId, appTemplate.ID)
+		require.NotNil(t, appTemplate.Webhooks)
+	})
 
-				appTemplate := fixtures.GetApplicationTemplate(t, ctx, test.consumer, tenantId, appTemplate.ID)
-				t.Log(fmt.Sprintf("APP TEMPLATE: %v", appTemplate.Webhooks))
-				require.Equal(t, appTemplate.Webhooks != nil, test.fieldExpectations.appTemplateWebhooks)
-			}
-
-			if test.consumerType == integrationSystemConsumer || test.consumerType == runtimeConsumer {
-				// runtimes
-				rt := fixtures.GetRuntime(t, ctx, test.consumer, tenantId, runtime.ID)
-				require.Equal(t, rt.Auths != nil, test.fieldExpectations.runtimeAuths)
-			}
+	t.Run("Runtime access", func(t *testing.T) {
+		t.Run("from runtime", func(t *testing.T) {
+			rt := fixtures.GetRuntime(t, ctx, runtimeOAuthGraphQLClient, tenantId, runtime.ID)
+			require.NotNil(t, rt.Auths)
 		})
-	}
+
+		t.Run("from integration system", func(t *testing.T) {
+			rt := fixtures.GetRuntime(t, ctx, intSystemOAuthGraphQLClient, tenantId, runtime.ID)
+			require.NotNil(t, rt.Auths)
+		})
+	})
+
 }
 
 func gqlClient(t *testing.T, creds *graphql.OAuthCredentialData, scopes string) *gcli.Client {
