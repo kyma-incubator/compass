@@ -106,7 +106,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		request := webhook.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
-		if errors.IsDeleteWebhookStatusGoneErr(err) {
+		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
 			log.C(ctx).Info(fmt.Sprintf("%s webhook initial request returned gone status %d", *(webhookEntity.Mode), *response.GoneStatusCode))
 			return r.finalizeStatusSuccess(ctx, operation)
 		}
