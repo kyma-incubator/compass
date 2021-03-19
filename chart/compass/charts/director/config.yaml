@@ -85,7 +85,7 @@ graphql:
     application:
       auths: ["application.auths:read"]
       webhooks: ["application.webhooks:read"]
-    applicationTemplate:
+    application_template:
       webhooks: ["application_template.webhooks:read"]
     bundle:
       instance_auth: ["bundle.instance_auths:read"]
@@ -116,6 +116,9 @@ clientCredentialsRegistrationScopes:
     - "application.auths:read"
     - "application.webhooks:read"
     - "bundle.instance_auths:read"
+    - "document.fetch_request:read"
+    - "event_spec.fetch_request:read"
+    - "api_spec.fetch_request:read"
   integration_system:
     - "application:read"
     - "application:write"
@@ -129,5 +132,4 @@ clientCredentialsRegistrationScopes:
     - "automatic_scenario_assignment:read"
     - "automatic_scenario_assignment:write"
     - "integration_system.auths:read"
-    - "application.webhooks:read"
     - "application_template.webhooks:read"

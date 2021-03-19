@@ -6,15 +6,12 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	gcli "github.com/machinebox/graphql"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,13 +20,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 		appName     = "application-test"
 		runtimeName = "runtime-test"
 		intSysName  = "integration-system-test"
-
-		appAuthsReadScope       = "application.auths:read"
-		runtimeAuthsReadScope   = "runtime.auths:read"
-		intSystemAuthsReadScope = "integration_system.auths:read"
-		webhooksReadScopes      = "application.webhooks:read application_template.webhooks:read"
-		bundleInstanceAuthScope = "bundle.instance_auths:read"
-		fetchRequestsReadScopes = "document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read"
 	)
 
 	ctx := context.Background()
@@ -40,62 +30,63 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NoError(t, err)
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
+	// CREATE APP TEMPLATE
+	t.Log("Creating application template")
+	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
+	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+
 	// REGISTER RUNTIME
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
-	// register runtime oauth client
+	// REQUEST RUNTIME OAUTH CLIENT
+	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+	runtimeOAuthGraphQLClient := gqlClient(t, rtmOauthCredentialData, token.RuntimeScopes)
 
-	// register application
+	// REGISTER APPLICATION
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 	// assert document, event and api definitions are present
-	assert.Len(t, app.Bundles.Data, 1)
+	require.Len(t, app.Bundles.Data, 1)
 	bndl := app.Bundles.Data[0]
 
-	assert.Len(t, bndl.EventDefinitions.Data, 1)
-	assert.Len(t, bndl.APIDefinitions.Data, 1)
-	assert.Len(t, bndl.Documents.Data, 1)
+	require.Len(t, bndl.EventDefinitions.Data, 1)
+	require.Len(t, bndl.APIDefinitions.Data, 1)
+	require.Len(t, bndl.Documents.Data, 1)
 
 	// register application oauth client
+	t.Log(fmt.Sprintf("Requesting application OAuth client for application %q", appName))
 	appAuth := fixtures.RequestClientCredentialsForApplication(t, context.Background(), dexGraphQLClient, tenantId, app.ID)
 	appOauthCredentialData, ok := appAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, appOauthCredentialData.ClientSecret)
 	require.NotEmpty(t, appOauthCredentialData.ClientID)
+	applicationOAuthGraphQLClient := gqlClient(t, appOauthCredentialData, token.ApplicationScopes)
 
-	intSysInput := graphql.IntegrationSystemInput{Name: intSysName}
-	intSys, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
-	require.NoError(t, err)
-
-	registerIntegrationSystemRequest := fixtures.FixRegisterIntegrationSystemRequest(intSys)
-	output := graphql.IntegrationSystemExt{}
-
-	// WHEN
-	t.Log("Register integration system")
-
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerIntegrationSystemRequest, &output)
-	require.NoError(t, err)
-	require.NotEmpty(t, output.ID)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, output.ID)
+	// register integration system
+	t.Log(fmt.Sprintf("Registering integration system %q", intSysName))
+	integrationSystem := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSysName)
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem.ID)
 
 	// register integration system oauth client
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), dexGraphQLClient, tenantId, app.ID)
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), dexGraphQLClient, tenantId, integrationSystem.ID)
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
-	require.NotEmpty(t, appOauthCredentialData.ClientSecret)
-	require.NotEmpty(t, appOauthCredentialData.ClientID)
+	require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
+	intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 
 	// assign runtime and app to the same scenario
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
@@ -112,35 +103,106 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	// create bundle instance auth
 	t.Log(fmt.Sprintf("Creating bundle instance auths %q with bundle with APIDefinition and ", appName))
-	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
-	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
-	bndlInstanceAuthRequestInputStr, err := testctx.Tc.Graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
-	require.NoError(t, err)
+	instanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+	require.NotNil(t, instanceAuth)
 
-	bndlInstanceAuthCreationRequestReq := fixtures.FixRequestBundleInstanceAuthCreationRequest(bndl.ID, bndlInstanceAuthRequestInputStr)
+	type accessRequired struct {
+		appWebhooks               bool
+		appAuths                  bool
+		appTemplateWebhooks       bool
+		bundleInstanceAuth        bool
+		bundleInstanceAuths       bool
+		bundleDefaultInstanceAuth bool
+		documentFetchRequest      bool
+		eventSpecFetchRequest     bool
+		apiSpecFetchRequest       bool
+		integrationSystemAuths    bool
+		runtimeAuths              bool
+	}
 
-	t.Log("Issue a Hydra token with Client Credentials")
-	runtimeOAuthGraphQLClient := gqlClient(t, rtmOauthCredentialData, "runtime:write application:read")
-	runtimeConsumer := testctx.Tc.NewOperation(ctx)
+	type consumerType string
+	const (
+		applicationConsumer       consumerType = "application"
+		runtimeConsumer           consumerType = "runtime"
+		integrationSystemConsumer consumerType = "integrationSystem"
+	)
 
-	t.Log("Request bundle instance auth creation")
-	output := graphql.BundleInstanceAuth{}
-	err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, runtimeOAuthGraphQLClient, &output)
+	type testCase struct {
+		name              string
+		consumer          *gcli.Client
+		consumerType      consumerType
+		fieldExpectations accessRequired
+	}
+	testCases := []testCase{
+		{
+			name:         "Runtime access",
+			consumer:     runtimeOAuthGraphQLClient,
+			consumerType: runtimeConsumer,
+			fieldExpectations: accessRequired{
+				bundleInstanceAuth:        true,
+				bundleInstanceAuths:       true,
+				bundleDefaultInstanceAuth: true,
+				runtimeAuths:              true,
+			},
+		},
+		{
+			name:         "Integration system access",
+			consumer:     intSystemOAuthGraphQLClient,
+			consumerType: integrationSystemConsumer,
+			fieldExpectations: accessRequired{
+				appTemplateWebhooks:    true,
+				integrationSystemAuths: true,
+			},
+		},
+		{
+			name:         "Application access",
+			consumer:     applicationOAuthGraphQLClient,
+			consumerType: applicationConsumer,
+			fieldExpectations: accessRequired{
+				appWebhooks:               true,
+				appAuths:                  true,
+				bundleInstanceAuth:        true,
+				bundleInstanceAuths:       true,
+				bundleDefaultInstanceAuth: true,
+				documentFetchRequest:      true,
+				eventSpecFetchRequest:     true,
+				apiSpecFetchRequest:       true,
+			},
+		},
+	}
 
-	require.NoError(t, err)
-	assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			// applications
+			application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
+			require.Equal(t, application.Webhooks != nil, test.fieldExpectations.appWebhooks)
+			require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
+			//=== RUN   TestSensitiveDataStrip/Application_access
+			// X=false true
+			require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.apiSpecFetchRequest)
+			require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.eventSpecFetchRequest)
+			require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil, test.fieldExpectations.documentFetchRequest)
 
-	// Fetch Application with bundles
-	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(app.ID)
-	bndlFromAPI := graphql.ApplicationExt{}
+			require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
 
-	err = runtimeConsumer.Run(bundlesForApplicationReq, runtimeOAuthGraphQLClient, &bndlFromAPI)
-	require.NoError(t, err)
+			// TODO app templates
+			if test.consumerType == integrationSystemConsumer {
+				// integration systems
+				is := fixtures.GetIntegrationSystem(t, ctx, test.consumer, integrationSystem.ID)
+				require.Equal(t, is.Auths != nil, test.fieldExpectations.integrationSystemAuths)
 
-	// Assert the bundle instance auths exists
-	require.Equal(t, 1, len(bndlFromAPI.Bundles.Data))
-	require.Equal(t, 1, len(bndlFromAPI.Bundles.Data[0].InstanceAuths))
+				appTemplate := fixtures.GetApplicationTemplate(t, ctx, test.consumer, tenantId, appTemplate.ID)
+				t.Log(fmt.Sprintf("APP TEMPLATE: %v", appTemplate.Webhooks))
+				require.Equal(t, appTemplate.Webhooks != nil, test.fieldExpectations.appTemplateWebhooks)
+			}
 
+			if test.consumerType == integrationSystemConsumer || test.consumerType == runtimeConsumer {
+				// runtimes
+				rt := fixtures.GetRuntime(t, ctx, test.consumer, tenantId, runtime.ID)
+				require.Equal(t, rt.Auths != nil, test.fieldExpectations.runtimeAuths)
+			}
+		})
+	}
 }
 
 func gqlClient(t *testing.T, creds *graphql.OAuthCredentialData, scopes string) *gcli.Client {
@@ -149,6 +211,7 @@ func gqlClient(t *testing.T, creds *graphql.OAuthCredentialData, scopes string) 
 }
 
 func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
+	webhookURL := "http://test-url.com"
 	return graphql.ApplicationRegisterInput{
 		Name: name,
 		Bundles: []*graphql.BundleCreateInput{{
@@ -181,6 +244,10 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 					URL: MDDocumentURL,
 				},
 			}},
+		}},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.WebhookTypeUnregisterApplication,
+			URL:  &webhookURL,
 		}},
 	}
 }

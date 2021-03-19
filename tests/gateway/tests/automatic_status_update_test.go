@@ -70,7 +70,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		require.True(t, ok)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, "application:write")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Register application as Integration System")
@@ -124,7 +124,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		require.NotEmpty(t, appOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := token.GetAccessToken(t, appOauthCredentialData, "application:read")
+		accessToken := token.GetAccessToken(t, appOauthCredentialData, token.ApplicationScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Get Application as Application")
@@ -163,7 +163,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:read")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Get Runtime as Runtime")

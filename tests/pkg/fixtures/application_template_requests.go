@@ -41,6 +41,38 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	return appTemplateInput
 }
 
+func FixApplicationTemplateWithWebhook(name string) graphql.ApplicationTemplateInput {
+	appTemplateDesc := "app-template-desc"
+	placeholderDesc := "new-placeholder-desc"
+	providerName := "compass-tests"
+	appTemplateInput := graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &appTemplateDesc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:         "app",
+			ProviderName: &providerName,
+			Description:  ptr.String("test {{new-placeholder}}"),
+			Labels: &graphql.Labels{
+				"a": []string{"b", "c"},
+				"d": []string{"e", "f"},
+			},
+			HealthCheckURL: ptr.String("http://url.valid"),
+		},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.WebhookTypeConfigurationChanged,
+			URL:  ptr.String("http://url.com"),
+		}},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "new-placeholder",
+				Description: &placeholderDesc,
+			},
+		},
+		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	return appTemplateInput
+}
+
 func FixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
