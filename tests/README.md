@@ -1,29 +1,34 @@
 # Compass tests
 
-Compass tests consists of end-to-end tests for Compass project:
-- each component's tests are placed into subdirectory named after the component 
-- all util directories are placed into `pkg`
+Compass tests comprise end-to-end tests for the Compass project, as follows:
+- The tests of each component are placed into a subdirectory with the corresponding title.
+- All utilities directories are placed into the `pkg` directory.
+
+## Prerequisites
+
+To run the tests, it is required a running minikube instance with installed Kyma and Compass.
 
 ## Usage
 
 The global Dockerfile builds all component test directories and adds the binaries to the image. 
-To run the tests running minikube with installed kyma and Compass is needed.
 
-The tests are run using Octopus. The Octopus test definitions can be found in `kyma-incubator/compass/chart/compass/templates/tests`.
+The tests are run via Octopus. The Octopus test definitions can be found in `kyma-incubator/compass/chart/compass/templates/tests`.
 
 ## Make targets
 
 ### Global Makefile
-- `deploy-tests-on-minikube` - push a new version of the tests into the Minikube cluster
-- `e2e-test` - create a new cluster-test-suite matching all test-definitions, runs the tests and provides information about the current status, finally cleans up after the test's execution is finished
-- `e2e-test-clean` - clean up after the test's execution is finished in case of abnormal termination of `e2e-test`
+The global Makefile comprises the following commands:
+
+- `deploy-tests-on-minikube` - Pushes a new version of the tests into the Minikube cluster.
+- `e2e-test` - Creates a new cluster-test-suite matching all test-definitions. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
+- `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
 
 ### Local Makefile
-Each component's test directory contains local Makefile.
+Each component test directory contains local Makefile that comprises the following commands:
 
-- `e2e-test` - create a new cluster-test-suite matching the component's test-definition, runs the tests and provides information about the current status, finally cleans up after the test's execution is finished
-- `e2e-test-clean` - clean up after the test's execution is finished in case of abnormal termination of `e2e-test`
-- `sandbox-test` - creates copy of the component's test-definition with changed command and installs go into the pod which is created by Octopus
-- `run` - runs the specified test. Example `make testName=TestFullConnectorFlow run`
-- `sandbox-deploy-test` - creates new binary for the components tests and pushes it into the cluster
-- `sandbox-test-clean` - deletes the cluster-test-suite and test-definition created by `sandbox-test`
+- `e2e-test` - Creates a new cluster-test-suite matching the component's test-definition. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
+- `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
+- `sandbox-test` - Creates a copy of the component's test-definition with changed command and installs go into the pod which is created by Octopus.
+- `run` - Runs the specified test. For example: `make testName=TestFullConnectorFlow run`.
+- `sandbox-deploy-test` - Creates new binary for the components tests and pushes it into the cluster.
+- `sandbox-test-clean` - Deletes the cluster-test-suite and test-definition created by `sandbox-test`.
