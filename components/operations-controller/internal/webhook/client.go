@@ -123,6 +123,10 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, errors.New("missing location url after executing async webhook")
 	}
 
+	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
+		return response, err
+	}
+
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
@@ -214,5 +218,12 @@ func checkForErr(resp *http.Response, successStatusCode *int, error *string) err
 		return errors.New(errMsg)
 	}
 
+	return nil
+}
+
+func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
+	if goneStatusCode != nil && resp.StatusCode == *goneStatusCode {
+		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
+	}
 	return nil
 }
