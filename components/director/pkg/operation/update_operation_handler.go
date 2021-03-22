@@ -162,7 +162,7 @@ func operationRequestFromBody(ctx context.Context, request *http.Request) (*Oper
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
-			log.C(ctx).WithError(err).Error("Failed to close request body: %v", err)
+			log.C(ctx).WithError(err).Errorf("Failed to close request body: %v", err)
 		}
 	}()
 
