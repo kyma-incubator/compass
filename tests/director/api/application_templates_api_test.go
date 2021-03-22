@@ -63,8 +63,9 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	appTemplate := createApplicationTemplate(t, ctx, name)
 	defer deleteApplicationTemplate(t, ctx, appTemplate.ID)
 
-	appTemplateInput := graphql.ApplicationTemplateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
-	appTemplateGQL, err := tc.graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateGQL, err := tc.graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+
 	updateAppTemplateRequest := fixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
 	updateOutput := graphql.ApplicationTemplate{}
 
@@ -76,7 +77,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	//THEN
 	t.Log("Check if application template was updated")
-	assertApplicationTemplate(t, appTemplateInput, updateOutput)
+	assertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
 	saveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
@@ -193,4 +194,74 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-value", *outputApp.Application.Description)
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+}
+
+func TestAddWebhookToApplicationTemplate(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "app-template"
+
+	t.Log("Create application template")
+	appTemplate := createApplicationTemplate(t, ctx, name)
+	defer deleteApplicationTemplate(t, ctx, appTemplate.ID)
+
+	// add
+	url := "http://new-webhook.url"
+	urlUpdated := "http://updated-webhook.url"
+	webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL:  &url,
+		Type: graphql.WebhookTypeUnregisterApplication,
+	})
+
+	require.NoError(t, err)
+	addReq := fixAddWebhookToTemplateRequest(appTemplate.ID, webhookInStr)
+	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application template webhook")
+
+	actualWebhook := graphql.Webhook{}
+	t.Run("fails when tenant is present", func(t *testing.T) {
+		t.Log("Trying to Webhook to application template with tenant")
+		err = tc.RunOperation(ctx, addReq, &actualWebhook)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not found")
+	})
+	t.Run("succeeds with no tenant", func(t *testing.T) {
+
+		t.Log("Add Webhook to application template")
+		err = tc.RunOperationWithoutTenant(ctx, addReq, &actualWebhook)
+		require.NoError(t, err)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+		assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
+		id := actualWebhook.ID
+		require.NotNil(t, id)
+
+	})
+
+	updatedAppTemplate := getApplicationTemplate(t, ctx, appTemplate.ID)
+	assert.Len(t, updatedAppTemplate.Webhooks, 1)
+
+	webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL: &urlUpdated, Type: graphql.WebhookTypeUnregisterApplication,
+	})
+	require.NoError(t, err)
+
+	t.Log("Getting Webhooks for application template")
+	updateReq := fixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
+	err = tc.RunOperationWithoutTenant(ctx, updateReq, &actualWebhook)
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+
+	// delete
+
+	//GIVEN
+	deleteReq := fixDeleteWebhookRequest(actualWebhook.ID)
+
+	//WHEN
+	err = tc.RunOperationWithoutTenant(ctx, deleteReq, &actualWebhook)
+
+	//THEN
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }

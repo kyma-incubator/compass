@@ -22,7 +22,7 @@ type ApplicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
-	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
+	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
@@ -32,6 +32,7 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
 	InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error)
+	UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateInput) (model.ApplicationTemplateUpdateInput, error)
 	ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput
 }
 
@@ -261,7 +262,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	return gqlApp, nil
 }
 
-func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -270,7 +271,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
+	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
 		return nil, err
 	}
