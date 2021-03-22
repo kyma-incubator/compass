@@ -25,7 +25,7 @@ func NewLivenessHandler(p Pinger) func(writer http.ResponseWriter, request *http
 		writer.WriteHeader(http.StatusOK)
 		_, err = writer.Write([]byte("ok"))
 		if err != nil {
-			logger.WithError(err).Error("An error has occurred while writing to response body")
+			logger.WithError(err).Errorf("An error has occurred while writing to response body: %v", err)
 		}
 	}
 }
