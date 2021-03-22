@@ -23,7 +23,7 @@ type Config struct {
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JwksEndpoints             []string      `envconfig:"APP_JWKS_ENDPOINTS"`
 	IdentityZone              string        `envconfig:"APP_TENANT_IDENTITY_ZONE"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
@@ -34,7 +34,7 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 	logger := log.C(ctx)
 
 	middleware := auth.New(
-		cfg.JwksEndpoint,
+		cfg.JwksEndpoints,
 		cfg.IdentityZone,
 		cfg.SubscriptionCallbackScope,
 		extractTrustedIssuersScopePrefixes(authConfig),

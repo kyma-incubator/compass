@@ -299,7 +299,7 @@ global:
     port: 3000
     authentication:
       allowJWTSigningNone: true
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
       identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"

@@ -31,16 +31,16 @@ type Error struct {
 type Authenticator struct {
 	mux                        sync.RWMutex
 	cachedJWKs                 jwk.Set
-	jwksEndpoint               string
+	jwksEndpoints              []string
 	zoneId                     string
 	trustedClaimPrefixes       []string
 	subscriptionCallbacksScope string
 	allowJWTSigningNone        bool
 }
 
-func New(jwksEndpoint, zoneId, subscriptionCallbacksScope string, trustedClaimPrefixes []string, allowJWTSigningNone bool) *Authenticator {
+func New(jwksEndpoints []string, zoneId, subscriptionCallbacksScope string, trustedClaimPrefixes []string, allowJWTSigningNone bool) *Authenticator {
 	return &Authenticator{
-		jwksEndpoint:               jwksEndpoint,
+		jwksEndpoints:              jwksEndpoints,
 		zoneId:                     zoneId,
 		trustedClaimPrefixes:       trustedClaimPrefixes,
 		subscriptionCallbacksScope: subscriptionCallbacksScope,
@@ -84,8 +84,8 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	}
 }
 
-func (a *Authenticator) SetJWKSEndpoint(url string) {
-	a.jwksEndpoint = url
+func (a *Authenticator) SetJWKSEndpoints(urls []string) {
+	a.jwksEndpoints = urls
 }
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
@@ -189,12 +189,31 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
-	if err != nil {
-		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
+
+	for _, jwksEndpoint := range a.jwksEndpoints {
+		jwks, err := authenticator.FetchJWK(ctx, jwksEndpoint)
+		if err != nil {
+			return errors.Wrapf(err, "while fetching JWKS from endpoint %s", jwksEndpoint)
+		}
+
+		keyIterator := &authenticator.JWTKeyIterator{
+			AlgorithmCriteria: func(alg string) bool {
+				return true
+			},
+			IDCriteria: func(id string) bool {
+				return true
+			},
+		}
+
+		if err := arrayiter.Walk(ctx, jwks, keyIterator); err != nil {
+			return errors.Wrapf(err, "while walking through JWKS")
+		}
+
+		for _, key := range keyIterator.AllKeys {
+			a.cachedJWKs.Add(key)
+		}
 	}
 
-	a.cachedJWKs = jwks
 	return nil
 }
 
