@@ -103,7 +103,7 @@ func createApplicationTemplateFromInput(t *testing.T, ctx context.Context, input
 	createApplicationTemplateRequest := fixCreateApplicationTemplateRequest(appTemplate)
 	output := graphql.ApplicationTemplate{}
 
-	err = tc.RunOperation(ctx, createApplicationTemplateRequest, &output)
+	err = tc.RunOperationWithoutTenant(ctx, createApplicationTemplateRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	return output

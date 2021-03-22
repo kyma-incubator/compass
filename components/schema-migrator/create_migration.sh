@@ -12,7 +12,7 @@ for var in COMPONENT NAME; do
     fi
 done
 
-DATE="$(date +%Y%m%d%H%M)"
+DATE="$(date +%Y%m%d%H%M%S)"
 MIGRATIONS_DIR="${DIR}/migrations"
 TRANSACTION_STR=$'BEGIN;\nCOMMIT;'
 

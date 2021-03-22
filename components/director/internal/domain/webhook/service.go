@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -14,6 +16,7 @@ import (
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, item *model.Webhook) error
@@ -47,17 +50,18 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 	}
 }
 
-func (s *service) Get(ctx context.Context, id string) (*model.Webhook, error) {
+func (s *service) Get(ctx context.Context, id string) (webhook *model.Webhook, err error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
+	if err != nil || tnt == "" {
+		log.C(ctx).Infof("tenant was not loaded while getting Webhook id %s", id)
+		webhook, err = s.webhookRepo.GetByIDGlobal(ctx, id)
+	} else {
+		webhook, err = s.webhookRepo.GetByID(ctx, tnt, id)
 	}
-	webhook, err := s.webhookRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
 	}
-
-	return webhook, nil
+	return
 }
 
 func (s *service) ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
@@ -83,7 +87,9 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
+	if apperrors.IsTenantRequired(err) {
+		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
+	} else if err != nil {
 		return "", err
 	}
 	id := s.uidSvc.Generate()
