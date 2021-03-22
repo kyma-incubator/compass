@@ -190,6 +190,8 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
+	a.cachedJWKs = jwk.NewSet()
+
 	for _, jwksEndpoint := range a.jwksEndpoints {
 		jwks, err := authenticator.FetchJWK(ctx, jwksEndpoint)
 		if err != nil {
@@ -214,6 +216,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 			if !ok {
 				return apperrors.NewInternalError("unable to parse jwk key")
 			}
+
 			a.cachedJWKs.Add(key)
 		}
 	}

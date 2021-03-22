@@ -2,8 +2,11 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -23,7 +26,7 @@ type Config struct {
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoints             []string      `envconfig:"APP_JWKS_ENDPOINTS"`
+	JwksEndpoints             string        `envconfig:"APP_JWKS_ENDPOINTS"`
 	IdentityZone              string        `envconfig:"APP_TENANT_IDENTITY_ZONE"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
@@ -33,8 +36,14 @@ const compassURL = "https://github.com/kyma-incubator/compass"
 func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authConfig []authenticator.Config, transact persistence.Transactioner) error {
 	logger := log.C(ctx)
 
+	var jwks []string
+
+	if err := json.Unmarshal([]byte(cfg.JwksEndpoints), &jwks); err != nil {
+		return apperrors.NewInternalError("unable to unmarshal jwks endpoints environment variable")
+	}
+
 	middleware := auth.New(
-		cfg.JwksEndpoints,
+		jwks,
 		cfg.IdentityZone,
 		cfg.SubscriptionCallbackScope,
 		extractTrustedIssuersScopePrefixes(authConfig),
