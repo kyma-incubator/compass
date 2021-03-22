@@ -358,6 +358,7 @@ global:
 
   externalServicesMock:
     enabled: false
+    auditlog: false
 
 pairing-adapter:
   enabled: false

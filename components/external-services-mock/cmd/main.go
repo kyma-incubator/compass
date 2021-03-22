@@ -26,6 +26,7 @@ type config struct {
 	OAuthConfig
 	BasicCredentialsConfig
 }
+
 type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
@@ -38,7 +39,7 @@ type BasicCredentialsConfig struct {
 
 func main() {
 	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
+	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
 	handler := initHTTP(cfg)

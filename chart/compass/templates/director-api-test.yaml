@@ -65,4 +65,20 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json",
+                    "-term_timeout=2s"]
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+      volumes:
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+        {{end}}
       restartPolicy: Never

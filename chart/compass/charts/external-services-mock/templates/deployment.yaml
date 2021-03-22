@@ -24,6 +24,7 @@ spec:
               env:
               - name: APP_ADDRESS
                 value: "127.0.0.1:{{ .Values.deployment.port }}"
+              {{- if eq .Values.global.externalServicesMock.auditlog true }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -34,6 +35,7 @@ spec:
                   secretKeyRef:
                     name: {{ .Values.global.auditlog.secretName }}
                     key: auditlog-client-secret
+              {{- end }}
               - name: BASIC_USERNAME
                 valueFrom:
                   secretKeyRef:
