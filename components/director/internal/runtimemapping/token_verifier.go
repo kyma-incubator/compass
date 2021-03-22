@@ -134,7 +134,7 @@ func (f *jwksFetch) getJWKsURI(ctx context.Context, token jwt.Token) (string, er
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			log.C(ctx).WithError(err).Error("An error has occurred while closing response body.")
+			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
 		}
 	}()
 

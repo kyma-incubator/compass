@@ -54,14 +54,14 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			token, err := a.getBearerToken(r)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while extracting the JWT token. Error code: ", http.StatusUnauthorized)
+				log.C(ctx).WithError(err).Errorf("An error has occurred while extracting the JWT token. Error code: %d: %v", http.StatusUnauthorized, err)
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(r.Context(), token)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
+				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims. Error code: %d: %v", http.StatusUnauthorized, err)
 				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
@@ -104,7 +104,7 @@ func (a *Authenticator) writeAppError(ctx context.Context, w http.ResponseWriter
 
 	err := json.NewEncoder(w).Encode(Error{Message: appErr.Error()})
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while encoding data.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
 }
 
