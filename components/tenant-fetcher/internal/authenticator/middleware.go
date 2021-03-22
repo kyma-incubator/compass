@@ -210,6 +210,10 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 		}
 
 		for _, key := range keyIterator.AllKeys {
+			key, ok := key.(jwk.Key)
+			if !ok {
+				return apperrors.NewInternalError("unable to parse jwk key")
+			}
 			a.cachedJWKs.Add(key)
 		}
 	}
