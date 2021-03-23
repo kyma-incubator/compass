@@ -35,3 +35,13 @@ func FixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
 			}`,
 			webhookID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
+
+func FixAddWebhookToTemplateRequest(applicationTemplateID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(applicationTemplateID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			applicationTemplateID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
+}

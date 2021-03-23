@@ -141,6 +141,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 	return fmt.Sprintf(
 		`id
 		applicationID
+		applicationTemplateID
 		type
 		mode
 		correlationIdKey

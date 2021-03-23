@@ -10,15 +10,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input graphql.ApplicationTemplateInput) graphql.ApplicationTemplate {
+func CreateApplicationTemplateFromInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input graphql.ApplicationTemplateInput) graphql.ApplicationTemplate {
 	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(input)
 	require.NoError(t, err)
 
 	req := FixCreateApplicationTemplateRequest(appTemplate)
 	appTpl := graphql.ApplicationTemplate{}
+
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
 	require.NoError(t, err)
 	return appTpl
+}
+
+func CreateApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) graphql.ApplicationTemplate {
+	return CreateApplicationTemplateFromInput(t, ctx,gqlClient,tenant, FixApplicationTemplate(name))
 }
 
 func GetApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationTemplate {

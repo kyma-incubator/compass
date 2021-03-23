@@ -81,11 +81,12 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
+	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
-	appTemplateInput := graphql.ApplicationTemplateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
-	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+
 	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
 	updateOutput := graphql.ApplicationTemplate{}
 
@@ -97,7 +98,8 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	//THEN
 	t.Log("Check if application template was updated")
-	assertions.AssertApplicationTemplate(t, appTemplateInput, updateOutput)
+	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
+
 	saveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
@@ -115,7 +117,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
+	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
 
 	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
 	deleteOutput := graphql.ApplicationTemplate{}
@@ -148,7 +150,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
+	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
 	getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(appTemplate.ID)
@@ -180,10 +182,10 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application templates")
-	appTemplate1 := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name1))
+	appTemplate1 := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name1))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate1.ID)
 
-	appTemplate2 := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name2))
+	appTemplate2 := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, fixtures.FixApplicationTemplate(name2))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate2.ID)
 
 	first := 100
@@ -224,7 +226,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	appTmpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTmplInput)
+	appTmpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTmpl.ID)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: tmplName, Values: []*graphql.TemplateValueInput{
@@ -246,4 +248,82 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-value", *outputApp.Application.Description)
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+}
+
+func TestAddWebhookToApplicationTemplate(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "app-template"
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log("Create application template")
+	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+
+	// add
+	url := "http://new-webhook.url"
+	urlUpdated := "http://updated-webhook.url"
+	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL:  &url,
+		Type: graphql.WebhookTypeUnregisterApplication,
+	})
+
+	require.NoError(t, err)
+	addReq := fixtures.FixAddWebhookToTemplateRequest(appTemplate.ID, webhookInStr)
+	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application template webhook")
+
+	actualWebhook := graphql.Webhook{}
+	t.Run("fails when tenant is present", func(t *testing.T) {
+		t.Log("Trying to Webhook to application template with tenant")
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addReq, &actualWebhook)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not found")
+	})
+	t.Run("succeeds with no tenant", func(t *testing.T) {
+
+		t.Log("Add Webhook to application template")
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addReq, &actualWebhook)
+		require.NoError(t, err)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+		assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
+		id := actualWebhook.ID
+		require.NotNil(t, id)
+
+	})
+
+	updatedAppTemplate := fixtures.GetApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	assert.Len(t, updatedAppTemplate.Webhooks, 1)
+
+	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL: &urlUpdated, Type: graphql.WebhookTypeUnregisterApplication,
+	})
+	require.NoError(t, err)
+
+	t.Log("Getting Webhooks for application template")
+	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateReq, &actualWebhook)
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+
+	// delete
+
+	//GIVEN
+	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
+
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteReq, &actualWebhook)
+
+	//THEN
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }

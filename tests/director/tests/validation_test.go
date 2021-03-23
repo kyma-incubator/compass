@@ -509,7 +509,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixApplicationTemplate("validation-test-app-tpl")
-	appTpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, input)
+	appTpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, input)
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTpl.ID)
 
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
@@ -545,7 +545,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixApplicationTemplate("validation-app")
-	tmpl := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, input)
+	tmpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, input)
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, tmpl.ID)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{}

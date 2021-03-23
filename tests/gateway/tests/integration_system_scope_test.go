@@ -70,7 +70,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
 		}
-		appTpl := fixtures.CreateApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTplInput)
+		appTpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTplInput)
 		require.NotEmpty(t, appTpl.ID)
 
 		t.Log("Get application template")
