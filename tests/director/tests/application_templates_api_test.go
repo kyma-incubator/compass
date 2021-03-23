@@ -2,8 +2,9 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -279,7 +280,6 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	t.Log("Issue a Hydra token with Client Credentials")
 	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, "application:write application:read application_template:write application_template:read")
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
-
 
 	t.Log("Create application template")
 	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, name)

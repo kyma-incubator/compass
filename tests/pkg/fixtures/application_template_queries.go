@@ -23,7 +23,7 @@ func CreateApplicationTemplateFromInput(t *testing.T, ctx context.Context, gqlCl
 }
 
 func CreateApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) graphql.ApplicationTemplate {
-	return CreateApplicationTemplateFromInput(t, ctx,gqlClient,tenant, FixApplicationTemplate(name))
+	return CreateApplicationTemplateFromInput(t, ctx, gqlClient, tenant, FixApplicationTemplate(name))
 }
 
 func GetApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationTemplate {
