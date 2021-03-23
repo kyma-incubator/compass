@@ -3,8 +3,9 @@ package res
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 func WriteJSONResponse(writer http.ResponseWriter, ctx context.Context, res interface{}) error {
