@@ -247,6 +247,8 @@ github.com/go-openapi/validate v0.19.2/go.mod h1:1tRCw7m3jtI8eNWEEliiAqUIcBztB2K
 github.com/go-openapi/validate v0.19.5/go.mod h1:8DJv2CVJQ6kGNpFW6eV9N3JviE1C85nY1c2z52x1Gk4=
 github.com/go-ozzo/ozzo-validation v3.6.0+incompatible h1:msy24VGS42fKO9K1vLz82/GeYW1cILu7Nuuj1N3BBkE=
 github.com/go-ozzo/ozzo-validation v3.6.0+incompatible/go.mod h1:gsEKFIVnabGBt6mXmxK0MoFy+cZoTJY6mu5Ll3LVLBU=
+github.com/go-ozzo/ozzo-validation/v4 v4.3.0 h1:byhDUpfEwjsVQb1vBunvIjh2BHQ9ead57VkAEY4V+Es=
+github.com/go-ozzo/ozzo-validation/v4 v4.3.0/go.mod h1:2NKgrcHl3z6cJs+3Oo940FPRiTzuqKbvfrL2RxCj6Ew=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
@@ -443,8 +445,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20201215200050-8026
 github.com/kyma-incubator/compass/components/director v0.0.0-20210203135116-086a057e4d3c/go.mod h1:X6pse3bIefvqtcRmbOZsPuVcrf7lPUMBRR0ZYeBoRus=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210222123648-c454983cf74b/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210301143156-3b39f117e7bf/go.mod h1:hJ3bgWfwFhdnxZF7Gcok5Rm1zDT4bHtVGHDeXDBvTfg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210315153111-9cd5154c69a3 h1:gaOX3eNc+wzXtM62wBbfq/uLvaSAZ0XOyXbGPercABk=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210315153111-9cd5154c69a3/go.mod h1:+WAhP+32wac2hQwEVcsvUP5rqgAGRs/+RTwDKCz4hIE=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210323083858-553421fa6228 h1:3FlolaB9oGZwgGGixY6MXdfZ5QjYD9FKj0+105f1hA8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210323083858-553421fa6228/go.mod h1:rxmpfjMTTdLOuLkbRjeiAVWkKJEFwxACgrZfeYN5S/o=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14 h1:gEtd9g2Yp5548gzdPcrD7I1yiq4sq0z1/WtwzWgoDu8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c/go.mod h1:MeS9gTgdRhKAWcMQSkYSk+ZSpYZJ1QipZeyJ6Cz7hHA=
