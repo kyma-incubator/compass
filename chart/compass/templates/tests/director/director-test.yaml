@@ -97,12 +97,16 @@ spec:
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
+          {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
               name: examples
+          {{ end }}
+      {{ if .Values.global.isLocalEnv }}
       volumes:
         - name: examples
           hostPath:
             path: "/examples"
             type: DirectoryOrCreate
+      {{ end }}
       restartPolicy: Never
