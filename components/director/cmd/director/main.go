@@ -217,7 +217,7 @@ func main() {
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
-	operationMiddleware := operation.NewMiddleware(cfg.AppURL)
+	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
@@ -641,6 +641,6 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 		}
 		app.Ready = ready
 		app.Error = errorMsg
-		return appRepo.Update(ctx, app)
+		return appRepo.TechnicalUpdate(ctx, app)
 	}
 }
