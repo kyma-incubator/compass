@@ -116,15 +116,15 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response into webhook output template"))
 	}
 
+	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
+		return response, err
+	}
+
 	isLocationEmpty := response.Location != nil && *response.Location == ""
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
 		return nil, errors.New("missing location url after executing async webhook")
-	}
-
-	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
-		return response, err
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
