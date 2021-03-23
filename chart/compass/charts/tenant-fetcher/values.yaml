@@ -17,7 +17,7 @@ deployment:
 
 database:
   dbPool:
-    maxOpenConnections: 30
+    maxOpenConnections: 2
     maxIdleConnections: 2
 
 server:
