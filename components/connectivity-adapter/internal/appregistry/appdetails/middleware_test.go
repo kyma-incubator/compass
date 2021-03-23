@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,10 +15,10 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,8 +36,6 @@ func TestMiddleware(t *testing.T) {
 		appPage := graphql.ApplicationPageExt{ApplicationPage: graphql.ApplicationPage{},
 			Data: []*graphql.ApplicationExt{&app}}
 
-		logger, _ := test.NewNullLogger()
-
 		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
@@ -47,7 +46,7 @@ func TestMiddleware(t *testing.T) {
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
 
-		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider)
 
 		router := mux.NewRouter()
 		router.HandleFunc("/{app-name}", assertAppInContext(t, app))
@@ -63,7 +62,6 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("application not found", func(t *testing.T) {
-		logger, _ := test.NewNullLogger()
 		emptyResponse := graphql.ApplicationPageExt{}
 
 		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
@@ -75,7 +73,7 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider)
 
 		router := mux.NewRouter()
 		router.Use(appMiddleware.Middleware)
@@ -96,7 +94,6 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("found more than one application", func(t *testing.T) {
-		logger, _ := test.NewNullLogger()
 		appPage := graphql.ApplicationPageExt{ApplicationPage: graphql.ApplicationPage{},
 			Data: []*graphql.ApplicationExt{&app, &app}}
 		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
@@ -108,7 +105,7 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider)
 
 		router := mux.NewRouter()
 		router.Use(appMiddleware.Middleware)
@@ -131,6 +128,9 @@ func TestMiddleware(t *testing.T) {
 	t.Run("director returns error", func(t *testing.T) {
 		logger, hook := test.NewNullLogger()
 
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		request := req.WithContext(ctx)
+
 		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
 		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
 
@@ -140,7 +140,7 @@ func TestMiddleware(t *testing.T) {
 
 		cliProvider := &automock.Provider{}
 		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
-		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider, logger)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider)
 
 		router := mux.NewRouter()
 		router.Use(appMiddleware.Middleware)
@@ -148,7 +148,7 @@ func TestMiddleware(t *testing.T) {
 		rw := httptest.NewRecorder()
 
 		//WHEN
-		router.ServeHTTP(rw, req)
+		router.ServeHTTP(rw, request)
 
 		//THEN
 		assert.Equal(t, http.StatusInternalServerError, rw.Code)
@@ -196,6 +196,6 @@ func fixDummyHandler() func(w http.ResponseWriter, r *http.Request) {
 func assertLastLogEntryError(t *testing.T, errMessage string, hook *test.Hook) {
 	entry := hook.LastEntry()
 	require.NotNil(t, entry)
-	assert.Equal(t, log.ErrorLevel, entry.Level)
+	assert.Equal(t, logrus.ErrorLevel, entry.Level)
 	assert.Equal(t, errMessage, entry.Message)
 }

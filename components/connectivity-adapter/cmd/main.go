@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"
 	connector "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/health"
+	appLog "github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
@@ -52,7 +53,7 @@ func initAPIHandler(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
 
-	router.Use(correlation.AttachCorrelationIDToContext())
+	router.Use(correlation.AttachCorrelationIDToContext(), appLog.RequestLogger())
 
 	applicationRegistryRouter := router.PathPrefix("/{app-name}/v1").Subrouter()
 	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
