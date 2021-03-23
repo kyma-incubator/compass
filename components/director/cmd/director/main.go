@@ -617,7 +617,7 @@ func buildScheduler(ctx context.Context, config config) (operation.Scheduler, er
 	}
 
 	cfg, err := cr.GetConfig()
-	exitOnError(err, "Failed to get cluster config for operations k8s client")
+	exitOnError(err, "Failed to get cluster config for operations kubernetes client")
 
 	cfg.Timeout = config.ClientTimeout
 	k8sClient, err := client.NewForConfig(cfg)
