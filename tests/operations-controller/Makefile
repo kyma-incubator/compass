@@ -12,7 +12,7 @@ test-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
 e2e-test:
-	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh operations-controler
+	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh operations-controller
 
 e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
@@ -29,5 +29,5 @@ sandbox-deploy-test:
 	rm ./operations-controller.test
 
 sandbox-test-clean:
-	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-operations-controller-local
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
+	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-operations-controller-local || true
+	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true

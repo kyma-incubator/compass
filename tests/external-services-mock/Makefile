@@ -33,5 +33,5 @@ sandbox-deploy-test:
 	rm ./external-services-mock.test
 
 sandbox-test-clean:
-	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-external-services-mock-local
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
+	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-external-services-mock-local || true
+	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true

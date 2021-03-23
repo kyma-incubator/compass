@@ -30,5 +30,5 @@ sandbox-deploy-test:
 	rm ./ord-service.test
 
 sandbox-test-clean:
-	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-ord-service-local
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
+	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-ord-service-local || true
+	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true

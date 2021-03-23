@@ -116,6 +116,10 @@ func (tc *TestContext) RunOperation(ctx context.Context, cli *gcli.Client, req *
 	return tc.NewOperation(ctx).Run(req, cli, resp)
 }
 
+func (tc *TestContext) RunOperationWithoutTenant(ctx context.Context, cli *gcli.Client, req *gcli.Request, resp interface{}) error {
+	return tc.NewOperation(ctx).WithTenant("").Run(req, cli, resp)
+}
+
 func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant string, req *gcli.Request, resp interface{}) error {
 	return tc.NewOperation(ctx).WithTenant(tenant).Run(req, cli, resp)
 }

@@ -27,6 +27,6 @@ sandbox-deploy-test:
 	rm ./system-broker.test
 
 sandbox-test-clean:
-	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-system-broker-local
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests
+	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-system-broker-local || true
+	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
