@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -263,9 +264,26 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
+	t.Log("Create integration system")
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	require.NotEmpty(t, intSys)
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, "application:write application:read application_template:write application_template:read")
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+
 	t.Log("Create application template")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, name)
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, name)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate.ID)
 
 	// add
 	url := "http://new-webhook.url"
@@ -282,14 +300,14 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	actualWebhook := graphql.Webhook{}
 	t.Run("fails when tenant is present", func(t *testing.T) {
 		t.Log("Trying to Webhook to application template with tenant")
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addReq, &actualWebhook)
+		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, addReq, &actualWebhook)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "not found")
 	})
 	t.Run("succeeds with no tenant", func(t *testing.T) {
 
 		t.Log("Add Webhook to application template")
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addReq, &actualWebhook)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, addReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.NotNil(t, actualWebhook.URL)
 		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
@@ -299,7 +317,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 	})
 
-	updatedAppTemplate := fixtures.GetApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	updatedAppTemplate := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate.ID)
 	assert.Len(t, updatedAppTemplate.Webhooks, 1)
 
 	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
@@ -309,7 +327,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 	t.Log("Getting Webhooks for application template")
 	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateReq, &actualWebhook)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, updateReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
@@ -320,7 +338,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
 
 	//WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteReq, &actualWebhook)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, deleteReq, &actualWebhook)
 
 	//THEN
 	require.NoError(t, err)
