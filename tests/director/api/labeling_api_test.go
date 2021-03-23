@@ -602,13 +602,11 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	firstApp := registerApplication(t, ctx, "first")
 	require.NotEmpty(t, firstApp.ID)
-	//defer updateApplicationScenariosToDefaultState(t, ctx, firstApp.ID)
 	defer unregisterApplication(t, firstApp.ID)
 
 	//Create second application
 	secondApp := registerApplication(t, ctx, "second")
 	require.NotEmpty(t, secondApp.ID)
-	//defer updateApplicationScenariosToDefaultState(t, ctx, secondApp.ID)
 	defer unregisterApplication(t, secondApp.ID)
 
 	//Set label "foo" on both applications
