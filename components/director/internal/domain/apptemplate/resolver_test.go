@@ -1040,9 +1040,9 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
-	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
-	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
+	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInput(testName)
 
 	testCases := []struct {
 		Name              string
@@ -1065,7 +1065,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
@@ -1086,7 +1086,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(model.ApplicationTemplateInput{}, testError).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(model.ApplicationTemplateUpdateInput{}, testError).Once()
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1107,7 +1107,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1129,7 +1129,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1170,7 +1170,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1192,7 +1192,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
@@ -1217,7 +1217,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
 
 			// WHEN
-			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateInput)
+			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInput)
 
 			// THEN
 			if testCase.ExpectedError != nil {

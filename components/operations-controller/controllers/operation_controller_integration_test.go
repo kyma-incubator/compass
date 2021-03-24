@@ -176,6 +176,52 @@ func TestController_Scenarios(t *testing.T) {
 		assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], pollInvocations)
 	})
 
+	t.Run("Successful Async Webhook flow due to gone status", func(t *testing.T) {
+		mode := graphql.WebhookModeAsync
+		goneStatusCode := 410
+		expectedErr := errors.NewWebhookStatusGoneErr(goneStatusCode)
+		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+		directorClient.FetchApplicationReturns(application, nil)
+		directorClient.UpdateOperationReturns(nil)
+
+		webhookClient.DoReturns(&web_hook.Response{GoneStatusCode: &goneStatusCode}, expectedErr)
+
+		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
+
+		operation := *mockedOperation
+		operation.Spec.OperationType = v1alpha1.OperationTypeDelete
+		err := kubeClient.Create(ctx, &operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err := kubeClient.Delete(ctx, &operation)
+			require.NoError(t, err)
+		}()
+
+		expectedStatus := expectedSuccessStatus(webhookGUID)
+		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		require.Equal(t, fetchApplicationInvocations+1, directorClient.FetchApplicationCallCount())
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations)
+
+		require.Equal(t, updateOperationInvocations+1, directorClient.UpdateOperationCallCount())
+		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
+
+		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
+
+		require.Equal(t, pollInvocations, webhookClient.PollCallCount())
+	})
+
 	t.Run("Successful Async Webhook flow after polling and requeue a few times", func(t *testing.T) {
 		mode := graphql.WebhookModeAsync
 		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
@@ -509,6 +555,50 @@ func TestController_Scenarios(t *testing.T) {
 		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
 
 		operation := *mockedOperation
+		err := kubeClient.Create(ctx, &operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err := kubeClient.Delete(ctx, &operation)
+			require.NoError(t, err)
+		}()
+
+		expectedStatus := expectedSuccessStatus(webhookGUID)
+		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		require.Equal(t, fetchApplicationInvocations+1, directorClient.FetchApplicationCallCount())
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations)
+
+		require.Equal(t, updateOperationInvocations+1, directorClient.UpdateOperationCallCount())
+		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
+
+		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
+	})
+
+	t.Run("Successful Sync Webhook flow due to gone status", func(t *testing.T) {
+		mode := graphql.WebhookModeSync
+		goneStatusCode := 410
+		expectedErr := errors.NewWebhookStatusGoneErr(goneStatusCode)
+		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
+
+		directorClient.FetchApplicationReturns(application, nil)
+		directorClient.UpdateOperationReturns(nil)
+
+		webhookClient.DoReturns(&web_hook.Response{GoneStatusCode: &goneStatusCode}, expectedErr)
+
+		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
+
+		operation := *mockedOperation
+		operation.Spec.OperationType = v1alpha1.OperationTypeDelete
 		err := kubeClient.Create(ctx, &operation)
 		require.NoError(t, err)
 
