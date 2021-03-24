@@ -36,6 +36,8 @@ global:
       id: 7e1f2df8-36dc-4e40-8be3-d1555d50c91c
     - name: TestTenantsQueryTenantInitialized
       id: 8cf0c909-f816-4fe3-a507-a7917ccd8380
+    - name: TestDeleteApplicationIfInFormation
+      id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
 
   images:
     containerRegistry:
