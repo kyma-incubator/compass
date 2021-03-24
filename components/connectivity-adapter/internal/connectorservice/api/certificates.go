@@ -63,7 +63,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readCertRequest(r *http.Request, entry *logrus.Entry) (*certRequest, error) {
+func readCertRequest(r *http.Request, logger *logrus.Entry) (*certRequest, error) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while reading request body: %s")
@@ -71,7 +71,7 @@ func readCertRequest(r *http.Request, entry *logrus.Entry) (*certRequest, error)
 	defer func() {
 		err := r.Body.Close()
 		if err != nil {
-			entry.Errorf("Failed to close response body: %s", err)
+			logger.Errorf("Failed to close response body: %s", err)
 		}
 	}()
 
@@ -102,6 +102,6 @@ func respondWithError(w http.ResponseWriter, contextLogger *logrus.Entry, err er
 	res.WriteError(w, err, appErroCode)
 }
 
-func contextLogger(ctx context.Context, application string) *logrus.Entry {
-	return log.C(ctx).WithField("application", application)
+func contextLogger(ctx context.Context, systemAuthId string) *logrus.Entry {
+	return log.C(ctx).WithField("system_auth_id", systemAuthId)
 }
