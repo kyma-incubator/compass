@@ -1,0 +1,51 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-connectivity-adapter
+  labels:
+    app: {{ .Chart.Name }}-connectivity-adapter-tests-app
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}-connectivity-adapter-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  disableConcurrency: false
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-connectivity-adapter-tests-app
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      serviceAccountName: {{ .Chart.Name }}-connectivity-adapter-tests
+      containers:
+        - name: connectivity-adapter-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/connectivity-adapter.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+            - name: APP_CONNECTIVITY_ADAPTER_URL
+              value: {{ .Values.global.tests.connectivityAdapterFQDN }}:{{ .Values.global.connectivity_adapter.port }}
+            - name: APP_DIRECTOR_URL
+              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/graphql
+            - name: APP_SKIP_SSL_VERIFY
+              value: {{ .Values.global.tests.skipTLSVerify | quote }}
+            - name: APP_CONNECTIVITY_ADAPTER_URL
+              value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_CONNECTIVITY_ADAPTER_MTLS_URL
+              value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_TENANT
+              value: {{ .Values.global.defaultTenant | quote }}
+            - name: APP_DIRECTOR_HEALTHZ_URL
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz"
+    restartPolicy: Never
