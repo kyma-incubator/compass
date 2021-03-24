@@ -189,7 +189,7 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 	onConfigChangeHandlers = append(onConfigChangeHandlers, dynamicLogHandler)
 
 	v.Viper.OnConfigChange(func(event fsnotify.Event) {
-		log.C(ctx).Warnf("Configuration file was changed by event %s. Triggering on config changed handlers...", event.String())
+		log.C(ctx).Warnf("configuration file was changed by event %s. Triggering on config changed handlers...", event.String())
 		for _, handler := range onConfigChangeHandlers {
 			handler(v)(event)
 		}
