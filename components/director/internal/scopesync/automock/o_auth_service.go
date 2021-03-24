@@ -62,8 +62,8 @@ func (_m *OAuthService) ListClients(ctx context.Context) ([]oauth20.Client, erro
 	return r0, r1
 }
 
-// UpdateClientCredentials provides a mock function with given fields: ctx, clientID, objectType
-func (_m *OAuthService) UpdateClientCredentials(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
+// UpdateClientScopes provides a mock function with given fields: ctx, clientID, objectType
+func (_m *OAuthService) UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
 	ret := _m.Called(ctx, clientID, objectType)
 
 	var r0 error

@@ -88,7 +88,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 	return credentialData, nil
 }
 
-func (s *service) UpdateClientCredentials(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
+func (s *service) UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
 	scopes, err := s.GetClientCredentialScopes(objectType)
 	if err != nil {
 		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
@@ -125,7 +125,7 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []m
 }
 
 func (s *service) ListClients(ctx context.Context) ([]Client, error) {
-	return s.doPageableRequest(ctx, s.clientEndpoint)
+	return s.clientsFromHydra(ctx, s.clientEndpoint)
 }
 
 func (s *service) GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
@@ -246,7 +246,7 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 	return resp, closeBodyFn, nil
 }
 
-func (s *service) doPageableRequest(ctx context.Context, endpoint string) ([]Client, error) {
+func (s *service) clientsFromHydra(ctx context.Context, endpoint string) ([]Client, error) {
 
 	var resultClients []Client
 	nextLink := endpoint

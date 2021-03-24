@@ -278,7 +278,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	require.True(t, ok)
 
 	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, "application:write application:read application_template:write application_template:read")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	t.Log("Create application template")

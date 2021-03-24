@@ -22,7 +22,7 @@ type SyncService interface {
 type OAuthService interface {
 	ListClients(ctx context.Context) ([]oauth20.Client, error)
 	GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error)
-	UpdateClientCredentials(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
+	UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
 }
 
 type service struct {
@@ -44,7 +44,7 @@ func (s *service) UpdateClientScopes(ctx context.Context) error {
 	}
 	clientScopes := convertScopesToMap(clientsFromHydra)
 
-	auths, err := getAuthsForUpdate(ctx, s.transact)
+	auths, err := systemAuthsWithOAuth(ctx, s.transact)
 	if err != nil {
 		return err
 	}
@@ -64,9 +64,12 @@ func (s *service) UpdateClientScopes(ctx context.Context) error {
 			continue
 		}
 
-		scopesFromHydra := clientScopes[clientID]
+		scopesFromHydra, ok := clientScopes[clientID]
+		if !ok {
+			log.C(ctx).Errorf("Client with ID %s not presents in Hydra", clientID)
+		}
 		if !str.Matches(scopesFromHydra, expectedScopes) {
-			err = s.oAuth20Svc.UpdateClientCredentials(ctx, clientID, objType)
+			err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 			}
@@ -85,7 +88,7 @@ func convertScopesToMap(clientsFromHydra []oauth20.Client) map[string][]string {
 	return clientScopes
 }
 
-func getAuthsForUpdate(ctx context.Context, transact persistence.Transactioner) ([]model.SystemAuth, error) {
+func systemAuthsWithOAuth(ctx context.Context, transact persistence.Transactioner) ([]model.SystemAuth, error) {
 	tx, err := transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening database transaction")

@@ -186,7 +186,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 			},
 		}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return(expectedScopes, nil)
-		oauthSvc.On("UpdateClientCredentials", context.TODO(), "client-id", model.ApplicationReference).Return(nil)
+		oauthSvc.On("UpdateClientScopes", context.TODO(), "client-id", model.ApplicationReference).Return(nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatSucceeds()
 		expected := systemauth.Collection{
 			systemauth.Entity{

@@ -57,15 +57,14 @@ func main() {
 	}()
 
 	syncService := scopesync.NewService(oAuth20Svc, transact)
-	err = syncService.UpdateClientScopes(ctx)
-	if err != nil {
+	if err := syncService.UpdateClientScopes(ctx); err != nil {
 		exitOnError(ctx, err, "Error while updating client scopes")
 	}
 }
 
 func exitOnError(ctx context.Context, err error, context string) {
 	if err != nil {
-		log.C(ctx).WithError(err).Error(context)
+		log.C(ctx).WithError(err).Errorf("%s: %v", context, err)
 		os.Exit(1)
 	}
 }
