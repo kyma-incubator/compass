@@ -264,7 +264,7 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	return deletedRuntimeContext, nil
 }
 
-func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (*graphql.Labels, error) {
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime Context cannot be empty")
 	}
@@ -299,7 +299,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key 
 	}
 
 	var gqlLabels graphql.Labels = resultLabels
-	return &gqlLabels, nil
+	return gqlLabels, nil
 }
 
 func (r *Resolver) getRuntimeID(ctx context.Context) (string, error) {
