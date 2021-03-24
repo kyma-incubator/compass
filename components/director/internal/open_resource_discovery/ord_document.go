@@ -239,9 +239,10 @@ func (docs Documents) Sanitize(baseURL string) error {
 			if api.ChangeLogEntries, err = rewriteRelativeURIsInJson(api.ChangeLogEntries, baseURL, "url"); err != nil {
 				return err
 			}
-			if !isAbsoluteURL(api.TargetURL) {
-				api.TargetURL = baseURL + api.TargetURL
+			if api.TargetURLs, err = rewriteRelativeURIsInJsonArray(api.TargetURLs, baseURL); err != nil {
+				return err
 			}
+
 		}
 
 		for _, event := range doc.EventResources {
@@ -394,6 +395,28 @@ func deduplicate(s []string) []string {
 		}
 	}
 	return result
+}
+
+func rewriteRelativeURIsInJsonArray(j json.RawMessage, baseURL string) (json.RawMessage, error) {
+	parsedJson := gjson.ParseBytes(j)
+
+	items := make([]interface{}, 0, 0)
+	for _, crrURI := range parsedJson.Array() {
+		if !isAbsoluteURL(crrURI.String()) {
+			rewrittenURI := baseURL + crrURI.String()
+
+			items = append(items, rewrittenURI)
+		} else {
+			items = append(items, crrURI.String())
+		}
+	}
+
+	rewrittenJson, err := json.Marshal(items)
+	if err != nil {
+		return nil, err
+	}
+
+	return rewrittenJson, nil
 }
 
 func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -54,7 +56,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
-		TargetURL:   in.TargetURL,
+		TargetURL:   ExtractTargetUrlFromJsonArray(in.TargetURLs),
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
@@ -120,7 +122,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	return &model.APIDefinitionInput{
 		Name:         in.Name,
 		Description:  in.Description,
-		TargetURL:    in.TargetURL,
+		TargetURLs:   ConvertTargetUrlToJsonArray(in.TargetURL),
 		Group:        in.Group,
 		VersionInput: c.version.InputFromGraphQL(in.Version),
 	}, spec, nil
@@ -135,7 +137,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		Tenant:                                  entity.TenantID,
 		Name:                                    entity.Name,
 		Description:                             repo.StringPtrFromNullableString(entity.Description),
-		TargetURL:                               entity.TargetURL,
+		TargetURLs:                              repo.JSONRawMessageFromNullableString(entity.TargetURLs),
 		Group:                                   repo.StringPtrFromNullableString(entity.Group),
 		OrdID:                                   repo.StringPtrFromNullableString(entity.OrdID),
 		ShortDescription:                        repo.StringPtrFromNullableString(entity.ShortDescription),
@@ -179,7 +181,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),
 		Group:                                   repo.NewNullableString(apiModel.Group),
-		TargetURL:                               apiModel.TargetURL,
+		TargetURLs:                              repo.NewNullableStringFromJSONRawMessage(apiModel.TargetURLs),
 		OrdID:                                   repo.NewNullableString(apiModel.OrdID),
 		ShortDescription:                        repo.NewNullableString(apiModel.ShortDescription),
 		SystemInstanceAware:                     repo.NewNullableBool(apiModel.SystemInstanceAware),
@@ -228,4 +230,20 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 
 	t := graphql.Timestamp(*time)
 	return &t
+}
+
+func ExtractTargetUrlFromJsonArray(jsonTargetUrl json.RawMessage) string {
+	strTargetUrl := string(jsonTargetUrl)
+	strTargetUrl = strings.TrimPrefix(strTargetUrl, `["`)
+	strTargetUrl = strings.TrimSuffix(strTargetUrl, `"]`)
+
+	return strTargetUrl
+}
+
+func ConvertTargetUrlToJsonArray(targetUrl string) json.RawMessage {
+	if targetUrl == "" {
+		return nil
+	}
+
+	return json.RawMessage(`["` + targetUrl + `"]`)
 }

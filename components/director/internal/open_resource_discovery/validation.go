@@ -131,7 +131,7 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
 		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
-		validation.Field(&api.TargetURL, validation.Required, is.RequestURI),
+		validation.Field(&api.TargetURLs, validation.Required, validation.By(validateEntryPoints)),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
 		validation.Field(&api.ImplementationStandard, validation.In("sap:ord-document-api:v1", "cff:open-service-broker:v2", "sap:csn-exposure:v1", "custom")),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
@@ -245,6 +245,50 @@ func validateORDLabels(val interface{}) error {
 		return true
 	})
 	return err
+}
+
+func validateEntryPoints(val interface{}) error {
+	if val == nil {
+		return nil
+	}
+
+	entryPoints, ok := val.(json.RawMessage)
+	if !ok {
+		return errors.New("entryPoints should be json")
+	}
+
+	if len(entryPoints) == 0 {
+		return nil
+	}
+
+	if !gjson.ValidBytes(entryPoints) {
+		return errors.New("entryPoints should be valid json")
+	}
+
+	parsedArr := gjson.ParseBytes(entryPoints)
+	if !parsedArr.IsArray() {
+		return errors.New("should be json array")
+	}
+
+	if len(parsedArr.Array()) == 0 {
+		return errors.New("entryPoints should not be empty")
+	}
+
+	if areThereEntryPointDuplicates(parsedArr.Array()) {
+		return errors.New("entryPoints should not contain duplicates")
+	}
+
+	for _, el := range parsedArr.Array() {
+		if el.Type != gjson.String {
+			return errors.New("should be array of strings")
+		}
+
+		err := validation.Validate(el.String(), is.RequestURI)
+		if err != nil {
+			return errors.New("entryPoint should be a valid URI")
+		}
+	}
+	return nil
 }
 
 func validateORDChangeLogEntries(value interface{}) error {
@@ -412,6 +456,22 @@ func validateCustomDescription(el gjson.Result) error {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
 	return nil
+}
+
+func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
+	if len(entryPoints) <= 1 {
+		return false
+	}
+
+	seen := make(map[gjson.Result]bool)
+	for _, val := range entryPoints {
+		if seen[val] {
+			return true
+		} else {
+			seen[val] = true
+		}
+	}
+	return false
 }
 
 func isValidDate(date *string) validation.RuleFunc {

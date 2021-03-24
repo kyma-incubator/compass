@@ -19,7 +19,7 @@ type APIDefinition struct {
 	Tenant                                  string
 	Name                                    string
 	Description                             *string
-	TargetURL                               string
+	TargetURLs                              json.RawMessage
 	Group                                   *string //  group allows you to find the same API but in different version
 	OrdID                                   *string
 	ShortDescription                        *string
@@ -56,7 +56,7 @@ type APIDefinitionInput struct {
 	Tenant                                  string          `json:",omitempty"`
 	Name                                    string          `json:"title"`
 	Description                             *string         `json:"description"`
-	TargetURL                               string          `json:"entryPoint"`
+	TargetURLs                              json.RawMessage `json:"entryPoints"`
 	Group                                   *string         `json:",omitempty"` //  group allows you to find the same API but in different version
 	OrdID                                   *string         `json:"ordId"`
 	ShortDescription                        *string         `json:"shortDescription"`
@@ -161,7 +161,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, bundleID *string,
 		Tenant:              tenant,
 		Name:                a.Name,
 		Description:         a.Description,
-		TargetURL:           a.TargetURL,
+		TargetURLs:          a.TargetURLs,
 		Group:               a.Group,
 		OrdID:               a.OrdID,
 		ShortDescription:    a.ShortDescription,

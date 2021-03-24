@@ -32,4 +32,18 @@ UNION ALL
  FROM products,
      jsonb_array_elements_text(products.correlation_ids) AS elements);
 
+
+ALTER TABLE api_definitions
+    ADD COLUMN target_urls JSONB NOT NULL DEFAULT '[]'::JSONB;
+
+UPDATE api_definitions SET
+    target_urls = json_build_array(to_jsonb(target_url))
+WHERE id IS NOT NULL;
+
+ALTER TABLE api_definitions
+    ALTER COLUMN target_urls DROP DEFAULT;
+
+ALTER TABLE api_definitions
+    DROP COLUMN target_url;
+
 COMMIT;

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -264,8 +266,8 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
+			{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
+			{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
 		},
 		APISpecs: []*model.SpecInput{
 			{Data: &specData1},

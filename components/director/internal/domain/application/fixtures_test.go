@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -195,8 +197,8 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{
 				Name: "foo",
 				APIDefinitions: []*model.APIDefinitionInput{
-					{Name: "api1", TargetURL: "foo.bar"},
-					{Name: "api2", TargetURL: "foo.bar2"},
+					{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
+					{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
 				},
 				EventDefinitions: []*model.EventDefinitionInput{
 					{Name: "event1", Description: &desc},

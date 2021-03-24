@@ -379,7 +379,7 @@ func TestService_Create(t *testing.T) {
 
 	modelInput := model.APIDefinitionInput{
 		Name:         name,
-		TargetURL:    targetUrl,
+		TargetURLs:   api.ConvertTargetUrlToJsonArray(targetUrl),
 		VersionInput: &model.VersionInput{},
 	}
 
@@ -404,7 +404,7 @@ func TestService_Create(t *testing.T) {
 		ApplicationID: appID,
 		Tenant:        tenantID,
 		Name:          name,
-		TargetURL:     targetUrl,
+		TargetURLs:    api.ConvertTargetUrlToJsonArray(targetUrl),
 		Version:       &model.Version{},
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
@@ -534,7 +534,7 @@ func TestService_Update(t *testing.T) {
 
 	modelInput := model.APIDefinitionInput{
 		Name:         "Foo",
-		TargetURL:    "https://test-url.com",
+		TargetURLs:   api.ConvertTargetUrlToJsonArray("https://test-url.com"),
 		VersionInput: &model.VersionInput{},
 	}
 
@@ -558,9 +558,9 @@ func TestService_Update(t *testing.T) {
 	})
 
 	apiDefinitionModel := &model.APIDefinition{
-		Name:      "Bar",
-		TargetURL: "https://test-url-updated.com",
-		Version:   &model.Version{},
+		Name:       "Bar",
+		TargetURLs: api.ConvertTargetUrlToJsonArray("https://test-url-updated.com"),
+		Version:    &model.Version{},
 	}
 
 	ctx := context.TODO()

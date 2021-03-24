@@ -15,7 +15,7 @@ type Entity struct {
 	Name                                    string         `db:"name"`
 	Description                             sql.NullString `db:"description"`
 	Group                                   sql.NullString `db:"group_name"`
-	TargetURL                               string         `db:"target_url"`
+	TargetURLs                              sql.NullString `db:"target_urls"`
 	OrdID                                   sql.NullString `db:"ord_id"`
 	ShortDescription                        sql.NullString `db:"short_description"`
 	SystemInstanceAware                     sql.NullBool   `db:"system_instance_aware"`

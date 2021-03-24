@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +31,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 			Input: &model.APIDefinitionInput{
 				Name:        name,
 				Description: &desc,
-				TargetURL:   targetUrl,
+				TargetURLs:  api.ConvertTargetUrlToJsonArray(targetUrl),
 				Group:       &group,
 			},
 			Expected: &model.APIDefinition{
@@ -37,7 +39,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 				BundleID:      &bndlID,
 				Name:          name,
 				Description:   &desc,
-				TargetURL:     targetUrl,
+				TargetURLs:    api.ConvertTargetUrlToJsonArray(targetUrl),
 				Group:         &group,
 				Tenant:        tenant,
 				BaseEntity: &model.BaseEntity{

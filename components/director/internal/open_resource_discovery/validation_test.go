@@ -293,8 +293,12 @@ var (
         }
       ]`
 
-	invalidCorrelationIdsElement = `["foo.bar.baz:123456", "wrongID"]`
+	invalidCorrelationIdsElement          = `["foo.bar.baz:123456", "wrongID"]`
 	invalidCorrelationIdsNonStringElement = `["foo.bar.baz:123456", 992]`
+
+	invalidEntryPointURI               = `["invalidUrl"]`
+	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
+	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
 )
 
 func TestDocuments_ValidatePackage(t *testing.T) {
@@ -1908,18 +1912,58 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing field `entryPoint` for API",
+			Name: "Missing field `entryPoints` for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].TargetURL = ""
+				doc.APIResources[0].TargetURLs = nil
 
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid field `entryPoint` for API",
+			Name: "Invalid field `entryPoints` when containing invalid URI for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].TargetURL = invalidUrl
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointURI)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `entryPoints` when containing duplicate URIs for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointsDueToDuplicates)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when it contains non string value for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointsNonStringElement)
 
 				return []*open_resource_discovery.Document{doc}
 			},
