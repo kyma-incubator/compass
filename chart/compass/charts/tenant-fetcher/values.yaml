@@ -18,7 +18,7 @@ deployment:
 database:
   dbPool:
     maxOpenConnections: 2
-    maxIdleConnections: 2
+    maxIdleConnections: 1
 
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
