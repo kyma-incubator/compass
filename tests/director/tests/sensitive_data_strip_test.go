@@ -33,7 +33,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	// CREATE APP TEMPLATE
 	t.Log("Creating application template")
 	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
-	appTemplate := fixtures.CreateApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
+	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
 	// REGISTER RUNTIME
