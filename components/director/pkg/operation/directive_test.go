@@ -33,7 +33,7 @@ import (
 	tx_automock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	"github.com/vektah/gqlparser/ast"
+	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -64,7 +64,7 @@ func TestHandleOperation(t *testing.T) {
 	t.Run("missing operation mode param causes internal server error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field:  gqlgen.CollectedField{},
 			Args: map[string]interface{}{
@@ -72,7 +72,7 @@ func TestHandleOperation(t *testing.T) {
 			},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		directive := operation.NewDirective(nil, nil, nil, nil, nil, nil)
 
@@ -86,13 +86,13 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
@@ -111,13 +111,13 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -139,13 +139,13 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -167,13 +167,13 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
@@ -195,7 +195,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -205,7 +205,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -230,7 +230,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -240,7 +240,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -265,7 +265,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -275,7 +275,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -302,7 +302,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -312,7 +312,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -339,7 +339,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -349,7 +349,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -374,7 +374,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -384,7 +384,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -409,7 +409,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -419,7 +419,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -443,7 +443,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -453,7 +453,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -477,7 +477,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -487,7 +487,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -515,7 +515,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -525,7 +525,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -554,7 +554,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -564,7 +564,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
@@ -598,7 +598,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -608,7 +608,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
@@ -633,7 +633,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -643,7 +643,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
@@ -675,7 +675,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -685,7 +685,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
@@ -784,7 +784,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -794,7 +794,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -821,7 +821,7 @@ func TestHandleOperation(t *testing.T) {
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
 		operationCategory := "registerApplication"
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -832,7 +832,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
@@ -897,7 +897,7 @@ func TestHandleOperation(t *testing.T) {
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
 		operationCategory := "registerApplication"
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -908,7 +908,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
@@ -973,7 +973,7 @@ func TestHandleOperation(t *testing.T) {
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
 		operationCategory := "registerApplication"
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -984,7 +984,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
@@ -1049,7 +1049,7 @@ func TestHandleOperation(t *testing.T) {
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
 		operationCategory := "registerApplication"
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -1060,7 +1060,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -1228,7 +1228,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			// GIVEN
 			ctx := context.Background()
-			rCtx := &gqlgen.ResolverContext{
+			rCtx := &gqlgen.FieldContext{
 				Object: test.mutation,
 				Field: gqlgen.CollectedField{
 					Field: &ast.Field{
@@ -1239,7 +1239,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 				IsMethod: false,
 			}
 
-			ctx = gqlgen.WithResolverContext(ctx, rCtx)
+			ctx = gqlgen.WithFieldContext(ctx, rCtx)
 			ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 			mockedTx, mockedTransactioner := test.transactionFunc()
 			defer mockedTx.AssertExpectations(t)
@@ -1264,7 +1264,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 		// GIVEN
 		operationCategory := "registerApplication"
 		ctx := context.Background()
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "UnregisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -1275,7 +1275,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
