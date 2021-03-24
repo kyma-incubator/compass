@@ -43,7 +43,7 @@ const envPrefix = "APP"
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
 
-	ServerTimeout   time.Duration `envconfig:"default=0s"`
+	ServerTimeout   time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout time.Duration `envconfig:"default=10s"`
 
 	Log log.Config
