@@ -1,0 +1,102 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher
+  labels:
+    app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+    app.kubernetes.io/name: {{ .Chart.Name }}-tenant-fetcher-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      containers:
+        - name: tenant-fetcher-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+            - name: APP_TENANT_PROVIDER
+              value: "test-provider"
+            - name: APP_TENANT
+              value: {{ .Values.global.defaultTenant }}
+            - name: TENANT_FETCHER_URL
+              value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}"
+            - name: TENANT_FETCHER_HEALTHZ_URL
+              value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
+            - name: ROOT_API
+              value: "{{ .Values.global.tenantFetcher.prefix }}"
+            - name: HANDLER_ENDPOINT
+              value: "/v1/callback/{tenantId}"
+            - name: TENANT_PATH_PARAM
+              value: "tenantId"
+            - name: APP_DIRECTOR_URL
+              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-director-username
+                  name: compass-postgresql
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-director-password
+                  name: compass-postgresql
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-serviceName
+                  name: compass-postgresql
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-servicePort
+                  name: compass-postgresql
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-director-db-name
+                  name: compass-postgresql
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-sslMode
+                  name: compass-postgresql
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "{{ .Values.global.tests.db.maxOpenConnections }}"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "{{ .Values.global.tests.db.maxIdleConnections }}"
+            - name: APP_TENANT_IDENTITY_ZONE
+              value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
+            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
+              value: Callback
+            {{- range $authenticatorName, $config := .Values.global.authenticators }}
+            {{- if eq $config.enabled true }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.trusted_issuers | quote }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.attributes | quote }}
+            {{- end }}
+            {{- end }}
+      restartPolicy: Never

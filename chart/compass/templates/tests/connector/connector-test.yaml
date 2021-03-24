@@ -1,0 +1,65 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-connector
+  labels:
+    app: {{ .Chart.Name }}-connector-tests-app
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}-connector-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-connector-tests-app
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-connector-tests
+      containers:
+      - name: connector-tests
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh"]
+        args: ["-c", "./connector.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+        env:
+          - name: APP_CONNECTOR_URL
+            value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
+          - name: APP_DIRECTOR_URL
+            value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
+          - name: APP_CONNECTOR_HYDRATOR_URL
+            value: '{{ .Values.global.tests.connectorFQDN }}:{{ .Values.global.connector.validator.port }}'
+          - name: APP_DIRECTOR_HYDRATOR_URL
+            value: '{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.validator.port }}'
+          - name: APP_CERTIFICATE_DATA_HEADER
+            value: {{ .Values.global.connector.certificateDataHeader }}
+          - name: APP_REVOCATION_CONFIG_MAP_NAMESPACE
+            value: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
+          - name: APP_REVOCATION_CONFIG_MAP_NAME
+            value: {{ .Values.global.connector.revocation.configmap.name | quote }}
+          - name: APP_TENANT
+            value: "{{.Values.global.defaultTenant}}"
+          - name: DOMAIN
+            value: "{{ .Values.global.ingress.domainName }}"
+          - name: USER_EMAIL
+            valueFrom:
+              secretKeyRef:
+                name: admin-user
+                key: email
+          - name: USER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: admin-user
+                key: password
+      restartPolicy: Never
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
