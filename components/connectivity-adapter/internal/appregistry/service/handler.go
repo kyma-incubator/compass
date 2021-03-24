@@ -266,7 +266,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	bndlID := previousBundle.ID
+	bndlID := previousBundle.BaseEntity.ID
 
 	err = dirCli.UpdateBundle(request.Context(), id, h.converter.GraphQLCreateInputToUpdateInput(createInput))
 	if err != nil {

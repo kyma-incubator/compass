@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"github.com/vektah/gqlparser/ast"
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 type GraphqlOperationType string
@@ -41,17 +41,13 @@ func (p *descriptionsDecoratorPlugin) Name() string {
 }
 
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
+	log.D().Infof("[%s] Mutate Configuration\n", p.Name())
 
-	if err := cfg.Check(); err != nil {
+	if err := cfg.Init(); err != nil {
 		return err
 	}
 
-	schema, _, err := cfg.LoadSchema()
-	if err != nil {
-		return err
-	}
-
+	schema := cfg.Schema
 	if schema.Query != nil {
 		for _, f := range schema.Query.Fields {
 			err := p.ensureDescription(f, Query)
@@ -69,7 +65,7 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 			}
 		}
 	}
-	if err := cfg.Check(); err != nil {
+	if err := cfg.LoadSchema(); err != nil {
 		return err
 	}
 

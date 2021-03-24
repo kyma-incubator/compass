@@ -182,8 +182,8 @@ func injectDirectorResponse(t *testing.T, result graphql.ApplicationPageExt) fun
 func fixApplicationExt(name string) graphql.ApplicationExt {
 	return graphql.ApplicationExt{
 		Application: graphql.Application{
-			ID:   uuid.New().String(),
-			Name: name,
+			BaseEntity: &graphql.BaseEntity{ID: uuid.New().String()},
+			Name:       name,
 		},
 		Labels: map[string]interface{}{"name": name},
 	}
