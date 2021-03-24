@@ -163,7 +163,7 @@ func TestCertificateResolver_RevokeCertificate(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("AuthenticateCertificate", context.Background()).Return(clientId, certificateHash, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
-		revokedCertsRepository.On("Insert", mock.Anything, certificateHash).Return(nil)
+		revokedCertsRepository.On("Insert", certificateHash).Return(nil)
 
 		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
@@ -197,7 +197,7 @@ func TestCertificateResolver_RevokeCertificate(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("AuthenticateCertificate", context.Background()).Return(clientId, certificateHash, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
-		revokedCertsRepository.On("Insert", mock.Anything, certificateHash).Return(errors.Errorf("error"))
+		revokedCertsRepository.On("Insert", certificateHash).Return(errors.Errorf("error"))
 
 		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
