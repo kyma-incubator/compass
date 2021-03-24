@@ -45,7 +45,7 @@ global:
       version: "PR-1767"
     connectivity_adapter:
       dir:
-      version: "PR-1770"
+      version: "PR-1791"
     pairing_adapter:
       dir:
       version: "PR-1750"

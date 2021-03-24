@@ -8,11 +8,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service/validation"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
-	"github.com/sirupsen/logrus"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 )
 
 type Config struct {
@@ -21,9 +19,6 @@ type Config struct {
 }
 
 func RegisterHandler(router *mux.Router, cfg Config) {
-	logger := logrus.New().WithField("component", "app-registry").Logger
-	logger.SetReportCaller(true)
-
 	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorEndpoint, cfg.ClientTimeout)
 	reqContextProvider := service.NewRequestContextProvider()
 
@@ -32,8 +27,8 @@ func RegisterHandler(router *mux.Router, cfg Config) {
 
 	labeler := service.NewAppLabeler()
 
-	serviceHandler := service.NewHandler(converter, validator, reqContextProvider, logger, labeler)
-	appMiddleware := appdetails.NewApplicationMiddleware(gqlCliProvider, logger)
+	serviceHandler := service.NewHandler(converter, validator, reqContextProvider, labeler)
+	appMiddleware := appdetails.NewApplicationMiddleware(gqlCliProvider)
 
 	router.Use(appMiddleware.Middleware)
 	router.HandleFunc("/services", serviceHandler.List).Methods(http.MethodGet)
