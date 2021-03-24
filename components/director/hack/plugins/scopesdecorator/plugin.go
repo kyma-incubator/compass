@@ -36,7 +36,7 @@ func (p *scopesDecoratorPlugin) Name() string {
 }
 
 func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
+	fmt.Printf("[%s] Mutate configuration\n", p.Name())
 	if err := cfg.Check(); err != nil {
 		return err
 	}
