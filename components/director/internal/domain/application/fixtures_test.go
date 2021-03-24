@@ -234,7 +234,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 	return graphql.ApplicationRegisterInput{
 		Name:                name,
 		Description:         &description,
-		Labels:              &labels,
+		Labels:              labels,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
