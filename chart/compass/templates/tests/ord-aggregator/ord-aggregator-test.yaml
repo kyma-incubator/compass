@@ -1,11 +1,11 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Values.global.ordAggregator.name }}
-  namespace: kyma-system
+  name: {{ .Chart.Name }}-e2e-ord-aggregator
+  namespace: {{ .Values.global.tests.namespace }}
   labels:
-    app: {{ .Values.global.ordAggregator.name }}-tests
-    app.kubernetes.io/name: {{ .Values.global.ordAggregator.name }}-tests
+    app: {{ .Chart.Name }}-ord-aggregator-tests-app
+    app.kubernetes.io/name: {{ .Chart.Name }}-ord-aggregator-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -15,7 +15,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Values.global.ordAggregator.name }}-tests
+        app: {{ .Chart.Name }}-ord-aggregator-tests-app
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -28,19 +28,19 @@ spec:
       {{ end }}
       containers:
         - name: ord-aggregator-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.ord_aggregator.dir }}ord-aggregator-tests:{{ .Values.global.images.tests.ord_aggregator.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "/ord-aggregator.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./ord-aggregator.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_SERVICE_HEALTHZ_URL
-              value: "http://compass-ord-service.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/actuator/health"
+              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
-              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/healthz"
+              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: ALL_SCOPES
