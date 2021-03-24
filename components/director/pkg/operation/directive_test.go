@@ -863,7 +863,7 @@ func TestHandleOperation(t *testing.T) {
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
 		operationCategory := "registerApplication"
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -874,7 +874,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
@@ -1088,7 +1088,7 @@ func TestHandleOperation(t *testing.T) {
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
 		operationCategory := "registerApplication"
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -1099,7 +1099,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
