@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	gcli "github.com/machinebox/graphql"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -492,34 +493,134 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 }
 
 func TestDeleteApplication(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	in := fixtures.FixSampleApplicationRegisterInputWithWebhooks("app")
-
-	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-
-	createReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	actualApp := graphql.ApplicationExt{}
-
 	t.Log("Get Dex id_token")
 	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
-	require.NoError(t, err)
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		in := fixtures.FixSampleApplicationRegisterInput("app")
 
-	require.NotEmpty(t, actualApp.ID)
+		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+		require.NoError(t, err)
+		createReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
+		actualApp := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
+		require.NoError(t, err)
 
-	// WHEN
-	delReq := fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-	saveExample(t, delReq.Query(), "unregister application")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, &actualApp)
+		require.NotEmpty(t, actualApp.ID)
 
-	//THEN
-	require.NoError(t, err)
+		// WHEN
+		delReq := fixtures.FixUnregisterApplicationRequest(actualApp.ID)
+		saveExample(t, delReq.Query(), "unregister application")
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, &actualApp)
+
+		//THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when application is in formation", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - test-scenario]"
+
+		defaultValue := "DEFAULT"
+		scenarios := []string{defaultValue, "test-scenario"}
+
+		jsonSchema := map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": scenarios,
+			},
+		}
+		var schema interface{} = jsonSchema
+
+		fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
+
+		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
+		applicationInput.Labels = &graphql.Labels{ScenariosLabel: scenarios}
+		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		defer fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+
+		//WHEN
+		req := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+					unregisterApplication(id: "%s") {
+						id
+					}
+				}`, application.ID))
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, nil)
+
+		//THEN
+		require.EqualError(t, err, expectedErrorMsg)
+	})
+
+	t.Run("Error when application is in formation and runtime", func(t *testing.T) {
+		//GIVEN
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - test-scenario and of runtime - one-runtime]"
+		ctx := context.Background()
+		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
+
+		runtimeInput := fixtures.FixRuntimeInput("one-runtime")
+		defaultValue := "DEFAULT"
+		scenarios := []string{defaultValue, "test-scenario"}
+		(*runtimeInput.Labels)[ScenariosLabel] = scenarios
+		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+		registerRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
+
+		runtime := graphql.Runtime{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerRuntimeRequest, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtime.ID)
+
+		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
+		applicationInput.Labels = &graphql.Labels{ScenariosLabel: scenarios}
+		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		defer fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+
+		//WHEN
+		req := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+					unregisterApplication(id: "%s") {
+						id
+					}
+				}`, application.ID))
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, nil)
+
+		//THEN
+		require.EqualError(t, err, expectedErrorMsg)
+	})
 }
 
 func TestUpdateApplicationParts(t *testing.T) {
