@@ -53,12 +53,12 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *graphql.HttpHeaders
+		Value         graphql.HttpHeaders
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},
@@ -71,21 +71,21 @@ func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 		},
 		{
 			Name: "Invalid - empty key",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				inputvalidationtest.EmptyString: {"test"},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"test": nil,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"test": {inputvalidationtest.EmptyString},
 			},
 			ExpectedValid: false,
@@ -112,12 +112,12 @@ func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *graphql.QueryParams
+		Value         graphql.QueryParams
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				"Param": {"test", "asdf"},
 				"Test":  {"test", "asdf"},
 			},
@@ -130,21 +130,21 @@ func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 		},
 		{
 			Name: "Invalid - empty key",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				inputvalidationtest.EmptyString: {"test"},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				"test": nil,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				"test": {inputvalidationtest.EmptyString},
 			},
 			ExpectedValid: false,
@@ -556,12 +556,12 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *graphql.HttpHeaders
+		Value         graphql.HttpHeaders
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},
@@ -574,21 +574,21 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 		},
 		{
 			Name: "Invalid - empty key",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				inputvalidationtest.EmptyString: {"test"},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"test": nil,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
-			Value: &graphql.HttpHeaders{
+			Value: graphql.HttpHeaders{
 				"test": {inputvalidationtest.EmptyString},
 			},
 			ExpectedValid: false,
@@ -615,12 +615,12 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *graphql.QueryParams
+		Value         graphql.QueryParams
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				"Param": {"test", "asdf"},
 				"Test":  {"test", "asdf"},
 			},
@@ -633,21 +633,21 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *t
 		},
 		{
 			Name: "Invalid - empty key",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				inputvalidationtest.EmptyString: {"test"},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				"test": nil,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
-			Value: &graphql.QueryParams{
+			Value: graphql.QueryParams{
 				"test": {inputvalidationtest.EmptyString},
 			},
 			ExpectedValid: false,
