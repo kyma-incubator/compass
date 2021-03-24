@@ -90,59 +90,60 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.finalizeStatus(ctx, operation, app.Result.Error)
 	}
 
-	if len(operation.Spec.WebhookIDs) > 0 {
-		webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
-		if err != nil {
-			log.C(ctx).Error(err, "Unable to retrieve webhook")
-			return r.finalizeStatusWithError(ctx, operation, err)
-		}
-
-		if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
-			log.C(ctx).Info("Reconciliation timeout reached")
-			return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached)
-		}
-
-		if !operation.HasPollURL() {
-			log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-			request := webhook.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
-
-			response, err := r.webhookClient.Do(ctx, request)
-			if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
-				log.C(ctx).Info(fmt.Sprintf("%s webhook initial request returned gone status %d", *(webhookEntity.Mode), *response.GoneStatusCode))
-				return r.finalizeStatusSuccess(ctx, operation)
-			}
-			if err != nil {
-				log.C(ctx).Error(err, "Unable to execute Webhook request")
-				return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
-			}
-
-			return r.handleWebhookResponse(ctx, operation, webhookEntity.Mode, response)
-		}
-
-		log.C(ctx).Info("Webhook Poll URL is found. Will calculate next poll time")
-		requeueAfter, err := operation.NextPollTime(webhookEntity.RetryInterval, r.config.TimeLayout)
-		if err != nil {
-			log.C(ctx).Error(err, "Unable to calculate next poll time")
-			return r.finalizeStatusWithError(ctx, operation, err)
-		}
-
-		if requeueAfter > 0 {
-			log.C(ctx).Info(fmt.Sprintf("Poll interval has not passed. Will requeue after: %d seconds", requeueAfter*time.Second))
-			return ctrl.Result{RequeueAfter: requeueAfter}, nil
-		}
-
-		request := webhook.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
-		response, err := r.webhookClient.Poll(ctx, request)
-		if err != nil {
-			log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
-			return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
-		}
-
-		return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
-	} else {
+	if len(operation.Spec.WebhookIDs) == 0 {
 		log.C(ctx).Info("No webhook defined. Operation executed successfully")
 		return r.finalizeStatusSuccess(ctx, operation)
 	}
+
+	webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to retrieve webhook")
+		return r.finalizeStatusWithError(ctx, operation, err)
+	}
+
+	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
+		log.C(ctx).Info("Reconciliation timeout reached")
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached)
+	}
+
+	if !operation.HasPollURL() {
+		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
+		request := webhook.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
+
+		response, err := r.webhookClient.Do(ctx, request)
+		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
+			log.C(ctx).Info(fmt.Sprintf("%s webhook initial request returned gone status %d", *(webhookEntity.Mode), *response.GoneStatusCode))
+			return r.finalizeStatusSuccess(ctx, operation)
+		}
+		if err != nil {
+			log.C(ctx).Error(err, "Unable to execute Webhook request")
+			return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
+		}
+
+		return r.handleWebhookResponse(ctx, operation, webhookEntity.Mode, response)
+	}
+
+	log.C(ctx).Info("Webhook Poll URL is found. Will calculate next poll time")
+	requeueAfter, err := operation.NextPollTime(webhookEntity.RetryInterval, r.config.TimeLayout)
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to calculate next poll time")
+		return r.finalizeStatusWithError(ctx, operation, err)
+	}
+
+	if requeueAfter > 0 {
+		log.C(ctx).Info(fmt.Sprintf("Poll interval has not passed. Will requeue after: %d seconds", requeueAfter*time.Second))
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	request := webhook.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
+	response, err := r.webhookClient.Poll(ctx, request)
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
+		return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, err)
+	}
+
+	return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
+
 }
 
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
