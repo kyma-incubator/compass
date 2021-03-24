@@ -516,11 +516,9 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 
 	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
 	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
-	
+
 	internalRouter := mux.NewRouter()
 	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
-	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
-
 	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	internalRouter.Use(middlewares...)
