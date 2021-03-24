@@ -20749,7 +20749,7 @@ func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx con
 			}
 		case "placeholders":
 			var err error
-			it.Placeholders, err = ec.unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx, v)
+			it.Placeholders, err = ec.unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
