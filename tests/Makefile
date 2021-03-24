@@ -21,7 +21,7 @@ e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	@kubectl delete clustertestsuites.testing.kyma-project.io compass-tests || true
 
 deploy-tests-on-minikube:
-	@eval $$(minikube docker-env) && docker build -t eu.gcr.io/kyma-project/incubator/compass-e2e-tests:${IMAGE_VERSION} .
+	@eval $$(minikube docker-env) && docker build -t eu.gcr.io/kyma-project/incubator/compass-tests:${IMAGE_VERSION} .

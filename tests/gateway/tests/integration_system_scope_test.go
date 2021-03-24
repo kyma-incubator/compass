@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	token2 "github.com/kyma-incubator/compass/tests/pkg/token"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 
@@ -27,6 +27,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Log("Register Integration System with Dex id token")
 	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 	t.Log("Request Client Credentials for Integration System")
 	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
@@ -35,7 +36,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 	require.True(t, ok)
 
 	t.Log("Issue a token with Client Credentials")
-	token := token2.GetAccessToken(t, intSysOauthCredentialData, token2.IntegrationSystemScopes)
+	token := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, testConfig.DirectorURL)
 	t.Run("Test application scopes", func(t *testing.T) {
 		t.Log("Register an application")
@@ -101,7 +102,4 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		fixtures.UnregisterRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 
 	})
-
-	t.Log("Unregister Integration System")
-	fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 }

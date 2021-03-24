@@ -5,13 +5,21 @@ import (
 	"net/http"
 )
 
+// TODO temporary fix
+var token string
+
 func GetDexToken() (string, error) {
+	if token != "" {
+		return token, nil
+	}
+
 	config, err := NewConfigFromEnv()
 	if err != nil {
 		return "", err
 	}
 
-	return authenticate(config)
+	token, err = authenticate(config)
+	return token, err
 }
 
 func authenticate(config Config) (string, error) {

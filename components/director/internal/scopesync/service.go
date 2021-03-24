@@ -67,12 +67,15 @@ func (s *service) UpdateClientScopes(ctx context.Context) error {
 		scopesFromHydra, ok := clientScopes[clientID]
 		if !ok {
 			log.C(ctx).Errorf("Client with ID %s not presents in Hydra", clientID)
+			continue
 		}
-		if !str.Matches(scopesFromHydra, expectedScopes) {
-			err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType)
-			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
-			}
+		if str.Matches(scopesFromHydra, expectedScopes) {
+			log.C(ctx).Info("Scopes for client with ID %s and type %s are in sync")
+			continue
+		}
+
+		if err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType); err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 		}
 	}
 

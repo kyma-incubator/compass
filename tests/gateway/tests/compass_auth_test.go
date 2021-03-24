@@ -40,7 +40,7 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Issue a Hydra token with Client Credentials")
 
-	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.ApplicationScopes)
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 

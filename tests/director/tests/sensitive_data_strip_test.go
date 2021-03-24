@@ -30,19 +30,19 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NoError(t, err)
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	// CREATE APP TEMPLATE
+	// Create app template
 	t.Log("Creating application template")
 	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
 	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
-	// REGISTER RUNTIME
+	// Register runtime
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
-	// REQUEST RUNTIME OAUTH CLIENT
+	// Request runtime oauth client
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
@@ -51,7 +51,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 	runtimeOAuthGraphQLClient := gqlClient(t, rtmOauthCredentialData, token.RuntimeScopes)
 
-	// REGISTER APPLICATION
+	// Register application
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
@@ -151,6 +151,20 @@ func TestSensitiveDataStrip(t *testing.T) {
 					apiSpecFetchRequest:       true,
 				},
 			},
+			{
+				name:     "Admin user consumer",
+				consumer: dexGraphQLClient,
+				fieldExpectations: accessRequired{
+					appWebhooks:               true,
+					appAuths:                  true,
+					bundleInstanceAuth:        true,
+					bundleInstanceAuths:       true,
+					bundleDefaultInstanceAuth: true,
+					documentFetchRequest:      true,
+					eventSpecFetchRequest:     true,
+					apiSpecFetchRequest:       true,
+				},
+			},
 		}
 
 		for _, test := range testCases {
@@ -166,14 +180,15 @@ func TestSensitiveDataStrip(t *testing.T) {
 		}
 	})
 
-	t.Run("Integration system access from integration system", func(t *testing.T) {
-		is := fixtures.GetIntegrationSystem(t, ctx, intSystemOAuthGraphQLClient, integrationSystem.ID)
-		require.NotNil(t, is.Auths)
-	})
-
-	t.Run("Application access from integration system", func(t *testing.T) {
-		appTemplate := fixtures.GetApplicationTemplate(t, ctx, intSystemOAuthGraphQLClient, tenantId, appTemplate.ID)
-		require.NotNil(t, appTemplate.Webhooks)
+	t.Run("Application template access", func(t *testing.T) {
+		t.Run("from runtime", func(t *testing.T) {
+			appTemplate := fixtures.GetApplicationTemplate(t, ctx, intSystemOAuthGraphQLClient, tenantId, appTemplate.ID)
+			require.NotNil(t, appTemplate.Webhooks)
+		})
+		t.Run("from admin user", func(t *testing.T) {
+			appTemplate := fixtures.GetApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+			require.NotNil(t, appTemplate.Webhooks)
+		})
 	})
 
 	t.Run("Runtime access", func(t *testing.T) {
@@ -182,12 +197,22 @@ func TestSensitiveDataStrip(t *testing.T) {
 			require.NotNil(t, rt.Auths)
 		})
 
-		t.Run("from integration system", func(t *testing.T) {
-			rt := fixtures.GetRuntime(t, ctx, intSystemOAuthGraphQLClient, tenantId, runtime.ID)
+		t.Run("from admin user", func(t *testing.T) {
+			rt := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 			require.NotNil(t, rt.Auths)
 		})
 	})
 
+	t.Run("Integration system access", func(t *testing.T) {
+		t.Run("from integration system", func(t *testing.T) {
+			is := fixtures.GetIntegrationSystem(t, ctx, intSystemOAuthGraphQLClient, integrationSystem.ID)
+			require.NotNil(t, is.Auths)
+		})
+		t.Run("from admin user", func(t *testing.T) {
+			is := fixtures.GetIntegrationSystem(t, ctx, dexGraphQLClient, integrationSystem.ID)
+			require.NotNil(t, is.Auths)
+		})
+	})
 }
 
 func gqlClient(t *testing.T, creds *graphql.OAuthCredentialData, scopes string) *gcli.Client {

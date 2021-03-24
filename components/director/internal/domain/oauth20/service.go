@@ -172,7 +172,7 @@ func (s *service) registerClient(ctx context.Context, clientID string, scopes []
 }
 
 func (s *service) updateClient(ctx context.Context, clientID string, scopes []string) error {
-	log.C(ctx).Debugf("Updating client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
+	log.C(ctx).Infof("Updating client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
 	reqBody := &clientCredentialsRegistrationBody{
 		Scope: strings.Join(scopes, " "),
 	}
@@ -247,7 +247,6 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 }
 
 func (s *service) clientsFromHydra(ctx context.Context, endpoint string) ([]Client, error) {
-
 	var resultClients []Client
 	nextLink := endpoint
 	for nextLink != "" {
@@ -258,9 +257,12 @@ func (s *service) clientsFromHydra(ctx context.Context, endpoint string) ([]Clie
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusOK)
 		}
+
 		nextLink = getNextLink(resp)
 		var clients []Client
-		err = json.NewDecoder(resp.Body).Decode(&clients)
+		if err = json.NewDecoder(resp.Body).Decode(&clients); err != nil {
+			return nil, fmt.Errorf("failed to decode response body from Hydra: %v", err)
+		}
 		closeBody(resp.Body)
 		resultClients = append(resultClients, clients...)
 	}
