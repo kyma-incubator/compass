@@ -28,11 +28,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
-	"github.com/kyma-incubator/compass/tests/ord-service/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -76,23 +77,21 @@ func TestORDService(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
-
-	app2, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
+	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
 	require.NoError(t, err)
-
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.Tenant, app2.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.Tenant, app2.ID)
 
 	t.Log("Create integration system")
-	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
 	require.NotEmpty(t, intSys)
-	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
 
-	intSystemCredentials := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
-	defer pkg.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
 
 	unsecuredHttpClient := http.DefaultClient
 	unsecuredHttpClient.Transport = &http.Transport{
@@ -615,7 +614,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 						Description: ptr.String("api for adding comments"),
 						TargetURL:   "http://mywordpress.com/comments",
 						Group:       ptr.String("comments"),
-						Version:     pkg.FixDepracatedVersion(),
+						Version:     fixtures.FixDeprecatedVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOpenAPI,
 							Format: directorSchema.SpecFormatYaml,
@@ -626,7 +625,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 						Name:        "reviews-v1",
 						Description: ptr.String("api for adding reviews"),
 						TargetURL:   "http://mywordpress.com/reviews",
-						Version:     pkg.FixActiveVersion(),
+						Version:     fixtures.FixActiveVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
 							Format: directorSchema.SpecFormatJSON,
@@ -636,7 +635,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "xml",
 						Description: ptr.String("xml api"),
-						Version:     pkg.FixDecomissionedVersion(),
+						Version:     fixtures.FixDecommissionedVersion(),
 						TargetURL:   "http://mywordpress.com/xml",
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
@@ -649,7 +648,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "comments-v1",
 						Description: ptr.String("comments events"),
-						Version:     pkg.FixDepracatedVersion(),
+						Version:     fixtures.FixDeprecatedVersion(),
 						Group:       ptr.String("comments"),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,
@@ -660,7 +659,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "reviews-v1",
 						Description: ptr.String("review events"),
-						Version:     pkg.FixActiveVersion(),
+						Version:     fixtures.FixActiveVersion(),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,
 							Format: directorSchema.SpecFormatYaml,
