@@ -160,7 +160,7 @@ func main() {
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
 	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
-	exitOnError(err, "Error while reading Pairing Adapters Configuration")
+	exitOnError(err, "Error while reading Pairing Adapters configuration")
 
 	httpClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,

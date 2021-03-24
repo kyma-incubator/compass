@@ -1,8 +1,6 @@
 package revocation
 
 import (
-	"context"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -18,7 +16,7 @@ type Manager interface {
 
 //go:generate mockery --name=RevokedCertificatesRepository
 type RevokedCertificatesRepository interface {
-	Insert(ctx context.Context, hash string) error
+	Insert(hash string) error
 	Contains(hash string) bool
 }
 
@@ -36,7 +34,7 @@ func NewRepository(configMapManager Manager, configMapName string, revokedCertsC
 	}
 }
 
-func (r *revokedCertifiatesRepository) Insert(ctx context.Context, hash string) error {
+func (r *revokedCertifiatesRepository) Insert(hash string) error {
 	configMap, err := r.configMapManager.Get(r.configMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
