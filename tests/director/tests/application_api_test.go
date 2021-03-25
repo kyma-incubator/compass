@@ -557,16 +557,13 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
-		defer fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		defer func() {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		}()
 
 		//WHEN
-		req := gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-					unregisterApplication(id: "%s") {
-						id
-					}
-				}`, application.ID))
+		req := fixtures.FixUnregisterApplicationRequest(application.ID)
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, nil)
 
@@ -606,8 +603,10 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
-		defer fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		defer func() {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		}()
 
 		//WHEN
 		req := gcli.NewRequest(
@@ -1050,8 +1049,10 @@ func TestApplicationsForRuntime(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testApp.Tenant, application.ID)
-		defer fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, testApp.Tenant, application.ID)
+		defer func() {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		}()
 
 		if testApp.WithinTenant {
 			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
@@ -1243,8 +1244,10 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
-		defer fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		defer func() {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		}()
 
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)

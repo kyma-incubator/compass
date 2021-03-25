@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
@@ -551,7 +553,7 @@ func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicati
 		return nil, nil, nil
 	}
 
-	scenariosQuery := buildQueryForScenarios(validScenarios)
+	scenariosQuery := eventing.BuildQueryForScenarios(validScenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
 	log.C(ctx).Infof("Listing runtimes matching the query %s", scenariosQuery)
@@ -582,18 +584,4 @@ func removeDefaultScenario(scenarios []string) []string {
 	}
 
 	return scenarios
-}
-
-func buildQueryForScenarios(scenarios []string) string {
-	var queryBuilder strings.Builder
-	for idx, scenario := range scenarios {
-		if idx > 0 {
-			queryBuilder.WriteString(` || `)
-		}
-
-		queryBuilder.WriteString(fmt.Sprintf(`@ == "%s"`, scenario))
-	}
-	query := fmt.Sprintf(`$[*] ? ( %s )`, queryBuilder.String())
-
-	return query
 }

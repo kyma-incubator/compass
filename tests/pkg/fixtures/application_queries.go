@@ -159,18 +159,10 @@ func UpdateApplicationScenariosToDefaultState(t *testing.T, ctx context.Context,
 }
 
 func setApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Client, applicationID string, tenantID string, labelKey string, labelValue interface{}) graphql.Label {
-	request := FixGetApplicationsRequestWithPagination()
-	applicationPage := graphql.ApplicationPage{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, request, &applicationPage)
-	require.NoError(t, err)
-
-	applicationPage = graphql.ApplicationPage{}
-	err = testctx.Tc.RunOperation(ctx, gqlClient, request, &applicationPage)
-	require.NoError(t, err)
-
 	setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
+
 	label := graphql.Label{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return label

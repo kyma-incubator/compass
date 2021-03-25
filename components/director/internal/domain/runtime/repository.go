@@ -22,6 +22,11 @@ var (
 	tenantColumn   = "tenant_id"
 )
 
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
+type EntityConverter interface {
+	MultipleFromEntities(entities RuntimeCollection) []*model.Runtime
+}
+
 type pgRepository struct {
 	existQuerier       repo.ExistQuerier
 	singleGetter       repo.SingleGetter
@@ -31,9 +36,10 @@ type pgRepository struct {
 	lister             repo.Lister
 	creator            repo.Creator
 	updater            repo.Updater
+	conv               EntityConverter
 }
 
-func NewRepository() *pgRepository {
+func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:       repo.NewExistQuerier(resource.Runtime, runtimeTable, tenantColumn),
 		singleGetter:       repo.NewSingleGetter(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
@@ -43,6 +49,7 @@ func NewRepository() *pgRepository {
 		lister:             repo.NewLister(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
 		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
 		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		conv:               conv,
 	}
 }
 
@@ -60,10 +67,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 		return nil, err
 	}
 
-	runtimeModel, err := runtimeEnt.ToModel()
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime model from entity")
-	}
+	runtimeModel := runtimeEnt.ToModel()
 
 	return runtimeModel, nil
 }
@@ -89,10 +93,7 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 		return nil, err
 	}
 
-	runtimeModel, err := runtimeEnt.ToModel()
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime model from entity")
-	}
+	runtimeModel := runtimeEnt.ToModel()
 
 	return runtimeModel, nil
 }
@@ -113,10 +114,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 		return nil, err
 	}
 
-	runtimeModel, err := runtimeEnt.ToModel()
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime model from entity")
-	}
+	runtimeModel := runtimeEnt.ToModel()
 
 	return runtimeModel, nil
 }
@@ -144,19 +142,7 @@ func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*lab
 		return nil, err
 	}
 
-	return r.multipleFromEntities(entities)
-}
-
-func (r *pgRepository) multipleFromEntities(entities RuntimeCollection) ([]*model.Runtime, error) {
-	var items []*model.Runtime
-	for _, ent := range entities {
-		model, err := ent.ToModel()
-		if err != nil {
-			continue
-		}
-		items = append(items, model)
-	}
-	return items, nil
+	return r.conv.MultipleFromEntities(entities), nil
 }
 
 type RuntimeCollection []Runtime
@@ -187,16 +173,8 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		return nil, err
 	}
 
-	var items []*model.Runtime
+	items := r.conv.MultipleFromEntities(runtimesCollection)
 
-	for _, runtimeEnt := range runtimesCollection {
-		m, err := runtimeEnt.ToModel()
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating runtime model from entity")
-		}
-
-		items = append(items, m)
-	}
 	return &model.RuntimePage{
 		Data:       items,
 		TotalCount: totalCount,
@@ -246,10 +224,7 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 		return nil, err
 	}
 
-	runtimeModel, err := runtimeEnt.ToModel()
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime model from entity")
-	}
+	runtimeModel := runtimeEnt.ToModel()
 
 	return runtimeModel, nil
 }
