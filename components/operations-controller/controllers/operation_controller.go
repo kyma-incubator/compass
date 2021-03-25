@@ -90,6 +90,11 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.finalizeStatus(ctx, operation, app.Result.Error)
 	}
 
+	if len(operation.Spec.WebhookIDs) == 0 {
+		log.C(ctx).Info("No webhook defined. Operation executed successfully")
+		return r.finalizeStatusSuccess(ctx, operation)
+	}
+
 	webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to retrieve webhook")
@@ -138,6 +143,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	return r.handleWebhookPollResponse(ctx, operation, webhookEntity, response)
+
 }
 
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
