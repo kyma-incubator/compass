@@ -9,7 +9,6 @@ import (
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,7 +27,7 @@ func TestHandlerRevocations(t *testing.T) {
 		connectorClientProviderMock := &mocks.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		handler := NewRevocationsHandler(connectorClientProviderMock, logrus.New())
+		handler := NewRevocationsHandler(connectorClientProviderMock)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromCertificate)
 
@@ -49,7 +48,7 @@ func TestHandlerRevocations(t *testing.T) {
 		connectorClientProviderMock := &mocks.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		handler := NewRevocationsHandler(connectorClientProviderMock, logrus.New())
+		handler := NewRevocationsHandler(connectorClientProviderMock)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromCertificate)
 
@@ -71,7 +70,7 @@ func TestHandlerRevocations(t *testing.T) {
 
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil)
-		handler := NewRevocationsHandler(connectorClientProviderMock, logrus.New())
+		handler := NewRevocationsHandler(connectorClientProviderMock)
 
 		// when
 		handler.RevokeCertificate(r, req)

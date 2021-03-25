@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -12,8 +13,9 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type certRequest struct {
@@ -22,13 +24,11 @@ type certRequest struct {
 
 type certificatesHandler struct {
 	connectorClientProvider connector.ClientProvider
-	logger                  *log.Logger
 }
 
-func NewCertificatesHandler(connectorClientProvider connector.ClientProvider, logger *log.Logger) certificatesHandler {
+func NewCertificatesHandler(connectorClientProvider connector.ClientProvider) certificatesHandler {
 	return certificatesHandler{
 		connectorClientProvider: connectorClientProvider,
-		logger:                  logger,
 	}
 }
 
@@ -40,8 +40,8 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contextLogger := contextLogger(ch.logger, authorizationHeaders.GetSystemAuthID())
-	certRequest, err := readCertRequest(r)
+	contextLogger := contextLogger(r.Context(), authorizationHeaders.GetSystemAuthID())
+	certRequest, err := readCertRequest(r, contextLogger)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to read certificate request"), apperrors.CodeWrongInput)
 
@@ -63,7 +63,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readCertRequest(r *http.Request) (*certRequest, error) {
+func readCertRequest(r *http.Request, logger *logrus.Entry) (*certRequest, error) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while reading request body: %s")
@@ -71,7 +71,7 @@ func readCertRequest(r *http.Request) (*certRequest, error) {
 	defer func() {
 		err := r.Body.Close()
 		if err != nil {
-			log.Errorf("Failed to close response body: %s", err)
+			logger.Errorf("Failed to close response body: %s", err)
 		}
 	}()
 
@@ -84,7 +84,7 @@ func readCertRequest(r *http.Request) (*certRequest, error) {
 	return &certRequest, nil
 }
 
-func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}, logger *log.Entry) {
+func respondWithBody(w http.ResponseWriter, statusCode int, responseBody interface{}, logger *logrus.Entry) {
 	respond(w, statusCode)
 	err := json.NewEncoder(w).Encode(responseBody)
 	if err != nil {
@@ -97,11 +97,11 @@ func respond(w http.ResponseWriter, statusCode int) {
 	w.WriteHeader(statusCode)
 }
 
-func respondWithError(w http.ResponseWriter, contextLogger *log.Entry, err error, appErroCode int) {
+func respondWithError(w http.ResponseWriter, contextLogger *logrus.Entry, err error, appErroCode int) {
 	contextLogger.Error(err.Error())
 	res.WriteError(w, err, appErroCode)
 }
 
-func contextLogger(logger *log.Logger, application string) *log.Entry {
-	return logger.WithField("application", application)
+func contextLogger(ctx context.Context, systemAuthId string) *logrus.Entry {
+	return log.C(ctx).WithField("system_auth_id", systemAuthId)
 }
