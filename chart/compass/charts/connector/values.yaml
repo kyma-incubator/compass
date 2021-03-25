@@ -32,3 +32,11 @@ certsSetupJob:
   generatedCertificateValidity: 92d
   securityContext: # Set on container level
     runAsUser: 2000
+
+istio:
+  rbac:
+    enabled: true
+    connectorInternalApi:
+      compassDirector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director
+      compassConnectorTests: cluster.local/ns/{{ .Values.global.tests.namespace }}/sa/compass-connector-tests
+

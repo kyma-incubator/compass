@@ -116,6 +116,10 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response into webhook output template"))
 	}
 
+	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
+		return response, err
+	}
+
 	isLocationEmpty := response.Location != nil && *response.Location == ""
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
@@ -214,5 +218,12 @@ func checkForErr(resp *http.Response, successStatusCode *int, error *string) err
 		return errors.New(errMsg)
 	}
 
+	return nil
+}
+
+func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
+	if goneStatusCode != nil && resp.StatusCode == *goneStatusCode {
+		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
+	}
 	return nil
 }

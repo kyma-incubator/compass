@@ -126,7 +126,7 @@ func fatalOnError(err error) {
 }
 
 func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
-	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg)))
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransport(cfg))
 
 	unsecuredClient := &http.Client{
 		Transport: httpTransport,

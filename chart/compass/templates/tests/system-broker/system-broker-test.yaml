@@ -1,0 +1,63 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-system-broker
+  labels:
+    app: {{ .Chart.Name }}-system-broker-tests-app
+    app.kubernetes.io/name: {{ .Chart.Name }}-system-broker-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-system-broker-tests-app
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      containers:
+        - name: system-broker-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir}}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./system-broker.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+            - name: DIRECTOR_HEALTHZ_URL
+              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
+            - name: CONNECTOR_HEALTHZ_URL
+              value: "{{ .Values.global.tests.connectorFQDN }}:{{ .Values.global.connector.graphql.external.port }}/healthz"
+            - name: SYSTEM_BROKER_HEALTHZ_URL
+              value: "{{ .Values.global.tests.systemBrokerFQDN }}:{{ .Values.global.system_broker.port }}/healthz"
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_TENANT
+              value: "{{ .Values.global.defaultTenant }}"
+            - name: APP_SYSTEM_BROKER_URL
+              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.system_broker.prefix }}"
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_CONNECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
+            - name: APP_ORD_SERVICE_URL
+              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.staticPrefix }}"
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
+      restartPolicy: Never
