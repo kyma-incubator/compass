@@ -70,7 +70,7 @@ func (s *service) UpdateClientScopes(ctx context.Context) error {
 			continue
 		}
 		if str.Matches(scopesFromHydra, expectedScopes) {
-			log.C(ctx).Info("Scopes for client with ID %s and type %s are in sync")
+			log.C(ctx).Infof("Scopes for client with ID %s and type %s are in sync", clientID, objType)
 			continue
 		}
 
