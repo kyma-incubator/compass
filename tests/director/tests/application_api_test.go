@@ -1049,10 +1049,10 @@ func TestApplicationsForRuntime(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer func(applicationID string) {
-			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, applicationID)
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, applicationID)
-		}(application.ID)
+		defer func(applicationID, tenant string) {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenant, applicationID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, applicationID)
+		}(application.ID, testApp.Tenant)
 
 		if testApp.WithinTenant {
 			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
