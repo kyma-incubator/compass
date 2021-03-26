@@ -28,11 +28,12 @@ import (
 )
 
 type config struct {
-	DefaultTenant               string
-	DirectorURL                 string
-	ORDServiceURL               string
-	AggregatorSchedule          string
-	ExternalServicesMockBaseURL string
+	DefaultTenant                 string
+	DirectorURL                   string
+	ORDServiceURL                 string
+	AggregatorSchedule            string
+	ExternalServicesMockBaseURL   string
+	ORDServiceDefaultResponseType string
 }
 
 var testConfig config

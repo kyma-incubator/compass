@@ -21,10 +21,9 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"net/http"
 	urlpkg "net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -122,7 +121,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
@@ -155,7 +154,7 @@ func TestORDService(t *testing.T) {
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
@@ -166,7 +165,7 @@ func TestORDService(t *testing.T) {
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
@@ -526,8 +525,8 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
@@ -539,65 +538,27 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		respBody := makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusNotFound)
+		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
 }
 
 func makeRequest(t *testing.T, httpClient *http.Client, url string) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
 
 func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus)
-}
-
-func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client, url string, headers map[string][]string, expectedHTTPStatus int) string {
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	require.NoError(t, err)
-
-	for key, values := range headers {
-		for _, value := range values {
-			request.Header.Add(key, value)
-		}
-	}
-
-	response, err := httpClient.Do(request)
-
-	require.NoError(t, err)
-	require.Equal(t, expectedHTTPStatus, response.StatusCode)
-
-	parsedURL, err := urlpkg.Parse(url)
-	require.NoError(t, err)
-
-	if !strings.Contains(parsedURL.Path, "/specification") {
-		formatParam := parsedURL.Query().Get("$format")
-		acceptHeader, acceptHeaderProvided := headers[acceptHeader]
-
-		contentType := response.Header.Get("Content-Type")
-		if formatParam != "" {
-			require.Contains(t, contentType, formatParam)
-		} else if acceptHeaderProvided && acceptHeader[0] != "*/*" {
-			require.Contains(t, contentType, acceptHeader[0])
-		} else {
-			require.Contains(t, contentType, testConfig.ORDServiceDefaultResponseType)
-		}
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	return string(body)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
 }
 
 func createApp(suffix string) directorSchema.ApplicationRegisterInput {

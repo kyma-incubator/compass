@@ -43,6 +43,8 @@ spec:
               value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
+            - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
+              value: {{ .Values.global.ordService.defaultResponseType }}
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
             - name: AGGREGATOR_SCHEDULE

@@ -9,21 +9,18 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-	"io/ioutil"
 	"net/http"
-	urlpkg "net/url"
-	"strings"
 	"testing"
 	"time"
 )
 
 const (
-	acceptHeader = "Accept"
 	tenantHeader = "Tenant"
 
 	applicationName         = "test-app"
@@ -105,7 +102,7 @@ func TestORDAggregator(t *testing.T) {
 	scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 	require.NoError(t, err)
 
-	defaultTestTimeout :=  scheduleTime + testTimeoutAdditionalBuffer
+	defaultTestTimeout := scheduleTime + testTimeoutAdditionalBuffer
 	defaultCheckInterval := scheduleTime / 20
 
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
@@ -252,43 +249,5 @@ func createApp() directorSchema.ApplicationRegisterInput {
 }
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK)
-}
-
-func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client, url string, headers map[string][]string, expectedHTTPStatus int) string {
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	require.NoError(t, err)
-
-	for key, values := range headers {
-		for _, value := range values {
-			request.Header.Add(key, value)
-		}
-	}
-
-	response, err := httpClient.Do(request)
-
-	require.NoError(t, err)
-	require.Equal(t, expectedHTTPStatus, response.StatusCode)
-
-	parsedURL, err := urlpkg.Parse(url)
-	require.NoError(t, err)
-
-	if !strings.Contains(parsedURL.Path, "/specification") {
-		formatParam := parsedURL.Query().Get("$format")
-		acceptHeader, acceptHeaderProvided := headers[acceptHeader]
-
-		contentType := response.Header.Get("Content-Type")
-		if formatParam != "" {
-			require.Contains(t, contentType, formatParam)
-		} else if acceptHeaderProvided && acceptHeader[0] != "*/*" {
-			require.Contains(t, contentType, acceptHeader[0])
-		} else {
-			require.Contains(t, contentType, "xml")
-		}
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	return string(body)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
