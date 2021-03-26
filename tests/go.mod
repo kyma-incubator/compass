@@ -12,6 +12,7 @@ require (
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210224145945-7c0650085504
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210309084252-cb1359ea9c14
+	github.com/kyma-incubator/compass/tests/director v0.0.0-20210323111309-0e91422c2c76
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1
