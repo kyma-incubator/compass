@@ -9,9 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 const (
@@ -47,6 +46,8 @@ type timeoutLoggingHandler struct {
 }
 
 func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationId(r))
+
 	timoutRW := &timoutLoggingResponseWriter{
 		ResponseWriter: w,
 		method:         template.HTMLEscapeString(r.Method),
@@ -54,8 +55,9 @@ func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		timeout:        h.timeout,
 		msg:            h.msg,
 		requestStart:   time.Now(),
-		ctx:            r.Context(),
+		ctx:            ctx,
 	}
+
 	h.h.ServeHTTP(timoutRW, r)
 }
 
