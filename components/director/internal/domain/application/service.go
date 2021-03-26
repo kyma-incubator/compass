@@ -307,7 +307,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	scenarios, runtimes, err := s.getScenariosAndRuntimes(ctx, appTenant, id)
 	if err != nil {
-		return errors.Wrapf(err, "while checking if application is in formation and runtime")
+		return errors.Wrapf(err, "while checking if application is in formation with runtime")
 	}
 
 	if len(scenarios) > 0 {
@@ -535,7 +535,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 }
 
 func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicationID string) ([]string, []string, error) {
-	log.C(ctx).Infof("Getting formations for application with id %s", applicationID)
+	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
@@ -553,13 +553,22 @@ func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicati
 		return nil, nil, nil
 	}
 
-	scenariosQuery := eventing.BuildQueryForScenarios(validScenarios)
+	runtimeNames, err := s.getRuntimeNamesWithScenarios(ctx, validScenarios, tenant)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return validScenarios, runtimeNames, nil
+}
+
+func (s *service) getRuntimeNamesWithScenarios(ctx context.Context, scenarios []string, tenant string) ([]string, error) {
+	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
 	log.C(ctx).Infof("Listing runtimes matching the query %s", scenariosQuery)
 	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting runtimes")
+		return nil, errors.Wrapf(err, "while getting runtimes")
 	}
 
 	var runtimesNames []string
@@ -567,7 +576,7 @@ func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicati
 		runtimesNames = append(runtimesNames, r.Name)
 	}
 
-	return validScenarios, runtimesNames, nil
+	return runtimesNames, nil
 }
 
 func removeDefaultScenario(scenarios []string) []string {
