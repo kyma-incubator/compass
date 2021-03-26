@@ -24,10 +24,10 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"

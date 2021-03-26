@@ -10,7 +10,9 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/dlmiddlecote/sqlstats v1.0.2
+	github.com/fatih/structs v1.1.0
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -29,6 +31,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
 	github.com/sirupsen/logrus v1.8.0
+	github.com/spf13/cast v1.3.1
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.8
 	github.com/tidwall/sjson v1.1.5
