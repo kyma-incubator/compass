@@ -542,11 +542,11 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			given: graphql.BundleExt{
 				Bundle: graphql.Bundle{
 					DefaultInstanceAuth: &graphql.Auth{
-						AdditionalQueryParams: &graphql.QueryParams{
+						AdditionalQueryParams: graphql.QueryParams{
 							"q1": []string{"a", "b"},
 							"q2": []string{"c", "d"},
 						},
-						AdditionalHeaders: &graphql.HttpHeaders{
+						AdditionalHeaders: graphql.HttpHeaders{
 							"h1": []string{"e", "f"},
 							"h2": []string{"g", "h"},
 						},
@@ -666,11 +666,11 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 								FetchRequest: &graphql.FetchRequest{
 									URL: "http://apispec.url",
 									Auth: &graphql.Auth{
-										AdditionalQueryParams: &graphql.QueryParams{
+										AdditionalQueryParams: graphql.QueryParams{
 											"q1": {"a", "b"},
 											"q2": {"c", "d"},
 										},
-										AdditionalHeaders: &graphql.HttpHeaders{
+										AdditionalHeaders: graphql.HttpHeaders{
 											"h1": {"e", "f"},
 											"h2": {"g", "h"},
 										},
