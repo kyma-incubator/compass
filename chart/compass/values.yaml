@@ -45,22 +45,22 @@ global:
       version: "PR-1767"
     connectivity_adapter:
       dir:
-      version: "PR-1770"
+      version: "PR-1791"
     pairing_adapter:
       dir:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1767"
+      version: "PR-1766"
     gateway:
       dir:
       version: "PR-1750"
     operations_controller:
       dir:
-      version: "PR-1777"
+      version: "PR-1766"
     tenant_fetcher:
       dir:
-      version: "PR-1750"
+      version: "PR-1782"
     ord_service:
       dir:
       version: "PR-15"
@@ -83,7 +83,7 @@ global:
       version: "PR-22"
     e2e_tests:
       dir:
-      version: "PR-1787"
+      version: "PR-1766"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -309,7 +309,7 @@ global:
     port: 3000
     authentication:
       allowJWTSigningNone: true
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
       identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"
