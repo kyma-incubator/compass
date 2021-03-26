@@ -55,8 +55,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
-	require.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	require.NoError(t, err)
 
 	// assert document, event and api definitions are present
 	require.Len(t, app.Bundles.Data, 1)

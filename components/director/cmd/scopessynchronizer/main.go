@@ -5,11 +5,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
-	"github.com/kyma-incubator/compass/components/director/internal/scopesync"
+	"github.com/kyma-incubator/compass/components/director/internal/scopes_sync"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -56,8 +59,10 @@ func main() {
 		exitOnError(ctx, err, "Error while closing the connection to the database")
 	}()
 
-	syncService := scopesync.NewService(oAuth20Svc, transact)
-	err = syncService.UpdateClientScopes(ctx)
+	authConverter := auth.NewConverter()
+	systemAuthConverter := systemauth.NewConverter(authConverter)
+	syncService := scopes_sync.NewService(oAuth20Svc, transact, systemauth.NewRepository(systemAuthConverter))
+	err = syncService.SynchronizeClientScopes(ctx)
 	exitOnError(ctx, err, "Error while updating client scopes")
 }
 

@@ -1,12 +1,13 @@
-package scopesync
+package scopes_sync
 
 import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -15,7 +16,12 @@ import (
 )
 
 type SyncService interface {
-	UpdateClientScopes(context.Context) error
+	SynchronizeClientScopes(context.Context) error
+}
+
+//go:generate mockery -name=SystemAuthRepo -output=automock -outpkg=automock -case=underscore
+type SystemAuthRepo interface {
+	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error)
 }
 
 //go:generate mockery -name=OAuthService -output=automock -outpkg=automock -case=underscore
@@ -28,23 +34,25 @@ type OAuthService interface {
 type service struct {
 	oAuth20Svc OAuthService
 	transact   persistence.Transactioner
+	repo       SystemAuthRepo
 }
 
-func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner) *service {
+func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, repo SystemAuthRepo) *service {
 	return &service{
 		oAuth20Svc: oAuth20Svc,
 		transact:   transact,
+		repo:       repo,
 	}
 }
 
-func (s *service) UpdateClientScopes(ctx context.Context) error {
+func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 	clientsFromHydra, err := s.oAuth20Svc.ListClients(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while listing clients from hydra")
 	}
 	clientScopes := convertScopesToMap(clientsFromHydra)
 
-	auths, err := systemAuthsWithOAuth(ctx, s.transact)
+	auths, err := s.systemAuthsWithOAuth(ctx)
 	if err != nil {
 		return err
 	}
@@ -91,14 +99,18 @@ func convertScopesToMap(clientsFromHydra []oauth20.Client) map[string][]string {
 	return clientScopes
 }
 
-func systemAuthsWithOAuth(ctx context.Context, transact persistence.Transactioner) ([]model.SystemAuth, error) {
-	tx, err := transact.Begin()
+func (s *service) systemAuthsWithOAuth(ctx context.Context) ([]model.SystemAuth, error) {
+	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening database transaction")
 	}
-	defer transact.RollbackUnlessCommitted(ctx, tx)
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
-	auths, err := listOauthAuths(tx)
+	conditions := repo.Conditions{
+		repo.NewNotNullCondition("(value -> 'Credential' -> 'Oauth')"),
+	}
+	auths, err := s.repo.ListGlobalWithConditions(ctx, conditions)
 	if err != nil {
 		return nil, err
 	}
@@ -108,37 +120,4 @@ func systemAuthsWithOAuth(ctx context.Context, transact persistence.Transactione
 	}
 
 	return auths, nil
-}
-
-func listOauthAuths(persist persistence.PersistenceOp) ([]model.SystemAuth, error) {
-	var dest systemauth.Collection
-
-	query := "select * from system_auths where (value -> 'Credential' -> 'Oauth') is not null"
-	log.D().Debugf("Executing DB query: %s", query)
-	err := persist.Select(&dest, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting Oauth system auths")
-	}
-
-	auths, err := multipleFromEntities(dest)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting entities")
-	}
-	return auths, nil
-}
-
-func multipleFromEntities(entities systemauth.Collection) ([]model.SystemAuth, error) {
-	conv := systemauth.NewConverter(nil)
-	var items []model.SystemAuth
-
-	for _, ent := range entities {
-		m, err := conv.FromEntity(ent)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating system auth model from entity")
-		}
-
-		items = append(items, m)
-	}
-
-	return items, nil
 }
