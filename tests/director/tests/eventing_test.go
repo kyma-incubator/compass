@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -26,12 +24,6 @@ const appEventURLFormat = "https://%s/%s/v1/events"
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -73,12 +65,6 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
@@ -101,12 +87,6 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 func TestSetDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -145,7 +125,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
 	request := fixtures.FixSetDefaultEventingForApplication(application.ID, runtime2.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualEventingCfg)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualEventingCfg)
 
 	// THEN
 	defaultAppNameNormalizer := &normalizer.DefaultNormalizator{}
@@ -161,12 +141,6 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 func TestEmptyEventConfigurationForApp(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -188,12 +162,6 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -237,7 +205,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	// WHEN
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
 	request := fixtures.FixDeleteDefaultEventingForApplication(application.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualEventingCfg)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualEventingCfg)
 
 	// THEN
 	saveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")

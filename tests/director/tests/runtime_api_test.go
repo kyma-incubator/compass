@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -30,12 +28,6 @@ const (
 func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -138,12 +130,6 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	)
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-with-scenario-assignments",
@@ -249,12 +235,6 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	firstRuntimeName := "unique-name-1"
@@ -340,12 +320,6 @@ func TestQueryRuntimes(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	idsToRemove := make([]string, 0)
@@ -382,7 +356,7 @@ func TestQueryRuntimes(t *testing.T) {
 
 	// WHEN
 	queryReq := fixtures.FixGetRuntimesRequestWithPagination()
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualPage)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualPage)
 	saveExampleInCustomDir(t, queryReq.Query(), QueryRuntimesCategory, "query runtimes")
 
 	//THEN
@@ -407,12 +381,6 @@ func TestQueryRuntimes(t *testing.T) {
 func TestQuerySpecificRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -445,12 +413,6 @@ func TestQuerySpecificRuntime(t *testing.T) {
 func TestQueryRuntimesWithPagination(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -501,7 +463,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	//WHEN get last page with last runtime
 	runtimesRequest := fixtures.FixRuntimeRequestWithPaginationRequest(after, cursor)
 	lastRuntimePage := graphql.RuntimePage{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &lastRuntimePage)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)
 	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with pagination")
 
@@ -517,12 +479,6 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -561,12 +517,6 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 

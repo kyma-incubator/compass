@@ -7,11 +7,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,12 +18,6 @@ func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Runtime", func(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
-
-		t.Log("Get Dex id_token")
-		dexToken, err := idtokenprovider.GetDexToken()
-		require.NoError(t, err)
-
-		dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -50,12 +40,6 @@ func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Application", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
-
-		t.Log("Get Dex id_token")
-		dexToken, err := idtokenprovider.GetDexToken()
-		require.NoError(t, err)
-
-		dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
