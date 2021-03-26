@@ -1,6 +1,7 @@
 BEGIN;
 
 DROP VIEW correlation_ids;
+DROP VIEW target_urls;
 
 ALTER TABLE api_definitions
     DROP COLUMN implementation_standard,

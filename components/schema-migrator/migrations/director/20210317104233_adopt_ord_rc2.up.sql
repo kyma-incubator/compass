@@ -46,4 +46,10 @@ ALTER TABLE api_definitions
 ALTER TABLE api_definitions
     DROP COLUMN target_url;
 
+CREATE VIEW target_urls AS
+SELECT api_definitions.id    AS api_definition_id,
+       elements.value        AS value
+FROM api_definitions,
+     jsonb_array_elements_text(api_definitions.target_urls) AS elements;
+
 COMMIT;
