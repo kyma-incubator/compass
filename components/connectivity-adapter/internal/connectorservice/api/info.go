@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -29,34 +28,31 @@ type infoHandler struct {
 	makeResponseFunc               model.InfoProviderFunc
 	connectivityAdapterBaseURL     string
 	connectivityAdapterMTLSBaseURL string
-	logger                         *log.Logger
 }
 
 func NewInfoHandler(
 	connectorClientProvider connector.ClientProvider,
 	directorClientProvider director.ClientProvider,
-	logger *log.Logger,
 	makeResponseFunc model.InfoProviderFunc) infoHandler {
 
 	return infoHandler{
 		connectorClientProvider: connectorClientProvider,
 		directorClientProvider:  directorClientProvider,
 		makeResponseFunc:        makeResponseFunc,
-		logger:                  logger,
 	}
 }
 
 func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
-		ih.logger.Errorf("Failed to read authorization context: %s.", err)
 		res.WriteErrorMessage(w, "Client ID not provided.", apperrors.CodeForbidden)
 
 		return
 	}
 	systemAuthID := authorizationHeaders.GetSystemAuthID()
 
-	contextLogger := contextLogger(ih.logger, systemAuthID)
+	contextLogger := contextLogger(r.Context(), systemAuthID)
+
 	contextLogger.Info("Getting Info")
 
 	application, err := ih.directorClientProvider.Client(r).GetApplication(r.Context(), systemAuthID)
