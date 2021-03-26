@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -2495,6 +2497,52 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
 		webhookClient.DoCallCount)
+}
+
+func TestReconcile_OperationNoWebhookPollURL_And_PollIntervalHasNotPassed_And_ShouldResultNoRequeueNoError(t *testing.T) {
+	// GIVEN:
+	defer func() { ctrl.Log = &originalLogger }()
+
+	operation := *mockedOperation
+	operation.Spec.WebhookIDs = []string{}
+	operation.Status.Webhooks = []v1alpha1.Webhook{}
+
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
+	k8sClient.GetReturns(&operation, nil)
+
+	statusMgrClient := &controllersfakes.FakeStatusManager{}
+	statusMgrClient.InitializeReturns(nil)
+	statusMgrClient.FailedStatusReturns(nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}})
+
+	directorClient := &controllersfakes.FakeDirectorClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateOperationReturns(nil)
+
+	webhookClient := &controllersfakes.FakeWebhookClient{}
+	webhookClient.DoReturns(&web_hook.Response{}, nil)
+
+	// WHEN:
+	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient)
+	res, err := controller.Reconcile(ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
+	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
+	assert.Equal(t, 1, directorClient.UpdateOperationCallCount())
+	assert.Equal(t, 1, statusMgrClient.SuccessStatusCallCount())
+	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
+		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount,
+		webhookClient.DoCallCount, webhookClient.PollCallCount)
 }
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsUnknown_And_ShouldResultNoRequeueNoError(t *testing.T) {
