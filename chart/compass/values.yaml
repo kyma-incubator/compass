@@ -226,6 +226,7 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
+      requestPayloadSizeLimit: 2097152  # 2 MB
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
