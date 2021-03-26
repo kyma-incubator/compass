@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/apispec"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator"
+	ord_aggregator "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 

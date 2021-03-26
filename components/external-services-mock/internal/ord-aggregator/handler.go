@@ -1,9 +1,10 @@
 package ord_aggregator
 
 import (
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 func HandleFuncOrdConfig(rw http.ResponseWriter, req *http.Request) {
