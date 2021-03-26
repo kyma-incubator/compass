@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 )
@@ -25,18 +23,12 @@ func TestTenantErrors(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	t.Log("Register application as Static User")
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
 	}
-	_, err = fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
+	_, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
