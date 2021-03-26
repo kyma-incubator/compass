@@ -4,14 +4,12 @@ go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.11.0
-	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210324071737-55d7b7d09c1c
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210326124939-c92902a68d01
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
-	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/vrischmann/envconfig v1.3.0
