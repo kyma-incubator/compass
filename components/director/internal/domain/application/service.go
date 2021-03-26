@@ -305,14 +305,9 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, err := s.getScenarioNamesForApplication(ctx, appTenant, id)
+	scenarios, runtimes, err := s.getScenariosAndRuntimes(ctx, appTenant, id)
 	if err != nil {
-		return err
-	}
-
-	runtimes, err := s.getRuntimeNamesWithScenarios(ctx, scenarios, appTenant)
-	if err != nil {
-		return err
+		return errors.Wrapf(err, "while checking if application is in formation and runtime")
 	}
 
 	if len(scenarios) > 0 {
@@ -539,36 +534,32 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	return true, nil
 }
 
-func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
-	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
+func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicationID string) ([]string, []string, error) {
+	log.C(ctx).Infof("Getting formations for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while parsing application label values")
+		return nil, nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
 	validScenarios := removeDefaultScenario(scenarios)
 
 	if len(validScenarios) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	return validScenarios, nil
-}
-
-func (s *service) getRuntimeNamesWithScenarios(ctx context.Context, scenarios []string, tenant string) ([]string, error) {
-	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
+	scenariosQuery := eventing.BuildQueryForScenarios(validScenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
 	log.C(ctx).Infof("Listing runtimes matching the query %s", scenariosQuery)
 	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes")
+		return nil, nil, errors.Wrapf(err, "while getting runtimes")
 	}
 
 	var runtimesNames []string
@@ -576,7 +567,7 @@ func (s *service) getRuntimeNamesWithScenarios(ctx context.Context, scenarios []
 		runtimesNames = append(runtimesNames, r.Name)
 	}
 
-	return runtimesNames, nil
+	return validScenarios, runtimesNames, nil
 }
 
 func removeDefaultScenario(scenarios []string) []string {

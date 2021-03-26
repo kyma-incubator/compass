@@ -523,10 +523,10 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error when application is in scenario", func(t *testing.T) {
+	t.Run("Error when application is in formation", func(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
-		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
+		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
 		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - test-scenario]"
 
 		defaultValue := "DEFAULT"
@@ -554,12 +554,13 @@ func TestDeleteApplication(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer func() {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID)
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
-		}()
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
+
+		defer func() {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		}()
 
 		//WHEN
 		req := fixtures.FixUnregisterApplicationRequest(application.ID)
@@ -570,11 +571,11 @@ func TestDeleteApplication(t *testing.T) {
 		require.EqualError(t, err, expectedErrorMsg)
 	})
 
-	t.Run("Error when application is in scenario and runtime", func(t *testing.T) {
+	t.Run("Error when application is in formation and runtime", func(t *testing.T) {
 		//GIVEN
 		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a formation - test-scenario and of runtime - one-runtime]"
 		ctx := context.Background()
-		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
+		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInFormation")
 
 		runtimeInput := fixtures.FixRuntimeInput("one-runtime")
 		defaultValue := "DEFAULT"
@@ -586,10 +587,9 @@ func TestDeleteApplication(t *testing.T) {
 
 		runtime := graphql.Runtime{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerRuntimeRequest, &runtime)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtime.ID)
-
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, runtime.ID)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
 		applicationInput.Labels = &graphql.Labels{ScenariosLabel: scenarios}
@@ -600,13 +600,13 @@ func TestDeleteApplication(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer func() {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID)
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
-		}()
-
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
+
+		defer func() {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
+		}()
 
 		//WHEN
 		req := gcli.NewRequest(
@@ -1045,13 +1045,14 @@ func TestApplicationsForRuntime(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testApp.Tenant, createApplicationReq, &application)
-		defer func(applicationID, tenant string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenant, applicationID)
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, applicationID)
-		}(application.ID, testApp.Tenant)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
+
+		defer func(applicationID, tenant string) {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenant, applicationID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, applicationID)
+		}(application.ID, testApp.Tenant)
 
 		if testApp.WithinTenant {
 			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
@@ -1239,13 +1240,14 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer func(applicationID string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, applicationID)
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, applicationID)
-		}(application.ID)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
+
+		defer func(applicationID string) {
+			fixtures.UpdateApplicationScenariosToDefaultState(t, ctx, dexGraphQLClient, tenantID, applicationID)
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, applicationID)
+		}(application.ID)
 
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)
