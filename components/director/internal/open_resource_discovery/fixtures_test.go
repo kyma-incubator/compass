@@ -14,6 +14,7 @@ import (
 const (
 	ordDocURI     = "/open-resource-discovery/v1/documents/example1"
 	baseURL       = "http://localhost:8080"
+	systemInstanceBaseURL = "http://test.com"
 	packageORDID  = "ns:package:PACKAGE_ID:v1"
 	productORDID  = "ns:product:id:"
 	product2ORDID = "ns:product:id2:"
@@ -151,7 +152,7 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 func fixSystemInstance() *model.Application {
 	return &model.Application{
 		CorrelationIds: json.RawMessage(correlationIds),
-		BaseURL:        str.Ptr(baseURL),
+		BaseURL:        str.Ptr(systemInstanceBaseURL),
 		Labels:         json.RawMessage(labels),
 	}
 }
