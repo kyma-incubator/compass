@@ -523,11 +523,10 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error when application is in scenario", func(t *testing.T) {
+	t.Run("Success when application is in scenario but not in runtime", func(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
-		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a scenario - test-scenario]"
 
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
@@ -564,11 +563,10 @@ func TestDeleteApplication(t *testing.T) {
 
 		//WHEN
 		req := fixtures.FixUnregisterApplicationRequest(application.ID)
-
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, nil)
 
 		//THEN
-		require.EqualError(t, err, expectedErrorMsg)
+		require.NoError(t, err)
 	})
 
 	t.Run("Error when application is in scenario and runtime", func(t *testing.T) {
