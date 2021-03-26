@@ -1927,8 +1927,8 @@ func TestService_Update(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
-	formationError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a formation - Easter]")
-	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a formation - Easter and of runtime - test-runtime]")
+	formationError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a scenario - Easter]")
+	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a scenario - Easter and of runtime - test-runtime]")
 	id := "foo"
 	desc := "Lorem ipsum"
 	tnt := "tenant"

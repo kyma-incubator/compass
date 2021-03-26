@@ -307,11 +307,11 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	scenarios, runtimes, err := s.getScenariosAndRuntimes(ctx, appTenant, id)
 	if err != nil {
-		return errors.Wrapf(err, "while checking if application is in formation and runtime")
+		return errors.Wrapf(err, "while checking if application is in scenario with runtime")
 	}
 
 	if len(scenarios) > 0 {
-		msg := fmt.Sprintf("System deletion failed: the system is part of a formation - %s", strings.Join(scenarios, ", "))
+		msg := fmt.Sprintf("System deletion failed: the system is part of a scenario - %s", strings.Join(scenarios, ", "))
 
 		if len(runtimes) > 0 {
 			msg = fmt.Sprintf("%s and of runtime - %s", msg, strings.Join(runtimes, ", "))
@@ -535,7 +535,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 }
 
 func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicationID string) ([]string, []string, error) {
-	log.C(ctx).Infof("Getting formations for application with id %s", applicationID)
+	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
@@ -556,7 +556,7 @@ func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicati
 	scenariosQuery := eventing.BuildQueryForScenarios(validScenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
-	log.C(ctx).Infof("Listing runtimes matching the query %s", scenariosQuery)
+	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
 	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting runtimes")
