@@ -68,8 +68,6 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
-	t.Log("Get Dex token")
-
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 	require.NoError(t, err)
@@ -112,8 +110,6 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
-
-	t.Log("Get Dex token")
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
