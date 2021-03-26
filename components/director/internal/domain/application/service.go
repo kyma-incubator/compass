@@ -305,9 +305,14 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, runtimes, err := s.getScenariosAndRuntimes(ctx, appTenant, id)
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appTenant, id)
 	if err != nil {
-		return errors.Wrapf(err, "while checking if application is in formation with runtime")
+		return err
+	}
+
+	runtimes, err := s.getRuntimeNamesWithScenarios(ctx, scenarios, appTenant)
+	if err != nil {
+		return err
 	}
 
 	if len(scenarios) > 0 {
@@ -534,31 +539,26 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	return true, nil
 }
 
-func (s *service) getScenariosAndRuntimes(ctx context.Context, tenant, applicationID string) ([]string, []string, error) {
+func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while parsing application label values")
+		return nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
 	validScenarios := removeDefaultScenario(scenarios)
 
 	if len(validScenarios) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	runtimeNames, err := s.getRuntimeNamesWithScenarios(ctx, validScenarios, tenant)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return validScenarios, runtimeNames, nil
+	return validScenarios, nil
 }
 
 func (s *service) getRuntimeNamesWithScenarios(ctx context.Context, scenarios []string, tenant string) ([]string, error) {
