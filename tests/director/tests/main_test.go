@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -26,7 +25,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	fmt.Println("yoooooooooooo")
 	dbCfg := persistence.DatabaseConfig{}
 	err := envconfig.Init(&dbCfg)
 	if err != nil {
