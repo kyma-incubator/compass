@@ -3,6 +3,7 @@ package open_resource_discovery_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"strings"
 	"testing"
 
@@ -300,6 +301,154 @@ var (
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
 	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
 )
+
+func TestDocuments_ValidateSystemInstance(t *testing.T) {
+	var tests = []struct {
+		Name                   string
+		SystemInstanceProvider func() *model.Application
+		ExpectedToBeValid      bool
+	}{
+		{
+			Name: "Invalid value for `correlationIds` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage(invalidCorrelationIdsElement)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage(invalidJson)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage("{}")
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when the JSON array is empty for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage("[]")
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage(invalidCorrelationIdsNonStringElement)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `baseUrl` for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.BaseURL = str.Ptr("http://test.com/test/v1")
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid JSON `Labels` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidJson)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid JSON object `Labels` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(`[]`)
+
+				return sysInst
+			},
+		}, {
+			Name: "`Labels` values are not array for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return sysInst
+			},
+		}, {
+			Name: "`Labels` values are not array of strings for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid key for JSON `Labels` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return sysInst
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			systemInstance := test.SystemInstanceProvider
+			err := open_resource_discovery.ValidateSystemInstanceInput(systemInstance())
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestDocuments_ValidateDocument(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Missing `OpenResourceDiscovery` field for Document",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `OpenResourceDiscovery` field for Document",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = "wrongValue"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
 
 func TestDocuments_ValidatePackage(t *testing.T) {
 	var tests = []struct {
@@ -3109,8 +3258,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 		DocumentProvider  func() []*open_resource_discovery.Document
 		ExpectedToBeValid bool
 	}{
-		//TODO: further clarification is needed as what is required by the spec
-		/*{
+		{
 			Name: "Missing `ordId` field for Tombstone",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3126,7 +3274,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},*/{
+		}, {
 			Name: "Missing `removalDate` field for Tombstone",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()

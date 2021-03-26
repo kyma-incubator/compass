@@ -15,15 +15,14 @@ import (
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.
 const (
-	SemVerRegex       = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	VendorOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
-	ProductOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
-	BundleOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	SemVerRegex         = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+	PackageOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	VendorOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
+	ProductOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
+	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	//TODO: further clarification is needed as what is required by the spec
-	//TombstoneOrdIDRegex     = "^([a-zA-Z0-9._\\-]+):(package|apiResource|eventResource):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-
+	SystemInstanceBaseURLRegex        = "^((http[s]?):\\/\\/)?\\/?([^\\/\\.]+\\.)*?([^\\/\\.]+\\.[^:\\/\\s\\.]{1,3}(\\.[^:\\/\\s\\.]{1,2})?(:\\d+)?)$"
 	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
@@ -41,8 +40,18 @@ var descriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
 }
 
+func ValidateSystemInstanceInput(app *model.Application) error {
+	return validation.ValidateStruct(app,
+		validation.Field(&app.CorrelationIds, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(CorrelationIDsRegex))
+		})),
+		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
+		validation.Field(&app.Labels, validation.By(validateORDLabels)),
+	)
+}
+
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.1")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.2")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {
@@ -198,9 +207,7 @@ func validateVendorInput(vendor *model.VendorInput) error {
 
 func validateTombstoneInput(tombstone *model.TombstoneInput) error {
 	return validation.ValidateStruct(tombstone,
-		//TODO: further clarification is needed as what is required by the spec
-		//validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
-
+		validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
 		validation.Field(&tombstone.RemovalDate, validation.Required, validation.Date(time.RFC3339)))
 }
 

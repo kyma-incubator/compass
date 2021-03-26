@@ -37,6 +37,7 @@ const (
 	cursor                    = "cursor"
 	policyLevel               = "sap"
 	apiImplementationStandard = "cff:open-service-broker:v2"
+	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
 )
 
 var (
@@ -147,6 +148,14 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	}
 }
 
+func fixSystemInstance() *model.Application {
+	return &model.Application{
+		CorrelationIds: json.RawMessage(correlationIds),
+		BaseURL:        str.Ptr(baseURL),
+		Labels:         json.RawMessage(labels),
+	}
+}
+
 func fixORDDocument() *open_resource_discovery.Document {
 	return fixORDDocumentWithBaseURL("")
 }
@@ -184,7 +193,7 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
-		OpenResourceDiscovery: "1.0-rc.1",
+		OpenResourceDiscovery: "1.0-rc.2",
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),
@@ -229,7 +238,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription: "lorem ipsum",
 				Vendor:           vendorORDID,
 				Parent:           str.Ptr(product2ORDID),
-				CorrelationIds:   json.RawMessage(`["foo.bar.baz:123456","foo.bar.baz:654321"]`),
+				CorrelationIds:   json.RawMessage(correlationIds),
 				Labels:           json.RawMessage(labels),
 			},
 		},
