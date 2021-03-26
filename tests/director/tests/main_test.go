@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
