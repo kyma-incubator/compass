@@ -16,8 +16,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	gcli "github.com/machinebox/graphql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -39,11 +37,6 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 		ProviderName: ptr.String("compass"),
 		Webhooks:     []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
-
-	t.Log("Get Dex token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
@@ -77,9 +70,6 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	}
 
 	t.Log("Get Dex token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
@@ -125,9 +115,6 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	}
 
 	t.Log("Get Dex token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
