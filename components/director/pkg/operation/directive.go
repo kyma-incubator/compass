@@ -257,14 +257,10 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 	}
 
 	webhookIDs := make([]string, 0)
-	for _, webhook := range webhooks {
-		if graphql.WebhookType(webhook.Type) == webhookType {
-			webhookIDs = append(webhookIDs, webhook.ID)
+	for _, currWebhook := range webhooks {
+		if graphql.WebhookType(currWebhook.Type) == webhookType {
+			webhookIDs = append(webhookIDs, currWebhook.ID)
 		}
-	}
-
-	if len(webhookIDs) == 0 {
-		return nil, errors.New("no webhooks found for operation")
 	}
 
 	if len(webhookIDs) > 1 {
