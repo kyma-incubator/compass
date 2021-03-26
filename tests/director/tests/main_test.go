@@ -1,17 +1,15 @@
 package tests
 
 import (
+	"github.com/pkg/errors"
 	"os"
 	"testing"
 
+	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-	"github.com/machinebox/graphql"
-	"github.com/pkg/errors"
-
-	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/machinebox/graphql"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vrischmann/envconfig"
@@ -33,17 +31,12 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
-	testctx.Tc, err = testctx.NewTestContext()
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting dex token"))
-	}
-
 	config.ReadConfig(conf)
 
 	log.Info("Get Dex id_token")
 	dexToken, err := idtokenprovider.GetDexToken()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(errors.Wrap(err, "while getting dex token"))
 	}
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
