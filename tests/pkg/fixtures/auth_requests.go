@@ -41,7 +41,7 @@ func FixOauthAuth(t *testing.T) *graphql.AuthInput {
 	})
 	require.NoError(t, err)
 	return &graphql.AuthInput{
-		Credential: FixOAuthCredential(),
+		Credential:                      FixOAuthCredential(),
 		AdditionalHeadersSerialized:     &additionalHeaders,
 		AdditionalQueryParamsSerialized: &additionalQueryParams,
 	}
