@@ -8,12 +8,13 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.1
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210322113515-625f90d1568f
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210326124939-c92902a68d01
 	github.com/lestrrat-go/iter v1.0.0
 	github.com/lestrrat-go/jwx v1.1.4
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.8
 	github.com/vrischmann/envconfig v1.3.0
-	k8s.io/client-go v0.20.2 // indirect
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
+	golang.org/x/sys v0.0.0-20210303074136-134d130e1a04 // indirect
 )
