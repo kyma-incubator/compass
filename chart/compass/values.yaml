@@ -51,7 +51,7 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1766"
+      version: "PR-1797"
     gateway:
       dir:
       version: "PR-1750"
