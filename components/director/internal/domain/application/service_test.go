@@ -1927,7 +1927,6 @@ func TestService_Update(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
-	formationError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a scenario - Easter]")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a scenario - Easter and of runtime - test-runtime]")
 	id := "foo"
 	desc := "Lorem ipsum"
@@ -1993,6 +1992,28 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "Success when application is part of a scenario but not in runtime",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
+				repo.AssertNotCalled(t, "Delete")
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			InputID:            id,
+			ExpectedErrMessage: "",
+		},
+		{
 			Name: "Returns error when application deletion failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -2012,27 +2033,6 @@ func TestService_Delete(t *testing.T) {
 			},
 			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when application is part of a scenario",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
-				return repo
-			},
-			RuntimeRepoFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: formationError.Error(),
 		},
 		{
 			Name: "Returns error when application is part of a scenario and a runtime",
