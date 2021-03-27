@@ -42,7 +42,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-create-update-delete",
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
+		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -98,7 +98,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	//GIVEN
 	givenInput.Name = "updated-name"
 	givenInput.Description = ptr.String("updated-description")
-	givenInput.Labels = &graphql.Labels{
+	givenInput.Labels = graphql.Labels{
 		"key": []interface{}{"values", "aabbcc"},
 	}
 	runtimeStatusCond := graphql.RuntimeStatusConditionConnected
@@ -148,7 +148,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-with-scenario-assignments",
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{labelKey: []interface{}{labelValue}},
+		Labels:      graphql.Labels{labelKey: []interface{}{labelValue}},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -261,7 +261,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	givenInput := graphql.RuntimeInput{
 		Name:        firstRuntimeName,
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
+		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -301,7 +301,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	givenInput = graphql.RuntimeInput{
 		Name:        secondRuntimeName,
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
+		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -544,7 +544,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	secondInput := graphql.RuntimeInput{
 		Name:        name,
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{ScenariosLabel: []interface{}{"DEFAULT"}},
+		Labels:      graphql.Labels{ScenariosLabel: []interface{}{"DEFAULT"}},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(secondInput)
 	require.NoError(t, err)
@@ -573,7 +573,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	name := "test-create-runtime-without-labels"
 	runtimeInput := graphql.RuntimeInput{
 		Name:   name,
-		Labels: &graphql.Labels{IsNormalizedLabel: "false"},
+		Labels: graphql.Labels{IsNormalizedLabel: "false"},
 	}
 
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
@@ -591,7 +591,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	secondInput := graphql.RuntimeInput{
 		Name:        name,
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{IsNormalizedLabel: "true", ScenariosLabel: []interface{}{"DEFAULT"}},
+		Labels:      graphql.Labels{IsNormalizedLabel: "true", ScenariosLabel: []interface{}{"DEFAULT"}},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(secondInput)
 	require.NoError(t, err)

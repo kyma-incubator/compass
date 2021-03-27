@@ -21,7 +21,7 @@ func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
-	AssertLabels(t, *in.Labels, actualApp.Labels, actualApp)
+	AssertLabels(t, in.Labels, actualApp.Labels, actualApp)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assert.Equal(t, in.ProviderName, actualApp.ProviderName)
 	AssertWebhooks(t, in.Webhooks, actualApp.Webhooks)
@@ -68,8 +68,8 @@ func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 		return
 	}
 	require.NotNil(t, actual)
-	AssertHttpHeaders(t, in.AdditionalHeadersSerialized, actual.AdditionalHeaders)
-	AssertQueryParams(t, in.AdditionalQueryParamsSerialized, actual.AdditionalQueryParams)
+	AssertHttpHeaders(t, in.AdditionalHeadersSerialized, &actual.AdditionalHeaders)
+	AssertQueryParams(t, in.AdditionalQueryParamsSerialized, &actual.AdditionalQueryParams)
 
 	if in.Credential != nil {
 		if in.Credential.Basic != nil {
@@ -231,7 +231,7 @@ func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	AssertRuntimeLabels(t, in.Labels, actualRuntime.Labels)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
 }
 
 func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {

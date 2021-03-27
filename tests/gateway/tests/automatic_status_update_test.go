@@ -103,7 +103,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		status := graphql.ApplicationStatusConditionFailed
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
 			StatusCondition: &status,
@@ -143,7 +143,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		status := graphql.RuntimeStatusConditionFailed
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test-runtime",
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
 			StatusCondition: &status,

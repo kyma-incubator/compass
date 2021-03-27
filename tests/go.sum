@@ -34,8 +34,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 code.cloudfoundry.org/lager v1.1.1-0.20191008172124-a9afc05ee5be/go.mod h1:O2sS7gKP3HM2iemG+EnwvyNQK7pTSC6Foi4QiMp9sSk=
 code.cloudfoundry.org/lager v2.0.0+incompatible/go.mod h1:O2sS7gKP3HM2iemG+EnwvyNQK7pTSC6Foi4QiMp9sSk=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-github.com/99designs/gqlgen v0.9.3 h1:BWOMuDFhpuvzbuUFgCL1OSfAM2lvnYgpoCXetDvbnHY=
 github.com/99designs/gqlgen v0.9.3/go.mod h1:HrrG7ic9EgLPsULxsZh/Ti+p0HNWgR3XRuvnD0pb5KY=
+github.com/99designs/gqlgen v0.11.0 h1:7MVbtFYo4IVV8ejJzqs9n+0VNP3HdJhJOaaxFV1OLnA=
 github.com/99designs/gqlgen v0.11.0/go.mod h1:vjFOyBZ7NwDl+GdSD4PFn7BQn5Fy7ohJwXn7Vk8zz+c=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/Azure/go-autorest/autorest v0.9.0/go.mod h1:xyHB1BMZT0cuDHU7I0+g046+BFDTQ8rEZB0s4Yfa6bI=
@@ -447,8 +447,8 @@ github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210222141445-9f0329ae5b8d h1:rPWmr3oUD3OVX+J9SwAhbWa8Kp3b1mR3PFvIlsuNp4k=
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210222141445-9f0329ae5b8d/go.mod h1:N2q9R5ztOt6/zweFgmTvNp47LmQnj9T9sJHYF2M+/j0=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210203135116-086a057e4d3c/go.mod h1:dO06pVSXg1+svXH9RadRtsrgsZAoJru7jw+3tWF+9ck=
-github.com/kyma-incubator/compass/components/connector v0.0.0-20210311194945-173a509b57cc h1:KFUDj6CsGG2XjzYQUkJsLDocu7ngJOXnz4q8o8gltDY=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210311194945-173a509b57cc/go.mod h1:LhzfXGVXwdray+f21KnrqYtjw2IR1ldKFNpHfWaBHbI=
+github.com/kyma-incubator/compass/components/connector v0.0.0-20210315172259-e186b4cac80b h1:u//Tagxvl50j6PdStg/3nzmW2b6Bv4MNR5aIGLFRNkg=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210315172259-e186b4cac80b/go.mod h1:bPwjvhAV9q4N70h30Ow745LRQftp0JhnLa7bJK5cEKs=
 github.com/kyma-incubator/compass/components/director v0.0.0-20201109133626-4876e6d3caae/go.mod h1:x7sMU+n72bd2nufOpfi3tjjRhSsey1eVsu8RBuETxCg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20201215200050-802603cbf300/go.mod h1:MJiIuIF4dkynfgv06QNRodxXyNa4/ksXT03DSUcI3VA=
@@ -456,8 +456,6 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210203135116-086a
 github.com/kyma-incubator/compass/components/director v0.0.0-20210222123648-c454983cf74b/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210301143156-3b39f117e7bf/go.mod h1:hJ3bgWfwFhdnxZF7Gcok5Rm1zDT4bHtVGHDeXDBvTfg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210317094736-36633489109a/go.mod h1:0pDgh1RV/dgiYTdkBsAlaJgjtno9t0BkqF1XHsgWcUw=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210323124919-e53b734a5692 h1:gyKlNJfX+7Hj/Ye+CjtPTDsZ0DWHt5BJ52PpWJmIQSk=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210323124919-e53b734a5692/go.mod h1:rxmpfjMTTdLOuLkbRjeiAVWkKJEFwxACgrZfeYN5S/o=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210327124918-fc8d9bd93566 h1:s7wck+cdyFoy+3gsjaXD/Q8BtTEb2bxfi/Oj6cdp87k=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210327124918-fc8d9bd93566/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14 h1:gEtd9g2Yp5548gzdPcrD7I1yiq4sq0z1/WtwzWgoDu8=
@@ -745,6 +743,7 @@ github.com/vektah/dataloaden v0.2.1-0.20190515034641-a19b9a6e7c9e/go.mod h1:/HUd
 github.com/vektah/gqlparser v1.1.2/go.mod h1:1ycwN7Ij5njmMkPPAOaRFY4rET2Enx7IkVv3vaXspKw=
 github.com/vektah/gqlparser v1.3.1 h1:8b0IcD3qZKWJQHSzynbDlrtP3IxVydZ2DZepCGofqfU=
 github.com/vektah/gqlparser v1.3.1/go.mod h1:bkVf0FX+Stjg/MHnm8mEyubuaArhNEqfQhF+OTiAL74=
+github.com/vektah/gqlparser/v2 v2.0.1 h1:xgl5abVnsd4hkN9rk65OJID9bfcLSMuTaTcZj777q1o=
 github.com/vektah/gqlparser/v2 v2.0.1/go.mod h1:SyUiHgLATUR8BiYURfTirrTcGpcE+4XkV2se04Px1Ms=
 github.com/vektra/mockery v1.1.2/go.mod h1:VcfZjKaFOPO+MpN4ZvwPjs4c48lkq1o3Ym8yHZJu0jU=
 github.com/vrischmann/envconfig v1.2.0/go.mod h1:c5DuUlkzfsnspy1g7qiqryPCsW+NjsrLsYq4zhwsoHo=
