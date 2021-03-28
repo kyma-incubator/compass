@@ -305,7 +305,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, err := s.getScenarioNamesForApplicationAndRuntimes(ctx, appTenant, id)
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appTenant, id)
 	if err != nil {
 		return err
 	}
@@ -315,8 +315,9 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	if len(scenarios) > 0 && len(runtimes) > 0 {
-		msg := fmt.Sprintf("System deletion failed: the system is part of a scenario - %s and of runtime - %s", strings.Join(scenarios, ", "), strings.Join(runtimes, ", "))
+	validScenarios := removeDefaultScenario(scenarios)
+	if len(validScenarios) > 0 && len(runtimes) > 0 {
+		msg := fmt.Sprintf("System deletion failed: the system is part of a scenario - %s and of runtime - %s", strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
 		return apperrors.NewInvalidOperationError(msg)
 	}
 
@@ -534,12 +535,12 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	return true, nil
 }
 
-func (s *service) getScenarioNamesForApplicationAndRuntimes(ctx context.Context, tenant, applicationID string) ([]string, error) {
+func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while fetching application label")
 	}
 
 	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
@@ -547,13 +548,7 @@ func (s *service) getScenarioNamesForApplicationAndRuntimes(ctx context.Context,
 		return nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
-	validScenarios := removeDefaultScenario(scenarios)
-
-	if len(validScenarios) == 0 {
-		return nil, nil
-	}
-
-	return validScenarios, nil
+	return scenarios, nil
 }
 
 func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
