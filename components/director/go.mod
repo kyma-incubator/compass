@@ -22,6 +22,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210315172259-e186b4cac80b
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210301144805-1544f7017bea
 	github.com/lestrrat-go/iter v1.0.0
 	github.com/lestrrat-go/jwx v1.1.4
 	github.com/lib/pq v1.9.0
@@ -41,6 +42,7 @@ require (
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/oauth2 v0.0.0-20210220000619-9bb904979d93
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.17.2 // DO NOT BUMP
 	k8s.io/apimachinery v0.17.2 // DO NOT BUMP
 	k8s.io/client-go v0.17.2 // DO NOT BUMP

@@ -11,9 +11,8 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
@@ -95,6 +94,12 @@ type EnvSuite struct {
 	environment env.Environment
 	err         error
 }
+
+type Config struct {
+	Server string `mapstructure:"server"`
+}
+
+var configuration Config
 
 // BeforeEach
 func (suite *EnvSuite) SetupTest() {
@@ -270,7 +275,7 @@ func (suite *EnvSuite) TestNewWhenConfigFileFlagsAreProvided() {
 				File:    env.DefaultConfigFile(),
 				content: suite.flatOuter,
 			}
-			config.AddPFlags(suite.testFlags)
+			env.AddPFlags(suite.testFlags, configuration)
 
 			test.TestFunc()
 		})
@@ -395,7 +400,7 @@ func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaConfigFile() {
 		File:    env.DefaultConfigFile(),
 		content: suite.flatOuter,
 	}
-	config.AddPFlags(suite.testFlags)
+	env.AddPFlags(suite.testFlags, Config{})
 	suite.verifyEnvCreated()
 
 	suite.verifyEnvContainsValues(suite.flatOuter)
@@ -414,7 +419,7 @@ func (suite *EnvSuite) TestGetOverridePriorityOverPflagSetOverEnvironmentOverFil
 
 	suite.Require().Equal(suite.environment.Get(key), flagDefaultValue)
 
-	config.AddPFlags(suite.testFlags)
+	env.AddPFlags(suite.testFlags, configuration)
 	suite.cfgFile = testFile{
 		File: env.DefaultConfigFile(),
 		content: map[string]interface{}{
@@ -493,7 +498,7 @@ func (suite *EnvSuite) TestUnmarshalParameterIsAPointerToAStruct() {
 					File:    env.DefaultConfigFile(),
 					content: suite.flatOuter,
 				}
-				config.AddPFlags(suite.testFlags)
+				env.AddPFlags(suite.testFlags, configuration)
 			},
 		},
 		{
@@ -533,7 +538,7 @@ func (suite *EnvSuite) TestUnmarshalOverridePriorityOverPflagSetOverEnvironmentO
 			key: fileValue,
 		},
 	}
-	config.AddPFlags(suite.testFlags)
+	env.AddPFlags(suite.testFlags, configuration)
 	suite.verifyEnvCreated()
 	suite.verifyUnmarshallingIsCorrect(&str, &s{fileValue})
 

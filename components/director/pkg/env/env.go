@@ -50,6 +50,11 @@ func DefaultConfigFile() File {
 	}
 }
 
+func AddPFlags(set *pflag.FlagSet, config interface{}) {
+	CreatePFlags(set, config)
+	CreatePFlagsForConfigFile(set)
+}
+
 // CreatePFlagsForConfigFile creates pflags for setting the configuration file
 func CreatePFlagsForConfigFile(set *pflag.FlagSet) {
 	CreatePFlags(set, struct{ File File }{File: DefaultConfigFile()})

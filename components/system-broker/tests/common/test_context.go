@@ -25,8 +25,8 @@ import (
 	gql "github.com/machinebox/graphql"
 
 	"github.com/gavv/httpexpect/v2"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"k8s.io/apimachinery/pkg/util/wait"

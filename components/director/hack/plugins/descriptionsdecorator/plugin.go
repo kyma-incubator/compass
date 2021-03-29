@@ -41,7 +41,7 @@ func (p *descriptionsDecoratorPlugin) Name() string {
 }
 
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	log.D().Infof("[%s] Mutate Configuration\n", p.Name())
+	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
 
 	if err := cfg.Init(); err != nil {
 		return err

@@ -215,11 +215,11 @@ type CertificateGen struct {
 
 // RequestParameters contains Headers and QueryParameters
 type RequestParameters struct {
-	Headers         *map[string][]string `json:"headers,omitempty"`
-	QueryParameters *map[string][]string `json:"query_parameters,omitempty"`
+	Headers         map[string][]string `json:"headers,omitempty"`
+	QueryParameters map[string][]string `json:"query_parameters,omitempty"`
 }
 
-func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]string) {
+func (rp *RequestParameters) unpack() (map[string][]string, map[string][]string) {
 	if rp == nil {
 		return nil, nil
 	}
@@ -289,10 +289,10 @@ func resolveAdditionalRequestParameters(auth *schema.Auth) (*RequestParameters, 
 		if err != nil {
 			return nil, err
 		}
-		additionalRequestParameters.Headers = &hed
+		additionalRequestParameters.Headers = hed
 	} else {
 		if auth.AdditionalHeaders != nil {
-			additionalRequestParameters.Headers = (*map[string][]string)(auth.AdditionalHeaders)
+			additionalRequestParameters.Headers = auth.AdditionalHeaders
 		}
 	}
 
@@ -301,10 +301,10 @@ func resolveAdditionalRequestParameters(auth *schema.Auth) (*RequestParameters, 
 		if err != nil {
 			return nil, err
 		}
-		additionalRequestParameters.QueryParameters = &params
+		additionalRequestParameters.QueryParameters = params
 	} else {
 		if auth.AdditionalQueryParams != nil {
-			additionalRequestParameters.QueryParameters = (*map[string][]string)(auth.AdditionalQueryParams)
+			additionalRequestParameters.QueryParameters = auth.AdditionalQueryParams
 		}
 	}
 
