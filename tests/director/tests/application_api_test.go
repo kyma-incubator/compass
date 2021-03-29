@@ -489,7 +489,6 @@ func TestDeleteApplication(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
