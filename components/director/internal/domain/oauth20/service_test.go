@@ -17,6 +17,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type hydraLinkMode string
+
+const (
+	firstAndNextAvailable  hydraLinkMode = "noClients"
+	onlyFirstLinkAvailable hydraLinkMode = "singlePage"
+	noLinkHeaderPresent    hydraLinkMode = "noLinkHeader"
+	firstPage              hydraLinkMode = "firstPage"
+	secondPage             hydraLinkMode = "secondPage"
+)
+
 const (
 	publicEndpoint = "accessTokenURL"
 	clientID       = "clientid"
@@ -368,7 +378,6 @@ func TestService_ListClients(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name                 string
-		ExpectedResult       *model.OAuthCredentialDataInput
 		ExpectedResponseCode int
 		ExpectedError        error
 		HTTPServerFn         func(t *testing.T) *httptest.Server
@@ -377,10 +386,28 @@ func TestService_ListClients(t *testing.T) {
 		Response             *http.Response
 	}{
 		{
-			Name:                 "Success",
+			Name:                 "Success when response is in two pages",
 			ExpectedError:        nil,
 			ExpectedResponseCode: http.StatusOK,
-			HTTPServerFn:         fixSuccessListClientsHTTPServer(),
+			HTTPServerFn:         fixSuccessPageableListClientsHTTPServer(),
+		},
+		{
+			Name:                 "Success when clients are in a single page and next link is available",
+			ExpectedError:        nil,
+			ExpectedResponseCode: http.StatusOK,
+			HTTPServerFn:         fixSuccessSinglePageListClientsHTTPServer(firstAndNextAvailable),
+		},
+		{
+			Name:                 "Success when clients are in a single page and next link is not available",
+			ExpectedError:        nil,
+			ExpectedResponseCode: http.StatusOK,
+			HTTPServerFn:         fixSuccessSinglePageListClientsHTTPServer(onlyFirstLinkAvailable),
+		},
+		{
+			Name:                 "Success when no link header is present",
+			ExpectedError:        nil,
+			ExpectedResponseCode: http.StatusOK,
+			HTTPServerFn:         fixSuccessSinglePageListClientsHTTPServer(noLinkHeaderPresent),
 		},
 		{
 			Name:          "Error - Response Status Code",
@@ -478,16 +505,51 @@ func fixSuccessUpdateClientHTTPServer(expectedReqBody map[string]interface{}) fu
 	}
 }
 
-var listCalls = 0
+func linkHeaderForMode(mode hydraLinkMode) string {
+	var linkHeader string
+	switch mode {
+	case firstAndNextAvailable:
+		linkHeader = `</clients?limit=100&offset=0>; rel="first",</clients?limit=100&offset=100>; rel="next",</clients?limit=100&offset=-100>; rel="prev"`
+	case onlyFirstLinkAvailable:
+		linkHeader = `</clients?limit=3&offset=0>; rel="first"`
+	case firstPage:
+		linkHeader = `</clients?limit=1&offset=1>; rel="next",</clients?limit=1&offset=33>; rel="last"`
+	case secondPage:
+		linkHeader = `</clients?limit=1&offset=0>; rel="first",</clients?limit=1&offset=0>; rel="prev"`
+	}
 
-func fixSuccessListClientsHTTPServer() func(t *testing.T) *httptest.Server {
+	return linkHeader
+}
+
+func fixSuccessSinglePageListClientsHTTPServer(mode hydraLinkMode) func(t *testing.T) *httptest.Server {
 	return func(t *testing.T) *httptest.Server {
 		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var res []map[string]interface{}
+			res := []map[string]interface{}{
+				{
+					"client_id": clientID,
+					"scope":     strings.Join(scopes, " "),
+				},
+			}
+
+			if linkHeader := linkHeaderForMode(mode); linkHeader != "" {
+				w.Header().Add("link", linkHeader)
+			}
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode(&res)
+			require.NoError(t, err)
+		}))
+	}
+}
+
+var listCalls = 0
+func fixSuccessPageableListClientsHTTPServer() func(t *testing.T) *httptest.Server {
+	return func(t *testing.T) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var linkHeader string
+			var res []map[string]interface{}
 			if listCalls >= 1 {
 				res = []map[string]interface{}{}
-				linkHeader = `</clients?limit=1&offset=0>; rel="first",</clients?limit=1&offset=0>; rel="prev"`
+				linkHeader = linkHeaderForMode(secondPage)
 			} else {
 				res = []map[string]interface{}{
 					{
@@ -495,7 +557,7 @@ func fixSuccessListClientsHTTPServer() func(t *testing.T) *httptest.Server {
 						"scope":     strings.Join(scopes, " "),
 					},
 				}
-				linkHeader = `</clients?limit=1&offset=1>; rel="next",</clients?limit=1&offset=33>; rel="last"`
+				linkHeader = linkHeaderForMode(firstPage)
 				listCalls++
 			}
 

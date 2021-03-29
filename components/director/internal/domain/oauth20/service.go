@@ -16,8 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-const clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
-const applicationJSONType = "application/json"
+const (
+	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
+	applicationJSONType         = "application/json"
+)
 
 var defaultGrantTypes = []string{"client_credentials"}
 
@@ -250,6 +252,7 @@ func (s *service) clientsFromHydra(ctx context.Context, endpoint string) ([]Clie
 	var resultClients []Client
 	nextLink := endpoint
 	for nextLink != "" {
+		log.C(ctx).Infof("calling %s", nextLink)
 		resp, closeBody, err := s.doRequest(ctx, http.MethodGet, nextLink, nil)
 		if err != nil {
 			return nil, err
@@ -277,12 +280,20 @@ func getNextLink(resp *http.Response) string {
 	if linkHeader == "" {
 		return ""
 	}
-	regex := regexp.MustCompile(`rel="next",</clients(.+)>;`)
-	rs := regex.FindStringSubmatch(linkHeader)
-	if len(rs) == 0 {
+
+	lastLinkRgx := regexp.MustCompile(`</clients(.+)>; rel="last"`)
+	lastLink := lastLinkRgx.FindStringSubmatch(linkHeader)
+	if len(lastLink) == 0 {
 		return ""
 	}
-	return rs[1]
+	nextLinkRgx := regexp.MustCompile(`</clients(.+)>; rel="next"`)
+	nextLink := nextLinkRgx.FindStringSubmatch(linkHeader)
+	if len(nextLink) == 0 {
+		return ""
+	}
+
+	nextLinkPath := nextLink[1]
+	return nextLinkPath
 }
 
 func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {
