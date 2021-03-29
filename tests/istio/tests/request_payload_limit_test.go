@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
@@ -23,8 +24,7 @@ import (
 )
 
 const (
-	directorPath  = "/director/graphql"
-	connectorPath = "/connector/graphql"
+	directorPath = "/director/graphql"
 )
 
 var (
@@ -50,7 +50,7 @@ func TestCallingCompassWithTooBigRequestBody(t *testing.T) {
 		authoizedClient := gql.NewAuthorizedHTTPClient(dexToken)
 
 		t.Log("Creating a request with big payload...")
-		bigBodyPOSTRequest, err := fixtures.FixHTTPBigBodyPOSTRequest(conf.CompassGatewayURL+directorPath, conf.RequestPayloadLimit)
+		bigBodyPOSTRequest, err := getHTTPBigBodyPOSTRequest(conf.CompassGatewayURL+directorPath, conf.RequestPayloadLimit)
 		require.NoError(t, err)
 
 		bigBodyPOSTRequest.Header.Set("Tenant", tenant)
@@ -93,7 +93,7 @@ func TestCallingCompassWithTooBigRequestBody(t *testing.T) {
 		certSecuredClient := authentication.CreateCertClient(clientKey, certChain...)
 
 		t.Log("Creating a request with big payload...")
-		bigBodyPOSTRequest, err := fixtures.FixHTTPBigBodyPOSTRequest(conf.CompassMTLSGatewayURL+directorPath, conf.RequestPayloadLimit)
+		bigBodyPOSTRequest, err := getHTTPBigBodyPOSTRequest(conf.CompassMTLSGatewayURL+directorPath, conf.RequestPayloadLimit)
 		require.NoError(t, err)
 
 		bigBodyPOSTRequest.Header.Set("Tenant", tenant)
@@ -112,4 +112,16 @@ func TestCallingCompassWithTooBigRequestBody(t *testing.T) {
 		require.Contains(t, string(all), "Payload Too Large")
 
 	})
+}
+
+func getHTTPBigBodyPOSTRequest(url string, bodySize int) (*http.Request, error) {
+	var b strings.Builder
+	b.Grow(bodySize)
+	for i := 0; i < bodySize; i++ {
+		b.WriteByte('a')
+	}
+	s := b.String()
+	applicationRequest := fixtures.FixGetApplicationRequest(s)
+	reader := strings.NewReader(applicationRequest.Query())
+	return http.NewRequest(http.MethodPost, url, reader)
 }
