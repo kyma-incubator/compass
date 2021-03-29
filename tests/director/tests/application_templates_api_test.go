@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -28,12 +27,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	appTemplateInput := fixtures.FixApplicationTemplate(name)
 	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 	require.NoError(t, err)
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
 	output := graphql.ApplicationTemplate{}
@@ -74,12 +67,6 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 		HealthCheckURL: ptr.String("http://url.valid"),
 	}
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
@@ -110,12 +97,6 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	ctx := context.Background()
 	name := "app-template"
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
@@ -126,7 +107,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete application template")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
@@ -143,12 +124,6 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	ctx := context.Background()
 	name := "app-template"
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
@@ -160,7 +135,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Log("Get application template")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getApplicationTemplateRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getApplicationTemplateRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 
@@ -174,12 +149,6 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	ctx := context.Background()
 	name1 := "app-template-1"
 	name2 := "app-template-2"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -198,7 +167,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	// WHEN
 	t.Log("List application templates")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getApplicationTemplatesRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getApplicationTemplatesRequest, &output)
 	require.NoError(t, err)
 
 	//THEN
@@ -219,12 +188,6 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 			Name:        placeholderKey,
 			Description: ptr.String("description"),
 		}}
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -256,12 +219,6 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 

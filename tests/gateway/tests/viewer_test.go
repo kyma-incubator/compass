@@ -9,8 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/stretchr/testify/assert"
@@ -19,12 +17,6 @@ import (
 
 func TestViewerQuery(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Run("Test viewer as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
@@ -47,7 +39,7 @@ func TestViewerQuery(t *testing.T) {
 		viewer := graphql.Viewer{}
 		req := fixtures.FixGetViewerRequest()
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, intSys.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeIntegrationSystem, viewer.Type)
@@ -117,7 +109,7 @@ func TestViewerQuery(t *testing.T) {
 		viewer := graphql.Viewer{}
 		req := fixtures.FixGetViewerRequest()
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, runtime.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)

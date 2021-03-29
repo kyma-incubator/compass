@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -25,12 +23,6 @@ const (
 
 func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -65,12 +57,6 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
@@ -99,12 +85,6 @@ func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 
 func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -139,12 +119,6 @@ func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 func TestRefetchAPISpec(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
@@ -176,7 +150,7 @@ func TestRefetchAPISpec(t *testing.T) {
 	var refetchedSpec graphql.APISpecExt
 	req := fixtures.FixRefetchAPISpecRequest(bndl.APIDefinitions.Data[0].ID)
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &refetchedSpec)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &refetchedSpec)
 	require.NoError(t, err)
 	assert.Equal(t, spec, refetchedSpec.Data)
 
