@@ -9,13 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
@@ -46,15 +43,11 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		subdomain := cfg.Gateway.ClientCertsSubdomain
 		tenant := cfg.DefaultTenant
 
-		dexToken, err := idtokenprovider.GetDexToken()
-		require.NoError(t, err)
-		dexGQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 		ctx := context.Background()
-		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
-		defer fixtures.UnregisterApplication(t, ctx, dexGQLClient, tenant, appID)
+		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGraphQLClient)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, appID)
 
-		oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
+		oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, dexGraphQLClient, tenant, appID)
 
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
 		client := getClientWithCert(certChain, clientKey)
