@@ -63,7 +63,7 @@ global:
       version: "PR-1782"
     ord_service:
       dir:
-      version: "PR-15"
+      version: "PR-17"
     schema_migrator:
       dir:
       version: "PR-1780"
@@ -226,7 +226,6 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
-      requestPayloadSizeLimit: 2097152  # 2 MB
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
