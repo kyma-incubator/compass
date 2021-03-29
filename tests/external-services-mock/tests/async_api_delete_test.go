@@ -11,15 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
-
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -40,11 +36,6 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 		ProviderName: ptr.String("compass"),
 		Webhooks:     []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
-
-	t.Log("Get Dex token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
@@ -76,11 +67,6 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
-
-	t.Log("Get Dex token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
@@ -124,11 +110,6 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
-
-	t.Log("Get Dex token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)

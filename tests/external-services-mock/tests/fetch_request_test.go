@@ -9,9 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,12 +61,6 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 			ctx := context.Background()
 			tenant := testConfig.DefaultTenant
 
-			t.Log("Get Dex id_token")
-			dexToken, err := idtokenprovider.GetDexToken()
-			require.NoError(t, err)
-
-			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 			appName := "app-test-bundle"
 			application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
 			defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
@@ -99,7 +90,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 			apiID := bndl.APIDefinitions.Data[0].ID
 			req := fixtures.FixRefetchAPISpecRequest(apiID)
 
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
+			err := testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
 			require.NoError(t, err)
 
 			require.NotNil(t, refetchedSpec.APISpec.Data)
@@ -156,12 +147,6 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			ctx := context.Background()
 			tenant := testConfig.DefaultTenant
-
-			t.Log("Get Dex id_token")
-			dexToken, err := idtokenprovider.GetDexToken()
-			require.NoError(t, err)
-
-			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 			appName := "app-test-bundle"
 			application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)

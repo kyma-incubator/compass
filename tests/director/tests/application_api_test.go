@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -50,11 +49,6 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 	t.Log("DIRECTOR URL: ", gql.GetDirectorGraphQLURL())
 
 	// WHEN
@@ -76,12 +70,6 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	firstAppName := "app@wordpress"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -180,12 +168,6 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	// WHEN
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
@@ -223,12 +205,6 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
@@ -249,12 +225,6 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
@@ -272,12 +242,6 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 	ctx := context.Background()
 	expectedAppName := "create-app-with-packages"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	type ApplicationWithPackagesExt struct {
 		graphql.Application
@@ -375,12 +339,6 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
@@ -393,12 +351,6 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
@@ -439,12 +391,6 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
@@ -469,12 +415,6 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	appName := "samename"
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
@@ -494,21 +434,17 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 }
 
 func TestDeleteApplication(t *testing.T) {
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		in := fixtures.FixSampleApplicationRegisterInput("app")
+		in := fixtures.FixSampleApplicationRegisterInputWithWebhooks("app")
 
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
+    
 		createReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
 		actualApp := graphql.ApplicationExt{}
+    
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 		require.NoError(t, err)
 
@@ -635,12 +571,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -744,12 +674,6 @@ func TestQueryApplications(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationRegisterInput{
 			Name: fmt.Sprintf("app-%d", i),
@@ -769,7 +693,7 @@ func TestQueryApplications(t *testing.T) {
 
 	// WHEN
 	queryReq := fixtures.FixGetApplicationsRequestWithPagination()
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualAppPage)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualAppPage)
 	saveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
 	//THEN
@@ -784,12 +708,6 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	after := 3
 	cursor := ""
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -821,7 +739,7 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	}
 
 	appReq := fixtures.FixApplicationsPageableRequest(after, cursor)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, appReq, &appsPage)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, appReq, &appsPage)
 	require.NoError(t, err)
 
 	assert.False(t, appsPage.PageInfo.HasNextPage)
@@ -843,12 +761,6 @@ func TestQuerySpecificApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	actualApp := graphql.Application{}
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
@@ -945,12 +857,6 @@ func TestTenantSeparation(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -986,12 +892,6 @@ func TestApplicationsForRuntime(t *testing.T) {
 		},
 	}
 	var schema interface{} = jsonSchema
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, otherTenant)
@@ -1192,12 +1092,6 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		},
 	}
 	var schema interface{} = jsonSchema
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 
