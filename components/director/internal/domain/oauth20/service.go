@@ -32,8 +32,8 @@ type UIDService interface {
 }
 
 type clientCredentialsRegistrationBody struct {
-	GrantTypes []string `json:"grant_types"`
-	ClientID   string   `json:"client_id"`
+	GrantTypes []string `json:"grant_types,omitempty"`
+	ClientID   string   `json:"client_id,omitempty"`
 	Scope      string   `json:"scope"`
 }
 
@@ -258,13 +258,15 @@ func (s *service) clientsFromHydra(ctx context.Context, endpoint string) ([]Clie
 			return nil, fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusOK)
 		}
 
-		nextLink = getNextLink(resp)
 		var clients []Client
 		if err = json.NewDecoder(resp.Body).Decode(&clients); err != nil {
 			return nil, fmt.Errorf("failed to decode response body from Hydra: %v", err)
 		}
 		closeBody(resp.Body)
 		resultClients = append(resultClients, clients...)
+		if nextLink = getNextLink(resp); nextLink != "" {
+			nextLink = endpoint + nextLink
+		}
 	}
 
 	return resultClients, nil
@@ -275,7 +277,7 @@ func getNextLink(resp *http.Response) string {
 	if linkHeader == "" {
 		return ""
 	}
-	regex := regexp.MustCompile(`<(.+)>; rel=\\"next\\"`)
+	regex := regexp.MustCompile(`rel="next",</clients(.+)>;`)
 	rs := regex.FindStringSubmatch(linkHeader)
 	if len(rs) == 0 {
 		return ""
