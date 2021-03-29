@@ -34,32 +34,48 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	singleGetter  repo.SingleGetter
-	updater       repo.Updater
-	creator       repo.Creator
-	deleterGlobal repo.DeleterGlobal
-	deleter       repo.Deleter
-	lister        repo.Lister
-	listerGlobal  repo.ListerGlobal
-	conv          EntityConverter
+	singleGetter       repo.SingleGetter
+	singleGetterGlobal repo.SingleGetterGlobal
+	updater            repo.Updater
+	updaterGlobal      repo.UpdaterGlobal
+	creator            repo.Creator
+	deleterGlobal      repo.DeleterGlobal
+	deleter            repo.Deleter
+	lister             repo.Lister
+	listerGlobal       repo.ListerGlobal
+	conv               EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter:  repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
-		creator:       repo.NewCreator(resource.Webhook, tableName, webhookColumns),
-		updater:       repo.NewUpdater(resource.Webhook, tableName, updatableColumns, tenantColumn, []string{"id", "app_id"}),
-		deleterGlobal: repo.NewDeleterGlobal(resource.Webhook, tableName),
-		deleter:       repo.NewDeleter(resource.Webhook, tableName, tenantColumn),
-		lister:        repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
-		listerGlobal:  repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
-		conv:          conv,
+		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
+		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
+		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, tenantColumn, []string{"id", "app_id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id"}),
+		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
+		deleter:            repo.NewDeleter(resource.Webhook, tableName, tenantColumn),
+		lister:             repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		listerGlobal:       repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
+		conv:               conv,
 	}
 }
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+	m, err := r.conv.FromEntity(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting from entity to model")
+	}
+	return &m, nil
+}
+
+func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error) {
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 	m, err := r.conv.FromEntity(entity)
@@ -145,6 +161,9 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
+	}
+	if item.TenantID == nil {
+		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
 	return r.updater.UpdateSingle(ctx, entity)
 }

@@ -25,6 +25,7 @@ type JWTKeyIterator struct {
 	AlgorithmCriteria func(string) bool
 	IDCriteria        func(string) bool
 	ResultingKey      interface{}
+	AllKeys           []interface{}
 }
 
 func (keyIterator *JWTKeyIterator) Visit(_ int, value interface{}) error {
@@ -32,6 +33,8 @@ func (keyIterator *JWTKeyIterator) Visit(_ int, value interface{}) error {
 	if !ok {
 		return apperrors.NewInternalError("unable to parse key")
 	}
+
+	keyIterator.AllKeys = append(keyIterator.AllKeys, key)
 
 	if keyIterator.AlgorithmCriteria(key.Algorithm()) && keyIterator.IDCriteria(key.KeyID()) {
 		var rawKey interface{}

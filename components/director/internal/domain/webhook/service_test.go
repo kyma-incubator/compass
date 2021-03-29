@@ -2,7 +2,6 @@ package webhook_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -35,12 +34,15 @@ func TestService_Create(t *testing.T) {
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+	ctxNoTenant := context.TODO()
+	ctxNoTenant = tenant.SaveToContext(ctx, "", "")
 
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.WebhookRepository
 		UIDServiceFn func() *automock.UIDService
 		ExpectedErr  error
+		Context      context.Context
 	}{
 		{
 			Name: "Success",
@@ -55,6 +57,22 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			ExpectedErr: nil,
+			Context:     ctx,
+		},
+		{
+			Name: "Success when tenant is missing",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("Create", ctxNoTenant, webhookModel).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
+			ExpectedErr: nil,
+			Context:     ctxNoTenant,
 		},
 		{
 			Name: "Returns error when webhook creation failed",
@@ -69,6 +87,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			ExpectedErr: testErr,
+			Context:     ctx,
 		},
 	}
 
@@ -80,7 +99,7 @@ func TestService_Create(t *testing.T) {
 			svc := webhook.NewService(repo, nil, uidSvc)
 
 			// when
-			result, err := svc.Create(ctx, givenApplicationID(), *modelInput, applicationConvererFunc)
+			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, applicationConvererFunc)
 
 			// then
 
@@ -163,13 +182,6 @@ func TestService_Get(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-
-	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
-		// when
-		_, err := svc.Get(context.TODO(), givenApplicationID())
-		assert.True(t, apperrors.IsCannotReadTenant(err))
-	})
 }
 
 func TestService_ListForApplication(t *testing.T) {
@@ -504,61 +516,68 @@ func TestService_Update(t *testing.T) {
 	*noIDWebhookModel = *applicationWebhookModel
 	noIDWebhookModel.ApplicationID = nil
 
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+	tenantCtx := context.TODO()
+	tenantCtx = tenant.SaveToContext(tenantCtx, givenTenant(), givenExternalTenant())
 
 	testCases := []struct {
 		Name                string
 		WebhookRepositoryFn func() *automock.WebhookRepository
 		ExpectedErrMessage  string
+		Context             context.Context
 	}{
 		{
 			Name: "Success when applicationID is present",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(applicationWebhookModel, nil).Once()
-				repo.On("Update", ctx, inputWebhookModel).Return(nil).Once()
+				repo.On("GetByID", tenantCtx, givenTenant(), id).Return(applicationWebhookModel, nil).Once()
+				repo.On("Update", tenantCtx, inputWebhookModel).Return(nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "",
+			Context:            tenantCtx,
 		},
 		{
 			Name: "Success when applicationTemplateID is present",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(applicationTemplateWebhookModel, nil).Once()
+				ctx := context.TODO()
+				repo.On("GetByIDGlobal", ctx, id).Return(applicationTemplateWebhookModel, nil).Once()
 				repo.On("Update", ctx, inputWebhookModel).Return(nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "",
+			Context:            context.TODO(),
 		},
 		{
 			Name: "Returns error when webhook update failed",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(applicationWebhookModel, nil).Once()
-				repo.On("Update", ctx, inputWebhookModel).Return(testErr).Once()
+				repo.On("GetByID", tenantCtx, givenTenant(), id).Return(applicationWebhookModel, nil).Once()
+				repo.On("Update", tenantCtx, inputWebhookModel).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
+			Context:            tenantCtx,
 		},
 		{
 			Name: "Returns error when webhook retrieval failed",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(nil, testErr).Once()
+				repo.On("GetByID", tenantCtx, givenTenant(), id).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
+			Context:            tenantCtx,
 		},
 		{
 			Name: "Returns error application doesn't have any ids",
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByID", ctx, givenTenant(), id).Return(noIDWebhookModel, nil).Once()
+				repo.On("GetByID", tenantCtx, givenTenant(), id).Return(noIDWebhookModel, nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "webhook doesn't have neither of application_id and application_template_id",
+			Context:            tenantCtx,
 		},
 	}
 
@@ -568,7 +587,7 @@ func TestService_Update(t *testing.T) {
 			svc := webhook.NewService(repo, nil, nil)
 
 			// when
-			err := svc.Update(ctx, id, *modelInput)
+			err := svc.Update(testCase.Context, id, *modelInput)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -581,12 +600,6 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 
-	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
-		// when
-		err := svc.Update(context.TODO(), givenApplicationID(), *modelInput)
-		assert.EqualError(t, err, fmt.Sprintf("while getting Webhook: %s", apperrors.NewCannotReadTenantError().Error()))
-	})
 }
 
 func TestService_Delete(t *testing.T) {
@@ -656,10 +669,4 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 
-	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
-		// when
-		err := svc.Delete(context.TODO(), id)
-		assert.EqualError(t, err, fmt.Sprintf("while getting Webhook: %s", apperrors.NewCannotReadTenantError()))
-	})
 }

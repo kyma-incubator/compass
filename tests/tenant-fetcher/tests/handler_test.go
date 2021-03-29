@@ -26,9 +26,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/authentication"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
-	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/director"
+	"github.com/kyma-incubator/compass/tests/pkg/authentication"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -90,7 +91,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		cleanUp(t, providedTenant, config)
 
-		oldTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		// WHEN
@@ -109,7 +110,7 @@ func TestOnboardingHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		tenants, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		// THEN
@@ -122,7 +123,7 @@ func TestOnboardingHandler(t *testing.T) {
 			TenantId: config.Tenant,
 		}
 
-		oldTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
@@ -140,7 +141,7 @@ func TestOnboardingHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		tenants, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		// THEN
@@ -178,7 +179,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		// Initial state
-		oldTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		request, err = http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
@@ -188,7 +189,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		response, err = httpClient.Do(request)
 		require.NoError(t, err)
 
-		newTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		newTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		// THEN
@@ -205,7 +206,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
-		oldTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -220,7 +221,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		newTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
+		newTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		// THEN

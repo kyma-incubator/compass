@@ -39,7 +39,7 @@ func (c *converter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.Run
 func (c *converter) InputFromGraphQL(in graphql.RuntimeContextInput, runtimeID string) model.RuntimeContextInput {
 	var labels map[string]interface{}
 	if in.Labels != nil {
-		labels = *in.Labels
+		labels = in.Labels
 	}
 
 	return model.RuntimeContextInput{

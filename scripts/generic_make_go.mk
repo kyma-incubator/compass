@@ -91,7 +91,7 @@ endef
 verify:: test check-imports check-fmt errcheck
 format:: imports fmt
 
-release: resolve dep-status verify build-image push-image
+release: verify build-image push-image
 
 .PHONY: build-image push-image
 build-image: pull-licenses
@@ -103,7 +103,7 @@ docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
+MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
@@ -113,15 +113,6 @@ build-to-minikube: pull-licenses
 build-local:
 	env CGO_ENABLED=0 go build -o $(APP_NAME) ./$(ENTRYPOINT)
 	rm $(APP_NAME)
-
-resolve-local:
-	dep ensure -vendor-only -v
-
-ensure-local:
-	dep ensure -v
-
-dep-status-local:
-	dep status -v
 
 check-imports-local:
 	@if [ -n "$$(goimports -l $$($(FILES_TO_CHECK)))" ]; then \

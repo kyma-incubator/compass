@@ -1,14 +1,17 @@
 package res
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-func WriteJSONResponse(writer http.ResponseWriter, res interface{}) error {
-	log.Infoln("returning response...")
+func WriteJSONResponse(writer http.ResponseWriter, ctx context.Context, res interface{}) error {
+	log.C(ctx).Infoln("returning response...")
 	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
-	return json.NewEncoder(writer).Encode(&res)
+	enc := json.NewEncoder(writer)
+	enc.SetEscapeHTML(false)
+	return enc.Encode(&res)
 }

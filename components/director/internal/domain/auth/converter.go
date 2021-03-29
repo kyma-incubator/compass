@@ -18,11 +18,10 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 		return nil, nil
 	}
 
-	var headers *graphql.HttpHeaders
+	var headers graphql.HttpHeaders
 	var headersSerialized *graphql.HttpHeadersSerialized
 	if len(in.AdditionalHeaders) != 0 {
-		var value graphql.HttpHeaders = in.AdditionalHeaders
-		headers = &value
+		headers = in.AdditionalHeaders
 
 		serialized, err := graphql.NewHttpHeadersSerialized(in.AdditionalHeaders)
 		if err != nil {
@@ -31,11 +30,10 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 		headersSerialized = &serialized
 	}
 
-	var params *graphql.QueryParams
+	var params graphql.QueryParams
 	var paramsSerialized *graphql.QueryParamsSerialized
 	if len(in.AdditionalQueryParams) != 0 {
-		var value graphql.QueryParams = in.AdditionalQueryParams
-		params = &value
+		params = in.AdditionalQueryParams
 
 		serialized, err := graphql.NewQueryParamsSerialized(in.AdditionalQueryParams)
 		if err != nil {
@@ -91,16 +89,14 @@ func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graph
 
 	var csrf *graphql.CSRFTokenCredentialRequestAuth
 	if in.Csrf != nil {
-		var headers *graphql.HttpHeaders
+		var headers graphql.HttpHeaders
 		if len(in.Csrf.AdditionalHeaders) != 0 {
-			var value graphql.HttpHeaders = in.Csrf.AdditionalHeaders
-			headers = &value
+			headers = in.Csrf.AdditionalHeaders
 		}
 
-		var params *graphql.QueryParams
+		var params graphql.QueryParams
 		if len(in.Csrf.AdditionalQueryParams) != 0 {
-			var value graphql.QueryParams = in.Csrf.AdditionalQueryParams
-			params = &value
+			params = in.Csrf.AdditionalQueryParams
 		}
 
 		csrf = &graphql.CSRFTokenCredentialRequestAuth{
@@ -146,25 +142,25 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 	}, nil
 }
 
-func (c *converter) headersFromGraphQL(headers *graphql.HttpHeaders, headersSerialized *graphql.HttpHeadersSerialized) (map[string][]string, error) {
+func (c *converter) headersFromGraphQL(headers graphql.HttpHeaders, headersSerialized *graphql.HttpHeadersSerialized) (map[string][]string, error) {
 	var h map[string][]string
 
 	if headersSerialized != nil {
 		return headersSerialized.Unmarshal()
 	} else if headers != nil {
-		h = *headers
+		h = headers
 	}
 
 	return h, nil
 }
 
-func (c *converter) queryParamsFromGraphQL(params *graphql.QueryParams, paramsSerialized *graphql.QueryParamsSerialized) (map[string][]string, error) {
+func (c *converter) queryParamsFromGraphQL(params graphql.QueryParams, paramsSerialized *graphql.QueryParamsSerialized) (map[string][]string, error) {
 	var p map[string][]string
 
 	if paramsSerialized != nil {
 		return paramsSerialized.Unmarshal()
 	} else if params != nil {
-		p = *params
+		p = params
 	}
 
 	return p, nil
