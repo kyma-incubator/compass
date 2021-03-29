@@ -571,7 +571,8 @@ func TestDeleteApplication(t *testing.T) {
 
 	t.Run("Error when application is in scenario and runtime", func(t *testing.T) {
 		//GIVEN
-		expectedErrorMsg := "graphql: The operation is not allowed [reason=System deletion failed: the system is part of a scenario - test-scenario and of runtime - one-runtime]"
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System first is still used and cannot be deleted. Unassign the system from the following formations first: test-scenario. Then, unassign the system from the following runtimes, too: one-runtime]"
+
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 

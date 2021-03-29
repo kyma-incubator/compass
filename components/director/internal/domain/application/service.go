@@ -317,7 +317,11 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	validScenarios := removeDefaultScenario(scenarios)
 	if len(validScenarios) > 0 && len(runtimes) > 0 {
-		msg := fmt.Sprintf("System deletion failed: the system is part of a scenario - %s and of runtime - %s", strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+		application, err := s.appRepo.GetByID(ctx, appTenant, id)
+		if err != nil {
+			return errors.Wrapf(err, "while getting application with id %s", id)
+		}
+		msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
 		return apperrors.NewInvalidOperationError(msg)
 	}
 

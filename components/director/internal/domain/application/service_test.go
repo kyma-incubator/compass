@@ -1927,7 +1927,7 @@ func TestService_Update(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
-	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System deletion failed: the system is part of a scenario - Easter and of runtime - test-runtime]")
+	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
 	desc := "Lorem ipsum"
 	tnt := "tenant"
@@ -2040,6 +2040,7 @@ func TestService_Delete(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
 				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
