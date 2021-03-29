@@ -3,6 +3,12 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,16 +22,9 @@ import (
 )
 
 func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
 	timeout := time.Millisecond * 100
-	h := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		defer wg.Done()
-		time.Sleep(time.Millisecond * 110)
-		_, err := writer.Write([]byte("test"))
-		require.Equal(t, http.ErrHandlerTimeout, err)
-	})
+	h, wait := getStubHandleFunc(t, timeout)
+	defer wait()
 
 	handlerWithTimeout, err := handler.WithTimeout(h, timeout)
 	require.NoError(t, err)
@@ -48,8 +47,52 @@ func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
 	require.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 
 	require.Contains(t, actualError, "timed out")
+}
 
-	wg.Wait()
+func TestHandlerWithTimeout_LogCorrelationId(t *testing.T) {
+	timeout := time.Millisecond * 100
+	h, wait := getStubHandleFunc(t, timeout)
+	defer wait()
+
+	handlerWithTimeout, err := handler.WithTimeout(h, timeout)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", &bytes.Buffer{})
+	w := httptest.NewRecorder()
+
+	logger, hook := test.NewNullLogger()
+
+	ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+	req = req.WithContext(ctx)
+
+	handlerWithTimeout.ServeHTTP(w, req)
+
+	resp := w.Result()
+	fmt.Println(resp)
+	reqId, ok := hook.LastEntry().Data[correlation.RequestIDHeaderKey]
+	require.True(t, ok)
+
+	assert.NotEqual(t, log.Configuration().BootstrapCorrelationID, reqId)
+}
+
+func getStubHandleFunc(t *testing.T, timeout time.Duration) (http.HandlerFunc, func()) {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	sleepTime := timeout + (time.Millisecond * 10)
+
+	h := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		defer wg.Done()
+		time.Sleep(sleepTime)
+		_, err := writer.Write([]byte("test"))
+		require.Equal(t, http.ErrHandlerTimeout, err)
+	})
+
+	wait := func() {
+		wg.Wait()
+	}
+
+	return h, wait
 }
 
 func getErrorMessage(t *testing.T, data []byte) string {
