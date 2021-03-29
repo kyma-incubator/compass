@@ -16,7 +16,7 @@ type update struct {
 	repo     StatusUpdateRepository
 }
 
-//go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
 	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)

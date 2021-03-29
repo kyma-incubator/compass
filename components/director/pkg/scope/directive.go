@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
