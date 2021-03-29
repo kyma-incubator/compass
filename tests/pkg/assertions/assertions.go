@@ -2,9 +2,12 @@ package assertions
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/tidwall/gjson"
 
 	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -481,6 +484,37 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 	assert.NotNil(t, bndl.APIDefinitions.Data[0])
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec)
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
+}
+
+func AssertEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField string) {
+	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
+	require.Equal(t, expectedName, gjson.Get(respBody, "value.0.title").String())
+	require.Equal(t, expectedDescription, gjson.Get(respBody, descriptionField).String())
+}
+
+func AssertEventFromORDService(t *testing.T, respBody string, eventsMap map[string]string, expectedNumber int) {
+	numberOfEvents := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEvents)
+
+	for i := 0; i < numberOfEvents; i++ {
+		eventTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		require.NotEmpty(t, eventTitle)
+
+		eventDescription, exists := eventsMap[eventTitle]
+		require.True(t, exists)
+
+		require.Equal(t, eventDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
+	}
+}
+
+func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber int, expectedID string) {
+	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
+	require.Equal(t, expectedID, gjson.Get(respBody, "value.0.ordId").String())
+}
+
+func AssertVendorFromORDService(t *testing.T, respBody string, expectedNumber int, expectedTitle string) {
+	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
+	require.Equal(t, expectedTitle, gjson.Get(respBody, "value.0.title").String())
 }
 
 func urlsAreIdentical(url1, url2 *string) bool {

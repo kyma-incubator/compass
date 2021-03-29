@@ -3,16 +3,16 @@ package tests
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -24,22 +24,25 @@ import (
 const (
 	tenantHeader = "Tenant"
 
-	applicationName         = "test-app"
-	applicationDescription  = "test-app-description"
-	bundleTitle             = "BUNDLE TITLE"
-	bundleDescription       = "lorem ipsum dolor nsq sme"
-	packageTitle            = "PACKAGE 1 TITLE"
-	packageDescription      = "lorem ipsum dolor set"
-	productTitle            = "PRODUCT TITLE"
-	productShortDescription = "lorem ipsum"
-	firstAPITitle           = "API TITLE"
-	firstAPIDescription     = "lorem ipsum dolor sit amet"
-	firstEventTitle         = "EVENT TITLE"
-	firstEventDescription   = "lorem ipsum dolor sit amet"
-	secondEventTitle        = "EVENT TITLE 2"
-	secondEventDescription  = "lorem ipsum dolor sit amet"
-	tombstoneOrdID          = "ns:apiResource:API_ID2:v1"
-	vendorTitle             = "SAP"
+	descriptionField      = "value.0.description"
+	shortDescriptionField = "value.0.shortDescription"
+
+	expectedSystemInstanceName        = "test-app"
+	expectedSystemInstanceDescription = "test-app-description"
+	expectedBundleTitle               = "BUNDLE TITLE"
+	expectedBundleDescription         = "lorem ipsum dolor nsq sme"
+	expectedPackageTitle              = "PACKAGE 1 TITLE"
+	expectedPackageDescription        = "lorem ipsum dolor set"
+	expectedProductTitle              = "PRODUCT TITLE"
+	expectedProductShortDescription   = "lorem ipsum"
+	firstAPIExpectedTitle             = "API TITLE"
+	firstAPIExpectedDescription       = "lorem ipsum dolor sit amet"
+	firstEventTitle                   = "EVENT TITLE"
+	firstEventDescription             = "lorem ipsum dolor sit amet"
+	secondEventTitle                  = "EVENT TITLE 2"
+	secondEventDescription            = "lorem ipsum dolor sit amet"
+	expectedTombstoneOrdID            = "ns:apiResource:API_ID2:v1"
+	expectedVendorTitle               = "SAP"
 
 	expectedNumberOfSystemInstances = 1
 	expectedNumberOfPackages        = 1
@@ -54,7 +57,7 @@ const (
 )
 
 func TestORDAggregator(t *testing.T) {
-	appInput := createApp()
+	appInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
 
 	eventsMap := make(map[string]string, 0)
 	eventsMap[firstEventTitle] = firstEventDescription
@@ -116,10 +119,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing System Instances...will try again")
 				return false
 			}
-
-			require.Equal(t, expectedNumberOfSystemInstances, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, applicationName, gjson.Get(respBody, "value.0.title").String())
-			require.Equal(t, applicationDescription, gjson.Get(respBody, "value.0.description").String())
+			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfSystemInstances, expectedSystemInstanceName, expectedSystemInstanceDescription, descriptionField)
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -128,10 +128,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
-
-			require.Equal(t, expectedNumberOfPackages, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, packageTitle, gjson.Get(respBody, "value.0.title").String())
-			require.Equal(t, packageDescription, gjson.Get(respBody, "value.0.description").String())
+			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -140,10 +137,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
-
-			require.Equal(t, expectedNumberOfBundles, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, bundleTitle, gjson.Get(respBody, "value.0.title").String())
-			require.Equal(t, bundleDescription, gjson.Get(respBody, "value.0.description").String())
+			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfBundles, expectedBundleTitle, expectedBundleDescription, descriptionField)
 
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -152,10 +146,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Products...will try again")
 				return false
 			}
-
-			require.Equal(t, expectedNumberOfProducts, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, productTitle, gjson.Get(respBody, "value.0.title").String())
-			require.Equal(t, productShortDescription, gjson.Get(respBody, "value.0.shortDescription").String())
+			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
 
 			// Verify apis
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -164,11 +155,8 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing APIs...will try again")
 				return false
 			}
-
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
-			require.Equal(t, expectedNumberOfAPIs, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, firstAPITitle, gjson.Get(respBody, "value.0.title").String())
-			require.Equal(t, firstAPIDescription, gjson.Get(respBody, "value.0.description").String())
+			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -177,19 +165,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Events...will try again")
 				return false
 			}
-
-			numberOfEvents := len(gjson.Get(respBody, "value").Array())
-			require.Equal(t, expectedNumberOfEvents, numberOfEvents)
-
-			for i := 0; i < numberOfEvents; i++ {
-				eventTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
-				require.NotEmpty(t, eventTitle)
-
-				eventDescription, exists := eventsMap[eventTitle]
-				require.True(t, exists)
-
-				require.Equal(t, eventDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
-			}
+			assertions.AssertEventFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -198,9 +174,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Tombstones...will try again")
 				return false
 			}
-
-			require.Equal(t, expectedNumberOfTombstones, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, tombstoneOrdID, gjson.Get(respBody, "value.0.ordId").String())
+			assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstones, expectedTombstoneOrdID)
 
 			// Verify vendors
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -209,9 +183,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
-
-			require.Equal(t, expectedNumberOfVendors, len(gjson.Get(respBody, "value").Array()))
-			require.Equal(t, vendorTitle, gjson.Get(respBody, "value.0.title").String())
+			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
 
 			return true
 		})
@@ -233,19 +205,6 @@ func verifyORDDocument(interval time.Duration, timeout time.Duration, conditiona
 			return errors.New("timeout waiting for entities to be present in DB")
 		case <-ticker:
 		}
-	}
-}
-
-func createApp() directorSchema.ApplicationRegisterInput {
-	return directorSchema.ApplicationRegisterInput{
-		Name:        applicationName,
-		Description: ptr.String(applicationDescription),
-		Webhooks: []*directorSchema.WebhookInput{
-			{
-				Type: directorSchema.WebhookTypeOpenResourceDiscovery,
-				URL:  &testConfig.ExternalServicesMockBaseURL,
-			},
-		},
 	}
 }
 
