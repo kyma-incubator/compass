@@ -542,6 +542,7 @@ func fixSuccessSinglePageListClientsHTTPServer(mode hydraLinkMode) func(t *testi
 }
 
 var listCalls = 0
+
 func fixSuccessPageableListClientsHTTPServer() func(t *testing.T) *httptest.Server {
 	return func(t *testing.T) *httptest.Server {
 		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

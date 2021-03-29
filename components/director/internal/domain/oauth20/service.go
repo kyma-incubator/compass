@@ -18,7 +18,7 @@ import (
 
 const (
 	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
-	applicationJSONType         = "application/json"
+	applicationJSONType          = "application/json"
 )
 
 var defaultGrantTypes = []string{"client_credentials"}
