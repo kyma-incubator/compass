@@ -441,10 +441,10 @@ func TestDeleteApplication(t *testing.T) {
 
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
-    
+
 		createReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
 		actualApp := graphql.ApplicationExt{}
-    
+
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 		require.NoError(t, err)
 
