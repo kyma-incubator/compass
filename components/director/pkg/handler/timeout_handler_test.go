@@ -3,7 +3,6 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -68,8 +67,6 @@ func TestHandlerWithTimeout_LogCorrelationId(t *testing.T) {
 
 	handlerWithTimeout.ServeHTTP(w, req)
 
-	resp := w.Result()
-	fmt.Println(resp)
 	reqId, ok := hook.LastEntry().Data[correlation.RequestIDHeaderKey]
 	require.True(t, ok)
 
