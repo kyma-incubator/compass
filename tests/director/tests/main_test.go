@@ -4,9 +4,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/machinebox/graphql"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vrischmann/envconfig"
@@ -14,7 +18,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-var conf = &config.DirectorConfig{}
+var (
+	conf             = &config.DirectorConfig{}
+	dexGraphQLClient *graphql.Client
+)
 
 func TestMain(m *testing.M) {
 	dbCfg := persistence.DatabaseConfig{}
@@ -25,12 +32,14 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
-	testctx.Tc, err = testctx.NewTestContext()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	config.ReadConfig(conf)
+
+	log.Info("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting dex token"))
+	}
+	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	exitVal := m.Run()
 

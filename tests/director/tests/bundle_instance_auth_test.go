@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -18,12 +17,6 @@ import (
 
 func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -76,12 +69,6 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 
 func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -179,12 +166,6 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
@@ -245,12 +226,6 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
@@ -266,7 +241,7 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 
 	// WHEN
 	t.Log("Request bundle instance auth deletion")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthDeletionRequestReq, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthDeletionRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -276,12 +251,6 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 
 func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -356,12 +325,6 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 func TestSetBundleInstanceAuth(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
@@ -395,12 +358,6 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 func TestDeleteBundleInstanceAuth(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
@@ -416,7 +373,7 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete bundle instance auth")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteBundleInstanceAuthReq, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)
