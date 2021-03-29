@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/server"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/pkg/errors"

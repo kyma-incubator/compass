@@ -7,6 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -27,7 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -37,7 +39,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
-	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -78,54 +79,6 @@ import (
 
 const envPrefix = "APP"
 
-type config struct {
-	Address                string `envconfig:"default=127.0.0.1:3000"`
-	InternalGraphQLAddress string `envconfig:"default=127.0.0.1:3001"`
-	HydratorAddress        string `envconfig:"default=127.0.0.1:8080"`
-
-	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
-	AppURL          string `envconfig:"APP_URL"`
-
-	ClientTimeout time.Duration `envconfig:"default=105s"`
-	ServerTimeout time.Duration `envconfig:"default=110s"`
-
-	Database                      persistence.DatabaseConfig
-	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
-	OperationPath                 string `envconfig:"default=/operation"`
-	LastOperationPath             string `envconfig:"default=/last_operation"`
-	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
-	ConfigurationFile             string
-	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
-
-	Log log.Config
-
-	MetricsAddress string `envconfig:"default=127.0.0.1:3003"`
-
-	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
-	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone   bool          `envconfig:"default=true"`
-	ClientIDHttpHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
-
-	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
-
-	StaticUsersSrc    string `envconfig:"default=/data/static-users.yaml"`
-	StaticGroupsSrc   string `envconfig:"default=/data/static-groups.yaml"`
-	PairingAdapterSrc string `envconfig:"optional"`
-
-	OneTimeToken onetimetoken.Config
-	OAuth20      oauth20.Config
-
-	Features features.Config
-
-	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
-	OperationsNamespace   string `envconfig:"default=compass-system"`
-
-	DisableAsyncMode bool `envconfig:"default=false"`
-}
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -134,14 +87,27 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, envPrefix)
+	environment, err := env.Default(ctx)
+	if err != nil {
+		exitOnError(err, "Error while creating environment")
+	}
+
+	cfg, err := config.New(environment)
+	if err != nil {
+		exitOnError(err, "Error while creating config")
+	}
+
+	if err = cfg.Validate(); err != nil {
+		exitOnError(err, "Error while validating config")
+	}
+
+	err = envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
 
 	authenticators, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
 
-	ctx, err = log.Configure(ctx, &cfg.Log)
+	ctx, err = log.Configure(ctx, cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
@@ -164,7 +130,7 @@ func main() {
 	exitOnError(err, "Error while reading Pairing Adapters configuration")
 
 	httpClient := &http.Client{
-		Timeout:   cfg.ClientTimeout,
+		Timeout:   cfg.Timeouts.Client,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
@@ -185,7 +151,7 @@ func main() {
 			cfg.OneTimeToken.Length,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
+			Async:       getAsyncDirective(ctx, *cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -194,12 +160,12 @@ func main() {
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey)
+	logger.Infof("Registering GraphQL endpoint on %s...", cfg.API.APIEndpoint)
+	authMiddleware := mp_authenticator.New(cfg.JWKS.Endpoint, cfg.JWKS.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey)
 
-	if cfg.JWKSSyncPeriod != 0 {
-		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+	if cfg.JWKS.SyncPeriod != 0 {
+		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKS.SyncPeriod)
+		periodicExecutor := executor.NewPeriodic(cfg.JWKS.SyncPeriod, func(ctx context.Context) {
 			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
 				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
@@ -213,14 +179,14 @@ func main() {
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
-	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
+	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.API.PlaygroundAPIEndpoint))
 
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL)
 
-	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
+	gqlAPIRouter := mainRouter.PathPrefix(cfg.API.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
@@ -232,29 +198,29 @@ func main() {
 
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
-	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.API.TenantMappingEndpoint)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.Static.UsersSrc, cfg.Static.GroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
-	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
+	mainRouter.HandleFunc(cfg.API.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
-	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.ProtectedLabelPattern)
+	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.API.RuntimeMappingEndpoint)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKS.SyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.ProtectedLabelPattern)
 
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
-	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
+	mainRouter.HandleFunc(cfg.API.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
-	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.AuthenticationMappingEndpoint)
+	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.API.AuthenticationMappingEndpoint)
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
-	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
+	mainRouter.HandleFunc(cfg.API.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
 	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}, tenant.LoadFromContext)
 
-	operationsAPIRouter := mainRouter.PathPrefix(cfg.LastOperationPath).Subrouter()
+	operationsAPIRouter := mainRouter.PathPrefix(cfg.API.LastOperationPath).Subrouter()
 	operationsAPIRouter.Use(authMiddleware.Handler())
 	operationsAPIRouter.HandleFunc("/{resource_type}/{resource_id}", operationHandler.ServeHTTP)
 
@@ -268,14 +234,14 @@ func main() {
 
 	internalRouter := mux.NewRouter()
 	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
-	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
+	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.API.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	internalGQLHandler, err := PrepareInternalGraphQLServer(*cfg, graphqlAPI.NewTokenResolver(transact, tokenService(*cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
 	timeService := directorTime.NewService()
-	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, timeService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	hydratorHandler, err := PrepareHydratorHandler(*cfg, systemAuthSvc(), transact, timeService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
@@ -290,11 +256,11 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
-	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalGraphQLAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
-	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.ServerTimeout)
-	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
+	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.Timeouts.Server)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.Timeouts.Server)
+	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalGraphQLAddress, internalGQLHandler, "internal_graphql", cfg.Timeouts.Server)
+	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.Timeouts.Server)
+	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.Timeouts.Server)
 
 	go func() {
 		<-ctx.Done()
@@ -341,7 +307,7 @@ func getPairingAdaptersMapping(ctx context.Context, filePath string) (map[string
 	return out, nil
 }
 
-func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
+func createAndRunConfigProvider(ctx context.Context, cfg *config.Config) *configprovider.Provider {
 	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	err := provider.Load()
 	exitOnError(err, "Error on loading configuration file")
@@ -505,7 +471,7 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
-func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+func PrepareInternalGraphQLServer(cfg config.Config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	gqlInternalCfg := internalschema.Config{
 		Resolvers: &graphqlAPI.InternalResolver{
 			TokenResolver: tokenResolver,
@@ -516,20 +482,20 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 
 	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
 	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
-	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
+	internalRouter.Handle(cfg.API.APIEndpoint, gqlHandler)
 
-	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
+	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.API.PlaygroundAPIEndpoint))
 
 	internalRouter.Use(middlewares...)
 
-	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
+	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.Timeouts.Server)
 	if err != nil {
 		return nil, err
 	}
 	return handlerWithTimeout, nil
 }
 
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+func tokenService(cfg config.Config, cfgProvider *configprovider.Provider, httpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -584,7 +550,7 @@ func systemAuthSvc() oathkeeper.Service {
 	return systemauth.NewService(systemAuthRepo, uidSvc)
 }
 
-func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+func PrepareHydratorHandler(cfg config.Config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, timeService, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
 
 	router := mux.NewRouter()
@@ -597,7 +563,7 @@ func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transac
 
 	router.Use(middlewares...)
 
-	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
+	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.Timeouts.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -605,7 +571,7 @@ func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transac
 	return handlerWithTimeout, nil
 }
 
-func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
+func getAsyncDirective(ctx context.Context, cfg config.Config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
 	resourceFetcherFunc := func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}
@@ -616,7 +582,7 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 	return operation.NewDirective(transact, webhookService().ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler).HandleOperation
 }
 
-func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
+func buildScheduler(ctx context.Context, config config.Config) (operation.Scheduler, error) {
 	if config.DisableAsyncMode {
 		log.C(ctx).Info("Async operations are disabled")
 		return &operation.DisabledScheduler{}, nil
@@ -625,7 +591,7 @@ func buildScheduler(ctx context.Context, config config) (operation.Scheduler, er
 	cfg, err := cr.GetConfig()
 	exitOnError(err, "Failed to get cluster config for operations k8s client")
 
-	cfg.Timeout = config.ClientTimeout
+	cfg.Timeout = config.Timeouts.Client
 	k8sClient, err := client.NewForConfig(cfg)
 	if err != nil {
 		return nil, err

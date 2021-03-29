@@ -41,7 +41,6 @@ type File struct {
 	Format   string `description:"extension of the configuration file"`
 }
 
-// DefaultConfigFile holds the default System Broker config file properties
 func DefaultConfigFile() File {
 	return File{
 		Name:     "application",
@@ -203,7 +202,6 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 	return nil
 }
 
-// Default creates a default environment that can be used to boot up a System Broker
 func Default(ctx context.Context, additionalPFlags ...func(set *pflag.FlagSet)) (Environment, error) {
 	set := EmptyFlagSet()
 
