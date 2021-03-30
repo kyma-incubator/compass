@@ -51,13 +51,13 @@ global:
       version: "PR-1750"
     director:
       dir:
-      version: "PR-1766"
+      version: "PR-1807"
     gateway:
       dir:
       version: "PR-1750"
     operations_controller:
       dir:
-      version: "PR-1766"
+      version: "PR-1807"
     tenant_fetcher:
       dir:
       version: "PR-1782"
@@ -69,7 +69,7 @@ global:
       version: "PR-1780"
     system_broker:
       dir:
-      version: "PR-1750"
+      version: "PR-1807"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -83,7 +83,7 @@ global:
       version: "PR-22"
     e2e_tests:
       dir:
-      version: "PR-1766"
+      version: "PR-1807"
   isLocalEnv: false
   oauth2:
     host: oauth2
