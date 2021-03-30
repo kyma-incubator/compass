@@ -11,8 +11,6 @@ import (
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -64,11 +62,6 @@ func TestORDAggregator(t *testing.T) {
 	eventsMap[secondEventTitle] = secondEventDescription
 
 	ctx := context.Background()
-
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)

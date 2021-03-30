@@ -22,6 +22,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+
+	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	c "github.com/robfig/cron/v3"
 	"github.com/vrischmann/envconfig"
@@ -36,13 +40,23 @@ type config struct {
 	ORDServiceDefaultResponseType string
 }
 
-var testConfig config
+var (
+	testConfig       config
+	dexGraphQLClient *graphql.Client
+)
 
 func TestMain(m *testing.M) {
 	err := envconfig.Init(&testConfig)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
+
+	dexToken, err := idtokenprovider.GetDexToken()
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting dex token"))
+	}
+	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+
 	exitVal := m.Run()
 	os.Exit(exitVal)
 
