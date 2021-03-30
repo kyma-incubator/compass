@@ -6,8 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -25,12 +23,6 @@ func TestQueryTenants(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	getTenantsRequest := fixtures.FixTenantsRequest()
 	var output []*graphql.Tenant
 	expectedTenants := expectedTenants()
@@ -42,7 +34,7 @@ func TestQueryTenants(t *testing.T) {
 
 	// WHEN
 	t.Log("List tenants")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN

@@ -15,7 +15,7 @@ func NewAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
 }
 
 func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Client {
-	authorizedClient := newAuthorizedHTTPClient(bearerToken)
+	authorizedClient := NewAuthorizedHTTPClient(bearerToken)
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
 }
 
@@ -33,7 +33,7 @@ type authenticatedTransport struct {
 	token string
 }
 
-func newAuthorizedHTTPClient(bearerToken string) *http.Client {
+func NewAuthorizedHTTPClient(bearerToken string) *http.Client {
 	transport := &authenticatedTransport{
 		Transport: http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

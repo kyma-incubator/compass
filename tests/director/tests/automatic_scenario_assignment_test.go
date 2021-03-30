@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -22,12 +20,6 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.AutomaticScenarioAssignmentQueriesTenantName)
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	testScenarioA := "ASA1"
 	testScenarioB := "ASA2"
@@ -102,12 +94,6 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	ctx := context.TODO()
 
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.AutomaticScenarioAssigmentForRuntimeTenantName)
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	prodScenario := "PRODUCTION"
 	devScenario := "DEVELOPMENT"
@@ -217,12 +203,6 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	defaultValue := "DEFAULT"
 	scenario1 := "test-scenario"
 	scenario2 := "test-scenario-2"
@@ -277,12 +257,6 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	defaultValue := "DEFAULT"
 	scenario1 := "test-scenario"
 	scenario2 := "test-scenario-2"
@@ -335,12 +309,6 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	defaultValue := "DEFAULT"
 	scenario := "test"
