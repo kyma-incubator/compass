@@ -425,13 +425,12 @@ func AssertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 }
 
 func AssertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *graphql.HttpHeaders) {
-	if in == nil && (actual == nil || *actual == nil) {
+	if in == nil && actual == nil {
 		return
 	}
 
 	require.NotNil(t, in)
 	require.NotNil(t, actual)
-	require.NotNil(t, *actual)
 
 	unquoted, err := strconv.Unquote(string(*in))
 	require.NoError(t, err)
@@ -444,13 +443,12 @@ func AssertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *
 }
 
 func AssertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *graphql.QueryParams) {
-	if in == nil && (actual == nil || *actual == nil) {
+	if in == nil && actual == nil {
 		return
 	}
 
 	require.NotNil(t, in)
 	require.NotNil(t, actual)
-	require.NotNil(t, *actual)
 
 	unquoted, err := strconv.Unquote(string(*in))
 	require.NoError(t, err)
