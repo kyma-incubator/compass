@@ -28,9 +28,22 @@ func FixBasicAuth(t *testing.T) *graphql.AuthInput {
 	}
 }
 
-func FixOauthAuth() *graphql.AuthInput {
+func FixOauthAuth(t *testing.T) *graphql.AuthInput {
+	additionalHeaders, err := graphql.NewHttpHeadersSerialized(map[string][]string{
+		"header-A": []string{"ha1", "ha2"},
+		"header-B": []string{"hb1", "hb2"},
+	})
+	require.NoError(t, err)
+
+	additionalQueryParams, err := graphql.NewQueryParamsSerialized(map[string][]string{
+		"qA": []string{"qa1", "qa2"},
+		"qB": []string{"qb1", "qb2"},
+	})
+	require.NoError(t, err)
 	return &graphql.AuthInput{
-		Credential: FixOAuthCredential(),
+		Credential:                      FixOAuthCredential(),
+		AdditionalHeadersSerialized:     &additionalHeaders,
+		AdditionalQueryParamsSerialized: &additionalQueryParams,
 	}
 }
 
