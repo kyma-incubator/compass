@@ -85,7 +85,7 @@ global:
       version: "PR-23"
     e2e_tests:
       dir:
-      version: "PR-1798"
+      version: "PR-1792"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -325,6 +325,14 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
+
+  ordAggregator:
+    name: ord-aggregator
+    enabled: true
+    schedule: "*/5 * * * *"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
 
   tenantFetchers:
     job1:
