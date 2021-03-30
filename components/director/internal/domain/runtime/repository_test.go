@@ -384,7 +384,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 				WithArgs(tenantID).
 				WillReturnRows(testCase.Rows)
 
-			//THEN
+			//WHEN
 			modelRuntime, err := pgRepository.ListAll(ctx, tenantID, nil)
 
 			//THEN
