@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/klauspost/compress v1.11.9 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210329081516-c889c4bdd3ba
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.3.0
 	github.com/pivotal-cf/brokerapi v6.4.2+incompatible
