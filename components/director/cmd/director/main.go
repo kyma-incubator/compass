@@ -73,7 +73,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/vrischmann/envconfig"
 	cr "sigs.k8s.io/controller-runtime"
 )
 
@@ -88,21 +87,16 @@ func main() {
 	signal.HandleInterrupts(ctx, cancel, term)
 
 	environment, err := env.Default(ctx, config.AddPFlags)
-	if err != nil {
-		exitOnError(err, "Error while creating environment")
-	}
+	exitOnError(err, "Error while creating environment")
+
+	environment.SetEnvPrefix(envPrefix)
 
 	cfg, err := config.New(environment)
-	if err != nil {
-		exitOnError(err, "Error while creating config")
-	}
+	exitOnError(err, "Error while creating config")
 
 	if err = cfg.Validate(); err != nil {
 		exitOnError(err, "Error while validating config")
 	}
-
-	err = envconfig.InitWithPrefix(&cfg, envPrefix)
-	exitOnError(err, "Error while loading app config")
 
 	authenticators, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")

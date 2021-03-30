@@ -62,6 +62,7 @@ type Environment interface {
 	Unmarshal(value interface{}) error
 	BindPFlag(key string, flag *pflag.Flag) error
 	AllSettings() map[string]interface{}
+	SetEnvPrefix(prefix string)
 }
 
 // ViperEnv represents an implementation of the Environment interface that uses viper
@@ -120,6 +121,10 @@ func New(ctx context.Context, set *pflag.FlagSet, onConfigChangeHandlers ...func
 
 func (v *ViperEnv) AllSettings() map[string]interface{} {
 	return v.Viper.AllSettings()
+}
+
+func (v *ViperEnv) SetEnvPrefix(prefix string) {
+	v.Viper.SetEnvPrefix(prefix)
 }
 
 // Unmarshal exposes viper's Unmarshal. Prior to unmarshaling it creates the necessary env var bindings
