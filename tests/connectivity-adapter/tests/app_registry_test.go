@@ -36,7 +36,7 @@ func TestAppRegistry(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &directorSchema.Labels{
+		Labels: directorSchema.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
@@ -45,7 +45,7 @@ func TestAppRegistry(t *testing.T) {
 	runtimeInput := directorSchema.RuntimeInput{
 		Name:        TestRuntime,
 		Description: &descr,
-		Labels: &directorSchema.Labels{
+		Labels: directorSchema.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}

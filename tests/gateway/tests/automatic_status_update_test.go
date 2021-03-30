@@ -14,7 +14,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,12 +21,6 @@ import (
 func TestAutomaticStatusUpdate(t *testing.T) {
 
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Run("Test status update as static user", func(t *testing.T) {
 
@@ -103,7 +96,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		status := graphql.ApplicationStatusConditionFailed
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
 			StatusCondition: &status,
@@ -143,7 +136,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		status := graphql.RuntimeStatusConditionFailed
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test-runtime",
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
 			StatusCondition: &status,
@@ -172,7 +165,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.RuntimeStatusConditionFailed, runtime.Status.Condition)
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &actualRuntime)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &actualRuntime)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")

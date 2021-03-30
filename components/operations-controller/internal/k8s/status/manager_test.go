@@ -77,7 +77,7 @@ func TestStatusManager(t *testing.T) {
 		invalidOperation := operation.DeepCopy()
 		invalidOperation.ResourceVersion = ""
 		invalidOperation.ObjectMeta.Name = "invalid-operation"
-		invalidOperation.Spec.WebhookIDs = make([]string, 0)
+		invalidOperation.Spec.WebhookIDs = make([]string, 2)
 
 		err = k8sClient.Create(ctx, invalidOperation)
 		require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestStatusManager(t *testing.T) {
 
 		_, isValErr := err.(*v1alpha1.OperationValidationErr)
 		require.True(t, isValErr)
-		require.Contains(t, err.Error(), "expected 1 webhook for execution, found: 0")
+		require.Contains(t, err.Error(), "expected 0 or 1 webhook for execution, found: 2")
 	})
 
 	t.Run("Test Initialize when generation and observed generation mismatch should initialize status with initial values", func(t *testing.T) {
