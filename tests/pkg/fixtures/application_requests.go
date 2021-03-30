@@ -41,6 +41,18 @@ func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.A
 	}
 }
 
+func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL string) graphql.ApplicationRegisterInput {
+	return graphql.ApplicationRegisterInput{
+		Name:        appName,
+		Description: ptr.String(appDescription),
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  ptr.String(webhookURL),
+		},
+		},
+	}
+}
+
 func FixSampleApplicationRegisterInputWithNameAndWebhooks(placeholder, name string) graphql.ApplicationRegisterInput {
 	sampleInput := FixSampleApplicationRegisterInputWithWebhooks(placeholder)
 	sampleInput.Name = name
