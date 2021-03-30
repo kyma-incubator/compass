@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	gcli "github.com/machinebox/graphql"
@@ -24,11 +23,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	// Create app template
 	t.Log("Creating application template")

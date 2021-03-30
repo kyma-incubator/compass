@@ -19,12 +19,12 @@ type SyncService interface {
 	SynchronizeClientScopes(context.Context) error
 }
 
-//go:generate mockery -name=SystemAuthRepo -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore
 type SystemAuthRepo interface {
 	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error)
 }
 
-//go:generate mockery -name=OAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore
 type OAuthService interface {
 	ListClients(ctx context.Context) ([]oauth20.Client, error)
 	GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error)
