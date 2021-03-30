@@ -98,7 +98,7 @@ func (p *dexIdTokenProvider) initializeImplicitFlow() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer closeRespBody(authorizeResp)
+	defer CloseRespBody(authorizeResp)
 	authorizeRespBody := readRespBody(authorizeResp)
 
 	switch authorizeResp.StatusCode {
@@ -138,7 +138,7 @@ func (p *dexIdTokenProvider) login(loginEndpoint string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "while performing HTTP POST on login endpoint")
 	}
-	defer closeRespBody(loginResp)
+	defer CloseRespBody(loginResp)
 	loginRespBody := readRespBody(loginResp)
 
 	if loginResp.StatusCode < 300 || loginResp.StatusCode > 399 {
@@ -159,7 +159,7 @@ func (p *dexIdTokenProvider) receiveToken(approvalEndpoint string) (*url.URL, er
 	if err != nil {
 		return nil, err
 	}
-	defer closeRespBody(approvalResp)
+	defer CloseRespBody(approvalResp)
 	approvalRespBody := readRespBody(approvalResp)
 
 	if approvalResp.StatusCode < 300 || approvalResp.StatusCode > 399 {
@@ -199,7 +199,7 @@ func readRespBody(resp *http.Response) string {
 	return string(b)
 }
 
-func closeRespBody(resp *http.Response) {
+func CloseRespBody(resp *http.Response) {
 	err := resp.Body.Close()
 	if err != nil {
 		log.Printf("WARNING: Unable to close response body. Cause: %v", err)

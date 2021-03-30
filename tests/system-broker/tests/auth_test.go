@@ -1,12 +1,13 @@
 package tests
 
 import (
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+
+	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -108,7 +109,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 
 		fakedClientKey, err := certs.GenerateKey()
 		require.NoError(t, err)
-		client := createCertClient(fakedClientKey, certChain...)
+		client := authentication.CreateCertClient(fakedClientKey, certChain...)
 
 		_, err = client.Do(req)
 		require.Error(t, err)
@@ -173,6 +174,19 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 
 }
 
+func getSecuredClientByContext(t *testing.T, ctx *broker.SystemBrokerTestContext, runtimeID string) (*http.Client, externalschema.Configuration, []*x509.Certificate) {
+	logrus.Infof("generating one-time token for runtime with id: %s", runtimeID)
+	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx.Context, ctx.DexGraphqlClient, ctx.Tenant, runtimeID)
+	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
+
+	logrus.Infof("generation certificate for runtime with id: %s", runtimeID)
+	certResult, configuration := clients.GenerateRuntimeCertificate(t, oneTimeToken, ctx.ConnectorTokenSecuredClient, ctx.ClientKey)
+	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
+	securedClient := authentication.CreateCertClient(ctx.ClientKey, certChain...)
+
+	return securedClient, configuration, certChain
+}
+
 func createCatalogRequest(t *testing.T, ctx *broker.SystemBrokerTestContext) *http.Request {
 	req, err := http.NewRequest(http.MethodGet, ctx.SystemBrokerURL+"/v2/catalog", nil)
 	require.NoError(t, err)
@@ -190,41 +204,4 @@ func createORDServiceRequest(t *testing.T, ctx *broker.SystemBrokerTestContext, 
 	require.NoError(t, err)
 
 	return req
-}
-
-func getSecuredClientByContext(t *testing.T, ctx *broker.SystemBrokerTestContext, runtimeID string) (*http.Client, externalschema.Configuration, []*x509.Certificate) {
-	logrus.Infof("generating one-time token for runtime with id: %s", runtimeID)
-	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx.Context, ctx.DexGraphqlClient, ctx.Tenant, runtimeID)
-	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
-
-	logrus.Infof("generation certificate for runtime with id: %s", runtimeID)
-	certResult, configuration := clients.GenerateRuntimeCertificate(t, oneTimeToken, ctx.ConnectorTokenSecuredClient, ctx.ClientKey)
-	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)
-	securedClient := createCertClient(ctx.ClientKey, certChain...)
-
-	return securedClient, configuration, certChain
-}
-
-func createCertClient(key *rsa.PrivateKey, certificates ...*x509.Certificate) *http.Client {
-	rawCerts := make([][]byte, len(certificates))
-	for i, c := range certificates {
-		rawCerts[i] = c.Raw
-	}
-
-	tlsCert := tls.Certificate{
-		Certificate: rawCerts,
-		PrivateKey:  key,
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{tlsCert},
-		ClientAuth:         tls.RequireAndVerifyClientCert,
-		InsecureSkipVerify: true,
-	}
-
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
 }

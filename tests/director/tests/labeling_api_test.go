@@ -833,7 +833,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			ScenariosLabel: []string{"Christmas", "New Year"},
 		},
 	}

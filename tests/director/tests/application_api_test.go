@@ -38,7 +38,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -87,7 +87,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -120,7 +120,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -155,7 +155,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -195,7 +195,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 				URL:  &url,
 			},
 		},
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
@@ -278,7 +278,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		})
 
 		runtimeInput := fixtures.FixRuntimeInput("test-runtime")
-		(*runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
+		(runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
 		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 
 		require.NoError(t, err)
@@ -924,7 +924,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	for _, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{ScenariosLabel: testApp.Scenarios}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -951,8 +951,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	//create runtime without normalization
 	runtimeInputWithoutNormalization := fixtures.FixRuntimeInput("unnormalized-runtime")
-	(*runtimeInputWithoutNormalization.Labels)[ScenariosLabel] = scenarios
-	(*runtimeInputWithoutNormalization.Labels)[IsNormalizedLabel] = "false"
+	(runtimeInputWithoutNormalization.Labels)[ScenariosLabel] = scenarios
+	(runtimeInputWithoutNormalization.Labels)[IsNormalizedLabel] = "false"
 	runtimeInputWithoutNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithoutNormalization)
 	require.NoError(t, err)
 	registerRuntimeWithNormalizationRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithoutNormalizationGQL)
@@ -981,8 +981,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
 		//create runtime without normalization
 		unlabeledRuntimeInput := fixtures.FixRuntimeInput("unlabeled-runtime")
-		(*unlabeledRuntimeInput.Labels)[ScenariosLabel] = scenarios
-		(*unlabeledRuntimeInput.Labels)[IsNormalizedLabel] = "false"
+		(unlabeledRuntimeInput.Labels)[ScenariosLabel] = scenarios
+		(unlabeledRuntimeInput.Labels)[IsNormalizedLabel] = "false"
 		unlabeledRuntimeGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
 		require.NoError(t, err)
 		registerUnlabeledRuntimeRequest := fixtures.FixRegisterRuntimeRequest(unlabeledRuntimeGQL)
@@ -1014,8 +1014,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime without normalization
 		runtimeInputWithNormalization := fixtures.FixRuntimeInput("normalized-runtime")
-		(*runtimeInputWithNormalization.Labels)[ScenariosLabel] = scenarios
-		(*runtimeInputWithNormalization.Labels)[IsNormalizedLabel] = "true"
+		(runtimeInputWithNormalization.Labels)[ScenariosLabel] = scenarios
+		(runtimeInputWithNormalization.Labels)[IsNormalizedLabel] = "true"
 		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithNormalization)
 		require.NoError(t, err)
 		registerRuntimeWithNormalizationRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
@@ -1112,9 +1112,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	for _, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{ScenariosLabel: testApp.Scenarios}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios}
 		if testApp.Hidden {
-			(*applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
+			(applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
 		}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
@@ -1142,8 +1142,8 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	//create runtime without normalization
 	runtimeWithoutNormalizationInput := fixtures.FixRuntimeInput("unnormalized-runtime")
-	(*runtimeWithoutNormalizationInput.Labels)[ScenariosLabel] = scenarios
-	(*runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
+	(runtimeWithoutNormalizationInput.Labels)[ScenariosLabel] = scenarios
+	(runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
 	runtimeWithoutNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
 	require.NoError(t, err)
 
@@ -1171,8 +1171,8 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime with normalization
 		runtimeWithNormalizationInput := fixtures.FixRuntimeInput("normalized-runtime")
-		(*runtimeWithNormalizationInput.Labels)[ScenariosLabel] = scenarios
-		(*runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
+		(runtimeWithNormalizationInput.Labels)[ScenariosLabel] = scenarios
+		(runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
 		runtimeWithNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
 		require.NoError(t, err)
 

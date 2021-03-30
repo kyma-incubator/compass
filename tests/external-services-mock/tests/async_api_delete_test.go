@@ -223,6 +223,7 @@ func buildMockedWebhook(externalSystemURL string) *graphql.WebhookInput {
 		Type:           graphql.WebhookTypeUnregisterApplication,
 		Mode:           webhookModePtr(graphql.WebhookModeAsync),
 		URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
+		RetryInterval:  intPtr(5),
 		OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
 		StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
 	}
@@ -290,4 +291,8 @@ func deleteApplicationTemplateOnExit(t *testing.T, ctx context.Context, gqlClien
 	if appTemplate.Name != "" {
 		fixtures.DeleteApplicationTemplate(t, ctx, gqlClient, tenant, appTemplateID)
 	}
+}
+
+func intPtr(n int) *int {
+	return &n
 }

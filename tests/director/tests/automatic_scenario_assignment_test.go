@@ -325,7 +325,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	rtmInput := graphql.RuntimeInput{
 		Name:   "test-name",
-		Labels: &graphql.Labels{selector.Key: selector.Value, "scenarios": []string{defaultValue}},
+		Labels: graphql.Labels{selector.Key: selector.Value, "scenarios": []string{defaultValue}},
 	}
 
 	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rtmInput)
