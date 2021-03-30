@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -23,12 +21,6 @@ import (
 func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -46,7 +38,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, application.ID, labelKey)
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
 
 	//THEN
 	require.NoError(t, err)
@@ -70,12 +62,6 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -180,12 +166,6 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 func TestEditLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -343,12 +323,6 @@ func TestCreateScenariosLabel(t *testing.T) {
 	t.Log("Create application")
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
@@ -360,7 +334,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 	getLabelDefinition := fixtures.FixLabelDefinitionRequest(labelKey)
 	ld := graphql.LabelDefinition{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getLabelDefinition, &ld)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getLabelDefinition, &ld)
 	require.NoError(t, err)
 
 	t.Log("Check if app was labeled with scenarios=default")
@@ -389,12 +363,6 @@ func TestCreateScenariosLabel(t *testing.T) {
 func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -459,12 +427,6 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 func TestDeleteLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -606,12 +568,6 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
@@ -657,12 +613,6 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	// GIVEN
 	//Create first application
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -748,12 +698,6 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	//Create first runtime
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	labelKeyFoo := "foo"
@@ -838,12 +782,6 @@ func TestListLabelDefinitions(t *testing.T) {
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	ctx := context.TODO()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	firstSchema := map[string]interface{}{
 		"test": "test",
 	}
@@ -870,12 +808,6 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteLastScenarioForApplicationTenantName)
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
@@ -895,7 +827,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			ScenariosLabel: []string{"Christmas", "New Year"},
 		},
 	}
@@ -922,18 +854,12 @@ func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantID := tenant.TestTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
 	getLabelDefinitionRequest := fixtures.FixLabelDefinitionRequest(ScenariosLabel)
 	labelDefinition := graphql.LabelDefinition{}
 
 	// WHEN
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
 
 	// THEN
 	require.NoError(t, err)

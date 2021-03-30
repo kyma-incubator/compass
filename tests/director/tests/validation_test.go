@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -23,12 +21,6 @@ import (
 func TestCreateRuntime_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.RuntimeInput{
 		Name: "0invalid",
@@ -49,12 +41,6 @@ func TestCreateRuntime_Validation(t *testing.T) {
 func TestUpdateRuntime_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -84,12 +70,6 @@ func TestCreateLabelDefinition_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}
@@ -109,12 +89,6 @@ func TestCreateLabelDefinition_Validation(t *testing.T) {
 func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -143,12 +117,6 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "validation-test-app", tenantId)
@@ -158,7 +126,7 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 	var result graphql.Label
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -168,12 +136,6 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 func TestSetRuntimeLabel_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -185,7 +147,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 	var result graphql.Label
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -199,12 +161,6 @@ const longDescErrMsg = "description=the length must be no more than 2000"
 func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	app := fixtures.FixSampleApplicationRegisterInputWithNameAndWebhooks("placeholder", "name")
 	longDesc := strings.Repeat("a", 2001)
@@ -225,12 +181,6 @@ func TestCreateApplication_Validation(t *testing.T) {
 func TestUpdateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -254,12 +204,6 @@ func TestUpdateApplication_Validation(t *testing.T) {
 func TestAddDocument_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -286,12 +230,6 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	intSys := graphql.IntegrationSystemInput{Name: "valid-name"}
 	longDesc := strings.Repeat("a", 2001)
 	intSys.Description = &longDesc
@@ -311,12 +249,6 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -339,12 +271,6 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 func TestAddAPI_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -369,12 +295,6 @@ func TestAddAPI_Validation(t *testing.T) {
 func TestUpdateAPI_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -403,12 +323,6 @@ func TestAddEventAPI_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenantId)
@@ -433,12 +347,6 @@ func TestAddEventAPI_Validation(t *testing.T) {
 
 func TestUpdateEventAPI_Validation(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -470,12 +378,6 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
 		Name:             "",
@@ -499,12 +401,6 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -536,12 +432,6 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixApplicationTemplate("validation-app")
@@ -566,12 +456,6 @@ func TestAddBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	invalidInput := graphql.BundleCreateInput{}
 	inputString, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(invalidInput)
 	require.NoError(t, err)
@@ -589,12 +473,6 @@ func TestAddBundle_Validation(t *testing.T) {
 func TestUpdateBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.BundleUpdateInput{}
 	inputString, err := testctx.Tc.Graphqlizer.BundleUpdateInputToGQL(invalidInput)
@@ -614,12 +492,6 @@ func TestSetBundleInstanceAuth_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	invalidInput := graphql.BundleInstanceAuthSetInput{}
 	inputString, err := testctx.Tc.Graphqlizer.BundleInstanceAuthSetInputToGQL(invalidInput)
 	require.NoError(t, err)
@@ -637,12 +509,6 @@ func TestSetBundleInstanceAuth_Validation(t *testing.T) {
 func TestAddAPIDefinitionToBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.APIDefinitionInput{}
 	inputString, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(invalidInput)
@@ -662,12 +528,6 @@ func TestAddEventDefinitionToBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	invalidInput := graphql.EventDefinitionInput{}
 	inputString, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
@@ -685,12 +545,6 @@ func TestAddEventDefinitionToBundle_Validation(t *testing.T) {
 func TestAddDocumentToBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	invalidInput := graphql.DocumentInput{
 		Format: graphql.DocumentFormatMarkdown,

@@ -25,7 +25,7 @@ func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
-		Labels:       &graphql.Labels{placeholder: []interface{}{placeholder}},
+		Labels:       graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
 }
 
@@ -79,7 +79,7 @@ func FixApplicationRegisterInputWithBundles(t *testing.T) graphql.ApplicationReg
 		Bundles: []*graphql.BundleCreateInput{
 			&bndl1, &bndl2,
 		},
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}

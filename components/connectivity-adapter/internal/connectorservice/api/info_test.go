@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -82,7 +81,7 @@ func TestHandler_Info(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
-		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
+		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
@@ -153,7 +152,7 @@ func TestHandler_Info(t *testing.T) {
 		}
 
 		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
-		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
+		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
@@ -234,7 +233,7 @@ func TestHandler_Info(t *testing.T) {
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
-		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
+		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
@@ -321,7 +320,7 @@ func TestHandler_Info(t *testing.T) {
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
-		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
+		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 
@@ -395,7 +394,7 @@ func TestHandler_Info(t *testing.T) {
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 		r := httptest.NewRecorder()
 
-		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), emptyResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, emptyResFunction)
 
 		// when
 		handler.GetInfo(r, req)
@@ -421,7 +420,7 @@ func TestHandler_Info(t *testing.T) {
 
 		r := httptest.NewRecorder()
 
-		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), emptyResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, emptyResFunction)
 
 		// when
 		handler.GetInfo(r, req)
@@ -441,7 +440,7 @@ func TestHandler_Info(t *testing.T) {
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil)
 
-		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), emptyResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, emptyResFunction)
 
 		// when
 		handler.GetInfo(r, req)
@@ -470,7 +469,7 @@ func TestHandler_Info(t *testing.T) {
 			return connectorSchema.Configuration{}, errors.New("some error")
 		}
 
-		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), errorResFunction)
+		handler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, errorResFunction)
 
 		// when
 		handler.GetInfo(r, req)
