@@ -478,7 +478,7 @@ func TestDeleteApplication(t *testing.T) {
 		fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = &graphql.Labels{ScenariosLabel: scenarios}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -507,7 +507,7 @@ func TestDeleteApplication(t *testing.T) {
 		runtimeInput := fixtures.FixRuntimeInput("one-runtime")
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
-		(*runtimeInput.Labels)[ScenariosLabel] = scenarios
+		(runtimeInput.Labels)[ScenariosLabel] = scenarios
 		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 		require.NoError(t, err)
 		registerRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
@@ -520,7 +520,7 @@ func TestDeleteApplication(t *testing.T) {
 		require.NotEmpty(t, runtime.ID)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = &graphql.Labels{ScenariosLabel: scenarios}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
