@@ -6,8 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -19,12 +17,6 @@ import (
 
 func TestAddAPIToBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -54,12 +46,6 @@ func TestAddAPIToBundle(t *testing.T) {
 
 func TestManageAPIInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -99,12 +85,6 @@ func TestManageAPIInBundle(t *testing.T) {
 func TestAddEventDefinitionToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
@@ -130,12 +110,6 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 
 func TestManageEventDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -175,12 +149,6 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 func TestAddDocumentToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
@@ -207,12 +175,6 @@ func TestAddDocumentToBundle(t *testing.T) {
 func TestManageDocumentInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
@@ -227,7 +189,7 @@ func TestManageDocumentInBundle(t *testing.T) {
 
 	var deletedDocument graphql.DocumentExt
 	req := fixtures.FixDeleteDocumentRequest(document.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedDocument)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedDocument)
 	require.NoError(t, err)
 
 	assert.Equal(t, document.ID, deletedDocument.ID)
@@ -236,12 +198,6 @@ func TestManageDocumentInBundle(t *testing.T) {
 
 func TestAPIDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -257,7 +213,7 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 
 	queryApiForBndl := fixtures.FixAPIDefinitionInBundleRequest(application.ID, bndl.ID, api.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryApiForBndl, &app)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryApiForBndl, &app)
 	require.NoError(t, err)
 
 	actualApi := app.Bundle.APIDefinition
@@ -268,12 +224,6 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 
 func TestEventDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -289,7 +239,7 @@ func TestEventDefinitionInBundle(t *testing.T) {
 
 	queryEventForBndl := fixtures.FixEventDefinitionInBundleRequest(application.ID, bndl.ID, event.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryEventForBndl, &app)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryEventForBndl, &app)
 	require.NoError(t, err)
 
 	actualEvent := app.Bundle.EventDefinition
@@ -300,12 +250,6 @@ func TestEventDefinitionInBundle(t *testing.T) {
 
 func TestDocumentInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -321,7 +265,7 @@ func TestDocumentInBundle(t *testing.T) {
 
 	queryDocForBndl := fixtures.FixDocumentInBundleRequest(application.ID, bndl.ID, doc.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryDocForBndl, &app)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryDocForBndl, &app)
 	require.NoError(t, err)
 
 	actualDoc := app.Bundle.Document
@@ -331,12 +275,6 @@ func TestDocumentInBundle(t *testing.T) {
 
 func TestAPIDefinitionsInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -356,7 +294,7 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 
 	queryApisForBndl := fixtures.FixAPIDefinitionsInBundleRequest(application.ID, bndl.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryApisForBndl, &app)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryApisForBndl, &app)
 	require.NoError(t, err)
 
 	apis := app.Bundle.APIDefinitions
@@ -367,12 +305,6 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 
 func TestEventDefinitionsInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -393,7 +325,7 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 	queryEventsForBndl := fixtures.FixEventDefinitionsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryEventsForBndl, &app)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryEventsForBndl, &app)
 	require.NoError(t, err)
 
 	events := app.Bundle.EventDefinitions
@@ -404,12 +336,6 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 
 func TestDocumentsInBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -430,7 +356,7 @@ func TestDocumentsInBundle(t *testing.T) {
 	queryDocsForBndl := fixtures.FixDocumentsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryDocsForBndl, &app)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryDocsForBndl, &app)
 	require.NoError(t, err)
 
 	docs := app.Bundle.Documents
@@ -441,12 +367,6 @@ func TestDocumentsInBundle(t *testing.T) {
 
 func TestAddBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -485,12 +405,6 @@ func TestAddBundle(t *testing.T) {
 func TestQueryBundles(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
@@ -505,7 +419,7 @@ func TestQueryBundles(t *testing.T) {
 	bundlesRequest := fixtures.FixGetBundlesRequest(application.ID)
 	bndlsFromAPI := graphql.ApplicationExt{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesRequest, &bndlsFromAPI)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesRequest, &bndlsFromAPI)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(bndlsFromAPI.Bundles.Data))
 
@@ -514,12 +428,6 @@ func TestQueryBundles(t *testing.T) {
 
 func TestUpdateBundle(t *testing.T) {
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -551,12 +459,6 @@ func TestUpdateBundle(t *testing.T) {
 func TestDeleteBundle(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
@@ -569,7 +471,7 @@ func TestDeleteBundle(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete bundle")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, pkdDeleteReq, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, pkdDeleteReq, &output)
 
 	// THEN
 	require.NoError(t, err)

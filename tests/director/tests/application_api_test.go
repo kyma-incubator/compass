@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -39,7 +38,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -48,11 +47,6 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 	t.Log("DIRECTOR URL: ", gql.GetDirectorGraphQLURL())
 
 	// WHEN
@@ -75,12 +69,6 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 	ctx := context.Background()
 	firstAppName := "app@wordpress"
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, firstAppName, tenantId)
@@ -98,7 +86,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -131,7 +119,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -166,7 +154,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
 		},
@@ -177,12 +165,6 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	require.NoError(t, err)
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	// WHEN
 	actualApp := graphql.ApplicationExt{}
@@ -212,7 +194,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 				URL:  &url,
 			},
 		},
-		Labels: &graphql.Labels{
+		Labels: graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
@@ -220,12 +202,6 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
@@ -247,12 +223,6 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
@@ -270,12 +240,6 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 	ctx := context.Background()
 	expectedAppName := "create-app-with-packages"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	type ApplicationWithPackagesExt struct {
 		graphql.Application
@@ -315,7 +279,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		})
 
 		runtimeInput := fixtures.FixRuntimeInput("test-runtime")
-		(*runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
+		(runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
 		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 
 		require.NoError(t, err)
@@ -373,12 +337,6 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
@@ -391,12 +349,6 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
@@ -437,12 +389,6 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
@@ -466,12 +412,6 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 	ctx := context.Background()
 
 	appName := "samename"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
@@ -502,12 +442,6 @@ func TestDeleteApplication(t *testing.T) {
 	createReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 
@@ -534,12 +468,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
@@ -644,12 +572,6 @@ func TestQueryApplications(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationRegisterInput{
 			Name: fmt.Sprintf("app-%d", i),
@@ -669,7 +591,7 @@ func TestQueryApplications(t *testing.T) {
 
 	// WHEN
 	queryReq := fixtures.FixGetApplicationsRequestWithPagination()
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualAppPage)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualAppPage)
 	saveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
 	//THEN
@@ -684,12 +606,6 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	after := 3
 	cursor := ""
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -721,7 +637,7 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	}
 
 	appReq := fixtures.FixApplicationsPageableRequest(after, cursor)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, appReq, &appsPage)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, appReq, &appsPage)
 	require.NoError(t, err)
 
 	assert.False(t, appsPage.PageInfo.HasNextPage)
@@ -743,12 +659,6 @@ func TestQuerySpecificApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	actualApp := graphql.Application{}
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
@@ -845,12 +755,6 @@ func TestTenantSeparation(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -886,12 +790,6 @@ func TestApplicationsForRuntime(t *testing.T) {
 		},
 	}
 	var schema interface{} = jsonSchema
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, otherTenant)
@@ -936,7 +834,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	for _, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{ScenariosLabel: testApp.Scenarios}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -960,8 +858,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	//create runtime without normalization
 	runtimeInputWithoutNormalization := fixtures.FixRuntimeInput("unnormalized-runtime")
-	(*runtimeInputWithoutNormalization.Labels)[ScenariosLabel] = scenarios
-	(*runtimeInputWithoutNormalization.Labels)[IsNormalizedLabel] = "false"
+	(runtimeInputWithoutNormalization.Labels)[ScenariosLabel] = scenarios
+	(runtimeInputWithoutNormalization.Labels)[IsNormalizedLabel] = "false"
 	runtimeInputWithoutNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithoutNormalization)
 	require.NoError(t, err)
 	registerRuntimeWithNormalizationRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithoutNormalizationGQL)
@@ -989,8 +887,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
 		//create runtime without normalization
 		unlabeledRuntimeInput := fixtures.FixRuntimeInput("unlabeled-runtime")
-		(*unlabeledRuntimeInput.Labels)[ScenariosLabel] = scenarios
-		(*unlabeledRuntimeInput.Labels)[IsNormalizedLabel] = "false"
+		(unlabeledRuntimeInput.Labels)[ScenariosLabel] = scenarios
+		(unlabeledRuntimeInput.Labels)[IsNormalizedLabel] = "false"
 		unlabeledRuntimeGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
 		require.NoError(t, err)
 		registerUnlabeledRuntimeRequest := fixtures.FixRegisterRuntimeRequest(unlabeledRuntimeGQL)
@@ -1021,8 +919,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime without normalization
 		runtimeInputWithNormalization := fixtures.FixRuntimeInput("normalized-runtime")
-		(*runtimeInputWithNormalization.Labels)[ScenariosLabel] = scenarios
-		(*runtimeInputWithNormalization.Labels)[IsNormalizedLabel] = "true"
+		(runtimeInputWithNormalization.Labels)[ScenariosLabel] = scenarios
+		(runtimeInputWithNormalization.Labels)[IsNormalizedLabel] = "true"
 		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithNormalization)
 		require.NoError(t, err)
 		registerRuntimeWithNormalizationRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
@@ -1089,12 +987,6 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}
 	var schema interface{} = jsonSchema
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 
 	applications := []struct {
@@ -1124,9 +1016,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	for _, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{ScenariosLabel: testApp.Scenarios}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios}
 		if testApp.Hidden {
-			(*applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
+			(applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
 		}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
@@ -1151,8 +1043,8 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	//create runtime without normalization
 	runtimeWithoutNormalizationInput := fixtures.FixRuntimeInput("unnormalized-runtime")
-	(*runtimeWithoutNormalizationInput.Labels)[ScenariosLabel] = scenarios
-	(*runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
+	(runtimeWithoutNormalizationInput.Labels)[ScenariosLabel] = scenarios
+	(runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
 	runtimeWithoutNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
 	require.NoError(t, err)
 
@@ -1180,8 +1072,8 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime with normalization
 		runtimeWithNormalizationInput := fixtures.FixRuntimeInput("normalized-runtime")
-		(*runtimeWithNormalizationInput.Labels)[ScenariosLabel] = scenarios
-		(*runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
+		(runtimeWithNormalizationInput.Labels)[ScenariosLabel] = scenarios
+		(runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
 		runtimeWithNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
 		require.NoError(t, err)
 

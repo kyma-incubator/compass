@@ -6,8 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -20,12 +18,6 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -64,12 +56,6 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "int-system"
@@ -100,12 +86,6 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "int-system"
@@ -118,7 +98,7 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 
 	// WHEN
 	t.Log("Unregister integration system")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
@@ -134,12 +114,6 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "int-system"
@@ -151,7 +125,7 @@ func TestQueryIntegrationSystem(t *testing.T) {
 
 	// WHEN
 	t.Log("Get integration system")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, output.ID)
@@ -164,12 +138,6 @@ func TestQueryIntegrationSystem(t *testing.T) {
 func TestQueryIntegrationSystems(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -191,7 +159,7 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	// WHEN
 	t.Log("List integration systems")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemsRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN

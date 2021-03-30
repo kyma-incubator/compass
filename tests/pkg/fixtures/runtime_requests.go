@@ -13,7 +13,7 @@ func FixRuntimeInput(placeholder string) graphql.RuntimeInput {
 	return graphql.RuntimeInput{
 		Name:        placeholder,
 		Description: ptr.String(fmt.Sprintf("%s-description", placeholder)),
-		Labels:      &graphql.Labels{"placeholder": []interface{}{"placeholder"}},
+		Labels:      graphql.Labels{"placeholder": []interface{}{"placeholder"}},
 	}
 }
 
