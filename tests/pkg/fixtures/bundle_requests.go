@@ -161,7 +161,7 @@ func FixBundleCreateInputWithRelatedObjects(t *testing.T, name string) graphql.B
 						URL:    "http://mywordpress.com/events",
 						Mode:   ptr.FetchMode(graphql.FetchModeBundle),
 						Filter: ptr.String("async.json"),
-						Auth:   FixOauthAuth(),
+						Auth:   FixOauthAuth(t),
 					},
 				},
 			},

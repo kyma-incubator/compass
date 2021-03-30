@@ -14,8 +14,6 @@ import (
 
 	graphql2 "github.com/machinebox/graphql"
 
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -32,12 +30,6 @@ func TestAuditlogIntegration(t *testing.T) {
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
 	}
-
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Create request for registering application")
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
