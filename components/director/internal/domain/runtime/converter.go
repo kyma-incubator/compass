@@ -109,3 +109,13 @@ func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *
 
 	return &condition
 }
+
+func (c *converter) MultipleFromEntities(entities RuntimeCollection) []*model.Runtime {
+	var items []*model.Runtime
+	for _, ent := range entities {
+		model := ent.ToModel()
+
+		items = append(items, model)
+	}
+	return items
+}
