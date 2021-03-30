@@ -394,7 +394,7 @@ func (s *service) getScenariosFilter(ctx context.Context, tenantID string, appID
 		return nil, false, errors.Wrap(err, fmt.Sprintf("while converting label [key=%s] value to a slice of strings", model.ScenariosKey))
 	}
 
-	scenariosQuery := buildQueryForScenarios(scenarios)
+	scenariosQuery := BuildQueryForScenarios(scenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
 	return runtimeScenariosFilter, true, nil
@@ -409,7 +409,7 @@ func (s *service) setRuntimeForAppEventing(ctx context.Context, runtime model.Ru
 	return nil
 }
 
-func buildQueryForScenarios(scenarios []string) string {
+func BuildQueryForScenarios(scenarios []string) string {
 	var queryBuilder strings.Builder
 	for idx, scenario := range scenarios {
 		if idx > 0 {

@@ -113,7 +113,7 @@ func NewRootResolver(
 	assignmentConv := scenarioassignment.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
-	runtimeRepo := runtime.NewRepository()
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	runtimeContextRepo := runtime_context.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
