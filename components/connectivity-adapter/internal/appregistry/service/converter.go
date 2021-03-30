@@ -392,7 +392,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		}
 
 		if in.DefaultInstanceAuth != nil && in.DefaultInstanceAuth.AdditionalHeaders != nil {
-			inHeaders := *in.DefaultInstanceAuth.AdditionalHeaders
+			inHeaders := in.DefaultInstanceAuth.AdditionalHeaders
 			outDeprecated.Api.Headers = &map[string][]string{}
 			if outDeprecated.Api.RequestParameters == nil {
 				outDeprecated.Api.RequestParameters = &model.RequestParameters{}
@@ -408,7 +408,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		}
 
 		if in.DefaultInstanceAuth != nil && in.DefaultInstanceAuth.AdditionalQueryParams != nil {
-			in := *in.DefaultInstanceAuth.AdditionalQueryParams
+			in := in.DefaultInstanceAuth.AdditionalQueryParams
 			outQueryParameters := &map[string][]string{}
 
 			for k, v := range in {
@@ -429,12 +429,12 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 				}
 
 				if apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams != nil {
-					asMap := (map[string][]string)(*apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams)
+					asMap := (map[string][]string)(apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams)
 					outDeprecated.Api.SpecificationRequestParameters.QueryParameters = &asMap
 				}
 
 				if apiDef.Spec.FetchRequest.Auth.AdditionalHeaders != nil {
-					asMap := (map[string][]string)(*apiDef.Spec.FetchRequest.Auth.AdditionalHeaders)
+					asMap := (map[string][]string)(apiDef.Spec.FetchRequest.Auth.AdditionalHeaders)
 					outDeprecated.Api.SpecificationRequestParameters.Headers = &asMap
 				}
 
