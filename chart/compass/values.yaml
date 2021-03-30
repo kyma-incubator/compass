@@ -83,7 +83,7 @@ global:
       version: "PR-22"
     e2e_tests:
       dir:
-      version: "PR-1793"
+      version: "PR-1795"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -226,6 +226,7 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
+      requestPayloadSizeLimit: 2097152 # 2 MB
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
