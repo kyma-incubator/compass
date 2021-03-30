@@ -146,3 +146,19 @@ func GenerateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	require.NotEmpty(t, oneTimeToken.LegacyConnectorURL)
 	return oneTimeToken
 }
+
+func UnassignApplicationFromScenarios(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
+	labelKey := "scenarios"
+	defaultValue := "DEFAULT"
+
+	scenarios := []string{defaultValue}
+	var labelValue interface{} = scenarios
+
+	t.Log("Updating Application scenario to a default state")
+
+	setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
+
+	label := graphql.Label{}
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
+	require.NoError(t, err)
+}
