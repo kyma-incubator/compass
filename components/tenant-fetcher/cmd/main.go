@@ -20,7 +20,9 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -35,25 +37,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
 
 const envPrefix = "APP"
-
-type config struct {
-	Address string `envconfig:"default=127.0.0.1:8080"`
-
-	ServerTimeout   time.Duration `envconfig:"default=110s"`
-	ShutdownTimeout time.Duration `envconfig:"default=10s"`
-
-	Log log.Config
-
-	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
-
-	Handler tenant.Config
-
-	Database persistence.DatabaseConfig
-}
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -63,15 +49,19 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
-	exitOnError(err, "Error while loading app config")
+	environment, err := env.Default(ctx, config.AddPFlags)
+	exitOnError(err, "Error while creating environment")
+
+	environment.SetEnvPrefix(envPrefix)
+
+	cfg, err := config.New(environment)
+	exitOnError(err, "Error while creating config")
 
 	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
 		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -82,13 +72,13 @@ func main() {
 	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
 
-	ctx, err = log.Configure(ctx, &cfg.Log)
+	ctx, err = log.Configure(ctx, cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	handler, err := initAPIHandler(ctx, cfg, authenticatorsConfig, transact)
+	handler, err := initAPIHandler(ctx, *cfg, authenticatorsConfig, transact)
 	exitOnError(err, "Failed to init tenant fetcher handlers")
 
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+	runMainSrv, shutdownMainSrv := createServer(ctx, *cfg, handler, "main")
 
 	go func() {
 		<-ctx.Done()
@@ -100,7 +90,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Config, transact persistence.Transactioner) (http.Handler, error) {
+func initAPIHandler(ctx context.Context, cfg config.Config, authCfg []authenticator.Config, transact persistence.Transactioner) (http.Handler, error) {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -108,7 +98,7 @@ func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Con
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg, transact); err != nil {
+	if err := tenant.RegisterHandler(ctx, router, *cfg.Handler, authCfg, transact); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +118,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createServer(ctx context.Context, cfg config, handler http.Handler, name string) (func(), func()) {
+func createServer(ctx context.Context, cfg config.Config, handler http.Handler, name string) (func(), func()) {
 	logger := log.C(ctx)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)

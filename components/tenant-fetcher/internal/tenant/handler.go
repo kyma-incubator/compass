@@ -18,17 +18,26 @@ import (
 )
 
 type Config struct {
-	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
-	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	HandlerEndpoint string `mapstructure:"HANDLER_ENDPOINT"`
+	TenantPathParam string `mapstructure:"TENANT_PATH_PARAM"`
 
-	TenantProviderTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
-	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER"`
+	TenantProviderTenantIdProperty string `mapstructure:"TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	TenantProvider                 string `mapstructure:"TENANT_PROVIDER"`
 
-	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoints             string        `envconfig:"APP_JWKS_ENDPOINTS"`
-	IdentityZone              string        `envconfig:"APP_TENANT_IDENTITY_ZONE"`
-	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
+	JWKSSyncPeriod            time.Duration `mapstructure:"JWKS_SYNC_PERIOD"`
+	AllowJWTSigningNone       bool          `mapstructure:"ALLOW_JWT_SIGNING_NONE,default=true"`
+	JwksEndpoints             string        `mapstructure:"JWKS_ENDPOINTS"`
+	IdentityZone              string        `mapstructure:"TENANT_IDENTITY_ZONE"`
+	SubscriptionCallbackScope string        `mapstructure:"SUBSCRIPTION_CALLBACK_SCOPE"`
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		HandlerEndpoint:     "/v1/callback/{tenantId}",
+		TenantPathParam:     "tenantId",
+		JWKSSyncPeriod:      5 * time.Minute,
+		AllowJWTSigningNone: true,
+	}
 }
 
 const compassURL = "https://github.com/kyma-incubator/compass"
