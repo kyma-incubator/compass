@@ -94,9 +94,8 @@ func main() {
 	cfg, err := config.New(environment)
 	exitOnError(err, "Error while creating config")
 
-	if err = cfg.Validate(); err != nil {
-		exitOnError(err, "Error while validating config")
-	}
+	err = cfg.Validate()
+	exitOnError(err, "Error while validating config")
 
 	authenticators, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
@@ -105,7 +104,7 @@ func main() {
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -135,10 +134,10 @@ func main() {
 			&normalizer.DefaultNormalizator{},
 			transact,
 			cfgProvider,
-			cfg.OneTimeToken,
-			cfg.OAuth20,
+			*cfg.OneTimeToken,
+			*cfg.OAuth20,
 			pairingAdapters,
-			cfg.Features,
+			*cfg.Features,
 			metricsCollector,
 			httpClient,
 			cfg.ProtectedLabelPattern,

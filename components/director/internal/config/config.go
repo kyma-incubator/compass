@@ -125,8 +125,8 @@ func (s *JWKSConfig) Validate() error {
 }
 
 type StaticConfig struct {
-	UsersSrc  string `mapstructure:"static_users"`
-	GroupsSrc string `mapstructure:"static_groups"`
+	UsersSrc  string `mapstructure:"users_src"`
+	GroupsSrc string `mapstructure:"groups_src"`
 }
 
 func DefaultStaticConfig() *StaticConfig {
@@ -156,9 +156,9 @@ type Config struct {
 
 	Timeouts *TimeoutsConfig
 
-	Database                persistence.DatabaseConfig
+	Database                *persistence.DatabaseConfig
 	API                     *ApiConfig
-	ConfigurationFile       string
+	ConfigurationFile       string        `mapstructure:"configuration_file"`
 	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`
 
 	Log *log.Config
@@ -169,14 +169,14 @@ type Config struct {
 
 	ClientIDHttpHeaderKey string `mapstructure:"client_id_http_header_key"`
 
-	Static *StaticConfig
+	Static *StaticConfig `mapstructure:"static"`
 
 	PairingAdapterSrc string `mapstructure:"pairing_adapter_config"`
 
-	OneTimeToken onetimetoken.Config
-	OAuth20      oauth20.Config
+	OneTimeToken *onetimetoken.Config
+	OAuth20      *oauth20.Config
 
-	Features features.Config
+	Features *features.Config
 
 	ProtectedLabelPattern string `mapstructure:"protected_label_pattern"`
 	OperationsNamespace   string `mapstructure:"operations_namespace"`
@@ -191,13 +191,18 @@ func DefaultConfig() *Config {
 		HydratorAddress:         "127.0.0.1:8080",
 		InternalAddress:         "127.0.0.1:3002",
 		Timeouts:                DefaultTimeoutsConfig(),
+		Database:                persistence.DefaultDatabaseConfig(),
 		API:                     DefaultAPIConfig(),
+		ConfigurationFile:       "/config/config.yaml",
 		ConfigurationFileReload: 1 * time.Minute,
 		Log:                     log.DefaultConfig(),
 		MetricsAddress:          "127.0.0.1:3003",
 		JWKS:                    DefaultJWKSConfig(),
 		ClientIDHttpHeaderKey:   "client_user,APP_CLIENT_ID_HTTP_HEADER",
 		Static:                  DefaultStaticConfig(),
+		OneTimeToken:            onetimetoken.DefaultConfig(),
+		OAuth20:                 oauth20.DefaultConfig(),
+		Features:                features.DefaultConfig(),
 		ProtectedLabelPattern:   ".*_defaultEventing",
 		OperationsNamespace:     "compass-system",
 		DisableAsyncMode:        false,

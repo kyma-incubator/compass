@@ -3,13 +3,22 @@ package onetimetoken
 import "time"
 
 type Config struct {
-	Length                int           `envconfig:"default=64"`
-	RuntimeExpiration     time.Duration `envconfig:"default=60m"`
-	ApplicationExpiration time.Duration `envconfig:"default=5m"`
-	CSRExpiration         time.Duration `envconfig:"default=5m"`
+	Length                int           `mapstructure:"length"`
+	RuntimeExpiration     time.Duration `mapstructure:"runtime_expiration"`
+	ApplicationExpiration time.Duration `mapstructure:"application_expiration"`
+	CSRExpiration         time.Duration `mapstructure:"csr_expiration"`
 
 	//Connector URL
-	ConnectorURL string `envconfig:"APP_CONNECTOR_URL"`
+	ConnectorURL string `mapstructure:"CONNECTOR_URL"`
 	//Legacy Connector URL
-	LegacyConnectorURL string `envconfig:"APP_LEGACY_CONNECTOR_URL"`
+	LegacyConnectorURL string `mapstructure:"LEGACY_CONNECTOR_URL"`
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		Length:                64,
+		RuntimeExpiration:     60 * time.Minute,
+		ApplicationExpiration: 5 * time.Minute,
+		CSRExpiration:         5 * time.Minute,
+	}
 }

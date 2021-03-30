@@ -1,5 +1,11 @@
 package features
 
 type Config struct {
-	DefaultScenarioEnabled bool `envconfig:"default=true,APP_DEFAULT_SCENARIO_ENABLED"`
+	DefaultScenarioEnabled bool `mapstructure:"DEFAULT_SCENARIO_ENABLED"`
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		DefaultScenarioEnabled: true,
+	}
 }

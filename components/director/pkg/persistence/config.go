@@ -8,15 +8,29 @@ import (
 const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type DatabaseConfig struct {
-	User               string        `envconfig:"default=postgres,APP_DB_USER"`
-	Password           string        `envconfig:"default=pgsql@12345,APP_DB_PASSWORD"`
-	Host               string        `envconfig:"default=localhost,APP_DB_HOST"`
-	Port               string        `envconfig:"default=5432,APP_DB_PORT"`
-	Name               string        `envconfig:"default=compass,APP_DB_NAME"`
-	SSLMode            string        `envconfig:"default=disable,APP_DB_SSL"`
-	MaxOpenConnections int           `envconfig:"default=2,APP_DB_MAX_OPEN_CONNECTIONS"`
-	MaxIdleConnections int           `envconfig:"default=2,APP_DB_MAX_IDLE_CONNECTIONS"`
-	ConnMaxLifetime    time.Duration `envconfig:"default=30m,APP_DB_CONNECTION_MAX_LIFETIME"`
+	User               string        `mapstructure:"DB_USER"`
+	Password           string        `mapstructure:"DB_PASSWORD"`
+	Host               string        `mapstructure:"DB_HOST"`
+	Port               string        `mapstructure:"DB_PORT"`
+	Name               string        `mapstructure:"DB_NAME"`
+	SSLMode            string        `mapstructure:"DB_SSL"`
+	MaxOpenConnections int           `mapstructure:"DB_MAX_OPEN_CONNECTIONS"`
+	MaxIdleConnections int           `mapstructure:"DB_MAX_IDLE_CONNECTIONS"`
+	ConnMaxLifetime    time.Duration `mapstructure:"DB_CONNECTION_MAX_LIFETIME"`
+}
+
+func DefaultDatabaseConfig() *DatabaseConfig {
+	return &DatabaseConfig{
+		User:               "postgres",
+		Password:           "pgsql@12345",
+		Host:               "localhost",
+		Port:               "5432",
+		Name:               "compass",
+		SSLMode:            "disable",
+		MaxOpenConnections: 2,
+		MaxIdleConnections: 2,
+		ConnMaxLifetime:    30 * time.Minute,
+	}
 }
 
 func (cfg DatabaseConfig) GetConnString() string {
