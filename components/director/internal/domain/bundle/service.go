@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=BundleRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
 type BundleRepository interface {
 	Create(ctx context.Context, item *model.Bundle) error
 	Update(ctx context.Context, item *model.Bundle) error
@@ -25,7 +25,7 @@ type BundleRepository interface {
 	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TombstoneRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TombstoneRepository --output=automock --outpkg=automock --case=underscore
 type TombstoneRepository interface {
 	Create(ctx context.Context, item *model.Tombstone) error
 	Update(ctx context.Context, item *model.Tombstone) error

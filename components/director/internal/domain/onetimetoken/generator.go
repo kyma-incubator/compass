@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-//go:generate mockery -name=TokenGenerator -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TokenGenerator --output=automock --outpkg=automock --case=underscore
 type TokenGenerator interface {
 	NewToken() (string, error)
 }

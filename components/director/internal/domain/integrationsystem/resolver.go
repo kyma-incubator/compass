@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-//go:generate mockery -name=IntegrationSystemService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemService interface {
 	Create(ctx context.Context, in model.IntegrationSystemInput) (string, error)
 	Get(ctx context.Context, id string) (*model.IntegrationSystem, error)
@@ -19,24 +19,24 @@ type IntegrationSystemService interface {
 	Delete(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=IntegrationSystemConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemConverter --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemConverter interface {
 	ToGraphQL(in *model.IntegrationSystem) *graphql.IntegrationSystem
 	MultipleToGraphQL(in []*model.IntegrationSystem) []*graphql.IntegrationSystem
 	InputFromGraphQL(in graphql.IntegrationSystemInput) model.IntegrationSystemInput
 }
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
-//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
