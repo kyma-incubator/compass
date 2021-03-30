@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/apispec"
+	ord_aggregator "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
@@ -74,6 +75,9 @@ func initHTTP(cfg config) http.Handler {
 	router.HandleFunc("/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig)
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
 
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
 	oauthRouter.Use(oauthMiddleware)
