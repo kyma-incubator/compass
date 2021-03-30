@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/spf13/pflag"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/env"
 	"github.com/pkg/errors"
 
@@ -19,14 +21,19 @@ type Validatable interface {
 	Validate() error
 }
 
+func AddPFlags(set *pflag.FlagSet) {
+	env.CreatePFlags(set, DefaultConfig())
+	env.CreatePFlagsForConfigFile(set)
+}
+
 type ApiConfig struct {
-	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
-	OperationPath                 string `envconfig:"default=/operation"`
-	LastOperationPath             string `envconfig:"default=/last_operation"`
-	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	APIEndpoint                   string `mapstructure:"api_endpoint"`
+	TenantMappingEndpoint         string `mapstructure:"tenant_mapping_endpoint"`
+	RuntimeMappingEndpoint        string `mapstructure:"runtime_mapping_endpoint"`
+	AuthenticationMappingEndpoint string `mapstructure:"authentication_mapping_endpoint`
+	OperationPath                 string `mapstructure:"operation_path"`
+	LastOperationPath             string `mapstructure:"last_operation_path"`
+	PlaygroundAPIEndpoint         string `mapstructure:"playground_api_endpoint"`
 }
 
 func DefaultAPIConfig() *ApiConfig {
@@ -67,8 +74,8 @@ func (s *ApiConfig) Validate() error {
 }
 
 type TimeoutsConfig struct {
-	Client time.Duration `envconfig:"default=105s"`
-	Server time.Duration `envconfig:"default=110s"`
+	Client time.Duration `mapstructure:"client_timeout"`
+	Server time.Duration `mapstructure:"server_timeout"`
 }
 
 func DefaultTimeoutsConfig() *TimeoutsConfig {
@@ -89,10 +96,10 @@ func (s *TimeoutsConfig) Validate() error {
 }
 
 type JWKSConfig struct {
-	Endpoint            string        `envconfig:"default=file://hack/default-jwks.json"`
-	SyncPeriod          time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone bool          `envconfig:"default=true"`
-	RuntimeCachePeriod  time.Duration `envconfig:"default=5m"`
+	Endpoint            string        `mapstructure:"jwks_endpoint"`
+	SyncPeriod          time.Duration `mapstructure:"jwks_sync_period"`
+	AllowJWTSigningNone bool          `mapstructure:"allow_jwts_signing_none"`
+	RuntimeCachePeriod  time.Duration `mapstructure:"runtime_cache_period"`
 }
 
 func DefaultJWKSConfig() *JWKSConfig {
@@ -118,8 +125,8 @@ func (s *JWKSConfig) Validate() error {
 }
 
 type StaticConfig struct {
-	UsersSrc  string `envconfig:"default=/data/static-users.yaml"`
-	GroupsSrc string `envconfig:"default=/data/static-groups.yaml"`
+	UsersSrc  string `mapstructure:"static_users"`
+	GroupsSrc string `mapstructure:"static_groups"`
 }
 
 func DefaultStaticConfig() *StaticConfig {
@@ -140,41 +147,41 @@ func (s *StaticConfig) Validate() error {
 }
 
 type Config struct {
-	Address                string `envconfig:"default=127.0.0.1:3000"`
-	InternalGraphQLAddress string `envconfig:"default=127.0.0.1:3001"`
-	HydratorAddress        string `envconfig:"default=127.0.0.1:8080"`
+	Address                string `mapstructure:"address"`
+	InternalGraphQLAddress string `mapstructure:"graphql_internal_address"`
+	HydratorAddress        string `mapstructure:"hydrator_address"`
 
-	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
-	AppURL          string `envconfig:"APP_URL"`
+	InternalAddress string `mapstructure:"internal_address"`
+	AppURL          string `mapstructure:"url"`
 
 	Timeouts *TimeoutsConfig
 
 	Database                persistence.DatabaseConfig
 	API                     *ApiConfig
 	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`
 
 	Log *log.Config
 
-	MetricsAddress string `envconfig:"default=127.0.0.1:3003"`
+	MetricsAddress string `mapstructure:"metrics_address"`
 
 	JWKS *JWKSConfig
 
-	ClientIDHttpHeaderKey string `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
+	ClientIDHttpHeaderKey string `mapstructure:"client_id_http_header_key"`
 
 	Static *StaticConfig
 
-	PairingAdapterSrc string `envconfig:"optional"`
+	PairingAdapterSrc string `mapstructure:"pairing_adapter_config"`
 
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
 
 	Features features.Config
 
-	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
-	OperationsNamespace   string `envconfig:"default=compass-system"`
+	ProtectedLabelPattern string `mapstructure:"protected_label_pattern"`
+	OperationsNamespace   string `mapstructure:"operations_namespace"`
 
-	DisableAsyncMode bool `envconfig:"default=false"`
+	DisableAsyncMode bool `mapstructure:"disable_async_mode"`
 }
 
 func DefaultConfig() *Config {

@@ -87,7 +87,7 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	environment, err := env.Default(ctx)
+	environment, err := env.Default(ctx, config.AddPFlags)
 	if err != nil {
 		exitOnError(err, "Error while creating environment")
 	}
