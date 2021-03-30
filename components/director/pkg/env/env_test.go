@@ -95,6 +95,11 @@ type EnvSuite struct {
 	err         error
 }
 
+func AddPFlags(set *pflag.FlagSet) {
+	env.CreatePFlags(set, Config{})
+	env.CreatePFlagsForConfigFile(set)
+}
+
 type Config struct {
 	Server string `mapstructure:"server"`
 }
@@ -275,7 +280,7 @@ func (suite *EnvSuite) TestNewWhenConfigFileFlagsAreProvided() {
 				File:    env.DefaultConfigFile(),
 				content: suite.flatOuter,
 			}
-			env.AddPFlags(suite.testFlags, configuration)
+			AddPFlags(suite.testFlags)
 
 			test.TestFunc()
 		})
@@ -400,7 +405,7 @@ func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaConfigFile() {
 		File:    env.DefaultConfigFile(),
 		content: suite.flatOuter,
 	}
-	env.AddPFlags(suite.testFlags, Config{})
+	AddPFlags(suite.testFlags)
 	suite.verifyEnvCreated()
 
 	suite.verifyEnvContainsValues(suite.flatOuter)
@@ -419,7 +424,7 @@ func (suite *EnvSuite) TestGetOverridePriorityOverPflagSetOverEnvironmentOverFil
 
 	suite.Require().Equal(suite.environment.Get(key), flagDefaultValue)
 
-	env.AddPFlags(suite.testFlags, configuration)
+	AddPFlags(suite.testFlags)
 	suite.cfgFile = testFile{
 		File: env.DefaultConfigFile(),
 		content: map[string]interface{}{
@@ -498,7 +503,7 @@ func (suite *EnvSuite) TestUnmarshalParameterIsAPointerToAStruct() {
 					File:    env.DefaultConfigFile(),
 					content: suite.flatOuter,
 				}
-				env.AddPFlags(suite.testFlags, configuration)
+				AddPFlags(suite.testFlags)
 			},
 		},
 		{
@@ -538,7 +543,7 @@ func (suite *EnvSuite) TestUnmarshalOverridePriorityOverPflagSetOverEnvironmentO
 			key: fileValue,
 		},
 	}
-	env.AddPFlags(suite.testFlags, configuration)
+	AddPFlags(suite.testFlags)
 	suite.verifyEnvCreated()
 	suite.verifyUnmarshallingIsCorrect(&str, &s{fileValue})
 
