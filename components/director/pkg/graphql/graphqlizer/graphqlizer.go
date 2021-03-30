@@ -262,10 +262,10 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		correlationIdKey: "{{.CorrelationIDKey }}",
 		{{- end }}
 		{{- if .RetryInterval }} 
-		retryInterval: "{{.RetryInterval }}",
+		retryInterval: {{.RetryInterval }},
 		{{- end }}
 		{{- if .Timeout }} 
-		timeout: "{{.Timeout }}",
+		timeout: {{.Timeout }},
 		{{- end }}
 		{{- if .URLTemplate }} 
 		urlTemplate: "{{.URLTemplate }}",

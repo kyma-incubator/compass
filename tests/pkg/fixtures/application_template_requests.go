@@ -20,7 +20,7 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 			Name:         "app",
 			ProviderName: &providerName,
 			Description:  ptr.String("test {{new-placeholder}}"),
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"a": []string{"b", "c"},
 				"d": []string{"e", "f"},
 			},
