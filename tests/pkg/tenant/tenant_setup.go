@@ -32,6 +32,7 @@ const (
 	GetScenariosLabelDefinitionCreatesOneIfNotExistsTenantName = "TestGetScenariosLabelDefinitionCreatesOneIfNotExists"
 	AutomaticScenarioAssignmentsWholeScenarioTenantName        = "TestAutomaticScenarioAssignmentsWholeScenario"
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
+	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 )
 
 type Tenant struct {
@@ -141,6 +142,13 @@ func (mgr *TestTenantsManager) Init() {
 			ID:             "8cf0c909-f816-4fe3-a507-a7917ccd8380",
 			Name:           TenantsQueryInitializedTenantName,
 			ExternalTenant: "8cf0c909-f816-4fe3-a507-a7917ccd8380",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		TestDeleteApplicationIfInScenario: {
+			ID:             "0d597250-6b2d-4d89-9c54-e23cb497cd01",
+			Name:           TestDeleteApplicationIfInScenario,
+			ExternalTenant: "0d597250-6b2d-4d89-9c54-e23cb497cd01",
 			ProviderName:   testProvider,
 			Status:         Active,
 		},

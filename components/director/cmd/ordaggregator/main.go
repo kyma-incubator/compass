@@ -92,8 +92,9 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	productConverter := product.NewConverter()
 	vendorConverter := ordvendor.NewConverter()
 	tombstoneConverter := tombstone.NewConverter()
+	runtimeConverter := runtime.NewConverter()
 
-	runtimeRepo := runtime.NewRepository()
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
