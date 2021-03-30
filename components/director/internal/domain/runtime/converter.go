@@ -43,7 +43,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
 	var labels map[string]interface{}
 	if in.Labels != nil {
-		labels = *in.Labels
+		labels = in.Labels
 	}
 
 	return model.RuntimeInput{
@@ -108,4 +108,14 @@ func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *
 	}
 
 	return &condition
+}
+
+func (c *converter) MultipleFromEntities(entities RuntimeCollection) []*model.Runtime {
+	var items []*model.Runtime
+	for _, ent := range entities {
+		model := ent.ToModel()
+
+		items = append(items, model)
+	}
+	return items
 }

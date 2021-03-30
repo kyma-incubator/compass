@@ -21,18 +21,19 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	urlpkg "net/url"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/request"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
-	"github.com/kyma-incubator/compass/tests/ord-service/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -76,23 +77,21 @@ func TestORDService(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
-
-	app2, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
+	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
 	require.NoError(t, err)
-
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.Tenant, app2.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.Tenant, app2.ID)
 
 	t.Log("Create integration system")
-	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
 	require.NotEmpty(t, intSys)
-	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
 
-	intSystemCredentials := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
-	defer pkg.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
 
 	unsecuredHttpClient := http.DefaultClient
 	unsecuredHttpClient.Transport = &http.Transport{
@@ -123,7 +122,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
@@ -156,7 +155,7 @@ func TestORDService(t *testing.T) {
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
@@ -167,7 +166,7 @@ func TestORDService(t *testing.T) {
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
@@ -527,8 +526,8 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
@@ -540,65 +539,27 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		respBody := makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusNotFound)
+		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
 }
 
 func makeRequest(t *testing.T, httpClient *http.Client, url string) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
 
 func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
-	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus)
-}
-
-func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client, url string, headers map[string][]string, expectedHTTPStatus int) string {
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	require.NoError(t, err)
-
-	for key, values := range headers {
-		for _, value := range values {
-			request.Header.Add(key, value)
-		}
-	}
-
-	response, err := httpClient.Do(request)
-
-	require.NoError(t, err)
-	require.Equal(t, expectedHTTPStatus, response.StatusCode)
-
-	parsedURL, err := urlpkg.Parse(url)
-	require.NoError(t, err)
-
-	if !strings.Contains(parsedURL.Path, "/specification") {
-		formatParam := parsedURL.Query().Get("$format")
-		acceptHeader, acceptHeaderProvided := headers[acceptHeader]
-
-		contentType := response.Header.Get("Content-Type")
-		if formatParam != "" {
-			require.Contains(t, contentType, formatParam)
-		} else if acceptHeaderProvided && acceptHeader[0] != "*/*" {
-			require.Contains(t, contentType, acceptHeader[0])
-		} else {
-			require.Contains(t, contentType, testConfig.ORDServiceDefaultResponseType)
-		}
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	return string(body)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
 }
 
 func createApp(suffix string) directorSchema.ApplicationRegisterInput {
@@ -615,7 +576,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 						Description: ptr.String("api for adding comments"),
 						TargetURL:   "http://mywordpress.com/comments",
 						Group:       ptr.String("comments"),
-						Version:     pkg.FixDepracatedVersion(),
+						Version:     fixtures.FixDeprecatedVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOpenAPI,
 							Format: directorSchema.SpecFormatYaml,
@@ -626,7 +587,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 						Name:        "reviews-v1",
 						Description: ptr.String("api for adding reviews"),
 						TargetURL:   "http://mywordpress.com/reviews",
-						Version:     pkg.FixActiveVersion(),
+						Version:     fixtures.FixActiveVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
 							Format: directorSchema.SpecFormatJSON,
@@ -636,7 +597,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "xml",
 						Description: ptr.String("xml api"),
-						Version:     pkg.FixDecomissionedVersion(),
+						Version:     fixtures.FixDecommissionedVersion(),
 						TargetURL:   "http://mywordpress.com/xml",
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
@@ -649,7 +610,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "comments-v1",
 						Description: ptr.String("comments events"),
-						Version:     pkg.FixDepracatedVersion(),
+						Version:     fixtures.FixDeprecatedVersion(),
 						Group:       ptr.String("comments"),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,
@@ -660,7 +621,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "reviews-v1",
 						Description: ptr.String("review events"),
-						Version:     pkg.FixActiveVersion(),
+						Version:     fixtures.FixActiveVersion(),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,
 							Format: directorSchema.SpecFormatYaml,

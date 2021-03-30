@@ -419,18 +419,18 @@ func TestService_List(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
-	modelAppTemplate := fixModelApplicationTemplate(testID, testName, []*model.Webhook{})
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, nil)
 
 	testCases := []struct {
 		Name              string
-		Input             *model.ApplicationTemplateInput
+		Input             *model.ApplicationTemplateUpdateInput
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		WebhookRepoFn     func() *automock.WebhookRepository
 		ExpectedError     error
 	}{
 		{
 			Name:  "Success",
-			Input: fixModelAppTemplateInput(testName, appInputJSONString),
+			Input: fixModelAppTemplateUpdateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
@@ -442,7 +442,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:  "Error when updating application template",
-			Input: fixModelAppTemplateInput(testName, appInputJSONString),
+			Input: fixModelAppTemplateUpdateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(testError).Once()

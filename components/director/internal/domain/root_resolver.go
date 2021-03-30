@@ -113,7 +113,7 @@ func NewRootResolver(
 	assignmentConv := scenarioassignment.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
-	runtimeRepo := runtime.NewRepository()
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	runtimeContextRepo := runtime_context.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
@@ -356,7 +356,7 @@ func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in gra
 func (r *mutationResolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
 	return r.appTemplate.RegisterApplicationFromTemplate(ctx, in)
 }
-func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.UpdateApplicationTemplate(ctx, id, in)
 }
 func (r *mutationResolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
@@ -529,7 +529,7 @@ func (r *applicationResolver) Auths(ctx context.Context, obj *graphql.Applicatio
 	return r.app.Auths(ctx, obj)
 }
 
-func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
+func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
 	return r.app.Labels(ctx, obj, key)
 }
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
@@ -557,7 +557,7 @@ type runtimeResolver struct {
 	*RootResolver
 }
 
-func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (*graphql.Labels, error) {
+func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
 }
 
@@ -617,7 +617,7 @@ type runtimeContextResolver struct {
 	*RootResolver
 }
 
-func (r *runtimeContextResolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (*graphql.Labels, error) {
+func (r *runtimeContextResolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (graphql.Labels, error) {
 	return r.runtimeContext.Labels(ctx, obj, key)
 }
 
