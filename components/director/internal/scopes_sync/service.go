@@ -74,7 +74,7 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 
 		scopesFromHydra, ok := clientScopes[clientID]
 		if !ok {
-			log.C(ctx).Errorf("Client with ID %s not presents in Hydra", clientID)
+			log.C(ctx).Errorf("Client with ID %s is not present in Hydra", clientID)
 			continue
 		}
 		if str.Matches(scopesFromHydra, expectedScopes) {

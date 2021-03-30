@@ -174,7 +174,7 @@ func (s *service) registerClient(ctx context.Context, clientID string, scopes []
 }
 
 func (s *service) updateClient(ctx context.Context, clientID string, scopes []string) error {
-	log.C(ctx).Infof("Updating client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
+	log.C(ctx).Infof("Updating client with client_id %s in Hydra with scopes: %s", clientID, scopes)
 	reqBody := &clientCredentialsRegistrationBody{
 		Scope: strings.Join(scopes, " "),
 	}
@@ -194,7 +194,7 @@ func (s *service) updateClient(ctx context.Context, clientID string, scopes []st
 		return fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusOK)
 	}
 
-	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
+	log.C(ctx).Debugf("Client with client_id %s successfully updated in Hydra", clientID)
 	return nil
 }
 
@@ -252,7 +252,7 @@ func (s *service) clientsFromHydra(ctx context.Context, endpoint string) ([]Clie
 	var resultClients []Client
 	nextLink := endpoint
 	for nextLink != "" {
-		log.C(ctx).Infof("calling %s", nextLink)
+		log.C(ctx).Debugf("Calling %s", nextLink)
 		resp, closeBody, err := s.doRequest(ctx, http.MethodGet, nextLink, nil)
 		if err != nil {
 			return nil, err
