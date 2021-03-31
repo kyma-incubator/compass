@@ -34,7 +34,7 @@ type APIConfig struct {
 	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
 }
 
-//go:generate mockery -name=MetricsPusher -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
 type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
 }

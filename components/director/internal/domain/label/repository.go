@@ -24,7 +24,7 @@ const (
 
 var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value"}
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.Label) (Entity, error)
 	FromEntity(in Entity) (model.Label, error)

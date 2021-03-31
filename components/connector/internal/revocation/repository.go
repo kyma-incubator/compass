@@ -7,7 +7,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-//go:generate mockery -name=Manager
+//go:generate mockery --name=Manager
 type Manager interface {
 	Get(name string, options metav1.GetOptions) (*v1.ConfigMap, error)
 	Update(configmap *v1.ConfigMap) (*v1.ConfigMap, error)

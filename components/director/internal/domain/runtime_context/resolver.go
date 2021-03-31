@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=RuntimeContextService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore
 type RuntimeContextService interface {
 	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
 	Update(ctx context.Context, id string, in model.RuntimeContextInput) error
@@ -28,7 +28,7 @@ type RuntimeContextService interface {
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 }
 
-//go:generate mockery -name=RuntimeContextConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore
 type RuntimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
 	MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext

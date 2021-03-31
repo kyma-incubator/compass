@@ -10,12 +10,12 @@ import (
 
 type ManagerConstructor func(namespace string) Manager
 
-//go:generate mockery -name=Manager
+//go:generate mockery --name=Manager
 type Manager interface {
 	Get(name string, options metav1.GetOptions) (*v1.Secret, error)
 }
 
-//go:generate mockery -name=Repository
+//go:generate mockery --name=Repository
 type Repository interface {
 	Get(name types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError)
 }

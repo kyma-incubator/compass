@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=PackageRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=PackageRepository --output=automock --outpkg=automock --case=underscore
 type PackageRepository interface {
 	Create(ctx context.Context, item *model.Package) error
 	Update(ctx context.Context, item *model.Package) error
@@ -19,7 +19,7 @@ type PackageRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

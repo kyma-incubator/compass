@@ -35,15 +35,16 @@ func (fake *FakeApplicationLister) FetchApplication(arg1 context.Context, arg2 s
 		arg1 context.Context
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.FetchApplicationStub
+	fakeReturns := fake.fetchApplicationReturns
 	fake.recordInvocation("FetchApplication", []interface{}{arg1, arg2})
 	fake.fetchApplicationMutex.Unlock()
-	if fake.FetchApplicationStub != nil {
-		return fake.FetchApplicationStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.fetchApplicationReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=VendorRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
 type VendorRepository interface {
 	Create(ctx context.Context, item *model.Vendor) error
 	Update(ctx context.Context, item *model.Vendor) error
