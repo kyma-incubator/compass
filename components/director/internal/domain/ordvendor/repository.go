@@ -19,7 +19,7 @@ var (
 	updatableColumns = []string{"title", "type", "labels"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Vendor) *Entity
 	FromEntity(entity *Entity) (*model.Vendor, error)

@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
@@ -37,7 +37,7 @@ type ApplicationService interface {
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 }
 
-//go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
@@ -46,13 +46,13 @@ type ApplicationConverter interface {
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
-//go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
-//go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.Webhook, error)
 	ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
@@ -61,12 +61,12 @@ type WebhookService interface {
 	Delete(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
-//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -74,30 +74,30 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
-//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 }
 
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
-//go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 	MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error)

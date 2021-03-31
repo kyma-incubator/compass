@@ -36,40 +36,42 @@ global:
       id: 7e1f2df8-36dc-4e40-8be3-d1555d50c91c
     - name: TestTenantsQueryTenantInitialized
       id: 8cf0c909-f816-4fe3-a507-a7917ccd8380
+    - name: TestDeleteApplicationIfInScenario
+      id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
 
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1767"
+      version: "PR-1808"
     connectivity_adapter:
       dir:
-      version: "PR-1791"
+      version: "PR-1808"
     pairing_adapter:
       dir:
-      version: "PR-1750"
+      version: "PR-1808"
     director:
       dir:
-      version: "PR-1766"
+      version: "PR-1808"
     gateway:
       dir:
-      version: "PR-1750"
+      version: "PR-1808"
     operations_controller:
       dir:
-      version: "PR-1766"
+      version: "PR-1798"
     tenant_fetcher:
       dir:
-      version: "PR-1782"
+      version: "PR-1798"
     ord_service:
       dir:
-      version: "PR-17"
+      version: "PR-19"
     schema_migrator:
       dir:
       version: "PR-1780"
     system_broker:
       dir:
-      version: "PR-1750"
+      version: "PR-1808"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -77,13 +79,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1750"
+      version: "PR-1808"
     console:
       dir:
-      version: "PR-22"
+      version: "PR-23"
     e2e_tests:
       dir:
-      version: "PR-1793"
+      version: "PR-1792"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -226,6 +228,7 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
+      requestPayloadSizeLimit: 2097152 # 2 MB
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
@@ -322,6 +325,14 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
+
+  ordAggregator:
+    name: ord-aggregator
+    enabled: true
+    schedule: "*/5 * * * *"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
 
   tenantFetchers:
     job1:

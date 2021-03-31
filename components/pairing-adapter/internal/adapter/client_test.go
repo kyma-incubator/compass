@@ -28,7 +28,9 @@ func TestClient(t *testing.T) {
 		givenRequestData := adapter.RequestData{
 			Tenant: fixTenant(),
 			Application: graphql.Application{
-				ID:   fixAppID(),
+				BaseEntity: &graphql.BaseEntity{
+					ID: fixAppID(),
+				},
 				Name: fixAppName(),
 			},
 		}
@@ -147,7 +149,9 @@ func TestClient(t *testing.T) {
 		_, err := cli.Do(nil, adapter.RequestData{
 			Tenant: fixTenant(),
 			Application: graphql.Application{
-				ID:   fixAppID(),
+				BaseEntity: &graphql.BaseEntity{
+					ID: fixAppID(),
+				},
 				Name: fixAppName(),
 			},
 		})
@@ -170,7 +174,9 @@ func TestClient(t *testing.T) {
 		_, err := cli.Do(nil, adapter.RequestData{
 			Tenant: fixTenant(),
 			Application: graphql.Application{
-				ID:   fixAppID(),
+				BaseEntity: &graphql.BaseEntity{
+					ID: fixAppID(),
+				},
 				Name: fixAppName(),
 			},
 		})

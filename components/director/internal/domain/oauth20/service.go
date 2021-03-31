@@ -20,12 +20,12 @@ const applicationJSONType = "application/json"
 
 var defaultGrantTypes = []string{"client_credentials"}
 
-//go:generate mockery -name=ScopeCfgProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScopeCfgProvider --output=automock --outpkg=automock --case=underscore
 type ScopeCfgProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

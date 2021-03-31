@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, item *model.BundleInstanceAuth) error
 	GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error)
@@ -24,7 +24,7 @@ type Repository interface {
 	Delete(ctx context.Context, tenantID string, id string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

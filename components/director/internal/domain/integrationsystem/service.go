@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemRepository interface {
 	Create(ctx context.Context, item model.IntegrationSystem) error
 	Get(ctx context.Context, id string) (*model.IntegrationSystem, error)
@@ -20,7 +20,7 @@ type IntegrationSystemRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
