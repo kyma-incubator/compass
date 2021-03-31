@@ -24,19 +24,20 @@ func TestSensitiveDataStrip(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	// Create app template
 	t.Log("Creating application template")
 	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
+	var appTemplateID string
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplateID)
 	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	appTemplateID = appTemplate.ID
 
-	// Register runtime
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
+	var runtimeID string
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtimeID)
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	runtimeID = runtime.ID
 
-	// Request runtime oauth client
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
@@ -45,14 +46,15 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 	runtimeOAuthGraphQLClient := gqlClient(t, rtmOauthCredentialData, token.RuntimeScopes)
 
-	// Register application
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
+	var appID string
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, appID)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	appID = app.ID
 	require.NoError(t, err)
 
-	// assert document, event and api definitions are present
+	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
 	require.Len(t, app.Bundles.Data, 1)
 	bndl := app.Bundles.Data[0]
 
@@ -60,7 +62,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.Len(t, bndl.APIDefinitions.Data, 1)
 	require.Len(t, bndl.Documents.Data, 1)
 
-	// register application oauth client
 	t.Log(fmt.Sprintf("Requesting application OAuth client for application %q", appName))
 	appAuth := fixtures.RequestClientCredentialsForApplication(t, context.Background(), dexGraphQLClient, tenantId, app.ID)
 	appOauthCredentialData, ok := appAuth.Auth.Credential.(*graphql.OAuthCredentialData)
@@ -69,12 +70,13 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, appOauthCredentialData.ClientID)
 	applicationOAuthGraphQLClient := gqlClient(t, appOauthCredentialData, token.ApplicationScopes)
 
-	// register integration system
 	t.Log(fmt.Sprintf("Registering integration system %q", intSysName))
+	var intSystemID string
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSystemID)
 	integrationSystem := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSysName)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem.ID)
+	intSystemID = integrationSystem.ID
 
-	// register integration system oauth client
+	t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), dexGraphQLClient, tenantId, integrationSystem.ID)
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -82,20 +84,19 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
 	intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 
-	// assign runtime and app to the same scenario
+	t.Log(fmt.Sprintf("assign runtime and app to scenario: %s", "'test-scenario'"))
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
 
-	// set application scenarios label
-	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, ScenariosLabel, scenarios[1:])
+	t.Log(fmt.Sprintf("Setting application scenarios label: %s", ScenariosLabel))
 	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, ScenariosLabel, scenarios[:1])
+	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, ScenariosLabel, scenarios[1:])
 
-	// set runtime scenarios label
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+	t.Log(fmt.Sprintf("Setting runtime scenarios label: %s", ScenariosLabel))
 	defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
 
-	// create bundle instance auth
 	t.Log(fmt.Sprintf("Creating bundle instance auths %q with bundle with APIDefinition and ", appName))
 	instanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
 	require.NotNil(t, instanceAuth)

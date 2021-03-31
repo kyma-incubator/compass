@@ -37,7 +37,7 @@ type service struct {
 	repo       SystemAuthRepo
 }
 
-func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, repo SystemAuthRepo) *service {
+func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, repo SystemAuthRepo) SyncService {
 	return &service{
 		oAuth20Svc: oAuth20Svc,
 		transact:   transact,
