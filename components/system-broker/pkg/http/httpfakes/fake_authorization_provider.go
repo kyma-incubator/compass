@@ -53,15 +53,16 @@ func (fake *FakeAuthorizationProvider) GetAuthorization(arg1 context.Context) (s
 	fake.getAuthorizationArgsForCall = append(fake.getAuthorizationArgsForCall, struct {
 		arg1 context.Context
 	}{arg1})
+	stub := fake.GetAuthorizationStub
+	fakeReturns := fake.getAuthorizationReturns
 	fake.recordInvocation("GetAuthorization", []interface{}{arg1})
 	fake.getAuthorizationMutex.Unlock()
-	if fake.GetAuthorizationStub != nil {
-		return fake.GetAuthorizationStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getAuthorizationReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -116,15 +117,16 @@ func (fake *FakeAuthorizationProvider) Matches(arg1 context.Context) bool {
 	fake.matchesArgsForCall = append(fake.matchesArgsForCall, struct {
 		arg1 context.Context
 	}{arg1})
+	stub := fake.MatchesStub
+	fakeReturns := fake.matchesReturns
 	fake.recordInvocation("Matches", []interface{}{arg1})
 	fake.matchesMutex.Unlock()
-	if fake.MatchesStub != nil {
-		return fake.MatchesStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.matchesReturns
 	return fakeReturns.result1
 }
 
@@ -175,15 +177,16 @@ func (fake *FakeAuthorizationProvider) Name() string {
 	ret, specificReturn := fake.nameReturnsOnCall[len(fake.nameArgsForCall)]
 	fake.nameArgsForCall = append(fake.nameArgsForCall, struct {
 	}{})
+	stub := fake.NameStub
+	fakeReturns := fake.nameReturns
 	fake.recordInvocation("Name", []interface{}{})
 	fake.nameMutex.Unlock()
-	if fake.NameStub != nil {
-		return fake.NameStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.nameReturns
 	return fakeReturns.result1
 }
 

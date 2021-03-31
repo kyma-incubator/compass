@@ -19,7 +19,7 @@ type StaticGroup struct {
 
 type StaticGroups []StaticGroup
 
-//go:generate mockery -name=StaticGroupRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=StaticGroupRepository --output=automock --outpkg=automock --case=underscore
 type StaticGroupRepository interface {
 	Get(ctx context.Context, groupnames []string) StaticGroups
 }

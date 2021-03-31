@@ -27,7 +27,7 @@ var (
 	tenantColumn           = "tenant_id"
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	FromEntity(in Entity) (model.Webhook, error)
 	ToEntity(in model.Webhook) (Entity, error)
