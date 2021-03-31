@@ -8,7 +8,8 @@ import (
 	"time"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/handler"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
 	graphqlAPI "github.com/kyma-incubator/compass/components/director/internal/api"
@@ -160,7 +161,7 @@ func main() {
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
 	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
-	exitOnError(err, "Error while reading Pairing Adapters Configuration")
+	exitOnError(err, "Error while reading Pairing Adapters configuration")
 
 	httpClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -212,7 +213,7 @@ func main() {
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
-	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
@@ -223,10 +224,13 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
-		handler.RequestMiddleware(operationMiddleware.ExtensionHandler),
-		handler.ErrorPresenter(presenter.Do),
-		handler.RecoverFunc(panic_handler.RecoverFn))))
+
+	gqlServ := handler.NewDefaultServer(executableSchema)
+	gqlServ.Use(operationMiddleware)
+	gqlServ.SetErrorPresenter(presenter.Do)
+	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
+
+	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
@@ -397,7 +401,8 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	runtimeRepo := runtime.NewRepository()
+	runtimeConv := runtime.NewConverter()
+	runtimeRepo := runtime.NewRepository(runtimeConv)
 
 	scenarioAssignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
@@ -508,11 +513,13 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 		},
 	}
 
-	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
-
 	internalRouter := mux.NewRouter()
-	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+
+	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
+	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
+	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
+
+	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	internalRouter.Use(middlewares...)
 
@@ -547,7 +554,8 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	appConverter := application.NewConverter(webhookConverter, packageConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
-	runtimeRepo := runtime.NewRepository()
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)

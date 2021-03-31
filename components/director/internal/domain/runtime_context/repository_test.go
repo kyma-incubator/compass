@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
@@ -233,7 +236,11 @@ func TestPgRepository_List(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := runtime.NewRepository()
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("MultipleFromEntities", mock.Anything)
+
+		pgRepository := runtime.NewRepository(mockConverter)
 		//THEN
 		_, err := pgRepository.List(ctx, tenantID, nil, 2, convertIntToBase64String(-3))
 

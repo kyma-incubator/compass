@@ -3,6 +3,9 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -62,6 +65,7 @@ type WebhookRepository interface {
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 //go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
@@ -302,6 +306,26 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appTenant, id)
+	if err != nil {
+		return err
+	}
+
+	runtimes, err := s.getRuntimeNamesForScenarios(ctx, appTenant, scenarios)
+	if err != nil {
+		return err
+	}
+
+	validScenarios := removeDefaultScenario(scenarios)
+	if len(validScenarios) > 0 && len(runtimes) > 0 {
+		application, err := s.appRepo.GetByID(ctx, appTenant, id)
+		if err != nil {
+			return errors.Wrapf(err, "while getting application with id %s", id)
+		}
+		msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+		return apperrors.NewInvalidOperationError(msg)
+	}
+
 	err = s.appRepo.Delete(ctx, appTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application with id %s", id)
@@ -514,4 +538,54 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	}
 	log.C(ctx).Infof("Integration System with id %s exists", *id)
 	return true, nil
+}
+
+func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
+	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
+
+	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching application label")
+	}
+
+	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing application label values")
+	}
+
+	return scenarios, nil
+}
+
+func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
+	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
+	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
+
+	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
+	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes")
+	}
+
+	var runtimesNames []string
+	for _, r := range runtimes {
+		runtimesNames = append(runtimesNames, r.Name)
+	}
+
+	return runtimesNames, nil
+}
+
+func removeDefaultScenario(scenarios []string) []string {
+	defaultScenarioIndex := -1
+	for idx, scenario := range scenarios {
+		if scenario == model.ScenariosDefaultValue[0] {
+			defaultScenarioIndex = idx
+			break
+		}
+	}
+
+	if defaultScenarioIndex >= 0 {
+		return append(scenarios[:defaultScenarioIndex], scenarios[defaultScenarioIndex+1:]...)
+	}
+
+	return scenarios
 }

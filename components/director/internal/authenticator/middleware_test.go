@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 

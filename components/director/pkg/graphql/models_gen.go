@@ -82,7 +82,7 @@ type ApplicationRegisterInput struct {
 	// **Validation:** max=2000
 	Description *string `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels   *Labels         `json:"labels"`
+	Labels   Labels          `json:"labels"`
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
@@ -139,9 +139,9 @@ type ApplicationUpdateInput struct {
 
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
-	AdditionalHeaders               *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders               HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 	RequestAuth                     *CredentialRequestAuth `json:"requestAuth"`
 }
@@ -149,10 +149,10 @@ type Auth struct {
 type AuthInput struct {
 	Credential *CredentialDataInput `json:"credential"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders           *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders           HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams           *QueryParams                `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams                 `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized"`
 	RequestAuth                     *CredentialRequestAuthInput `json:"requestAuth"`
 }
@@ -277,9 +277,9 @@ type BundleUpdateInput struct {
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL                string                 `json:"tokenEndpointURL"`
 	Credential                      CredentialData         `json:"credential"`
-	AdditionalHeaders               *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders               HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
@@ -288,10 +288,10 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	TokenEndpointURL string               `json:"tokenEndpointURL"`
 	Credential       *CredentialDataInput `json:"credential"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders           *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders           HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
@@ -493,7 +493,7 @@ type RuntimeContextInput struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels *Labels `json:"labels"`
+	Labels Labels `json:"labels"`
 }
 
 type RuntimeContextPage struct {
@@ -514,7 +514,7 @@ type RuntimeInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          *Labels                 `json:"labels"`
+	Labels          Labels                  `json:"labels"`
 	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
 }
 

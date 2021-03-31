@@ -296,7 +296,7 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 
 	t.Run("Successful two-way conversion", func(t *testing.T) {
 		inputGQL := fixGQLApplicationRegisterInput("name", "description")
-		inputGQL.Labels = &graphql.Labels{"test": "test"}
+		inputGQL.Labels = graphql.Labels{"test": "test"}
 
 		// WHEN
 		// GQL -> JSON

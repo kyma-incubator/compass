@@ -1,7 +1,6 @@
 package revocation
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -55,7 +54,6 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 
 	t.Run("should insert value to the list", func(t *testing.T) {
 		// given
-		ctx := context.TODO()
 		cache := NewCache()
 		someHash := "someHash"
 		configListManagerMock := &mocks.Manager{}
@@ -76,7 +74,7 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
-		err := repository.Insert(ctx, someHash)
+		err := repository.Insert(someHash)
 		require.NoError(t, err)
 
 		// then
@@ -85,7 +83,6 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 
 	t.Run("should return error when failed to update config map", func(t *testing.T) {
 		// given
-		ctx := context.TODO()
 		cache := NewCache()
 		someHash := "someHash"
 		configListManagerMock := &mocks.Manager{}
@@ -103,7 +100,7 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
-		err := repository.Insert(ctx, someHash)
+		err := repository.Insert(someHash)
 		require.Error(t, err)
 
 		// then

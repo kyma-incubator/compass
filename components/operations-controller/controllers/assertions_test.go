@@ -67,7 +67,7 @@ func stubLoggerNotLoggedAssertion(t *testing.T, errExpectation string, msgExpect
 
 func assertZeroInvocations(t *testing.T, callCountFunc ...func() int) {
 	for _, callCount := range callCountFunc {
-		require.Equal(t, callCount(), 0)
+		require.Equal(t, 0, callCount())
 	}
 }
 
