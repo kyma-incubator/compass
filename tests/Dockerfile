@@ -3,6 +3,9 @@ FROM golang:1.15.7-alpine3.13 as builder
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests
 
+COPY go.mod go.sum /
+RUN go mod download -x
+
 WORKDIR ${BASE_TEST_DIR}
 COPY . ${BASE_TEST_DIR}
 
