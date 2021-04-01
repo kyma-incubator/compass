@@ -9,7 +9,7 @@ The Aggregator application collects, aggregates and stores the ORD information f
 The Aggregator requires access to:
 1. Configured PostgreSQL database with the imported Director's database schema.
 2. Running Director component
-3. API that can be called to fetch and process ORD Documents. For details about the API that the Aggregator can call, see: TODO:
+3. API that can be called to fetch and process ORD Documents.
 
 ## Configuration
 
