@@ -124,7 +124,12 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
-		return nil, errors.New("missing location url after executing async webhook")
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to parse webhook HTTP response with body %s", respBody))
+		}
+
+		return nil, errors.New(fmt.Sprintf("%s: HTTP response status %+v with body %s", "missing location url after executing async webhook", resp.Status, respBody))
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
@@ -190,7 +195,7 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 	if len(bytes) > 0 {
 		tmpBody := make(map[string]interface{})
 		if err := json.Unmarshal(bytes, &tmpBody); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body %s", bytes))
 		}
 
 		for k, v := range tmpBody {
@@ -212,7 +217,12 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 func checkForErr(resp *http.Response, successStatusCode *int, error *string) error {
 	var errMsg string
 	if *successStatusCode != resp.StatusCode {
-		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *successStatusCode, resp.StatusCode)
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to parse webhook HTTP response with body %s", respBody))
+		}
+
+		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d and body %s; ", *successStatusCode, resp.StatusCode, respBody)
 	}
 
 	if error != nil && *error != "" {
