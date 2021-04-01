@@ -19,7 +19,7 @@ var (
 	tenantColumn = "tenant_id"
 )
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.SystemAuth) (Entity, error)
 	FromEntity(in Entity) (model.SystemAuth, error)

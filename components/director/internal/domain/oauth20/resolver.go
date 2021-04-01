@@ -16,33 +16,33 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
 }
 
-//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=IntegrationSystemService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(model *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
-//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
 	DeleteClientCredentials(ctx context.Context, clientID string) error

@@ -33,7 +33,7 @@ const (
 
 type repoCreatorFunc func(ctx context.Context, application *model.Application) error
 
-//go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -49,7 +49,7 @@ type ApplicationRepository interface {
 	DeleteGlobal(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -57,40 +57,40 @@ type LabelRepository interface {
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
-//go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, items []*model.Webhook) error
 }
 
-//go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
-//go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=ApplicationHideCfgProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }

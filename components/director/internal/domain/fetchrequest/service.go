@@ -26,7 +26,7 @@ type service struct {
 	timestampGen timestamp.Generator
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Update(ctx context.Context, item *model.FetchRequest) error
 }

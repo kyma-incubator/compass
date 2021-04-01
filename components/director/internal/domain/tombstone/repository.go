@@ -19,7 +19,7 @@ var (
 	updatableColumns = []string{"removal_date"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Tombstone) *Entity
 	FromEntity(entity *Entity) (*model.Tombstone, error)
