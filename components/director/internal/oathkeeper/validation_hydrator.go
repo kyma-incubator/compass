@@ -20,7 +20,7 @@ type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 }
 
-//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	InvalidateToken(ctx context.Context, item *model.SystemAuth) error

@@ -23,22 +23,22 @@ const (
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
 )
 
-//go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
 
-//go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
-//go:generate mockery -name=ObjectContextProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore
 type ObjectContextProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
-//go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }

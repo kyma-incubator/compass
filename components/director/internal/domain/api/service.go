@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIRepository --output=automock --outpkg=automock --case=underscore
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
@@ -26,17 +26,17 @@ type APIRepository interface {
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore
 type FetchRequestService interface {
 	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
-//go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error

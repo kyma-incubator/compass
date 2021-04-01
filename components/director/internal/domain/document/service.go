@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=DocumentRepository --output=automock --outpkg=automock --case=underscore
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
@@ -23,14 +23,14 @@ type DocumentRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	Delete(ctx context.Context, tenant, id string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

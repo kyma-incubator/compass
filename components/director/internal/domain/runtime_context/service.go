@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=RuntimeContextRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
@@ -24,7 +24,7 @@ type RuntimeContextRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 }
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -32,13 +32,13 @@ type LabelRepository interface {
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
-//go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

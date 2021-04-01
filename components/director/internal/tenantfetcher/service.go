@@ -35,14 +35,14 @@ type QueryConfig struct {
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
 
-//go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
-//go:generate mockery -name=EventAPIClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
 type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }

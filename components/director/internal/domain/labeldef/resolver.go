@@ -30,14 +30,14 @@ func NewResolver(transactioner persistence.Transactioner, srv Service, conv Mode
 }
 
 // dependencies
-//go:generate mockery -name=ModelConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ModelConverter --output=automock --outpkg=automock --case=underscore
 type ModelConverter interface {
 	// TODO: Use model.LabelDefinitionInput
 	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error)
 	ToGraphQL(definition model.LabelDefinition) (graphql.LabelDefinition, error)
 }
 
-//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
 	Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)

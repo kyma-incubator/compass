@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=ConfigChangeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ConfigChangeService --output=automock --outpkg=automock --case=underscore
 type ConfigChangeService interface {
 	Save(change model.ConfigurationChange) (string, error)
 	Get(id string) *model.ConfigurationChange

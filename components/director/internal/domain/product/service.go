@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ProductRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore
 type ProductRepository interface {
 	Create(ctx context.Context, item *model.Product) error
 	Update(ctx context.Context, item *model.Product) error

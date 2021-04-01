@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-//go:generate mockery -name=Pinger -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Pinger --output=automock --outpkg=automock --case=underscore
 type Pinger interface {
 	PingContext(ctx context.Context) error
 }

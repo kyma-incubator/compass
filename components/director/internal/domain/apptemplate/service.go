@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery -name=ApplicationTemplateRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
@@ -25,12 +25,12 @@ type ApplicationTemplateRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, items []*model.Webhook) error
 }

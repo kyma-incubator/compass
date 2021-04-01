@@ -20,7 +20,7 @@ var (
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.ApplicationTemplate) (*Entity, error)
 	FromEntity(entity *Entity) (*model.ApplicationTemplate, error)

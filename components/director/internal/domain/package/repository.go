@@ -22,7 +22,7 @@ var (
 		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Package) *Entity
 	FromEntity(entity *Entity) (*model.Package, error)
