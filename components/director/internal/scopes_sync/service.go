@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/ory/hydra-client-go/models"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -26,7 +26,7 @@ type SystemAuthRepo interface {
 
 //go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore
 type OAuthService interface {
-	ListClients(ctx context.Context) ([]oauth20.Client, error)
+	ListClients() ([]*models.OAuth2Client, error)
 	GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error)
 	UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
 }
@@ -46,7 +46,7 @@ func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, rep
 }
 
 func (s *service) SynchronizeClientScopes(ctx context.Context) error {
-	clientsFromHydra, err := s.oAuth20Svc.ListClients(ctx)
+	clientsFromHydra, err := s.oAuth20Svc.ListClients()
 	if err != nil {
 		return errors.Wrap(err, "while listing clients from hydra")
 	}
@@ -91,10 +91,10 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 	return nil
 }
 
-func convertScopesToMap(clientsFromHydra []oauth20.Client) map[string][]string {
+func convertScopesToMap(clientsFromHydra []*models.OAuth2Client) map[string][]string {
 	clientScopes := make(map[string][]string)
 	for _, s := range clientsFromHydra {
-		clientScopes[s.ClientID] = strings.Split(s.Scopes, " ")
+		clientScopes[s.ClientID] = strings.Split(s.Scope, " ")
 	}
 	return clientScopes
 }

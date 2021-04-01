@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
+	"github.com/ory/hydra-client-go/models"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/scopes_sync/automock"
@@ -36,7 +37,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 	t.Run("fails when cannot begin transaction", func(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
@@ -52,7 +53,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatDoesntExpectCommit()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return(nil, errors.New("error while listing systemAuths"))
 		defer mockedTx.AssertExpectations(t)
@@ -68,7 +69,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error during transaction commit")).ThatFailsOnCommit()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{}, nil)
 		defer mockedTx.AssertExpectations(t)
@@ -85,7 +86,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -112,7 +113,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return(nil, errors.New("error while getting scopes"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
@@ -141,7 +142,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{}, nil)
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
@@ -170,10 +171,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{
 			{
 				ClientID: clientID,
-				Scopes:   "scope",
+				Scope:    "scope",
 			},
 		}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"scope"}, nil)
@@ -204,10 +205,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients", context.TODO()).Return([]oauth20.Client{
+		oauthSvc.On("ListClients", context.TODO()).Return([]*models.OAuth2Client{
 			{
 				ClientID: clientID,
-				Scopes:   "first",
+				Scope:    "first",
 			},
 		}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"first", "second"}, nil)

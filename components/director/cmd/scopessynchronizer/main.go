@@ -3,7 +3,12 @@ package main
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
+
+	httptransport "github.com/go-openapi/runtime/client"
+
+	"github.com/ory/hydra-client-go/client"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
@@ -45,12 +50,15 @@ func main() {
 	exitOnError(ctx, err, "Error while loading app config")
 
 	oAuth20HTTPClient := &http.Client{
-		Timeout:   cfg.OAuth20.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		Timeout:   cfg.OAuth20.HTTPClientTimeout,
 	}
-	cfgProvider := configProvider(ctx, cfg)
+	adminURL, _ := url.Parse(cfg.OAuth20.ClientEndpoint)
+	transport := httptransport.NewWithClient(adminURL.Host, adminURL.Path, []string{adminURL.Scheme}, oAuth20HTTPClient)
+	hydra := client.New(transport, nil)
 
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20, oAuth20HTTPClient)
+	cfgProvider := configProvider(ctx, cfg)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20, hydra.Admin)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(ctx, err, "Error while establishing the connection to the database")
