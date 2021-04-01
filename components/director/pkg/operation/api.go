@@ -119,7 +119,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	err = json.NewEncoder(writer).Encode(opResponse)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while encoding operation data")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding operation data: %v", err)
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
@@ -18,7 +18,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
-//go:generate mockery -name=SpecConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, error)
 	InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (*model.SpecInput, error)

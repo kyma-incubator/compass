@@ -132,7 +132,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:              &http.Request{},
 			ExpectedStatus:       http.StatusOK,
-			ExpectedErrorMessage: str.Ptr("An error has occurred while fetching consumer info from context."),
+			ExpectedErrorMessage: str.Ptr("An error has occurred while fetching consumer info from context:"),
 			ExpectedError:        str.Ptr("Internal Server Error: cannot read consumer from context"),
 			MockNextHandler:      fixNextHandler(t),
 		},
@@ -145,7 +145,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:              createRequestWithClaims(testID, consumer.Application),
 			ExpectedStatus:       http.StatusOK,
-			ExpectedErrorMessage: str.Ptr("An error has occurred while opening transaction."),
+			ExpectedErrorMessage: str.Ptr("An error has occurred while opening transaction:"),
 			ExpectedError:        str.Ptr("test"),
 			MockNextHandler:      fixNextHandler(t),
 		},
@@ -159,7 +159,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:              createRequestWithClaims(testID, consumer.Application),
 			ExpectedStatus:       http.StatusOK,
-			ExpectedErrorMessage: str.Ptr("An error has occurred while checking repository status."),
+			ExpectedErrorMessage: str.Ptr("An error has occurred while checking repository status:"),
 			ExpectedError:        str.Ptr("test"),
 			MockNextHandler:      fixNextHandler(t),
 		},
@@ -173,7 +173,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:              createRequestWithClaims(testID, consumer.Application),
 			ExpectedStatus:       http.StatusOK,
-			ExpectedErrorMessage: str.Ptr("An error has occurred while committing transaction."),
+			ExpectedErrorMessage: str.Ptr("An error has occurred while committing transaction:"),
 			ExpectedError:        str.Ptr("test"),
 			MockNextHandler:      fixNextHandler(t),
 		},
@@ -188,7 +188,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:              createRequestWithClaims(testID, consumer.Application),
 			ExpectedStatus:       http.StatusOK,
-			ExpectedErrorMessage: str.Ptr("An error has occurred while updating repository status."),
+			ExpectedErrorMessage: str.Ptr("An error has occurred while updating repository status:"),
 			ExpectedError:        str.Ptr("test"),
 			MockNextHandler:      fixNextHandler(t),
 		},
@@ -218,7 +218,7 @@ func TestUpdate_Handler(t *testing.T) {
 				assert.Equal(t, testCase.ExpectedResponse, response)
 			}
 			if testCase.ExpectedErrorMessage != nil {
-				assert.Equal(t, *testCase.ExpectedErrorMessage, hook.LastEntry().Message)
+				assert.Equal(t, *testCase.ExpectedErrorMessage+" "+*testCase.ExpectedError, hook.LastEntry().Message)
 			}
 			if testCase.ExpectedError != nil {
 				assert.Equal(t, *testCase.ExpectedError, hook.LastEntry().Data["error"].(error).Error())
