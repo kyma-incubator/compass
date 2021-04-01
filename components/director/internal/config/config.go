@@ -156,7 +156,7 @@ type Config struct {
 
 	Timeouts *TimeoutsConfig
 
-	Database                *persistence.DatabaseConfig
+	Database                *persistence.DatabaseConfig `mapstructure:"db"`
 	API                     *ApiConfig
 	ConfigurationFile       string        `mapstructure:"configuration_file"`
 	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`

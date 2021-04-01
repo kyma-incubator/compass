@@ -8,15 +8,15 @@ import (
 const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type DatabaseConfig struct {
-	User               string        `mapstructure:"DB_USER"`
-	Password           string        `mapstructure:"DB_PASSWORD"`
-	Host               string        `mapstructure:"DB_HOST"`
-	Port               string        `mapstructure:"DB_PORT"`
-	Name               string        `mapstructure:"DB_NAME"`
-	SSLMode            string        `mapstructure:"DB_SSL"`
-	MaxOpenConnections int           `mapstructure:"DB_MAX_OPEN_CONNECTIONS"`
-	MaxIdleConnections int           `mapstructure:"DB_MAX_IDLE_CONNECTIONS"`
-	ConnMaxLifetime    time.Duration `mapstructure:"DB_CONNECTION_MAX_LIFETIME"`
+	User               string        `mapstructure:"user"`
+	Password           string        `mapstructure:"password"`
+	Host               string        `mapstructure:"host"`
+	Port               string        `mapstructure:"port"`
+	Name               string        `mapstructure:"name"`
+	SSLMode            string        `mapstructure:"ssl"`
+	MaxOpenConnections int           `mapstructure:"max_open_connections"`
+	MaxIdleConnections int           `mapstructure:"max_idle_connections"`
+	ConnMaxLifetime    time.Duration `mapstructure:"connection_max_lifetime"`
 }
 
 func DefaultDatabaseConfig() *DatabaseConfig {
