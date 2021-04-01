@@ -453,8 +453,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20201215200050-8026
 github.com/kyma-incubator/compass/components/director v0.0.0-20210203135116-086a057e4d3c/go.mod h1:X6pse3bIefvqtcRmbOZsPuVcrf7lPUMBRR0ZYeBoRus=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210222123648-c454983cf74b/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210301143156-3b39f117e7bf/go.mod h1:hJ3bgWfwFhdnxZF7Gcok5Rm1zDT4bHtVGHDeXDBvTfg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210327124918-fc8d9bd93566 h1:s7wck+cdyFoy+3gsjaXD/Q8BtTEb2bxfi/Oj6cdp87k=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210327124918-fc8d9bd93566/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081 h1:B5YW5qCt1PeNkNq1eHgS8O9+Ac6M05CJTn7hLVOzTWg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14 h1:gEtd9g2Yp5548gzdPcrD7I1yiq4sq0z1/WtwzWgoDu8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c/go.mod h1:MeS9gTgdRhKAWcMQSkYSk+ZSpYZJ1QipZeyJ6Cz7hHA=
@@ -647,6 +647,8 @@ github.com/prometheus/procfs v0.3.0/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4O
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
+github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
+github.com/robfig/cron/v3 v3.0.1/go.mod h1:eQICP3HwyT7UooqI/z+Ov+PtYAWygg1TEWWzGIFLtro=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rs/cors v1.6.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=

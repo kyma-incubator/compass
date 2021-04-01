@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TokenService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
 	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
 }
 
-//go:generate mockery -name=TokenConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
 type TokenConverter interface {
 	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)

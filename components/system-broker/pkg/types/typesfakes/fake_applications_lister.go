@@ -33,15 +33,16 @@ func (fake *FakeApplicationsLister) FetchApplications(arg1 context.Context) (*di
 	fake.fetchApplicationsArgsForCall = append(fake.fetchApplicationsArgsForCall, struct {
 		arg1 context.Context
 	}{arg1})
+	stub := fake.FetchApplicationsStub
+	fakeReturns := fake.fetchApplicationsReturns
 	fake.recordInvocation("FetchApplications", []interface{}{arg1})
 	fake.fetchApplicationsMutex.Unlock()
-	if fake.FetchApplicationsStub != nil {
-		return fake.FetchApplicationsStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.fetchApplicationsReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

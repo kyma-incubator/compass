@@ -24,17 +24,17 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
 type EventingService interface {
 	GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error)
 }
 
-//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Create(ctx context.Context, in model.RuntimeInput) (string, error)
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
@@ -47,25 +47,25 @@ type RuntimeService interface {
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
-//go:generate mockery -name=ScenarioAssignmentService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-//go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeConverter --output=automock --outpkg=automock --case=underscore
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
 	MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime
 	InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }

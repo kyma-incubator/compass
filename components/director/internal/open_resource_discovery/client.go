@@ -12,7 +12,7 @@ import (
 )
 
 // Client represents ORD documents client
-//go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error)
 }
