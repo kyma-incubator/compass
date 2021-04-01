@@ -82,10 +82,14 @@ graphql:
     deleteAutomaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:write"]
 
   field:
+    fetch_request:
+      auth: [ "fetch-request.webhooks.auth:read" ]
+    webhooks:
+        auth: [ "webhooks.auth:read" ]
     application:
       auths: ["application.auths:read"]
       webhooks: ["application.webhooks:read"]
-    applicationTemplate:
+    application_template:
       webhooks: ["application_template.webhooks:read"]
     bundle:
       instance_auth: ["bundle.instance_auths:read"]

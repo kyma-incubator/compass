@@ -46,6 +46,14 @@ func FixApplicationTemplateWithWebhook(name string) graphql.ApplicationTemplateI
 	appTemplate.Webhooks = []*graphql.WebhookInput{{
 		Type: graphql.WebhookTypeConfigurationChanged,
 		URL:  ptr.String("http://url.com"),
+		Auth: &graphql.AuthInput{
+			Credential: &graphql.CredentialDataInput{
+				Basic: &graphql.BasicCredentialDataInput{
+					Username: "username",
+					Password: "password",
+				},
+			},
+		},
 	}}
 	return appTemplate
 }

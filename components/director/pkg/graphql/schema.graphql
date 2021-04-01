@@ -883,7 +883,7 @@ Compass performs fetch to validate if request is correct and stores a copy
 """
 type FetchRequest {
 	url: String!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.fetch_request.auth")
 	mode: FetchMode!
 	filter: String
 	status: FetchRequestStatus!
@@ -1058,7 +1058,7 @@ type Webhook {
 	retryInterval: Int
 	timeout: Int
 	url: String
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String

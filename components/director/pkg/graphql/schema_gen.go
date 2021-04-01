@@ -4198,7 +4198,7 @@ Compass performs fetch to validate if request is correct and stores a copy
 """
 type FetchRequest {
 	url: String!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.fetch_request.auth")
 	mode: FetchMode!
 	filter: String
 	status: FetchRequestStatus!
@@ -4373,7 +4373,7 @@ type Webhook {
 	retryInterval: Int
 	timeout: Int
 	url: String
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String
@@ -11496,8 +11496,32 @@ func (ec *executionContext) _FetchRequest_auth(ctx context.Context, field graphq
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.fetch_request.auth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19556,8 +19580,32 @@ func (ec *executionContext) _Webhook_auth(ctx context.Context, field graphql.Col
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.webhooks.auth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

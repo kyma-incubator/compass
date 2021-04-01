@@ -39,13 +39,13 @@ func (_m *OAuthService) GetClientCredentialScopes(objType model.SystemAuthRefere
 	return r0, r1
 }
 
-// ListClients provides a mock function with given fields: ctx
-func (_m *OAuthService) ListClients(ctx context.Context) ([]*models.OAuth2Client, error) {
-	ret := _m.Called(ctx)
+// ListClients provides a mock function with given fields:
+func (_m *OAuthService) ListClients() ([]*models.OAuth2Client, error) {
+	ret := _m.Called()
 
 	var r0 []*models.OAuth2Client
-	if rf, ok := ret.Get(0).(func(context.Context) []*models.OAuth2Client); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() []*models.OAuth2Client); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*models.OAuth2Client)
@@ -53,8 +53,8 @@ func (_m *OAuthService) ListClients(ctx context.Context) ([]*models.OAuth2Client
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}

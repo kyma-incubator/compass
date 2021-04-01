@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read"
+const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
 
 // UnsignedTokenAuthorizationProvider presents an AuthorizationProvider implementation which fabricates its own unsigned tokens for the Authorization header
 type unsignedTokenAuthorizationProvider struct{}

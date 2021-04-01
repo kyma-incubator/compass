@@ -27,3 +27,5 @@
   - "api_spec.fetch_request:read"
   - "integration_system.auths:read"
   - "runtime.auths:read"
+  - "fetch-request.webhooks.auth:read"
+  - "webhooks.auth:read"

@@ -104,6 +104,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Run("Application access", func(t *testing.T) {
 		type accessRequired struct {
 			appWebhooks               bool
+			appWebhooksAuth           bool
 			appAuths                  bool
 			bundleInstanceAuth        bool
 			bundleInstanceAuths       bool
@@ -158,6 +159,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 					documentFetchRequest:      true,
 					eventSpecFetchRequest:     true,
 					apiSpecFetchRequest:       true,
+					appWebhooksAuth:           true,
 				},
 			},
 		}
@@ -166,6 +168,9 @@ func TestSensitiveDataStrip(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
 				require.Equal(t, application.Webhooks != nil, test.fieldExpectations.appWebhooks)
+				if application.Webhooks != nil {
+					require.Equal(t, application.Webhooks[0].Auth != nil, test.fieldExpectations.appWebhooksAuth)
+				}
 				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
 				require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.apiSpecFetchRequest)
 				require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.eventSpecFetchRequest)
@@ -217,6 +222,14 @@ func gqlClient(t *testing.T, creds *graphql.OAuthCredentialData, scopes string) 
 
 func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 	webhookURL := "http://test-url.com"
+	auth := &graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: "username",
+				Password: "password",
+			},
+		},
+	}
 	return graphql.ApplicationRegisterInput{
 		Name: name,
 		Bundles: []*graphql.BundleCreateInput{{
@@ -228,7 +241,8 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 					Format: graphql.SpecFormatJSON,
 					Type:   graphql.APISpecTypeOpenAPI,
 					FetchRequest: &graphql.FetchRequestInput{
-						URL: OpenAPISpec,
+						URL:  OpenAPISpec,
+						Auth: auth,
 					},
 				},
 			}},
@@ -238,7 +252,8 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 					Type:   graphql.EventSpecTypeAsyncAPI,
 					Format: graphql.SpecFormatJSON,
 					FetchRequest: &graphql.FetchRequestInput{
-						URL: AsyncAPISpec,
+						URL:  AsyncAPISpec,
+						Auth: auth,
 					},
 				},
 			}},
@@ -246,13 +261,15 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 				Title:  "test-document",
 				Format: graphql.DocumentFormatMarkdown,
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: MDDocumentURL,
+					URL:  MDDocumentURL,
+					Auth: auth,
 				},
 			}},
 		}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.WebhookTypeUnregisterApplication,
 			URL:  &webhookURL,
+			Auth: auth,
 		}},
 	}
 }
