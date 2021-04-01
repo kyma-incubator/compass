@@ -119,18 +119,18 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	entity, ok := resp.(graphql.Entity)
 	if !ok {
-		log.C(ctx).WithError(err).Error("An error occurred while casting the response entity")
+		log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", err)
 		return nil, apperrors.NewInternalError("Failed to process operation")
 	}
 
 	appConditionStatus, err := determineApplicationInProgressStatus(operationType)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("While determining the application status condition")
+		log.C(ctx).WithError(err).Errorf("While determining the application status condition: %v", err)
 		return nil, err
 	}
 
 	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, *appConditionStatus); err != nil {
-		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %v", entity.GetType(), entity.GetID(), appConditionStatus)
+		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %v: %v", entity.GetType(), entity.GetID(), appConditionStatus, err)
 		return nil, apperrors.NewInternalError("Unable to update resource %s with id %s", entity.GetType(), entity.GetID())
 	}
 
