@@ -188,8 +188,13 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 
 	body := make(map[string]string, 0)
 	if len(bytes) > 0 {
-		if err := json.Unmarshal(bytes, &body); err != nil {
+		tmpBody := make(map[string]interface{})
+		if err := json.Unmarshal(bytes, &tmpBody); err != nil {
 			return nil, err
+		}
+
+		for k, v := range tmpBody {
+			body[k] = fmt.Sprintf("%v", v)
 		}
 	}
 
