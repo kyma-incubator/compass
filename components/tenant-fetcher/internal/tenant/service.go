@@ -58,7 +58,7 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 
 	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty)
 	if !tenantId.Exists() || tenantId.Type != gjson.String || len(tenantId.String()) == 0 {
-		logger.Errorf("Property %q not found in body or it is not of String type: %v", s.config.TenantProviderTenantIdProperty, err)
+		logger.Errorf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty)
 		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
 		return
 	}
@@ -117,7 +117,7 @@ func (s *service) DeleteByExternalID(writer http.ResponseWriter, request *http.R
 
 	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty)
 	if !tenantId.Exists() || tenantId.Type != gjson.String || len(tenantId.String()) == 0 {
-		logger.Errorf("Property %q not found in body or it is not of String type: %v", s.config.TenantProviderTenantIdProperty, err)
+		logger.Errorf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty)
 		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
 		return
 	}

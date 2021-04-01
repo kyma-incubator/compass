@@ -116,16 +116,17 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
 		if !ok || validationErr.Inner != rsa.ErrVerification {
+			log.C(ctx).WithError(err).Errorf("An error occurred while parsing claims: %v", err)
 			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
 		}
 
-		err := a.SynchronizeJWKS(ctx)
-		if err != nil {
+		if err := a.SynchronizeJWKS(ctx); err != nil {
 			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKs during parsing token")
 		}
 
 		claims, err = a.parseClaims(ctx, bearerToken)
 		if err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while parsing claims: %v", err)
 			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
 		}
 
