@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -170,6 +171,9 @@ func main() {
 
 	appRepo := applicationRepo()
 
+	adminURL, err := url.Parse(cfg.OAuth20.ClientEndpoint)
+	exitOnError(err, "Error while parsing Hydra URL")
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -183,6 +187,7 @@ func main() {
 			httpClient,
 			cfg.ProtectedLabelPattern,
 			cfg.OneTimeToken.Length,
+			adminURL,
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),

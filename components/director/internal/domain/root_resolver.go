@@ -87,14 +87,14 @@ func NewRootResolver(
 	httpClient *http.Client,
 	protectedLabelPattern string,
 	tokenLength int,
+	hydraURL *url.URL,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
-	adminURL, _ := url.Parse(oAuth20Cfg.ClientEndpoint)
-	transport := httptransport.NewWithClient(adminURL.Host, adminURL.Path, []string{adminURL.Scheme}, oAuth20HTTPClient)
+	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)

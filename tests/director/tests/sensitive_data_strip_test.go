@@ -112,6 +112,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 			documentFetchRequest      bool
 			eventSpecFetchRequest     bool
 			apiSpecFetchRequest       bool
+			fetchRequestAuth          bool
 		}
 		type testCase struct {
 			name              string
@@ -160,6 +161,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 					eventSpecFetchRequest:     true,
 					apiSpecFetchRequest:       true,
 					appWebhooksAuth:           true,
+					fetchRequestAuth:          true,
 				},
 			},
 		}
@@ -173,8 +175,17 @@ func TestSensitiveDataStrip(t *testing.T) {
 				}
 				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
 				require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.apiSpecFetchRequest)
+				if application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil {
+					require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest.Auth != nil, test.fieldExpectations.fetchRequestAuth)
+				}
 				require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.eventSpecFetchRequest)
+				if application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil {
+					require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest.Auth != nil, test.fieldExpectations.fetchRequestAuth)
+				}
 				require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil, test.fieldExpectations.documentFetchRequest)
+				if application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil {
+					require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest.Auth != nil, test.fieldExpectations.fetchRequestAuth)
+				}
 				require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
 			})
 		}

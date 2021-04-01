@@ -96,7 +96,15 @@ func (s *service) UpdateClientScopes(ctx context.Context, clientID string, objec
 }
 
 func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) error {
-	return s.unregisterClient(ctx, clientID)
+	log.C(ctx).Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
+
+	_, err := s.hydraCLi.DeleteOAuth2Client(admin.NewDeleteOAuth2ClientParams().WithID(clientID))
+	if err != nil {
+		return err
+	}
+
+	log.C(ctx).Debugf("client_id %s and client_secret successfully unregistered in Hydra", clientID)
+	return nil
 }
 
 func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
@@ -157,18 +165,6 @@ func (s *service) updateClient(ctx context.Context, clientID string, scopes []st
 		return err
 	}
 	log.C(ctx).Debugf("Client with client_id %s successfully updated in Hydra", clientID)
-	return nil
-}
-
-func (s *service) unregisterClient(ctx context.Context, clientID string) error {
-	log.C(ctx).Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
-
-	_, err := s.hydraCLi.DeleteOAuth2Client(admin.NewDeleteOAuth2ClientParams().WithID(clientID))
-	if err != nil {
-		return err
-	}
-
-	log.C(ctx).Debugf("client_id %s and client_secret successfully unregistered in Hydra", clientID)
 	return nil
 }
 
