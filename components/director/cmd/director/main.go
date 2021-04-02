@@ -208,7 +208,7 @@ func main() {
 		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
 			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
-				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
+				logger.WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
 			}
 		})
 		go periodicExecutor.Run(ctx)
@@ -451,14 +451,14 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	runFn := func() {
 		log.C(ctx).Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe.", name)
+			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe: %v", name, err)
 		}
 	}
 
 	shutdownFn := func() {
 		log.C(ctx).Infof("Shutting down %s server...", name)
 		if err := srv.Shutdown(context.Background()); err != nil {
-			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s.", name)
+			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s: %v", name, err)
 		}
 	}
 

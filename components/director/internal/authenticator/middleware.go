@@ -67,21 +67,21 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while getting token from header. Error code: ", http.StatusBadRequest)
+				log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
+				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims. Error code: %d: %v", http.StatusUnauthorized, err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
 				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
-				log.C(ctx).WithError(err).Error("Tenant not found. Error code: ", http.StatusBadRequest)
+				log.C(ctx).WithError(err).Errorf("Tenant not found. Error code: %d: %v", http.StatusBadRequest, err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
