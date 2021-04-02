@@ -54,6 +54,7 @@ type DirectiveRoot struct {
 	Async       func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
 	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
 	HasScopes   func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	Sanitize    func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
 	Validate    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
@@ -3325,6 +3326,10 @@ HasScopes directive is added automatically to every query and mutation by scopes
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
 """
+Sanitize directive marks mutation arguments that will be validated.
+"""
+directive @sanitize(path: String!) on FIELD_DEFINITION
+"""
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
@@ -3979,7 +3984,7 @@ type APISpec {
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.api_spec.fetch_request")
 }
 
 type Application {
@@ -3991,11 +3996,11 @@ type Application {
 	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
-	webhooks: [Webhook!]
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
-	auths: [SystemAuth!]
+	auths: [SystemAuth!] @sanitize(path: "graphql.field.application.auths")
 	eventingConfiguration: ApplicationEventingConfiguration
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -4022,7 +4027,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
-	webhooks: [Webhook!]
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -4064,12 +4069,12 @@ type Bundle {
 	name: String!
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): BundleInstanceAuth
-	instanceAuths: [BundleInstanceAuth!]!
+	instanceAuth(id: ID!): BundleInstanceAuth @sanitize(path: "graphql.field.bundle.instance_auth")
+	instanceAuths: [BundleInstanceAuth!] @sanitize(path: "graphql.field.bundle.instance_auths")
 	"""
 	When defined, all Auth requests fallback to defaultInstanceAuth.
 	"""
-	defaultInstanceAuth: Auth
+	defaultInstanceAuth: Auth @sanitize(path: "graphql.field.bundle.default_instance_auth")
 	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
 	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
 	documents(first: Int = 200, after: PageCursor): DocumentPage
@@ -4145,7 +4150,7 @@ type Document {
 	"""
 	kind: String
 	data: CLOB
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.document.fetch_request")
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -4185,7 +4190,7 @@ type EventSpec {
 	data: CLOB
 	type: EventSpecType!
 	format: SpecFormat!
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.event_spec.fetch_request")
 }
 
 """
@@ -4193,7 +4198,7 @@ Compass performs fetch to validate if request is correct and stores a copy
 """
 type FetchRequest {
 	url: String!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.fetch_request.auth")
 	mode: FetchMode!
 	filter: String
 	status: FetchRequestStatus!
@@ -4223,7 +4228,7 @@ type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!]
+	auths: [SystemAuth!] @sanitize(path: "graphql.field.integration_system.auths")
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -4287,7 +4292,7 @@ type Runtime {
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!]
+	auths: [SystemAuth!] @sanitize(path: "graphql.field.runtime.auths")
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
@@ -4368,7 +4373,7 @@ type Webhook {
 	retryInterval: Int
 	timeout: Int
 	url: String
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String
@@ -4770,6 +4775,20 @@ func (ec *executionContext) dir_hasScenario_args(ctx context.Context, rawArgs ma
 }
 
 func (ec *executionContext) dir_hasScopes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["path"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["path"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) dir_sanitize_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -7374,8 +7393,32 @@ func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.APISpec().FetchRequest(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.APISpec().FetchRequest(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.api_spec.fetch_request")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*FetchRequest); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.FetchRequest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7669,8 +7712,32 @@ func (ec *executionContext) _Application_webhooks(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().Webhooks(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Application().Webhooks(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application.webhooks")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*Webhook); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Webhook`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7807,8 +7874,32 @@ func (ec *executionContext) _Application_auths(ctx context.Context, field graphq
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().Auths(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Application().Auths(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application.auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*SystemAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8296,8 +8387,32 @@ func (ec *executionContext) _ApplicationTemplate_webhooks(ctx context.Context, f
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ApplicationTemplate().Webhooks(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.ApplicationTemplate().Webhooks(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application_template.webhooks")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*Webhook); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Webhook`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9092,8 +9207,32 @@ func (ec *executionContext) _Bundle_instanceAuth(ctx context.Context, field grap
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().InstanceAuth(rctx, obj, args["id"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Bundle().InstanceAuth(rctx, obj, args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.bundle.instance_auth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*BundleInstanceAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9123,22 +9262,43 @@ func (ec *executionContext) _Bundle_instanceAuths(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().InstanceAuths(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Bundle().InstanceAuths(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.bundle.instance_auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*BundleInstanceAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*BundleInstanceAuth)
 	fc.Result = res
-	return ec.marshalNBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthᚄ(ctx, field.Selections, res)
+	return ec.marshalOBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Bundle_defaultInstanceAuth(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
@@ -9157,8 +9317,32 @@ func (ec *executionContext) _Bundle_defaultInstanceAuth(ctx context.Context, fie
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefaultInstanceAuth, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.DefaultInstanceAuth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.bundle.default_instance_auth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10391,8 +10575,32 @@ func (ec *executionContext) _Document_fetchRequest(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Document().FetchRequest(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Document().FetchRequest(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.document.fetch_request")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*FetchRequest); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.FetchRequest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11199,8 +11407,32 @@ func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.EventSpec().FetchRequest(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.EventSpec().FetchRequest(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.event_spec.fetch_request")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*FetchRequest); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.FetchRequest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11264,8 +11496,32 @@ func (ec *executionContext) _FetchRequest_auth(ctx context.Context, field graphq
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.fetch_request.auth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11858,8 +12114,32 @@ func (ec *executionContext) _IntegrationSystem_auths(ctx context.Context, field 
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.IntegrationSystem().Auths(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.IntegrationSystem().Auths(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.integration_system.auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*SystemAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17997,8 +18277,32 @@ func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.Co
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Runtime().Auths(rctx, obj)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Runtime().Auths(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.runtime.auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*SystemAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19276,8 +19580,32 @@ func (ec *executionContext) _Webhook_auth(ctx context.Context, field graphql.Col
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.webhooks.auth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22497,9 +22825,6 @@ func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Bundle_instanceAuths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "defaultInstanceAuth":
@@ -25286,43 +25611,6 @@ func (ec *executionContext) marshalNBundleInstanceAuth2githubᚗcomᚋkymaᚑinc
 	return ec._BundleInstanceAuth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthᚄ(ctx context.Context, sel ast.SelectionSet, v []*BundleInstanceAuth) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuth) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -26766,6 +27054,46 @@ func (ec *executionContext) unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkym
 
 func (ec *executionContext) marshalOBundleInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuth) graphql.Marshaler {
 	return ec._BundleInstanceAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthᚄ(ctx context.Context, sel ast.SelectionSet, v []*BundleInstanceAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuth) graphql.Marshaler {

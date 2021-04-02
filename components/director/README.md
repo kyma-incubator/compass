@@ -70,7 +70,7 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_ONE_TIME_TOKEN_URL**                   | None                            | The endpoint for fetching a one-time token                         |
 | **APP_URL**                                  | None                            | The endpoint of the application (Director)                         |
 | **APP_CONNECTOR_URL**                        | None                            | The endpoint of Connector                                          |
-| **APP_OAUTH20_CLIENT_ENDPOINT**              | None                            | The endpoint for managing OAuth 2.0 clients                        |
+| **APP_OAUTH20_URL**              | None                            | The endpoint for managing OAuth 2.0 clients                        |
 | **APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT** | None                            | The public endpoint for fetching OAuth 2.0 access token            |
 | **APP_OAUTH20_HTTP_CLIENT_TIMEOUT**          | `3m`                            | The timeout of HTTP client for managing OAuth 2.0 clients          |
 | **APP_STATIC_USERS_SRC**                     | None                            | The path for static users configuration file                       |
