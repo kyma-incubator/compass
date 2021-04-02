@@ -183,7 +183,7 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 					BootstrapCorrelationID: bootstrapCorrelationID,
 				})
 				if err != nil {
-					log.C(ctx).WithError(err).Errorf("Could not set log level to %s and log format to %s after config file modification event of type %s", logLevel, logFormat, event.String())
+					log.C(ctx).WithError(err).Errorf("Could not set log level to %s and log format to %s after config file modification event of type %s: %v", logLevel, logFormat, event.String(), err)
 				}
 				ctx = newCtx
 			}

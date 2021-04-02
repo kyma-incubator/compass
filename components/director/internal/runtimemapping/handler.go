@@ -15,22 +15,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TokenVerifier -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore
 type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (*jwt.MapClaims, error)
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
 }
 
-//go:generate mockery -name=TenantService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 }
 
-//go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }

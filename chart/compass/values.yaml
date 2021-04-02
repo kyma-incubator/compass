@@ -44,28 +44,28 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1767"
+      version: "PR-1783"
     connectivity_adapter:
       dir:
-      version: "PR-1791"
+      version: "PR-1808"
     pairing_adapter:
       dir:
-      version: "PR-1750"
+      version: "PR-1808"
     director:
       dir:
       version: "PR-1807"
     gateway:
       dir:
-      version: "PR-1750"
+      version: "PR-1783"
     operations_controller:
       dir:
       version: "PR-1807"
     tenant_fetcher:
       dir:
-      version: "PR-1782"
+      version: "PR-1783"
     ord_service:
       dir:
-      version: "PR-17"
+      version: "PR-19"
     schema_migrator:
       dir:
       version: "PR-1780"
@@ -79,10 +79,10 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1750"
+      version: "PR-1808"
     console:
       dir:
-      version: "PR-23"
+      version: "PR-25"
     e2e_tests:
       dir:
       version: "PR-1807"
@@ -325,6 +325,14 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
+
+  ordAggregator:
+    name: ord-aggregator
+    enabled: true
+    schedule: "*/5 * * * *"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
 
   tenantFetchers:
     job1:

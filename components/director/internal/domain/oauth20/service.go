@@ -20,12 +20,12 @@ const applicationJSONType = "application/json"
 
 var defaultGrantTypes = []string{"client_credentials"}
 
-//go:generate mockery -name=ScopeCfgProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScopeCfgProvider --output=automock --outpkg=automock --case=underscore
 type ScopeCfgProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
@@ -183,12 +183,12 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 		}
 		_, err = io.Copy(ioutil.Discard, resp.Body)
 		if err != nil {
-			log.C(ctx).WithError(err).Error("An error has occurred while copying response body.")
+			log.C(ctx).WithError(err).Errorf("An error has occurred while copying response body: %v", err)
 		}
 
 		err := body.Close()
 		if err != nil {
-			log.C(ctx).WithError(err).Error("An error has occurred while closing body.")
+			log.C(ctx).WithError(err).Errorf("An error has occurred while closing body: %v", err)
 		}
 	}
 

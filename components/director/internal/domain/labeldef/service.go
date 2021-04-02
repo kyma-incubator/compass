@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
@@ -22,12 +22,12 @@ type Repository interface {
 	DeleteByKey(ctx context.Context, tenant, key string) error
 }
 
-//go:generate mockery -name=ScenarioAssignmentLister -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenarioAssignmentLister --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentLister interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -37,12 +37,12 @@ type LabelRepository interface {
 	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
-//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
