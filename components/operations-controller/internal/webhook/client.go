@@ -124,12 +124,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to parse webhook HTTP response with body %s", respBody))
-		}
-
-		return nil, errors.New(fmt.Sprintf("%s: HTTP response status %+v with body %s", "missing location url after executing async webhook", resp.Status, respBody))
+		return nil, errors.New(fmt.Sprintf("%s: HTTP response status %+v with body %s", "missing location url after executing async webhook", resp.Status, responseObject.Body))
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
@@ -190,6 +185,7 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body := make(map[string]string, 0)
 	if len(bytes) > 0 {
