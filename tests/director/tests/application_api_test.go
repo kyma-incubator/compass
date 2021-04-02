@@ -304,7 +304,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 			t.Log("Issue a Hydra token with Client Credentials")
-			accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+			accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 			oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 			err = testctx.Tc.NewOperation(ctx).Run(request, oauthGraphQLClient, &applicationPage)
@@ -784,7 +784,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
@@ -1050,7 +1050,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 		err = testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
@@ -1208,7 +1208,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:read application:read")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 		err = testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
