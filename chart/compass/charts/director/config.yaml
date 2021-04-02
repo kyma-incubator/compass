@@ -83,7 +83,7 @@ graphql:
 
   field:
     fetch_request:
-      auth: ["fetch-request.webhooks.auth:read"]
+      auth: ["fetch-request.auth:read"]
     webhooks:
       auth: ["webhooks.auth:read"]
     application:
@@ -123,6 +123,7 @@ clientCredentialsRegistrationScopes:
     - "document.fetch_request:read"
     - "event_spec.fetch_request:read"
     - "api_spec.fetch_request:read"
+    - "fetch-request.auth:read"
   integration_system:
     - "application:read"
     - "application:write"
