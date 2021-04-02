@@ -19,13 +19,13 @@ func MapSQLError(ctx context.Context, err error, resourceType resource.Type, sql
 	}
 
 	if err == sql.ErrNoRows {
-		log.C(ctx).WithError(err).Errorf("SQL: no rows in result set for '%s' resource type", resourceType)
+		log.C(ctx).WithError(err).Errorf("SQL: no rows in result set for '%s' resource type: %v", resourceType, err)
 		return apperrors.NewNotFoundErrorWithType(resourceType)
 	}
 
 	pgErr, ok := err.(*pq.Error)
 	if !ok {
-		log.C(ctx).WithError(err).Errorf("Error while casting to postgres error.")
+		log.C(ctx).WithError(err).Errorf("Error while casting to postgres error: %v", err)
 		return apperrors.NewInternalError("Unexpected error while executing SQL query")
 	}
 

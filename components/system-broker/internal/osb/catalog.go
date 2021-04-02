@@ -49,7 +49,7 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 	if err != nil {
 		//broker api does not log catalog errors
 		err := errors.Wrap(err, "while listing applications from director")
-		log.C(ctx).WithError(err).Error("catalog failure")
+		log.C(ctx).WithError(err).Errorf("catalog failure: %v", err)
 		return nil, errors.Wrap(err, "could not build catalog")
 	}
 
