@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -1218,4 +1219,106 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		require.Len(t, applicationPage.Data, len(expectedApplications))
 		assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
 	})
+}
+
+func TestDeleteApplicationWithNoScenarios(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	in := graphql.ApplicationRegisterInput{
+		Name:           "wordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+	}
+
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	actualApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
+	require.NoError(t, err)
+
+	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "integrationSystemID")
+	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "name")
+	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "scenarios")
+
+	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	require.NoError(t, err)
+}
+
+func TestApplicationDeletionInScenario(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	validSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": []interface{}{
+				"DEFAULT", "test",
+			},
+		},
+	}
+	labelDefinitionInput := graphql.LabelDefinitionInput{
+		Key:    "scenarios",
+		Schema: json.MarshalJSONSchema(t, validSchema),
+	}
+
+	ldInputGql, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
+	require.NoError(t, err)
+
+	updateLabelDefinitionReq := fixtures.FixUpdateLabelDefinitionRequest(ldInputGql)
+
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), updateLabelDefinitionReq, nil)
+	require.NoError(t, err)
+
+	in := graphql.ApplicationRegisterInput{
+		Name:           "wordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: graphql.Labels{
+			"scenarios": []interface{}{"DEFAULT", "test"},
+		},
+	}
+
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	actualApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
+	require.NoError(t, err)
+
+	inRuntime := graphql.RuntimeInput{
+		Name: "test-runtime",
+		Labels: graphql.Labels{
+			"scenarios": []interface{}{"DEFAULT", "test"},
+		},
+	}
+	runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(inRuntime)
+	require.NoError(t, err)
+	request = fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
+	runtime := graphql.RuntimeExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &runtime)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), runtime.ID)
+	require.NoError(t, err)
+
+	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "The operation is not allowed [reason=System wordpress is still used and cannot be deleted. Unassign the system from the following formations first: test. Then, unassign the system from the following runtimes, too: test-runtime")
+
+	request = fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	require.NoError(t, err)
+
+	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	require.NoError(t, err)
 }

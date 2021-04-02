@@ -310,19 +310,21 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	runtimes, err := s.getRuntimeNamesForScenarios(ctx, appTenant, scenarios)
-	if err != nil {
-		return err
-	}
-
 	validScenarios := removeDefaultScenario(scenarios)
-	if len(validScenarios) > 0 && len(runtimes) > 0 {
-		application, err := s.appRepo.GetByID(ctx, appTenant, id)
+	if len(validScenarios) > 0 {
+		runtimes, err := s.getRuntimeNamesForScenarios(ctx, appTenant, validScenarios)
 		if err != nil {
-			return errors.Wrapf(err, "while getting application with id %s", id)
+			return err
 		}
-		msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
-		return apperrors.NewInvalidOperationError(msg)
+
+		if len(validScenarios) > 0 && len(runtimes) > 0 {
+			application, err := s.appRepo.GetByID(ctx, appTenant, id)
+			if err != nil {
+				return errors.Wrapf(err, "while getting application with id %s", id)
+			}
+			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+			return apperrors.NewInvalidOperationError(msg)
+		}
 	}
 
 	err = s.appRepo.Delete(ctx, appTenant, id)
@@ -544,7 +546,10 @@ func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, ap
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "while fetching application label")
+		if apperrors.ErrorCode(err) == apperrors.NotFound {
+			return nil, nil
+		}
+		return nil, err
 	}
 
 	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
