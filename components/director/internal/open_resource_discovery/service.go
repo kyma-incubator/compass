@@ -106,7 +106,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
 			documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q", wh.ID)
+				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
 			baseURL = *wh.URL
 			break
@@ -115,7 +115,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		if err := s.processDocuments(ctx, app.ID, baseURL, documents); err != nil {
-			log.C(ctx).WithError(err).Error("error processing ORD documents")
+			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 		} else {
 			log.C(ctx).Info("Successfully processed ORD documents")
 			return tx.Commit()

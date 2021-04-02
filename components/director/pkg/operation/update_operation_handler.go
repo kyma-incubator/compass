@@ -124,7 +124,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		fallthrough
 	case OperationTypeUpdate:
 		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError, appConditionStatus); err != nil {
-			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
+			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 			return
 		}
@@ -132,13 +132,13 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		resourceDeleterFunc := h.resourceDeleterFuncs[operation.ResourceType]
 		if operation.Error != "" {
 			if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError, appConditionStatus); err != nil {
-				log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
+				log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 				return
 			}
 		} else {
 			if err := resourceDeleterFunc(ctx, operation.ResourceID); err != nil {
-				log.C(ctx).WithError(err).Errorf("While deleting resource %s with id %s", operation.ResourceType, operation.ResourceID)
+				log.C(ctx).WithError(err).Errorf("While deleting resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to delete resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 				return
 			}
@@ -162,7 +162,7 @@ func operationRequestFromBody(ctx context.Context, request *http.Request) (*Oper
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
-			log.C(ctx).WithError(err).Error("Failed to close request body")
+			log.C(ctx).WithError(err).Errorf("Failed to close request body: %v", err)
 		}
 	}()
 
