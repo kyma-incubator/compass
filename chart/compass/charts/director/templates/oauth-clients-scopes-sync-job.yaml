@@ -1,7 +1,10 @@
 {{- $jobName := (printf "%s-clients-scopes-synchronization" (include "fullname" .)) }}
 {{- $job := (lookup "batch/v1" "Job" .Release.Namespace $jobName) }}
 {{- $currentChecksum := (.Files.Glob .Values.configFile.name ).AsConfig | sha256sum | quote }}
-{{- $jobChecksum := empty $job | ternary "" $job.metadata.annotations.configChecksum | quote }}
+{{- $jobChecksum := "" }}
+{{- if not (empty $job) }}
+  {{- $jobChecksum = $job.metadata.annotations.configChecksum | quote }}
+{{- end}}
 {{- if ne $currentChecksum $jobChecksum }}
 apiVersion: batch/v1
 kind: Job
