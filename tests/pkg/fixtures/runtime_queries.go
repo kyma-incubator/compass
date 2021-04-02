@@ -33,6 +33,9 @@ func RequestClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlCl
 }
 
 func UnregisterRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
 	delReq := FixUnregisterRuntimeRequest(id)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)

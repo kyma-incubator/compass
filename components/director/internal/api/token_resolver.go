@@ -45,7 +45,7 @@ func (r *tokenResolver) GenerateCSRToken(ctx context.Context, authID string) (*i
 
 	token, err := r.tokenService.RegenerateOneTimeToken(ctx, authID, tokens.CSRToken)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for CSR with authID %s", authID)
+		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for CSR with authID %s: %v", authID, err)
 		return nil, errors.Wrap(err, "Failed to create one-time token for CSR")
 	}
 

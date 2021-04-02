@@ -102,7 +102,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:write application:read")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
@@ -280,7 +280,7 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, "runtime:write")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)

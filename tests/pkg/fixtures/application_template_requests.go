@@ -41,6 +41,23 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	return appTemplateInput
 }
 
+func FixApplicationTemplateWithWebhook(name string) graphql.ApplicationTemplateInput {
+	appTemplate := FixApplicationTemplate(name)
+	appTemplate.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url.com"),
+		Auth: &graphql.AuthInput{
+			Credential: &graphql.CredentialDataInput{
+				Basic: &graphql.BasicCredentialDataInput{
+					Username: "username",
+					Password: "password",
+				},
+			},
+		},
+	}}
+	return appTemplate
+}
+
 func FixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
