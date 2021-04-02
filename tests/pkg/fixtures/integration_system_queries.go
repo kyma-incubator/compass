@@ -35,6 +35,9 @@ func RegisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcl
 }
 
 func UnregisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
 	req := FixUnregisterIntegrationSystem(id)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)

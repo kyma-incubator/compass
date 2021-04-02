@@ -1,9 +1,11 @@
 FROM golang:1.15.7-alpine3.13 as builder
 
-
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests
-
 WORKDIR ${BASE_TEST_DIR}
+
+COPY go.mod go.sum ${BASE_TEST_DIR}/
+RUN go mod download -x
+
 COPY . ${BASE_TEST_DIR}
 
 RUN CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapter.test && \

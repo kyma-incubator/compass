@@ -11,7 +11,6 @@ import (
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -84,7 +83,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
-		log.D().Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
+		fmt.Printf("no examples under %s directory, skipping adding description", p.examplesDirectory)
 		return nil
 	}
 	for _, dir := range dirs {
