@@ -189,16 +189,17 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 }
 
 func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) {
-	bytes, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+	resp.Body = ioutil.NopCloser(bytes.NewBuffer(respBody))
 
 	body := make(map[string]string, 0)
-	if len(bytes) > 0 {
+	if len(respBody) > 0 {
 		tmpBody := make(map[string]interface{})
-		if err := json.Unmarshal(bytes, &tmpBody); err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body %s", bytes))
+		if err := json.Unmarshal(respBody, &tmpBody); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body %s", respBody))
 		}
 
 		for k, v := range tmpBody {
@@ -224,6 +225,7 @@ func checkForErr(resp *http.Response, successStatusCode *int, error *string) err
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to parse webhook HTTP response with body %s", respBody))
 		}
+		resp.Body = ioutil.NopCloser(bytes.NewBuffer(respBody))
 
 		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d and body %s; ", *successStatusCode, resp.StatusCode, respBody)
 	}
