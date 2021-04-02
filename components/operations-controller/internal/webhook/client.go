@@ -103,6 +103,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	responseObject, err := parseResponseObject(resp)
 	if err != nil {
@@ -164,6 +165,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	responseObject, err := parseResponseObject(resp)
 	if err != nil {
@@ -185,7 +187,6 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	body := make(map[string]string, 0)
 	if len(bytes) > 0 {
