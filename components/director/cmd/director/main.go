@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -170,6 +171,9 @@ func main() {
 
 	appRepo := applicationRepo()
 
+	adminURL, err := url.Parse(cfg.OAuth20.URL)
+	exitOnError(err, "Error while parsing Hydra URL")
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -183,11 +187,13 @@ func main() {
 			httpClient,
 			cfg.ProtectedLabelPattern,
 			cfg.OneTimeToken.Length,
+			adminURL,
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
-			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
+			HasScopes:   scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
+			Sanitize:    scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
 	}
@@ -513,12 +519,11 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 		},
 	}
 
-	internalRouter := mux.NewRouter()
-
 	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
 	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
-	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
 
+	internalRouter := mux.NewRouter()
+	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
 	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	internalRouter.Use(middlewares...)
