@@ -59,7 +59,7 @@ func FetchJWK(ctx context.Context, urlstring string, options ...jwk.FetchOption)
 		defer func() {
 			err := f.Close()
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while closing file.")
+				log.C(ctx).WithError(err).Errorf("An error has occurred while closing file: %v", err)
 			}
 		}()
 

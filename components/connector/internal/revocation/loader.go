@@ -59,7 +59,7 @@ func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 			Watch:         true,
 		})
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again...", rl.reconnectInterval.String())
+			log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", rl.reconnectInterval.String(), err)
 			time.Sleep(rl.reconnectInterval)
 			continue
 		}
