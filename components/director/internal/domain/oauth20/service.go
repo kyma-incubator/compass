@@ -48,7 +48,7 @@ type service struct {
 func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config, hydraCLi OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
-		clientEndpoint:            cfg.ClientEndpoint,
+		clientEndpoint:            cfg.URL,
 		publicAccessTokenEndpoint: cfg.PublicAccessTokenEndpoint,
 		uidService:                uidService,
 		hydraCLi:                  hydraCLi,

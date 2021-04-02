@@ -171,7 +171,7 @@ func main() {
 
 	appRepo := applicationRepo()
 
-	adminURL, err := url.Parse(cfg.OAuth20.ClientEndpoint)
+	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
 	gqlCfg := graphql.Config{

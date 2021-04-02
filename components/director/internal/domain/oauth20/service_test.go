@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	clientEndpoint = "URl"
+	url            = "URl"
 	publicEndpoint = "accessTokenURL"
 	clientID       = "clientid"
 	clientSecret   = "secret"
@@ -112,7 +112,7 @@ func TestService_CreateClient(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{ClientEndpoint: clientEndpoint, PublicAccessTokenEndpoint: publicEndpoint}, hydraService)
+			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{URL: url, PublicAccessTokenEndpoint: publicEndpoint}, hydraService)
 
 			// when
 			oauthData, err := svc.CreateClientCredentials(ctx, testCase.ObjectType)
@@ -195,7 +195,7 @@ func TestService_UpdateClient(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{ClientEndpoint: clientEndpoint, PublicAccessTokenEndpoint: publicEndpoint}, hydraService)
+			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{URL: url, PublicAccessTokenEndpoint: publicEndpoint}, hydraService)
 
 			// when
 			err := svc.UpdateClientScopes(ctx, clientID, testCase.ObjectType)
@@ -247,7 +247,7 @@ func TestService_DeleteClientCredentials(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(nil, nil, oauth20.Config{ClientEndpoint: clientEndpoint}, hydraService)
+			svc := oauth20.NewService(nil, nil, oauth20.Config{URL: url}, hydraService)
 
 			// when
 			err := svc.DeleteClientCredentials(ctx, id)
@@ -349,7 +349,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(nil, nil, oauth20.Config{ClientEndpoint: clientEndpoint}, hydraService)
+			svc := oauth20.NewService(nil, nil, oauth20.Config{URL: url}, hydraService)
 
 			// when
 			err := svc.DeleteMultipleClientCredentials(ctx, testCase.Auths)
@@ -402,7 +402,7 @@ func TestService_ListClients(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{ClientEndpoint: clientEndpoint, PublicAccessTokenEndpoint: publicEndpoint}, hydraService)
+			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{URL: url, PublicAccessTokenEndpoint: publicEndpoint}, hydraService)
 
 			// when
 			clients, err := svc.ListClients()

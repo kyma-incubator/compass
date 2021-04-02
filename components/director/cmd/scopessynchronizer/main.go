@@ -53,7 +53,7 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 		Timeout:   cfg.OAuth20.HTTPClientTimeout,
 	}
-	adminURL, err := url.Parse(cfg.OAuth20.ClientEndpoint)
+	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(ctx, err, "Error while parsing OAuth client endpoint")
 
 	transport := httptransport.NewWithClient(adminURL.Host, adminURL.Path, []string{adminURL.Scheme}, oAuth20HTTPClient)
