@@ -103,7 +103,10 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		log.C(ctx).Error(err, "Failed to close HTTP response body")
+	}()
 
 	responseObject, err := parseResponseObject(resp)
 	if err != nil {
@@ -165,7 +168,10 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		log.C(ctx).Error(err, "Failed to close HTTP response body")
+	}()
 
 	responseObject, err := parseResponseObject(resp)
 	if err != nil {
