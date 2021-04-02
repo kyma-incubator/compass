@@ -146,6 +146,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 					documentFetchRequest:      true,
 					eventSpecFetchRequest:     true,
 					apiSpecFetchRequest:       true,
+					fetchRequestAuth:          true,
 				},
 			},
 			{
@@ -169,36 +170,43 @@ func TestSensitiveDataStrip(t *testing.T) {
 		for _, test := range testCases {
 			t.Run(test.name, func(t *testing.T) {
 				application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
+
+				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
+				require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
+
 				require.Equal(t, application.Webhooks != nil, test.fieldExpectations.appWebhooks)
 				if application.Webhooks != nil {
 					require.Equal(t, application.Webhooks[0].Auth != nil, test.fieldExpectations.appWebhooksAuth)
 				}
-				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
+
 				require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.apiSpecFetchRequest)
 				if application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest != nil {
 					require.Equal(t, application.Bundles.Data[0].APIDefinitions.Data[0].Spec.FetchRequest.Auth != nil, test.fieldExpectations.fetchRequestAuth)
 				}
+
 				require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil, test.fieldExpectations.eventSpecFetchRequest)
 				if application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest != nil {
 					require.Equal(t, application.Bundles.Data[0].EventDefinitions.Data[0].Spec.FetchRequest.Auth != nil, test.fieldExpectations.fetchRequestAuth)
 				}
+
 				require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil, test.fieldExpectations.documentFetchRequest)
 				if application.Bundles.Data[0].Documents.Data[0].FetchRequest != nil {
 					require.Equal(t, application.Bundles.Data[0].Documents.Data[0].FetchRequest.Auth != nil, test.fieldExpectations.fetchRequestAuth)
 				}
-				require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
 			})
 		}
 	})
 
 	t.Run("Application template access", func(t *testing.T) {
-		t.Run("from runtime", func(t *testing.T) {
+		t.Run("from integration system", func(t *testing.T) {
 			appTemplate := fixtures.GetApplicationTemplate(t, ctx, intSystemOAuthGraphQLClient, tenantId, appTemplate.ID)
-			require.NotNil(t, appTemplate.Webhooks)
+			require.NotNil(t, appTemplate.Webhooks, "app template webhooks should be visible")
+			require.Nil(t, appTemplate.Webhooks[0].Auth, "app template webhook auths should not be visible")
 		})
 		t.Run("from admin user", func(t *testing.T) {
 			appTemplate := fixtures.GetApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
-			require.NotNil(t, appTemplate.Webhooks)
+			require.NotNil(t, appTemplate.Webhooks, "app template webhooks should be visible")
+			require.NotNil(t, appTemplate.Webhooks[0].Auth, "app template webhook auths should be visible")
 		})
 	})
 
@@ -207,7 +215,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 			rt := fixtures.GetRuntime(t, ctx, runtimeOAuthGraphQLClient, tenantId, runtime.ID)
 			require.NotNil(t, rt.Auths)
 		})
-
 		t.Run("from admin user", func(t *testing.T) {
 			rt := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 			require.NotNil(t, rt.Auths)
