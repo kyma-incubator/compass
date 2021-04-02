@@ -1,7 +1,8 @@
-{{ $jobName := (printf "%s-clients-scopes-synchronization" (include "fullname" .)) }}
-{{ $jobChecksum := (lookup "batch/v1" "Job" .Release.Namespace $jobName).metadata.annotations.configChecksum | quote }}
-{{ $currentChecksum := (.Files.Glob .Values.configFile.name ).AsConfig | sha256sum | quote }}
-{{ if ( ne $currentChecksum $jobChecksum) }}
+{{- $jobName := (printf "%s-clients-scopes-synchronization" (include "fullname" .)) }}
+{{- $job := (lookup "batch/v1" "Job" .Release.Namespace $jobName) }}
+{{- $currentChecksum := (.Files.Glob .Values.configFile.name ).AsConfig | sha256sum | quote }}
+{{- $jobChecksum := empty $job | ternary "" $job.metadata.annotations.configChecksum | quote }}
+{{- if ne $currentChecksum $jobChecksum }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -14,7 +15,7 @@ metadata:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation
-    configChecksum: { { $currentChecksum } }
+    configChecksum: {{ $currentChecksum }}
 spec:
   template:
     metadata:
@@ -65,8 +66,8 @@ spec:
               value: "{{.Values.global.tenantConfig.dbPool.maxIdleConnections}}"
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
-            - name: APP_OAUTH20_CLIENT_ENDPOINT
-              value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/clients
+            - name: APP_OAUTH20_URL
+              value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
           command:
