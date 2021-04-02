@@ -293,7 +293,7 @@ func resolveAdditionalRequestParameters(auth *schema.Auth) (*RequestParameters, 
 	} else {
 		if auth.AdditionalHeaders != nil {
 			headers := (map[string][]string)(auth.AdditionalHeaders)
-			additionalRequestParameters.Headers = &headers
+			additionalRequestParameters.Headers = headers
 		}
 	}
 
@@ -306,7 +306,7 @@ func resolveAdditionalRequestParameters(auth *schema.Auth) (*RequestParameters, 
 	} else {
 		if auth.AdditionalQueryParams != nil {
 			qp := (map[string][]string)(auth.AdditionalQueryParams)
-			additionalRequestParameters.QueryParameters = &qp
+			additionalRequestParameters.QueryParameters = qp
 		}
 	}
 
