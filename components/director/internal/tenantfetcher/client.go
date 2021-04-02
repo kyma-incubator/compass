@@ -23,15 +23,15 @@ const (
 )
 
 type OAuth2Config struct {
-	ClientID           string `envconfig:"APP_CLIENT_ID"`
-	ClientSecret       string `envconfig:"APP_CLIENT_SECRET"`
-	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
+	ClientID           string `mapstructure:"CLIENT_ID"`
+	ClientSecret       string `mapstructure:"CLIENT_SECRET"`
+	OAuthTokenEndpoint string `mapstructure:"OAUTH_TOKEN_ENDPOINT"`
 }
 
 type APIConfig struct {
-	EndpointTenantCreated string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
-	EndpointTenantDeleted string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
-	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointTenantCreated string `mapstructure:"ENDPOINT_TENANT_CREATED"`
+	EndpointTenantDeleted string `mapstructure:"ENDPOINT_TENANT_DELETED"`
+	EndpointTenantUpdated string `mapstructure:"ENDPOINT_TENANT_UPDATED"`
 }
 
 //go:generate mockery -name=MetricsPusher -output=automock -outpkg=automock -case=underscore

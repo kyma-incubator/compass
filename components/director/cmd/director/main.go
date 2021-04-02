@@ -7,7 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/config"
+	"github.com/kyma-incubator/compass/components/director/internal/config/director"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/env"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -86,12 +87,12 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	environment, err := env.Default(ctx, config.AddPFlags)
+	environment, err := env.Default(ctx, director.AddPFlags)
 	exitOnError(err, "Error while creating environment")
 
 	environment.SetEnvPrefix(envPrefix)
 
-	cfg, err := config.New(environment)
+	cfg, err := director.New(environment)
 	exitOnError(err, "Error while creating config")
 
 	err = cfg.Validate()
@@ -300,7 +301,7 @@ func getPairingAdaptersMapping(ctx context.Context, filePath string) (map[string
 	return out, nil
 }
 
-func createAndRunConfigProvider(ctx context.Context, cfg *config.Config) *configprovider.Provider {
+func createAndRunConfigProvider(ctx context.Context, cfg *director.Config) *configprovider.Provider {
 	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	err := provider.Load()
 	exitOnError(err, "Error on loading configuration file")
@@ -465,7 +466,7 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
-func PrepareInternalGraphQLServer(cfg config.Config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+func PrepareInternalGraphQLServer(cfg director.Config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	gqlInternalCfg := internalschema.Config{
 		Resolvers: &graphqlAPI.InternalResolver{
 			TokenResolver: tokenResolver,
@@ -489,7 +490,7 @@ func PrepareInternalGraphQLServer(cfg config.Config, tokenResolver graphqlAPI.To
 	return handlerWithTimeout, nil
 }
 
-func tokenService(cfg config.Config, cfgProvider *configprovider.Provider, httpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+func tokenService(cfg director.Config, cfgProvider *configprovider.Provider, httpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -545,7 +546,7 @@ func systemAuthSvc() oathkeeper.Service {
 	return systemauth.NewService(systemAuthRepo, uidSvc)
 }
 
-func PrepareHydratorHandler(cfg config.Config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+func PrepareHydratorHandler(cfg director.Config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, timeService, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
 
 	router := mux.NewRouter()
@@ -566,7 +567,7 @@ func PrepareHydratorHandler(cfg config.Config, tokenService oathkeeper.Service, 
 	return handlerWithTimeout, nil
 }
 
-func getAsyncDirective(ctx context.Context, cfg config.Config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
+func getAsyncDirective(ctx context.Context, cfg director.Config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
 	resourceFetcherFunc := func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}
@@ -577,7 +578,7 @@ func getAsyncDirective(ctx context.Context, cfg config.Config, transact persiste
 	return operation.NewDirective(transact, webhookService().ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler).HandleOperation
 }
 
-func buildScheduler(ctx context.Context, config config.Config) (operation.Scheduler, error) {
+func buildScheduler(ctx context.Context, config director.Config) (operation.Scheduler, error) {
 	if config.DisableAsyncMode {
 		log.C(ctx).Info("Async operations are disabled")
 		return &operation.DisabledScheduler{}, nil

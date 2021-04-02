@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"net/http"
-	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/config/ordagregator"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -32,32 +34,28 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
 
-type config struct {
-	Database persistence.DatabaseConfig
-
-	Log log.Config
-
-	Features features.Config
-
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
-
-	ClientTimeout time.Duration `envconfig:"default=60s"`
-}
-
 func main() {
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
-	exitOnError(err, "Error while loading app config")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	environment, err := env.Default(ctx, ordagregator.AddPFlags)
+	exitOnError(err, "Error while creating environment")
+
+	environment.SetEnvPrefix("APP")
+
+	cfg, err := ordagregator.New(environment)
+	exitOnError(err, "Error while creating config")
+
+	err = cfg.Validate()
+	exitOnError(err, "Error while validating config")
+
+	//ctx, err := log.Configure(context.Background(), cfg.Log)
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -65,7 +63,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, &http.Client{
+	ordAggregator := createORDAggregatorSvc(cfgProvider, *cfg.Features, transact, &http.Client{
 		Timeout: cfg.ClientTimeout,
 	})
 	err = ordAggregator.SyncORDDocuments(ctx)
@@ -132,7 +130,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	return open_resource_discovery.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }
 
-func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
+func createAndRunConfigProvider(ctx context.Context, cfg *ordagregator.Config) *configprovider.Provider {
 	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	err := provider.Load()
 	exitOnError(err, "Error on loading configuration file")

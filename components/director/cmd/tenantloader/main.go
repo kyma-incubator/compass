@@ -3,31 +3,39 @@ package main
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/config/tenantloader"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
 )
 
-type jobConfig struct {
-	Database persistence.DatabaseConfig
-	Log      log.Config
-}
-
 func main() {
 	const tenantsDirectoryPath = "/data/"
 
-	cfg := jobConfig{}
-	err := envconfig.Init(&cfg)
-	exitOnError(err, "error while loading app config")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	environment, err := env.Default(ctx, tenantloader.AddPFlags)
+	exitOnError(err, "Error while creating environment")
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	environment.SetEnvPrefix("APP")
+
+	cfg, err := tenantloader.New(environment)
+	exitOnError(err, "Error while creating config")
+
+	err = cfg.Validate()
+	exitOnError(err, "Error while validating config")
+
+	//ctx, err := log.Configure(context.Background(), &cfg.Log)
+
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
 	exitOnError(err, "error while establishing the connection to the database")
 
 	defer func() {

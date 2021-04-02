@@ -51,11 +51,20 @@ func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Contex
 }
 
 type KubeConfig struct {
-	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
+	UseKubernetes string `mapstructure:"USE_KUBERNETES"`
 
-	ConfigMapNamespace      string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
-	ConfigMapName           string `envconfig:"default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
-	ConfigMapTimestampField string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
+	ConfigMapNamespace      string `mapstructure:"CONFIGMAP_NAMESPACE"`
+	ConfigMapName           string `mapstructure:"LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
+	ConfigMapTimestampField string `mapstructure:"CONFIGMAP_TIMESTAMP_FIELD"`
+}
+
+func DefaultKubeConfig() *KubeConfig {
+	return &KubeConfig{
+		UseKubernetes:           "true",
+		ConfigMapNamespace:      "compass-system",
+		ConfigMapName:           "tenant-fetcher-config",
+		ConfigMapTimestampField: "lastConsumedTenantTimestamp",
+	}
 }
 
 type kubernetesClient struct {

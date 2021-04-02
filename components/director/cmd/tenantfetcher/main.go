@@ -2,47 +2,41 @@ package main
 
 import (
 	"context"
-	"time"
 
+	config "github.com/kyma-incubator/compass/components/director/internal/config/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
 
-type config struct {
-	Database         persistence.DatabaseConfig
-	KubernetesConfig tenantfetcher.KubeConfig
-	OAuthConfig      tenantfetcher.OAuth2Config
-	APIConfig        tenantfetcher.APIConfig
-	QueryConfig      tenantfetcher.QueryConfig
-	FieldMapping     tenantfetcher.TenantFieldMapping
-
-	Log log.Config
-
-	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
-	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-
-	ClientTimeout time.Duration `envconfig:"default=60s"`
-}
-
 func main() {
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
-	exitOnError(err, "Error while loading app config")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	environment, err := env.Default(ctx, config.AddPFlags)
+	exitOnError(err, "Error while creating environment")
+
+	environment.SetEnvPrefix("APP")
+
+	cfg, err := config.New(environment)
+	exitOnError(err, "Error while creating config")
+
+	err = cfg.Validate()
+	exitOnError(err, "Error while validating config")
+
+	//ctx, err := log.Configure(context.Background(), &cfg.Log)
 
 	var metricsPusher *metrics.Pusher
 	if cfg.MetricsPushEndpoint != "" {
 		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint, cfg.ClientTimeout)
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -50,10 +44,10 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
+	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, *cfg.KubernetesConfig)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
-	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
+	tenantFetcherSvc := createTenantFetcherSvc(*cfg, transact, kubeClient, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
@@ -72,7 +66,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient,
+func createTenantFetcherSvc(cfg config.Config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient,
 	metricsPusher *metrics.Pusher) *tenantfetcher.Service {
 	uidSvc := uid.NewService()
 

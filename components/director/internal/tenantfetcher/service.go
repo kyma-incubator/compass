@@ -15,24 +15,42 @@ import (
 )
 
 type TenantFieldMapping struct {
-	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
-	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
-	EventsField       string `envconfig:"APP_TENANT_EVENTS_FIELD"`
+	TotalPagesField   string `mapstructure:"TENANT_TOTAL_PAGES_FIELD"`
+	TotalResultsField string `mapstructure:"TENANT_TOTAL_RESULTS_FIELD"`
+	EventsField       string `mapstructure:"TENANT_EVENTS_FIELD"`
 
-	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
-	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
-	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
-	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
+	NameField          string `mapstructure:"MAPPING_FIELD_NAME"`
+	IDField            string `mapstructure:"MAPPING_FIELD_ID"`
+	DetailsField       string `mapstructure:"MAPPING_FIELD_DETAILS"`
+	DiscriminatorField string `mapstructure:"MAPPING_FIELD_DISCRIMINATOR"` //optional
+	DiscriminatorValue string `mapstructure:"MAPPING_VALUE_DISCRIMINATOR"` //optional
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
-	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
-	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
-	TimestampField string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
-	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
+	PageNumField   string `mapstructure:"QUERY_PAGE_NUM_FIELD"`
+	PageSizeField  string `mapstructure:"QUERY_PAGE_SIZE_FIELD"`
+	TimestampField string `mapstructure:"QUERY_TIMESTAMP_FIELD"`
+	PageStartValue string `mapstructure:"QUERY_PAGE_START"`
+	PageSizeValue  string `mapstructure:"QUERY_PAGE_SIZE"`
+}
+
+func DefaultQueryConfig() *QueryConfig {
+	return &QueryConfig{
+		PageNumField:   "pageNum",
+		PageSizeField:  "pageSize",
+		TimestampField: "timestamp",
+		PageStartValue: "0",
+		PageSizeValue:  "150",
+	}
+}
+
+func DefaultTenantFieldMapping() *TenantFieldMapping {
+	return &TenantFieldMapping{
+		NameField:    "name",
+		IDField:      "id",
+		DetailsField: "details",
+	}
 }
 
 //go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
