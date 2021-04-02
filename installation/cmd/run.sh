@@ -37,8 +37,8 @@ do
             SKIP_KYMA_START=true
             shift # past argument
         ;;
-        --docker-driver)
-            DOCKER_DRIVER=true
+        --hyperkit)
+            HYPERKIT=true
             shift # past argument
         ;;
         --minikube-cpus)
@@ -81,10 +81,10 @@ fi
 
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."
-  if [[ ! ${DOCKER_DRIVER} ]]; then
-    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT}
-  else
+  if [[ ! ${HYPERKIT} ]]; then
     kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
+  else
+    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT}
   fi
 fi
 
