@@ -21,7 +21,7 @@ func AddPFlags(set *pflag.FlagSet) {
 }
 
 type JobConfig struct {
-	Database *persistence.DatabaseConfig
+	Database *persistence.DatabaseConfig `mapstructure:"db"`
 	Log      *log.Config
 }
 

@@ -33,7 +33,8 @@ func main() {
 	err = cfg.Validate()
 	exitOnError(err, "Error while validating config")
 
-	//ctx, err := log.Configure(context.Background(), &cfg.Log)
+	ctx, err = log.Configure(ctx, cfg.Log)
+	exitOnError(err, "Error while crating context with logger")
 
 	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
 	exitOnError(err, "error while establishing the connection to the database")

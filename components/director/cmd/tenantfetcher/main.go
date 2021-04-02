@@ -29,7 +29,8 @@ func main() {
 	err = cfg.Validate()
 	exitOnError(err, "Error while validating config")
 
-	//ctx, err := log.Configure(context.Background(), &cfg.Log)
+	ctx, err = log.Configure(ctx, cfg.Log)
+	exitOnError(err, "Error while crating context with logger")
 
 	var metricsPusher *metrics.Pusher
 	if cfg.MetricsPushEndpoint != "" {

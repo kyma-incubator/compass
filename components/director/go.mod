@@ -38,7 +38,6 @@ require (
 	github.com/tidwall/gjson v1.6.8
 	github.com/tidwall/sjson v1.1.5
 	github.com/vektah/gqlparser/v2 v2.0.1
-	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/oauth2 v0.0.0-20210220000619-9bb904979d93
 	gopkg.in/yaml.v2 v2.4.0
