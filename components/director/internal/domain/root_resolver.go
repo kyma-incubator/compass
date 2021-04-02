@@ -160,7 +160,7 @@ func NewRootResolver(
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, hydra.Admin)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)

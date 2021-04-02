@@ -38,18 +38,16 @@ type OryHydraService interface {
 }
 
 type service struct {
-	clientEndpoint            string
 	publicAccessTokenEndpoint string
 	scopeCfgProvider          ScopeCfgProvider
 	uidService                UIDService
 	hydraCLi                  OryHydraService
 }
 
-func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config, hydraCLi OryHydraService) *service {
+func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
-		clientEndpoint:            cfg.URL,
-		publicAccessTokenEndpoint: cfg.PublicAccessTokenEndpoint,
+		publicAccessTokenEndpoint: publicAccessTokenEndpoint,
 		uidService:                uidService,
 		hydraCLi:                  hydraCLi,
 	}
@@ -58,9 +56,7 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	scopes, err := s.GetClientCredentialScopes(objectType)
 	if err != nil {
-		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
-			return nil, err
-		}
+		return nil, err
 	}
 	log.C(ctx).Debugf("Fetched client credential scopes: %s for %s", scopes, objectType)
 
@@ -82,9 +78,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 func (s *service) UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
 	scopes, err := s.GetClientCredentialScopes(objectType)
 	if err != nil {
-		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
-			return err
-		}
+		return err
 	}
 	log.C(ctx).Debugf("Fetched Client credential scopes: %s for %s", scopes, objectType)
 

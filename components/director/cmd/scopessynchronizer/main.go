@@ -7,22 +7,18 @@ import (
 	"os"
 
 	httptransport "github.com/go-openapi/runtime/client"
-
-	"github.com/ory/hydra-client-go/client"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/scopes_sync"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/ory/hydra-client-go/client"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -60,7 +56,7 @@ func main() {
 	hydra := client.New(transport, nil)
 
 	cfgProvider := configProvider(ctx, cfg)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20, hydra.Admin)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.Admin)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(ctx, err, "Error while establishing the connection to the database")
