@@ -149,6 +149,16 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 	return r.multipleFromEntities(entities)
 }
 
+func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error) {
+	var entities Collection
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
 func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAuth, error) {
 
 	var items []model.SystemAuth

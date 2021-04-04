@@ -99,7 +99,7 @@ func (m *middleware) InterceptResponse(ctx context.Context, next gqlgen.Response
 
 		newData, err := cleanupFields(resp, jsonPropsToDelete)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Unable to process and delete unnecessary bytes from response body: %s", err.Error())
+			log.C(ctx).WithError(err).Errorf("Unable to process and delete unnecessary bytes from response body: %v", err)
 			return gqlgen.ErrorResponse(ctx, "failed to prepare response body")
 		}
 
