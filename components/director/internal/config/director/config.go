@@ -156,7 +156,7 @@ type Config struct {
 
 	Timeouts *TimeoutsConfig
 
-	Database                *persistence.DatabaseConfig `mapstructure:"db"`
+	DB                      *persistence.DatabaseConfig `mapstructure:"db"`
 	API                     *ApiConfig
 	ConfigurationFile       string        `mapstructure:"configuration_file"`
 	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`
@@ -191,7 +191,7 @@ func DefaultConfig() *Config {
 		HydratorAddress:         "127.0.0.1:8080",
 		InternalAddress:         "127.0.0.1:3002",
 		Timeouts:                DefaultTimeoutsConfig(),
-		Database:                persistence.DefaultDatabaseConfig(),
+		DB:                      persistence.DefaultDatabaseConfig(),
 		API:                     DefaultAPIConfig(),
 		ConfigurationFile:       "/config/config.yaml",
 		ConfigurationFileReload: 1 * time.Minute,

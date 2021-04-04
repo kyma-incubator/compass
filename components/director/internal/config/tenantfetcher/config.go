@@ -23,7 +23,7 @@ func AddPFlags(set *pflag.FlagSet) {
 }
 
 type Config struct {
-	Database         *persistence.DatabaseConfig `mapstructure:"db"`
+	DB               *persistence.DatabaseConfig `mapstructure:"db"`
 	KubernetesConfig *tenantfetcher.KubeConfig
 	OAuthConfig      tenantfetcher.OAuth2Config
 	APIConfig        tenantfetcher.APIConfig
@@ -40,7 +40,7 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		Database:         persistence.DefaultDatabaseConfig(),
+		DB:               persistence.DefaultDatabaseConfig(),
 		KubernetesConfig: tenantfetcher.DefaultKubeConfig(),
 		OAuthConfig:      tenantfetcher.OAuth2Config{},
 		APIConfig:        tenantfetcher.APIConfig{},

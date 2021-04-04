@@ -37,7 +37,7 @@ func main() {
 		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint, cfg.ClientTimeout)
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.DB)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {

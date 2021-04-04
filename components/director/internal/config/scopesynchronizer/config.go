@@ -1,15 +1,12 @@
-package ordagregator
+package scopesynchronizer
 
 import (
 	"reflect"
-	"time"
 
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/features"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/pkg/env"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
 
@@ -23,25 +20,15 @@ func AddPFlags(set *pflag.FlagSet) {
 }
 
 type Config struct {
-	DB *persistence.DatabaseConfig `mapstructure:"db"`
-
-	Log *log.Config
-
-	Features *features.Config
-
-	ConfigurationFile       string        `mapstructure:"configuration_file"`
-	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`
-
-	ClientTimeout time.Duration `mapstructure:"client_timeout"`
+	DB                *persistence.DatabaseConfig
+	ConfigurationFile string `mapstructure:"configuration_file"`
+	OAuth20           *oauth20.Config
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		DB:                      persistence.DefaultDatabaseConfig(),
-		Log:                     log.DefaultConfig(),
-		Features:                features.DefaultConfig(),
-		ConfigurationFileReload: 1 * time.Minute,
-		ClientTimeout:           60 * time.Second,
+		DB:      persistence.DefaultDatabaseConfig(),
+		OAuth20: oauth20.DefaultConfig(),
 	}
 }
 

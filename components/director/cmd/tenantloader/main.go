@@ -36,7 +36,7 @@ func main() {
 	ctx, err = log.Configure(ctx, cfg.Log)
 	exitOnError(err, "Error while crating context with logger")
 
-	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.DB)
 	exitOnError(err, "error while establishing the connection to the database")
 
 	defer func() {

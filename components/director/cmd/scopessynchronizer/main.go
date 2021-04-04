@@ -6,6 +6,9 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/director/internal/config/scopesynchronizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/env"
+
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
@@ -19,20 +22,24 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/ory/hydra-client-go/client"
-	"github.com/vrischmann/envconfig"
 )
 
 const envPrefix = "APP"
 
-type config struct {
-	Database          persistence.DatabaseConfig
-	ConfigurationFile string
-	OAuth20           oauth20.Config
-}
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	environment, err := env.Default(ctx, scopesynchronizer.AddPFlags)
+	exitOnError(ctx, err, "Error while creating environment")
+
+	environment.SetEnvPrefix(envPrefix)
+
+	cfg, err := scopesynchronizer.New(environment)
+	exitOnError(ctx, err, "Error while creating config")
+
+	err = cfg.Validate()
+	exitOnError(ctx, err, "Error while validating config")
 
 	uidSvc := uid.NewService()
 	correlationID := uidSvc.Generate()
@@ -40,10 +47,6 @@ func main() {
 
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
-
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, envPrefix)
-	exitOnError(ctx, err, "Error while loading app config")
 
 	oAuth20HTTPClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
@@ -55,10 +58,10 @@ func main() {
 	transport := httptransport.NewWithClient(adminURL.Host, adminURL.Path, []string{adminURL.Scheme}, oAuth20HTTPClient)
 	hydra := client.New(transport, nil)
 
-	cfgProvider := configProvider(ctx, cfg)
+	cfgProvider := configProvider(ctx, *cfg)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.Admin)
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.DB)
 	exitOnError(ctx, err, "Error while establishing the connection to the database")
 	defer func() {
 		err := closeFunc()
@@ -84,7 +87,7 @@ func withCorrelationID(ctx context.Context, id string) context.Context {
 	return correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &id)
 }
 
-func configProvider(ctx context.Context, cfg config) *configprovider.Provider {
+func configProvider(ctx context.Context, cfg scopesynchronizer.Config) *configprovider.Provider {
 	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	exitOnError(ctx, provider.Load(), "Error on loading configuration file")
 

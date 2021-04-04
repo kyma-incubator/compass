@@ -56,7 +56,7 @@ func main() {
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	transact, closeFunc, err := persistence.Configure(ctx, *cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, *cfg.DB)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
