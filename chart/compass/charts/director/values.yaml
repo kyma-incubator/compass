@@ -26,6 +26,9 @@ deployment:
 adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
 operatorGroupNames: "runtimeOperator"
 
+configFile:
+  name: "config.yaml"
+
 applicationHideSelectors: |-
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

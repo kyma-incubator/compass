@@ -44,7 +44,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1783"
+      version: "PR-1768"
     connectivity_adapter:
       dir:
       version: "PR-1808"
@@ -59,7 +59,7 @@ global:
       version: "PR-1783"
     operations_controller:
       dir:
-      version: "PR-1798"
+      version: "PR-1768"
     tenant_fetcher:
       dir:
       version: "PR-1783"
@@ -82,7 +82,7 @@ global:
       version: "PR-1808"
     console:
       dir:
-      version: "PR-25"
+      version: "PR-24"
     e2e_tests:
       dir:
       version: "PR-1818"
