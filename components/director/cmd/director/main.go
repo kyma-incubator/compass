@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -170,6 +171,9 @@ func main() {
 
 	appRepo := applicationRepo()
 
+	adminURL, err := url.Parse(cfg.OAuth20.URL)
+	exitOnError(err, "Error while parsing Hydra URL")
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -183,11 +187,13 @@ func main() {
 			httpClient,
 			cfg.ProtectedLabelPattern,
 			cfg.OneTimeToken.Length,
+			adminURL,
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
-			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
+			HasScopes:   scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
+			Sanitize:    scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
 	}
@@ -202,7 +208,7 @@ func main() {
 		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
 			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
-				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
+				logger.WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
 			}
 		})
 		go periodicExecutor.Run(ctx)
@@ -445,14 +451,14 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	runFn := func() {
 		log.C(ctx).Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe.", name)
+			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe: %v", name, err)
 		}
 	}
 
 	shutdownFn := func() {
 		log.C(ctx).Infof("Shutting down %s server...", name)
 		if err := srv.Shutdown(context.Background()); err != nil {
-			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s.", name)
+			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s: %v", name, err)
 		}
 	}
 
@@ -513,12 +519,11 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 		},
 	}
 
-	internalRouter := mux.NewRouter()
-
 	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
 	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
-	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
 
+	internalRouter := mux.NewRouter()
+	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
 	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	internalRouter.Use(middlewares...)
