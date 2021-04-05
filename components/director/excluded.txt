@@ -1,0 +1,2 @@
+(github.com/kyma-incubator/compass/components/director/internal/domain/oauth20.OryHydraService).DeleteOAuth2Client
+(github.com/kyma-incubator/compass/components/director/internal/domain/oauth20.OryHydraService).UpdateOAuth2Client

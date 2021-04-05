@@ -58,6 +58,9 @@ func RequestClientCredentialsForApplication(t *testing.T, ctx context.Context, g
 }
 
 func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
+	if id == "" {
+		return graphql.ApplicationExt{}
+	}
 	deleteRequest := FixUnregisterApplicationRequest(id)
 	app := graphql.ApplicationExt{}
 
