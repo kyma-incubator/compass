@@ -20,11 +20,14 @@ func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Clie
 }
 
 func GetDirectorGraphQLURL() string {
+	return GetDirectorURL() + "/graphql"
+}
+
+func GetDirectorURL() string {
 	url := os.Getenv("DIRECTOR_URL")
 	if url == "" {
 		url = "http://127.0.0.1:3000"
 	}
-	url = url + "/graphql"
 	return url
 }
 
