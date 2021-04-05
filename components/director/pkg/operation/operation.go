@@ -30,9 +30,8 @@ import (
 )
 
 const (
-	OpCtxKey    = "OperationCtx"
-	OpModeKey   = "OperationModeCtx"
-	OpErrCtxKey = "OpErrorCtxKey"
+	OpCtxKey  = "OperationCtx"
+	OpModeKey = "OperationModeCtx"
 )
 
 // OperationStatus denotes the different statuses that an Operation can be in
