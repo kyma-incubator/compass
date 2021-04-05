@@ -317,7 +317,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 			return err
 		}
 
-		if len(validScenarios) > 0 && len(runtimes) > 0 {
+		if len(runtimes) > 0 {
 			application, err := s.appRepo.GetByID(ctx, appTenant, id)
 			if err != nil {
 				return errors.Wrapf(err, "while getting application with id %s", id)
@@ -547,6 +547,7 @@ func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, ap
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
 	if err != nil {
 		if apperrors.ErrorCode(err) == apperrors.NotFound {
+			log.C(ctx).Infof("No scenarios found for application")
 			return nil, nil
 		}
 		return nil, err
