@@ -16,7 +16,7 @@ import (
 )
 
 type SyncService interface {
-	SynchronizeClientScopes(context.Context) error
+	SynchronizeClientScopes(context.Context) (error, bool)
 }
 
 //go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore
@@ -45,35 +45,39 @@ func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, rep
 	}
 }
 
-func (s *service) SynchronizeClientScopes(ctx context.Context) error {
+func (s *service) SynchronizeClientScopes(ctx context.Context) (error, bool) {
 	clientsFromHydra, err := s.oAuth20Svc.ListClients()
 	if err != nil {
-		return errors.Wrap(err, "while listing clients from hydra")
+		return errors.Wrap(err, "while listing clients from hydra"), false
 	}
 	clientScopes := convertScopesToMap(clientsFromHydra)
 
 	auths, err := s.systemAuthsWithOAuth(ctx)
 	if err != nil {
-		return err
+		return err, false
 	}
 
+	areAllClientsUpdated := true
 	for _, auth := range auths {
 		clientID := auth.Value.Credential.Oauth.ClientID
 
 		objType, err := auth.GetReferenceObjectType()
 		if err != nil {
+			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 			continue
 		}
 
 		expectedScopes, err := s.oAuth20Svc.GetClientCredentialScopes(objType)
 		if err != nil {
+			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while getting client credentials scopes for client with ID %s: %v", clientID, err)
 			continue
 		}
 
 		scopesFromHydra, ok := clientScopes[clientID]
 		if !ok {
+			areAllClientsUpdated = false
 			log.C(ctx).Errorf("Client with ID %s is not present in Hydra", clientID)
 			continue
 		}
@@ -83,12 +87,13 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 		}
 
 		if err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType); err != nil {
+			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 		}
 	}
 
 	log.C(ctx).Info("Finished synchronization of Hydra scopes")
-	return nil
+	return nil, areAllClientsUpdated
 }
 
 func convertScopesToMap(clientsFromHydra []*models.OAuth2Client) map[string][]string {
