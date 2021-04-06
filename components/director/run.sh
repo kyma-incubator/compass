@@ -137,20 +137,20 @@ fi
 
 echo -e "${GREEN}Starting application${NC}"
 
-export APP_DB_USER=${DB_USER}
-export APP_DB_PASSWORD=${DB_PWD}
-export APP_DB_NAME=${DB_NAME}
-export APP_CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml
-export APP_STATIC_USERS_SRC=${ROOT_PATH}/hack/static-users-local.yaml
-export APP_STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml
-export APP_OAUTH20_URL="https://oauth2-admin.kyma.local"
-export APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token"
-export APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
-export APP_URL="http://director.not.configured.url/director"
-export APP_CONNECTOR_URL="http://connector.not.configured.url/connector/graphql"
-export APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
+export DB_USER=${DB_USER}
+export DB_PASSWORD=${DB_PWD}
+export DB_NAME=${DB_NAME}
+export CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml
+export STATIC_USERS_SRC=${ROOT_PATH}/hack/static-users-local.yaml
+export STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml
+export OAUTH20_URL="https://oauth2-admin.kyma.local"
+export OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token"
+export ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
+export URL="http://director.not.configured.url/director"
+export CONNECTOR_URL="http://connector.not.configured.url/connector/graphql"
+export LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
 export APP_LOG_LEVEL=debug
-export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
+export DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
 
 if [[  ${DEBUG} ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"
