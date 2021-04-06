@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	PublicJWKSURL              = "file://../../../director/internal/authenticator/testdata/jwks-public.json"
 	PrivateJWKSURL             = "file://../../../director/internal/authenticator/testdata/jwks-private.json"
 	PrivateJWKS2URL            = "file://../../../director/internal/authenticator/testdata/jwks-private2.json"
+	PublicJWKSURL              = "file://../../../director/internal/authenticator/testdata/jwks-public.json"
 	PublicJWKS2URL             = "file://../../../director/internal/authenticator/testdata/jwks-public2.json"
 	fakeJWKSURL                = "file://../../../director/internal/authenticator/testdata/invalid.json"
 	ZoneId                     = "private-zone"
@@ -81,7 +81,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		key, ok := privateJWKS.Get(0)
 		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, key.KeyID())
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 		//when
 		middleware(handler).ServeHTTP(rr, req)
@@ -89,26 +90,6 @@ func TestMiddleware_Handler(t *testing.T) {
 		//then
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
-	})
-
-	t.Run("Error - token without signing key", func(t *testing.T) {
-		//given
-		middleware := createMiddleware(t)
-		handler := testHandler(t)
-		rr := httptest.NewRecorder()
-		req := emptyRequest(t)
-
-		key, ok := privateJWKS.Get(0)
-		assert.True(t, ok)
-
-		token := createTokenWithoutSigningKey(t, scopes, ZoneId, key)
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-		//when
-		middleware(handler).ServeHTTP(rr, req)
-
-		//then
-		assert.Contains(t, rr.Body.String(), "unable to find the key ID in the token")
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
@@ -131,7 +112,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		key, ok := privateJWKS2.Get(0)
 		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, key.KeyID())
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -162,7 +144,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		key, ok := privateJWKS2.Get(0)
 		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, key.KeyID())
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -178,6 +161,26 @@ func TestMiddleware_Handler(t *testing.T) {
 
 		expected := "Internal Server Error: while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme "
 		assert.Equal(t, expected, message)
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	})
+
+	t.Run("Error - token without signing key", func(t *testing.T) {
+		//given
+		middleware := createMiddleware(t)
+		handler := testHandler(t)
+		rr := httptest.NewRecorder()
+		req := emptyRequest(t)
+
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, nil, false)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Contains(t, rr.Body.String(), "unable to find the key ID in the token")
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})
 
@@ -211,22 +214,23 @@ func TestMiddleware_Handler(t *testing.T) {
 		middleware := createMiddleware(t)
 		handler := testHandler(t)
 
-		privateJWKS2, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
+		privateJWKSOld, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKSURL)
 		require.NoError(t, err)
 
-		privateJWKS, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKSURL)
+		privateJWKSNew, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := emptyRequest(t)
 
-		key, ok := privateJWKS2.Get(0)
+		oldKey, ok := privateJWKSOld.Get(0)
 		assert.True(t, ok)
 
-		key1, ok := privateJWKS.Get(0)
+		newKey, ok := privateJWKSNew.Get(0)
 		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, key1.KeyID())
+		oldKeyID := oldKey.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, newKey, &oldKeyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -271,7 +275,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		key, isOkay := privateJWKS.Get(0)
 		assert.True(t, isOkay)
 
-		token := createTokenWithSigningMethod(t, scopes, untrustedZoneId, key, key.KeyID())
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, untrustedZoneId, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -300,7 +305,8 @@ func TestMiddleware_Handler(t *testing.T) {
 		key, isOkay := privateJWKS.Get(0)
 		assert.True(t, isOkay)
 
-		token := createTokenWithSigningMethod(t, fakeScopes, ZoneId, key, key.KeyID())
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, fakeScopes, ZoneId, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -320,28 +326,15 @@ func TestMiddleware_Handler(t *testing.T) {
 	})
 }
 
-func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, key jwk.Key, keyID string) string {
+func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
 		Scopes: scopes,
 		ZID:    zone,
 	})
-	token.Header[authenticator.JwksKeyIDKey] = keyID
 
-	var rawKey interface{}
-	err := key.Raw(&rawKey)
-	require.NoError(t, err)
-
-	signedToken, err := token.SignedString(rawKey)
-	require.NoError(t, err)
-
-	return signedToken
-}
-
-func createTokenWithoutSigningKey(t *testing.T, scopes []string, zone string, key jwk.Key) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
-		Scopes: scopes,
-		ZID:    zone,
-	})
+	if isSigningKeyAvailable {
+		token.Header[authenticator.JwksKeyIDKey] = keyID
+	}
 
 	var rawKey interface{}
 	err := key.Raw(&rawKey)
