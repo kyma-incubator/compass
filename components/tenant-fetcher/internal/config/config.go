@@ -36,7 +36,7 @@ type Config struct {
 
 	Handler *tenant.Config
 
-	Database *persistence.DatabaseConfig
+	DB *persistence.DatabaseConfig `mapstructure:"db"`
 }
 
 func DefaultConfig() *Config {
@@ -47,7 +47,7 @@ func DefaultConfig() *Config {
 		Log:             log.DefaultConfig(),
 		RootAPI:         "/tenants",
 		Handler:         tenant.DefaultConfig(),
-		Database:        persistence.DefaultDatabaseConfig(),
+		DB:              persistence.DefaultDatabaseConfig(),
 	}
 }
 
