@@ -27,44 +27,44 @@ spec:
                 - name: director-config
                   mountPath: /config
               env:
-                - name: APP_DB_USER
+                - name: DB_USER
                   valueFrom:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-director-username
-                - name: APP_DB_PASSWORD
+                - name: DB_PASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-director-password
-                - name: APP_DB_HOST
+                - name: DB_HOST
                   valueFrom:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-serviceName
-                - name: APP_DB_PORT
+                - name: DB_PORT
                   valueFrom:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-servicePort
-                - name: APP_DB_NAME
+                - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-director-db-name
-                - name: APP_DB_SSL
+                - name: DB_SSL
                   valueFrom:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-sslMode
-                - name: APP_CONFIGURATION_FILE
+                - name: CONFIGURATION_FILE
                   value: /config/config.yaml
-                - name: APP_DB_MAX_OPEN_CONNECTIONS
+                - name: DB_MAX_OPEN_CONNECTIONS
                   value: "{{ .Values.global.ordAggregator.dbPool.maxOpenConnections }}"
-                - name: APP_DB_MAX_IDLE_CONNECTIONS
+                - name: DB_MAX_IDLE_CONNECTIONS
                   value: "{{ .Values.global.ordAggregator.dbPool.maxIdleConnections }}"
                 {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
-                - name: APP_METRICS_PUSH_ENDPOINT
+                - name: METRICS_PUSH_ENDPOINT
                   value: {{ $.Values.global.metrics.pushEndpoint}}
               {{ end }}
               command:
