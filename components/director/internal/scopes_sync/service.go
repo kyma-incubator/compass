@@ -16,7 +16,7 @@ import (
 )
 
 type SyncService interface {
-	SynchronizeClientScopes(context.Context) (error, bool)
+	SynchronizeClientScopes(context.Context) error
 }
 
 //go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore
@@ -45,16 +45,16 @@ func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, rep
 	}
 }
 
-func (s *service) SynchronizeClientScopes(ctx context.Context) (error, bool) {
+func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 	clientsFromHydra, err := s.oAuth20Svc.ListClients()
 	if err != nil {
-		return errors.Wrap(err, "while listing clients from hydra"), false
+		return errors.Wrap(err, "while listing clients from hydra")
 	}
 	clientScopes := convertScopesToMap(clientsFromHydra)
 
 	auths, err := s.systemAuthsWithOAuth(ctx)
 	if err != nil {
-		return err, false
+		return err
 	}
 
 	areAllClientsUpdated := true
@@ -91,9 +91,11 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) (error, bool) {
 			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 		}
 	}
-
+	if !areAllClientsUpdated {
+		return errors.New("Not all clients were updated successfully")
+	}
 	log.C(ctx).Info("Finished synchronization of Hydra scopes")
-	return nil, areAllClientsUpdated
+	return nil
 }
 
 func convertScopesToMap(clientsFromHydra []*models.OAuth2Client) map[string][]string {

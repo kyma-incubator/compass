@@ -68,13 +68,8 @@ func main() {
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	syncService := scopes_sync.NewService(oAuth20Svc, transact, systemauth.NewRepository(systemAuthConverter))
-	err, areAllClientsUpdated := syncService.SynchronizeClientScopes(ctx)
-
+	err = syncService.SynchronizeClientScopes(ctx)
 	exitOnError(ctx, err, "Error while updating client scopes")
-	if !areAllClientsUpdated {
-		log.C(ctx).WithError(err).Errorf("Not all clients were updated")
-		os.Exit(1)
-	}
 }
 
 func exitOnError(ctx context.Context, err error, context string) {

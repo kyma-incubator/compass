@@ -29,9 +29,8 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		oauthSvc.On("ListClients").Return(nil, errors.New("error"))
 		scopeSyncSvc := NewService(oauthSvc, nil, &automock.SystemAuthRepo{})
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.False(t, areAllClientsUpdated)
 		assert.Error(t, err, "while listing clients from hydra")
 	})
 
@@ -45,9 +44,8 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, &automock.SystemAuthRepo{})
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.False(t, areAllClientsUpdated)
 		assert.Error(t, err, "while opening database transaction")
 	})
 
@@ -63,9 +61,8 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.False(t, areAllClientsUpdated)
 		assert.Error(t, err, "error while listing systemAuths")
 	})
 	t.Run("fails when cannot commit transaction", func(t *testing.T) {
@@ -80,9 +77,8 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.False(t, areAllClientsUpdated)
 		assert.Error(t, err, "while database transaction commit")
 	})
 
@@ -108,10 +104,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Nil(t, err)
-		assert.False(t, areAllClientsUpdated)
+		assert.Error(t, err, "Not all clients were updated successfully")
 	})
 
 	t.Run("won't update client when getting client credentials scopes fails", func(t *testing.T) {
@@ -138,10 +133,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Nil(t, err)
-		assert.False(t, areAllClientsUpdated)
+		assert.Error(t, err, "Not all clients were updated successfully")
 	})
 
 	t.Run("fails when client does not present in hydra", func(t *testing.T) {
@@ -168,10 +162,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Nil(t, err)
-		assert.False(t, areAllClientsUpdated)
+		assert.Error(t, err, "Not all clients were updated successfully")
 	})
 
 	t.Run("won't update scopes if not needed", func(t *testing.T) {
@@ -203,10 +196,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
 		assert.Nil(t, err)
-		assert.True(t, areAllClientsUpdated)
 	})
 
 	t.Run("will update scopes successfully", func(t *testing.T) {
@@ -239,9 +231,8 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		defer oauthSvc.AssertExpectations(t)
 		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
 		// WHEN
-		err, areAllClientsUpdated := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
 		assert.Nil(t, err)
-		assert.True(t, areAllClientsUpdated)
 	})
 }
