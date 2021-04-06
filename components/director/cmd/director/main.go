@@ -78,8 +78,6 @@ import (
 	cr "sigs.k8s.io/controller-runtime"
 )
 
-const envPrefix = "APP"
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -91,15 +89,13 @@ func main() {
 	environment, err := env.Default(ctx, director.AddPFlags)
 	exitOnError(err, "Error while creating environment")
 
-	environment.SetEnvPrefix(envPrefix)
-
 	cfg, err := director.New(environment)
 	exitOnError(err, "Error while creating config")
 
 	err = cfg.Validate()
 	exitOnError(err, "Error while validating config")
 
-	authenticators, err := authenticator.InitFromEnv(envPrefix)
+	authenticators, err := authenticator.InitFromEnv("")
 	exitOnError(err, "Failed to retrieve authenticators config")
 
 	ctx, err = log.Configure(ctx, cfg.Log)

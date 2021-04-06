@@ -24,16 +24,12 @@ import (
 	"github.com/ory/hydra-client-go/client"
 )
 
-const envPrefix = "APP"
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	environment, err := env.Default(ctx, scopesynchronizer.AddPFlags)
 	exitOnError(ctx, err, "Error while creating environment")
-
-	environment.SetEnvPrefix(envPrefix)
 
 	cfg, err := scopesynchronizer.New(environment)
 	exitOnError(ctx, err, "Error while creating config")

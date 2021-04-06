@@ -63,91 +63,91 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
           env:
-            - name: APP_ADDRESS
+            - name: ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
-            - name: APP_GRAPHQL_INTERNAL_ADDRESS
+            - name: GRAPHQL_INTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.internal.port }}"
-            - name: APP_HYDRATOR_ADDRESS
+            - name: HYDRATOR_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
-            - name: APP_INTERNAL_ADDRESS
+            - name: INTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.operations.port }}"
-            - name: APP_METRICS_ADDRESS
+            - name: METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.metrics.port }}"
-            - name: APP_PLAYGROUND_API_ENDPOINT
+            - name: PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
-            - name: APP_JWKS_ENDPOINT
+            - name: JWKS_ENDPOINT
               value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
-            - name: APP_DB_USER
+            - name: DB_USER
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-username
-            - name: APP_DB_PASSWORD
+            - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-password
-            - name: APP_DB_HOST
+            - name: DB_HOST
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-serviceName
-            - name: APP_DB_PORT
+            - name: DB_PORT
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-servicePort
-            - name: APP_DB_NAME
+            - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-db-name
-            - name: APP_DB_SSL
+            - name: DB_SSL
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: APP_DB_MAX_OPEN_CONNECTIONS
+            - name: DB_MAX_OPEN_CONNECTIONS
               value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
-            - name: APP_DB_MAX_IDLE_CONNECTIONS
+            - name: DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
-            - name: APP_ONE_TIME_TOKEN_LENGTH
+            - name: ONE_TIME_TOKEN_LENGTH
               value: {{ .Values.deployment.args.token.length | quote }}
-            - name: APP_ONE_TIME_TOKEN_RUNTIME_EXPIRATION
+            - name: ONE_TIME_TOKEN_RUNTIME_EXPIRATION
               value: {{ .Values.deployment.args.token.runtimeExpiration | quote }}
-            - name: APP_ONE_TIME_TOKEN_APPLICATION_EXPIRATION
+            - name: ONE_TIME_TOKEN_APPLICATION_EXPIRATION
               value: {{ .Values.deployment.args.token.applicationExpiration | quote }}
-            - name: APP_ONE_TIME_TOKEN_CSR_EXPIRATION
+            - name: ONE_TIME_TOKEN_CSR_EXPIRATION
               value: {{ .Values.deployment.args.token.csrExpiration | quote }}
-            - name: APP_URL
+            - name: URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
-            - name: APP_OPERATION_PATH
+            - name: OPERATION_PATH
               value: {{ .Values.global.director.operations.path }}
-            - name: APP_LAST_OPERATION_PATH
+            - name: LAST_OPERATION_PATH
               value: {{ .Values.global.director.operations.lastOperationPath }}
-            - name: APP_CONNECTOR_URL
+            - name: CONNECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
-            - name: APP_CONFIGURATION_FILE
+            - name: CONFIGURATION_FILE
               value: /config/config.yaml
-            - name: APP_ALLOW_JWT_SIGNING_NONE
+            - name: ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.deployment.allowJWTSigningNone | quote }}
-            - name: APP_CLIENT_ID_HTTP_HEADER
+            - name: CLIENT_ID_HTTP_HEADER
               value: {{ .Values.global.director.clientIDHeaderKey }}
-            - name: APP_OAUTH20_URL
+            - name: OAUTH20_URL
               value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445
-            - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
+            - name: OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
-            - name: APP_LEGACY_CONNECTOR_URL
+            - name: LEGACY_CONNECTOR_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}/v1/applications/signingRequests/info"
             {{- if .Values.deployment.pairingAdapterConfigMap }}
-            - name: APP_PAIRING_ADAPTER_SRC
+            - name: PAIRING_ADAPTER_SRC
               value: /pairing-adapters/config.json
             {{- end }}
-            - name: APP_DEFAULT_SCENARIO_ENABLED
+            - name: DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             {{- range $authenticatorName, $config := .Values.global.authenticators }}
             {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+            - name: {{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
               value: {{ $config.trusted_issuers | quote }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes | quote }}

@@ -25,8 +25,6 @@ func main() {
 	environment, err := env.Default(ctx, tenantloader.AddPFlags)
 	exitOnError(err, "Error while creating environment")
 
-	environment.SetEnvPrefix("APP")
-
 	cfg, err := tenantloader.New(environment)
 	exitOnError(err, "Error while creating config")
 

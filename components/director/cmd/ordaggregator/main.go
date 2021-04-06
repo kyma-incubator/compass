@@ -43,8 +43,6 @@ func main() {
 	environment, err := env.Default(ctx, ordagregator.AddPFlags)
 	exitOnError(err, "Error while creating environment")
 
-	environment.SetEnvPrefix("APP")
-
 	cfg, err := ordagregator.New(environment)
 	exitOnError(err, "Error while creating config")
 

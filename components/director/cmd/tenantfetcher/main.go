@@ -21,8 +21,6 @@ func main() {
 	environment, err := env.Default(ctx, config.AddPFlags)
 	exitOnError(err, "Error while creating environment")
 
-	environment.SetEnvPrefix("APP")
-
 	cfg, err := config.New(environment)
 	exitOnError(err, "Error while creating config")
 

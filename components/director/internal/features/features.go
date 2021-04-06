@@ -1,7 +1,7 @@
 package features
 
 type Config struct {
-	DefaultScenarioEnabled bool `mapstructure:"DEFAULT_SCENARIO_ENABLED"`
+	DefaultScenarioEnabled bool `mapstructure:"default_scenario_enabled"`
 }
 
 func DefaultConfig() *Config {
