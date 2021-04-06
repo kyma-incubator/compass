@@ -33,45 +33,45 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
           imagePullPolicy: IfNotPresent
           env:
-            - name: APP_DB_USER
+            - name: DB_USER
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-username
-            - name: APP_DB_PASSWORD
+            - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-password
-            - name: APP_DB_HOST
+            - name: DB_HOST
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-serviceName
-            - name: APP_DB_PORT
+            - name: DB_PORT
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-servicePort
-            - name: APP_DB_NAME
+            - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-db-name
-            - name: APP_DB_SSL
+            - name: DB_SSL
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: APP_DB_MAX_OPEN_CONNECTIONS
+            - name: DB_MAX_OPEN_CONNECTIONS
               value: "{{.Values.global.tenantConfig.dbPool.maxOpenConnections}}"
-            - name: APP_DB_MAX_IDLE_CONNECTIONS
+            - name: DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.global.tenantConfig.dbPool.maxIdleConnections}}"
-            - name: APP_CONFIGURATION_FILE
+            - name: CONFIGURATION_FILE
               value: /config/config.yaml
-            - name: APP_OAUTH20_URL
+            - name: OAUTH20_URL
               value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445
-            - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
+            - name: OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
           command:
             - "/bin/sh"
