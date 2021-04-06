@@ -83,6 +83,7 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."
   if [[ ! ${HYPERKIT} ]]; then
     DOCKER_CPUS=$(docker info --format '{{json .}}' | jq -r '.NCPU')
+    echo "Docker CPUS: " $DOCKER_CPUS
     if [[ "$DOCKER_CPUS" -lt "$MINIKUBE_CPUS" ]]; then
       echo "Insufficient resources. Required CPU: min 6, RAM: min 12.0 GB. Please edit Docker configuration"
       exit 1
