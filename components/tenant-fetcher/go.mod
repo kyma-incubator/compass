@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.1
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210330110957-2e17deac2600
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210406104640-e6bb2c8f5f5d
 	github.com/lestrrat-go/iter v1.0.0
 	github.com/lestrrat-go/jwx v1.1.4
 	github.com/pkg/errors v0.9.1
@@ -16,5 +16,4 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.8
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
-	golang.org/x/sys v0.0.0-20210303074136-134d130e1a04 // indirect
 )

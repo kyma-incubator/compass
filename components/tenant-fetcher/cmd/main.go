@@ -39,8 +39,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const envPrefix = "APP"
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -51,8 +49,6 @@ func main() {
 
 	environment, err := env.Default(ctx, config.AddPFlags)
 	exitOnError(err, "Error while creating environment")
-
-	environment.SetEnvPrefix(envPrefix)
 
 	cfg, err := config.New(environment)
 	exitOnError(err, "Error while creating config")
@@ -69,7 +65,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
+	authenticatorsConfig, err := authenticator.InitFromEnv("")
 	exitOnError(err, "Failed to retrieve authenticators config")
 
 	ctx, err = log.Configure(ctx, cfg.Log)

@@ -50,65 +50,65 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
           env:
-            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+            - name: TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
-            - name: APP_TENANT_PROVIDER
+            - name: TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
-            - name: APP_TENANT
+            - name: TENANT
               value: {{ .Values.global.defaultTenant }}
-            - name: APP_ADDRESS
+            - name: ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            - name: APP_ROOT_API
+            - name: ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_HANDLER_ENDPOINT
+            - name: HANDLER_ENDPOINT
               value: "{{ .Values.server.handlerEndpoint }}"
-            - name: APP_JWKS_ENDPOINTS
+            - name: JWKS_ENDPOINTS
               value: {{ .Values.global.tenantFetcher.authentication.jwksEndpoints | quote }}
-            - name: APP_TENANT_PATH_PARAM
+            - name: TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
-            - name: APP_DB_USER
+            - name: DB_USER
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-username
-            - name: APP_DB_PASSWORD
+            - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-password
-            - name: APP_DB_HOST
+            - name: DB_HOST
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-serviceName
-            - name: APP_DB_PORT
+            - name: DB_PORT
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-servicePort
-            - name: APP_DB_NAME
+            - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-db-name
-            - name: APP_DB_SSL
+            - name: DB_SSL
               valueFrom:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: APP_DB_MAX_OPEN_CONNECTIONS
+            - name: DB_MAX_OPEN_CONNECTIONS
               value: "{{.Values.database.dbPool.maxOpenConnections}}"
-            - name: APP_DB_MAX_IDLE_CONNECTIONS
+            - name: DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.database.dbPool.maxIdleConnections}}"
-            - name: APP_ALLOW_JWT_SIGNING_NONE
+            - name: ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.global.tenantFetcher.authentication.allowJWTSigningNone | quote }}
-            - name: APP_TENANT_IDENTITY_ZONE
+            - name: TENANT_IDENTITY_ZONE
               value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
-            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
+            - name: SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
             {{- range $authenticatorName, $config := .Values.global.authenticators }}
             {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+            - name: {{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
               value: {{ $config.trusted_issuers | quote }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes | quote }}
