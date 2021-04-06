@@ -92,6 +92,33 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
+	t.Run("Success - when we have more than one JWT key", func(t *testing.T) {
+		//given
+		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		err := auth.SynchronizeJWKS(context.TODO())
+		require.NoError(t, err)
+
+		auth.SetJWKSEndpoints([]string{PublicJWKS2URL})
+
+		middleware := auth.Handler()
+		handler := testHandler(t)
+		rr := httptest.NewRecorder()
+		req := emptyRequest(t)
+
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
 		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
