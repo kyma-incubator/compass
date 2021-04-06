@@ -69,6 +69,7 @@ func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 func TestMiddleware_Handler(t *testing.T) {
 	//given
 	privateJWKS, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKSURL)
+	privateJWKS2, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKS2URL)
 	require.NoError(t, err)
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
@@ -92,13 +93,11 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
-	t.Run("Success - when we have more than one JWT key", func(t *testing.T) {
+	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
 		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
-
-		auth.SetJWKSEndpoints([]string{PublicJWKS2URL})
 
 		middleware := auth.Handler()
 		handler := testHandler(t)
@@ -111,6 +110,33 @@ func TestMiddleware_Handler(t *testing.T) {
 		keyID := key.KeyID()
 		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
+		//given
+		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		err := auth.SynchronizeJWKS(context.TODO())
+		require.NoError(t, err)
+
+		middleware := auth.Handler()
+		handler := testHandler(t)
+		rr := httptest.NewRecorder()
+		req := emptyRequest(t)
+
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
 		//when
 		middleware(handler).ServeHTTP(rr, req)
 
