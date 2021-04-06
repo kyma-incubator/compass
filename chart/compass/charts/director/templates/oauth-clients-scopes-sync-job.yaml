@@ -81,7 +81,7 @@ spec:
           volumeMounts:
           - name: director-config
             mountPath: /config
-        {{if eq .Values.global.database.embedded.enabled false}}
+        {{- if eq .Values.global.database.embedded.enabled false }}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
           command:
@@ -93,14 +93,14 @@ spec:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-      {{end}}
+        {{- end}}
       volumes:
       - name: director-config
         configMap:
           name: {{ template "fullname" . }}-config
-      {{if eq .Values.global.database.embedded.enabled false}}
-        - name: cloudsql-instance-credentials
-          secret:
-            secretName: cloudsql-instance-credentials
-  {{end}}
-{{ end }}
+      {{- if eq .Values.global.database.embedded.enabled false }}
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      {{- end }}
+{{- end }}
