@@ -35,105 +35,105 @@ spec:
             image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
             imagePullPolicy: IfNotPresent
             env:
-              - name: APP_USE_KUBERNETES
+              - name: USE_KUBERNETES
                 value: "true"
-              - name: APP_KUBERNETES_POLL_INTERVAL
+              - name: KUBERNETES_POLL_INTERVAL
                 value: {{ $config.kubernetes.pollInterval }}
-              - name: APP_KUBERNETES_POLL_TIMEOUT
+              - name: KUBERNETES_POLL_TIMEOUT
                 value: {{ $config.kubernetes.pollTimeout }}
-              - name: APP_KUBERNETES_TIMEOUT
+              - name: KUBERNETES_TIMEOUT
                 value: {{ $config.kubernetes.timeout }}
-              - name: APP_DB_USER
+              - name: DB_USER
                 valueFrom:
                   secretKeyRef:
                     name: compass-postgresql
                     key: postgresql-director-username
-              - name: APP_DB_PASSWORD
+              - name: DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: compass-postgresql
                     key: postgresql-director-password
-              - name: APP_DB_HOST
+              - name: DB_HOST
                 valueFrom:
                   secretKeyRef:
                     name: compass-postgresql
                     key: postgresql-serviceName
-              - name: APP_DB_PORT
+              - name: DB_PORT
                 valueFrom:
                   secretKeyRef:
                     name: compass-postgresql
                     key: postgresql-servicePort
-              - name: APP_DB_NAME
+              - name: DB_NAME
                 valueFrom:
                   secretKeyRef:
                     name: compass-postgresql
                     key: postgresql-director-db-name
-              - name: APP_DB_SSL
+              - name: DB_SSL
                 valueFrom:
                   secretKeyRef:
                     name: compass-postgresql
                     key: postgresql-sslMode
-              - name: APP_DB_MAX_OPEN_CONNECTIONS
+              - name: DB_MAX_OPEN_CONNECTIONS
                 value: "{{ $config.dbPool.maxOpenConnections }}"
-              - name: APP_DB_MAX_IDLE_CONNECTIONS
+              - name: DB_MAX_IDLE_CONNECTIONS
                 value: "{{ $config.dbPool.maxIdleConnections }}"
-              - name: APP_ENDPOINT_TENANT_CREATED
+              - name: ENDPOINT_TENANT_CREATED
                 value: {{ $config.endpoints.tenantCreated }}
-              - name: APP_ENDPOINT_TENANT_DELETED
+              - name: ENDPOINT_TENANT_DELETED
                 value: {{ $config.endpoints.tenantDeleted }}
-              - name: APP_ENDPOINT_TENANT_UPDATED
+              - name: ENDPOINT_TENANT_UPDATED
                 value: {{ $config.endpoints.tenantUpdated }}
-              - name: APP_TENANT_PROVIDER
+              - name: TENANT_PROVIDER
                 value: {{ $config.providerName }}
-              - name: APP_CLIENT_ID
+              - name: CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-client
-              - name: APP_CLIENT_SECRET
+              - name: CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-secret
-              - name: APP_OAUTH_TOKEN_ENDPOINT
+              - name: OAUTH_TOKEN_ENDPOINT
                 valueFrom:
                   secretKeyRef:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-token-endpoint
-              - name: APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
+              - name: LAST_EXECUTION_TIME_CONFIG_MAP_NAME
                 value: {{ $configmapName }}
-              - name: APP_CONFIGMAP_NAMESPACE
+              - name: CONFIGMAP_NAMESPACE
                 value: {{ $config.kubernetes.configMapNamespace }}
-              - name: APP_CONFIGMAP_TIMESTAMP_FIELD
+              - name: CONFIGMAP_TIMESTAMP_FIELD
                 value: "lastConsumedTenantTimestamp"
-              - name: APP_MAPPING_FIELD_ID
+              - name: MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
-              - name: APP_MAPPING_FIELD_NAME
+              - name: MAPPING_FIELD_NAME
                 value: {{ $config.fieldMapping.nameField }}
-              - name: APP_MAPPING_FIELD_DISCRIMINATOR
+              - name: MAPPING_FIELD_DISCRIMINATOR
                 value: {{ $config.fieldMapping.discriminatorField }}
-              - name: APP_MAPPING_VALUE_DISCRIMINATOR
+              - name: MAPPING_VALUE_DISCRIMINATOR
                 value: {{ $config.fieldMapping.discriminatorValue }}
-              - name: APP_MAPPING_FIELD_DETAILS
+              - name: MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField}}
-              - name: APP_TENANT_TOTAL_PAGES_FIELD
+              - name: TENANT_TOTAL_PAGES_FIELD
                 value: {{ $config.fieldMapping.totalPagesField}}
-              - name: APP_TENANT_TOTAL_RESULTS_FIELD
+              - name: TENANT_TOTAL_RESULTS_FIELD
                 value: {{ $config.fieldMapping.totalResultsField}}
-              - name: APP_TENANT_EVENTS_FIELD
+              - name: TENANT_EVENTS_FIELD
                 value: {{ $config.fieldMapping.tenantEventsField}}
-              - name: APP_QUERY_PAGE_NUM_FIELD
+              - name: QUERY_PAGE_NUM_FIELD
                 value: {{ $config.queryMapping.pageNumField}}
-              - name: APP_QUERY_PAGE_SIZE_FIELD
+              - name: QUERY_PAGE_SIZE_FIELD
                 value: {{ $config.queryMapping.pageSizeField}}
-              - name: APP_QUERY_TIMESTAMP_FIELD
+              - name: QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}
-              - name: APP_QUERY_PAGE_START
+              - name: QUERY_PAGE_START
                 value: "{{ $config.query.startPage}}"
-              - name: APP_QUERY_PAGE_SIZE
+              - name: QUERY_PAGE_SIZE
                 value: "{{ $config.query.pageSize}}"
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
-              - name: APP_METRICS_PUSH_ENDPOINT
+              - name: METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}
             {{ end }}
             command:
