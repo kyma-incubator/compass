@@ -12,7 +12,7 @@ metadata:
   name: {{ $jobName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ $jobName }}
     release: {{ .Release.Name }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
