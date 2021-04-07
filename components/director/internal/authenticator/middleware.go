@@ -36,7 +36,7 @@ const (
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
-	cachedJWKs          jwk.Set
+	cachedJWKS          jwk.Set
 	clientIDHeaderKey   string
 	mux                 sync.RWMutex
 }
@@ -50,7 +50,7 @@ func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string
 }
 
 func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
-	log.C(ctx).Info("Synchronizing JWKs...")
+	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
@@ -58,8 +58,8 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
 
-	a.cachedJWKs = jwks
-	log.C(ctx).Info("Successfully synchronized JWKs")
+	a.cachedJWKS = jwks
+	log.C(ctx).Info("Successfully synchronized JWKS")
 
 	return nil
 }
@@ -114,7 +114,7 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 
 		err := a.SynchronizeJWKS(ctx)
 		if err != nil {
-			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKs during parsing token")
+			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKS during parsing token")
 		}
 
 		claims, err = a.parseClaims(ctx, bearerToken)
@@ -164,7 +164,7 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
 			a.mux.RLock()
-			keys := a.cachedJWKs
+			keys := a.cachedJWKS
 			a.mux.RUnlock()
 
 			keyID, err := a.getKeyID(*token)
@@ -183,7 +183,7 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 			}
 
 			if err := arrayiter.Walk(ctx, keys, keyIterator); err != nil {
-				log.C(ctx).WithError(err).Errorf("An error occurred while walking through the jwks: %v", err)
+				log.C(ctx).WithError(err).Errorf("An error occurred while walking through the JWKS: %v", err)
 				return nil, err
 			}
 

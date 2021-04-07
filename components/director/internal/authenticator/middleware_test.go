@@ -196,7 +196,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
-	t.Run("Success - when we have more than one JWKs and use the first key", func(t *testing.T) {
+	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
 		err := auth.SynchronizeJWKS(context.TODO())
@@ -223,7 +223,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
-	t.Run("Success - when we have more than one JWKs and use the second key", func(t *testing.T) {
+	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
 		err := auth.SynchronizeJWKS(context.TODO())
@@ -279,7 +279,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		err = json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(t, err)
 
-		expected := fixGraphqlResponse("Internal Server Error: while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme ", apperrors.InternalError)
+		expected := fixGraphqlResponse("Internal Server Error: while synchronizing JWKS during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme ", apperrors.InternalError)
 		assertGraphqlResponse(t, expected, response)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})

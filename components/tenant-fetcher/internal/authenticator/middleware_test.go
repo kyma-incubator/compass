@@ -212,7 +212,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		message, ok := response["message"]
 		require.True(t, ok)
 
-		expected := "Internal Server Error: while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme "
+		expected := "Internal Server Error: while synchronizing JWKS during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme "
 		assert.Equal(t, expected, message)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})

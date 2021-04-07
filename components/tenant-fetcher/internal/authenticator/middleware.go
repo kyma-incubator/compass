@@ -31,7 +31,7 @@ type Error struct {
 
 type Authenticator struct {
 	mux                        sync.RWMutex
-	cachedJWKs                 jwk.Set
+	cachedJWKS                 jwk.Set
 	jwksEndpoints              []string
 	zoneId                     string
 	trustedClaimPrefixes       []string
@@ -122,7 +122,7 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 		}
 
 		if err := a.SynchronizeJWKS(ctx); err != nil {
-			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKs during parsing token")
+			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKS during parsing token")
 		}
 
 		claims, err = a.parseClaims(ctx, bearerToken)
@@ -144,7 +144,7 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
 			a.mux.RLock()
-			keys := a.cachedJWKs
+			keys := a.cachedJWKS
 			a.mux.RUnlock()
 
 			keyID, err := a.getKeyID(*token)
@@ -200,7 +200,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	a.cachedJWKs = jwk.NewSet()
+	a.cachedJWKS = jwk.NewSet()
 
 	for _, jwksEndpoint := range a.jwksEndpoints {
 		log.C(ctx).Debugf("Fetching from endpoint: %s", jwksEndpoint)
@@ -228,7 +228,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 				return apperrors.NewInternalError("unable to parse jwk key")
 			}
 
-			a.cachedJWKs.Add(key)
+			a.cachedJWKS.Add(key)
 		}
 	}
 	log.C(ctx).Info("Successfully synchronized JWKS")
