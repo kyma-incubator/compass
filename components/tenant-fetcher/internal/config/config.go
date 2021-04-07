@@ -34,7 +34,7 @@ type Config struct {
 
 	RootAPI string `mapstructure:"root_api"`
 
-	Handler *tenant.Config
+	Handler *tenant.Config `mapstructure:",squash"`
 
 	DB *persistence.DatabaseConfig `mapstructure:"db"`
 }
