@@ -57,20 +57,17 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 		return err
 	}
 
-	areAllClientsUpdated := true
 	for _, auth := range auths {
 		clientID := auth.Value.Credential.Oauth.ClientID
 
 		objType, err := auth.GetReferenceObjectType()
 		if err != nil {
-			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
 			continue
 		}
 
 		expectedScopes, err := s.oAuth20Svc.GetClientCredentialScopes(objType)
 		if err != nil {
-			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while getting client credentials scopes for client with ID %s: %v", clientID, err)
 			continue
 		}
@@ -86,13 +83,10 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 		}
 
 		if err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType); err != nil {
-			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while updating client with ID %s: %v", clientID, err)
 		}
 	}
-	if !areAllClientsUpdated {
-		return errors.New("Not all clients were updated successfully")
-	}
+
 	log.C(ctx).Info("Finished synchronization of Hydra scopes")
 	return nil
 }

@@ -106,7 +106,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// WHEN
 		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Error(t, err, "Not all clients were updated successfully")
+		assert.NoError(t, err)
 	})
 
 	t.Run("won't update client when getting client credentials scopes fails", func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// WHEN
 		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Error(t, err, "Not all clients were updated successfully")
+		assert.NoError(t, err)
 	})
 
 	t.Run("fails when client does not present in hydra", func(t *testing.T) {

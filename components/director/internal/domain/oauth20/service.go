@@ -157,7 +157,7 @@ func (s *service) updateClient(ctx context.Context, clientID string, scopes []st
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Debugf("Client with client_id %s successfully updated in Hydra", clientID)
+	log.C(ctx).Infof("Client with client_id %s successfully updated in Hydra", clientID)
 	return nil
 }
 
