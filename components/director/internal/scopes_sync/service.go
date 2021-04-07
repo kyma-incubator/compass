@@ -46,11 +46,11 @@ func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, rep
 }
 
 func (s *service) SynchronizeClientScopes(ctx context.Context) error {
-	clientsFromHydra, err := s.oAuth20Svc.ListClients()
+	hydraClients, err := s.oAuth20Svc.ListClients()
 	if err != nil {
 		return errors.Wrap(err, "while listing clients from hydra")
 	}
-	clientScopes := convertScopesToMap(clientsFromHydra)
+	hydraClientsScopes := convertScopesToMap(hydraClients)
 
 	auths, err := s.systemAuthsWithOAuth(ctx)
 	if err != nil {
@@ -75,9 +75,8 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 			continue
 		}
 
-		scopesFromHydra, ok := clientScopes[clientID]
+		scopesFromHydra, ok := hydraClientsScopes[clientID]
 		if !ok {
-			areAllClientsUpdated = false
 			log.C(ctx).Errorf("Client with ID %s is not present in Hydra", clientID)
 			continue
 		}
@@ -88,12 +87,13 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 
 		if err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType); err != nil {
 			areAllClientsUpdated = false
-			log.C(ctx).WithError(err).Errorf("Error while getting obj type of client with ID %s: %v", clientID, err)
+			log.C(ctx).WithError(err).Errorf("Error while updating scopes of client with ID %s: %v", clientID, err)
 		}
 	}
 	if !areAllClientsUpdated {
 		return errors.New("Not all clients were updated successfully")
 	}
+
 	log.C(ctx).Info("Finished synchronization of Hydra scopes")
 	return nil
 }
