@@ -148,11 +148,11 @@ func (s *StaticConfig) Validate() error {
 
 type Config struct {
 	Address                string `mapstructure:"address"`
-	InternalGraphQLAddress string `mapstructure:"graphql_internal_address"`
+	InternalGraphQLAddress string `mapstructure:"internal_graphql_address"`
 	HydratorAddress        string `mapstructure:"hydrator_address"`
 
 	InternalAddress string `mapstructure:"internal_address"`
-	AppURL          string `mapstructure:"url"`
+	AppURL          string `mapstructure:"app_url"`
 
 	Timeouts *TimeoutsConfig `mapstructure:",squash"`
 
@@ -167,11 +167,11 @@ type Config struct {
 
 	JWKS *JWKSConfig `mapstructure:",squash"`
 
-	ClientIDHttpHeaderKey string `mapstructure:"client_id_http_header_key"`
+	ClientIDHttpHeaderKey string `mapstructure:"client_id_http_header"`
 
 	Static *StaticConfig `mapstructure:"static"`
 
-	PairingAdapterSrc string `mapstructure:"pairing_adapter_config"`
+	PairingAdapterSrc string `mapstructure:"pairing_adapter_src"`
 
 	OneTimeToken *onetimetoken.Config
 	OAuth20      *oauth20.Config `mapstructure:"oauth20"`
@@ -199,7 +199,7 @@ func DefaultConfig() *Config {
 		Log:                     log.DefaultConfig(),
 		MetricsAddress:          "127.0.0.1:3003",
 		JWKS:                    DefaultJWKSConfig(),
-		ClientIDHttpHeaderKey:   "client_user,APP_CLIENT_ID_HTTP_HEADER",
+		ClientIDHttpHeaderKey:   "client_user",
 		Static:                  DefaultStaticConfig(),
 		PairingAdapterSrc:       "",
 		OneTimeToken:            onetimetoken.DefaultConfig(),
