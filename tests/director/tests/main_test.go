@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"net/http"
 	"os"
 	"testing"
 
@@ -19,8 +20,9 @@ import (
 )
 
 var (
-	conf             = &config.DirectorConfig{}
-	dexGraphQLClient *graphql.Client
+	conf               = &config.DirectorConfig{}
+	dexGraphQLClient   *graphql.Client
+	directorHTTPClient *http.Client
 )
 
 func TestMain(m *testing.M) {
@@ -40,6 +42,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while getting dex token"))
 	}
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	directorHTTPClient = gql.NewAuthorizedHTTPClient(dexToken)
 
 	exitVal := m.Run()
 

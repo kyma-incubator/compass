@@ -107,6 +107,16 @@ func FixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 			applicationInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixAsyncRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerApplication(in: %s mode: ASYNC) {
+					%s
+				}
+			}`,
+			applicationInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixGetApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {

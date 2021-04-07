@@ -53,13 +53,13 @@ global:
       version: "PR-1808"
     director:
       dir:
-      version: "PR-1768"
+      version: "PR-1821"
     gateway:
       dir:
       version: "PR-1783"
     operations_controller:
       dir:
-      version: "PR-1768"
+      version: "PR-1814"
     tenant_fetcher:
       dir:
       version: "PR-1783"
