@@ -83,7 +83,7 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 		}
 
 		if err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType); err != nil {
-			log.C(ctx).WithError(err).Errorf("Error while updating client with ID %s: %v", clientID, err)
+			log.C(ctx).WithError(err).Errorf("Error while updating scopes of client with ID %s: %v", clientID, err)
 		}
 	}
 
