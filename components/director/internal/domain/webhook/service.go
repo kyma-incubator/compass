@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -82,6 +83,7 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 		return nil, errors.Wrapf(err, "while getting Applicaiton with ID %s", applicationID)
 	}
 
+	time.Sleep(30 * time.Second)
 	return s.retrieveWebhooks(ctx, application)
 }
 
