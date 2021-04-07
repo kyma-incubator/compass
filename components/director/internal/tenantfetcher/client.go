@@ -28,10 +28,26 @@ type OAuth2Config struct {
 	OAuthTokenEndpoint string `mapstructure:"OAUTH_TOKEN_ENDPOINT"`
 }
 
+func DefaultOAuth2Config() *OAuth2Config {
+	return &OAuth2Config{
+		ClientID:           "",
+		ClientSecret:       "",
+		OAuthTokenEndpoint: "",
+	}
+}
+
 type APIConfig struct {
 	EndpointTenantCreated string `mapstructure:"ENDPOINT_TENANT_CREATED"`
 	EndpointTenantDeleted string `mapstructure:"ENDPOINT_TENANT_DELETED"`
 	EndpointTenantUpdated string `mapstructure:"ENDPOINT_TENANT_UPDATED"`
+}
+
+func DefaultAPIConfig() *APIConfig {
+	return &APIConfig{
+		EndpointTenantCreated: "",
+		EndpointTenantDeleted: "",
+		EndpointTenantUpdated: "",
+	}
 }
 
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore

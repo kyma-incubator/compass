@@ -40,14 +40,16 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		DB:               persistence.DefaultDatabaseConfig(),
-		KubernetesConfig: tenantfetcher.DefaultKubeConfig(),
-		OAuthConfig:      tenantfetcher.OAuth2Config{},
-		APIConfig:        tenantfetcher.APIConfig{},
-		QueryConfig:      *tenantfetcher.DefaultQueryConfig(),
-		FieldMapping:     *tenantfetcher.DefaultTenantFieldMapping(),
-		Log:              log.DefaultConfig(),
-		ClientTimeout:    60 * time.Second,
+		DB:                  persistence.DefaultDatabaseConfig(),
+		KubernetesConfig:    tenantfetcher.DefaultKubeConfig(),
+		OAuthConfig:         *tenantfetcher.DefaultOAuth2Config(),
+		APIConfig:           *tenantfetcher.DefaultAPIConfig(),
+		QueryConfig:         *tenantfetcher.DefaultQueryConfig(),
+		FieldMapping:        *tenantfetcher.DefaultTenantFieldMapping(),
+		Log:                 log.DefaultConfig(),
+		TenantProvider:      "",
+		MetricsPushEndpoint: "",
+		ClientTimeout:       60 * time.Second,
 	}
 }
 

@@ -40,6 +40,7 @@ func DefaultConfig() *Config {
 		DB:                      persistence.DefaultDatabaseConfig(),
 		Log:                     log.DefaultConfig(),
 		Features:                features.DefaultConfig(),
+		ConfigurationFile:       "",
 		ConfigurationFileReload: 1 * time.Minute,
 		ClientTimeout:           60 * time.Second,
 	}

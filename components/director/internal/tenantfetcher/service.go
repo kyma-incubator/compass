@@ -47,9 +47,14 @@ func DefaultQueryConfig() *QueryConfig {
 
 func DefaultTenantFieldMapping() *TenantFieldMapping {
 	return &TenantFieldMapping{
-		NameField:    "name",
-		IDField:      "id",
-		DetailsField: "details",
+		TotalPagesField:    "",
+		TotalResultsField:  "",
+		EventsField:        "",
+		NameField:          "name",
+		IDField:            "id",
+		DetailsField:       "details",
+		DiscriminatorField: "",
+		DiscriminatorValue: "",
 	}
 }
 

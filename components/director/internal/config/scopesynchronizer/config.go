@@ -27,8 +27,9 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		DB:      persistence.DefaultDatabaseConfig(),
-		OAuth20: oauth20.DefaultConfig(),
+		DB:                persistence.DefaultDatabaseConfig(),
+		ConfigurationFile: "",
+		OAuth20:           oauth20.DefaultConfig(),
 	}
 }
 

@@ -10,6 +10,8 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		HTTPClientTimeout: 105 * time.Second,
+		URL:                       "",
+		PublicAccessTokenEndpoint: "",
+		HTTPClientTimeout:         105 * time.Second,
 	}
 }

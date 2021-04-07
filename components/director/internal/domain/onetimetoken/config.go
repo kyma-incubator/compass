@@ -20,5 +20,7 @@ func DefaultConfig() *Config {
 		RuntimeExpiration:     60 * time.Minute,
 		ApplicationExpiration: 5 * time.Minute,
 		CSRExpiration:         5 * time.Minute,
+		ConnectorURL:          "",
+		LegacyConnectorURL:    "",
 	}
 }
