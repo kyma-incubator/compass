@@ -180,7 +180,7 @@ func main() {
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
-	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.API.LastOperationPath)
+	operationMiddleware := operation.NewMiddleware(cfg.URL + cfg.API.LastOperationPath)
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.API.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())

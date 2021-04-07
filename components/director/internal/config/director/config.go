@@ -152,7 +152,7 @@ type Config struct {
 	HydratorAddress        string `mapstructure:"hydrator_address"`
 
 	InternalAddress string `mapstructure:"internal_address"`
-	AppURL          string `mapstructure:"app_url"`
+	URL             string `mapstructure:"url"`
 
 	Timeouts *TimeoutsConfig `mapstructure:",squash"`
 
@@ -173,10 +173,10 @@ type Config struct {
 
 	PairingAdapterSrc string `mapstructure:"pairing_adapter_src"`
 
-	OneTimeToken *onetimetoken.Config
-	OAuth20      *oauth20.Config `mapstructure:"oauth20"`
+	OneTimeToken *onetimetoken.Config `mapstructure:",squash"`
+	OAuth20      *oauth20.Config      `mapstructure:"oauth20"`
 
-	Features *features.Config
+	Features *features.Config `mapstructure:",squash"`
 
 	ProtectedLabelPattern string `mapstructure:"protected_label_pattern"`
 	OperationsNamespace   string `mapstructure:"operations_namespace"`
@@ -190,7 +190,7 @@ func DefaultConfig() *Config {
 		InternalGraphQLAddress:  "127.0.0.1:3001",
 		HydratorAddress:         "127.0.0.1:8080",
 		InternalAddress:         "127.0.0.1:3002",
-		AppURL:                  "",
+		URL:                     "",
 		Timeouts:                DefaultTimeoutsConfig(),
 		DB:                      persistence.DefaultDatabaseConfig(),
 		API:                     DefaultAPIConfig(),

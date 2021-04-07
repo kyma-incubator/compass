@@ -27,7 +27,7 @@ type Config struct {
 
 	Log *log.Config `mapstructure:"log"`
 
-	Features *features.Config
+	Features *features.Config `mapstructure:",squash"`
 
 	ConfigurationFile       string        `mapstructure:"configuration_file"`
 	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`
