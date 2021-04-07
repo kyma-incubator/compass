@@ -59,6 +59,12 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 
 	areAllClientsUpdated := true
 	for _, auth := range auths {
+		log.C(ctx).Infof("Synchronizing oauth client of system auth with ID %s", auth.ID)
+		if auth.Value == nil || auth.Value.Credential.Oauth == nil {
+			log.C(ctx).Infof("System auth with ID %s does not have oauth client for update", auth.ID)
+			continue
+		}
+
 		clientID := auth.Value.Credential.Oauth.ClientID
 
 		objType, err := auth.GetReferenceObjectType()
@@ -115,7 +121,7 @@ func (s *service) systemAuthsWithOAuth(ctx context.Context) ([]model.SystemAuth,
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	conditions := repo.Conditions{
-		repo.NewNotNullCondition("(value -> 'Credential' -> 'Oauth')"),
+		repo.NewNotEqualCondition("(value -> 'Credential' -> 'Oauth')", "null"),
 	}
 	auths, err := s.repo.ListGlobalWithConditions(ctx, conditions)
 	if err != nil {
