@@ -39,6 +39,7 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 
+	log.C(ctx).WithField("errorID", errID).WithError(err).Error()
 	return newGraphqlErrorResponse(ctx, apperrors.ErrorCode(customErr), customErr.Error())
 }
 

@@ -44,6 +44,14 @@ func FixUnregisterRuntimeRequest(id string) *gcli.Request {
 		}`, id, testctx.Tc.GQLFieldsProvider.ForRuntime()))
 }
 
+func FixDeleteRuntimeLabel(id, key string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{deleteRuntimeLabel(runtimeID: "%s", key: "%s") {
+				%s
+			}
+		}`, id, key, testctx.Tc.GQLFieldsProvider.ForLabel()))
+}
+
 func FixGetRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
