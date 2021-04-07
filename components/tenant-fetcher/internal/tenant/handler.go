@@ -18,25 +18,30 @@ import (
 )
 
 type Config struct {
-	HandlerEndpoint string `mapstructure:"HANDLER_ENDPOINT"`
-	TenantPathParam string `mapstructure:"TENANT_PATH_PARAM"`
+	HandlerEndpoint string `mapstructure:"handler_endpoint"`
+	TenantPathParam string `mapstructure:"tenant_path_param"`
 
-	TenantProviderTenantIdProperty string `mapstructure:"TENANT_PROVIDER_TENANT_ID_PROPERTY"`
-	TenantProvider                 string `mapstructure:"TENANT_PROVIDER"`
+	TenantProviderTenantIdProperty string `mapstructure:"tenant_provider_tenant_id_property"`
+	TenantProvider                 string `mapstructure:"tenant_provider"`
 
-	JWKSSyncPeriod            time.Duration `mapstructure:"JWKS_SYNC_PERIOD"`
-	AllowJWTSigningNone       bool          `mapstructure:"ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoints             string        `mapstructure:"JWKS_ENDPOINTS"`
-	IdentityZone              string        `mapstructure:"TENANT_IDENTITY_ZONE"`
-	SubscriptionCallbackScope string        `mapstructure:"SUBSCRIPTION_CALLBACK_SCOPE"`
+	JWKSSyncPeriod            time.Duration `mapstructure:"jwks_sync_period"`
+	AllowJWTSigningNone       bool          `mapstructure:"allow_jwt_signing_none"`
+	JwksEndpoints             string        `mapstructure:"jwks_endpoints"`
+	IdentityZone              string        `mapstructure:"tenant_identity_zone"`
+	SubscriptionCallbackScope string        `mapstructure:"subscription_callback_scope"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		HandlerEndpoint:     "/v1/callback/{tenantId}",
-		TenantPathParam:     "tenantId",
-		JWKSSyncPeriod:      5 * time.Minute,
-		AllowJWTSigningNone: true,
+		HandlerEndpoint:                "/v1/callback/{tenantId}",
+		TenantPathParam:                "tenantId",
+		TenantProviderTenantIdProperty: "",
+		TenantProvider:                 "",
+		JWKSSyncPeriod:                 5 * time.Minute,
+		AllowJWTSigningNone:            true,
+		JwksEndpoints:                  "",
+		IdentityZone:                   "",
+		SubscriptionCallbackScope:      "",
 	}
 }
 
