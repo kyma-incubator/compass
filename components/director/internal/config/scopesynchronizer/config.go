@@ -22,7 +22,7 @@ func AddPFlags(set *pflag.FlagSet) {
 type Config struct {
 	DB                *persistence.DatabaseConfig `mapstructure:"db"`
 	ConfigurationFile string                      `mapstructure:"configuration_file"`
-	OAuth20           *oauth20.Config
+	OAuth20           *oauth20.Config             `mapstructure:"oauth20"`
 }
 
 func DefaultConfig() *Config {

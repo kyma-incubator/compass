@@ -23,17 +23,17 @@ func AddPFlags(set *pflag.FlagSet) {
 }
 
 type Config struct {
-	DB               *persistence.DatabaseConfig `mapstructure:"db"`
-	KubernetesConfig *tenantfetcher.KubeConfig
-	OAuthConfig      tenantfetcher.OAuth2Config
-	APIConfig        tenantfetcher.APIConfig
-	QueryConfig      tenantfetcher.QueryConfig
-	FieldMapping     tenantfetcher.TenantFieldMapping
+	DB               *persistence.DatabaseConfig      `mapstructure:"db"`
+	KubernetesConfig *tenantfetcher.KubeConfig        `mapstructure:",squash"`
+	OAuthConfig      tenantfetcher.OAuth2Config       `mapstructure:",squash"`
+	APIConfig        tenantfetcher.APIConfig          `mapstructure:",squash"`
+	QueryConfig      tenantfetcher.QueryConfig        `mapstructure:"query"`
+	FieldMapping     tenantfetcher.TenantFieldMapping `mapstructure:",squash"`
 
-	Log *log.Config
+	Log *log.Config `mapstructure:"log"`
 
 	TenantProvider      string `mapstructure:"tenant_provider"`
-	MetricsPushEndpoint string `mapstructure:"metrics_push_endpoint"` //optional
+	MetricsPushEndpoint string `mapstructure:"metrics_push_endpoint"`
 
 	ClientTimeout time.Duration `mapstructure:"client_timeout"`
 }
@@ -44,8 +44,8 @@ func DefaultConfig() *Config {
 		KubernetesConfig: tenantfetcher.DefaultKubeConfig(),
 		OAuthConfig:      tenantfetcher.OAuth2Config{},
 		APIConfig:        tenantfetcher.APIConfig{},
-		QueryConfig:      tenantfetcher.QueryConfig{},
-		FieldMapping:     tenantfetcher.TenantFieldMapping{},
+		QueryConfig:      *tenantfetcher.DefaultQueryConfig(),
+		FieldMapping:     *tenantfetcher.DefaultTenantFieldMapping(),
 		Log:              log.DefaultConfig(),
 		ClientTimeout:    60 * time.Second,
 	}

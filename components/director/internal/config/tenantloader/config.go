@@ -22,7 +22,7 @@ func AddPFlags(set *pflag.FlagSet) {
 
 type JobConfig struct {
 	DB  *persistence.DatabaseConfig `mapstructure:"db"`
-	Log *log.Config
+	Log *log.Config                 `mapstructure:"log"`
 }
 
 func DefaultJobConfig() *JobConfig {

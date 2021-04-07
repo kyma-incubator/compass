@@ -28,11 +28,11 @@ type TenantFieldMapping struct {
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
-	PageNumField   string `mapstructure:"QUERY_PAGE_NUM_FIELD"`
-	PageSizeField  string `mapstructure:"QUERY_PAGE_SIZE_FIELD"`
-	TimestampField string `mapstructure:"QUERY_TIMESTAMP_FIELD"`
-	PageStartValue string `mapstructure:"QUERY_PAGE_START"`
-	PageSizeValue  string `mapstructure:"QUERY_PAGE_SIZE"`
+	PageNumField   string `mapstructure:"PAGE_NUM_FIELD"`
+	PageSizeField  string `mapstructure:"PAGE_SIZE_FIELD"`
+	TimestampField string `mapstructure:"TIMESTAMP_FIELD"`
+	PageStartValue string `mapstructure:"PAGE_START"`
+	PageSizeValue  string `mapstructure:"PAGE_SIZE"`
 }
 
 func DefaultQueryConfig() *QueryConfig {

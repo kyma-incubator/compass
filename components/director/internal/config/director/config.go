@@ -99,7 +99,7 @@ type JWKSConfig struct {
 	Endpoint            string        `mapstructure:"jwks_endpoint"`
 	SyncPeriod          time.Duration `mapstructure:"jwks_sync_period"`
 	AllowJWTSigningNone bool          `mapstructure:"allow_jwts_signing_none"`
-	RuntimeCachePeriod  time.Duration `mapstructure:"runtime_cache_period"`
+	RuntimeCachePeriod  time.Duration `mapstructure:"runtime_jwks_cache_period"`
 }
 
 func DefaultJWKSConfig() *JWKSConfig {
@@ -154,18 +154,18 @@ type Config struct {
 	InternalAddress string `mapstructure:"internal_address"`
 	AppURL          string `mapstructure:"url"`
 
-	Timeouts *TimeoutsConfig
+	Timeouts *TimeoutsConfig `mapstructure:",squash"`
 
 	DB                      *persistence.DatabaseConfig `mapstructure:"db"`
-	API                     *ApiConfig
-	ConfigurationFile       string        `mapstructure:"configuration_file"`
-	ConfigurationFileReload time.Duration `mapstructure:"configuration_file_reload"`
+	API                     *ApiConfig                  `mapstructure:",squash"`
+	ConfigurationFile       string                      `mapstructure:"configuration_file"`
+	ConfigurationFileReload time.Duration               `mapstructure:"configuration_file_reload"`
 
-	Log *log.Config
+	Log *log.Config `mapstructure:"log"`
 
 	MetricsAddress string `mapstructure:"metrics_address"`
 
-	JWKS *JWKSConfig
+	JWKS *JWKSConfig `mapstructure:",squash"`
 
 	ClientIDHttpHeaderKey string `mapstructure:"client_id_http_header_key"`
 
@@ -174,7 +174,7 @@ type Config struct {
 	PairingAdapterSrc string `mapstructure:"pairing_adapter_config"`
 
 	OneTimeToken *onetimetoken.Config
-	OAuth20      *oauth20.Config
+	OAuth20      *oauth20.Config `mapstructure:"oauth20"`
 
 	Features *features.Config
 
