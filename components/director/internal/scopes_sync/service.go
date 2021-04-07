@@ -59,8 +59,9 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 
 	areAllClientsUpdated := true
 	for _, auth := range auths {
+		log.C(ctx).Infof("Synchronizing oauth client of system auth with ID %s", auth.ID)
 		if auth.Value == nil || auth.Value.Credential.Oauth == nil {
-			log.C(ctx).Infof("System auth with ID %s should not be updated", auth.ID)
+			log.C(ctx).Infof("System auth with ID %s does not have oauth client for update", auth.ID)
 			continue
 		}
 
