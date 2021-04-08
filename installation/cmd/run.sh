@@ -10,7 +10,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
 MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
-MINIKUBE_CPUS=5
+MINIKUBE_CPUS=4
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -83,9 +83,11 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."
   if [[ ! ${HYPERKIT} ]]; then
     DOCKER_CPUS=$(docker info --format '{{json .}}' | jq -r '.NCPU')
+    DOCKER_MEMORY=$(($(docker info --format '{{json .}}' | jq -r '.MemTotal') / 1000000))
     echo "Docker CPUS: " $DOCKER_CPUS
-    if [[ "$DOCKER_CPUS" -lt "$MINIKUBE_CPUS" ]]; then
-      echo "Insufficient resources. Required CPU: min 6, RAM: min 12.0 GB. Please edit Docker configuration"
+    echo "Docker Memory: " $DOCKER_MEMORY
+    if [[ ("$DOCKER_CPUS" -lt "$MINIKUBE_CPUS") || ("$DOCKER_MEMORY" -lt "$MINIKUBE_MEMORY")]]; then
+      echo "Insufficient resources. Required CPU: min 4, RAM: min 8.0 GB. Please edit Docker configuration"
       exit 1
     fi
     kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
