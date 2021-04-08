@@ -110,7 +110,7 @@ spec:
             {{- if eq $config.enabled true }}
             - name: {{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
               value: {{ $config.trusted_issuers | quote }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
+            - name: {{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes | quote }}
             {{- end }}
             {{- end }}
