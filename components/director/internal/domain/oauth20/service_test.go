@@ -37,13 +37,13 @@ func TestService_CreateClient(t *testing.T) {
 	testErr := errors.New("test err")
 
 	testCases := []struct {
-		Name               string
-		ExpectedResult     *model.OAuthCredentialDataInput
-		ExpectedError      error
+		Name                       string
+		ExpectedResult             *model.OAuthCredentialDataInput
+		ExpectedError              error
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
-		UIDServiceFn       func() *automock.UIDService
-		HydraClient        func() *automock.OryHydraService
-		ObjectType         model.SystemAuthReferenceObjectType
+		UIDServiceFn               func() *automock.UIDService
+		HydraClient                func() *automock.OryHydraService
+		ObjectType                 model.SystemAuthReferenceObjectType
 	}{
 		{
 			Name:           "Success",
@@ -155,11 +155,11 @@ func TestService_UpdateClient(t *testing.T) {
 	// given
 	testErr := errors.New("test err")
 	testCases := []struct {
-		Name               string
-		ExpectedError      error
+		Name                       string
+		ExpectedError              error
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
-		HydraClient        func() *automock.OryHydraService
-		ObjectType         model.SystemAuthReferenceObjectType
+		HydraClient                func() *automock.OryHydraService
+		ObjectType                 model.SystemAuthReferenceObjectType
 	}{
 		{
 			Name:          "Success",
