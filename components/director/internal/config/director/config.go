@@ -98,7 +98,7 @@ func (s *TimeoutsConfig) Validate() error {
 type JWKSConfig struct {
 	Endpoint            string        `mapstructure:"jwks_endpoint"`
 	SyncPeriod          time.Duration `mapstructure:"jwks_sync_period"`
-	AllowJWTSigningNone bool          `mapstructure:"allow_jwts_signing_none"`
+	AllowJWTSigningNone bool          `mapstructure:"allow_jwt_signing_none"`
 	RuntimeCachePeriod  time.Duration `mapstructure:"runtime_jwks_cache_period"`
 }
 

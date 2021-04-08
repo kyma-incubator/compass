@@ -30,7 +30,7 @@ type Config struct {
 	ServerTimeout   time.Duration `mapstructure:"server_timeout"`
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
 
-	Log *log.Config
+	Log *log.Config `mapstructure:"log"`
 
 	RootAPI string `mapstructure:"root_api"`
 
