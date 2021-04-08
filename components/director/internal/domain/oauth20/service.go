@@ -15,7 +15,7 @@ import (
 
 const (
 	clientCredentialScopesPrefix     = "clientCredentialsRegistrationScopes"
-	clientCredentialGrantTypesPrefix = "clientCredentialsRegistrationScopes"
+	clientCredentialGrantTypesPrefix = "clientCredentialsRegistrationGrantTypes"
 )
 
 //go:generate mockery --name=ScopeCfgProvider --output=automock --outpkg=automock --case=underscore
