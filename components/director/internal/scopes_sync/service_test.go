@@ -114,7 +114,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
 		oauthSvc.On("ListClients").Return([]*models.OAuth2Client{}, nil)
-		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return(nil, errors.New("error while getting scopes"))
+		oauthSvc.On("GetClientDetails", model.ApplicationReference).Return(nil, errors.New("error while getting scopes"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -138,7 +138,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		assert.EqualError(t, err, "Not all clients were updated successfully")
 	})
 
-	t.Run("fails when client does not present in hydra", func(t *testing.T) {
+	t.Run("won't try to  when client does not present in hydra", func(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
@@ -241,7 +241,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 			},
 		}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"first", "second"}, nil)
-		oauthSvc.On("UpdateClientScopes", mock.Anything, "client-id", model.ApplicationReference).Return(errors.New("fail"))
+		oauthSvc.On("UpdateClient", mock.Anything, "client-id", model.ApplicationReference).Return(errors.New("fail"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -276,7 +276,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 			},
 		}, nil)
 		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"first", "second"}, nil)
-		oauthSvc.On("UpdateClientScopes", mock.Anything, "client-id", model.ApplicationReference).Return(nil)
+		oauthSvc.On("UpdateClient", mock.Anything, "client-id", model.ApplicationReference).Return(nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{

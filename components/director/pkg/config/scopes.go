@@ -7,6 +7,14 @@ import (
 )
 
 func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
+	return p.getValues("scopes", path)
+}
+
+func (p *Provider) GetRequiredGrantTypes(path string) ([]string, error) {
+	return p.getValues("grant_types", path)
+}
+
+func (p *Provider) getValues(valueType, path string) ([]string, error) {
 	val, err := p.getValueForJSONPath(path)
 	if err != nil {
 		if apperrors.IsValueNotFoundInConfiguration(err) {
@@ -21,14 +29,14 @@ func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
 	}
 	manyVals, ok := val.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected scopes definition, should be string or list of strings, but was %T", val)
+		return nil, fmt.Errorf("unexpected %s definition, should be string or list of strings, but was %T", valueType, val)
 	}
 
 	var scopes []string
 	for _, val := range manyVals {
 		strVal, ok := val.(string)
 		if !ok {
-			return nil, fmt.Errorf("unexpected scope value in a list, should be string but was %T", val)
+			return nil, fmt.Errorf("unexpected value in a list, should be string but was %T", val)
 		}
 		scopes = append(scopes, strVal)
 
