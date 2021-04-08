@@ -44,6 +44,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-dependencies.yaml
 TRACING_OVERRIDES="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-tracing.yaml
+KIALI_OVERRIDES="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kiali.yaml
 CORE_TESTS_OVERRIDES="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-core-tests.yaml
 
 INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma.yaml
@@ -79,6 +80,6 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then
   kyma install -c $INSTALLER_CR_FULL_PATH -o $OVERRIDES_KYMA_CFG_LOCAL -o $OVERRIDES_KYMA_LEGACY_CONNECTIVITY ${ADDITIONAL_PARAMS} --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma install -c $INSTALLER_CR_PATH -o $CORE_TESTS_OVERRIDES -o $TRACING_OVERRIDES ${ADDITIONAL_PARAMS} --source $KYMA_SOURCE
+  kyma install -c $INSTALLER_CR_PATH -o $CORE_TESTS_OVERRIDES -o $TRACING_OVERRIDES -o $KIALI_OVERRIDES ${ADDITIONAL_PARAMS} --source $KYMA_SOURCE
 fi
 set +o xtrace

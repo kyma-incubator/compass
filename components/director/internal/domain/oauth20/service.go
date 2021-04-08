@@ -151,14 +151,13 @@ func (s *service) registerClient(ctx context.Context, clientID string, scopes []
 }
 
 func (s *service) updateClient(ctx context.Context, clientID string, scopes []string) error {
-	_, err := s.hydraCLi.UpdateOAuth2Client(admin.NewUpdateOAuth2ClientParams().WithBody(&models.OAuth2Client{
-		ClientID: clientID,
-		Scope:    strings.Join(scopes, " "),
+	_, err := s.hydraCLi.UpdateOAuth2Client(admin.NewUpdateOAuth2ClientParams().WithID(clientID).WithBody(&models.OAuth2Client{
+		Scope: strings.Join(scopes, " "),
 	}))
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Debugf("Client with client_id %s successfully updated in Hydra", clientID)
+	log.C(ctx).Infof("Client with client_id %s successfully updated in Hydra", clientID)
 	return nil
 }
 

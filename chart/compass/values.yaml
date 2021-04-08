@@ -53,16 +53,16 @@ global:
       version: "PR-1808"
     director:
       dir:
-      version: "PR-1811"
+      version: "PR-1824"
     gateway:
       dir:
       version: "PR-1783"
     operations_controller:
       dir:
-      version: "PR-1768"
+      version: "PR-1814"
     tenant_fetcher:
       dir:
-      version: "PR-1783"
+      version: "PR-1820"
     ord_service:
       dir:
       version: "PR-19"
@@ -85,7 +85,7 @@ global:
       version: "PR-24"
     e2e_tests:
       dir:
-      version: "PR-1768"
+      version: "PR-1818"
   isLocalEnv: false
   oauth2:
     host: oauth2

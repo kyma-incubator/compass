@@ -20,7 +20,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 
 	const clientID = "client-id"
 	selectCondition := repo.Conditions{
-		repo.NewNotNullCondition("(value -> 'Credential' -> 'Oauth')"),
+		repo.NewNotEqualCondition("(value -> 'Credential' -> 'Oauth')", "null"),
 	}
 
 	t.Run("fails when oauth service cannot list clients", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// WHEN
 		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Nil(t, err)
+		assert.EqualError(t, err, "Not all clients were updated successfully")
 	})
 
 	t.Run("won't update client when getting client credentials scopes fails", func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// WHEN
 		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Nil(t, err)
+		assert.EqualError(t, err, "Not all clients were updated successfully")
 	})
 
 	t.Run("fails when client does not present in hydra", func(t *testing.T) {
@@ -164,7 +164,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// WHEN
 		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("won't update scopes if not needed", func(t *testing.T) {
@@ -199,6 +199,70 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
 		// THEN
 		assert.Nil(t, err)
+	})
+
+	t.Run("won't update scopes when returned client is not for update", func(t *testing.T) {
+		// GIVEN
+		oauthSvc := &automock.OAuthService{}
+		systemAuthRepo := &automock.SystemAuthRepo{}
+		oauthSvc.On("ListClients").Return([]*models.OAuth2Client{
+			{
+				ClientID: clientID,
+				Scope:    "scope",
+			},
+		}, nil)
+		mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
+			{
+				AppID: str.Ptr("app-id"),
+				Value: &model.Auth{
+					Credential: model.CredentialData{},
+				},
+			},
+		}, nil)
+		defer mockedTx.AssertExpectations(t)
+		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
+		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
+		// WHEN
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		// THEN
+		assert.Nil(t, err)
+	})
+
+	t.Run("fails when client update in Hydra fails", func(t *testing.T) {
+		// GIVEN
+		oauthSvc := &automock.OAuthService{}
+		systemAuthRepo := &automock.SystemAuthRepo{}
+		oauthSvc.On("ListClients").Return([]*models.OAuth2Client{
+			{
+				ClientID: clientID,
+				Scope:    "first",
+			},
+		}, nil)
+		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"first", "second"}, nil)
+		oauthSvc.On("UpdateClientScopes", mock.Anything, "client-id", model.ApplicationReference).Return(errors.New("fail"))
+		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
+		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
+			{
+				AppID: str.Ptr("app-id"),
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
+							ClientID: clientID,
+						},
+					},
+				},
+			},
+		}, nil)
+		defer mockedTx.AssertExpectations(t)
+		defer transactioner.AssertExpectations(t)
+		defer oauthSvc.AssertExpectations(t)
+		scopeSyncSvc := NewService(oauthSvc, transactioner, systemAuthRepo)
+		// WHEN
+		err := scopeSyncSvc.SynchronizeClientScopes(context.TODO())
+		// THEN
+		assert.EqualError(t, err, "Not all clients were updated successfully")
 	})
 
 	t.Run("will update scopes successfully", func(t *testing.T) {
