@@ -7,14 +7,14 @@ import (
 )
 
 func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
-	return p.getValues("scopes", path)
+	return p.getValues("scopes", path, true)
 }
 
 func (p *Provider) GetRequiredGrantTypes(path string) ([]string, error) {
-	return p.getValues("grant_types", path)
+	return p.getValues("grant_types", path, false)
 }
 
-func (p *Provider) getValues(valueType, path string) ([]string, error) {
+func (p *Provider) getValues(valueType, path string, singeValueExpected bool) ([]string, error) {
 	val, err := p.getValueForJSONPath(path)
 	if err != nil {
 		if apperrors.IsValueNotFoundInConfiguration(err) {
@@ -24,12 +24,16 @@ func (p *Provider) getValues(valueType, path string) ([]string, error) {
 	}
 
 	singleVal, ok := val.(string)
-	if ok {
+	if ok && singeValueExpected {
 		return []string{singleVal}, nil
 	}
 	manyVals, ok := val.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected %s definition, should be string or list of strings, but was %T", valueType, val)
+		errorMessageFormat := "unexpected %s definition, should be a list of strings, but was %T"
+		if singeValueExpected {
+			errorMessageFormat = "unexpected %s definition, should be string or list of strings, but was %T"
+		}
+		return nil, fmt.Errorf(errorMessageFormat, valueType, val)
 	}
 
 	var scopes []string

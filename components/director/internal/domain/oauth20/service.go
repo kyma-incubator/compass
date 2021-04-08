@@ -18,8 +18,8 @@ const (
 	clientCredentialGrantTypesPrefix = "clientCredentialsRegistrationGrantTypes"
 )
 
-//go:generate mockery --name=ScopeCfgProvider --output=automock --outpkg=automock --case=underscore
-type ScopeCfgProvider interface {
+//go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore
+type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
 	GetRequiredGrantTypes(path string) ([]string, error)
 }
@@ -44,12 +44,12 @@ type ClientDetails struct {
 
 type service struct {
 	publicAccessTokenEndpoint string
-	scopeCfgProvider          ScopeCfgProvider
+	scopeCfgProvider          ClientDetailsConfigProvider
 	uidService                UIDService
 	hydraCLi                  OryHydraService
 }
 
-func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
+func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
 		publicAccessTokenEndpoint: publicAccessTokenEndpoint,
