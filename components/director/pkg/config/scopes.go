@@ -36,7 +36,7 @@ func (p *Provider) getValues(valueType, path string) ([]string, error) {
 	for _, val := range manyVals {
 		strVal, ok := val.(string)
 		if !ok {
-			return nil, fmt.Errorf("unexpected value in a list, should be string but was %T", val)
+			return nil, fmt.Errorf("unexpected %T value in a string list", val)
 		}
 		scopes = append(scopes, strVal)
 

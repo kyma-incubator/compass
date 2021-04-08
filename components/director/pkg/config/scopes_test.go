@@ -70,7 +70,7 @@ func TestProvider_GetRequiredScopes(t *testing.T) {
 		// WHEN
 		_, err := sut.GetRequiredScopes("graphql.mutation.updateApplication")
 		// THEN
-		require.EqualError(t, err, "unexpected scope value in a list, should be string but was float64")
+		require.EqualError(t, err, "unexpected float64 value in a string list")
 
 	})
 }

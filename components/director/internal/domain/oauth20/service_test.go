@@ -23,10 +23,9 @@ const (
 )
 
 var (
-	scopes = []string{"foo", "bar", "baz"}
-	grantTypes = []string {"client_credentials"}
+	scopes     = []string{"foo", "bar", "baz"}
+	grantTypes = []string{"client_credentials"}
 )
-
 
 func TestService_CreateClient(t *testing.T) {
 	// given
