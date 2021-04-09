@@ -29,9 +29,10 @@ type OAuth2Config struct {
 }
 
 type APIConfig struct {
-	EndpointTenantCreated string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
-	EndpointTenantDeleted string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
-	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointTenantCreated   string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
+	EndpointTenantDeleted   string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
+	EndpointTenantUpdated   string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointSubaccountMoved string `envconfig:"APP_ENDPOINT_SUBACCOUNT_MOVED"`
 }
 
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
@@ -120,6 +121,8 @@ func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error)
 		return c.apiConfig.EndpointTenantDeleted, nil
 	case UpdatedEventsType:
 		return c.apiConfig.EndpointTenantUpdated, nil
+	case MovedEventType:
+		return c.apiConfig.EndpointSubaccountMoved, nil
 	default:
 		return "", apperrors.NewInternalError("unknown events type")
 	}

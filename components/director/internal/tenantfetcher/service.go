@@ -2,8 +2,11 @@ package tenantfetcher
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -53,6 +56,12 @@ type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
+//go:generate mockery --name=RuntimeStorageService --output=automock --outpkg=automock --case=underscore
+type RuntimeStorageService interface {
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	Update(ctx context.Context, id string, in model.RuntimeInput) error
+}
+
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
@@ -64,6 +73,7 @@ type Service struct {
 	kubeClient                  KubeClient
 	eventAPIClient              EventAPIClient
 	tenantStorageService        TenantStorageService
+	runtimeStorageService       RuntimeStorageService
 	providerName                string
 	fieldMapping                TenantFieldMapping
 	movedSubaccountFieldMapping MovedSubaccountFieldMapping
@@ -71,7 +81,7 @@ type Service struct {
 	retryAttempts uint
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movSubAcc MovedSubaccountFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movSubAcc MovedSubaccountFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService, runtimeStorageService RuntimeStorageService) *Service {
 	return &Service{
 		transact:                    transact,
 		kubeClient:                  kubeClient,
@@ -79,10 +89,10 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 		providerName:                providerName,
 		eventAPIClient:              client,
 		tenantStorageService:        tenantStorageService,
+		runtimeStorageService:       runtimeStorageService,
 		queryConfig:                 queryConfig,
 		movedSubaccountFieldMapping: movSubAcc,
-
-		retryAttempts: retryAttempts,
+		retryAttempts:               retryAttempts,
 	}
 }
 
@@ -95,6 +105,13 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
+	//TODO: Move after delete and create once you tested everyting
+	subAccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp)
+	if err != nil {
+		return err
+	}
+	fmt.Println(subAccountsToMove)
+
 	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 
 	if err != nil {
@@ -105,11 +122,6 @@ func (s Service) SyncTenants() error {
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
 	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
-	if err != nil {
-		return err
-	}
-
-	subAccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
@@ -167,6 +179,8 @@ func (s Service) SyncTenants() error {
 		return errors.Wrap(err, "while storing new tenants")
 	}
 
+	//s.runtimeStorageService
+
 	err = s.tenantStorageService.DeleteMany(ctx, tenantsToDelete)
 	if err != nil {
 		return errors.Wrap(err, "while removing tenants")
@@ -208,8 +222,9 @@ func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenan
 	return s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
 }
 
-func (s Service) getSubaccountsToMove(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	return s.fetchTenantsWithRetries(MovedEventType, fromTimestamp)
+func (s Service) getSubaccountsToMove(fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
+	//TODO: Add method which adds retries
+	return s.fetchMovedSubaccounts(MovedEventType, fromTimestamp)
 }
 
 func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
@@ -229,14 +244,14 @@ func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp st
 }
 
 func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	details, err := s.fetchTenantDetailsRaw(eventsType, fromTimestamp)
+	detailsPages, err := s.fetchTenantDetailsRaw(eventsType, fromTimestamp)
 
 	if err != nil {
 		return nil, err
 	}
-	tenants := make([]model.BusinessTenantMappingInput, len(details))
+	tenants := make([]model.BusinessTenantMappingInput, 0, len(detailsPages))
 
-	for _, detail := range details {
+	for _, detail := range detailsPages {
 		tenant, err := s.eventDataToTenant(eventsType, detail)
 		if err != nil {
 			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
@@ -254,7 +269,7 @@ func (s Service) fetchMovedSubaccounts(eventsType EventsType, fromTimestamp stri
 	if err != nil {
 		return nil, err
 	}
-	movSub := make([]model.MovedSubaccountMappingInput, len(details))
+	movSub := make([]model.MovedSubaccountMappingInput, 0, len(details))
 
 	for _, detail := range details {
 		tenant, err := s.eventDataToChangedSubAccount(detail)
@@ -283,7 +298,7 @@ func (s Service) fetchTenantDetailsRaw(eventsType EventsType, fromTimestamp stri
 	}
 
 	tenants := make([]TenantEventsResponse, 0)
-	tenants = append(tenants, s.extractTenantDetails(firstPage))
+	tenants = append(tenants, s.extractTenantDetails(firstPage)...)
 	initialCount := gjson.GetBytes(firstPage, s.fieldMapping.TotalResultsField).Int()
 	totalPages := gjson.GetBytes(firstPage, s.fieldMapping.TotalPagesField).Int()
 
@@ -303,14 +318,14 @@ func (s Service) fetchTenantDetailsRaw(eventsType EventsType, fromTimestamp stri
 		if initialCount != gjson.GetBytes(res, s.fieldMapping.TotalResultsField).Int() {
 			return nil, apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
 		}
-		tenants = append(tenants, s.extractTenantDetails(res))
+		tenants = append(tenants, s.extractTenantDetails(res)...)
 	}
 
 	return tenants, nil
 }
 
-func (s Service) extractTenantDetails(eventsJSON []byte) TenantEventsResponse {
-	tenantDetails := make(TenantEventsResponse, 0)
+func (s Service) extractTenantDetails(eventsJSON []byte) []TenantEventsResponse {
+	tenantDetails := make([]TenantEventsResponse, 0)
 	gjson.GetBytes(eventsJSON, s.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
 		detailsType := event.Get(s.fieldMapping.DetailsField).Type
 		var details []byte
@@ -323,7 +338,7 @@ func (s Service) extractTenantDetails(eventsJSON []byte) TenantEventsResponse {
 			return true
 		}
 
-		tenantDetails = append(tenantDetails, details...)
+		tenantDetails = append(tenantDetails, details)
 		return true
 	})
 	return tenantDetails

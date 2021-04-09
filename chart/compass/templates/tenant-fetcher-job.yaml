@@ -132,6 +132,8 @@ spec:
                 value: "{{ $config.query.startPage}}"
               - name: APP_QUERY_PAGE_SIZE
                 value: "{{ $config.query.pageSize}}"
+              - name: APP_DEFAULT_SCENARIO_ENABLED
+                value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}
