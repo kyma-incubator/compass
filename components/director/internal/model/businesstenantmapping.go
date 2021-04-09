@@ -32,6 +32,12 @@ type BusinessTenantMappingInput struct {
 	Provider       string
 }
 
+type MovedSubaccountMappingInput struct {
+	SubaccountID string
+	SourceGlobal string
+	TargetGlobal string
+}
+
 func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *BusinessTenantMapping {
 	return &BusinessTenantMapping{
 		ID:             id,

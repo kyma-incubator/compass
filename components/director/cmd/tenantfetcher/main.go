@@ -15,12 +15,13 @@ import (
 )
 
 type config struct {
-	Database         persistence.DatabaseConfig
-	KubernetesConfig tenantfetcher.KubeConfig
-	OAuthConfig      tenantfetcher.OAuth2Config
-	APIConfig        tenantfetcher.APIConfig
-	QueryConfig      tenantfetcher.QueryConfig
-	FieldMapping     tenantfetcher.TenantFieldMapping
+	Database                    persistence.DatabaseConfig
+	KubernetesConfig            tenantfetcher.KubeConfig
+	OAuthConfig                 tenantfetcher.OAuth2Config
+	APIConfig                   tenantfetcher.APIConfig
+	QueryConfig                 tenantfetcher.QueryConfig
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountFieldMapping
 
 	Log log.Config
 
@@ -85,5 +86,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.FieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
 }
