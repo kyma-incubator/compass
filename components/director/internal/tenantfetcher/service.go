@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/avast/retry-go"
@@ -16,6 +18,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
+
+const SubaccountLabelKey = "global_subaccount_id"
 
 type TenantFieldMapping struct {
 	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
@@ -47,6 +51,7 @@ type QueryConfig struct {
 //go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
@@ -60,6 +65,7 @@ type EventAPIClient interface {
 type RuntimeStorageService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
+	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
 const (
@@ -107,13 +113,6 @@ func (s Service) SyncTenants() error {
 
 	//lastConsumedTenantTimestamp := "1618045494000"
 
-	//TODO: Move after delete and create once you tested everyting
-	subAccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp)
-	if err != nil {
-		return err
-	}
-	fmt.Println(subAccountsToMove)
-
 	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 
 	if err != nil {
@@ -124,6 +123,11 @@ func (s Service) SyncTenants() error {
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
 	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
+	if err != nil {
+		return err
+	}
+
+	subAccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
@@ -145,6 +149,7 @@ func (s Service) SyncTenants() error {
 		}
 	}
 
+	//TODO: Check whether GAs created by this transaction are viewed when querying
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -182,6 +187,10 @@ func (s Service) SyncTenants() error {
 	}
 
 	//s.runtimeStorageService
+	err = s.moveSubaccounts(ctx, subAccountsToMove)
+	if err != nil {
+		return errors.Wrap(err, "while moving subaccounts")
+	}
 
 	err = s.tenantStorageService.DeleteMany(ctx, tenantsToDelete)
 	if err != nil {
@@ -359,19 +368,36 @@ func (s Service) walkThroughPages(eventsType EventsType, fromTimestamp string, a
 	return nil
 }
 
-func (s Service) moveSubaccounts(ctx context.Context, subAccMappings []model.MovedSubaccountMappingInput) {
-	lf := labelfilter.LabelFilter{
-		Key:   "",
-		Query: nil,
-	}
-
+func (s Service) moveSubaccounts(ctx context.Context, subAccMappings []model.MovedSubaccountMappingInput) error {
 	for _, subAcc := range subAccMappings {
-		filter := labelfilter.LabelFilter{
-			Key:   "",
-			Query: nil,
+		filters := []*labelfilter.LabelFilter{
+			{
+				Key:   SubaccountLabelKey,
+				Query: str.Ptr(fmt.Sprintf("\"%s\"", subAcc.SubaccountID)),
+			},
 		}
 
-		s.runtimeStorageService.List(ctx, []labelfilter.LabelFilter{filter})
+		page, err := s.runtimeStorageService.List(ctx, filters, 10, "")
+		if err != nil {
+			return errors.Wrapf(err, "while listing runtimes for subaccount")
+		}
+		if page.TotalCount == 0 {
+			continue
+		}
+		if page.TotalCount > 1 {
+			return errors.Errorf("%d runtimes found for subaccount %s", page.TotalCount, subAcc.SubaccountID)
+		}
+
+		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, subAcc.TargetGlobal)
+		if err != nil {
+			return errors.Errorf("while getting internal tenant ID for external tenant ID %s", subAcc.TargetGlobal)
+		}
+
+		runtimeID := page.Data[0].ID
+		err = s.runtimeStorageService.UpdateTenantID(ctx, runtimeID, targetInternalTenant)
+		if err != nil {
+			return errors.Errorf("while updating tenant ID runtime of subaccount with ID %s", subAcc.SubaccountID)
+		}
 	}
 }
 
