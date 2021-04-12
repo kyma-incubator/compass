@@ -172,7 +172,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
 
-				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
 				require.Greater(t, len(application.Auths), 0)
 				for _, v := range application.Auths {
 					require.NotEmpty(t, v.ID)
