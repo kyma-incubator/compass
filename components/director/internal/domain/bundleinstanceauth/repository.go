@@ -2,6 +2,7 @@ package bundleinstanceauth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -53,6 +54,10 @@ func (r *repository) Create(ctx context.Context, item *model.BundleInstanceAuth)
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
+
+	fmt.Printf("\n ---> RuntimeID in CREATE: %s <---\n", item.RuntimeID)
+	fmt.Printf("\n ---> ID: %s <---\n", item.ID)
+	fmt.Printf("\n ---> BundleInstanceAuth: %+v <---\n", item)
 
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
@@ -106,6 +111,22 @@ func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundle
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("bundle_id", bundleID),
+	}
+
+	err := r.lister.List(ctx, tenantID, &entities, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error) {
+	var entities Collection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("runtime_id", runtimeID),
 	}
 
 	err := r.lister.List(ctx, tenantID, &entities, conditions...)

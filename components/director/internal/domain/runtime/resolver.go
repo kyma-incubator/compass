@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -70,6 +71,11 @@ type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
+//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
+type BundleInstanceAuthService interface {
+	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
+}
+
 type Resolver struct {
 	transact                  persistence.Transactioner
 	runtimeService            RuntimeService
@@ -79,9 +85,10 @@ type Resolver struct {
 	sysAuthConv               SystemAuthConverter
 	oAuth20Svc                OAuth20Service
 	eventingSvc               EventingService
+	bundleInstanceAuthSvc     BundleInstanceAuthService
 }
 
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -91,6 +98,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		converter:                 conv,
 		sysAuthConv:               sysAuthConv,
 		eventingSvc:               eventingSvc,
+		bundleInstanceAuthSvc:     bundleInstanceAuthSvc,
 	}
 }
 
@@ -241,6 +249,18 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, runtime.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	bundleInstanceAuths, err := r.bundleInstanceAuthSvc.ListByRuntimeID(ctx, runtime.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	currentTimestamp := timestamp.DefaultGenerator()
+	for _, auth := range bundleInstanceAuths {
+		if auth.Status.Condition == model.BundleInstanceAuthStatusConditionSucceeded {
+			_ = auth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionUnused, currentTimestamp())
+		}
 	}
 
 	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)

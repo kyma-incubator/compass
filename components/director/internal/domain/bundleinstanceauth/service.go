@@ -20,6 +20,7 @@ type Repository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.BundleInstanceAuth, error)
 	ListByBundleID(ctx context.Context, tenantID string, bundleID string) ([]*model.BundleInstanceAuth, error)
+	ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, item *model.BundleInstanceAuth) error
 	Delete(ctx context.Context, tenantID string, id string) error
 }
@@ -43,7 +44,7 @@ func NewService(repo Repository, uidService UIDService) *service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
+func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -57,7 +58,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 
 	id := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for BundleInstanceAuth for Bundle with id %s", id, bundleID)
-	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil)
+	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil, runtimeID)
 
 	err = s.setCreationStatusFromAuth(ctx, &bndlInstAuth, defaultAuth)
 	if err != nil {
@@ -107,6 +108,20 @@ func (s *service) List(ctx context.Context, bundleID string) ([]*model.BundleIns
 	}
 
 	bndlInstanceAuths, err := s.repo.ListByBundleID(ctx, tnt, bundleID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing Bundle Instance Auths")
+	}
+
+	return bndlInstanceAuths, nil
+}
+
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	bndlInstanceAuths, err := s.repo.ListByRuntimeID(ctx, tnt, runtimeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing Bundle Instance Auths")
 	}
