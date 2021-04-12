@@ -105,6 +105,8 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
+	//lastConsumedTenantTimestamp := "1618045494000"
+
 	//TODO: Move after delete and create once you tested everyting
 	subAccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp)
 	if err != nil {
@@ -223,67 +225,93 @@ func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenan
 }
 
 func (s Service) getSubaccountsToMove(fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
-	//TODO: Add method which adds retries
-	return s.fetchMovedSubaccounts(MovedEventType, fromTimestamp)
+	return s.fetchSubAccountsWithRetries(MovedEventType, fromTimestamp)
 }
 
 func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenants []model.BusinessTenantMappingInput
-	err := retry.Do(func() error {
+	err := s.fetchWithRetries(func() error {
 		fetchedTenants, err := s.fetchTenants(eventsType, fromTimestamp)
 		if err != nil {
 			return err
 		}
 		tenants = fetchedTenants
 		return nil
-	}, retry.Attempts(s.retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	return tenants, nil
 }
 
-func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	detailsPages, err := s.fetchTenantDetailsRaw(eventsType, fromTimestamp)
+func (s Service) fetchSubAccountsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
+	var tenants []model.MovedSubaccountMappingInput
+	err := s.fetchWithRetries(func() error {
+		fetchedTenants, err := s.fetchMovedSubaccounts(eventsType, fromTimestamp)
+		if err != nil {
+			return err
+		}
+		tenants = fetchedTenants
+		return nil
+	})
 
 	if err != nil {
 		return nil, err
 	}
-	tenants := make([]model.BusinessTenantMappingInput, 0, len(detailsPages))
 
-	for _, detail := range detailsPages {
-		tenant, err := s.eventDataToTenant(eventsType, detail)
+	return tenants, nil
+}
+
+func (s Service) fetchWithRetries(applyFunc func() error) error {
+	err := retry.Do(applyFunc, retry.Attempts(s.retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
+	tenants := make([]model.BusinessTenantMappingInput, 0)
+
+	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
+		mappings, err := page.getTenantMappings(eventsType)
 		if err != nil {
-			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
-			continue
+			return err
 		}
-		tenants = append(tenants, *tenant)
+		tenants = append(tenants, mappings...)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return tenants, nil
 }
 
 func (s Service) fetchMovedSubaccounts(eventsType EventsType, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
-	details, err := s.fetchTenantDetailsRaw(eventsType, fromTimestamp)
+	subaccMappings := make([]model.MovedSubaccountMappingInput, 0)
+
+	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
+		mappings, err := page.getMovedSubaccounts()
+		if err != nil {
+			return err
+		}
+		subaccMappings = append(subaccMappings, mappings...)
+		return nil
+	})
 
 	if err != nil {
 		return nil, err
 	}
-	movSub := make([]model.MovedSubaccountMappingInput, 0, len(details))
 
-	for _, detail := range details {
-		tenant, err := s.eventDataToChangedSubAccount(detail)
-		if err != nil {
-			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
-			continue
-		}
-		movSub = append(movSub, *tenant)
-	}
-
-	return movSub, nil
+	return subaccMappings, nil
 }
 
-func (s Service) fetchTenantDetailsRaw(eventsType EventsType, fromTimestamp string) ([]TenantEventsResponse, error) {
+func (s Service) walkThroughPages(eventsType EventsType, fromTimestamp string, applyFunc func(*eventsPage) error) error {
 	params := QueryParams{
 		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
 		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
@@ -291,115 +319,60 @@ func (s Service) fetchTenantDetailsRaw(eventsType EventsType, fromTimestamp stri
 	}
 	firstPage, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 	if err != nil {
-		return nil, errors.Wrap(err, "while fetching tenant events page")
+		return errors.Wrap(err, "while fetching tenant events page")
 	}
 	if firstPage == nil {
-		return nil, nil
+		return nil
 	}
 
-	tenants := make([]TenantEventsResponse, 0)
-	tenants = append(tenants, s.extractTenantDetails(firstPage)...)
+	err = applyFunc(s.eventsPage(firstPage))
+	if err != nil {
+		return err
+	}
+
 	initialCount := gjson.GetBytes(firstPage, s.fieldMapping.TotalResultsField).Int()
 	totalPages := gjson.GetBytes(firstPage, s.fieldMapping.TotalPagesField).Int()
 
 	pageStart, err := strconv.ParseInt(s.queryConfig.PageStartValue, 10, 64)
 	if err != nil {
-		return nil, err
+		return err
 	}
+
 	for i := pageStart + 1; i <= totalPages; i++ {
 		params[s.queryConfig.PageNumField] = strconv.FormatInt(i, 10)
 		res, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 		if err != nil {
-			return nil, errors.Wrap(err, "while fetching tenant events page")
+			return errors.Wrap(err, "while fetching tenant events page")
 		}
 		if res == nil {
-			return nil, apperrors.NewInternalError("next page was expected but response was empty")
+			return apperrors.NewInternalError("next page was expected but response was empty")
 		}
 		if initialCount != gjson.GetBytes(res, s.fieldMapping.TotalResultsField).Int() {
-			return nil, apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
+			return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
 		}
-		tenants = append(tenants, s.extractTenantDetails(res)...)
+
+		if err = applyFunc(s.eventsPage(res)); err != nil {
+			return err
+		}
 	}
 
-	return tenants, nil
+	return nil
 }
 
-func (s Service) extractTenantDetails(eventsJSON []byte) []TenantEventsResponse {
-	tenantDetails := make([]TenantEventsResponse, 0)
-	gjson.GetBytes(eventsJSON, s.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
-		detailsType := event.Get(s.fieldMapping.DetailsField).Type
-		var details []byte
-		if detailsType == gjson.String {
-			details = []byte(gjson.Parse(event.Get(s.fieldMapping.DetailsField).String()).Raw)
-		} else if detailsType == gjson.JSON {
-			details = []byte(event.Get(s.fieldMapping.DetailsField).Raw)
-		} else {
-			log.D().Warnf("Invalid event data format: %+v", event)
-			return true
+func (s Service) moveSubaccounts(ctx context.Context, subAccMappings []model.MovedSubaccountMappingInput) {
+	lf := labelfilter.LabelFilter{
+		Key:   "",
+		Query: nil,
+	}
+
+	for _, subAcc := range subAccMappings {
+		filter := labelfilter.LabelFilter{
+			Key:   "",
+			Query: nil,
 		}
 
-		tenantDetails = append(tenantDetails, details)
-		return true
-	})
-	return tenantDetails
-}
-
-//tenant, err := s.eventDataToTenant(eventType, details)
-//if err != nil {
-//log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
-//return true
-//}
-
-func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
-	if eventType == CreatedEventsType && s.fieldMapping.DiscriminatorField != "" {
-		discriminator, ok := gjson.GetBytes(eventData, s.fieldMapping.DiscriminatorField).Value().(string)
-		if !ok {
-			return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.DiscriminatorField)
-		}
-
-		if discriminator != s.fieldMapping.DiscriminatorValue {
-			return nil, nil
-		}
+		s.runtimeStorageService.List(ctx, []labelfilter.LabelFilter{filter})
 	}
-
-	id, ok := gjson.GetBytes(eventData, s.fieldMapping.IDField).Value().(string)
-	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.IDField)
-	}
-
-	name, ok := gjson.GetBytes(eventData, s.fieldMapping.NameField).Value().(string)
-	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.NameField)
-	}
-
-	return &model.BusinessTenantMappingInput{
-		Name:           name,
-		ExternalTenant: id,
-		Provider:       s.providerName,
-	}, nil
-}
-
-func (s Service) eventDataToChangedSubAccount(eventData []byte) (*model.MovedSubaccountMappingInput, error) {
-	id, ok := gjson.GetBytes(eventData, s.movedSubaccountFieldMapping.IDField).Value().(string)
-	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", s.movedSubaccountFieldMapping.IDField)
-	}
-
-	source, ok := gjson.GetBytes(eventData, s.movedSubaccountFieldMapping.SourceGlobal).Value().(string)
-	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", s.movedSubaccountFieldMapping.SourceGlobal)
-	}
-
-	target, ok := gjson.GetBytes(eventData, s.movedSubaccountFieldMapping.TargetGlobal).Value().(string)
-	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", s.movedSubaccountFieldMapping.TargetGlobal)
-	}
-
-	return &model.MovedSubaccountMappingInput{
-		SubaccountID: id,
-		SourceGlobal: source,
-		TargetGlobal: target,
-	}, nil
 }
 
 func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
@@ -414,6 +387,124 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 	return tenants
 }
 
+func (s Service) eventsPage(payload []byte) *eventsPage {
+	return &eventsPage{
+		fieldMapping:                s.fieldMapping,
+		movedSubaccountFieldMapping: s.movedSubaccountFieldMapping,
+		payload:                     payload,
+		providerName:                s.providerName,
+	}
+}
+
 func convertTimeToUnixNanoString(timestamp time.Time) string {
 	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
+}
+
+type eventsPage struct {
+	fieldMapping                TenantFieldMapping
+	movedSubaccountFieldMapping MovedSubaccountFieldMapping
+	providerName                string
+	payload                     []byte
+}
+
+func (ep eventsPage) getEventsDetails() [][]byte {
+	tenantDetails := make([][]byte, 0)
+	gjson.GetBytes(ep.payload, ep.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
+		detailsType := event.Get(ep.fieldMapping.DetailsField).Type
+		var details []byte
+		if detailsType == gjson.String {
+			details = []byte(gjson.Parse(event.Get(ep.fieldMapping.DetailsField).String()).Raw)
+		} else if detailsType == gjson.JSON {
+			details = []byte(event.Get(ep.fieldMapping.DetailsField).Raw)
+		} else {
+			log.D().Warnf("Invalid event data format: %+v", event)
+			return true
+		}
+
+		tenantDetails = append(tenantDetails, details)
+		return true
+	})
+	return tenantDetails
+}
+
+func (ep eventsPage) getMovedSubaccounts() ([]model.MovedSubaccountMappingInput, error) {
+	eds := ep.getEventsDetails()
+	subaccMappings := make([]model.MovedSubaccountMappingInput, 0, len(eds))
+	for _, detail := range eds {
+		mapping, err := ep.eventDataToChangedSubAccount(detail)
+		if err != nil {
+			return nil, err
+		}
+
+		subaccMappings = append(subaccMappings, *mapping)
+	}
+
+	return subaccMappings, nil
+}
+
+func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+	eds := ep.getEventsDetails()
+	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
+	for _, detail := range eds {
+		mapping, err := ep.eventDataToTenant(eventsType, detail)
+		if err != nil {
+			return nil, err
+		}
+
+		tenants = append(tenants, *mapping)
+	}
+
+	return tenants, nil
+}
+
+func (ep eventsPage) eventDataToChangedSubAccount(eventData []byte) (*model.MovedSubaccountMappingInput, error) {
+	id, ok := gjson.GetBytes(eventData, ep.movedSubaccountFieldMapping.IDField).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountFieldMapping.IDField)
+	}
+
+	source, ok := gjson.GetBytes(eventData, ep.movedSubaccountFieldMapping.SourceGlobal).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountFieldMapping.SourceGlobal)
+	}
+
+	target, ok := gjson.GetBytes(eventData, ep.movedSubaccountFieldMapping.TargetGlobal).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountFieldMapping.TargetGlobal)
+	}
+
+	return &model.MovedSubaccountMappingInput{
+		SubaccountID: id,
+		SourceGlobal: source,
+		TargetGlobal: target,
+	}, nil
+}
+
+func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
+	if eventType == CreatedEventsType && ep.fieldMapping.DiscriminatorField != "" {
+		discriminator, ok := gjson.GetBytes(eventData, ep.fieldMapping.DiscriminatorField).Value().(string)
+		if !ok {
+			return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.DiscriminatorField)
+		}
+
+		if discriminator != ep.fieldMapping.DiscriminatorValue {
+			return nil, nil
+		}
+	}
+
+	id, ok := gjson.GetBytes(eventData, ep.fieldMapping.IDField).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.IDField)
+	}
+
+	name, ok := gjson.GetBytes(eventData, ep.fieldMapping.NameField).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.NameField)
+	}
+
+	return &model.BusinessTenantMappingInput{
+		Name:           name,
+		ExternalTenant: id,
+		Provider:       ep.providerName,
+	}, nil
 }

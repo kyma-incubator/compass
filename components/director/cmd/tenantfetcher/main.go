@@ -51,18 +51,18 @@ func main() {
 		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint, cfg.ClientTimeout)
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
+	//transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	//exitOnError(err, "Error while establishing the connection to the database")
 
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
+	//defer func() {
+	//	err := closeFunc()
+	//	exitOnError(err, "Error while closing the connection to the database")
+	//}()
+	//
+	//kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
+	//exitOnError(err, "Failed to initialize Kubernetes client")
 
-	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
-	exitOnError(err, "Failed to initialize Kubernetes client")
-
-	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
+	tenantFetcherSvc := createTenantFetcherSvc(cfg, nil, nil, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
