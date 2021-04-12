@@ -23,7 +23,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ $jobName }}
         release: {{ .Release.Name }}
     spec:
       restartPolicy: Never
