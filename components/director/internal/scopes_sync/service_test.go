@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/ory/hydra-client-go/models"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -114,7 +115,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
 		oauthSvc.On("ListClients").Return([]*models.OAuth2Client{}, nil)
-		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return(nil, errors.New("error while getting scopes"))
+		oauthSvc.On("GetClientDetails", model.ApplicationReference).Return(nil, errors.New("error while getting scopes"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -138,12 +139,15 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		assert.EqualError(t, err, "Not all clients were updated successfully")
 	})
 
-	t.Run("fails when client does not present in hydra", func(t *testing.T) {
+	t.Run("won't try to update the client when client is not present in hydra", func(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
 		oauthSvc.On("ListClients").Return([]*models.OAuth2Client{}, nil)
-		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{}, nil)
+		oauthSvc.On("GetClientDetails", model.ApplicationReference).Return(&oauth20.ClientDetails{
+			Scopes:     []string{},
+			GrantTypes: []string{},
+		}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -177,7 +181,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Scope:    "scope",
 			},
 		}, nil)
-		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"scope"}, nil)
+		oauthSvc.On("GetClientDetails", model.ApplicationReference).Return(&oauth20.ClientDetails{
+			Scopes:     []string{"scope"},
+			GrantTypes: []string{},
+		}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -240,8 +247,11 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Scope:    "first",
 			},
 		}, nil)
-		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"first", "second"}, nil)
-		oauthSvc.On("UpdateClientScopes", mock.Anything, "client-id", model.ApplicationReference).Return(errors.New("fail"))
+		oauthSvc.On("GetClientDetails", model.ApplicationReference).Return(&oauth20.ClientDetails{
+			Scopes:     []string{"scope"},
+			GrantTypes: []string{},
+		}, nil)
+		oauthSvc.On("UpdateClient", mock.Anything, "client-id", model.ApplicationReference).Return(errors.New("fail"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
@@ -275,8 +285,11 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 				Scope:    "first",
 			},
 		}, nil)
-		oauthSvc.On("GetClientCredentialScopes", model.ApplicationReference).Return([]string{"first", "second"}, nil)
-		oauthSvc.On("UpdateClientScopes", mock.Anything, "client-id", model.ApplicationReference).Return(nil)
+		oauthSvc.On("GetClientDetails", model.ApplicationReference).Return(&oauth20.ClientDetails{
+			Scopes:     []string{"scope"},
+			GrantTypes: []string{},
+		}, nil)
+		oauthSvc.On("UpdateClient", mock.Anything, "client-id", model.ApplicationReference).Return(nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]model.SystemAuth{
 			{
