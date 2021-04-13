@@ -206,6 +206,9 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 		}
 
 		for k, v := range tmpBody {
+			if v == nil {
+				continue
+			}
 			body[k] = fmt.Sprintf("%v", v)
 		}
 	}
