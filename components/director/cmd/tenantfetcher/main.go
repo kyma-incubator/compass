@@ -51,18 +51,18 @@ func main() {
 		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint, cfg.ClientTimeout)
 	}
 
-	//transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	//exitOnError(err, "Error while establishing the connection to the database")
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
 
-	//defer func() {
-	//	err := closeFunc()
-	//	exitOnError(err, "Error while closing the connection to the database")
-	//}()
-	//
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	//kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
 	//exitOnError(err, "Failed to initialize Kubernetes client")
 
-	tenantFetcherSvc := createTenantFetcherSvc(cfg, nil, nil, metricsPusher)
+	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, nil, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
@@ -101,6 +101,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo)
 
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
+	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, scenariosService, uidSvc)
+
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
 	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, cfg.ProtectedLabelPattern)
@@ -110,5 +113,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService)
 }

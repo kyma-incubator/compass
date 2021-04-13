@@ -56,6 +56,11 @@ type TenantStorageService interface {
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
+//go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
+type LabelDefinitionService interface {
+	Upsert(ctx context.Context, def model.LabelDefinition) error
+}
+
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
 type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
@@ -63,7 +68,7 @@ type EventAPIClient interface {
 
 //go:generate mockery --name=RuntimeStorageService --output=automock --outpkg=automock --case=underscore
 type RuntimeStorageService interface {
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
@@ -83,11 +88,12 @@ type Service struct {
 	providerName                string
 	fieldMapping                TenantFieldMapping
 	movedSubaccountFieldMapping MovedSubaccountFieldMapping
+	labelDefService             LabelDefinitionService
 
 	retryAttempts uint
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movSubAcc MovedSubaccountFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService, runtimeStorageService RuntimeStorageService) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movSubAcc MovedSubaccountFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService, runtimeStorageService RuntimeStorageService, labelDefService LabelDefinitionService) *Service {
 	return &Service{
 		transact:                    transact,
 		kubeClient:                  kubeClient,
@@ -99,6 +105,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 		queryConfig:                 queryConfig,
 		movedSubaccountFieldMapping: movSubAcc,
 		retryAttempts:               retryAttempts,
+		labelDefService:             labelDefService,
 	}
 }
 
@@ -186,8 +193,7 @@ func (s Service) SyncTenants() error {
 		return errors.Wrap(err, "while storing new tenants")
 	}
 
-	//s.runtimeStorageService
-	err = s.moveSubaccounts(ctx, subAccountsToMove)
+	err = s.moveSubAccounts(ctx, subAccountsToMove)
 	if err != nil {
 		return errors.Wrap(err, "while moving subaccounts")
 	}
@@ -234,7 +240,7 @@ func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenan
 }
 
 func (s Service) getSubaccountsToMove(fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
-	return s.fetchSubAccountsWithRetries(MovedEventType, fromTimestamp)
+	return s.fetchSubAccountsWithRetries(MovedSubAccountEventsType, fromTimestamp)
 }
 
 func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
@@ -368,7 +374,7 @@ func (s Service) walkThroughPages(eventsType EventsType, fromTimestamp string, a
 	return nil
 }
 
-func (s Service) moveSubaccounts(ctx context.Context, subAccMappings []model.MovedSubaccountMappingInput) error {
+func (s Service) moveSubAccounts(ctx context.Context, subAccMappings []model.MovedSubaccountMappingInput) error {
 	for _, subAcc := range subAccMappings {
 		filters := []*labelfilter.LabelFilter{
 			{
@@ -377,15 +383,10 @@ func (s Service) moveSubaccounts(ctx context.Context, subAccMappings []model.Mov
 			},
 		}
 
-		page, err := s.runtimeStorageService.List(ctx, filters, 10, "")
+		//TODO: change magic values
+		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
 		if err != nil {
 			return errors.Wrapf(err, "while listing runtimes for subaccount")
-		}
-		if page.TotalCount == 0 {
-			continue
-		}
-		if page.TotalCount > 1 {
-			return errors.Errorf("%d runtimes found for subaccount %s", page.TotalCount, subAcc.SubaccountID)
 		}
 
 		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, subAcc.TargetGlobal)
@@ -393,12 +394,22 @@ func (s Service) moveSubaccounts(ctx context.Context, subAccMappings []model.Mov
 			return errors.Errorf("while getting internal tenant ID for external tenant ID %s", subAcc.TargetGlobal)
 		}
 
-		runtimeID := page.Data[0].ID
-		err = s.runtimeStorageService.UpdateTenantID(ctx, runtimeID, targetInternalTenant)
+		labelDef := model.LabelDefinition{
+			Tenant: targetInternalTenant,
+			Key:    SubaccountLabelKey,
+		}
+
+		if err := s.labelDefService.Upsert(ctx, labelDef); err != nil {
+			return errors.Errorf("while upserting label definition to internal tenant with ID %s", targetInternalTenant)
+		}
+
+		err = s.runtimeStorageService.UpdateTenantID(ctx, runtime.ID, targetInternalTenant)
 		if err != nil {
 			return errors.Errorf("while updating tenant ID runtime of subaccount with ID %s", subAcc.SubaccountID)
 		}
 	}
+
+	return nil
 }
 
 func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {

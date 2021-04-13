@@ -121,7 +121,7 @@ func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error)
 		return c.apiConfig.EndpointTenantDeleted, nil
 	case UpdatedEventsType:
 		return c.apiConfig.EndpointTenantUpdated, nil
-	case MovedEventType:
+	case MovedSubAccountEventsType:
 		return c.apiConfig.EndpointSubaccountMoved, nil
 	default:
 		return "", apperrors.NewInternalError("unknown events type")

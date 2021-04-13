@@ -69,12 +69,14 @@ func TestService_SyncTenants(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name               string
-		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		APIClientFn        func() *automock.EventAPIClient
-		TenantStorageSvcFn func() *automock.TenantStorageService
-		KubeClientFn       func() *automock.KubeClient
-		ExpectedError      error
+		Name                string
+		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		APIClientFn         func() *automock.EventAPIClient
+		TenantStorageSvcFn  func() *automock.TenantStorageService
+		RuntimeStorageSvcFn func() *automock.RuntimeStorageService
+		LabelDefSvcFn       func() *automock.LabelDefinitionService
+		KubeClientFn        func() *automock.KubeClient
+		ExpectedError       error
 	}{
 		{
 			Name:            "Success when empty db and single page",
@@ -84,11 +86,19 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				return svc
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				svc := &automock.LabelDefinitionService{}
+				svc.On("Upsert", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc

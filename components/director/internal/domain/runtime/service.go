@@ -141,6 +141,10 @@ func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.R
 	return runtime, nil
 }
 
+func (s *service) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	return s.repo.GetByFiltersGlobal(ctx, filter)
+}
+
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

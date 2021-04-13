@@ -3,6 +3,7 @@ package labeldef
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -15,6 +16,7 @@ import (
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
+	Upsert(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	Update(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
@@ -124,6 +126,18 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	if err := s.repo.Update(ctx, *ld); err != nil {
 		return errors.Wrap(err, "while updating Label Definition")
 	}
+
+	return nil
+}
+
+func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
+	def.ID = s.uidService.Generate()
+
+	err := s.repo.Upsert(ctx, def)
+	if err != nil {
+		return errors.Wrapf(err, "while upserting Label Definition with id %s and key %s", def.ID, def.Key)
+	}
+	log.C(ctx).Debugf("Successfully upserted Label Definition with id %s and key %s", def.ID, def.Key)
 
 	return nil
 }

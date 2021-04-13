@@ -8,7 +8,7 @@ const (
 	UpdatedEventsType
 
 	//TODO: Think for better naming
-	MovedEventType
+	MovedSubAccountEventsType
 )
 
 type TenantEventsResponse []byte
