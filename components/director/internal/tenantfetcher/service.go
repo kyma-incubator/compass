@@ -73,6 +73,11 @@ type RuntimeStorageService interface {
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
+type syncTenantsAction struct {
+	name string
+	fn   func() error
+}
+
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
@@ -109,6 +114,14 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 	}
 }
 
+func (a syncTenantsAction) Execute() error {
+	if err := a.fn(); err != nil {
+		return errors.Wrap(err, a.name)
+	}
+
+	return nil
+}
+
 func (s Service) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
@@ -117,15 +130,11 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return err
 	}
-
-	//lastConsumedTenantTimestamp := "1618045494000"
-
 	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 
 	if err != nil {
 		return err
 	}
-
 	//TODO: Check for created and then moved tenants
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
@@ -139,7 +148,7 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete)
+	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete) + len(subAccountsToMove)
 	log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
 	if totalNewEvents == 0 {
 		return nil
@@ -165,52 +174,92 @@ func (s Service) SyncTenants() error {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	currentTenants, err := s.tenantStorageService.List(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while listing tenants")
+	var currentTenants []*model.BusinessTenantMapping = nil
+	var currentTenantsMap map[string]bool = nil
+
+	getCurrentTenants := func() (map[string]bool, error) {
+		if currentTenantsMap != nil {
+			return currentTenantsMap, nil
+		}
+
+		var listErr error = nil
+		currentTenants, listErr = s.tenantStorageService.List(ctx)
+
+		if listErr != nil {
+			return nil, errors.Wrap(listErr, "while listing tenants")
+		}
+
+		currentTenantsMap = make(map[string]bool)
+		for _, ct := range currentTenants {
+			currentTenantsMap[ct.ExternalTenant] = true
+		}
+
+		return currentTenantsMap, nil
 	}
 
-	currentTenantsMap := make(map[string]bool)
-	for _, ct := range currentTenants {
-		currentTenantsMap[ct.ExternalTenant] = true
+	actions := make([]*syncTenantsAction, 0)
+	if len(tenantsToCreate) == 0 && len(tenantsToDelete) == 0 {
+		actions = append(actions, &syncTenantsAction{"while moving subaccounts", func() error { return s.moveSubAccounts(ctx, subAccountsToMove) }})
+	} else {
+		actions = append(actions,
+			&syncTenantsAction{"while storing tenants", func() error { return s.createTenants(ctx, getCurrentTenants, tenantsToCreate) }},
+			&syncTenantsAction{"while moving subaccounts", func() error { return s.moveSubAccounts(ctx, subAccountsToMove) }},
+			&syncTenantsAction{"while deleting tenants", func() error { return s.deleteTenants(ctx, getCurrentTenants, tenantsToDelete) }})
 	}
 
-	for i := len(tenantsToCreate) - 1; i >= 0; i-- {
-		if currentTenantsMap[tenantsToCreate[i].ExternalTenant] {
-			tenantsToCreate = append(tenantsToCreate[:i], tenantsToCreate[i+1:]...)
+	for _, action := range actions {
+		if err = action.Execute(); err != nil {
+			return errors.Wrap(err, "while processing events")
 		}
 	}
 
-	tenantsToDelete = make([]model.BusinessTenantMappingInput, 0)
-	for _, toDelete := range deleteTenantsMap {
-		if currentTenantsMap[toDelete.ExternalTenant] {
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixNanoString(startTime)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) createTenants(ctx context.Context, getCurrentTenants func() (map[string]bool, error), eventsTenants []model.BusinessTenantMappingInput) error {
+	currTenants, err := getCurrentTenants()
+	if err != nil {
+		return err
+	}
+
+	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
+	for i := len(eventsTenants) - 1; i >= 0; i-- {
+		if currTenants[eventsTenants[i].ExternalTenant] {
+			continue
+		}
+		tenantsToCreate = append(tenantsToCreate, eventsTenants[i])
+	}
+
+	if err = s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+		return errors.Wrap(err, "while storing new tenants")
+	}
+
+	return nil
+}
+
+func (s Service) deleteTenants(ctx context.Context, getCurrentTenants func() (map[string]bool, error), eventsTenants []model.BusinessTenantMappingInput) error {
+	currTenants, err := getCurrentTenants()
+
+	if err != nil {
+		return err
+	}
+
+	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
+	for _, toDelete := range eventsTenants {
+		if currTenants[toDelete.ExternalTenant] {
 			tenantsToDelete = append(tenantsToDelete, toDelete)
 		}
 	}
 
-	err = s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate)
-	if err != nil {
-		return errors.Wrap(err, "while storing new tenants")
-	}
-
-	err = s.moveSubAccounts(ctx, subAccountsToMove)
-	if err != nil {
-		return errors.Wrap(err, "while moving subaccounts")
-	}
-
-	err = s.tenantStorageService.DeleteMany(ctx, tenantsToDelete)
-	if err != nil {
+	if err = s.tenantStorageService.DeleteMany(ctx, tenantsToDelete); err != nil {
 		return errors.Wrap(err, "while removing tenants")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixNanoString(startTime))
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -385,13 +434,18 @@ func (s Service) moveSubAccounts(ctx context.Context, subAccMappings []model.Mov
 
 		//TODO: change magic values
 		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
+
 		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.D().Debugf("No runtime found for moved subaccount %s", subAcc.SubaccountID)
+				continue
+			}
 			return errors.Wrapf(err, "while listing runtimes for subaccount")
 		}
 
 		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, subAcc.TargetGlobal)
 		if err != nil {
-			return errors.Errorf("while getting internal tenant ID for external tenant ID %s", subAcc.TargetGlobal)
+			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", subAcc.TargetGlobal)
 		}
 
 		labelDef := model.LabelDefinition{

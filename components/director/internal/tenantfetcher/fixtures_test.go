@@ -18,6 +18,16 @@ func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []
 	}`, fixID(), eventData))
 }
 
+//TODO: Extract common logic
+func fixMovedSubAccountEvent(id, source, target string, fieldMapping tenantfetcher.MovedSubaccountFieldMapping) []byte {
+	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`, fieldMapping.IDField, id, fieldMapping.SourceGlobal, source, fieldMapping.TargetGlobal, target)
+
+	return []byte(fmt.Sprintf(`{
+		"id":        %s,
+		"eventData": %s,
+	}`, fixID(), eventData))
+}
+
 func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
 	discriminatorData := ""
 	if fieldMapping.DiscriminatorField != "" {
