@@ -116,7 +116,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 				name:     "Runtime consumer",
 				consumer: runtimeOAuthGraphQLClient,
 				fieldExpectations: accessRequired{
-					appAuths:                  true,
 					bundleInstanceAuth:        true,
 					bundleInstanceAuths:       true,
 					bundleDefaultInstanceAuth: true,

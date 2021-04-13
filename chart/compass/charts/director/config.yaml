@@ -113,7 +113,6 @@ clientCredentialsRegistrationScopes:
     - "runtime:write"
     - "application:read"
     - "runtime.auths:read"
-    - "application.auths:read"
     - "bundle.instance_auths:read"
   application:
     - "application:read"
