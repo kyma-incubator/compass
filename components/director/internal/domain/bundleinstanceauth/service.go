@@ -44,7 +44,7 @@ func NewService(repo Repository, uidService UIDService) *service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID string) (string, error) {
+func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID *string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -127,6 +127,15 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*mod
 	}
 
 	return bndlInstanceAuths, nil
+}
+
+func (s *service) Update(ctx context.Context, item *model.BundleInstanceAuth) error {
+	err := s.repo.Update(ctx, item)
+	if err != nil {
+		return errors.Wrap(err, "while updating Bundle Instance Auths")
+	}
+
+	return nil
 }
 
 func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error {

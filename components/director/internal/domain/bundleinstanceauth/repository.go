@@ -2,7 +2,6 @@ package bundleinstanceauth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -21,7 +20,7 @@ var (
 	tenantColumn     = "tenant_id"
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
-	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -54,10 +53,6 @@ func (r *repository) Create(ctx context.Context, item *model.BundleInstanceAuth)
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
-
-	fmt.Printf("\n ---> RuntimeID in CREATE: %s <---\n", item.RuntimeID)
-	fmt.Printf("\n ---> ID: %s <---\n", item.ID)
-	fmt.Printf("\n ---> BundleInstanceAuth: %+v <---\n", item)
 
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {

@@ -2,12 +2,8 @@ package bundleinstanceauth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/tidwall/gjson"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/tidwall/sjson"
 
@@ -26,7 +22,7 @@ import (
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
-	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID string) (string, error)
+	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID *string) (string, error)
 	Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error)
 	SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error
 	Delete(ctx context.Context, id string) error
@@ -194,19 +190,6 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 		return nil, err
 	}
 
-	fmt.Printf("\n ---> Consumer ID: %s <--- \n", con.ConsumerID)
-	fmt.Printf("\n ---> Consumer Type: %s <--- \n", con.ConsumerType)
-	scopes, err := scope.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("\n ---> Scopes: %s <--- \n", scopes)
-	tenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("\n ---> Tenant: %s <--- \n", tenant)
-
 	if con.ConsumerType == consumer.Runtime {
 		if c, err := sjson.Set(string(*in.Context), "runtime_id", con.ConsumerID); err != nil {
 			return nil, err
@@ -215,8 +198,7 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 		}
 	}
 
-	runtimeIDFromInputCtx := gjson.Get(string(*in.Context), "runtime_id")
-	fmt.Printf("\n ---> RuntimeID: %s <---\n", runtimeIDFromInputCtx)
+	runtimeIDFromInputCtx := gjson.Get(string(*in.Context), "runtime_id").String()
 
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -235,10 +217,7 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 
 	convertedIn := r.conv.RequestInputFromGraphQL(in)
 
-	fmt.Printf("\n ---> Bundle DefaultInstanceAuth: %+v <---\n", bndl.DefaultInstanceAuth)
-	fmt.Printf("\n ---> runtimeIDFromInputCtx: %s <---\n", runtimeIDFromInputCtx.String())
-
-	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bndl.DefaultInstanceAuth, bndl.InstanceAuthRequestInputSchema, runtimeIDFromInputCtx.String())
+	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bndl.DefaultInstanceAuth, bndl.InstanceAuthRequestInputSchema, &runtimeIDFromInputCtx)
 	if err != nil {
 		return nil, err
 	}

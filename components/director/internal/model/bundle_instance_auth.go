@@ -9,7 +9,7 @@ import (
 type BundleInstanceAuth struct {
 	ID               string
 	BundleID         string
-	RuntimeID        string
+	RuntimeID        *string
 	RuntimeContextID *string
 	Tenant           string
 	Context          *string
@@ -75,7 +75,7 @@ type BundleInstanceAuthRequestInput struct {
 	InputParams *string
 }
 
-func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID string) BundleInstanceAuth {
+func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID *string) BundleInstanceAuth {
 	return BundleInstanceAuth{
 		ID:          id,
 		BundleID:    bundleID,

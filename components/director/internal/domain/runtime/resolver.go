@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
@@ -74,6 +75,7 @@ type SystemAuthService interface {
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
+	Update(ctx context.Context, item *model.BundleInstanceAuth) error
 }
 
 type Resolver struct {
@@ -259,7 +261,14 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	currentTimestamp := timestamp.DefaultGenerator()
 	for _, auth := range bundleInstanceAuths {
 		if auth.Status.Condition == model.BundleInstanceAuthStatusConditionSucceeded {
-			_ = auth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionUnused, currentTimestamp())
+			if err := auth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionUnused, currentTimestamp()); err != nil {
+				log.C(ctx).WithError(err).Warningf("while update bundle instance auth status condition: %v", err)
+				return nil, err
+			}
+			if err := r.bundleInstanceAuthSvc.Update(ctx, auth); err != nil {
+				log.C(ctx).Warningf("Unable to update bundle instance auth with ID: %s for corresponding bundle with ID: %s", auth.ID, auth.BundleID)
+				return nil, err
+			}
 		}
 	}
 

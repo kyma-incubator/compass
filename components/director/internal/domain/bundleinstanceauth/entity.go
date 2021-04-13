@@ -9,8 +9,8 @@ type Entity struct {
 	ID               string         `db:"id"`
 	BundleID         string         `db:"bundle_id"`
 	TenantID         string         `db:"tenant_id"`
-	RuntimeID        string         `db:runtime_id`
-	RuntimeContextID string         `db:runtime_context_id`
+	RuntimeID        sql.NullString `db:"runtime_id"`
+	RuntimeContextID sql.NullString `db:"runtime_context_id"`
 	Context          sql.NullString `db:"context"`
 	InputParams      sql.NullString `db:"input_params"`
 	AuthValue        sql.NullString `db:"auth_value"`
