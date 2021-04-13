@@ -50,7 +50,7 @@ global:
       version: "PR-1828"
     pairing_adapter:
       dir:
-      version: "PR-1808"
+      version: "PR-1828"
     director:
       dir:
       version: "PR-1828"
@@ -62,7 +62,7 @@ global:
       version: "PR-1828"
     tenant_fetcher:
       dir:
-      version: "PR-1820"
+      version: "PR-1828"
     ord_service:
       dir:
       version: "PR-19"
@@ -71,7 +71,7 @@ global:
       version: "PR-1780"
     system_broker:
       dir:
-      version: "PR-1783"
+      version: "PR-1828"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
