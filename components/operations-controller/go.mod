@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/zapr v0.4.0 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210412125407-088a6bd2781d
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210412125407-088a6bd2781d
 	github.com/mitchellh/copystructure v1.1.2 // indirect
