@@ -29,3 +29,6 @@ applicationHideSelectors:
     - "Work In Progress"
   second:
     - "Single"
+
+clientCredentialsRegistrationGrantTypes:
+  - "client_credentials"

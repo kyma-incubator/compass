@@ -113,6 +113,7 @@ clientCredentialsRegistrationScopes:
     - "runtime:write"
     - "application:read"
     - "runtime.auths:read"
+    - "application.auths:read"
     - "bundle.instance_auths:read"
   application:
     - "application:read"
@@ -138,3 +139,6 @@ clientCredentialsRegistrationScopes:
     - "automatic_scenario_assignment:write"
     - "integration_system.auths:read"
     - "application_template.webhooks:read"
+
+clientCredentialsRegistrationGrantTypes:
+  - "client_credentials"
