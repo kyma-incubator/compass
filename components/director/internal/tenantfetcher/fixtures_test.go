@@ -19,8 +19,8 @@ func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []
 }
 
 //TODO: Extract common logic
-func fixMovedSubAccountEvent(id, source, target string, fieldMapping tenantfetcher.MovedSubaccountFieldMapping) []byte {
-	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`, fieldMapping.IDField, id, fieldMapping.SourceGlobal, source, fieldMapping.TargetGlobal, target)
+func fixMovedRuntimeByLabelEvent(id, source, target string, fieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping) []byte {
+	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`, fieldMapping.LabelValue, id, fieldMapping.SourceTenant, source, fieldMapping.TargetTenant, target)
 
 	return []byte(fmt.Sprintf(`{
 		"id":        %s,

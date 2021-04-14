@@ -21,22 +21,22 @@ import (
 )
 
 type config struct {
-	Database                    persistence.DatabaseConfig
-	KubernetesConfig            tenantfetcher.KubeConfig
-	OAuthConfig                 tenantfetcher.OAuth2Config
-	APIConfig                   tenantfetcher.APIConfig
-	QueryConfig                 tenantfetcher.QueryConfig
-	TenantFieldMapping          tenantfetcher.TenantFieldMapping
-	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountFieldMapping
+	Database                        persistence.DatabaseConfig
+	KubernetesConfig                tenantfetcher.KubeConfig
+	OAuthConfig                     tenantfetcher.OAuth2Config
+	APIConfig                       tenantfetcher.APIConfig
+	QueryConfig                     tenantfetcher.QueryConfig
+	TenantFieldMapping              tenantfetcher.TenantFieldMapping
+	MovedRuntimeByLabelFieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping
 
 	Log log.Config
 
-	TenantProvider         string `envconfig:"APP_TENANT_PROVIDER"`
-	MetricsPushEndpoint    string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	DefaultScenarioEnabled bool   `envconfig:"APP_DEFAULT_SCENARIO_ENABLED"`
-	ProtectedLabelPattern  string `envconfig:"default=.*_defaultEventing"`
-
-	ClientTimeout time.Duration `envconfig:"default=60s"`
+	TenantProvider         string        `envconfig:"APP_TENANT_PROVIDER"`
+	MetricsPushEndpoint    string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	DefaultScenarioEnabled bool          `envconfig:"APP_DEFAULT_SCENARIO_ENABLED"`
+	ProtectedLabelPattern  string        `envconfig:"default=.*_defaultEventing"`
+	MovedRuntimeLabelKey   string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
+	ClientTimeout          time.Duration `envconfig:"default=60s"`
 }
 
 func main() {
@@ -113,5 +113,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey)
 }

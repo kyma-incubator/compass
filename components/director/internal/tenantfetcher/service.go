@@ -19,8 +19,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const SubaccountLabelKey = "global_subaccount_id"
-
 type TenantFieldMapping struct {
 	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
 	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
@@ -33,10 +31,10 @@ type TenantFieldMapping struct {
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 }
 
-type MovedSubaccountFieldMapping struct {
-	IDField      string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	SourceGlobal string `envconfig:"default=sourceGlobalAccountGUID,APP_MOVED_SUBACCOUNT_SOURCE_FIELD"`
-	TargetGlobal string `envconfig:"default=targetGlobalAccountGUID,APP_MOVED_SUBACCOUNT_TARGET_FIELD"`
+type MovedRuntimeByLabelFieldMapping struct {
+	LabelValue   string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
+	SourceTenant string `envconfig:"default=sourceTenant,APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD"`
+	TargetTenant string `envconfig:"default=targetTenant,APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD"`
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values
@@ -84,33 +82,34 @@ const (
 )
 
 type Service struct {
-	queryConfig                 QueryConfig
-	transact                    persistence.Transactioner
-	kubeClient                  KubeClient
-	eventAPIClient              EventAPIClient
-	tenantStorageService        TenantStorageService
-	runtimeStorageService       RuntimeStorageService
-	providerName                string
-	fieldMapping                TenantFieldMapping
-	movedSubaccountFieldMapping MovedSubaccountFieldMapping
-	labelDefService             LabelDefinitionService
-
-	retryAttempts uint
+	queryConfig                     QueryConfig
+	transact                        persistence.Transactioner
+	kubeClient                      KubeClient
+	eventAPIClient                  EventAPIClient
+	tenantStorageService            TenantStorageService
+	runtimeStorageService           RuntimeStorageService
+	providerName                    string
+	fieldMapping                    TenantFieldMapping
+	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
+	labelDefService                 LabelDefinitionService
+	retryAttempts                   uint
+	movedRuntimeLabelKey            string
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movSubAcc MovedSubaccountFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService, runtimeStorageService RuntimeStorageService, labelDefService LabelDefinitionService) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService, runtimeStorageService RuntimeStorageService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string) *Service {
 	return &Service{
-		transact:                    transact,
-		kubeClient:                  kubeClient,
-		fieldMapping:                fieldMapping,
-		providerName:                providerName,
-		eventAPIClient:              client,
-		tenantStorageService:        tenantStorageService,
-		runtimeStorageService:       runtimeStorageService,
-		queryConfig:                 queryConfig,
-		movedSubaccountFieldMapping: movSubAcc,
-		retryAttempts:               retryAttempts,
-		labelDefService:             labelDefService,
+		transact:                        transact,
+		kubeClient:                      kubeClient,
+		fieldMapping:                    fieldMapping,
+		providerName:                    providerName,
+		eventAPIClient:                  client,
+		tenantStorageService:            tenantStorageService,
+		runtimeStorageService:           runtimeStorageService,
+		queryConfig:                     queryConfig,
+		movedRuntimeByLabelFieldMapping: movRuntime,
+		retryAttempts:                   retryAttempts,
+		labelDefService:                 labelDefService,
+		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 	}
 }
 
@@ -143,12 +142,12 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	subAccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp)
+	runtimesToMove, err := s.getRuntimesToMoveByLabel(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
 
-	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete) + len(subAccountsToMove)
+	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete) + len(runtimesToMove)
 	log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
 	if totalNewEvents == 0 {
 		return nil
@@ -199,11 +198,11 @@ func (s Service) SyncTenants() error {
 
 	actions := make([]*syncTenantsAction, 0)
 	if len(tenantsToCreate) == 0 && len(tenantsToDelete) == 0 {
-		actions = append(actions, &syncTenantsAction{"while moving subaccounts", func() error { return s.moveSubAccounts(ctx, subAccountsToMove) }})
+		actions = append(actions, &syncTenantsAction{"while moving runtimes by labels", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }})
 	} else {
 		actions = append(actions,
 			&syncTenantsAction{"while storing tenants", func() error { return s.createTenants(ctx, getCurrentTenants, tenantsToCreate) }},
-			&syncTenantsAction{"while moving subaccounts", func() error { return s.moveSubAccounts(ctx, subAccountsToMove) }},
+			&syncTenantsAction{"while moving runtimes by label", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }},
 			&syncTenantsAction{"while deleting tenants", func() error { return s.deleteTenants(ctx, getCurrentTenants, tenantsToDelete) }})
 	}
 
@@ -288,8 +287,8 @@ func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenan
 	return s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
 }
 
-func (s Service) getSubaccountsToMove(fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
-	return s.fetchSubAccountsWithRetries(MovedSubAccountEventsType, fromTimestamp)
+func (s Service) getRuntimesToMoveByLabel(fromTimestamp string) ([]model.MovedRuntimeByLabelMappingInput, error) {
+	return s.fetchMovedRuntimesWithRetries(MovedRuntimeByLabelEventsType, fromTimestamp)
 }
 
 func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
@@ -310,10 +309,10 @@ func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp st
 	return tenants, nil
 }
 
-func (s Service) fetchSubAccountsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
-	var tenants []model.MovedSubaccountMappingInput
+func (s Service) fetchMovedRuntimesWithRetries(eventsType EventsType, fromTimestamp string) ([]model.MovedRuntimeByLabelMappingInput, error) {
+	var tenants []model.MovedRuntimeByLabelMappingInput
 	err := s.fetchWithRetries(func() error {
-		fetchedTenants, err := s.fetchMovedSubaccounts(eventsType, fromTimestamp)
+		fetchedTenants, err := s.fetchMovedRuntimes(eventsType, fromTimestamp)
 		if err != nil {
 			return err
 		}
@@ -356,15 +355,15 @@ func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]mo
 	return tenants, nil
 }
 
-func (s Service) fetchMovedSubaccounts(eventsType EventsType, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
-	subaccMappings := make([]model.MovedSubaccountMappingInput, 0)
+func (s Service) fetchMovedRuntimes(eventsType EventsType, fromTimestamp string) ([]model.MovedRuntimeByLabelMappingInput, error) {
+	allMappings := make([]model.MovedRuntimeByLabelMappingInput, 0)
 
 	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
-		mappings, err := page.getMovedSubaccounts()
+		mappings, err := page.getMovedRuntimes()
 		if err != nil {
 			return err
 		}
-		subaccMappings = append(subaccMappings, mappings...)
+		allMappings = append(allMappings, mappings...)
 		return nil
 	})
 
@@ -372,7 +371,7 @@ func (s Service) fetchMovedSubaccounts(eventsType EventsType, fromTimestamp stri
 		return nil, err
 	}
 
-	return subaccMappings, nil
+	return allMappings, nil
 }
 
 func (s Service) walkThroughPages(eventsType EventsType, fromTimestamp string, applyFunc func(*eventsPage) error) error {
@@ -423,12 +422,12 @@ func (s Service) walkThroughPages(eventsType EventsType, fromTimestamp string, a
 	return nil
 }
 
-func (s Service) moveSubAccounts(ctx context.Context, subAccMappings []model.MovedSubaccountMappingInput) error {
-	for _, subAcc := range subAccMappings {
+func (s Service) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
+	for _, mapping := range movedRuntimeMappings {
 		filters := []*labelfilter.LabelFilter{
 			{
-				Key:   SubaccountLabelKey,
-				Query: str.Ptr(fmt.Sprintf("\"%s\"", subAcc.SubaccountID)),
+				Key:   s.movedRuntimeLabelKey,
+				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
 			},
 		}
 
@@ -437,20 +436,20 @@ func (s Service) moveSubAccounts(ctx context.Context, subAccMappings []model.Mov
 
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
-				log.D().Debugf("No runtime found for moved subaccount %s", subAcc.SubaccountID)
+				log.D().Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
 				continue
 			}
-			return errors.Wrapf(err, "while listing runtimes for subaccount")
+			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
 		}
 
-		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, subAcc.TargetGlobal)
+		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant)
 		if err != nil {
-			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", subAcc.TargetGlobal)
+			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
 		}
 
 		labelDef := model.LabelDefinition{
 			Tenant: targetInternalTenant,
-			Key:    SubaccountLabelKey,
+			Key:    s.movedRuntimeLabelKey,
 		}
 
 		if err := s.labelDefService.Upsert(ctx, labelDef); err != nil {
@@ -459,7 +458,8 @@ func (s Service) moveSubAccounts(ctx context.Context, subAccMappings []model.Mov
 
 		err = s.runtimeStorageService.UpdateTenantID(ctx, runtime.ID, targetInternalTenant)
 		if err != nil {
-			return errors.Errorf("while updating tenant ID runtime of subaccount with ID %s", subAcc.SubaccountID)
+			return errors.Errorf("while updating tenant ID of runtime with label key-value match %s-%s",
+				s.movedRuntimeLabelKey, mapping.LabelValue)
 		}
 	}
 
@@ -478,12 +478,13 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 	return tenants
 }
 
+//TODO: move static converters to new file
 func (s Service) eventsPage(payload []byte) *eventsPage {
 	return &eventsPage{
-		fieldMapping:                s.fieldMapping,
-		movedSubaccountFieldMapping: s.movedSubaccountFieldMapping,
-		payload:                     payload,
-		providerName:                s.providerName,
+		fieldMapping:                    s.fieldMapping,
+		movedRuntimeByLabelFieldMapping: s.movedRuntimeByLabelFieldMapping,
+		payload:                         payload,
+		providerName:                    s.providerName,
 	}
 }
 
@@ -492,10 +493,10 @@ func convertTimeToUnixNanoString(timestamp time.Time) string {
 }
 
 type eventsPage struct {
-	fieldMapping                TenantFieldMapping
-	movedSubaccountFieldMapping MovedSubaccountFieldMapping
-	providerName                string
-	payload                     []byte
+	fieldMapping                    TenantFieldMapping
+	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
+	providerName                    string
+	payload                         []byte
 }
 
 func (ep eventsPage) getEventsDetails() [][]byte {
@@ -518,19 +519,19 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 	return tenantDetails
 }
 
-func (ep eventsPage) getMovedSubaccounts() ([]model.MovedSubaccountMappingInput, error) {
+func (ep eventsPage) getMovedRuntimes() ([]model.MovedRuntimeByLabelMappingInput, error) {
 	eds := ep.getEventsDetails()
-	subaccMappings := make([]model.MovedSubaccountMappingInput, 0, len(eds))
+	mappings := make([]model.MovedRuntimeByLabelMappingInput, 0, len(eds))
 	for _, detail := range eds {
-		mapping, err := ep.eventDataToChangedSubAccount(detail)
+		mapping, err := ep.eventDataToMovedRuntime(detail)
 		if err != nil {
 			return nil, err
 		}
 
-		subaccMappings = append(subaccMappings, *mapping)
+		mappings = append(mappings, *mapping)
 	}
 
-	return subaccMappings, nil
+	return mappings, nil
 }
 
 func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
@@ -548,26 +549,26 @@ func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessT
 	return tenants, nil
 }
 
-func (ep eventsPage) eventDataToChangedSubAccount(eventData []byte) (*model.MovedSubaccountMappingInput, error) {
-	id, ok := gjson.GetBytes(eventData, ep.movedSubaccountFieldMapping.IDField).Value().(string)
+func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRuntimeByLabelMappingInput, error) {
+	id, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.LabelValue).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountFieldMapping.IDField)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.LabelValue)
 	}
 
-	source, ok := gjson.GetBytes(eventData, ep.movedSubaccountFieldMapping.SourceGlobal).Value().(string)
+	source, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.SourceTenant).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountFieldMapping.SourceGlobal)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.SourceTenant)
 	}
 
-	target, ok := gjson.GetBytes(eventData, ep.movedSubaccountFieldMapping.TargetGlobal).Value().(string)
+	target, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.TargetTenant).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountFieldMapping.TargetGlobal)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.TargetTenant)
 	}
 
-	return &model.MovedSubaccountMappingInput{
-		SubaccountID: id,
-		SourceGlobal: source,
-		TargetGlobal: target,
+	return &model.MovedRuntimeByLabelMappingInput{
+		LabelValue:   id,
+		SourceTenant: source,
+		TargetTenant: target,
 	}, nil
 }
 

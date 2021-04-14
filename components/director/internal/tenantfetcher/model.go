@@ -6,9 +6,7 @@ const (
 	CreatedEventsType EventsType = iota
 	DeletedEventsType
 	UpdatedEventsType
-
-	//TODO: Think for better naming
-	MovedSubAccountEventsType
+	MovedRuntimeByLabelEventsType
 )
 
 type TenantEventsResponse []byte

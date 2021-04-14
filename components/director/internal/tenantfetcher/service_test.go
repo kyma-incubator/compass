@@ -3,10 +3,11 @@ package tenantfetcher_test
 import (
 	"bytes"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
@@ -29,10 +30,10 @@ func TestService_SyncTenants(t *testing.T) {
 		IDField:   "id",
 	}
 
-	movedSubAccoFieldMapping := tenantfetcher.MovedSubaccountFieldMapping{
-		IDField:      "id",
-		SourceGlobal: "sourceGlobalAccountGUID",
-		TargetGlobal: "targetGlobalAccountGUID",
+	movedRuntimeFieldMapping := tenantfetcher.MovedRuntimeByLabelFieldMapping{
+		LabelValue:   "id",
+		SourceTenant: "source_tenant",
+		TargetTenant: "target_tenant",
 	}
 
 	event1 := fixEvent("1", "foo", tenantFieldMapping)
@@ -48,9 +49,10 @@ func TestService_SyncTenants(t *testing.T) {
 
 	sourceExtAccId := "sourceExternalId"
 	targetExtAccId := "targetExternalId"
-	subAccId := "subid"
+	movedRuntimeLabelKey := "moved_runtime_key"
+	movedRuntimeLabelValue := "sample_runtime_label_value"
 
-	movedSubAccountEvent := eventsToJsonArray(fixMovedSubAccountEvent(subAccId, sourceExtAccId, targetExtAccId, movedSubAccoFieldMapping))
+	movedRuntimeByLabelEvent := eventsToJsonArray(fixMovedRuntimeByLabelEvent(movedRuntimeLabelValue, sourceExtAccId, targetExtAccId, movedRuntimeFieldMapping))
 
 	businessTenants := []model.BusinessTenantMappingInput{
 		fixBusinessTenantMappingInput("foo", "1", provider),
@@ -103,7 +105,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -135,7 +137,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -170,7 +172,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -206,7 +208,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -241,7 +243,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -380,14 +382,14 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:            "Error when couldn't fetch moved subaccount events page",
+			Name:            "Error when couldn't fetch moved runtime by label events page",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -473,7 +475,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -503,7 +505,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -536,7 +538,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -569,7 +571,7 @@ func TestService_SyncTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 				return client
 			},
@@ -595,14 +597,14 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:            "Do nothing when moved subaccount event type is received but no runtime is found",
+			Name:            "Do nothing when moved runtime by label event type is received but no runtime is found",
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedSubAccountEvent, 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
 
 				return client
 			},
@@ -612,7 +614,7 @@ func TestService_SyncTenants(t *testing.T) {
 			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
 				svc := &automock.RuntimeStorageService{}
 				err := apperrors.NewNotFoundError(resource.Label, "foo")
-				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchSubAccountLabelFilter(subAccId)).Return(nil, err).Once()
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(nil, err).Once()
 
 				return svc
 			},
@@ -628,14 +630,14 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:            "Error getting runtime while processing moved subaccount event",
+			Name:            "Error getting runtime while processing moved runtime by label event",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedSubAccountEvent, 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
 
 				return client
 			},
@@ -644,7 +646,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
 				svc := &automock.RuntimeStorageService{}
-				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchSubAccountLabelFilter(subAccId)).Return(nil, testErr).Once()
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(nil, testErr).Once()
 
 				return svc
 			},
@@ -660,14 +662,14 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:            "Error getting old internal tenant while processing moved subaccount event",
+			Name:            "Error getting old internal tenant while processing moved runtime by label event",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedSubAccountEvent, 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
 
 				return client
 			},
@@ -676,7 +678,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
 				svc := &automock.RuntimeStorageService{}
-				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchSubAccountLabelFilter(subAccId)).Return(&model.Runtime{}, nil).Once()
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
 				return svc
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -718,11 +720,11 @@ func TestService_SyncTenants(t *testing.T) {
 				NameField:          "name",
 				TotalPagesField:    "pages",
 				TotalResultsField:  "total",
-			}, tenantfetcher.MovedSubaccountFieldMapping{
-				IDField:      "id",
-				SourceGlobal: "sourceGlobalAccountGUID",
-				TargetGlobal: "targetGlobalAccountGUID",
-			}, provider, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc)
+			}, tenantfetcher.MovedRuntimeByLabelFieldMapping{
+				LabelValue:   "id",
+				SourceTenant: "source_tenant",
+				TargetTenant: "target_tenant",
+			}, provider, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, movedRuntimeLabelKey)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -755,7 +757,7 @@ func TestService_SyncTenants(t *testing.T) {
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedSubAccountEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 		tenantStorageSvc := &automock.TenantStorageService{}
 		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
@@ -780,11 +782,11 @@ func TestService_SyncTenants(t *testing.T) {
 			NameField:          "name",
 			TotalPagesField:    "pages",
 			TotalResultsField:  "total",
-		}, tenantfetcher.MovedSubaccountFieldMapping{
-			IDField:      "id",
-			SourceGlobal: "sourceGlobalAccountGUID",
-			TargetGlobal: "targetGlobalAccountGUID",
-		}, provider, apiClient, tenantStorageSvc, nil, nil)
+		}, tenantfetcher.MovedRuntimeByLabelFieldMapping{
+			LabelValue:   "id",
+			SourceTenant: "source_tenant",
+			TargetTenant: "target_tenant",
+		}, provider, apiClient, tenantStorageSvc, nil, nil, movedRuntimeLabelKey)
 
 		// WHEN
 		err := svc.SyncTenants()
@@ -809,9 +811,9 @@ func matchArrayWithoutOrderArgument(t *testing.T, expected []model.BusinessTenan
 	})
 }
 
-func matchSubAccountLabelFilter(subAccId string) interface{} {
+func matchMovedRuntimeLabelFilter(labelKey, labelValue string) interface{} {
 	return mock.MatchedBy(func(filters []*labelfilter.LabelFilter) bool {
-		return len(filters) == 1 && filters[0].Key == tenantfetcher.SubaccountLabelKey && *filters[0].Query == fmt.Sprintf("\"%s\"", subAccId)
+		return len(filters) == 1 && filters[0].Key == labelKey && *filters[0].Query == fmt.Sprintf("\"%s\"", labelValue)
 	})
 
 }
