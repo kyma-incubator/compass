@@ -125,7 +125,7 @@ func TestAppRegistry(t *testing.T) {
 			},
 			Labels: &map[string]string{},
 			Events: &model.Events{
-				Spec: ptrSpecResponse(`asyncapi: "1.2.0"`),
+				Spec: ptrSpecResponse(`{"asyncapi":"1.2.0"}`),
 			},
 		}
 
