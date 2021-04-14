@@ -43,6 +43,7 @@ func (c *converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInst
 		InputParams: c.strPtrToJSONPtr(in.InputParams),
 		Auth:        auth,
 		Status:      c.statusToGraphQL(in.Status),
+		RuntimeID:   in.RuntimeID,
 	}, nil
 }
 

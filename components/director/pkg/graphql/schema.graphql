@@ -798,6 +798,7 @@ type BundleInstanceAuth {
 	"""
 	auth: Auth
 	status: BundleInstanceAuthStatus!
+	runtimeID: ID
 }
 
 type BundleInstanceAuthStatus {
