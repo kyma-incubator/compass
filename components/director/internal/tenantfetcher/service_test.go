@@ -43,12 +43,13 @@ func TestService_SyncTenants(t *testing.T) {
 	eventsToJsonArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 	}
-
 	tenantEvents := eventsToJsonArray(event1, event2, event3)
+
 	emptyEvents := eventsToJsonArray()
 
 	sourceExtAccId := "sourceExternalId"
 	targetExtAccId := "targetExternalId"
+	targetIntTenant := "targetIntTenant"
 	movedRuntimeLabelKey := "moved_runtime_key"
 	movedRuntimeLabelValue := "sample_runtime_label_value"
 
@@ -87,6 +88,7 @@ func TestService_SyncTenants(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
+	//TODO:
 	testCases := []struct {
 		Name                string
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -597,7 +599,42 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:            "Do nothing when moved runtime by label event type is received but no runtime is found",
+			Name:            "Successfully process 'moved runtime by label' event",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
+
+				return client
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				svc := &automock.LabelDefinitionService{}
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), matchLabelDefinition(targetIntTenant, movedRuntimeLabelKey)).Return(nil).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
+				svc := &automock.RuntimeStorageService{}
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
+				svc.On("UpdateTenantID", txtest.CtxWithDBMatcher(), mock.AnythingOfType("string"), targetIntTenant).Return(nil).Once()
+				return svc
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+		},
+		{
+			Name:            "Do nothing when 'moved runtime by label' event type is received but no runtime is found",
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
@@ -630,7 +667,7 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:            "Error getting runtime while processing moved runtime by label event",
+			Name:            "Error getting runtime while processing 'moved runtime by label' event",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
@@ -662,7 +699,7 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:            "Error getting old internal tenant while processing moved runtime by label event",
+			Name:            "Error getting old internal tenant while processing 'moved runtime by label' event",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
@@ -693,6 +730,107 @@ func TestService_SyncTenants(t *testing.T) {
 				return client
 			},
 			ExpectedError: testErr,
+		},
+		{
+			Name:            "Error while upserting label definition while processing 'moved runtime by label' event",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
+
+				return client
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				svc := &automock.LabelDefinitionService{}
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), matchLabelDefinition(targetIntTenant, movedRuntimeLabelKey)).Return(testErr).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
+				svc := &automock.RuntimeStorageService{}
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
+				return svc
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:            "Error while changing runtime tenant while processing 'moved runtime by label' event",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
+
+				return client
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				svc := &automock.LabelDefinitionService{}
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), matchLabelDefinition(targetIntTenant, movedRuntimeLabelKey)).Return(nil).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
+				svc := &automock.RuntimeStorageService{}
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
+				svc.On("UpdateTenantID", txtest.CtxWithDBMatcher(), mock.AnythingOfType("string"), targetIntTenant).Return(testErr).Once()
+				return svc
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:            "Error when receiving event with wrong format",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				wrongFieldMApping := tenantfetcher.TenantFieldMapping{
+					IDField:   "wrong",
+					NameField: tenantFieldMapping.NameField,
+				}
+				wrongTenantEvents := eventsToJsonArray(fixEvent("4", "qux", wrongFieldMApping))
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
+				return client
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				return &automock.LabelDefinitionService{}
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeStorageService {
+				return &automock.RuntimeStorageService{}
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				return &automock.TenantStorageService{}
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
+			ExpectedError: errors.New("invalid format"),
 		},
 	}
 
@@ -815,5 +953,10 @@ func matchMovedRuntimeLabelFilter(labelKey, labelValue string) interface{} {
 	return mock.MatchedBy(func(filters []*labelfilter.LabelFilter) bool {
 		return len(filters) == 1 && filters[0].Key == labelKey && *filters[0].Query == fmt.Sprintf("\"%s\"", labelValue)
 	})
+}
 
+func matchLabelDefinition(tenant, labelKey string) interface{} {
+	return mock.MatchedBy(func(labelDef model.LabelDefinition) bool {
+		return labelDef.Tenant == tenant && labelDef.Key == labelKey
+	})
 }
