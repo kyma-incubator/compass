@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	pkgmock "github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
@@ -167,6 +169,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
+	runtimeID := "id"
 	testCases := []struct {
 		Name              string
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -182,7 +185,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams).Return(testID, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return(testID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelInstanceAuth, nil).Once()
 				return svc
 			},
@@ -229,7 +232,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams).Return(testID, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return(testID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelInstanceAuth, nil).Once()
 				return svc
 			},
@@ -276,7 +279,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams).Return("", testError).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return("", testError).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
@@ -300,7 +303,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams).Return(testID, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return(testID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return svc
 			},
@@ -334,7 +337,13 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter, bndlConverter)
 
 			// when
-			result, err := resolver.RequestBundleInstanceAuthCreation(context.TODO(), testBundleID, *gqlRequestInput)
+			consumerEntity := consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.Runtime,
+			}
+			ctx := context.WithValue(context.TODO(), "consumer", consumerEntity)
+
+			result, err := resolver.RequestBundleInstanceAuthCreation(ctx, testBundleID, *gqlRequestInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

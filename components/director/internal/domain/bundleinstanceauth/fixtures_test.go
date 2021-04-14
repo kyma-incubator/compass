@@ -37,6 +37,7 @@ func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, s
 
 	return pia
 }
+
 func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *model.BundleInstanceAuth {
 	return &model.BundleInstanceAuth{
 		ID:       id,
@@ -226,16 +227,18 @@ func fixGQLAuthInput() *graphql.AuthInput {
 }
 
 type sqlRow struct {
-	id              string
-	tenantID        string
-	bundleID        string
-	context         sql.NullString
-	inputParams     sql.NullString
-	authValue       sql.NullString
-	statusCondition string
-	statusTimestamp time.Time
-	statusMessage   string
-	statusReason    string
+	id               string
+	tenantID         string
+	bundleID         string
+	runtimeID        sql.NullString
+	runtimeContextID sql.NullString
+	context          sql.NullString
+	inputParams      sql.NullString
+	authValue        sql.NullString
+	statusCondition  string
+	statusTimestamp  time.Time
+	statusMessage    string
+	statusReason     string
 }
 
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
@@ -248,21 +251,23 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 
 func fixSQLRowFromEntity(entity bundleinstanceauth.Entity) sqlRow {
 	return sqlRow{
-		id:              entity.ID,
-		tenantID:        entity.TenantID,
-		bundleID:        entity.BundleID,
-		context:         entity.Context,
-		inputParams:     entity.InputParams,
-		authValue:       entity.AuthValue,
-		statusCondition: entity.StatusCondition,
-		statusTimestamp: entity.StatusTimestamp,
-		statusMessage:   entity.StatusMessage,
-		statusReason:    entity.StatusReason,
+		id:               entity.ID,
+		tenantID:         entity.TenantID,
+		bundleID:         entity.BundleID,
+		runtimeID:        entity.RuntimeID,
+		runtimeContextID: entity.RuntimeContextID,
+		context:          entity.Context,
+		inputParams:      entity.InputParams,
+		authValue:        entity.AuthValue,
+		statusCondition:  entity.StatusCondition,
+		statusTimestamp:  entity.StatusTimestamp,
+		statusMessage:    entity.StatusMessage,
+		statusReason:     entity.StatusReason,
 	}
 }
 
 func fixCreateArgs(ent bundleinstanceauth.Entity) []driver.Value {
-	return []driver.Value{ent.ID, ent.TenantID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason}
+	return []driver.Value{ent.ID, ent.TenantID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason, ent.RuntimeID, ent.RuntimeContextID}
 }
 
 func fixSimpleModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {

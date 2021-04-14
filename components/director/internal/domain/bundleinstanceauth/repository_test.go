@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var runtimeID = "d05fb90c-3084-4349-9deb-af23a4ce76be"
+
 func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
@@ -32,7 +34,7 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.bundle_instance_auths ( id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.bundle_instance_auths ( id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
 			WithArgs(fixCreateArgs(*piaEntity)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -274,7 +276,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -310,7 +312,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -337,7 +339,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnError(testError)
