@@ -3,10 +3,6 @@ package bundleinstanceauth
 import (
 	"context"
 
-	"github.com/tidwall/gjson"
-
-	"github.com/tidwall/sjson"
-
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -185,21 +181,6 @@ func (r *Resolver) SetBundleInstanceAuth(ctx context.Context, authID string, in 
 }
 
 func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundleID string, in graphql.BundleInstanceAuthRequestInput) (*graphql.BundleInstanceAuth, error) {
-	con, err := consumer.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if con.ConsumerType == consumer.Runtime {
-		if c, err := sjson.Set(string(*in.Context), "runtime_id", con.ConsumerID); err != nil {
-			return nil, err
-		} else if err = in.Context.UnmarshalGQL(c); err != nil {
-			return nil, err
-		}
-	}
-
-	runtimeIDFromInputCtx := gjson.Get(string(*in.Context), "runtime_id").String()
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -217,7 +198,17 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 
 	convertedIn := r.conv.RequestInputFromGraphQL(in)
 
-	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bndl.DefaultInstanceAuth, bndl.InstanceAuthRequestInputSchema, &runtimeIDFromInputCtx)
+	con, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var runtimeID *string
+	if con.ConsumerType == consumer.Runtime {
+		runtimeID = &con.ConsumerID
+	}
+
+	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bndl.DefaultInstanceAuth, bndl.InstanceAuthRequestInputSchema, runtimeID)
 	if err != nil {
 		return nil, err
 	}
