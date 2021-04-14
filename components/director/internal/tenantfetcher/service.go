@@ -76,6 +76,11 @@ type syncTenantsAction struct {
 	fn   func() error
 }
 
+type currentTenantsSupplier struct {
+	currentTenantsMap    map[string]bool
+	tenantStorageService TenantStorageService
+}
+
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
@@ -115,7 +120,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 
 func (a syncTenantsAction) Execute() error {
 	if err := a.fn(); err != nil {
-		return errors.Wrap(err, a.name)
+		return errors.Wrap(err, "while "+a.name)
 	}
 
 	return nil
@@ -129,13 +134,11 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return err
 	}
-	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 
+	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
-	//TODO: Check for created and then moved tenants
-	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
 	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
@@ -153,16 +156,9 @@ func (s Service) SyncTenants() error {
 		return nil
 	}
 
-	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
-	for _, ct := range tenantsToDelete {
-		deleteTenantsMap[ct.ExternalTenant] = ct
-	}
-
-	for i := len(tenantsToCreate) - 1; i >= 0; i-- {
-		if _, found := deleteTenantsMap[tenantsToCreate[i].ExternalTenant]; found {
-			tenantsToCreate = append(tenantsToCreate[:i], tenantsToCreate[i+1:]...)
-		}
-	}
+	//TODO: Check for created and then moved tenants
+	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
+	tenantsToCreate = s.excludeTenants(tenantsToCreate, tenantsToDelete)
 
 	//TODO: Check whether GAs created by this transaction are viewed when querying
 	tx, err := s.transact.Begin()
@@ -170,40 +166,18 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	var currentTenants []*model.BusinessTenantMapping = nil
-	var currentTenantsMap map[string]bool = nil
-
-	getCurrentTenants := func() (map[string]bool, error) {
-		if currentTenantsMap != nil {
-			return currentTenantsMap, nil
-		}
-
-		var listErr error = nil
-		currentTenants, listErr = s.tenantStorageService.List(ctx)
-
-		if listErr != nil {
-			return nil, errors.Wrap(listErr, "while listing tenants")
-		}
-
-		currentTenantsMap = make(map[string]bool)
-		for _, ct := range currentTenants {
-			currentTenantsMap[ct.ExternalTenant] = true
-		}
-
-		return currentTenantsMap, nil
-	}
+	existingTenantsSup := s.newCurrentTenantsSupplier()
 
 	actions := make([]*syncTenantsAction, 0)
 	if len(tenantsToCreate) == 0 && len(tenantsToDelete) == 0 {
 		actions = append(actions, &syncTenantsAction{"while moving runtimes by labels", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }})
 	} else {
 		actions = append(actions,
-			&syncTenantsAction{"while storing tenants", func() error { return s.createTenants(ctx, getCurrentTenants, tenantsToCreate) }},
+			&syncTenantsAction{"while storing tenants", func() error { return s.createTenants(ctx, existingTenantsSup, tenantsToCreate) }},
 			&syncTenantsAction{"while moving runtimes by label", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }},
-			&syncTenantsAction{"while deleting tenants", func() error { return s.deleteTenants(ctx, getCurrentTenants, tenantsToDelete) }})
+			&syncTenantsAction{"while deleting tenants", func() error { return s.deleteTenants(ctx, existingTenantsSup, tenantsToDelete) }})
 	}
 
 	for _, action := range actions {
@@ -222,8 +196,8 @@ func (s Service) SyncTenants() error {
 	return nil
 }
 
-func (s Service) createTenants(ctx context.Context, getCurrentTenants func() (map[string]bool, error), eventsTenants []model.BusinessTenantMappingInput) error {
-	currTenants, err := getCurrentTenants()
+func (s Service) createTenants(ctx context.Context, ts *currentTenantsSupplier, eventsTenants []model.BusinessTenantMappingInput) error {
+	currTenants, err := ts.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -243,8 +217,8 @@ func (s Service) createTenants(ctx context.Context, getCurrentTenants func() (ma
 	return nil
 }
 
-func (s Service) deleteTenants(ctx context.Context, getCurrentTenants func() (map[string]bool, error), eventsTenants []model.BusinessTenantMappingInput) error {
-	currTenants, err := getCurrentTenants()
+func (s Service) deleteTenants(ctx context.Context, ts *currentTenantsSupplier, eventsTenants []model.BusinessTenantMappingInput) error {
+	currTenants, err := ts.Get(ctx)
 
 	if err != nil {
 		return err
@@ -431,9 +405,7 @@ func (s Service) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings [
 			},
 		}
 
-		//TODO: change magic values
 		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
-
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.D().Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
@@ -478,13 +450,54 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 	return tenants
 }
 
-//TODO: move static converters to new file
+func (s Service) excludeTenants(source, target []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
+	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
+	for _, ct := range target {
+		deleteTenantsMap[ct.ExternalTenant] = ct
+	}
+
+	result := make([]model.BusinessTenantMappingInput, 0)
+	copy(result, source)
+
+	for i := len(result) - 1; i >= 0; i-- {
+		if _, found := deleteTenantsMap[result[i].ExternalTenant]; found {
+			result = append(result[:i], result[i+1:]...)
+		}
+	}
+
+	return result
+}
+
 func (s Service) eventsPage(payload []byte) *eventsPage {
 	return &eventsPage{
 		fieldMapping:                    s.fieldMapping,
 		movedRuntimeByLabelFieldMapping: s.movedRuntimeByLabelFieldMapping,
 		payload:                         payload,
 		providerName:                    s.providerName,
+	}
+}
+
+func (supplier *currentTenantsSupplier) Get(ctx context.Context) (map[string]bool, error) {
+	if supplier.currentTenantsMap != nil {
+		return supplier.currentTenantsMap, nil
+	}
+
+	currentTenants, listErr := supplier.tenantStorageService.List(ctx)
+	if listErr != nil {
+		return nil, errors.Wrap(listErr, "while listing tenants")
+	}
+
+	supplier.currentTenantsMap = make(map[string]bool)
+	for _, ct := range currentTenants {
+		supplier.currentTenantsMap[ct.ExternalTenant] = true
+	}
+
+	return supplier.currentTenantsMap, nil
+}
+
+func (s Service) newCurrentTenantsSupplier() *currentTenantsSupplier {
+	return &currentTenantsSupplier{
+		tenantStorageService: s.tenantStorageService,
 	}
 }
 
