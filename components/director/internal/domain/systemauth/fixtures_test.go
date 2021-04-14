@@ -22,8 +22,22 @@ var (
 
 var testTableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}
 
-func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
-	return &graphql.SystemAuth{
+func fixGQLAppSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+	return &graphql.AppSystemAuth{
+		ID:   id,
+		Auth: auth,
+	}
+}
+
+func fixGQLIntSysSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+	return &graphql.IntSysSystemAuth{
+		ID:   id,
+		Auth: auth,
+	}
+}
+
+func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+	return &graphql.RuntimeSystemAuth{
 		ID:   id,
 		Auth: auth,
 	}

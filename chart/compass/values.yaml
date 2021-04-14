@@ -82,10 +82,10 @@ global:
       version: "PR-1808"
     console:
       dir:
-      version: "PR-24"
+      version: "PR-26"
     e2e_tests:
       dir:
-      version: "PR-1825"
+      version: "PR-1827"
   isLocalEnv: false
   oauth2:
     host: oauth2

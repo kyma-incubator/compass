@@ -448,24 +448,24 @@ func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context
 func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
 	return r.token.RequestOneTimeTokenForRuntime(ctx, id)
 }
-func (r *mutationResolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *mutationResolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.oAuth20.RequestClientCredentialsForRuntime(ctx, id)
 }
-func (r *mutationResolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *mutationResolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.oAuth20.RequestClientCredentialsForApplication(ctx, id)
 }
-func (r *mutationResolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *mutationResolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.oAuth20.RequestClientCredentialsForIntegrationSystem(ctx, id)
 }
-func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
+func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.RuntimeReference)
 	return fn(ctx, authID)
 }
-func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
+func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, authID string) (graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.ApplicationReference)
 	return fn(ctx, authID)
 }
-func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
+func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
 	return fn(ctx, authID)
 }
@@ -534,7 +534,7 @@ type applicationResolver struct {
 	*RootResolver
 }
 
-func (r *applicationResolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
+func (r *applicationResolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.AppSystemAuth, error) {
 	return r.app.Auths(ctx, obj)
 }
 
@@ -570,7 +570,7 @@ func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key 
 	return r.runtime.Labels(ctx, obj, key)
 }
 
-func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
+func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.RuntimeSystemAuth, error) {
 	return r.runtime.Auths(ctx, obj)
 }
 
@@ -598,7 +598,7 @@ func (r *eventSpecResolver) FetchRequest(ctx context.Context, obj *graphql.Event
 
 type integrationSystemResolver struct{ *RootResolver }
 
-func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.SystemAuth, error) {
+func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.IntSysSystemAuth, error) {
 	return r.intSys.Auths(ctx, obj)
 }
 
