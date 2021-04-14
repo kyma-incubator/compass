@@ -456,7 +456,7 @@ func (s Service) excludeTenants(source, target []model.BusinessTenantMappingInpu
 		deleteTenantsMap[ct.ExternalTenant] = ct
 	}
 
-	result := make([]model.BusinessTenantMappingInput, 0)
+	result := append([]model.BusinessTenantMappingInput{}, source...)
 	copy(result, source)
 
 	for i := len(result) - 1; i >= 0; i-- {
