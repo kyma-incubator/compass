@@ -230,8 +230,8 @@ func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) model.Sy
 	}
 }
 
-func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
-	return &graphql.SystemAuth{
+func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.RuntimeSystemAuth {
+	return &graphql.RuntimeSystemAuth{
 		ID:   id,
 		Auth: auth,
 	}
