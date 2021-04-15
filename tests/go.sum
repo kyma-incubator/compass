@@ -459,6 +459,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6
 github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14 h1:gEtd9g2Yp5548gzdPcrD7I1yiq4sq0z1/WtwzWgoDu8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210413115746-1d808696fbe7 h1:2EKd+97EXS3ZXz16BA5vzIj1kwUKxpDU0wfD5piULwk=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210413115746-1d808696fbe7/go.mod h1:RoENlGS6hILTK7ZeO8wzixcDR/hHfX85LxOtmcj7+Pc=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c/go.mod h1:MeS9gTgdRhKAWcMQSkYSk+ZSpYZJ1QipZeyJ6Cz7hHA=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210224145945-7c0650085504 h1:BUOj2kBl7RByYku6U18i5+voHr6G//PSau3JztXncuw=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210224145945-7c0650085504/go.mod h1:7SszjiSGtE7HyvcSSZyVWNpCHfQb6LJp6E6gD8ZZ4Cs=
@@ -959,6 +961,8 @@ golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210303074136-134d130e1a04 h1:cEhElsAv9LUt9ZUUocxzWe05oFLVd+AA2nstydTeI8g=
+golang.org/x/sys v0.0.0-20210303074136-134d130e1a04/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 h1:v+OssWQX+hTHEmOBgwxdZxK4zHq3yOs8F9J7mk0PY8E=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=

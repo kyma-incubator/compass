@@ -39,7 +39,7 @@ type IntegrationSystemService interface {
 
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(model *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
@@ -62,19 +62,19 @@ func NewResolver(transactioner persistence.Transactioner, svc Service, appSvc Ap
 	return &Resolver{transact: transactioner, svc: svc, appSvc: appSvc, rtmSvc: rtmSvc, systemAuthSvc: systemAuthSvc, isSvc: isSvc, systemAuthConv: systemAuthConv}
 }
 
-func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.RuntimeReference, id)
 }
 
-func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.ApplicationReference, id)
 }
 
-func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.IntegrationSystemReference, id)
 }
 
-func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (*graphql.SystemAuth, error) {
+func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

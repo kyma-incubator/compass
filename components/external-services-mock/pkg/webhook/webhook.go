@@ -20,6 +20,7 @@ type OperationStatusRequestData struct {
 
 type OperationResponseData struct {
 	Status string `json:"status"`
+	Error  error  `json:"error"`
 }
 
 func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
@@ -65,6 +66,7 @@ func NewWebHookOperationGetHTTPHandler() func(rw http.ResponseWriter, r *http.Re
 
 		body := OperationResponseData{
 			Status: OperationResponseStatusOK,
+			Error:  nil,
 		}
 		if isInProgress {
 			body.Status = OperationResponseStatusINProgress

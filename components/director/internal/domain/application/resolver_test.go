@@ -1266,7 +1266,7 @@ func TestResolver_Auths(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	sysAuthModels := []model.SystemAuth{{ID: "id1", AppID: &id}, {ID: "id2", AppID: &id}}
-	sysAuthGQL := []*graphql.SystemAuth{{ID: "id1"}, {ID: "id2"}}
+	sysAuthGQL := []*graphql.AppSystemAuth{{ID: "id1"}, {ID: "id2"}}
 
 	testCases := []struct {
 		Name            string
@@ -1274,7 +1274,7 @@ func TestResolver_Auths(t *testing.T) {
 		ServiceFn       func() *automock.SystemAuthService
 		SysAuthConvFn   func() *automock.SystemAuthConverter
 		InputApp        *graphql.Application
-		ExpectedResult  []*graphql.SystemAuth
+		ExpectedResult  []*graphql.AppSystemAuth
 		ExpectedErr     error
 	}{
 		{

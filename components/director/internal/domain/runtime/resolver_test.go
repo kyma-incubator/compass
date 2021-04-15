@@ -1711,7 +1711,7 @@ func TestResolver_Auths(t *testing.T) {
 		fixModelSystemAuth("faz", tnt, parentRuntime.ID, fixModelAuth()),
 	}
 
-	gqlSysAuths := []*graphql.SystemAuth{
+	gqlSysAuths := []*graphql.RuntimeSystemAuth{
 		fixGQLSystemAuth("bar", fixGQLAuth()),
 		fixGQLSystemAuth("baz", fixGQLAuth()),
 		fixGQLSystemAuth("faz", fixGQLAuth()),
@@ -1725,7 +1725,7 @@ func TestResolver_Auths(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		SysAuthSvcFn    func() *automock.SystemAuthService
 		SysAuthConvFn   func() *automock.SystemAuthConverter
-		ExpectedOutput  []*graphql.SystemAuth
+		ExpectedOutput  []*graphql.RuntimeSystemAuth
 		ExpectedError   error
 	}{
 		{
