@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"os"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
@@ -59,7 +60,8 @@ func main() {
 	fatalOnError(err)
 
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.ORD.ServiceURL+cfg.ORD.StaticPath)
-	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
+	collector := metrics.NewCollector()
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter(), collector)
 
 	middlewares := []mux.MiddlewareFunc{
 		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
