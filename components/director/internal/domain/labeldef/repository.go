@@ -14,6 +14,7 @@ const (
 	tableName    = "public.label_definitions"
 	tenantColumn = "tenant_id"
 	keyColumn    = "key"
+	schemaColumn = "schema"
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -24,7 +25,7 @@ type EntityConverter interface {
 
 var (
 	idColumns        = []string{"id"}
-	labeldefColumns  = []string{"id", tenantColumn, keyColumn, "schema"}
+	labeldefColumns  = []string{"id", tenantColumn, keyColumn, schemaColumn}
 	updatableColumns = []string{"schema"}
 )
 
@@ -48,7 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 		lister:       repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		deleter:      repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
 		updater:      repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
-		upserter:     repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{keyColumn}),
+		upserter:     repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
 	}
 }
 

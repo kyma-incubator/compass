@@ -118,6 +118,24 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 	}
 }
 
+func (supplier *currentTenantsSupplier) Get(ctx context.Context) (map[string]bool, error) {
+	if supplier.currentTenantsMap != nil {
+		return supplier.currentTenantsMap, nil
+	}
+
+	currentTenants, listErr := supplier.tenantStorageService.List(ctx)
+	if listErr != nil {
+		return nil, errors.Wrap(listErr, "while listing tenants")
+	}
+
+	supplier.currentTenantsMap = make(map[string]bool)
+	for _, ct := range currentTenants {
+		supplier.currentTenantsMap[ct.ExternalTenant] = true
+	}
+
+	return supplier.currentTenantsMap, nil
+}
+
 func (a syncTenantsAction) Execute() error {
 	if err := a.fn(); err != nil {
 		return errors.Wrap(err, "while "+a.name)
@@ -457,7 +475,6 @@ func (s Service) excludeTenants(source, target []model.BusinessTenantMappingInpu
 	}
 
 	result := append([]model.BusinessTenantMappingInput{}, source...)
-	copy(result, source)
 
 	for i := len(result) - 1; i >= 0; i-- {
 		if _, found := deleteTenantsMap[result[i].ExternalTenant]; found {
@@ -475,24 +492,6 @@ func (s Service) eventsPage(payload []byte) *eventsPage {
 		payload:                         payload,
 		providerName:                    s.providerName,
 	}
-}
-
-func (supplier *currentTenantsSupplier) Get(ctx context.Context) (map[string]bool, error) {
-	if supplier.currentTenantsMap != nil {
-		return supplier.currentTenantsMap, nil
-	}
-
-	currentTenants, listErr := supplier.tenantStorageService.List(ctx)
-	if listErr != nil {
-		return nil, errors.Wrap(listErr, "while listing tenants")
-	}
-
-	supplier.currentTenantsMap = make(map[string]bool)
-	for _, ct := range currentTenants {
-		supplier.currentTenantsMap[ct.ExternalTenant] = true
-	}
-
-	return supplier.currentTenantsMap, nil
 }
 
 func (s Service) newCurrentTenantsSupplier() *currentTenantsSupplier {
