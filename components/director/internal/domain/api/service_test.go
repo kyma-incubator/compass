@@ -668,6 +668,7 @@ func TestService_Update(t *testing.T) {
 
 	apiDefinitionModel := &model.APIDefinition{
 		Name:       "Bar",
+		BundleID:   bundleID,
 		TargetURLs: api.ConvertTargetUrlToJsonArray("https://test-url-updated.com"),
 		Version:    &model.Version{},
 	}
