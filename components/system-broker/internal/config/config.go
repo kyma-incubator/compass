@@ -17,6 +17,7 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"reflect"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/ord"
@@ -42,6 +43,7 @@ type Config struct {
 	GraphQLClient *graphql.Config `mapstructure:"graphql_client"`
 	OAuthProvider *oauth.Config   `mapstructure:"oauth_provider"`
 	ORD           *ord.Config     `mapstructure:"ord"`
+	Metrics       *metrics.Config `mapstructure:"metrics"`
 }
 
 func AddPFlags(set *pflag.FlagSet) {
@@ -57,6 +59,7 @@ func DefaultConfig() *Config {
 		GraphQLClient: graphql.DefaultConfig(),
 		OAuthProvider: oauth.DefaultConfig(),
 		ORD:           ord.DefaultConfig(),
+		Metrics:       metrics.DefaultConfig(),
 	}
 }
 
