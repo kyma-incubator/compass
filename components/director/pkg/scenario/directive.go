@@ -157,6 +157,9 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 func (d *directive) getObjectScenarios(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) ([]string, error) {
 	scenariosLabel, err := d.labelRepo.GetByKey(ctx, tenantID, objectType, objectID, model.ScenariosKey)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return make([]string, 0), nil
+		}
 		return nil, errors.Wrapf(err, "while fetching scenarios for object with id: %s and type: %s", objectID, objectType)
 	}
 	return label.ValueToStringsSlice(scenariosLabel.Value)
