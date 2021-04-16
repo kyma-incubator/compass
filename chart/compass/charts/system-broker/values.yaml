@@ -1,5 +1,7 @@
 deployment:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
   image:
     pullPolicy: IfNotPresent
   resources: {}
