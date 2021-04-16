@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210412125407-088a6bd2781d
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210415152921-17feb4dbc6b1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
 	github.com/stretchr/testify v1.7.0
