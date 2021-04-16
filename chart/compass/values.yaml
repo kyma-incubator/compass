@@ -65,7 +65,7 @@ global:
       version: "PR-1820"
     ord_service:
       dir:
-      version: "PR-19"
+      version: "PR-20"
     schema_migrator:
       dir:
       version: "PR-1780"
@@ -354,7 +354,6 @@ global:
         tenantCreated: "127.0.0.1/events?type=created"
         tenantDeleted: "127.0.0.1/events?type=deleted"
         tenantUpdated: "127.0.0.1/events?type=updated"
-        movedRuntimeByLabel: "127.0.0.1/events?type=movedRuntime"
       fieldMapping:
         totalPagesField: "totalPages"
         totalResultsField: "totalResults"
@@ -364,8 +363,6 @@ global:
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
-        movedRuntimeByLabelSourceField: "sourceTenant"
-        movedRuntimeByLabelTargetField: "targetTenant"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
@@ -376,7 +373,6 @@ global:
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1
-      movedRuntimeLabelKey: "moved_runtime"
 
   metrics:
     enabled: true
