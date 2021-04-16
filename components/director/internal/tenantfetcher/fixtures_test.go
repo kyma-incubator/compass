@@ -23,7 +23,6 @@ func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []
 	return wrapIntoEventPageJSON(eventData)
 }
 
-//TODO: Extract common logic
 func fixMovedRuntimeByLabelEvent(id, source, target string, fieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping) []byte {
 	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`, fieldMapping.LabelValue, id, fieldMapping.SourceTenant, source, fieldMapping.TargetTenant, target)
 

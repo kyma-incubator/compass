@@ -94,7 +94,6 @@ func TestService_SyncTenants(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	//TODO:
 	testCases := []struct {
 		Name                string
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)

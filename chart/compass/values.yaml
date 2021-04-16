@@ -354,6 +354,7 @@ global:
         tenantCreated: "127.0.0.1/events?type=created"
         tenantDeleted: "127.0.0.1/events?type=deleted"
         tenantUpdated: "127.0.0.1/events?type=updated"
+        movedRuntimeByLabel: "127.0.0.1/events?type=moved"
       fieldMapping:
         totalPagesField: "totalPages"
         totalResultsField: "totalResults"
@@ -367,6 +368,9 @@ global:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
         timestampField: "timestamp"
+        movedRuntimeLabelKey: "moved_label"
+        movedRuntimeByLabelTargetField: "target"
+        movedRuntimeByLabelSourceField: "source"
       query:
         startPage: "0"
         pageSize: "100"

@@ -174,11 +174,9 @@ func (s Service) SyncTenants() error {
 		return nil
 	}
 
-	//TODO: Check for created and then moved tenants
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 	tenantsToCreate = s.excludeTenants(tenantsToCreate, tenantsToDelete)
 
-	//TODO: Check whether GAs created by this transaction are viewed when querying
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
