@@ -123,6 +123,22 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
 	})
+
+	// GIVEN
+	apiCfg = tenantfetcher.APIConfig{
+		EndpointRuntimeMovedByLabel: "",
+	}
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client.SetMetricsPusher(metricsPusherMock)
+	client.SetHTTPClient(mockClient)
+
+	t.Run("Success moved param is not passed", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
+		// THEN
+		require.NoError(t, err)
+		require.Nil(t, res)
+	})
 }
 
 func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {

@@ -32,7 +32,7 @@ type APIConfig struct {
 	EndpointTenantCreated       string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
 	EndpointTenantDeleted       string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
 	EndpointTenantUpdated       string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
-	EndpointRuntimeMovedByLabel string `envconfig:"APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL"`
+	EndpointRuntimeMovedByLabel string `envconfig:"optional,APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL"`
 }
 
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
@@ -72,6 +72,10 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 }
 
 func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
+	if eventsType == MovedRuntimeByLabelEventsType && len(c.apiConfig.EndpointRuntimeMovedByLabel) == 0 {
+		return nil, nil
+	}
+
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if err != nil {
 		return nil, err
