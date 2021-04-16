@@ -19,9 +19,10 @@ package main
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
-	"os"
-
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"os"
+	"sync"
 
 	"github.com/gorilla/mux"
 
@@ -53,6 +54,8 @@ func main() {
 	err = cfg.Validate()
 	fatalOnError(err)
 
+	metrics.MapPathToInstrumentation(cfg.Server.RootAPI)
+
 	ctx, err = log.Configure(ctx, cfg.Log)
 	fatalOnError(err)
 
@@ -68,7 +71,21 @@ func main() {
 	}
 	srv := server.New(cfg.Server, middlewares, osbApi)
 
-	srv.Start(ctx)
+	metricsHandler := mux.NewRouter()
+	metricsHandler.Handle("/metrics", promhttp.Handler())
+	metricsServer := server.NewServerWithRouter(&server.Config{
+		Port:            cfg.Metrics.Port,
+		Timeout:         cfg.Metrics.Timeout,
+		ShutdownTimeout: cfg.Metrics.ShutDownTimeout,
+	}, metricsHandler)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	go metricsServer.Start(ctx, wg)
+	go srv.Start(ctx, wg)
+
+	wg.Wait()
 }
 
 func fatalOnError(err error) {
