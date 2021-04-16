@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	Namespace              = "compass"
-	SystemBrokerSubsystem  = "system-broker"
+	Namespace             = "compass"
+	SystemBrokerSubsystem = "system_broker"
 )
 
 type Collector struct {
@@ -41,6 +41,7 @@ func NewCollector() *Collector {
 			Subsystem: SystemBrokerSubsystem,
 			Name:      "catalog_request_duration_seconds",
 			Help:      "Duration of handling Catalog requests",
+			Buckets:   []float64{0.1, 0.3, 0.5, 0.7, 1, 1.5, 2.5, 5, 10, 15},
 		}, []string{"code", "method"}),
 		catalogResponseSize: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: Namespace,
