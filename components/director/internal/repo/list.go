@@ -15,6 +15,7 @@ import (
 
 type Lister interface {
 	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error
+	SetSelectedColumns(selectedColumns []string)
 }
 
 type ListerGlobal interface {
@@ -67,6 +68,10 @@ func (l *universalLister) List(ctx context.Context, tenant string, dest Collecti
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }
 
+func (l *universalLister) SetSelectedColumns(selectedColumns []string) {
+	l.selectedColumns = strings.Join(selectedColumns, ", ")
+}
+
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }
@@ -77,7 +82,7 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 		return err
 	}
 
-	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams)
+	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

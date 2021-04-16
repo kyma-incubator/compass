@@ -10,6 +10,7 @@ const (
 	LabelDefinition            Type = "labelDefinition"
 	Label                      Type = "label"
 	Bundle                     Type = "bundle"
+	BundleReference            Type = "bundleReference"
 	Package                    Type = "package"
 	Product                    Type = "product"
 	Vendor                     Type = "vendor"

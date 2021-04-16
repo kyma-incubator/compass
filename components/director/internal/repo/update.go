@@ -17,6 +17,8 @@ import (
 
 type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
+	SetIDColumns(idColumns []string)
+	SetUpdatableColumns(updatableColumns []string)
 }
 
 type UpdaterGlobal interface {
@@ -48,6 +50,14 @@ func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableCol
 		updatableColumns: updatableColumns,
 		idColumns:        idColumns,
 	}
+}
+
+func (u *universalUpdater) SetIDColumns(idColumns []string) {
+	u.idColumns = idColumns
+}
+
+func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
+	u.updatableColumns = updatableColumns
 }
 
 func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{}) error {

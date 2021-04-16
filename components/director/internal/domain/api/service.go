@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -45,19 +47,28 @@ type SpecService interface {
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 }
 
-type service struct {
-	repo         APIRepository
-	uidService   UIDService
-	specService  SpecService
-	timestampGen timestamp.Generator
+//go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
+type BundleReferenceService interface {
+	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 }
 
-func NewService(repo APIRepository, uidService UIDService, specService SpecService) *service {
+type service struct {
+	repo                   APIRepository
+	uidService             UIDService
+	specService            SpecService
+	bundleReferenceService BundleReferenceService
+	timestampGen           timestamp.Generator
+}
+
+func NewService(repo APIRepository, uidService UIDService, specService SpecService, bundleReferenceService BundleReferenceService) *service {
 	return &service{
-		repo:         repo,
-		uidService:   uidService,
-		specService:  specService,
-		timestampGen: timestamp.DefaultGenerator(),
+		repo:                   repo,
+		uidService:             uidService,
+		specService:            specService,
+		bundleReferenceService: bundleReferenceService,
+		timestampGen:           timestamp.DefaultGenerator(),
 	}
 }
 
@@ -105,7 +116,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 
 	apiDefinition, err := s.repo.GetForBundle(ctx, tnt, id, bundleID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting API definition")
+		return nil, errors.Wrapf(err, "while getting API definition with id %q", id)
 	}
 
 	return apiDefinition, nil
@@ -139,10 +150,23 @@ func (s *service) Create(ctx context.Context, appId string, bundleID, packageID 
 		}
 	}
 
+	bundleRefInput := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(ExtractTargetUrlFromJsonArray(in.TargetURLs)),
+	}
+
+	err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID)
+	if err != nil {
+		return "", err
+	}
+
 	return id, nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil)
+}
+
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, targetURLsPerBundle map[string]string, bundleIDsToBeDeleted []string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -158,6 +182,27 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 	err = s.repo.Update(ctx, api)
 	if err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
+	}
+
+	if targetURLsPerBundle == nil {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: str.Ptr(ExtractTargetUrlFromJsonArray(in.TargetURLs)),
+		}
+		err = s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		// TODO: ORD case -> loop through the map and call `UpdateByReferenceObjectID` with the current bundleID and URL
+	}
+
+	if bundleIDsToBeDeleted != nil {
+		for _, bundleID := range bundleIDsToBeDeleted {
+			err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleAPIReference, &api.ID, &bundleID)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if specIn != nil {

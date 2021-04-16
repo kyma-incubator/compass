@@ -41,19 +41,28 @@ type SpecService interface {
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 }
 
-type service struct {
-	eventAPIRepo EventAPIRepository
-	uidService   UIDService
-	specService  SpecService
-	timestampGen timestamp.Generator
+//go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
+type BundleReferenceService interface {
+	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 }
 
-func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specService SpecService) *service {
+type service struct {
+	eventAPIRepo           EventAPIRepository
+	uidService             UIDService
+	specService            SpecService
+	bundleReferenceService BundleReferenceService
+	timestampGen           timestamp.Generator
+}
+
+func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specService SpecService, bundleReferenceService BundleReferenceService) *service {
 	return &service{
-		eventAPIRepo: eventAPIRepo,
-		uidService:   uidService,
-		specService:  specService,
-		timestampGen: timestamp.DefaultGenerator(),
+		eventAPIRepo:           eventAPIRepo,
+		uidService:             uidService,
+		specService:            specService,
+		bundleReferenceService: bundleReferenceService,
+		timestampGen:           timestamp.DefaultGenerator(),
 	}
 }
 
@@ -135,10 +144,19 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		}
 	}
 
+	err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID)
+	if err != nil {
+		return "", err
+	}
+
 	return id, nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil)
+}
+
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsToBeDeleted []string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -154,6 +172,15 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
+	}
+
+	if bundleIDsToBeDeleted != nil {
+		for _, bundleID := range bundleIDsToBeDeleted {
+			err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if specIn != nil {

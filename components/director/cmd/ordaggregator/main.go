@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -93,6 +95,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorConverter := ordvendor.NewConverter()
 	tombstoneConverter := tombstone.NewConverter()
 	runtimeConverter := runtime.NewConverter()
+	bundleReferenceConv := bundlereferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -110,14 +113,16 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	productRepo := product.NewRepository(productConverter)
 	vendorRepo := ordvendor.NewRepository(vendorConverter)
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
+	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)

@@ -2,7 +2,6 @@ package eventdef_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"testing"
@@ -48,59 +47,6 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 }
 
-func TestPgRepository_GetForBundle(t *testing.T) {
-	// given
-	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
-
-	selectQuery := `^SELECT (.+) FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND bundle_id = \$3`
-
-	t.Run("success", func(t *testing.T) {
-		bundleID := bundleID
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
-			AddRow(fixEventDefinitionRow(eventID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, eventID, bundleID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventDefEntity).Return(model.EventDefinition{Tenant: tenantID, BundleID: &bundleID, BaseEntity: &model.BaseEntity{ID: eventID}}, nil).Once()
-		pgRepository := event.NewRepository(convMock)
-		// WHEN
-		modelApiDef, err := pgRepository.GetForBundle(ctx, tenantID, eventID, bundleID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, eventID, modelApiDef.ID)
-		assert.Equal(t, tenantID, modelApiDef.Tenant)
-		assert.Equal(t, &bundleID, modelApiDef.BundleID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		repo := event.NewRepository(nil)
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, eventID, bundleID).
-			WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		// when
-		modelApiDef, err := repo.GetForBundle(ctx, tenantID, eventID, bundleID)
-		// then
-
-		sqlMock.AssertExpectations(t)
-		assert.Nil(t, modelApiDef)
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-}
-
 func TestPgRepository_ListForBundle(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
@@ -114,13 +60,12 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 	secondApiDefID := "222222222-2222-2222-2222-222222222222"
 	secondApiDefEntity := fixFullEntityEventDefinition(secondApiDefID, "placeholder")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
-		WHERE tenant_id = \$1 AND bundle_id = \$2
+	selectQuery := fmt.Sprintf(`SELECT (.+) FROM "public"."event_api_definitions"
+		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND event_def_id IS NOT NULL\) 
 		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := `SELECT COUNT(*) FROM "public"."event_api_definitions" 
-		WHERE tenant_id = $1 AND bundle_id = $2`
-	countQuery := regexp.QuoteMeta(rawCountQuery)
+	countQuery := `SELECT COUNT\(\*\) FROM "public"."event_api_definitions"
+		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -129,11 +74,11 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 			AddRow(fixEventDefinitionRow(secondApiDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, bundleID).
+			WithArgs(tenantID, tenantID, bundleID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID, bundleID).
+			WithArgs(tenantID, tenantID, bundleID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

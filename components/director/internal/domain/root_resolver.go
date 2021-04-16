@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -111,6 +113,7 @@ func NewRootResolver(
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
 	assignmentConv := scenarioassignment.NewConverter()
+	bundleReferenceConv := bundlereferences.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -131,6 +134,7 @@ func NewRootResolver(
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
 	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
@@ -139,8 +143,9 @@ func NewRootResolver(
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)

@@ -416,6 +416,8 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 		return err
 	}
 
+	// TODO: use UpdateInManyBundles and pass the collected diff between all current bundleIDs that it's part of (bundleRefRepo.GetBundleIDsForObject()) and the ones from CBReference field
+	// This is needed so that if the api is not part of a given bundle anymore this record to be deleted from the BR table
 	if err := s.apiSvc.Update(ctx, apisFromDB[i].ID, api, nil); err != nil {
 		return err
 	}

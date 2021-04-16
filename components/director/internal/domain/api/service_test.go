@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -68,7 +70,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -86,7 +88,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -147,7 +149,7 @@ func TestService_GetForBundle(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			api, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
@@ -165,7 +167,7 @@ func TestService_GetForBundle(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForBundle(context.TODO(), "", "")
 		// THEN
@@ -258,7 +260,7 @@ func TestService_ListForBundle(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListForBundle(ctx, bundleID, testCase.PageSize, after)
@@ -276,7 +278,7 @@ func TestService_ListForBundle(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForBundle(context.TODO(), "", 5, "")
 		// THEN
@@ -335,7 +337,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListByApplicationID(ctx, appID)
@@ -353,7 +355,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN
@@ -412,17 +414,22 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
+	bundleReferenceInput := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetUrlFromJsonArray(modelAPIDefinition.TargetURLs)),
+	}
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
-		Name          string
-		RepositoryFn  func() *automock.APIRepository
-		UIDServiceFn  func() *automock.UIDService
-		SpecServiceFn func() *automock.SpecService
-		Input         model.APIDefinitionInput
-		SpecsInput    []*model.SpecInput
-		ExpectedErr   error
+		Name              string
+		RepositoryFn      func() *automock.APIRepository
+		UIDServiceFn      func() *automock.UIDService
+		SpecServiceFn     func() *automock.SpecService
+		BundleReferenceFn func() *automock.BundleReferenceService
+		Input             model.APIDefinitionInput
+		SpecsInput        []*model.SpecInput
+		ExpectedErr       error
 	}{
 		{
 			Name: "Success",
@@ -442,6 +449,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[1], model.APISpecReference, id).Return("id", nil).Once()
 				return svc
 			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("CreateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), str.Ptr(bundleID)).Return(nil).Once()
+				return svc
+			},
 			Input:      modelInput,
 			SpecsInput: modelSpecsInput,
 		},
@@ -459,6 +471,9 @@ func TestService_Create(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			Input:       modelInput,
 			SpecsInput:  modelSpecsInput,
@@ -481,6 +496,36 @@ func TestService_Create(t *testing.T) {
 				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[0], model.APISpecReference, id).Return("", testErr).Once()
 				return svc
 			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
+			Input:       modelInput,
+			SpecsInput:  modelSpecsInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error - BundleReference API Creation",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[0], model.APISpecReference, id).Return("id", nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[1], model.APISpecReference, id).Return("id", nil).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("CreateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), str.Ptr(bundleID)).Return(testErr).Once()
+				return svc
+			},
 			Input:       modelInput,
 			SpecsInput:  modelSpecsInput,
 			ExpectedErr: testErr,
@@ -493,8 +538,9 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
 			specService := testCase.SpecServiceFn()
+			bundleReferenceService := testCase.BundleReferenceFn()
 
-			svc := api.NewService(repo, uidService, specService)
+			svc := api.NewService(repo, uidService, specService, bundleReferenceService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -511,10 +557,11 @@ func TestService_Create(t *testing.T) {
 			repo.AssertExpectations(t)
 			specService.AssertExpectations(t)
 			uidService.AssertExpectations(t)
+			bundleReferenceService.AssertExpectations(t)
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", nil, nil, model.APIDefinitionInput{}, []*model.SpecInput{})
 		// THEN
@@ -528,6 +575,7 @@ func TestService_Update(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
+	var bundleID *string
 	timestamp := time.Now()
 	frURL := "foo.bar"
 	spec := "spec"
@@ -559,21 +607,27 @@ func TestService_Update(t *testing.T) {
 
 	apiDefinitionModel := &model.APIDefinition{
 		Name:       "Bar",
+		BundleID:   bundleID,
 		TargetURLs: api.ConvertTargetUrlToJsonArray("https://test-url-updated.com"),
 		Version:    &model.Version{},
+	}
+
+	bundleReferenceInput := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetUrlFromJsonArray(modelInput.TargetURLs)),
 	}
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
-		Name          string
-		RepositoryFn  func() *automock.APIRepository
-		SpecServiceFn func() *automock.SpecService
-		Input         model.APIDefinitionInput
-		InputID       string
-		SpecInput     *model.SpecInput
-		ExpectedErr   error
+		Name              string
+		RepositoryFn      func() *automock.APIRepository
+		SpecServiceFn     func() *automock.SpecService
+		BundleReferenceFn func() *automock.BundleReferenceService
+		Input             model.APIDefinitionInput
+		InputID           string
+		SpecInput         *model.SpecInput
+		ExpectedErr       error
 	}{
 		{
 			Name: "Success When Spec is Found should update it",
@@ -587,6 +641,11 @@ func TestService_Update(t *testing.T) {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(modelSpec, nil).Once()
 				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, model.APISpecReference, id).Return(nil).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), bundleID).Return(nil).Once()
 				return svc
 			},
 			InputID:     "foo",
@@ -608,6 +667,11 @@ func TestService_Update(t *testing.T) {
 				svc.On("CreateByReferenceObjectID", ctx, modelSpecInput, model.APISpecReference, id).Return("id", nil).Once()
 				return svc
 			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), bundleID).Return(nil).Once()
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			SpecInput:   &modelSpecInput,
@@ -623,6 +687,9 @@ func TestService_Update(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			InputID:     "foo",
 			Input:       modelInput,
@@ -640,6 +707,11 @@ func TestService_Update(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(nil, testErr).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), bundleID).Return(nil).Once()
 				return svc
 			},
 			InputID:     "foo",
@@ -661,6 +733,11 @@ func TestService_Update(t *testing.T) {
 				svc.On("CreateByReferenceObjectID", ctx, modelSpecInput, model.APISpecReference, id).Return("", testErr).Once()
 				return svc
 			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), bundleID).Return(nil).Once()
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			SpecInput:   &modelSpecInput,
@@ -680,6 +757,32 @@ func TestService_Update(t *testing.T) {
 				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, model.APISpecReference, id).Return(testErr).Once()
 				return svc
 			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), bundleID).Return(nil).Once()
+				return svc
+			},
+			InputID:     "foo",
+			Input:       modelInput,
+			SpecInput:   &modelSpecInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "BundleReference API Update Error",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				return &automock.SpecService{}
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), bundleID).Return(testErr).Once()
+				return svc
+			},
 			InputID:     "foo",
 			Input:       modelInput,
 			SpecInput:   &modelSpecInput,
@@ -692,8 +795,9 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
+			bundleReferenceSvc := testCase.BundleReferenceFn()
 
-			svc := api.NewService(repo, nil, specSvc)
+			svc := api.NewService(repo, nil, specSvc, bundleReferenceSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -709,10 +813,11 @@ func TestService_Update(t *testing.T) {
 
 			repo.AssertExpectations(t)
 			specSvc.AssertExpectations(t)
+			bundleReferenceSvc.AssertExpectations(t)
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{})
 		// THEN
@@ -763,7 +868,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -780,7 +885,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -830,7 +935,7 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil, nil)
+			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
 			err := svc.DeleteAllByBundleID(ctx, testCase.InputID)
@@ -847,7 +952,7 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -993,7 +1098,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			specService := testCase.SpecServiceFn()
 
-			svc := api.NewService(repo, nil, specService)
+			svc := api.NewService(repo, nil, specService, nil)
 
 			// when
 			l, err := svc.GetFetchRequest(ctx, testCase.InputAPIDefID)
@@ -1011,7 +1116,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := api.NewService(nil, nil, nil)
+		svc := api.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
 		assert.True(t, apperrors.IsCannotReadTenant(err))

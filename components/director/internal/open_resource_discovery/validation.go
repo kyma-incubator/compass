@@ -22,7 +22,7 @@ const (
 	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	SystemInstanceBaseURLRegex        = "^((http[s]?):\\/\\/)?\\/?([^\\/\\.]+\\.)*?([^\\/\\.]+\\.[^:\\/\\s\\.]{1,3}(\\.[^:\\/\\s\\.]{1,2})?(:\\d+)?)$"
+	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+$"
 	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
