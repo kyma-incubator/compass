@@ -56,7 +56,9 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 				PathTemplate: t,
 				HTTPMethods:  methods,
 			}]
-			route.Handler(instrumentation(c, route.GetHandler()))
+			if instrumentation != nil {
+				route.Handler(instrumentation(c, route.GetHandler()))
+			}
 			return nil
 		})
 	}
