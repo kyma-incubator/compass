@@ -169,7 +169,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	runtimeID := "id"
+	runtimeID := "runtimeID"
 	testCases := []struct {
 		Name              string
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -352,6 +352,31 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, persist, transact, svc, bndlSvc, converter)
 		})
 	}
+
+	t.Run("Error when consumer is not in the context", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		svc := &automock.Service{}
+
+		bndlSvc := &automock.BundleService{}
+		bndlSvc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBundle, nil).Once()
+
+		converter := &automock.Converter{}
+		converter.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput).Once()
+
+		bndlConverter := &pkgmock.BundleConverter{}
+
+		resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter, bndlConverter)
+
+		// WHEN
+		result, err := resolver.RequestBundleInstanceAuthCreation(context.TODO(), testBundleID, *gqlRequestInput)
+
+		// THEN
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Internal Server Error: cannot read consumer from context")
+		mock.AssertExpectationsForObjects(t, persist, transact, svc, bndlSvc, converter)
+	})
 }
 
 func TestResolver_SetBundleInstanceAuth(t *testing.T) {

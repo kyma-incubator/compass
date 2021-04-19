@@ -590,14 +590,14 @@ func TestService_ListByApplicationID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	id := "foo"
+	bundleID := "bundleID"
 	tnt := testTenant
 	externalTnt := testExternalTenant
 
 	bundleInstanceAuths := []*model.BundleInstanceAuth{
-		fixSimpleModelBundleInstanceAuth(id),
-		fixSimpleModelBundleInstanceAuth(id),
-		fixSimpleModelBundleInstanceAuth(id),
+		fixSimpleModelBundleInstanceAuth(bundleID),
+		fixSimpleModelBundleInstanceAuth(bundleID),
+		fixSimpleModelBundleInstanceAuth(bundleID),
 	}
 
 	ctx := context.TODO()
@@ -613,7 +613,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByBundleID", ctx, tnt, id).Return(bundleInstanceAuths, nil).Once()
+				repo.On("ListByBundleID", ctx, tnt, bundleID).Return(bundleInstanceAuths, nil).Once()
 				return repo
 			},
 			ExpectedResult:     bundleInstanceAuths,
@@ -623,7 +623,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Returns error when Bundle Instance Auth listing failed",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByBundleID", ctx, tnt, id).Return(nil, testErr).Once()
+				repo.On("ListByBundleID", ctx, tnt, bundleID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -638,7 +638,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			svc := bundleinstanceauth.NewService(repo, nil)
 
 			// when
-			pia, err := svc.List(ctx, id)
+			pia, err := svc.List(ctx, bundleID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -652,10 +652,91 @@ func TestService_ListByApplicationID(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := bundleinstanceauth.NewService(nil, nil)
 		// WHEN
 		_, err := svc.List(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListByRuntimeID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	bundleID := "bundleID"
+	runtimeID := "runtimeID"
+	tnt := testTenant
+	externalTnt := testExternalTenant
+
+	bundleInstanceAuths := []*model.BundleInstanceAuth{
+		fixSimpleModelBundleInstanceAuth(bundleID),
+		fixSimpleModelBundleInstanceAuth(bundleID),
+		fixSimpleModelBundleInstanceAuth(bundleID),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.Repository
+		ExpectedResult     []*model.BundleInstanceAuth
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListByRuntimeID", ctx, tnt, runtimeID).Return(bundleInstanceAuths, nil).Once()
+				return repo
+			},
+			ExpectedResult:     bundleInstanceAuths,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Bundle Instance Auth listing by runtime ID failed",
+			RepositoryFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListByRuntimeID", ctx, tnt, runtimeID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := bundleinstanceauth.NewService(repo, nil)
+
+			// WHEN
+			bundleInstanceAuth, err := svc.ListByRuntimeID(ctx, runtimeID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, bundleInstanceAuth)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := bundleinstanceauth.NewService(nil, nil)
+
+		// WHEN
+		_, err := svc.ListByRuntimeID(context.TODO(), "")
+
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
