@@ -17,6 +17,7 @@
 package osb
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
@@ -41,7 +42,7 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 
 		brokerapi.AttachRoutes(r, serviceBroker, logger)
 
-		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		err := r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			t, err := route.GetPathTemplate()
 			if err != nil {
 				return err
@@ -62,5 +63,8 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 			}
 			return nil
 		})
+		if err != nil {
+			log.D().Fatal(err.Error())
+		}
 	}
 }
