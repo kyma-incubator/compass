@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 	"time"
 
@@ -133,7 +134,11 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
+<<<<<<< HEAD
 		ApplicationID:                           entity.ApplicationID,
+=======
+		ApplicationID: entity.ApplicationID,
+>>>>>>> c586f15f ([WIP] Remove bundleID from apis/events and adapt layers)
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Tenant:                                  entity.TenantID,
 		Name:                                    entity.Name,
@@ -176,8 +181,13 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 	return &Entity{
+<<<<<<< HEAD
 		TenantID:                                apiModel.Tenant,
 		ApplicationID:                           apiModel.ApplicationID,
+=======
+		TenantID:      apiModel.Tenant,
+		ApplicationID: apiModel.ApplicationID,
+>>>>>>> c586f15f ([WIP] Remove bundleID from apis/events and adapt layers)
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),
