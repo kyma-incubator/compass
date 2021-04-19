@@ -77,7 +77,7 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	t.Log("Get updated runtime")
 	rtm = fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtm.Auths)
-	defer fixtures.DeleteSystemAuthForRuntime(t, ctx, dexGraphQLClient, rtm.ID)
+	defer fixtures.DeleteSystemAuthForRuntime(t, ctx, dexGraphQLClient, rtm.Auths[0].ID)
 
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, rtm.Auths[0])
