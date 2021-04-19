@@ -17,8 +17,9 @@
 package osb
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
