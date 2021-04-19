@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -39,15 +39,17 @@ func New(c *Config) *TokenServer {
 				rw.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			// ioutil.ReadAll(r.Body)
 			var token string
-			if err := json.NewDecoder(r.Body).Decode(&token); err != nil {
+			bytes, err := ioutil.ReadAll(r.Body)
+			if err != nil {
 				c.Log("Could not decode request body: %+v", err)
 				rw.Write([]byte("Unexpected body format"))
 				rw.WriteHeader(http.StatusBadRequest)
+				return
 			}
+			token = string(bytes)
 			ts.tokenMutex.Lock()
-			defer ts.tokenMutex.Lock()
+			defer ts.tokenMutex.Unlock()
 			ts.token = token
 			c.Log("Token successfully provided and set")
 			rw.WriteHeader(http.StatusOK)
