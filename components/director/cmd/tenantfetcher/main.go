@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/features"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -29,12 +31,12 @@ type config struct {
 	TenantFieldMapping              tenantfetcher.TenantFieldMapping
 	MovedRuntimeByLabelFieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping
 
-	Log log.Config
+	Log      log.Config
+	Features features.Config
 
 	TenantProvider         string        `envconfig:"APP_TENANT_PROVIDER"`
 	MetricsPushEndpoint    string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	DefaultScenarioEnabled bool          `envconfig:"APP_DEFAULT_SCENARIO_ENABLED"`
-	ProtectedLabelPattern  string        `envconfig:"default=.*_defaultEventing"`
 	MovedRuntimeLabelKey   string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	ClientTimeout          time.Duration `envconfig:"default=60s"`
 }
@@ -106,7 +108,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, cfg.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {

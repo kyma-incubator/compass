@@ -35,6 +35,13 @@ type APIConfig struct {
 	EndpointRuntimeMovedByLabel string `envconfig:"optional,APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL"`
 }
 
+func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
+	if eventsType == MovedRuntimeByLabelEventsType && len(c.EndpointRuntimeMovedByLabel) == 0 {
+		return true
+	}
+	return false
+}
+
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
 type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
@@ -72,7 +79,8 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 }
 
 func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
-	if eventsType == MovedRuntimeByLabelEventsType && len(c.apiConfig.EndpointRuntimeMovedByLabel) == 0 {
+	if c.apiConfig.isUnassignedOptionalProperty(eventsType) {
+		log.D().Warnf("Optional property for event type %s was not set", eventsType)
 		return nil, nil
 	}
 

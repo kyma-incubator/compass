@@ -46,8 +46,8 @@ type QueryConfig struct {
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
 
-//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore
-type TenantStorageService interface {
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
@@ -64,8 +64,8 @@ type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
-//go:generate mockery --name=RuntimeStorageService --output=automock --outpkg=automock --case=underscore
-type RuntimeStorageService interface {
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
@@ -74,11 +74,6 @@ type RuntimeStorageService interface {
 type syncTenantsAction struct {
 	name string
 	fn   func() error
-}
-
-type currentTenantsSupplier struct {
-	currentTenantsMap    map[string]bool
-	tenantStorageService TenantStorageService
 }
 
 const (
@@ -91,8 +86,8 @@ type Service struct {
 	transact                        persistence.Transactioner
 	kubeClient                      KubeClient
 	eventAPIClient                  EventAPIClient
-	tenantStorageService            TenantStorageService
-	runtimeStorageService           RuntimeStorageService
+	tenantStorageService            TenantService
+	runtimeStorageService           RuntimeService
 	providerName                    string
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
@@ -101,7 +96,7 @@ type Service struct {
 	movedRuntimeLabelKey            string
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService, runtimeStorageService RuntimeStorageService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantService, runtimeStorageService RuntimeService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string) *Service {
 	return &Service{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -116,24 +111,6 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 		labelDefService:                 labelDefService,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 	}
-}
-
-func (supplier *currentTenantsSupplier) Get(ctx context.Context) (map[string]bool, error) {
-	if supplier.currentTenantsMap != nil {
-		return supplier.currentTenantsMap, nil
-	}
-
-	currentTenants, listErr := supplier.tenantStorageService.List(ctx)
-	if listErr != nil {
-		return nil, errors.Wrap(listErr, "while listing tenants")
-	}
-
-	supplier.currentTenantsMap = make(map[string]bool)
-	for _, ct := range currentTenants {
-		supplier.currentTenantsMap[ct.ExternalTenant] = true
-	}
-
-	return supplier.currentTenantsMap, nil
 }
 
 func (a syncTenantsAction) Execute() error {
@@ -168,14 +145,14 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
+	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
+	tenantsToCreate = s.excludeTenants(tenantsToCreate, tenantsToDelete)
+
 	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete) + len(runtimesToMove)
 	log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
 	if totalNewEvents == 0 {
 		return nil
 	}
-
-	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
-	tenantsToCreate = s.excludeTenants(tenantsToCreate, tenantsToDelete)
 
 	tx, err := s.transact.Begin()
 	if err != nil {
@@ -184,16 +161,19 @@ func (s Service) SyncTenants() error {
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	existingTenantsSup := s.newCurrentTenantsSupplier()
-
 	actions := make([]*syncTenantsAction, 0)
+
 	if len(tenantsToCreate) == 0 && len(tenantsToDelete) == 0 {
 		actions = append(actions, &syncTenantsAction{"while moving runtimes by labels", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }})
 	} else {
+		currentTenants, err := s.getCurrentTenants(ctx)
+		if err != nil {
+			return err
+		}
 		actions = append(actions,
-			&syncTenantsAction{"while storing tenants", func() error { return s.createTenants(ctx, existingTenantsSup, tenantsToCreate) }},
-			&syncTenantsAction{"while moving runtimes by label", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }},
-			&syncTenantsAction{"while deleting tenants", func() error { return s.deleteTenants(ctx, existingTenantsSup, tenantsToDelete) }})
+			&syncTenantsAction{"storing tenants", func() error { return s.createTenants(ctx, currentTenants, tenantsToCreate) }},
+			&syncTenantsAction{"moving runtimes by label", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }},
+			&syncTenantsAction{"deleting tenants", func() error { return s.deleteTenants(ctx, currentTenants, tenantsToDelete) }})
 	}
 
 	for _, action := range actions {
@@ -212,12 +192,7 @@ func (s Service) SyncTenants() error {
 	return nil
 }
 
-func (s Service) createTenants(ctx context.Context, ts *currentTenantsSupplier, eventsTenants []model.BusinessTenantMappingInput) error {
-	currTenants, err := ts.Get(ctx)
-	if err != nil {
-		return err
-	}
-
+func (s Service) createTenants(ctx context.Context, currTenants map[string]bool, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
 	for i := len(eventsTenants) - 1; i >= 0; i-- {
 		if currTenants[eventsTenants[i].ExternalTenant] {
@@ -226,20 +201,56 @@ func (s Service) createTenants(ctx context.Context, ts *currentTenantsSupplier, 
 		tenantsToCreate = append(tenantsToCreate, eventsTenants[i])
 	}
 
-	if err = s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+	if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
 		return errors.Wrap(err, "while storing new tenants")
 	}
 
 	return nil
 }
 
-func (s Service) deleteTenants(ctx context.Context, ts *currentTenantsSupplier, eventsTenants []model.BusinessTenantMappingInput) error {
-	currTenants, err := ts.Get(ctx)
+func (s Service) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
+	for _, mapping := range movedRuntimeMappings {
+		filters := []*labelfilter.LabelFilter{
+			{
+				Key:   s.movedRuntimeLabelKey,
+				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
+			},
+		}
 
-	if err != nil {
-		return err
+		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.D().Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
+				continue
+			}
+			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
+		}
+
+		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant)
+		if err != nil {
+			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
+		}
+
+		labelDef := model.LabelDefinition{
+			Tenant: targetInternalTenant,
+			Key:    s.movedRuntimeLabelKey,
+		}
+
+		if err := s.labelDefService.Upsert(ctx, labelDef); err != nil {
+			return errors.Wrapf(err, "while upserting label definition to internal tenant with ID %s", targetInternalTenant)
+		}
+
+		err = s.runtimeStorageService.UpdateTenantID(ctx, runtime.ID, targetInternalTenant)
+		if err != nil {
+			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
+				s.movedRuntimeLabelKey, mapping.LabelValue)
+		}
 	}
 
+	return nil
+}
+
+func (s Service) deleteTenants(ctx context.Context, currTenants map[string]bool, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
 		if currTenants[toDelete.ExternalTenant] {
@@ -247,7 +258,7 @@ func (s Service) deleteTenants(ctx context.Context, ts *currentTenantsSupplier, 
 		}
 	}
 
-	if err = s.tenantStorageService.DeleteMany(ctx, tenantsToDelete); err != nil {
+	if err := s.tenantStorageService.DeleteMany(ctx, tenantsToDelete); err != nil {
 		return errors.Wrap(err, "while removing tenants")
 	}
 
@@ -412,48 +423,6 @@ func (s Service) walkThroughPages(eventsType EventsType, fromTimestamp string, a
 	return nil
 }
 
-func (s Service) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
-	for _, mapping := range movedRuntimeMappings {
-		filters := []*labelfilter.LabelFilter{
-			{
-				Key:   s.movedRuntimeLabelKey,
-				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
-			},
-		}
-
-		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.D().Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
-				continue
-			}
-			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
-		}
-
-		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant)
-		if err != nil {
-			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
-		}
-
-		labelDef := model.LabelDefinition{
-			Tenant: targetInternalTenant,
-			Key:    s.movedRuntimeLabelKey,
-		}
-
-		if err := s.labelDefService.Upsert(ctx, labelDef); err != nil {
-			return errors.Wrapf(err, "while upserting label definition to internal tenant with ID %s", targetInternalTenant)
-		}
-
-		err = s.runtimeStorageService.UpdateTenantID(ctx, runtime.ID, targetInternalTenant)
-		if err != nil {
-			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
-				s.movedRuntimeLabelKey, mapping.LabelValue)
-		}
-	}
-
-	return nil
-}
-
 func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
 	elms := make(map[string]model.BusinessTenantMappingInput)
 	for _, tc := range tenants {
@@ -492,10 +461,18 @@ func (s Service) eventsPage(payload []byte) *eventsPage {
 	}
 }
 
-func (s Service) newCurrentTenantsSupplier() *currentTenantsSupplier {
-	return &currentTenantsSupplier{
-		tenantStorageService: s.tenantStorageService,
+func (s Service) getCurrentTenants(ctx context.Context) (map[string]bool, error) {
+	currentTenants, listErr := s.tenantStorageService.List(ctx)
+	if listErr != nil {
+		return nil, errors.Wrap(listErr, "while listing tenants")
 	}
+
+	currentTenantsMap := make(map[string]bool)
+	for _, ct := range currentTenants {
+		currentTenantsMap[ct.ExternalTenant] = true
+	}
+
+	return currentTenantsMap, nil
 }
 
 func convertTimeToUnixNanoString(timestamp time.Time) string {

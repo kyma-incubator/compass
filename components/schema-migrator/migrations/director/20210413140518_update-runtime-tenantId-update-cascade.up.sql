@@ -19,4 +19,19 @@ ALTER TABLE runtime_contexts
         FOREIGN KEY (tenant_id, runtime_id) REFERENCES runtimes (tenant_id, id)
             ON UPDATE CASCADE
             ON DELETE CASCADE;
+
+ALTER TABLE webhooks DROP CONSTRAINT webhooks_runtime_id_fkey;
+ALTER TABLE webhooks
+    ADD CONSTRAINT webhooks_runtime_id_fkey
+        FOREIGN KEY (tenant_id, runtime_id) REFERENCES runtimes (tenant_id, id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE;
+
+ALTER TABLE api_runtime_auths DROP CONSTRAINT runtime_auths_tenant_id_fkey;
+ALTER TABLE api_runtime_auths
+    ADD CONSTRAINT runtime_auths_tenant_id_fkey
+        FOREIGN KEY (tenant_id, runtime_id) REFERENCES runtimes (tenant_id, id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE;
+
 COMMIT;

@@ -32,9 +32,10 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	}
 
 	apiCfg := tenantfetcher.APIConfig{
-		EndpointTenantCreated: endpoint + "/created",
-		EndpointTenantDeleted: endpoint + "/deleted",
-		EndpointTenantUpdated: endpoint + "/updated",
+		EndpointTenantCreated:       endpoint + "/created",
+		EndpointTenantDeleted:       endpoint + "/deleted",
+		EndpointTenantUpdated:       endpoint + "/updated",
+		EndpointRuntimeMovedByLabel: endpoint + "/moved",
 	}
 	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
@@ -59,6 +60,14 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	t.Run("Success fetching deletion events", func(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
+		// THEN
+		require.NoError(t, err)
+		assert.NotEmpty(t, res)
+	})
+
+	t.Run("Success fetching moved runtime events", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -132,7 +141,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
-	t.Run("Success moved param is not passed", func(t *testing.T) {
+	t.Run("Skip fetching moved runtime events when endpoint is not provided", func(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
 		// THEN
@@ -160,6 +169,12 @@ func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, err := io.WriteString(w, fixUpdatedTenantsJSON())
+		require.NoError(t, err)
+	})
+	mux.HandleFunc("/moved", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, fixMovedRuntimeJSON())
 		require.NoError(t, err)
 	})
 	mux.HandleFunc("/empty", func(w http.ResponseWriter, r *http.Request) {
@@ -248,6 +263,27 @@ func fixDeletedTenantsJSON() string {
       "type": "DELETION",
       "timestamp": "1579771215336",
       "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+    }
+  ],
+  "totalResults": 2,
+  "totalPages": 1
+}`
+}
+
+func fixMovedRuntimeJSON() string {
+	return `{
+  "events": [
+	{
+      "id": 2,
+      "type": "MOVED",
+      "timestamp": "1579771215436",
+      "eventData": "{\"id\":\"22\",\"source\":\"TEN1\",\"target\":\"TEN2\"}"
+    },
+	{
+      "id": 1,
+      "type": "MOVED",
+      "timestamp": "1579771215336",
+      "eventData": "{\"id\":\"11\",\"source\":\"TEN3\",\"target\":\"TEN4\"}"
     }
   ],
   "totalResults": 2,
