@@ -531,8 +531,12 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6
 github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210415123606-48b0af2f20ec h1:tkKXMYk1F96Bel7K712ismtAbZ6zITDpzWlygp+ybJs=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210415123606-48b0af2f20ec/go.mod h1:dBSz67XgayIOfFrbIVn7aB1NJM/waXh0Yb+4h7omaww=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210419060508-f030062da07e h1:xHm82Twswm8rAFJOqnMZcmJxB44bTj9dDRm20HtPHnI=
-github.com/kyma-incubator/compass/components/director v0.0.0-20210419060508-f030062da07e/go.mod h1:dBSz67XgayIOfFrbIVn7aB1NJM/waXh0Yb+4h7omaww=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210416120917-30c770b13b01 h1:C9IqiA54t8NWPuSEmyU9P3ghK5diACr5XEfYHIVZr44=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210416120917-30c770b13b01/go.mod h1:dBSz67XgayIOfFrbIVn7aB1NJM/waXh0Yb+4h7omaww=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210417172202-582c20ac0b8f h1:QOfXDSRJIRwHpYO/EnDicxIVWUKsGgugEO8U+hecC/c=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210417172202-582c20ac0b8f/go.mod h1:dBSz67XgayIOfFrbIVn7aB1NJM/waXh0Yb+4h7omaww=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210417212237-8ae57a0ffd1d h1:TwzaSG+/7k8HyGQb6g8wVaQZJRBwfKpKLg2R8Wy8zrA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210417212237-8ae57a0ffd1d/go.mod h1:dBSz67XgayIOfFrbIVn7aB1NJM/waXh0Yb+4h7omaww=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14 h1:gEtd9g2Yp5548gzdPcrD7I1yiq4sq0z1/WtwzWgoDu8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210309084252-cb1359ea9c14/go.mod h1:yPZNKM/6iawnHkyyl/BrLQT4YqEnZ9KXxf/JOsYu4FQ=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210413115746-1d808696fbe7 h1:2EKd+97EXS3ZXz16BA5vzIj1kwUKxpDU0wfD5piULwk=
