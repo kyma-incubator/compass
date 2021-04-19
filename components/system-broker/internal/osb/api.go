@@ -17,6 +17,8 @@
 package osb
 
 import (
+	"strings"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
@@ -24,7 +26,6 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
-	"strings"
 )
 
 func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger, c *metrics.Collector) func(router *mux.Router) {

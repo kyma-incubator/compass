@@ -6,16 +6,16 @@ import (
 )
 
 type Config struct {
-	Port int        `mapstructure:"port"`
-	Timeout  time.Duration `mapstructure:"server_timeout"`
-	ShutDownTimeout  time.Duration `mapstructure:"shut_down_timeout"`
+	Port            int           `mapstructure:"port"`
+	Timeout         time.Duration `mapstructure:"server_timeout"`
+	ShutDownTimeout time.Duration `mapstructure:"shut_down_timeout"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Port: 5002,
-		Timeout:  time.Second * 115,
-		ShutDownTimeout: time.Second*10,
+		Port:            5002,
+		Timeout:         time.Second * 115,
+		ShutDownTimeout: time.Second * 10,
 	}
 }
 

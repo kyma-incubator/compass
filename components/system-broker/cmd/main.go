@@ -18,12 +18,13 @@ package main
 
 import (
 	"context"
+	"os"
+	"sync"
+
 	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"os"
-	"sync"
 
 	"github.com/gorilla/mux"
 

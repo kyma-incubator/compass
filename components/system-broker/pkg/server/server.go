@@ -88,8 +88,8 @@ func NewServerWithRouter(c *Config, router *mux.Router) *Server {
 		log.D().Fatalf("Could not create timeout handler: %v\n", err)
 	}
 	s.Server = &http.Server{
-		Addr:    ":" + strconv.Itoa(c.Port),
-		Handler: handlerWithTimeout,
+		Addr:         ":" + strconv.Itoa(c.Port),
+		Handler:      handlerWithTimeout,
 		ReadTimeout:  c.Timeout,
 		WriteTimeout: c.Timeout,
 		IdleTimeout:  c.Timeout,

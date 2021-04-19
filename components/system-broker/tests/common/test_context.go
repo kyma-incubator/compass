@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"log"
 	"net"
 	"net/http"
@@ -15,6 +14,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 

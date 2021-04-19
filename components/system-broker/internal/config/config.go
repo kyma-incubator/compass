@@ -17,8 +17,9 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"reflect"
+
+	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/ord"
 
