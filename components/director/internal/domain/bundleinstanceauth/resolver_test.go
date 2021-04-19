@@ -164,12 +164,11 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 	gqlRequestInput := fixGQLRequestInput()
 	modelRequestInput := fixModelRequestInput()
 
-	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil)
-	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil)
+	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil, &testRuntimeID)
+	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil, &testRuntimeID)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	runtimeID := "runtimeID"
 	testCases := []struct {
 		Name              string
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -185,7 +184,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return(testID, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &testRuntimeID).Return(testID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelInstanceAuth, nil).Once()
 				return svc
 			},
@@ -232,7 +231,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return(testID, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &testRuntimeID).Return(testID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelInstanceAuth, nil).Once()
 				return svc
 			},
@@ -279,7 +278,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return("", testError).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &testRuntimeID).Return("", testError).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
@@ -303,7 +302,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &runtimeID).Return(testID, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams, &testRuntimeID).Return(testID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return svc
 			},
@@ -338,7 +337,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 			// when
 			consumerEntity := consumer.Consumer{
-				ConsumerID:   runtimeID,
+				ConsumerID:   testRuntimeID,
 				ConsumerType: consumer.Runtime,
 			}
 			ctx := context.WithValue(context.TODO(), "consumer", consumerEntity)
@@ -387,8 +386,8 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 	modelSetInput := fixModelSetInput()
 	gqlSetInput := fixGQLSetInput()
 
-	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil)
-	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil)
+	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil, nil)
+	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil, nil)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 

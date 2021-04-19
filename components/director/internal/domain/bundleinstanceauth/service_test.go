@@ -244,11 +244,11 @@ func TestService_SetAuth(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	modelInstanceAuthFn := func() *model.BundleInstanceAuth {
-		return fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
+		return fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 	}
 
 	modelSetInput := fixModelSetInput()
-	modelUpdatedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
+	modelUpdatedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 	modelUpdatedInstanceAuth.Auth = modelSetInput.Auth.ToAuth()
 	modelUpdatedInstanceAuth.Status = &model.BundleInstanceAuthStatus{
 		Condition: model.BundleInstanceAuthStatusConditionSucceeded,
@@ -261,7 +261,7 @@ func TestService_SetAuth(t *testing.T) {
 		Auth:   fixModelAuthInput(),
 		Status: nil,
 	}
-	modelUpdatedInstanceAuthWithDefaultStatus := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
+	modelUpdatedInstanceAuthWithDefaultStatus := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 	modelUpdatedInstanceAuthWithDefaultStatus.Auth = modelSetInputWithoutStatus.Auth.ToAuth()
 	err := modelUpdatedInstanceAuthWithDefaultStatus.SetDefaultStatus(model.BundleInstanceAuthStatusConditionSucceeded, testTime)
 	require.NoError(t, err)
@@ -395,8 +395,8 @@ func TestService_Create(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	modelAuth := fixModelAuth()
-	modelExpectedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, modelAuth, fixModelStatusSucceeded())
-	modelExpectedInstanceAuthPending := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
+	modelExpectedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, modelAuth, fixModelStatusSucceeded(), nil)
+	modelExpectedInstanceAuthPending := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 
 	modelRequestInput := fixModelRequestInput()
 
@@ -590,14 +590,13 @@ func TestService_ListByApplicationID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	bundleID := "bundleID"
 	tnt := testTenant
 	externalTnt := testExternalTenant
 
 	bundleInstanceAuths := []*model.BundleInstanceAuth{
-		fixSimpleModelBundleInstanceAuth(bundleID),
-		fixSimpleModelBundleInstanceAuth(bundleID),
-		fixSimpleModelBundleInstanceAuth(bundleID),
+		fixSimpleModelBundleInstanceAuth(testBundleID),
+		fixSimpleModelBundleInstanceAuth(testBundleID),
+		fixSimpleModelBundleInstanceAuth(testBundleID),
 	}
 
 	ctx := context.TODO()
@@ -613,7 +612,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByBundleID", ctx, tnt, bundleID).Return(bundleInstanceAuths, nil).Once()
+				repo.On("ListByBundleID", ctx, tnt, testBundleID).Return(bundleInstanceAuths, nil).Once()
 				return repo
 			},
 			ExpectedResult:     bundleInstanceAuths,
@@ -623,7 +622,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Returns error when Bundle Instance Auth listing failed",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByBundleID", ctx, tnt, bundleID).Return(nil, testErr).Once()
+				repo.On("ListByBundleID", ctx, tnt, testBundleID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -638,7 +637,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			svc := bundleinstanceauth.NewService(repo, nil)
 
 			// when
-			pia, err := svc.List(ctx, bundleID)
+			pia, err := svc.List(ctx, testBundleID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -667,15 +666,13 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	bundleID := "bundleID"
-	runtimeID := "runtimeID"
 	tnt := testTenant
 	externalTnt := testExternalTenant
 
 	bundleInstanceAuths := []*model.BundleInstanceAuth{
-		fixSimpleModelBundleInstanceAuth(bundleID),
-		fixSimpleModelBundleInstanceAuth(bundleID),
-		fixSimpleModelBundleInstanceAuth(bundleID),
+		fixSimpleModelBundleInstanceAuth(testBundleID),
+		fixSimpleModelBundleInstanceAuth(testBundleID),
+		fixSimpleModelBundleInstanceAuth(testBundleID),
 	}
 
 	ctx := context.TODO()
@@ -691,7 +688,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByRuntimeID", ctx, tnt, runtimeID).Return(bundleInstanceAuths, nil).Once()
+				repo.On("ListByRuntimeID", ctx, tnt, testRuntimeID).Return(bundleInstanceAuths, nil).Once()
 				return repo
 			},
 			ExpectedResult:     bundleInstanceAuths,
@@ -701,7 +698,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Name: "Returns error when Bundle Instance Auth listing by runtime ID failed",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByRuntimeID", ctx, tnt, runtimeID).Return(nil, testErr).Once()
+				repo.On("ListByRuntimeID", ctx, tnt, testRuntimeID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -716,7 +713,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			svc := bundleinstanceauth.NewService(repo, nil)
 
 			// WHEN
-			bundleInstanceAuth, err := svc.ListByRuntimeID(ctx, runtimeID)
+			bundleInstanceAuth, err := svc.ListByRuntimeID(ctx, testRuntimeID)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -741,6 +738,65 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+}
+
+func TestService_Update(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	tnt := testTenant
+	externalTnt := testExternalTenant
+
+	bundleInstanceAuth := fixSimpleModelBundleInstanceAuth(testBundleID)
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.Repository
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("Update", ctx, bundleInstanceAuth).Return(nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when bundle instance auth update failed",
+			RepositoryFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("Update", ctx, bundleInstanceAuth).Return(testErr).Once()
+				return repo
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := bundleinstanceauth.NewService(repo, nil)
+
+			// WHEN
+			err := svc.Update(ctx, bundleInstanceAuth)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
 }
 
 func TestService_RequestDeletion(t *testing.T) {
