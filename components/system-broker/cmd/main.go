@@ -20,6 +20,7 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"os"
 	"sync"
@@ -65,6 +66,7 @@ func main() {
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.ORD.ServiceURL+cfg.ORD.StaticPath)
 	collector := metrics.NewCollector()
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter(), collector)
+	prometheus.MustRegister(collector)
 
 	middlewares := []mux.MiddlewareFunc{
 		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),

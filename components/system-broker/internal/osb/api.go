@@ -52,11 +52,11 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 			}
 
 			methods := strings.Join(m, " ")
-			instrumentation := metrics.PathToInstrumentationMapping[metrics.Path{
+			instrumentation, found := metrics.PathToInstrumentationMapping[metrics.Path{
 				PathTemplate: t,
 				HTTPMethods:  methods,
 			}]
-			if instrumentation != nil {
+			if found {
 				route.Handler(instrumentation(c, route.GetHandler()))
 			}
 			return nil
