@@ -533,7 +533,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Return error when listing all auths failed",
+			Name:            "Return error when listing all system auths failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -559,6 +559,81 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Fails when cannot list bundle instance auths by runtime id",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return(nil, testErr)
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Fails when cannot update bundle instance auths status to unused",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				auth := &model.BundleInstanceAuth{
+					RuntimeID: &modelRuntime.ID,
+					Status: &model.BundleInstanceAuthStatus{
+						Condition: model.BundleInstanceAuthStatusConditionSucceeded,
+					},
+				}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{auth}, nil)
+				svc.On("Update", contextParam, auth).Return(testErr)
 				return svc
 			},
 			InputID:         "foo",
