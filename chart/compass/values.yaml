@@ -403,3 +403,8 @@ global:
     skipTLSVerify: true
 pairing-adapter:
   enabled: false
+
+test:
+  token:
+    server:
+      port: 5000
