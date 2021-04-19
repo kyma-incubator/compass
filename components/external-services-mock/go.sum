@@ -433,6 +433,8 @@ github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a0
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210203135116-086a057e4d3c/go.mod h1:MeS9gTgdRhKAWcMQSkYSk+ZSpYZJ1QipZeyJ6Cz7hHA=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210407183425-2a5a26c43e6c h1:6U/KTyW4VlPF2RVl2lzHqa6BsK4DqenfOPuxMi04k2Y=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210407183425-2a5a26c43e6c/go.mod h1:mpppXIXBAKiult9IKeY603H61yeQypNEIDOHMkuZTfA=
+github.com/kyma-incubator/compass/components/gateway v0.0.0-20210416142045-25b90bbc9ee6 h1:yOlb2HlEG2sMShDaK+XvGmoDi+ikjgTBPr//94JSd7Y=
+github.com/kyma-incubator/compass/components/gateway v0.0.0-20210416142045-25b90bbc9ee6/go.mod h1:mpppXIXBAKiult9IKeY603H61yeQypNEIDOHMkuZTfA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210301144805-1544f7017bea/go.mod h1:K1miIQTocreo5NaWZ/QpP3nYZqojQ6G3sf/NTZfa6dk=
