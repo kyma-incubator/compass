@@ -13,7 +13,6 @@ import (
 func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 	// given
 	id := "foo"
-	//bndlID := "bar"
 	appID := "baz"
 	desc := "Sample"
 	name := "sample"

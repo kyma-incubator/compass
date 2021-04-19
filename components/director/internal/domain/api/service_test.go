@@ -180,7 +180,6 @@ func TestService_ListForBundle(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	//bndlID := "foobar"
 	name := "foo"
 	desc := "bar"
 
@@ -291,7 +290,6 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	//bndlID := "foobar"
 	name := "foo"
 	desc := "bar"
 
