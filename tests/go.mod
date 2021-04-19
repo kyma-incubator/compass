@@ -7,12 +7,12 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.2.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210412125407-088a6bd2781d
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210412125407-088a6bd2781d
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210416142045-25b90bbc9ee6
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210416142045-25b90bbc9ee6
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210412125407-088a6bd2781d
-    github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210413115746-1d808696fbe7
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210412125407-088a6bd2781d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210412125407-088a6bd2781d
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210416142045-25b90bbc9ee6
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210416142045-25b90bbc9ee6
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210416142045-25b90bbc9ee6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1
