@@ -26,11 +26,10 @@ func TestService_Get(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bundleID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, bundleID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -106,7 +105,7 @@ func TestService_GetForBundle(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, bndlID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -181,14 +180,14 @@ func TestService_ListForBundle(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bndlID := "foobar"
+	//bndlID := "foobar"
 	name := "foo"
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, bndlID, name, desc),
-		fixAPIDefinitionModel(id, bndlID, name, desc),
-		fixAPIDefinitionModel(id, bndlID, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,
@@ -292,14 +291,14 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bndlID := "foobar"
+	//bndlID := "foobar"
 	name := "foo"
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, bndlID, name, desc),
-		fixAPIDefinitionModel(id, bndlID, name, desc),
-		fixAPIDefinitionModel(id, bndlID, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
 	}
 
 	ctx := context.TODO()
@@ -401,7 +400,6 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		BundleID:      &bundleID,
 		PackageID:     &packageID,
 		ApplicationID: appID,
 		Tenant:        tenantID,
@@ -606,8 +604,7 @@ func TestService_Update(t *testing.T) {
 	})
 
 	apiDefinitionModel := &model.APIDefinition{
-		Name:       "Bar",
-		BundleID:   bundleID,
+		Name: "Bar",
 		TargetURLs: api.ConvertTargetUrlToJsonArray("https://test-url-updated.com"),
 		Version:    &model.Version{},
 	}

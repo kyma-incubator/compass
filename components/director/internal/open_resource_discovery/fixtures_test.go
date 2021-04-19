@@ -545,8 +545,7 @@ func fixBundles() []*model.Bundle {
 func fixAPIs() []*model.APIDefinition {
 	return []*model.APIDefinition{
 		{
-			ApplicationID:                           appID,
-			BundleID:                                str.Ptr(bundleORDID),
+			ApplicationID: appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Tenant:                                  tenantID,
 			Name:                                    "API TITLE",
@@ -579,8 +578,7 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 		{
-			ApplicationID:                           appID,
-			BundleID:                                str.Ptr(bundleORDID),
+			ApplicationID: appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Tenant:                                  tenantID,
 			Name:                                    "Gateway Sample Service",
@@ -619,9 +617,8 @@ func fixAPIs() []*model.APIDefinition {
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			Tenant:           tenantID,
-			ApplicationID:    appID,
-			BundleID:         str.Ptr(bundleORDID),
+			Tenant:        tenantID,
+			ApplicationID: appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
@@ -647,9 +644,8 @@ func fixEvents() []*model.EventDefinition {
 			},
 		},
 		{
-			Tenant:           tenantID,
-			ApplicationID:    appID,
-			BundleID:         str.Ptr(bundleORDID),
+			Tenant:        tenantID,
+			ApplicationID: appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),

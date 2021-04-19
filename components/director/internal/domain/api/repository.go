@@ -18,12 +18,12 @@ var (
 	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "ord_id",
+	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls"}
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"bundle_id", "package_id", "name", "description", "group_name", "ord_id",
+	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls"}
@@ -182,5 +182,18 @@ func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) e
 }
 
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition(bundleColumn, bundleID),
+		repo.NewNotNullCondition(bundlereferences.APIDefIDColumn),
+	}
+	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false, subqueryConditions...)
+	if err != nil {
+		return err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
+	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
 }

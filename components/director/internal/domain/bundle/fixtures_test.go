@@ -20,9 +20,8 @@ import (
 
 var fixedTimestamp = time.Now()
 
-func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
+func fixModelAPIDefinition(id string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
-		BundleID:    &bndlID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -66,9 +65,8 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 	}
 }
 
-func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,

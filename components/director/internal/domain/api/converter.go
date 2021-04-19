@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 	"time"
 
@@ -36,7 +37,7 @@ func NewConverter(version VersionConverter, specConverter SpecConverter) *conver
 	return &converter{version: version, specConverter: specConverter}
 }
 
-func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error) {
+func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -47,8 +48,8 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 	}
 
 	var bundleID string
-	if in.BundleID != nil {
-		bundleID = *in.BundleID
+	if bundleRef.BundleID != nil {
+		bundleID = *bundleRef.BundleID
 	}
 
 	return &graphql.APIDefinition{
@@ -56,9 +57,10 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
-		TargetURL:   ExtractTargetUrlFromJsonArray(in.TargetURLs),
-		Group:       in.Group,
-		Version:     c.version.ToGraphQL(in.Version),
+		//TargetURL:   ExtractTargetUrlFromJsonArray(in.TargetURLs),
+		TargetURL: str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
+		Group:     in.Group,
+		Version:   c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -70,9 +72,9 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 	}, nil
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error) {
-	if len(in) != len(specs) {
-		return nil, errors.New("different apis and specs count provided")
+func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
+	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
+		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
 	var apis []*graphql.APIDefinition
@@ -81,7 +83,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 			continue
 		}
 
-		api, err := c.ToGraphQL(a, specs[i])
+		api, err := c.ToGraphQL(a, specs[i], bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -131,8 +133,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ApplicationID:                           entity.ApplicationID,
-		BundleID:                                repo.StringPtrFromNullableString(entity.BndlID),
+		ApplicationID: entity.ApplicationID,
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Tenant:                                  entity.TenantID,
 		Name:                                    entity.Name,
@@ -174,9 +175,8 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 	return &Entity{
-		TenantID:                                apiModel.Tenant,
-		ApplicationID:                           apiModel.ApplicationID,
-		BndlID:                                  repo.NewNullableString(apiModel.BundleID),
+		TenantID:      apiModel.Tenant,
+		ApplicationID: apiModel.ApplicationID,
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),

@@ -23,12 +23,12 @@ var (
 	tenantColumn    = "tenant_id"
 	appColumn       = "app_id"
 	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, tenantColumn, appColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+	eventDefColumns = []string{idColumn, tenantColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{idColumn}
-	updatableColumns = []string{bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
@@ -186,5 +186,18 @@ func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) e
 }
 
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition(bundleColumn, bundleID),
+		repo.NewNotNullCondition(bundlereferences.EventDefIDColumn),
+	}
+	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false, subqueryConditions...)
+	if err != nil {
+		return err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
+	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
 }

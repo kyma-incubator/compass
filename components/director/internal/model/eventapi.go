@@ -11,9 +11,8 @@ import (
 )
 
 type EventDefinition struct {
-	Tenant              string
-	ApplicationID       string
-	BundleID            *string
+	Tenant        string
+	ApplicationID string
 	PackageID           *string
 	Name                string
 	Description         *string
@@ -112,16 +111,15 @@ func (a *EventResourceDefinition) ToSpec() *SpecInput {
 }
 
 func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string) *EventDefinition {
-	return e.ToEventDefinition(id, appID, &bndlID, nil, tenant)
+	return e.ToEventDefinition(id, appID, nil, tenant)
 }
 
-func (e *EventDefinitionInput) ToEventDefinition(id, appID string, bundleID *string, packageID *string, tenant string) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
 
 	return &EventDefinition{
-		BundleID:            bundleID,
 		ApplicationID:       appID,
 		PackageID:           packageID,
 		Tenant:              tenant,

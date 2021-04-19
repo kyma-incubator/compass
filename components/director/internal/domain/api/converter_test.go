@@ -20,7 +20,7 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	placeholder := "test"
-	modelAPIDefinition, modelSpec := fixFullAPIDefinitionModel(placeholder)
+	modelAPIDefinition, modelSpec, modelBundleReference := fixFullAPIDefinitionModel(placeholder)
 	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
 	emptyModelAPIDefinition := &model.APIDefinition{BaseEntity: &model.BaseEntity{}}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{BaseEntity: &graphql.BaseEntity{}}
@@ -28,19 +28,21 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	expectedErr := errors.New("error")
 
 	testCases := []struct {
-		Name             string
-		Input            *model.APIDefinition
-		SpecInput        *model.Spec
-		Expected         *graphql.APIDefinition
-		VersionConverter func() *automock.VersionConverter
-		SpecConverter    func() *automock.SpecConverter
-		ExpectedErr      error
+		Name                 string
+		Input                *model.APIDefinition
+		SpecInput            *model.Spec
+		BundleReferenceInput *model.BundleReference
+		Expected             *graphql.APIDefinition
+		VersionConverter     func() *automock.VersionConverter
+		SpecConverter        func() *automock.SpecConverter
+		ExpectedErr          error
 	}{
 		{
-			Name:      "All properties given",
-			Input:     &modelAPIDefinition,
-			SpecInput: &modelSpec,
-			Expected:  gqlAPIDefinition,
+			Name:                 "All properties given",
+			Input:                &modelAPIDefinition,
+			SpecInput:            &modelSpec,
+			BundleReferenceInput: &modelBundleReference,
+			Expected:             gqlAPIDefinition,
 			VersionConverter: func() *automock.VersionConverter {
 				conv := &automock.VersionConverter{}
 				conv.On("ToGraphQL", modelAPIDefinition.Version).Return(gqlAPIDefinition.Version).Once()
@@ -53,10 +55,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name:      "Error while converting spec",
-			Input:     &modelAPIDefinition,
-			SpecInput: &modelSpec,
-			Expected:  nil,
+			Name:                 "Error while converting spec",
+			Input:                &modelAPIDefinition,
+			SpecInput:            &modelSpec,
+			BundleReferenceInput: &modelBundleReference,
+			Expected:             nil,
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -68,10 +71,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			ExpectedErr: expectedErr,
 		},
 		{
-			Name:      "Empty",
-			Input:     emptyModelAPIDefinition,
-			SpecInput: &model.Spec{},
-			Expected:  emptyGraphQLAPIDefinition,
+			Name:                 "Empty",
+			Input:                emptyModelAPIDefinition,
+			SpecInput:            &model.Spec{},
+			BundleReferenceInput: &model.BundleReference{},
+			Expected:             emptyGraphQLAPIDefinition,
 			VersionConverter: func() *automock.VersionConverter {
 				conv := &automock.VersionConverter{}
 				conv.On("ToGraphQL", emptyModelAPIDefinition.Version).Return(nil).Once()
@@ -102,7 +106,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 			// when
 			converter := api.NewConverter(versionConverter, specConverter)
-			res, err := converter.ToGraphQL(testCase.Input, testCase.SpecInput)
+			res, err := converter.ToGraphQL(testCase.Input, testCase.SpecInput, testCase.BundleReferenceInput)
 			// then
 			if testCase.ExpectedErr != nil {
 				assert.Error(t, err)
@@ -121,8 +125,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
-	api1, spec1 := fixFullAPIDefinitionModel("test1")
-	api2, spec2 := fixFullAPIDefinitionModel("test2")
+	api1, spec1, bundleRef1 := fixFullAPIDefinitionModel("test1")
+	api2, spec2, bundleRef2 := fixFullAPIDefinitionModel("test2")
 
 	inputApis := []*model.APIDefinition{
 		&api1, &api2, {BaseEntity: &model.BaseEntity{}}, nil,
@@ -130,6 +134,10 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	inputSpecs := []*model.Spec{
 		&spec1, &spec2, {}, nil,
+	}
+
+	inputBundleRefs := []*model.BundleReference{
+		&bundleRef1, &bundleRef2, {}, nil,
 	}
 
 	expected := []*graphql.APIDefinition{
@@ -151,7 +159,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	// when
 	converter := api.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs)
+	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then
@@ -342,7 +350,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		apiModel, _ := fixFullAPIDefinitionModel("foo")
+		apiModel, _, _ := fixFullAPIDefinitionModel("foo")
 
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
@@ -353,14 +361,14 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixAPIDefinitionModel("id", "bndl_id", "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		//WHEN
 		entity := conv.ToEntity(*apiModel)
 		//THEN
-		assert.Equal(t, fixEntityAPIDefinition("id", "bndl_id", "name", "target_url"), entity)
+		assert.Equal(t, fixEntityAPIDefinition("id", "name", "target_url"), entity)
 	})
 }
 
@@ -373,18 +381,18 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//WHEN
 		apiModel := conv.FromEntity(entity)
 		//THEN
-		expectedModel, _ := fixFullAPIDefinitionModel("placeholder")
+		expectedModel, _, _ := fixFullAPIDefinitionModel("placeholder")
 		assert.Equal(t, expectedModel, apiModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixEntityAPIDefinition("id", "bndl_id", "name", "target_url")
+		entity := fixEntityAPIDefinition("id", "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		//WHEN
 		apiModel := conv.FromEntity(*entity)
 		//THEN
-		expectedModel := fixAPIDefinitionModel("id", "bndl_id", "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", "name", "target_url")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

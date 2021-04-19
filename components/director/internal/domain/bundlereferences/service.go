@@ -27,6 +27,20 @@ func NewService(repo BundleReferenceRepository) *service {
 	}
 }
 
+func (s *service) GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	bundleRef, err := s.repo.GetByID(ctx, objectType, tnt, objectID, bundleID)
+	if err != nil {
+		return nil, err
+	}
+
+	return bundleRef, nil
+}
+
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -64,7 +78,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 
 	err = s.repo.Update(ctx, bundleReference)
 	if err != nil {
-		return errors.Wrapf(err, "while updating record for %s with id %q for Bundle with id %q", objectType, *objectID, *bundleID)
+		return errors.Wrapf(err, "while updating record for %s with id %q", objectType, *objectID)
 	}
 
 	return nil

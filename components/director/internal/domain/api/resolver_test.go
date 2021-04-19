@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -25,7 +27,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 	id := "bar"
 
-	modelAPI, spec := fixFullAPIDefinitionModel("test")
+	modelAPI, spec, bundleRef := fixFullAPIDefinitionModel("test")
 	modelBndl := &model.Bundle{
 		TenantID:      tenantID,
 		ApplicationID: appID,
@@ -40,14 +42,15 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.APIService
-		BndlServiceFn   func() *automock.BundleService
-		SpecServiceFn   func() *automock.SpecService
-		ConverterFn     func() *automock.APIConverter
-		ExpectedAPI     *graphql.APIDefinition
-		ExpectedErr     error
+		Name                   string
+		TransactionerFn        func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn              func() *automock.APIService
+		BndlServiceFn          func() *automock.BundleService
+		BndlReferenceServiceFn func() *automock.BundleReferenceService
+		SpecServiceFn          func() *automock.SpecService
+		ConverterFn            func() *automock.APIConverter
+		ExpectedAPI            *graphql.APIDefinition
+		ExpectedErr            error
 	}{
 		{
 			Name:            "Success",
@@ -63,6 +66,11 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
 				return appSvc
 			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &gqlAPI.ID, str.Ptr(bundleID)).Return(&bundleRef, nil).Once()
+				return svc
+			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
@@ -71,7 +79,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, specInput, nil).Once()
-				conv.On("ToGraphQL", &modelAPI, &spec).Return(gqlAPI, nil).Once()
+				conv.On("ToGraphQL", &modelAPI, &spec, &bundleRef).Return(gqlAPI, nil).Once()
 				return conv
 			},
 			ExpectedAPI: gqlAPI,
@@ -85,6 +93,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				return &automock.BundleService{}
+			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.APIConverter {
 				return &automock.APIConverter{}
@@ -105,6 +116,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(nil, apperrors.NewNotFoundError(resource.Bundle, bundleID))
 				return appSvc
+			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
@@ -128,6 +142,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(nil, testErr)
 				return appSvc
+			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
@@ -153,6 +170,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
 				return appSvc
 			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, specInput, nil).Once()
@@ -177,6 +197,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
 				return appSvc
+			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
@@ -203,6 +226,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
 				return appSvc
 			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, specInput, nil).Once()
@@ -212,6 +238,38 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(nil, testErr).Once()
 				return svc
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Returns error when BundleReference retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
+				return svc
+			},
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
+				return appSvc
+			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &gqlAPI.ID, str.Ptr(bundleID)).Return(nil, testErr).Once()
+				return svc
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, specInput, nil).Once()
+				return conv
 			},
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
@@ -230,6 +288,11 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
 				return appSvc
 			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &gqlAPI.ID, str.Ptr(bundleID)).Return(&bundleRef, nil).Once()
+				return svc
+			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
@@ -238,7 +301,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, specInput, nil).Once()
-				conv.On("ToGraphQL", &modelAPI, &spec).Return(gqlAPI, testErr).Once()
+				conv.On("ToGraphQL", &modelAPI, &spec, &bundleRef).Return(gqlAPI, testErr).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -258,10 +321,15 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), bundleID).Return(modelBndl, nil)
 				return appSvc
 			},
+			BndlReferenceServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &gqlAPI.ID, str.Ptr(bundleID)).Return(&bundleRef, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, specInput, nil).Once()
-				conv.On("ToGraphQL", &modelAPI, &spec).Return(gqlAPI, nil).Once()
+				conv.On("ToGraphQL", &modelAPI, &spec, &bundleRef).Return(gqlAPI, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -281,9 +349,10 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			bndlSvc := testCase.BndlServiceFn()
+			bndlRefSvc := testCase.BndlReferenceServiceFn()
 			specSvc := testCase.SpecServiceFn()
 
-			resolver := api.NewResolver(transact, svc, nil, bndlSvc, converter, nil, specSvc, nil)
+			resolver := api.NewResolver(transact, svc, nil, bndlSvc, bndlRefSvc, converter, nil, specSvc, nil)
 
 			// when
 			result, err := resolver.AddAPIDefinitionToBundle(context.TODO(), bundleID, *gqlAPIInput)
@@ -301,6 +370,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			bndlSvc.AssertExpectations(t)
+			bndlRefSvc.AssertExpectations(t)
 			specSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
@@ -312,19 +382,22 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelAPIDefinition, spec := fixFullAPIDefinitionModel("test")
+	var nilBundleID *string
+
+	modelAPIDefinition, spec, bundleRef := fixFullAPIDefinitionModel("test")
 	gqlAPIDefinition := fixFullGQLAPIDefinition("test")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.APIService
-		ConverterFn     func() *automock.APIConverter
-		SpecServiceFn   func() *automock.SpecService
-		ExpectedAPI     *graphql.APIDefinition
-		ExpectedErr     error
+		Name               string
+		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.APIService
+		ConverterFn        func() *automock.APIConverter
+		SpecServiceFn      func() *automock.SpecService
+		BundleRefServiceFn func() *automock.BundleReferenceService
+		ExpectedAPI        *graphql.APIDefinition
+		ExpectedErr        error
 	}{
 		{
 			Name:            "Success",
@@ -337,12 +410,17 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", &modelAPIDefinition, &spec).Return(gqlAPIDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &spec, &bundleRef).Return(gqlAPIDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedAPI: gqlAPIDefinition,
@@ -360,6 +438,9 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
@@ -376,6 +457,9 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
@@ -396,6 +480,34 @@ func TestResolver_DeleteAPI(t *testing.T) {
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(nil, testErr).Once()
 				return svc
 			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Returns error when BundleReference retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				return &automock.APIConverter{}
+
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(nil, testErr).Once()
+				return svc
+			},
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
@@ -409,12 +521,17 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", &modelAPIDefinition, &spec).Return(nil, testErr).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &spec, &bundleRef).Return(nil, testErr).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedAPI: nil,
@@ -431,12 +548,17 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", &modelAPIDefinition, &spec).Return(gqlAPIDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &spec, &bundleRef).Return(gqlAPIDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedAPI: nil,
@@ -453,12 +575,17 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", &modelAPIDefinition, &spec).Return(gqlAPIDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &spec, &bundleRef).Return(gqlAPIDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedAPI: nil,
@@ -473,8 +600,9 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			specService := testCase.SpecServiceFn()
 			converter := testCase.ConverterFn()
+			bundleRefService := testCase.BundleRefServiceFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, converter, nil, specService, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, bundleRefService, converter, nil, specService, nil)
 
 			// when
 			result, err := resolver.DeleteAPIDefinition(context.TODO(), id)
@@ -491,6 +619,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc.AssertExpectations(t)
 			specService.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			bundleRefService.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			persist.AssertExpectations(t)
 		})
@@ -502,10 +631,11 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
+	var nilBundleID *string
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelAPIDefinitionInput, modelSpecInput := fixModelAPIDefinitionInput(id, "foo", "bar")
 	gqlAPIDefinition := fixFullGQLAPIDefinition("test")
-	modelAPIDefinition, modelSpec := fixFullAPIDefinitionModel("test")
+	modelAPIDefinition, modelSpec, modelBundleRef := fixFullAPIDefinitionModel("test")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -515,6 +645,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 		ServiceFn             func() *automock.APIService
 		ConverterFn           func() *automock.APIConverter
 		SpecServiceFn         func() *automock.SpecService
+		BundleRefServiceFn    func() *automock.BundleReferenceService
 		InputWebhookID        string
 		InputAPI              graphql.APIDefinitionInput
 		ExpectedAPIDefinition *graphql.APIDefinition
@@ -532,12 +663,17 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, modelSpecInput, nil).Once()
-				conv.On("ToGraphQL", &modelAPIDefinition, &modelSpec).Return(gqlAPIDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &modelSpec, &modelBundleRef).Return(gqlAPIDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&modelBundleRef, nil).Once()
 				return svc
 			},
 			InputWebhookID:        id,
@@ -557,6 +693,9 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
 			InputWebhookID:        id,
 			InputAPI:              *gqlAPIDefinitionInput,
 			ExpectedAPIDefinition: nil,
@@ -575,6 +714,9 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			InputWebhookID:        id,
 			InputAPI:              *gqlAPIDefinitionInput,
@@ -597,6 +739,9 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
 			InputWebhookID:        id,
 			InputAPI:              *gqlAPIDefinitionInput,
 			ExpectedAPIDefinition: nil,
@@ -618,6 +763,9 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
 			},
 			InputWebhookID:        id,
 			InputAPI:              *gqlAPIDefinitionInput,
@@ -643,6 +791,38 @@ func TestResolver_UpdateAPI(t *testing.T) {
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(nil, testErr).Once()
 				return svc
 			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				return &automock.BundleReferenceService{}
+			},
+			InputWebhookID:        id,
+			InputAPI:              *gqlAPIDefinitionInput,
+			ExpectedAPIDefinition: nil,
+			ExpectedErr:           testErr,
+		},
+		{
+			Name:            "Returns error when BundleReference retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, modelSpecInput, nil).Once()
+				return conv
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(nil, testErr).Once()
+				return svc
+			},
 			InputWebhookID:        id,
 			InputAPI:              *gqlAPIDefinitionInput,
 			ExpectedAPIDefinition: nil,
@@ -660,12 +840,17 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, modelSpecInput, nil).Once()
-				conv.On("ToGraphQL", &modelAPIDefinition, &modelSpec).Return(nil, testErr).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &modelSpec, &modelBundleRef).Return(nil, testErr).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&modelBundleRef, nil).Once()
 				return svc
 			},
 			InputWebhookID:        id,
@@ -685,12 +870,17 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, modelSpecInput, nil).Once()
-				conv.On("ToGraphQL", &modelAPIDefinition, &modelSpec).Return(gqlAPIDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelAPIDefinition, &modelSpec, &modelBundleRef).Return(gqlAPIDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(&modelBundleRef, nil).Once()
 				return svc
 			},
 			InputWebhookID:        id,
@@ -707,8 +897,9 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			specService := testCase.SpecServiceFn()
+			bundleRefService := testCase.BundleRefServiceFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, converter, nil, specService, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, bundleRefService, converter, nil, specService, nil)
 
 			// when
 			result, err := resolver.UpdateAPIDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -726,6 +917,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			specService.AssertExpectations(t)
+			bundleRefService.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
@@ -873,7 +1065,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
-			resolver := api.NewResolver(transact, nil, nil, nil, nil, nil, svc, conv)
+			resolver := api.NewResolver(transact, nil, nil, nil, nil, nil, nil, svc, conv)
 
 			// when
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
@@ -1014,7 +1206,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{DefinitionID: id})

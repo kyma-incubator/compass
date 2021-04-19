@@ -14,6 +14,71 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestService_GetForBundle(t *testing.T) {
+	testErr := errors.New("test err")
+
+	objectID := "id"
+	bundleID := "bundleID"
+	targetURL := "http://test.com"
+
+	bundleReferenceModel := &model.BundleReference{
+		Tenant:              tenantID,
+		BundleID:            &bundleID,
+		ObjectType:          model.BundleAPIReference,
+		ObjectID:            &objectID,
+		APIDefaultTargetURL: &targetURL,
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.BundleReferenceRepository
+		Expected     *model.BundleReference
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(bundleReferenceModel, nil).Once()
+				return repo
+			},
+			Expected: bundleReferenceModel,
+		},
+		{
+			Name: "Error on getting by id",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			// given
+			repo := testCase.RepositoryFn()
+			svc := bundlereferences.NewService(repo)
+
+			// when
+			bndlRef, err := svc.GetForBundle(ctx, model.BundleAPIReference, &objectID, &bundleID)
+
+			// then
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+				assert.Equal(t, testCase.Expected, bndlRef)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_CreateByReferenceObjectID(t *testing.T) {
 	testErr := errors.New("test err")
 

@@ -373,9 +373,8 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -383,9 +382,8 @@ func fixModelEventAPIDefinition(id string, appId, bundleID string, name, descrip
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	bundleID := "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: &bundleID, Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
+		Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{

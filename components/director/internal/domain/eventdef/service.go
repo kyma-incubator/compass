@@ -43,6 +43,7 @@ type SpecService interface {
 
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
 type BundleReferenceService interface {
+	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
@@ -127,7 +128,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	id := s.uidService.Generate()
-	eventAPI := in.ToEventDefinition(id, appID, bundleID, packageID, tnt)
+	eventAPI := in.ToEventDefinition(id, appID, packageID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
@@ -167,7 +168,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return err
 	}
 
-	event = in.ToEventDefinition(id, event.ApplicationID, event.BundleID, event.PackageID, tnt)
+	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {

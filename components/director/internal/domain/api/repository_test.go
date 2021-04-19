@@ -140,7 +140,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	apiDefModel, _ := fixFullAPIDefinitionModel("placeholder")
+	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 	insertQuery := `^INSERT INTO "public"."api_definitions" \(.+\) VALUES \(.+\)$`
 
@@ -182,9 +182,9 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		first, _ := fixFullAPIDefinitionModel("first")
-		second, _ := fixFullAPIDefinitionModel("second")
-		third, _ := fixFullAPIDefinitionModel("third")
+		first, _, _ := fixFullAPIDefinitionModel("first")
+		second, _, _ := fixFullAPIDefinitionModel("second")
+		third, _, _ := fixFullAPIDefinitionModel("third")
 		items := []*model.APIDefinition{&first, &second, &third}
 
 		convMock := &automock.APIDefinitionConverter{}
@@ -206,7 +206,7 @@ func TestPgRepository_CreateMany(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET bundle_id = ?, package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
+	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, api_protocol = ?, tags = ?, countries = ?, links = ?, api_resource_links = ?, release_status = ?,
 		sunset_date = ?, successor = ?, changelog_entries = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?,
 		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, implementation_standard = ?, custom_implementation_standard = ?, custom_implementation_standard_description = ?, target_urls = ? WHERE tenant_id = ? AND id = ?`)
@@ -214,7 +214,7 @@ func TestPgRepository_Update(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel, _ := fixFullAPIDefinitionModel("update")
+		apiModel, _, _ := fixFullAPIDefinitionModel("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
 		entity.UpdatedAt = &fixedTimestamp
 		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
@@ -222,7 +222,7 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(&entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.BndlID, entity.PackageID, entity.Name, entity.Description, entity.Group,
+			WithArgs(entity.PackageID, entity.Name, entity.Description, entity.Group,
 				entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ApiProtocol, entity.Tags, entity.Countries,
 				entity.Links, entity.APIResourceLinks, entity.ReleaseStatus, entity.SunsetDate, entity.Successor, entity.ChangeLogEntries, entity.Labels, entity.Visibility,
 				entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ImplementationStandard, entity.CustomImplementationStandard, entity.CustomImplementationStandardDescription, entity.TargetURLs, tenantID, entity.ID).
@@ -270,9 +270,10 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM "public"."api_definitions" WHERE tenant_id = \$1 AND bundle_id = \$2$`
+	deleteQuery := `DELETE FROM "public"."api_definitions"
+		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND api_def_id IS NOT NULL\)`
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
+	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.APIDefinitionConverter{}
 	pgRepository := api.NewRepository(convMock)
 	//WHEN

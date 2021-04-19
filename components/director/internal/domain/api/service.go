@@ -49,6 +49,7 @@ type SpecService interface {
 
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
 type BundleReferenceService interface {
+	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
@@ -133,7 +134,7 @@ func (s *service) Create(ctx context.Context, appId string, bundleID, packageID 
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinition(id, appId, bundleID, packageID, tnt)
+	api := in.ToAPIDefinition(id, appId, packageID, tnt)
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
@@ -177,7 +178,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return err
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, api.BundleID, api.PackageID, tnt)
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, tnt)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {

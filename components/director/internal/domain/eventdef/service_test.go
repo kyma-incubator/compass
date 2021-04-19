@@ -26,10 +26,9 @@ func TestService_Get(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bundleID := "foobar"
 	name := "foo"
 
-	eventDefinition := fixEventDefinitionModel(id, bundleID, name)
+	eventDefinition := fixEventDefinitionModel(id, name)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -104,7 +103,7 @@ func TestService_GetForBundle(t *testing.T) {
 	bndlID := "foobar"
 	name := "foo"
 
-	eventDefinition := fixEventDefinitionModel(id, bndlID, name)
+	eventDefinition := fixEventDefinitionModel(id, name)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -179,13 +178,12 @@ func TestService_ListForBundle(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bndlID := "foobar"
 	name := "foo"
 
 	eventDefinitions := []*model.EventDefinition{
-		fixEventDefinitionModel(id, bndlID, name),
-		fixEventDefinitionModel(id, bndlID, name),
-		fixEventDefinitionModel(id, bndlID, name),
+		fixEventDefinitionModel(id, name),
+		fixEventDefinitionModel(id, name),
+		fixEventDefinitionModel(id, name),
 	}
 	eventDefinitionPage := &model.EventDefinitionPage{
 		Data:       eventDefinitions,
@@ -289,13 +287,12 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bndlID := "foobar"
 	name := "foo"
 
 	apiDefinitions := []*model.EventDefinition{
-		fixEventDefinitionModel(id, bndlID, name),
-		fixEventDefinitionModel(id, bndlID, name),
-		fixEventDefinitionModel(id, bndlID, name),
+		fixEventDefinitionModel(id, name),
+		fixEventDefinitionModel(id, name),
+		fixEventDefinitionModel(id, name),
 	}
 
 	ctx := context.TODO()
@@ -395,7 +392,6 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelEventDefinition := &model.EventDefinition{
-		BundleID:      &bundleID,
 		PackageID:     &packageID,
 		ApplicationID: appID,
 		Tenant:        tenantID,
