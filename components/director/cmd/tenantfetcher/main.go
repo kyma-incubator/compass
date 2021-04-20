@@ -34,11 +34,10 @@ type config struct {
 	Log      log.Config
 	Features features.Config
 
-	TenantProvider         string        `envconfig:"APP_TENANT_PROVIDER"`
-	MetricsPushEndpoint    string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	DefaultScenarioEnabled bool          `envconfig:"APP_DEFAULT_SCENARIO_ENABLED"`
-	MovedRuntimeLabelKey   string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
-	ClientTimeout          time.Duration `envconfig:"default=60s"`
+	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
+	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
+	ClientTimeout        time.Duration `envconfig:"default=60s"`
 }
 
 func main() {
@@ -93,7 +92,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepository := labeldef.NewRepository(labelDefConverter)
-	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.DefaultScenarioEnabled)
+	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	labelConverter := label.NewConverter()
 	labelRepository := label.NewRepository(labelConverter)
