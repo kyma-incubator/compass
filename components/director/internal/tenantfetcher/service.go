@@ -170,6 +170,7 @@ func (s Service) SyncTenants() error {
 		if err != nil {
 			return err
 		}
+		//It is important ot add syncActions in this order
 		actions = append(actions,
 			&syncTenantsAction{"storing tenants", func() error { return s.createTenants(ctx, currentTenants, tenantsToCreate) }},
 			&syncTenantsAction{"moving runtimes by label", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }},
