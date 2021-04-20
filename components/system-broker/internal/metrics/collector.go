@@ -79,7 +79,7 @@ func NewCollector() *Collector {
 			Namespace: Namespace,
 			Subsystem: SystemBrokerSubsystem,
 			Name:      "deprovision_request_duration_seconds",
-			Help:      "Duration of handling Deproviosion requests",
+			Help:      "Duration of handling Deprovision requests",
 		}, []string{"code", "method"}),
 		deprovisionResponseSize: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: Namespace,
