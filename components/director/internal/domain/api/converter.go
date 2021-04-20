@@ -57,10 +57,9 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
-		//TargetURL:   ExtractTargetUrlFromJsonArray(in.TargetURLs),
-		TargetURL: str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
-		Group:     in.Group,
-		Version:   c.version.ToGraphQL(in.Version),
+		TargetURL:   str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
+		Group:       in.Group,
+		Version:     c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -133,7 +132,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ApplicationID: entity.ApplicationID,
+		ApplicationID:                           entity.ApplicationID,
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Tenant:                                  entity.TenantID,
 		Name:                                    entity.Name,
@@ -175,8 +174,8 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 	return &Entity{
-		TenantID:      apiModel.Tenant,
-		ApplicationID: apiModel.ApplicationID,
+		TenantID:                                apiModel.Tenant,
+		ApplicationID:                           apiModel.ApplicationID,
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),
