@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
-	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210416142045-25b90bbc9ee6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210416142045-25b90bbc9ee6
