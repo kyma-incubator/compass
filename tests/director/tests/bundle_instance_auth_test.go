@@ -41,6 +41,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.Nil(t, output.RuntimeID)
+	require.Nil(t, output.RuntimeContextID)
 	assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
 	saveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
@@ -124,6 +125,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, output.RuntimeID)
 		require.Equal(t, runtime.ID, *output.RuntimeID)
+		require.Nil(t, output.RuntimeContextID)
 		assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
 		// Fetch Application with bundles
@@ -164,6 +166,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		require.Error(t, err)
 		require.NotNil(t, output.RuntimeID)
 		require.Equal(t, runtime.ID, *output.RuntimeID)
+		require.Nil(t, output.RuntimeContextID)
 		require.Contains(t, err.Error(), "The operation is not allowed")
 	})
 }
@@ -217,6 +220,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	require.NoError(t, err)
 	require.NotNil(t, bndlInstanceAuth.RuntimeID)
 	require.Equal(t, runtime.ID, *bndlInstanceAuth.RuntimeID)
+	require.Nil(t, bndlInstanceAuth.RuntimeContextID)
 	assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, bndlInstanceAuth)
 	assertions.AssertAuth(t, authInput, bndlInstanceAuth.Auth)
 
