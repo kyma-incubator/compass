@@ -32,9 +32,10 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	}
 
 	apiCfg := tenantfetcher.APIConfig{
-		EndpointTenantCreated: endpoint + "/created",
-		EndpointTenantDeleted: endpoint + "/deleted",
-		EndpointTenantUpdated: endpoint + "/updated",
+		EndpointTenantCreated:       endpoint + "/created",
+		EndpointTenantDeleted:       endpoint + "/deleted",
+		EndpointTenantUpdated:       endpoint + "/updated",
+		EndpointRuntimeMovedByLabel: endpoint + "/moved",
 	}
 	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
@@ -59,6 +60,14 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	t.Run("Success fetching deletion events", func(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
+		// THEN
+		require.NoError(t, err)
+		assert.NotEmpty(t, res)
+	})
+
+	t.Run("Success fetching moved runtime events", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -123,6 +132,22 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
 	})
+
+	// GIVEN
+	apiCfg = tenantfetcher.APIConfig{
+		EndpointRuntimeMovedByLabel: "",
+	}
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client.SetMetricsPusher(metricsPusherMock)
+	client.SetHTTPClient(mockClient)
+
+	t.Run("Skip fetching moved runtime events when endpoint is not provided", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
+		// THEN
+		require.NoError(t, err)
+		require.Nil(t, res)
+	})
 }
 
 func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
@@ -144,6 +169,12 @@ func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, err := io.WriteString(w, fixUpdatedTenantsJSON())
+		require.NoError(t, err)
+	})
+	mux.HandleFunc("/moved", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, fixMovedRuntimeJSON())
 		require.NoError(t, err)
 	})
 	mux.HandleFunc("/empty", func(w http.ResponseWriter, r *http.Request) {
@@ -232,6 +263,27 @@ func fixDeletedTenantsJSON() string {
       "type": "DELETION",
       "timestamp": "1579771215336",
       "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+    }
+  ],
+  "totalResults": 2,
+  "totalPages": 1
+}`
+}
+
+func fixMovedRuntimeJSON() string {
+	return `{
+  "events": [
+	{
+      "id": 2,
+      "type": "MOVED",
+      "timestamp": "1579771215436",
+      "eventData": "{\"id\":\"22\",\"source\":\"TEN1\",\"target\":\"TEN2\"}"
+    },
+	{
+      "id": 1,
+      "type": "MOVED",
+      "timestamp": "1579771215336",
+      "eventData": "{\"id\":\"11\",\"source\":\"TEN3\",\"target\":\"TEN4\"}"
     }
   ],
   "totalResults": 2,
