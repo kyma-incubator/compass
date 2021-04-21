@@ -42,7 +42,7 @@ func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss Systems
 }
 
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	//TODO: Open transact here instead? So that all DB calls are in one transaction - avoid phantom DB sh*t, but there's a problem that we have HTTP calls inside of the DB call
+	//TODO: Open transact here instead? So that all DB calls are in one transaction - avoid phantom DB stuff, but there's a problem that we have HTTP calls inside of the DB call
 
 	tenants, err := s.tenantService.List(ctx)
 	if err != nil {
