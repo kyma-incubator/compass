@@ -120,6 +120,9 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return errors.Wrap(err, "while checking affected rows")
 	}
 	if affected != 1 {
+		if u.resourceType == resource.BundleReference {
+			return apperrors.NewCannotUpdateObjectInManyBundles()
+		}
 		return apperrors.NewInternalError("should update single row, but updated %d rows", affected)
 	}
 
