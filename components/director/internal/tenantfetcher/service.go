@@ -149,7 +149,7 @@ func (s Service) SyncTenants() error {
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	currentTenants := make(map[string]bool)
-	if len(tenantsToCreate) == 0 && len(tenantsToDelete) == 0 {
+	if len(tenantsToCreate) > 0 || len(tenantsToDelete) > 0 {
 		currentTenants, err = s.getCurrentTenants(ctx)
 		if err != nil {
 			return err
