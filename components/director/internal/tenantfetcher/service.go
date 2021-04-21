@@ -71,11 +71,6 @@ type RuntimeService interface {
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
-type syncTenantsAction struct {
-	name string
-	fn   func() error
-}
-
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
@@ -111,14 +106,6 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 		labelDefService:                 labelDefService,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 	}
-}
-
-func (a syncTenantsAction) Execute() error {
-	if err := a.fn(); err != nil {
-		return errors.Wrap(err, "while "+a.name)
-	}
-
-	return nil
 }
 
 func (s Service) SyncTenants() error {
@@ -161,25 +148,26 @@ func (s Service) SyncTenants() error {
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	actions := make([]*syncTenantsAction, 0)
-
+	currentTenants := make(map[string]bool)
 	if len(tenantsToCreate) == 0 && len(tenantsToDelete) == 0 {
-		actions = append(actions, &syncTenantsAction{"while moving runtimes by labels", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }})
-	} else {
-		currentTenants, err := s.getCurrentTenants(ctx)
+		currentTenants, err = s.getCurrentTenants(ctx)
 		if err != nil {
 			return err
 		}
-		//It is important ot add syncActions in this order
-		actions = append(actions,
-			&syncTenantsAction{"storing tenants", func() error { return s.createTenants(ctx, currentTenants, tenantsToCreate) }},
-			&syncTenantsAction{"moving runtimes by label", func() error { return s.moveRuntimesByLabel(ctx, runtimesToMove) }},
-			&syncTenantsAction{"deleting tenants", func() error { return s.deleteTenants(ctx, currentTenants, tenantsToDelete) }})
 	}
-
-	for _, action := range actions {
-		if err = action.Execute(); err != nil {
-			return errors.Wrap(err, "while processing events")
+	if len(tenantsToCreate) > 0 {
+		if err := s.createTenants(ctx, currentTenants, tenantsToCreate); err != nil {
+			return errors.Wrap(err, "while storing tenant")
+		}
+	}
+	if len(runtimesToMove) > 0 {
+		if err := s.moveRuntimesByLabel(ctx, runtimesToMove); err != nil {
+			return errors.Wrap(err, "moving runtimes by label")
+		}
+	}
+	if len(tenantsToDelete) > 0 {
+		if err := s.deleteTenants(ctx, currentTenants, tenantsToDelete); err != nil {
+			return errors.Wrap(err, "moving deleting runtimes")
 		}
 	}
 
