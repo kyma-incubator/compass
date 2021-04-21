@@ -36,9 +36,15 @@ func TestService_SyncTenants(t *testing.T) {
 		TargetTenant: "target_tenant",
 	}
 
-	event1 := fixEvent("1", "foo", tenantFieldMapping)
-	event2 := fixEvent("2", "bar", tenantFieldMapping)
-	event3 := fixEvent("3", "baz", tenantFieldMapping)
+	busTenant1 := fixBusinessTenantMappingInput("foo", "1", provider)
+	busTenant2 := fixBusinessTenantMappingInput("bar", "2", provider)
+	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider)
+
+	businessTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2, busTenant3}
+
+	event1 := fixEvent(busTenant1.ExternalTenant, "foo", tenantFieldMapping)
+	event2 := fixEvent(busTenant2.ExternalTenant, "bar", tenantFieldMapping)
+	event3 := fixEvent(busTenant3.ExternalTenant, "baz", tenantFieldMapping)
 
 	eventsToJsonArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
@@ -60,12 +66,6 @@ func TestService_SyncTenants(t *testing.T) {
 	}
 
 	movedRuntimeByLabelEvent := eventsToJsonArray(fixMovedRuntimeByLabelEvent(movedRuntimeLabelValue, sourceExtAccId, targetExtAccId, movedRuntimeFieldMapping))
-
-	businessTenants := []model.BusinessTenantMappingInput{
-		fixBusinessTenantMappingInput("foo", "1", provider),
-		fixBusinessTenantMappingInput("bar", "2", provider),
-		fixBusinessTenantMappingInput("baz", "3", provider),
-	}
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
 		"pageSize":  "1",
@@ -105,21 +105,60 @@ func TestService_SyncTenants(t *testing.T) {
 		ExpectedError       error
 	}{
 		{
-			Name:            "Success when empty db and single page",
+			Name:            "Success processing all kind of events",
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event2), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event3), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+
+				// create and update event
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants[:2])).Return(nil).Once()
+
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+
+				return svc
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				svc := &automock.LabelDefinitionService{}
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), matchLabelDefinition(targetIntTenant, movedRuntimeLabelKey)).Return(nil).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
+				svc.On("UpdateTenantID", txtest.CtxWithDBMatcher(), mock.AnythingOfType("string"), targetIntTenant).Return(nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Success when empty db and single 'create event' page",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
+				return client
+			},
+			TenantStorageSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants)).Return(nil).Once()
 				return svc
 			},
 			LabelDefSvcFn:       UnusedLabelLabelSvc,
@@ -133,15 +172,12 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:            "Success when populated db and single page",
+			Name:            "Success when populated db and single `create event` page",
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, tenantfetcher.DeletedEventsType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
-
+				attachNoResponseOnFirstPage(client, tenantfetcher.DeletedEventsType, tenantfetcher.UpdatedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
@@ -150,7 +186,6 @@ func TestService_SyncTenants(t *testing.T) {
 					businessTenants[0].ToBusinessTenantMapping(fixID()),
 				}, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants[1:])).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
 			LabelDefSvcFn:       UnusedLabelLabelSvc,
@@ -164,14 +199,12 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:            "Success when empty db and page",
+			Name:            "Success when empty db and single 'update event' page",
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, tenantfetcher.CreatedEventsType, tenantfetcher.DeletedEventsType)
+				attachNoResponseOnFirstPage(client, tenantfetcher.CreatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
-
 				return client
 			},
 			LabelDefSvcFn:       UnusedLabelLabelSvc,
@@ -180,6 +213,132 @@ func TestService_SyncTenants(t *testing.T) {
 				svc := &automock.TenantService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants)).Return(nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Success when populated db and single 'delete event' page",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				attachNoResponseOnFirstPage(client, tenantfetcher.CreatedEventsType, tenantfetcher.UpdatedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				return client
+			},
+			LabelDefSvcFn:       UnusedLabelLabelSvc,
+			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
+			TenantStorageSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				businessTenantMappings := make([]*model.BusinessTenantMapping, 0, len(businessTenants))
+				for _, tenant := range businessTenants {
+					businessTenantMappings = append(businessTenantMappings, tenant.ToBusinessTenantMapping(fixID()))
+				}
+
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessTenantMappings, nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants)).Return(nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Successfully process 'moved runtime by label' event",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				attachNoResponseOnFirstPage(client, tenantfetcher.CreatedEventsType, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType)
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
+
+				return client
+			},
+			LabelDefSvcFn: func() *automock.LabelDefinitionService {
+				svc := &automock.LabelDefinitionService{}
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), matchLabelDefinition(targetIntTenant, movedRuntimeLabelKey)).Return(nil).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
+				svc.On("UpdateTenantID", txtest.CtxWithDBMatcher(), mock.AnythingOfType("string"), targetIntTenant).Return(nil).Once()
+				return svc
+			},
+			TenantStorageSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+		},
+		{
+			Name:            "Success when create and update events refer to the same tenants",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				attachNoResponseOnFirstPage(client, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
+
+				updatedTenant := fixEvent(busTenant1.ExternalTenant, "updated-name", tenantFieldMapping)
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(updatedTenant), 1, 1), nil).Once()
+
+				return client
+			},
+			LabelDefSvcFn:       UnusedLabelLabelSvc,
+			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
+			TenantStorageSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+
+				receivedTenants := []model.BusinessTenantMappingInput{{
+					Name:           "updated-name",
+					ExternalTenant: busTenant1.ExternalTenant,
+					Provider:       busTenant1.Provider,
+				}}
+
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, receivedTenants)).Return(nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Success when db is empty and both create and delete events refer to the same tenants",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+
+				return client
+			},
+			LabelDefSvcFn:       UnusedLabelLabelSvc,
+			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
+			TenantStorageSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.AssertNotCalled(t, "CreateManyIfNotExists", mock.Anything, mock.Anything)
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
@@ -446,7 +605,6 @@ func TestService_SyncTenants(t *testing.T) {
 				svc := &automock.TenantService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -489,8 +647,8 @@ func TestService_SyncTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.CreatedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 
 				return client
 			},
@@ -498,9 +656,13 @@ func TestService_SyncTenants(t *testing.T) {
 			RuntimeStorageSvcFn: func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(testErr).Once()
+				businessTenantMappings := make([]*model.BusinessTenantMapping, 0, len(businessTenants))
+				for _, tenant := range businessTenants {
+					businessTenantMappings = append(businessTenantMappings, tenant.ToBusinessTenantMapping(fixID()))
+				}
+
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessTenantMappings, nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants)).Return(testErr).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -510,39 +672,6 @@ func TestService_SyncTenants(t *testing.T) {
 				return client
 			},
 			ExpectedError: testErr,
-		},
-		{
-			Name:            "Successfully process 'moved runtime by label' event",
-			TransactionerFn: txGen.ThatSucceeds,
-			APIClientFn: func() *automock.EventAPIClient {
-				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, tenantfetcher.CreatedEventsType, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
-
-				return client
-			},
-			LabelDefSvcFn: func() *automock.LabelDefinitionService {
-				svc := &automock.LabelDefinitionService{}
-				svc.On("Upsert", txtest.CtxWithDBMatcher(), matchLabelDefinition(targetIntTenant, movedRuntimeLabelKey)).Return(nil).Once()
-				return svc
-			},
-			RuntimeStorageSvcFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), matchMovedRuntimeLabelFilter(movedRuntimeLabelKey, movedRuntimeLabelValue)).Return(&model.Runtime{}, nil).Once()
-				svc.On("UpdateTenantID", txtest.CtxWithDBMatcher(), mock.AnythingOfType("string"), targetIntTenant).Return(nil).Once()
-				return svc
-			},
-			TenantStorageSvcFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
-				return svc
-			},
-			KubeClientFn: func() *automock.KubeClient {
-				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
-				return client
-			},
 		},
 		{
 			Name:            "Do nothing when 'moved runtime by label' event type is received but no runtime is found",
@@ -767,17 +896,16 @@ func TestService_SyncTenants(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
 		apiClient := &automock.EventAPIClient{}
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
 
 		tenantStorageSvc := &automock.TenantService{}
 		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
-		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 		kubeClient := &automock.KubeClient{}
 		kubeClient.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
