@@ -29,9 +29,17 @@ type OAuth2Config struct {
 }
 
 type APIConfig struct {
-	EndpointTenantCreated string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
-	EndpointTenantDeleted string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
-	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointTenantCreated       string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
+	EndpointTenantDeleted       string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
+	EndpointTenantUpdated       string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointRuntimeMovedByLabel string `envconfig:"optional,APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL"`
+}
+
+func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
+	if eventsType == MovedRuntimeByLabelEventsType && len(c.EndpointRuntimeMovedByLabel) == 0 {
+		return true
+	}
+	return false
 }
 
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
@@ -71,6 +79,11 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 }
 
 func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
+	if c.apiConfig.isUnassignedOptionalProperty(eventsType) {
+		log.D().Warnf("Optional property for event type %s was not set", eventsType)
+		return nil, nil
+	}
+
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if err != nil {
 		return nil, err
@@ -120,6 +133,8 @@ func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error)
 		return c.apiConfig.EndpointTenantDeleted, nil
 	case UpdatedEventsType:
 		return c.apiConfig.EndpointTenantUpdated, nil
+	case MovedRuntimeByLabelEventsType:
+		return c.apiConfig.EndpointRuntimeMovedByLabel, nil
 	default:
 		return "", apperrors.NewInternalError("unknown events type")
 	}
