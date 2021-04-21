@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -23,9 +24,9 @@ func RegisterRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gql
 	return runtime
 }
 
-func RequestClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.SystemAuth {
+func RequestClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeSystemAuth {
 	req := FixRequestClientCredentialsForRuntime(id)
-	systemAuth := graphql.SystemAuth{}
+	systemAuth := graphql.RuntimeSystemAuth{}
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
 	require.NoError(t, err)
@@ -40,6 +41,19 @@ func UnregisterRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
 	require.NoError(t, err)
+}
+
+func UnregisterGracefullyRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
+	delReq := FixUnregisterRuntimeRequest(id)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
+
+	if err != nil && !strings.Contains(err.Error(), "Object not found [object=runtime]") {
+		require.NoError(t, err)
+	}
 }
 
 func GetRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeExt {

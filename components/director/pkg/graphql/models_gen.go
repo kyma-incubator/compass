@@ -219,8 +219,10 @@ type BundleInstanceAuth struct {
 	InputParams *JSON `json:"inputParams"`
 	// It may be empty if status is PENDING.
 	// Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth   *Auth                     `json:"auth"`
-	Status *BundleInstanceAuthStatus `json:"status"`
+	Auth             *Auth                     `json:"auth"`
+	Status           *BundleInstanceAuthStatus `json:"status"`
+	RuntimeID        *string                   `json:"runtimeID"`
+	RuntimeContextID *string                   `json:"runtimeContextID"`
 }
 
 type BundleInstanceAuthRequestInput struct {

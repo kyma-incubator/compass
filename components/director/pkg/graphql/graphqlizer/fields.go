@@ -499,7 +499,9 @@ func (fp *GqlFieldsProvider) ForBundleInstanceAuth() string {
 		context
 		inputParams
 		auth {%s}
-		status {%s}`, fp.ForAuth(), fp.ForBundleInstanceAuthStatus())
+		status {%s}
+		runtimeID
+		runtimeContextID`, fp.ForAuth(), fp.ForBundleInstanceAuthStatus())
 }
 
 func (fp *GqlFieldsProvider) OmitForBundleInstanceAuthStatus(omittedProperties []string) string {

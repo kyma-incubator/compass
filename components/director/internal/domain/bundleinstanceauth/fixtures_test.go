@@ -21,48 +21,52 @@ import (
 var (
 	testID             = "foo"
 	testBundleID       = "bar"
+	testRuntimeID      = "d05fb90c-3084-4349-9deb-af23a4ce76be"
 	testTenant         = "baz"
 	testExternalTenant = "foobaz"
 	testContext        = `{"foo": "bar"}`
 	testInputParams    = `{"bar": "baz"}`
 	testError          = errors.New("test")
 	testTime           = time.Now()
-	testTableColumns   = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	testTableColumns   = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
-func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *model.BundleInstanceAuth {
-	pia := fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant, auth, status)
+func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
+	pia := fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant, auth, status, runtimeID)
 	pia.Context = &testContext
 	pia.InputParams = &testInputParams
 
 	return pia
 }
-func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *model.BundleInstanceAuth {
+
+func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
 	return &model.BundleInstanceAuth{
-		ID:       id,
-		BundleID: bundleID,
-		Tenant:   tenant,
-		Auth:     auth,
-		Status:   status,
+		ID:        id,
+		BundleID:  bundleID,
+		RuntimeID: runtimeID,
+		Tenant:    tenant,
+		Auth:      auth,
+		Status:    status,
 	}
 }
 
-func fixGQLBundleInstanceAuth(id string, auth *graphql.Auth, status *graphql.BundleInstanceAuthStatus) *graphql.BundleInstanceAuth {
+func fixGQLBundleInstanceAuth(id string, auth *graphql.Auth, status *graphql.BundleInstanceAuthStatus, runtimeID *string) *graphql.BundleInstanceAuth {
 	context := graphql.JSON(testContext)
 	inputParams := graphql.JSON(testInputParams)
 
-	out := fixGQLBundleInstanceAuthWithoutContextAndInputParams(id, auth, status)
+	out := fixGQLBundleInstanceAuthWithoutContextAndInputParams(id, auth, status, runtimeID)
 	out.Context = &context
 	out.InputParams = &inputParams
 
 	return out
 }
 
-func fixGQLBundleInstanceAuthWithoutContextAndInputParams(id string, auth *graphql.Auth, status *graphql.BundleInstanceAuthStatus) *graphql.BundleInstanceAuth {
+func fixGQLBundleInstanceAuthWithoutContextAndInputParams(id string, auth *graphql.Auth, status *graphql.BundleInstanceAuthStatus, runtimeID *string) *graphql.BundleInstanceAuth {
 	return &graphql.BundleInstanceAuth{
-		ID:     id,
-		Auth:   auth,
-		Status: status,
+		ID:        id,
+		Auth:      auth,
+		Status:    status,
+		RuntimeID: runtimeID,
 	}
 }
 
@@ -149,19 +153,25 @@ func fixGQLSetInput() *graphql.BundleInstanceAuthSetInput {
 	}
 }
 
-func fixEntityBundleInstanceAuth(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *bundleinstanceauth.Entity {
-	out := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, id, bundleID, tenant, auth, status)
+func fixEntityBundleInstanceAuth(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *bundleinstanceauth.Entity {
+	out := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, id, bundleID, tenant, auth, status, runtimeID)
 	out.Context = sql.NullString{Valid: true, String: testContext}
 	out.InputParams = sql.NullString{Valid: true, String: testInputParams}
 
 	return out
 }
 
-func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *bundleinstanceauth.Entity {
+func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *bundleinstanceauth.Entity {
+	sqlNullString := sql.NullString{}
+	if runtimeID != nil {
+		sqlNullString.Valid = true
+		sqlNullString.String = *runtimeID
+	}
 	out := bundleinstanceauth.Entity{
-		ID:       id,
-		BundleID: bundleID,
-		TenantID: tenant,
+		ID:        id,
+		BundleID:  bundleID,
+		RuntimeID: sqlNullString,
+		TenantID:  tenant,
 	}
 
 	if auth != nil {
@@ -226,43 +236,47 @@ func fixGQLAuthInput() *graphql.AuthInput {
 }
 
 type sqlRow struct {
-	id              string
-	tenantID        string
-	bundleID        string
-	context         sql.NullString
-	inputParams     sql.NullString
-	authValue       sql.NullString
-	statusCondition string
-	statusTimestamp time.Time
-	statusMessage   string
-	statusReason    string
+	id               string
+	tenantID         string
+	bundleID         string
+	runtimeID        sql.NullString
+	runtimeContextID sql.NullString
+	context          sql.NullString
+	inputParams      sql.NullString
+	authValue        sql.NullString
+	statusCondition  string
+	statusTimestamp  time.Time
+	statusMessage    string
+	statusReason     string
 }
 
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
-		out.AddRow(row.id, row.tenantID, row.bundleID, row.context, row.inputParams, row.authValue, row.statusCondition, row.statusTimestamp, row.statusMessage, row.statusReason)
+		out.AddRow(row.id, row.tenantID, row.bundleID, row.context, row.inputParams, row.authValue, row.statusCondition, row.statusTimestamp, row.statusMessage, row.statusReason, row.runtimeID, row.runtimeContextID)
 	}
 	return out
 }
 
 func fixSQLRowFromEntity(entity bundleinstanceauth.Entity) sqlRow {
 	return sqlRow{
-		id:              entity.ID,
-		tenantID:        entity.TenantID,
-		bundleID:        entity.BundleID,
-		context:         entity.Context,
-		inputParams:     entity.InputParams,
-		authValue:       entity.AuthValue,
-		statusCondition: entity.StatusCondition,
-		statusTimestamp: entity.StatusTimestamp,
-		statusMessage:   entity.StatusMessage,
-		statusReason:    entity.StatusReason,
+		id:               entity.ID,
+		tenantID:         entity.TenantID,
+		bundleID:         entity.BundleID,
+		runtimeID:        entity.RuntimeID,
+		runtimeContextID: entity.RuntimeContextID,
+		context:          entity.Context,
+		inputParams:      entity.InputParams,
+		authValue:        entity.AuthValue,
+		statusCondition:  entity.StatusCondition,
+		statusTimestamp:  entity.StatusTimestamp,
+		statusMessage:    entity.StatusMessage,
+		statusReason:     entity.StatusReason,
 	}
 }
 
 func fixCreateArgs(ent bundleinstanceauth.Entity) []driver.Value {
-	return []driver.Value{ent.ID, ent.TenantID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason}
+	return []driver.Value{ent.ID, ent.TenantID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason, ent.RuntimeID, ent.RuntimeContextID}
 }
 
 func fixSimpleModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
