@@ -247,6 +247,41 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
+func (s *service) CreateManyIfNotExists(ctx context.Context, applicationInputs []model.ApplicationRegisterInput) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	allApps, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
+	}
+
+	var appsToAdd []model.ApplicationRegisterInput
+	for _, ai := range applicationInputs {
+		alreadyExits := false
+		for _, a := range allApps {
+			if ai.Name == a.Name {
+				alreadyExits = true
+				break
+			}
+		}
+
+		if !alreadyExits {
+			appsToAdd = append(appsToAdd, ai)
+		}
+	}
+
+	for _, a := range appsToAdd {
+		_, err := s.Create(ctx, a)
+		if err != nil {
+			return errors.Wrap(err, "while creating application")
+		}
+	}
+	return nil
+}
+
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateId *string) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateId
