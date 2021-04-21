@@ -162,8 +162,8 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 	gqlRequestInput := fixGQLRequestInput()
 	modelRequestInput := fixModelRequestInput()
 
-	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil)
-	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil)
+	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil, &testRuntimeID)
+	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil, &testRuntimeID)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -333,7 +333,6 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 			resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter, bndlConverter)
 
-			// when
 			result, err := resolver.RequestBundleInstanceAuthCreation(context.TODO(), testBundleID, *gqlRequestInput)
 
 			// then
@@ -353,8 +352,8 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 	modelSetInput := fixModelSetInput()
 	gqlSetInput := fixGQLSetInput()
 
-	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil)
-	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil)
+	modelInstanceAuth := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil, nil)
+	gqlInstanceAuth := fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil, nil)
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 

@@ -48,9 +48,9 @@ func RegisterApplicationFromInput(t *testing.T, ctx context.Context, gqlClient *
 	return app, err
 }
 
-func RequestClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.SystemAuth {
+func RequestClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.AppSystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
-	systemAuth := graphql.SystemAuth{}
+	systemAuth := graphql.AppSystemAuth{}
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
 	require.NoError(t, err)
@@ -89,10 +89,10 @@ func SetApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Clie
 	return label
 }
 
-func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) graphql.SystemAuth {
+func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) graphql.AppSystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
 
-	out := graphql.SystemAuth{}
+	out := graphql.AppSystemAuth{}
 	err := testctx.Tc.RunOperation(ctx, gqlClient, req, &out)
 	require.NoError(t, err)
 

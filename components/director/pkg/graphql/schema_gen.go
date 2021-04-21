@@ -190,11 +190,13 @@ type ComplexityRoot struct {
 	}
 
 	BundleInstanceAuth struct {
-		Auth        func(childComplexity int) int
-		Context     func(childComplexity int) int
-		ID          func(childComplexity int) int
-		InputParams func(childComplexity int) int
-		Status      func(childComplexity int) int
+		Auth             func(childComplexity int) int
+		Context          func(childComplexity int) int
+		ID               func(childComplexity int) int
+		InputParams      func(childComplexity int) int
+		RuntimeContextID func(childComplexity int) int
+		RuntimeID        func(childComplexity int) int
+		Status           func(childComplexity int) int
 	}
 
 	BundleInstanceAuthStatus struct {
@@ -1352,6 +1354,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BundleInstanceAuth.InputParams(childComplexity), true
+
+	case "BundleInstanceAuth.runtimeContextID":
+		if e.complexity.BundleInstanceAuth.RuntimeContextID == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.RuntimeContextID(childComplexity), true
+
+	case "BundleInstanceAuth.runtimeID":
+		if e.complexity.BundleInstanceAuth.RuntimeID == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.RuntimeID(childComplexity), true
 
 	case "BundleInstanceAuth.status":
 		if e.complexity.BundleInstanceAuth.Status == nil {
@@ -4151,6 +4167,8 @@ type BundleInstanceAuth {
 	"""
 	auth: Auth
 	status: BundleInstanceAuthStatus!
+	runtimeID: ID
+	runtimeContextID: ID
 }
 
 type BundleInstanceAuthStatus {
@@ -9985,6 +10003,68 @@ func (ec *executionContext) _BundleInstanceAuth_status(ctx context.Context, fiel
 	res := resTmp.(*BundleInstanceAuthStatus)
 	fc.Result = res
 	return ec.marshalNBundleInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_runtimeID(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_runtimeContextID(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeContextID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BundleInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
@@ -23183,6 +23263,10 @@ func (ec *executionContext) _BundleInstanceAuth(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "runtimeID":
+			out.Values[i] = ec._BundleInstanceAuth_runtimeID(ctx, field, obj)
+		case "runtimeContextID":
+			out.Values[i] = ec._BundleInstanceAuth_runtimeContextID(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
