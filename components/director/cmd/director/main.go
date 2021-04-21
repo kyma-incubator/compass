@@ -121,8 +121,7 @@ type config struct {
 
 	Features features.Config
 
-	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
-	OperationsNamespace   string `envconfig:"default=compass-system"`
+	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
 }
@@ -185,7 +184,6 @@ func main() {
 			cfg.Features,
 			metricsCollector,
 			httpClient,
-			cfg.ProtectedLabelPattern,
 			cfg.OneTimeToken.Length,
 			adminURL,
 		),
@@ -245,7 +243,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.ProtectedLabelPattern)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
 
 	exitOnError(err, "Error while configuring runtime mapping handler")
 

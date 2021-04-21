@@ -734,6 +734,85 @@ func TestServiceDelete(t *testing.T) {
 	})
 }
 
+func TestService_Upsert(t *testing.T) {
+	// given
+	ctx := context.TODO()
+	id := "sample-id"
+	labelDefinition := model.LabelDefinition{
+		ID:     id,
+		Tenant: "sample-tenant",
+		Key:    "sample-key",
+	}
+	testErr := errors.New("test-err")
+
+	testCases := []struct {
+		Name               string
+		LabelDefRepoFn     func() *automock.Repository
+		UIDServiceFn       func() *automock.UIDService
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			LabelDefRepoFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("Upsert", ctx, labelDefinition).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error when labelDefinition repository fails",
+			LabelDefRepoFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("Upsert", ctx, labelDefinition).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := &automock.LabelRepository{}
+			labelDefRepo := testCase.LabelDefRepoFn()
+
+			scenarioAssignmentLister := &automock.ScenarioAssignmentLister{}
+			scenariosService := &automock.ScenariosService{}
+			uidService := testCase.UIDServiceFn()
+
+			svc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentLister, scenariosService, uidService)
+
+			// when
+			err := svc.Upsert(ctx, labelDefinition)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			labelRepo.AssertExpectations(t)
+			labelDefRepo.AssertExpectations(t)
+			uidService.AssertExpectations(t)
+			labelRepo.AssertExpectations(t)
+			scenarioAssignmentLister.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
+		})
+	}
+}
+
 func fixUUID() string {
 	return "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 }

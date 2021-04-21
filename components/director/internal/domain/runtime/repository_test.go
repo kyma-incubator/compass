@@ -600,6 +600,30 @@ func TestPgRepository_Exist(t *testing.T) {
 	assert.True(t, ex)
 }
 
+func TestPgRepository_UpdateTenantID_ShouldUpdateTenant(t *testing.T) {
+	// given
+	runtimeID := uuid.New().String()
+	newTenantID := uuid.New().String()
+	mockConverter := &automock.EntityConverter{}
+
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
+
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.runtimes SET tenant_id = ? WHERE id = ?`)).
+		WithArgs(newTenantID, runtimeID).
+		WillReturnResult(sqlmock.NewResult(-1, 1))
+
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+	pgRepository := runtime.NewRepository(mockConverter)
+
+	// when
+	err := pgRepository.UpdateTenantID(ctx, runtimeID, newTenantID)
+
+	// then
+	assert.NoError(t, err)
+}
+
 func convertIntToBase64String(number int) string {
 	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
 }
