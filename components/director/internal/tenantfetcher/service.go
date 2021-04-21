@@ -155,6 +155,8 @@ func (s Service) SyncTenants() error {
 			return err
 		}
 	}
+
+	//Order of event processing matters
 	if len(tenantsToCreate) > 0 {
 		if err := s.createTenants(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing tenant")
