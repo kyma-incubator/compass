@@ -3,6 +3,7 @@ package bundleinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -44,7 +45,7 @@ func NewService(repo Repository, uidService UIDService) *service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID *string) (string, error) {
+func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -56,9 +57,19 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 		return "", errors.Wrapf(err, "while validating BundleInstanceAuth request input for Bundle with id %s", bundleID)
 	}
 
+	con, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	var runtimeID *string
+	if con.ConsumerType == consumer.Runtime {
+		runtimeID = &con.ConsumerID
+	}
+
 	id := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for BundleInstanceAuth for Bundle with id %s", id, bundleID)
-	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil, runtimeID)
+	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil, runtimeID, nil)
 
 	err = s.setCreationStatusFromAuth(ctx, &bndlInstAuth, defaultAuth)
 	if err != nil {
@@ -129,8 +140,8 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*mod
 	return bndlInstanceAuths, nil
 }
 
-func (s *service) Update(ctx context.Context, item *model.BundleInstanceAuth) error {
-	err := s.repo.Update(ctx, item)
+func (s *service) Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error {
+	err := s.repo.Update(ctx, instanceAuth)
 	if err != nil {
 		return errors.Wrap(err, "while updating Bundle Instance Auths")
 	}
@@ -224,7 +235,7 @@ func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *mode
 	// Input validation ensures that status can be nil only when auth was provided, so we can assume SUCCEEDED status
 	if instanceAuth.Status == nil {
 		log.C(ctx).Infof("Updating the status of BundleInstanceAuth with id %s to '%s'", instanceAuth.ID, model.BundleInstanceAuthStatusConditionSucceeded)
-		err := instanceAuth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionSucceeded, ts)
+		err := instanceAuth.SetDefaultStatus(instanceAuth.Status.Condition, ts)
 		if err != nil {
 			return errors.Wrapf(err, "while setting status '%s' to BundleInstanceAuth with id %s", model.BundleInstanceAuthStatusConditionSucceeded, instanceAuth.ID)
 		}

@@ -75,7 +75,7 @@ type SystemAuthService interface {
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
-	Update(ctx context.Context, item *model.BundleInstanceAuth) error
+	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 }
 
 type Resolver struct {
@@ -248,11 +248,6 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, runtime.ID)
-	if err != nil {
-		return nil, err
-	}
-
 	bundleInstanceAuths, err := r.bundleInstanceAuthSvc.ListByRuntimeID(ctx, runtime.ID)
 	if err != nil {
 		return nil, err
@@ -260,37 +255,38 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 
 	currentTimestamp := timestamp.DefaultGenerator()
 	for _, auth := range bundleInstanceAuths {
-		if auth.Status.Condition == model.BundleInstanceAuthStatusConditionSucceeded {
+		if auth.Status.Condition != model.BundleInstanceAuthStatusConditionUnused {
 			if err := auth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionUnused, currentTimestamp()); err != nil {
-				log.C(ctx).WithError(err).Warningf("while update bundle instance auth status condition: %v", err)
+				log.C(ctx).WithError(err).Errorf("while update bundle instance auth status condition: %v", err)
 				return nil, err
 			}
 			if err := r.bundleInstanceAuthSvc.Update(ctx, auth); err != nil {
-				log.C(ctx).Warningf("Unable to update bundle instance auth with ID: %s for corresponding bundle with ID: %s", auth.ID, auth.BundleID)
+				log.C(ctx).WithError(err).Errorf("Unable to update bundle instance auth with ID: %s for corresponding bundle with ID: %s: %v", auth.ID, auth.BundleID, err)
 				return nil, err
 			}
 		}
 	}
 
-	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, runtime.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.deleteAssociatedScenarioAssignments(ctx, runtime.ID)
-	if err != nil {
+	if err = r.deleteAssociatedScenarioAssignments(ctx, runtime.ID); err != nil {
 		return nil, err
 	}
 
 	deletedRuntime := r.converter.ToGraphQL(runtime)
 
-	err = r.runtimeService.Delete(ctx, id)
-	if err != nil {
+	if err = r.runtimeService.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 

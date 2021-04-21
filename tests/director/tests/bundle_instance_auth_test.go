@@ -159,13 +159,13 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
 		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
+		output = graphql.BundleInstanceAuth{}
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
 
 		// THEN
 		require.Error(t, err)
-		require.NotNil(t, output.RuntimeID)
-		require.Equal(t, runtime.ID, *output.RuntimeID)
+		require.Nil(t, output.RuntimeID)
 		require.Nil(t, output.RuntimeContextID)
 		require.Contains(t, err.Error(), "The operation is not allowed")
 	})
@@ -177,6 +177,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 
 	input := fixtures.FixRuntimeInput("runtime-test")
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.UnregisterGracefullyRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
@@ -213,6 +214,18 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
+	scenarios := []string{conf.DefaultScenario, "test-scenario"}
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
+
+	// set application scenarios label
+	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
+	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
+
+	// set runtime scenarios label
+	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+	defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+
 	t.Log("Request bundle instance auth creation")
 	err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &bndlInstanceAuth)
 
@@ -245,6 +258,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, nil)
 	require.NoError(t, err)
 
+	appExt = graphql.ApplicationExt{}
 	t.Log("Fetch application with bundles after deleting runtime")
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationReq, &appExt)
 	require.NoError(t, err)

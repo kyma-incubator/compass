@@ -55,7 +55,7 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 		expected.RuntimeID = &runtimeID
 
 		// WHEN
-		result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus, &runtimeID)
+		result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus, &runtimeID, nil)
 
 		// THEN
 		require.Equal(t, expected, result)
@@ -66,7 +66,7 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 		expected.RuntimeID = nil
 
 		// WHEN
-		result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus, nil)
+		result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus, nil, nil)
 
 		// THEN
 		require.Equal(t, expected, result)

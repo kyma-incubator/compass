@@ -75,16 +75,17 @@ type BundleInstanceAuthRequestInput struct {
 	InputParams *string
 }
 
-func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID *string) BundleInstanceAuth {
+func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID *string, runtimeContextID *string) BundleInstanceAuth {
 	return BundleInstanceAuth{
-		ID:          id,
-		BundleID:    bundleID,
-		RuntimeID:   runtimeID,
-		Tenant:      tenant,
-		Context:     ri.Context,
-		InputParams: ri.InputParams,
-		Auth:        auth,
-		Status:      status,
+		ID:               id,
+		BundleID:         bundleID,
+		RuntimeID:        runtimeID,
+		RuntimeContextID: runtimeContextID,
+		Tenant:           tenant,
+		Context:          ri.Context,
+		InputParams:      ri.InputParams,
+		Auth:             auth,
+		Status:           status,
 	}
 }
 

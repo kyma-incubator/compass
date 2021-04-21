@@ -3,8 +3,6 @@ package bundleinstanceauth
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,7 +16,7 @@ import (
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
-	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string, runtimeID *string) (string, error)
+	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
 	Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error)
 	SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error
 	Delete(ctx context.Context, id string) error
@@ -198,17 +196,7 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 
 	convertedIn := r.conv.RequestInputFromGraphQL(in)
 
-	con, err := consumer.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var runtimeID *string
-	if con.ConsumerType == consumer.Runtime {
-		runtimeID = &con.ConsumerID
-	}
-
-	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bndl.DefaultInstanceAuth, bndl.InstanceAuthRequestInputSchema, runtimeID)
+	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bndl.DefaultInstanceAuth, bndl.InstanceAuthRequestInputSchema)
 	if err != nil {
 		return nil, err
 	}

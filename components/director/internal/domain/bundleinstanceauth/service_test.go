@@ -559,7 +559,7 @@ func TestService_Create(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
-			result, err := svc.Create(ctx, testBundleID, testCase.Input, testCase.InputAuth, testCase.InputSchema, nil)
+			result, err := svc.Create(ctx, testBundleID, testCase.Input, testCase.InputAuth, testCase.InputSchema)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -578,12 +578,23 @@ func TestService_Create(t *testing.T) {
 		svc := bundleinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.Create(context.TODO(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil, nil)
+		_, err := svc.Create(context.TODO(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil)
 
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+
+	//t.Run("Error when consumer is not in the context", func(t *testing.T) {
+	//	// GIVEN
+	//	svc := bundleinstanceauth.NewService(nil, nil)
+	//
+	//	// WHEN
+	//	_, err := svc.Create(context.TODO(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil)
+	//
+	//	// THEN
+	//	assert.Nil(t, result)
+	//})
 }
 
 func TestService_ListByApplicationID(t *testing.T) {

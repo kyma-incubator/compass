@@ -366,7 +366,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
 				return svc
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
@@ -411,8 +410,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				//svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
@@ -559,6 +557,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -583,7 +582,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -617,7 +615,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -646,7 +643,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -655,6 +653,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
