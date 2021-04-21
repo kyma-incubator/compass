@@ -235,7 +235,7 @@ func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *mode
 	// Input validation ensures that status can be nil only when auth was provided, so we can assume SUCCEEDED status
 	if instanceAuth.Status == nil {
 		log.C(ctx).Infof("Updating the status of BundleInstanceAuth with id %s to '%s'", instanceAuth.ID, model.BundleInstanceAuthStatusConditionSucceeded)
-		err := instanceAuth.SetDefaultStatus(instanceAuth.Status.Condition, ts)
+		err := instanceAuth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionSucceeded, ts)
 		if err != nil {
 			return errors.Wrapf(err, "while setting status '%s' to BundleInstanceAuth with id %s", model.BundleInstanceAuthStatusConditionSucceeded, instanceAuth.ID)
 		}
