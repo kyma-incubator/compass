@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -394,9 +396,15 @@ func TestService_Create(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
+	consumerEntity := consumer.Consumer{
+		ConsumerID:   testRuntimeID,
+		ConsumerType: consumer.Runtime,
+	}
+	ctx = consumer.SaveToContext(ctx, consumerEntity)
+
 	modelAuth := fixModelAuth()
-	modelExpectedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, modelAuth, fixModelStatusSucceeded(), nil)
-	modelExpectedInstanceAuthPending := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
+	modelExpectedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, modelAuth, fixModelStatusSucceeded(), &testRuntimeID)
+	modelExpectedInstanceAuthPending := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending(), &testRuntimeID)
 
 	modelRequestInput := fixModelRequestInput()
 
@@ -585,16 +593,18 @@ func TestService_Create(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 
-	//t.Run("Error when consumer is not in the context", func(t *testing.T) {
-	//	// GIVEN
-	//	svc := bundleinstanceauth.NewService(nil, nil)
-	//
-	//	// WHEN
-	//	_, err := svc.Create(context.TODO(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil)
-	//
-	//	// THEN
-	//	assert.Nil(t, result)
-	//})
+	t.Run("Error when consumer is not in the context", func(t *testing.T) {
+		// GIVEN
+		svc := bundleinstanceauth.NewService(nil, nil)
+		ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+
+		// WHEN
+		_, err := svc.Create(ctx, testBundleID, *modelRequestInput, modelAuth, nil)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read consumer from context")
+	})
 }
 
 func TestService_ListByApplicationID(t *testing.T) {

@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
 	pkgmock "github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
@@ -335,14 +333,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 			resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter, bndlConverter)
 
-			// when
-			consumerEntity := consumer.Consumer{
-				ConsumerID:   testRuntimeID,
-				ConsumerType: consumer.Runtime,
-			}
-			ctx := context.WithValue(context.TODO(), "consumer", consumerEntity)
-
-			result, err := resolver.RequestBundleInstanceAuthCreation(ctx, testBundleID, *gqlRequestInput)
+			result, err := resolver.RequestBundleInstanceAuthCreation(context.TODO(), testBundleID, *gqlRequestInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
