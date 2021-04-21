@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -80,22 +80,22 @@ func (c *Client) FetchSystemsForTenant(tenant string) []ProductInstanceExtended 
 	url := c.apiConfig.Endpoint + c.apiConfig.Path
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.D().Fatal(err)
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.D().Fatal(err)
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.D().Fatal(err)
 	}
 
 	var systems []ProductInstanceExtended
 	if err = json.Unmarshal(respBody, &systems); err != nil {
-		log.Fatal(err)
+		log.D().Fatal(err)
 	}
 
 	return systems
