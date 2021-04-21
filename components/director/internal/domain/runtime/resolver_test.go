@@ -410,7 +410,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				//svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
@@ -699,7 +698,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
@@ -779,7 +777,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
@@ -861,7 +858,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
 			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
