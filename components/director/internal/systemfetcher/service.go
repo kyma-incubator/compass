@@ -56,12 +56,18 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		for _, s := range systems {
 			sc := s
 
+			initStatusCond := model.ApplicationStatusConditionInitial
+			baseURL := sc.BaseURL
+			if mainURL, ok := sc.AdditionalUrls["mainUrl"]; ok {
+				baseURL = mainURL
+			}
+
 			a := model.ApplicationRegisterInput{
 				Name:                sc.DisplayName,
 				Description:         &sc.ProductDescription,
-				BaseURL:             &sc.BaseURL,
+				BaseURL:             &baseURL,
 				ProviderName:        &sc.InfrastructureProvider,
-				StatusCondition:     nil,
+				StatusCondition:     &initStatusCond,
 				Labels:              nil,
 				HealthCheckURL:      nil,
 				IntegrationSystemID: nil,

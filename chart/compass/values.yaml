@@ -53,7 +53,7 @@ global:
       version: "PR-1808"
     director:
       dir:
-      version: "PR-1827"
+      version: "PR-1841"
     gateway:
       dir:
       version: "PR-1783"
@@ -330,6 +330,14 @@ global:
     name: ord-aggregator
     enabled: true
     schedule: "*/5 * * * *"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
+
+  systemFetcher:
+    name: "system-fetcher"
+    enabled: true
+    schedule: "0 0 * * *"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
