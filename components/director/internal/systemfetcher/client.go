@@ -38,7 +38,7 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config) *Client {
 	}
 }
 
-func (c *Client) FetchSystemsForTenant(tenant string) []ProductInstanceExtended {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) []ProductInstanceExtended {
 	//client := http.Client{}
 	//
 	//reqBody := url.Values{}
@@ -73,7 +73,9 @@ func (c *Client) FetchSystemsForTenant(tenant string) []ProductInstanceExtended 
 		Scopes:       scopes,
 	}
 
-	httpClient := cfg.Client(context.Background())
+	// TODO: Check token, err := cfg.Token(ctx) optimization
+
+	httpClient := cfg.Client(ctx)
 
 	url := c.apiConfig.Endpoint + c.apiConfig.Path
 	req, err := http.NewRequest("GET", url, nil)
