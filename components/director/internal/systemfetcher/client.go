@@ -18,12 +18,12 @@ var (
 type OAuth2Config struct {
 	ClientID                  string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret              string `envconfig:"APP_CLIENT_SECRET"`
-	OAuthTokenEndpointPattern string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
+	OAuthTokenEndpointPattern string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PATTERN"`
 }
 
 type APIConfig struct {
-	Endpoint string `envconfig:"APP_LANDSCAPE_INFORMATION_ENDPOINT"`
-	Path     string `envconfig:"APP_LANDSCAPE_INFORMATION_PATH"`
+	Endpoint string `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
+	Path     string `envconfig:"APP_SYSTEM_INFORMATION_PATH"`
 }
 
 type Client struct {
@@ -39,8 +39,6 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config) *Client {
 }
 
 func (c *Client) FetchSystemsForTenant(tenant string) []ProductInstanceExtended {
-
-	//
 	//client := http.Client{}
 	//
 	//reqBody := url.Values{}

@@ -27,6 +27,31 @@ spec:
                 - name: director-config
                   mountPath: /config
               env:
+                - name: APP_SYSTEM_INFORMATION_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-system-fetcher-secrets
+                      key: system-information-endpoint
+                - name: APP_SYSTEM_INFORMATION_PATH
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-system-fetcher-secrets
+                      key: system-information-path
+                - name: APP_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-system-fetcher-secrets
+                      key: client-id
+                - name: APP_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-system-fetcher-secrets
+                      key: client-secret
+                - name: APP_OAUTH_TOKEN_ENDPOINT_PATTERN
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-system-fetcher-secrets
+                      key: oauth-token-endpoint-pattern
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
