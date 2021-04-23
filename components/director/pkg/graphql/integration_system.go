@@ -15,5 +15,5 @@ type IntegrationSystemPageExt struct {
 
 type IntegrationSystemExt struct {
 	IntegrationSystem
-	Auths []*SystemAuth `json:"auths"`
+	Auths []*IntSysSystemAuth `json:"auths"`
 }

@@ -3,6 +3,7 @@ package bundleinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -20,6 +21,7 @@ type Repository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.BundleInstanceAuth, error)
 	ListByBundleID(ctx context.Context, tenantID string, bundleID string) ([]*model.BundleInstanceAuth, error)
+	ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, item *model.BundleInstanceAuth) error
 	Delete(ctx context.Context, tenantID string, id string) error
 }
@@ -55,9 +57,19 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 		return "", errors.Wrapf(err, "while validating BundleInstanceAuth request input for Bundle with id %s", bundleID)
 	}
 
+	con, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	var runtimeID *string
+	if con.ConsumerType == consumer.Runtime {
+		runtimeID = &con.ConsumerID
+	}
+
 	id := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for BundleInstanceAuth for Bundle with id %s", id, bundleID)
-	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil)
+	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil, runtimeID, nil)
 
 	err = s.setCreationStatusFromAuth(ctx, &bndlInstAuth, defaultAuth)
 	if err != nil {
@@ -112,6 +124,29 @@ func (s *service) List(ctx context.Context, bundleID string) ([]*model.BundleIns
 	}
 
 	return bndlInstanceAuths, nil
+}
+
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	bndlInstanceAuths, err := s.repo.ListByRuntimeID(ctx, tnt, runtimeID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing Bundle Instance Auths")
+	}
+
+	return bndlInstanceAuths, nil
+}
+
+func (s *service) Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error {
+	err := s.repo.Update(ctx, instanceAuth)
+	if err != nil {
+		return errors.Wrap(err, "while updating Bundle Instance Auths")
+	}
+
+	return nil
 }
 
 func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error {

@@ -180,5 +180,6 @@ exec:
 
 # Sets locally built image for a given component in Minikube cluster 
 deploy-on-minikube: build-to-minikube
+	kubectl config use-context minikube
 	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=$(DEPLOYMENT_NAME):latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)

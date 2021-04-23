@@ -1,0 +1,26 @@
+{{- if eq .Values.global.metrics.enabled true -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    prometheus: monitoring
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      metricRelabelings:
+        - sourceLabels: [ __name__ ]
+          regex: ^(go_gc_duration_seconds|go_goroutines|go_memstats_alloc_bytes|go_memstats_heap_alloc_bytes|go_memstats_heap_inuse_bytes|go_memstats_heap_sys_bytes|go_memstats_stack_inuse_bytes|go_threads|http_requests_total|process_cpu_seconds_total|process_max_fds|process_open_fds|process_resident_memory_bytes|process_start_time_seconds|process_virtual_memory_bytes|go_sql_stats_connections_in_use|go_sql_stats_connections_idle|go_sql_stats_connections_max_open|compass_system_broker_catalog_request_duration_seconds_bucket|compass_system_broker_catalog_request_duration_seconds_count|compass_system_broker_catalog_request_duration_seconds_sum|compass_system_broker_catalog_response_size_bucket|compass_system_broker_catalog_response_size_count|compass_system_broker_catalog_response_size_sum|compass_system_broker_catalog_request_total|compass_system_broker_provision_request_duration_seconds_bucket|compass_system_broker_provision_request_duration_seconds_count|compass_system_broker_provision_request_duration_seconds_sum|compass_system_broker_provision_response_size_bucket|compass_system_broker_provision_response_size_count|compass_system_broker_provision_response_size_sum|compass_system_broker_provision_request_total|compass_system_broker_deprovision_request_duration_seconds_bucket|compass_system_broker_deprovision_request_duration_seconds_count|compass_system_broker_deprovision_request_duration_seconds_sum|compass_system_broker_deprovision_response_size_bucket|compass_system_broker_deprovision_response_size_count|compass_system_broker_deprovision_response_size_sum|compass_system_broker_deprovision_request_total|compass_system_broker_bind_request_duration_seconds_bucket|compass_system_broker_bind_request_duration_seconds_count|compass_system_broker_bind_request_duration_seconds_sum|compass_system_broker_bind_response_size_bucket|compass_system_broker_bind_response_size_count|compass_system_broker_bind_response_size_sum|compass_system_broker_bind_request_total|compass_system_broker_unbind_request_duration_seconds_bucket|compass_system_broker_unbind_request_duration_seconds_count|compass_system_broker_unbind_request_duration_seconds_sum|compass_system_broker_unbind_response_size_bucket|compass_system_broker_unbind_response_size_count|compass_system_broker_unbind_response_size_sum|compass_system_broker_unbind_request_total)$
+          action: keep
+  namespaceSelector:
+    matchNames:
+      - "{{ .Release.Namespace }}"
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  {{- end }}

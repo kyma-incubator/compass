@@ -17,15 +17,20 @@
 package osb
 
 import (
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/pivotal-cf/brokerapi/v7"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger) func(router *mux.Router) {
+func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger, c *metrics.Collector) func(router *mux.Router) {
 	return func(router *mux.Router) {
 
 		r := router.PathPrefix(rootAPI).Subrouter()
@@ -37,5 +42,30 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 		r.Use(http.UnauthorizedMiddleware())
 
 		brokerapi.AttachRoutes(r, serviceBroker, logger)
+
+		err := r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+			t, err := route.GetPathTemplate()
+			if err != nil {
+				return err
+			}
+
+			m, err := route.GetMethods()
+			if err != nil {
+				return err
+			}
+
+			methods := strings.Join(m, " ")
+			instrumentation, found := metrics.PathToInstrumentationMapping[metrics.Path{
+				PathTemplate: t,
+				HTTPMethods:  methods,
+			}]
+			if found {
+				route.Handler(instrumentation(c, route.GetHandler()))
+			}
+			return nil
+		})
+		if err != nil {
+			log.D().Fatal(err.Error())
+		}
 	}
 }

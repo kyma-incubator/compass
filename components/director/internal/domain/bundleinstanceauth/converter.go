@@ -38,11 +38,13 @@ func (c *converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInst
 	}
 
 	return &graphql.BundleInstanceAuth{
-		ID:          in.ID,
-		Context:     c.strPtrToJSONPtr(in.Context),
-		InputParams: c.strPtrToJSONPtr(in.InputParams),
-		Auth:        auth,
-		Status:      c.statusToGraphQL(in.Status),
+		ID:               in.ID,
+		Context:          c.strPtrToJSONPtr(in.Context),
+		InputParams:      c.strPtrToJSONPtr(in.InputParams),
+		Auth:             auth,
+		Status:           c.statusToGraphQL(in.Status),
+		RuntimeID:        in.RuntimeID,
+		RuntimeContextID: in.RuntimeContextID,
 	}, nil
 }
 
@@ -93,11 +95,13 @@ func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (
 
 func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	out := Entity{
-		ID:          in.ID,
-		BundleID:    in.BundleID,
-		TenantID:    in.Tenant,
-		Context:     repo.NewNullableString(in.Context),
-		InputParams: repo.NewNullableString(in.InputParams),
+		ID:               in.ID,
+		BundleID:         in.BundleID,
+		TenantID:         in.Tenant,
+		RuntimeID:        repo.NewNullableString(in.RuntimeID),
+		RuntimeContextID: repo.NewNullableString(in.RuntimeContextID),
+		Context:          repo.NewNullableString(in.Context),
+		InputParams:      repo.NewNullableString(in.InputParams),
 	}
 	authValue, err := c.nullStringFromAuthPtr(in.Auth)
 	if err != nil {
@@ -122,12 +126,14 @@ func (c *converter) FromEntity(in Entity) (model.BundleInstanceAuth, error) {
 	}
 
 	return model.BundleInstanceAuth{
-		ID:          in.ID,
-		BundleID:    in.BundleID,
-		Tenant:      in.TenantID,
-		Context:     repo.StringPtrFromNullableString(in.Context),
-		InputParams: repo.StringPtrFromNullableString(in.InputParams),
-		Auth:        auth,
+		ID:               in.ID,
+		BundleID:         in.BundleID,
+		Tenant:           in.TenantID,
+		RuntimeID:        repo.StringPtrFromNullableString(in.RuntimeID),
+		RuntimeContextID: repo.StringPtrFromNullableString(in.RuntimeContextID),
+		Context:          repo.StringPtrFromNullableString(in.Context),
+		InputParams:      repo.StringPtrFromNullableString(in.InputParams),
+		Auth:             auth,
 		Status: &model.BundleInstanceAuthStatus{
 			Condition: model.BundleInstanceAuthStatusCondition(in.StatusCondition),
 			Timestamp: in.StatusTimestamp,
