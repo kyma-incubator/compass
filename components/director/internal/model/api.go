@@ -13,7 +13,7 @@ import (
 )
 
 type APIDefinition struct {
-	ApplicationID string
+	ApplicationID                           string
 	PackageID                               *string
 	Tenant                                  string
 	Name                                    string
@@ -50,7 +50,6 @@ func (_ *APIDefinition) GetType() resource.Type {
 }
 
 type APIDefinitionInput struct {
-	OrdBundleID                             *string         `json:"partOfConsumptionBundle"`
 	OrdPackageID                            *string         `json:"partOfPackage"`
 	Tenant                                  string          `json:",omitempty"`
 	Name                                    string          `json:"title"`
@@ -79,7 +78,8 @@ type APIDefinitionInput struct {
 	CustomImplementationStandard            *string         `json:"customImplementationStandard"`
 	CustomImplementationStandardDescription *string         `json:"customImplementationStandardDescription"`
 
-	ResourceDefinitions []*APIResourceDefinition `json:"resourceDefinitions"`
+	ResourceDefinitions      []*APIResourceDefinition      `json:"resourceDefinitions"`
+	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
 	*VersionInput
 }
@@ -136,6 +136,11 @@ func (as AccessStrategy) Validate() error {
 	)
 }
 
+type ConsumptionBundleReference struct {
+	BundleOrdID      string `json:"ordId"`
+	DefaultTargetURL string `json:"defaultEntryPoint"`
+}
+
 type APIDefinitionPage struct {
 	Data       []*APIDefinition
 	PageInfo   *pagination.Page
@@ -154,7 +159,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 	}
 
 	return &APIDefinition{
-		ApplicationID: appID,
+		ApplicationID:       appID,
 		PackageID:           packageID,
 		Tenant:              tenant,
 		Name:                a.Name,

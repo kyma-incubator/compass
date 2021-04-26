@@ -11,8 +11,8 @@ import (
 )
 
 type EventDefinition struct {
-	Tenant        string
-	ApplicationID string
+	Tenant              string
+	ApplicationID       string
 	PackageID           *string
 	Name                string
 	Description         *string
@@ -51,7 +51,6 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	OrdBundleID         *string         `json:"partOfConsumptionBundle"`
 	OrdPackageID        *string         `json:"partOfPackage"`
 	Name                string          `json:"title"`
 	Description         *string         `json:"description"`
@@ -73,7 +72,8 @@ type EventDefinitionInput struct {
 	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
 	Industry            json.RawMessage `json:"industry"`
 
-	ResourceDefinitions []*EventResourceDefinition `json:"resourceDefinitions"`
+	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
+	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
 	*VersionInput
 }

@@ -70,7 +70,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 
 	boolVar := false
 	return model.APIDefinition{
-		ApplicationID: appID,
+		ApplicationID:                           appID,
 		PackageID:                               str.Ptr(packageID),
 		Tenant:                                  tenantID,
 		Name:                                    placeholder,
@@ -221,8 +221,8 @@ func fixEntityAPIDefinition(id string, name, targetUrl string) *api.Entity {
 
 func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
-		TenantID:      tenantID,
-		ApplicationID: appID,
+		TenantID:                                tenantID,
+		ApplicationID:                           appID,
 		PackageID:                               repo.NewValidNullableString(packageID),
 		Name:                                    placeholder,
 		Description:                             repo.NewValidNullableString("desc_" + placeholder),

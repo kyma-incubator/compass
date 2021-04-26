@@ -35,11 +35,11 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 			},
 			Expected: &model.APIDefinition{
 				ApplicationID: appID,
-				Name:        name,
-				Description: &desc,
-				TargetURLs:  api.ConvertTargetUrlToJsonArray(targetUrl),
-				Group:       &group,
-				Tenant:      tenant,
+				Name:          name,
+				Description:   &desc,
+				TargetURLs:    api.ConvertTargetUrlToJsonArray(targetUrl),
+				Group:         &group,
+				Tenant:        tenant,
 				BaseEntity: &model.BaseEntity{
 					ID:    id,
 					Ready: true,

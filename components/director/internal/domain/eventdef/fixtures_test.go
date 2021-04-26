@@ -66,7 +66,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 
 	boolVar := false
 	return model.EventDefinition{
-		ApplicationID: appID,
+		ApplicationID:       appID,
 		PackageID:           str.Ptr(packageID),
 		Tenant:              tenantID,
 		Name:                placeholder,
@@ -207,8 +207,8 @@ func fixEntityEventDefinition(id string, name string) event.Entity {
 
 func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 	return event.Entity{
-		TenantID:      tenantID,
-		ApplicationID: appID,
+		TenantID:            tenantID,
+		ApplicationID:       appID,
 		PackageID:           repo.NewValidNullableString(packageID),
 		Name:                placeholder,
 		Description:         repo.NewValidNullableString("desc_" + placeholder),

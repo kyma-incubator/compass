@@ -24,9 +24,10 @@ const (
 	invalidType                  = "invalidType"
 	invalidCustomType            = "wrongCustomType"
 	invalidMediaType             = "invalid/type"
+	invalidBundleOrdID           = "ns:wrongConsumptionBundle:v1"
 
-	unknownVendorOrdID  = "vendor2"
-	unknownProductOrdID = "ns:UNKNOWN_PRODUCT_ID"
+	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
+	unknownProductOrdID = "nsUNKNOWN:product:id:"
 	unknownPackageOrdID = "ns:package:UNKNOWN_PACKAGE_ID:v1"
 	unknownBundleOrdID  = "ns:consumptionBundle:UNKNOWN_BUNDLE_ID:v1"
 )
@@ -1393,14 +1394,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `partOfConsumptionBundle` field for API",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].OrdBundleID = str.Ptr(invalidOrdID)
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Missing `apiProtocol` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2234,6 +2227,54 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Missing `ordId` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].BundleOrdID = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordId` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].BundleOrdID = invalidBundleOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Duplicate `ordId` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles = append(doc.APIResources[0].PartOfConsumptionBundles, &model.ConsumptionBundleReference{BundleOrdID: bundleORDID})
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `defaultEntryPoint` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = invalidUrl
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `defaultEntryPoint` field from `entryPoints` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Present `defaultEntryPoint` field even though there is a single element in `entryPoints` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[1].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
@@ -2250,7 +2291,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "API has a reference to an unknown Bundle",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].OrdBundleID = str.Ptr(unknownBundleOrdID)
+				doc.ConsumptionBundles = fixBundleCreateInput()
+				doc.APIResources[0].PartOfConsumptionBundles = fixAPIPartOfConsumptionBundles()
+				doc.APIResources[0].PartOfConsumptionBundles[0].BundleOrdID = unknownBundleOrdID
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2457,14 +2500,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].OrdPackageID = str.Ptr(invalidOrdID)
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Invalid `partOfConsumptionBundle` field for Event",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].OrdBundleID = str.Ptr(invalidOrdID)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2937,6 +2972,38 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Missing `ordId` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles[0].BundleOrdID = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordId` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles[0].BundleOrdID = invalidBundleOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Duplicate `ordId` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles = append(doc.EventResources[0].PartOfConsumptionBundles, &model.ConsumptionBundleReference{BundleOrdID: bundleORDID})
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Present `defaultEntryPoint` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
@@ -2953,7 +3020,9 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Event has a reference to unknown Bundle",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].OrdBundleID = str.Ptr(unknownBundleOrdID)
+				doc.ConsumptionBundles = fixBundleCreateInput()
+				doc.EventResources[0].PartOfConsumptionBundles = fixEventPartOfConsumptionBundles()
+				doc.EventResources[0].PartOfConsumptionBundles[0].BundleOrdID = unknownBundleOrdID
 
 				return []*open_resource_discovery.Document{doc}
 			},

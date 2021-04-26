@@ -486,24 +486,41 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 }
 
-func AssertEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField string) {
+func AssertSingleEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField string) {
 	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
 	require.Equal(t, expectedName, gjson.Get(respBody, "value.0.title").String())
 	require.Equal(t, expectedDescription, gjson.Get(respBody, descriptionField).String())
 }
 
-func AssertEventFromORDService(t *testing.T, respBody string, eventsMap map[string]string, expectedNumber int) {
-	numberOfEvents := len(gjson.Get(respBody, "value").Array())
-	require.Equal(t, expectedNumber, numberOfEvents)
+func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitiesMap map[string]string, expectedNumber int) {
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
 
-	for i := 0; i < numberOfEvents; i++ {
-		eventTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
-		require.NotEmpty(t, eventTitle)
+	for i := 0; i < numberOfEntities; i++ {
+		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		require.NotEmpty(t, entityTitle)
 
-		eventDescription, exists := eventsMap[eventTitle]
+		entityDescription, exists := entitiesMap[entityTitle]
 		require.True(t, exists)
 
-		require.Equal(t, eventDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
+		require.Equal(t, entityDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
+	}
+}
+
+func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
+	numberOfBundles := len(gjson.Get(respBody, "value").Array())
+
+	for i := 0; i < numberOfBundles; i++ {
+		bundleTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		numberOfEntities := len(gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, entityType)).Array())
+		require.NotEmpty(t, bundleTitle)
+		require.Equal(t, numberOfEntitiesForBundle[bundleTitle], numberOfEntities)
+
+		for j := 0; j < numberOfEntities; j++ {
+			entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.%s.%d.title", i, entityType, j)).String()
+			require.NotEmpty(t, entityTitle)
+			require.Contains(t, entitiesDataForBundle[bundleTitle], entityTitle)
+		}
 	}
 }
 

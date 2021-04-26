@@ -24,11 +24,15 @@ const (
 
 	descriptionField      = "value.0.description"
 	shortDescriptionField = "value.0.shortDescription"
+	apisField             = "apis"
+	eventsField           = "events"
 
 	expectedSystemInstanceName        = "test-app"
 	expectedSystemInstanceDescription = "test-app-description"
 	expectedBundleTitle               = "BUNDLE TITLE"
+	secondExpectedBundleTitle         = "BUNDLE TITLE 2"
 	expectedBundleDescription         = "lorem ipsum dolor nsq sme"
+	secondExpectedBundleDescription   = "foo bar"
 	expectedPackageTitle              = "PACKAGE 1 TITLE"
 	expectedPackageDescription        = "lorem ipsum dolor set"
 	expectedProductTitle              = "PRODUCT TITLE"
@@ -44,12 +48,17 @@ const (
 
 	expectedNumberOfSystemInstances = 1
 	expectedNumberOfPackages        = 1
-	expectedNumberOfBundles         = 1
+	expectedNumberOfBundles         = 2
 	expectedNumberOfProducts        = 1
 	expectedNumberOfAPIs            = 1
 	expectedNumberOfEvents          = 2
 	expectedNumberOfTombstones      = 1
 	expectedNumberOfVendors         = 1
+
+	expectedNumberOfAPIsInFirstBundle    = 1
+	expectedNumberOfAPIsInSecondBundle   = 1
+	expectedNumberOfEventsInFirstBundle  = 2
+	expectedNumberOfEventsInSecondBundle = 2
 
 	testTimeoutAdditionalBuffer = 1 * time.Minute
 )
@@ -60,6 +69,26 @@ func TestORDAggregator(t *testing.T) {
 	eventsMap := make(map[string]string, 0)
 	eventsMap[firstEventTitle] = firstEventDescription
 	eventsMap[secondEventTitle] = secondEventDescription
+
+	bundlesMap := make(map[string]string)
+	bundlesMap[expectedBundleTitle] = expectedBundleDescription
+	bundlesMap[secondExpectedBundleTitle] = secondExpectedBundleDescription
+
+	bundlesAPIsNumberMap := make(map[string]int)
+	bundlesAPIsNumberMap[expectedBundleTitle] = expectedNumberOfAPIsInFirstBundle
+	bundlesAPIsNumberMap[secondExpectedBundleTitle] = expectedNumberOfAPIsInSecondBundle
+
+	bundlesAPIsData := make(map[string][]string)
+	bundlesAPIsData[expectedBundleTitle] = []string{firstAPIExpectedTitle}
+	bundlesAPIsData[secondExpectedBundleTitle] = []string{firstAPIExpectedTitle}
+
+	bundlesEventsNumberMap := make(map[string]int)
+	bundlesEventsNumberMap[expectedBundleTitle] = expectedNumberOfEventsInFirstBundle
+	bundlesEventsNumberMap[secondExpectedBundleTitle] = expectedNumberOfEventsInSecondBundle
+
+	bundlesEventsData := make(map[string][]string)
+	bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
+	bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
 
 	ctx := context.Background()
 
@@ -112,7 +141,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing System Instances...will try again")
 				return false
 			}
-			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfSystemInstances, expectedSystemInstanceName, expectedSystemInstanceDescription, descriptionField)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfSystemInstances, expectedSystemInstanceName, expectedSystemInstanceDescription, descriptionField)
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -121,7 +150,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
-			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -130,7 +159,13 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
-			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfBundles, expectedBundleTitle, expectedBundleDescription, descriptionField)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
+
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
 
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -139,7 +174,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Products...will try again")
 				return false
 			}
-			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
 
 			// Verify apis
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -149,7 +184,7 @@ func TestORDAggregator(t *testing.T) {
 				return false
 			}
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
-			assertions.AssertEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
@@ -158,7 +193,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Events...will try again")
 				return false
 			}
-			assertions.AssertEventFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})

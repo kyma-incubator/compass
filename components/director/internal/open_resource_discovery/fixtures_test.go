@@ -19,6 +19,7 @@ const (
 	productORDID          = "ns:product:id:"
 	product2ORDID         = "ns:product:id2:"
 	bundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID     = "ns:consumptionBundle:BUNDLE_ID:v2"
 	vendorORDID           = "ns:vendor:id:"
 	api1ORDID             = "ns:apiResource:API_ID:v2"
 	api2ORDID             = "ns:apiResource:API_ID2:v1"
@@ -246,11 +247,10 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		APIResources: []*model.APIDefinitionInput{
 			{
 				OrdID:                                   str.Ptr(api1ORDID),
-				OrdBundleID:                             str.Ptr(bundleORDID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "API TITLE",
 				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
-				TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1"]`),
+				TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1","https://exmaple.com/test/v2"]`),
 				ShortDescription:                        str.Ptr("lorem ipsum"),
 				SystemInstanceAware:                     &boolPtr,
 				ApiProtocol:                             str.Ptr("odata-v2"),
@@ -293,13 +293,18 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID:      bundleORDID,
+						DefaultTargetURL: "https://exmaple.com/test/v1",
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
 			},
 			{
 				OrdID:                                   str.Ptr(api2ORDID),
-				OrdBundleID:                             str.Ptr(bundleORDID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "Gateway Sample Service",
 				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -336,6 +341,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "1.1.0",
 				},
@@ -344,7 +354,6 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		EventResources: []*model.EventDefinitionInput{
 			{
 				OrdID:               str.Ptr(event1ORDID),
-				OrdBundleID:         str.Ptr(bundleORDID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -375,13 +384,17 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
 			},
 			{
 				OrdID:               str.Ptr(event2ORDID),
-				OrdBundleID:         str.Ptr(bundleORDID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE 2",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -410,6 +423,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 								Type: "open",
 							},
 						},
+					},
+				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
 					},
 				},
 				VersionInput: &model.VersionInput{
@@ -542,10 +560,29 @@ func fixBundles() []*model.Bundle {
 	}
 }
 
+func fixBundleCreateInput() []*model.BundleCreateInput {
+	return []*model.BundleCreateInput{
+		{
+			Name:             "BUNDLE TITLE",
+			Description:      str.Ptr("lorem ipsum dolor nsq sme"),
+			OrdID:            str.Ptr(bundleORDID),
+			ShortDescription: str.Ptr("lorem ipsum"),
+			Labels:           json.RawMessage(labels),
+		},
+		{
+			Name:             "BUNDLE TITLE 2 ",
+			Description:      str.Ptr("foo bar"),
+			OrdID:            str.Ptr(secondBundleORDID),
+			ShortDescription: str.Ptr("bar foo"),
+			Labels:           json.RawMessage(labels),
+		},
+	}
+}
+
 func fixAPIs() []*model.APIDefinition {
 	return []*model.APIDefinition{
 		{
-			ApplicationID: appID,
+			ApplicationID:                           appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Tenant:                                  tenantID,
 			Name:                                    "API TITLE",
@@ -578,7 +615,7 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 		{
-			ApplicationID: appID,
+			ApplicationID:                           appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Tenant:                                  tenantID,
 			Name:                                    "Gateway Sample Service",
@@ -614,11 +651,35 @@ func fixAPIs() []*model.APIDefinition {
 	}
 }
 
+func fixAPIPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
+	return []*model.ConsumptionBundleReference{
+		{
+			BundleOrdID:      bundleORDID,
+			DefaultTargetURL: "https://exmaple.com/test/v1",
+		},
+		{
+			BundleOrdID:      secondBundleORDID,
+			DefaultTargetURL: "https://exmaple.com/test/v2",
+		},
+	}
+}
+
+func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
+	return []*model.ConsumptionBundleReference{
+		{
+			BundleOrdID: bundleORDID,
+		},
+		{
+			BundleOrdID: secondBundleORDID,
+		},
+	}
+}
+
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			Tenant:        tenantID,
-			ApplicationID: appID,
+			Tenant:           tenantID,
+			ApplicationID:    appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
@@ -644,8 +705,8 @@ func fixEvents() []*model.EventDefinition {
 			},
 		},
 		{
-			Tenant:        tenantID,
-			ApplicationID: appID,
+			Tenant:           tenantID,
+			ApplicationID:    appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),

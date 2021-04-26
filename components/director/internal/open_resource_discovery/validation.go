@@ -115,7 +115,6 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.OrdBundleID, validation.When(api.OrdBundleID != nil, validation.Match(regexp.MustCompile(BundleOrdIDRegex)))),
 		validation.Field(&api.ApiProtocol, validation.Required, validation.In("odata-v2", "odata-v4", "soap-inbound", "soap-outbound", "rest", "sap-rfc")),
 		validation.Field(&api.Visibility, validation.Required, validation.In("public", "internal", "private")),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
@@ -145,6 +144,9 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.ImplementationStandard, validation.In("sap:ord-document-api:v1", "cff:open-service-broker:v2", "sap:csn-exposure:v1", "custom")),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
 		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required).Else(validation.Empty)),
+		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
+			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
+		})),
 	)
 }
 
@@ -156,7 +158,6 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Description, validation.Required),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.OrdBundleID, validation.When(event.OrdBundleID != nil, validation.Match(regexp.MustCompile(BundleOrdIDRegex)))),
 		validation.Field(&event.Visibility, validation.Required, validation.In("public", "internal", "private")),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
@@ -180,6 +181,9 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
+		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
+			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
+		})),
 	)
 }
 
@@ -463,6 +467,86 @@ func validateCustomDescription(el gjson.Result) error {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
 	return nil
+}
+
+func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *regexp.Regexp) error {
+	bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
+	if !ok {
+		return errors.New("error while casting to ConsumptionBundleReference")
+	}
+
+	bundleIDsPerEvent := make(map[string]bool)
+	for _, br := range bundleReferences {
+		if br.BundleOrdID == "" {
+			return errors.New("bundleReference ordId is mandatory field")
+		}
+
+		if !regexPattern.MatchString(br.BundleOrdID) {
+			return errors.Errorf("ordId should match %q", regexPattern.String())
+		}
+
+		if isPresent := bundleIDsPerEvent[br.BundleOrdID]; !isPresent {
+			bundleIDsPerEvent[br.BundleOrdID] = true
+		} else {
+			return errors.Errorf("event can not reference the same bundle with ordId %q more than once", br.BundleOrdID)
+		}
+
+		if br.DefaultTargetURL != "" {
+			return errors.New("events are not supposed to have defaultEntryPoint")
+		}
+	}
+	return nil
+}
+
+func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawMessage, regexPattern *regexp.Regexp) error {
+	bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
+	if !ok {
+		return errors.New("error while casting to ConsumptionBundleReference")
+	}
+
+	bundleIDsPerAPI := make(map[string]bool)
+	for _, br := range bundleReferences {
+		if br.BundleOrdID == "" {
+			return errors.New("bundleReference ordId is mandatory field")
+		}
+
+		if !regexPattern.MatchString(br.BundleOrdID) {
+			return errors.Errorf("ordId should match %q", regexPattern.String())
+		}
+
+		if isPresent := bundleIDsPerAPI[br.BundleOrdID]; !isPresent {
+			bundleIDsPerAPI[br.BundleOrdID] = true
+		} else {
+			return errors.Errorf("api can not reference the same bundle with ordId %q more than once", br.BundleOrdID)
+		}
+
+		err := validation.Validate(br.DefaultTargetURL, is.RequestURI)
+		if err != nil {
+			return errors.New("defaultEntryPoint should be a valid URI")
+		}
+
+		lenTargetURLs := len(gjson.ParseBytes(targetURLs).Array())
+		if br.DefaultTargetURL != "" && lenTargetURLs <= 1 {
+			return errors.New("defaultEntryPoint must only be provided if an API has more than one entry point")
+		}
+
+		if br.DefaultTargetURL != "" && lenTargetURLs > 1 {
+			if isDefaultTargetURLMissingFromTargetURLs(br.DefaultTargetURL, targetURLs) {
+				return errors.New("defaultEntryPoint must be in the list of entryPoints for the given API")
+			}
+		}
+	}
+
+	return nil
+}
+
+func isDefaultTargetURLMissingFromTargetURLs(defaultTargetURL string, targetURLs json.RawMessage) bool {
+	for _, targetURL := range gjson.ParseBytes(targetURLs).Array() {
+		if targetURL.String() == defaultTargetURL {
+			return false
+		}
+	}
+	return true
 }
 
 func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {

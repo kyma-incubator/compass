@@ -14,7 +14,7 @@ type Vendor struct {
 }
 
 type VendorInput struct {
-	OrdID      string          `json:"id"`
+	OrdID      string          `json:"ordId"`
 	Title      string          `json:"title"`
 	SapPartner *bool           `json:"sapPartner"`
 	Labels     json.RawMessage `json:"labels"`

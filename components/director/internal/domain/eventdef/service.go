@@ -118,10 +118,10 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec})
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil)
 }
 
-func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput) (string, error) {
+func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -145,19 +145,28 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		}
 	}
 
-	err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID)
-	if err != nil {
-		return "", err
+	if bundleIDs == nil {
+		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		for _, bndlID := range bundleIDs {
+			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, &bndlID)
+			if err != nil {
+				return "", err
+			}
+		}
 	}
 
 	return id, nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil)
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil)
 }
 
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsToBeDeleted []string) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -175,8 +184,17 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
-	if bundleIDsToBeDeleted != nil {
-		for _, bundleID := range bundleIDsToBeDeleted {
+	if bundleIDsForCreation != nil && len(bundleIDsForCreation) != 0 {
+		for _, bundleID := range bundleIDsForCreation {
+			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if bundleIDsForDeletion != nil && len(bundleIDsForDeletion) != 0 {
+		for _, bundleID := range bundleIDsForDeletion {
 			err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
 			if err != nil {
 				return err

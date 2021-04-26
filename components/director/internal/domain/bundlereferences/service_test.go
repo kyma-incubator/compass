@@ -79,6 +79,65 @@ func TestService_GetForBundle(t *testing.T) {
 	}
 }
 
+func TestService_GetBundleIDsForObject(t *testing.T) {
+	testErr := errors.New("test err")
+
+	objectID := "id"
+	firstBundleID := "bundleID"
+	secondBundleID := "bundleID2"
+
+	bundleIDs := []string{firstBundleID, secondBundleID}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.BundleReferenceRepository
+		Expected     []string
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				repo.On("GetBundleIDsForObject", ctx, tenantID, model.BundleAPIReference, &objectID).Return(bundleIDs, nil).Once()
+				return repo
+			},
+			Expected: bundleIDs,
+		},
+		{
+			Name: "Error on getting bundle ids",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				repo.On("GetBundleIDsForObject", ctx, tenantID, model.BundleAPIReference, &objectID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			// given
+			repo := testCase.RepositoryFn()
+			svc := bundlereferences.NewService(repo)
+
+			// when
+			bndlIDs, err := svc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &objectID)
+
+			// then
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+				assert.Equal(t, testCase.Expected, bndlIDs)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_CreateByReferenceObjectID(t *testing.T) {
 	testErr := errors.New("test err")
 

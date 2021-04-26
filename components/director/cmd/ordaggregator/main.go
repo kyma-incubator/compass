@@ -134,7 +134,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 
 	ordClient := open_resource_discovery.NewClient(httpClient)
 
-	return open_resource_discovery.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
+	return open_resource_discovery.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

@@ -41,6 +41,20 @@ func (s *service) GetForBundle(ctx context.Context, objectType model.BundleRefer
 	return bundleRef, nil
 }
 
+func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) ([]string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ids, err := s.repo.GetBundleIDsForObject(ctx, tnt, objectType, objectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
