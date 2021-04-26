@@ -1,4 +1,6 @@
 {{if .Values.global.systemFetcher.enabled }}
+{{ $configmapName := printf "%s-%s-config" $.Chart.Name .Values.global.systemFetcher.name }}
+{{ $secretName := printf "%s-%s-secrets" $.Chart.Name .Values.global.systemFetcher.name }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -28,28 +30,28 @@ spec:
               env:
                 - name: APP_SYSTEM_INFORMATION_ENDPOINT
                   valueFrom:
-                    secretKeyRef:
-                      name: compass-system-fetcher-secrets
-                      key: system-information-endpoint
+                    configMapKeyRef:
+                      name: "{{ $configmapName }}"
+                      key: system-information-api-endpoint
                 - name: APP_SYSTEM_INFORMATION_PATH
                   valueFrom:
-                    secretKeyRef:
-                      name: compass-system-fetcher-secrets
-                      key: system-information-path
-                - name: APP_CLIENT_ID
+                    configMapKeyRef:
+                      name: "{{ $configmapName }}"
+                      key: system-information-api-path
+                - name: APP_OAUTH_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: compass-system-fetcher-secrets
-                      key: client-id
-                - name: APP_CLIENT_SECRET
+                      name: "{{ $secretName }}"
+                      key: oauth-client-id
+                - name: APP_OAUTH_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: compass-system-fetcher-secrets
-                      key: client-secret
+                      name: "{{ $secretName }}"
+                      key: oauth-client-secret
                 - name: APP_OAUTH_TOKEN_ENDPOINT_PATTERN
                   valueFrom:
                     secretKeyRef:
-                      name: compass-system-fetcher-secrets
+                      name: "{{ $secretName }}"
                       key: oauth-token-endpoint-pattern
                 - name: APP_DB_USER
                   valueFrom:
@@ -116,4 +118,32 @@ spec:
             - name: director-config
               configMap:
                 name: compass-director-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configmapName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+data:
+  system-information-api-endpoint: "{{ .Values.global.systemFetcher.systemsAPIEndpoint }}"
+  system-information-api-path: "{{ .Values.global.systemFetcher.systemsAPIPath }}"
+{{- if and (eq .Values.global.systemFetcher.enabled true) (eq .Values.global.systemFetcher.manageSecrets true) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  oauth-client-id: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
+  oauth-client-secret: {{ .Values.global.systemFetcher.oauth.secret | b64enc | quote }}
+  oauth-token-endpoint-pattern: {{ .Values.global.systemFetcher.oauth.tokenURLPattern | b64enc | quote }}
+{{ end }}
 {{ end }}

@@ -335,12 +335,19 @@ global:
       maxIdleConnections: 2
 
   systemFetcher:
-    name: "system-fetcher"
     enabled: true
+    name: "system-fetcher"
     schedule: "0 0 * * *"
+    manageSecrets: true
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    systemsAPIEndpoint: ""
+    systemsAPIPath: ""
+    oauth:
+      client: ""
+      secret: ""
+      tokenURLPattern: ""
 
   tenantFetchers:
     job1:

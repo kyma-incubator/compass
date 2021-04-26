@@ -16,8 +16,8 @@ var (
 )
 
 type OAuth2Config struct {
-	ClientID                  string `envconfig:"APP_CLIENT_ID"`
-	ClientSecret              string `envconfig:"APP_CLIENT_SECRET"`
+	ClientID                  string `envconfig:"APP_OAUTH_CLIENT_ID"`
+	ClientSecret              string `envconfig:"APP_OAUTH_CLIENT_SECRET"`
 	OAuthTokenEndpointPattern string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PATTERN"`
 }
 
