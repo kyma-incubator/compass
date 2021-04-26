@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -38,7 +39,7 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config) *Client {
 	}
 }
 
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) []ProductInstanceExtended {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]ProductInstanceExtended, error) {
 	//client := http.Client{}
 	//
 	//reqBody := url.Values{}
@@ -80,17 +81,17 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) []Pro
 	url := c.apiConfig.Endpoint + c.apiConfig.Path
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.D().Fatal(err)
+		return nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.D().Fatal(err)
+		return nil, errors.Wrap(err, "failed to execute HTTP request")
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.D().Fatal(err)
+		return nil, errors.Wrap(err, "failed to parse HTTP response body")
 	}
 
 	var systems []ProductInstanceExtended
@@ -98,5 +99,5 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) []Pro
 		log.D().Fatal(err)
 	}
 
-	return systems
+	return systems, nil
 }

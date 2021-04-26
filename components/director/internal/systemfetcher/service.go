@@ -23,7 +23,7 @@ type SystemsService interface {
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
 type SystemsAPIClient interface {
-	FetchSystemsForTenant(ctx context.Context, tenant string) []ProductInstanceExtended
+	FetchSystemsForTenant(ctx context.Context, tenant string) ([]ProductInstanceExtended, error)
 }
 
 type SystemFetcher struct {
@@ -50,11 +50,14 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	}
 
 	for _, t := range tenants {
-		systems := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
-
-		err := s.saveSystemsForTenant(ctx, t, systems)
+		systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant))
+		}
+
+		err = s.saveSystemsForTenant(ctx, t, systems)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", t.ExternalTenant))
 		}
 	}
 
