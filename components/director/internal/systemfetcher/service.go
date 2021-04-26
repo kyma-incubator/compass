@@ -119,7 +119,7 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.
 func (s *SystemFetcher) convertSystemToAppRegisterInput(sc ProductInstanceExtended) model.ApplicationRegisterInput {
 	initStatusCond := model.ApplicationStatusConditionInitial
 	baseURL := sc.BaseURL
-	if mainURL, ok := sc.AdditionalUrls["mainUrl"]; ok {
+	if mainURL, ok := sc.AdditionalUrls["mainUrl"]; ok && baseURL == "" {
 		baseURL = mainURL
 	}
 
