@@ -815,7 +815,7 @@ func TestService_SyncTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:            "Error when receiving event with wrong format",
+			Name:            "Skip event when receiving event with wrong format",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
@@ -825,6 +825,7 @@ func TestService_SyncTenants(t *testing.T) {
 				}
 				wrongTenantEvents := eventsToJsonArray(fixEvent("4", "qux", wrongFieldMApping))
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 				return client
 			},
 			LabelDefSvcFn:       UnusedLabelLabelSvc,
@@ -836,7 +837,6 @@ func TestService_SyncTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			ExpectedError: errors.New("invalid format"),
 		},
 	}
 
