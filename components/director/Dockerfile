@@ -25,11 +25,13 @@ RUN go build -v -o director ./cmd/director/main.go \
   && go build -v -o tenantloader ./cmd/tenantloader/main.go \
   && go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
   && go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go
+  && go build -v -o systemfetcher ./cmd/systemfetcher/main.go
 RUN mkdir /app && mv ./director /app/director \
   && mv ./tenantfetcher /app/tenantfetcher \
   && mv ./tenantloader /app/tenantloader \
   && mv ./ordaggregator /app/ordaggregator \
   && mv ./scopessynchronizer /app/scopessynchronizer \
+  && mv ./systemfetcher /app/systemfetcher \
   && mv ./licenses /app/licenses
 
 FROM alpine:3.13.5
