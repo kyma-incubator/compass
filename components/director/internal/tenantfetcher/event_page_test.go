@@ -25,16 +25,18 @@ func Test_getMovedRuntimes(t *testing.T) {
 	}
 	tests := []struct {
 		name               string
-		detailsPairs       []Pair
+		detailsPairs       [][]Pair
 		errorFunc          func(*testing.T, error)
 		assertRuntimesFunc func(*testing.T, []model.MovedRuntimeByLabelMappingInput)
 	}{
 		{
 			name: "successfully gets MovedRuntimeByLabelMappingInputs for correct eventPage format",
-			detailsPairs: []Pair{
-				{labelFieldMappingValue, "label-value"},
-				{sourceTenantField, "123"},
-				{targetTenantField, "456"},
+			detailsPairs: [][]Pair{
+				{
+					{labelFieldMappingValue, "label-value"},
+					{sourceTenantField, "123"},
+					{targetTenantField, "456"},
+				},
 			},
 			assertRuntimesFunc: func(t *testing.T, runtimes []model.MovedRuntimeByLabelMappingInput) {
 				assert.Equal(t, 1, len(runtimes))
@@ -45,57 +47,82 @@ func Test_getMovedRuntimes(t *testing.T) {
 			},
 		},
 		{
-			name: "fails to get MovedRuntimeByLabelMappingInput when id field is invalid",
-			detailsPairs: []Pair{
-				{"wrong", "label-value"},
-				{sourceTenantField, "123"},
-				{targetTenantField, "456"},
+			name: "empty mappings for get MovedRuntimeByLabelMappingInput when id field is invalid",
+			detailsPairs: [][]Pair{
+				{
+					{"wrong", "label-value"},
+					{sourceTenantField, "123"},
+					{targetTenantField, "456"},
+				},
 			},
 			errorFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid format")
-				assert.Contains(t, err.Error(), labelFieldMappingValue)
+				assert.NoError(t, err)
 			},
 			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
-				return
+				assert.Len(t, inputs, 0)
 			},
 		},
 		{
-			name: "fails to get MovedRuntimeByLabelMappingInput when sourceTenant field is invalid",
-			detailsPairs: []Pair{
-				{labelFieldMappingValue, "label-value"},
-				{"wrong", "123"},
-				{targetTenantField, "456"},
+			name: "empty mappings for get MovedRuntimeByLabelMappingInput when sourceTenant field is invalid",
+			detailsPairs: [][]Pair{
+				{
+					{labelFieldMappingValue, "label-value"},
+					{"wrong", "123"},
+					{targetTenantField, "456"},
+				},
 			},
 			errorFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid format")
-				assert.Contains(t, err.Error(), sourceTenantField)
+				assert.NoError(t, err)
 			},
 			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
-				return
+				assert.Len(t, inputs, 0)
 			},
 		},
 		{
-			name: "fails to get MovedRuntimeByLabelMappingInput when sourceTenant field is invalid",
-			detailsPairs: []Pair{
-				{labelFieldMappingValue, "label-value"},
-				{sourceTenantField, "123"},
-				{"wrong", "456"},
+			name: "empty mappings for get MovedRuntimeByLabelMappingInput when sourceTenant field is invalid",
+			detailsPairs: [][]Pair{
+				{
+					{labelFieldMappingValue, "label-value"},
+					{sourceTenantField, "123"},
+					{"wrong", "456"},
+				},
 			},
 			errorFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid format")
-				assert.Contains(t, err.Error(), targetTenantField)
+				assert.NoError(t, err)
 			},
 			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
-				return
+				assert.Len(t, inputs, 0)
+			},
+		},
+		{
+			name: "events are skipped if some of the fields are invalid",
+			detailsPairs: [][]Pair{
+				{
+					{labelFieldMappingValue, "label-value"},
+					{sourceTenantField, "123"},
+					{"wrong", "456"},
+				},
+				{
+					{labelFieldMappingValue, "label-value"},
+					{sourceTenantField, "123"},
+					{targetTenantField, "456"},
+				},
+			},
+			errorFunc: func(t *testing.T, err error) {
+				assert.NoError(t, err)
+			},
+			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
+				assert.Len(t, inputs, 1)
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			events := make([][]byte, 0, len(test.detailsPairs))
+			for i, detailPair := range test.detailsPairs {
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), constructJSONObject(detailPair...), fieldMapping))
+			}
 			page := eventsPage{
 				fieldMapping: fieldMapping,
 				movedRuntimeByLabelFieldMapping: MovedRuntimeByLabelFieldMapping{
@@ -103,7 +130,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 					SourceTenant: sourceTenantField,
 					TargetTenant: targetTenantField,
 				},
-				payload: []byte(fixTenantEventsResponse(eventsToJsonArray(fixEventWithDetails("1", "foo", constructJSONObject(test.detailsPairs...), fieldMapping)), 1, 1)),
+				payload: []byte(fixTenantEventsResponse(eventsToJsonArray(events...), len(test.detailsPairs), 1)),
 			}
 
 			runtimes, err := page.getMovedRuntimes()
@@ -129,7 +156,7 @@ func Test_getTenantMappings(t *testing.T) {
 
 	tests := []struct {
 		name                    string
-		detailsPairs            []Pair
+		detailsPairs            [][]Pair
 		fieldMapping            TenantFieldMapping
 		errorFunc               func(*testing.T, error)
 		assertTenantMappingFunc func(*testing.T, []model.BusinessTenantMappingInput)
@@ -149,9 +176,11 @@ func Test_getTenantMappings(t *testing.T) {
 				assert.Equal(t, 1, len(tenantMappings))
 				assert.Equal(t, expectedTenantMapping, tenantMappings[0])
 			},
-			detailsPairs: []Pair{
-				{idField, id},
-				{nameField, name},
+			detailsPairs: [][]Pair{
+				{
+					{idField, id},
+					{nameField, name},
+				},
 			},
 		},
 		{
@@ -171,14 +200,16 @@ func Test_getTenantMappings(t *testing.T) {
 				assert.Equal(t, 1, len(tenantMappings))
 				assert.Equal(t, expectedTenantMapping, tenantMappings[0])
 			},
-			detailsPairs: []Pair{
-				{idField, id},
-				{nameField, name},
-				{discriminatorField, "discriminator-value"},
+			detailsPairs: [][]Pair{
+				{
+					{idField, id},
+					{nameField, name},
+					{discriminatorField, "discriminator-value"},
+				},
 			},
 		},
 		{
-			name: "fails to get businessTenantMappingInputs when id field is wrong",
+			name: "empty mappings for get businessTenantMappingInputs when id field is wrong",
 			fieldMapping: TenantFieldMapping{
 				NameField:          nameField,
 				IDField:            idField,
@@ -188,21 +219,21 @@ func Test_getTenantMappings(t *testing.T) {
 				DiscriminatorValue: "discriminator-value",
 			},
 			errorFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid format")
-				assert.Contains(t, err.Error(), idField)
+				assert.NoError(t, err)
 			},
 			assertTenantMappingFunc: func(t *testing.T, tenantMappings []model.BusinessTenantMappingInput) {
-				return
+				assert.Len(t, tenantMappings, 0)
 			},
-			detailsPairs: []Pair{
-				{"wrong", id},
-				{nameField, name},
-				{discriminatorField, "discriminator-value"},
+			detailsPairs: [][]Pair{
+				{
+					{"wrong", id},
+					{nameField, name},
+					{discriminatorField, "discriminator-value"},
+				},
 			},
 		},
 		{
-			name: "fails to get businessTenantMappingInputs when name field is wrong",
+			name: "empty mappings for get businessTenantMappingInputs when name field is wrong",
 			fieldMapping: TenantFieldMapping{
 				NameField:          nameField,
 				IDField:            idField,
@@ -212,21 +243,21 @@ func Test_getTenantMappings(t *testing.T) {
 				DiscriminatorValue: "discriminator-value",
 			},
 			errorFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid format")
-				assert.Contains(t, err.Error(), nameField)
+				assert.NoError(t, err)
 			},
 			assertTenantMappingFunc: func(t *testing.T, tenantMappings []model.BusinessTenantMappingInput) {
-				return
+				assert.Len(t, tenantMappings, 0)
 			},
-			detailsPairs: []Pair{
-				{idField, id},
-				{"wrong", name},
-				{discriminatorField, "discriminator-value"},
+			detailsPairs: [][]Pair{
+				{
+					{idField, id},
+					{"wrong", name},
+					{discriminatorField, "discriminator-value"},
+				},
 			},
 		},
 		{
-			name: "fails to get businessTenantMappingInputs when discriminator field is wrong",
+			name: "empty mappings for get businessTenantMappingInputs when discriminator field is wrong",
 			fieldMapping: TenantFieldMapping{
 				NameField:          nameField,
 				IDField:            idField,
@@ -236,28 +267,31 @@ func Test_getTenantMappings(t *testing.T) {
 				DiscriminatorValue: "discriminator-value",
 			},
 			errorFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid format")
-				assert.Contains(t, err.Error(), discriminatorField)
+				assert.NoError(t, err)
 			},
 			assertTenantMappingFunc: func(t *testing.T, tenantMappings []model.BusinessTenantMappingInput) {
-				return
+				assert.Len(t, tenantMappings, 0)
 			},
-			detailsPairs: []Pair{
-				{idField, id},
-				{nameField, name},
-				{"wrong", "discriminator-value"},
+			detailsPairs: [][]Pair{
+				{
+					{idField, id},
+					{nameField, name},
+					{"wrong", "discriminator-value"},
+				},
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
+			events := make([][]byte, 0, len(test.detailsPairs))
+			for i, detailPair := range test.detailsPairs {
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), constructJSONObject(detailPair...), test.fieldMapping))
+			}
 			page := eventsPage{
 				fieldMapping: test.fieldMapping,
 				providerName: providerName,
-				payload:      []byte(fixTenantEventsResponse(eventsToJsonArray(fixEventWithDetails(id, "foo", constructJSONObject(test.detailsPairs...), test.fieldMapping)), 1, 1)),
+				payload:      []byte(fixTenantEventsResponse(eventsToJsonArray(events...), len(test.detailsPairs), 1)),
 			}
 			tenantMappings, err := page.getTenantMappings(CreatedEventsType)
 			test.errorFunc(t, err)
