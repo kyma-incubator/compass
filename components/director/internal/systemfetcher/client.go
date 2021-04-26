@@ -88,6 +88,12 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Pr
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute HTTP request")
 	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.D().Println("Failed to close HTTP response body")
+		}
+	}()
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -96,7 +102,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Pr
 
 	var systems []ProductInstanceExtended
 	if err = json.Unmarshal(respBody, &systems); err != nil {
-		log.D().Fatal(err)
+		return nil, errors.Wrap(err, "failed to unmarshal systems response")
 	}
 
 	return systems, nil

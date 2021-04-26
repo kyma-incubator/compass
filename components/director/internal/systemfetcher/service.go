@@ -46,7 +46,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	//TODO: Open transact here instead? So that all DB calls are in one transaction - avoid phantom DB stuff, but there's a problem that we have HTTP calls inside of the DB call
 	tenants, err := s.listTenants(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to list tenants")
 	}
 
 	for _, t := range tenants {
@@ -62,6 +62,28 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	tx, err := s.transaction.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to begin transaction")
+	}
+	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenants, err := s.tenantService.List(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve tenants")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to commit while retrieving tenants")
+	}
+
+	return tenants, nil
 }
 
 func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systems []ProductInstanceExtended) error {
@@ -92,28 +114,6 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.
 	}
 
 	return nil
-}
-
-func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
-	tx, err := s.transaction.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to begin transaction")
-	}
-	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	tenants, err := s.tenantService.List(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve tenants")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to commit while reading tenants")
-	}
-
-	return tenants, nil
 }
 
 func (s *SystemFetcher) convertSystemToAppRegisterInput(sc ProductInstanceExtended) model.ApplicationRegisterInput {

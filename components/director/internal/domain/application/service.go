@@ -279,6 +279,7 @@ func (s *service) CreateManyIfNotExists(ctx context.Context, applicationInputs [
 			return errors.Wrap(err, "while creating application")
 		}
 	}
+
 	return nil
 }
 
