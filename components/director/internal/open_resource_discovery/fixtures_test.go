@@ -311,6 +311,12 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						DefaultTargetURL: "https://exmaple.com/test/v1",
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID:      bundleORDID,
+						DefaultTargetURL: "https://exmaple.com/test/v1",
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
@@ -362,6 +368,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 								Type: "open",
 							},
 						},
+					},
+				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
 					},
 				},
 				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{

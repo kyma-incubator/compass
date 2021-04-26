@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 	"time"
 
