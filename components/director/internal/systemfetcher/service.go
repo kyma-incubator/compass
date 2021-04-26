@@ -44,10 +44,18 @@ func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss Systems
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	//TODO: Open transact here instead? So that all DB calls are in one transaction - avoid phantom DB stuff, but there's a problem that we have HTTP calls inside of the DB call
 
+	tx, err := s.transaction.Begin()
+	ctx = persistence.SaveToContext(ctx, tx)
+	if err != nil {
+		return errors.Wrap(err, "failed to begin transaction")
+	}
+
 	tenants, err := s.tenantService.List(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve tenants")
 	}
+
+	s.transaction.RollbackUnlessCommitted(ctx, tx)
 
 	for _, t := range tenants {
 		systems := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
@@ -85,6 +93,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 
 		ctx := tenant.SaveToContext(ctx, t.ID, t.ExternalTenant)
+		ctx = persistence.SaveToContext(ctx, tx)
 		err = s.systemsService.CreateManyIfNotExists(ctx, appInputs)
 		if err != nil {
 			return errors.Wrap(err, "failed to create applications")
