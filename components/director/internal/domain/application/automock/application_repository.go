@@ -219,6 +219,20 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 	return r0, r1
 }
 
+// TechnicalUpdate provides a mock function with given fields: ctx, item
+func (_m *ApplicationRepository) TechnicalUpdate(ctx context.Context, item *model.Application) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Application) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Update provides a mock function with given fields: ctx, item
 func (_m *ApplicationRepository) Update(ctx context.Context, item *model.Application) error {
 	ret := _m.Called(ctx, item)

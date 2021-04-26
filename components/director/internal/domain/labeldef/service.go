@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -12,9 +14,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
+	Upsert(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	Update(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
@@ -22,12 +25,12 @@ type Repository interface {
 	DeleteByKey(ctx context.Context, tenant, key string) error
 }
 
-//go:generate mockery -name=ScenarioAssignmentLister -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenarioAssignmentLister --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentLister interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -37,12 +40,12 @@ type LabelRepository interface {
 	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
-//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
@@ -124,6 +127,18 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	if err := s.repo.Update(ctx, *ld); err != nil {
 		return errors.Wrap(err, "while updating Label Definition")
 	}
+
+	return nil
+}
+
+func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
+	def.ID = s.uidService.Generate()
+
+	err := s.repo.Upsert(ctx, def)
+	if err != nil {
+		return errors.Wrapf(err, "while upserting Label Definition with id %s and key %s", def.ID, def.Key)
+	}
+	log.C(ctx).Debugf("Successfully upserted Label Definition with id %s and key %s", def.ID, def.Key)
 
 	return nil
 }

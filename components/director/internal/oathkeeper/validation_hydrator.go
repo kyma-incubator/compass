@@ -20,7 +20,7 @@ type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 }
 
-//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	InvalidateToken(ctx context.Context, item *model.SystemAuth) error
@@ -51,7 +51,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	tx, err := vh.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to open db transaction")
+		log.C(ctx).WithError(err).Errorf("Failed to open db transaction: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
 		return
 	}
@@ -60,7 +60,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	var authSession oathkeeper.AuthenticationSession
 	if err = json.NewDecoder(r.Body).Decode(&authSession); err != nil {
-		log.C(ctx).WithError(err).Error("Failed to decode request body")
+		log.C(ctx).WithError(err).Errorf("Failed to decode request body: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
 	}
@@ -112,13 +112,13 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
 	if err := vh.tokenService.InvalidateToken(ctx, systemAuth); err != nil {
-		log.C(ctx).WithError(err).Error("Failed to invalidate token")
+		log.C(ctx).WithError(err).Errorf("Failed to invalidate token: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("Failed to commit db transaction")
+		log.C(ctx).WithError(err).Errorf("Failed to commit db transaction: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
 		return
 	}

@@ -120,7 +120,7 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 
 	tx, err := d.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening the db transaction.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening the db transaction: %v", err)
 		return nil, err
 	}
 	defer d.transact.RollbackUnlessCommitted(ctx, tx)
@@ -146,7 +146,7 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 	log.C(ctx).Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction: %v", err)
 		return nil, err
 	}
 
@@ -157,6 +157,9 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 func (d *directive) getObjectScenarios(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) ([]string, error) {
 	scenariosLabel, err := d.labelRepo.GetByKey(ctx, tenantID, objectType, objectID, model.ScenariosKey)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return make([]string, 0), nil
+		}
 		return nil, errors.Wrapf(err, "while fetching scenarios for object with id: %s and type: %s", objectID, objectType)
 	}
 	return label.ValueToStringsSlice(scenariosLabel.Value)

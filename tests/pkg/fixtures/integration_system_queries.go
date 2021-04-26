@@ -35,6 +35,9 @@ func RegisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcl
 }
 
 func UnregisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
 	req := FixUnregisterIntegrationSystem(id)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)
@@ -47,7 +50,7 @@ func UnregisterIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlCl
 	require.Contains(t, err.Error(), "The record cannot be deleted because another record refers to it")
 }
 
-func GetSystemAuthsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) []*graphql.SystemAuth {
+func GetSystemAuthsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) []*graphql.IntSysSystemAuth {
 	req := FixGetIntegrationSystemRequest(id)
 	intSys := graphql.IntegrationSystemExt{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &intSys)
@@ -55,9 +58,9 @@ func GetSystemAuthsForIntegrationSystem(t *testing.T, ctx context.Context, gqlCl
 	return intSys.Auths
 }
 
-func RequestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) *graphql.SystemAuth {
+func RequestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) *graphql.IntSysSystemAuth {
 	req := FixRequestClientCredentialsForIntegrationSystem(id)
-	systemAuth := graphql.SystemAuth{}
+	systemAuth := graphql.IntSysSystemAuth{}
 
 	// WHEN
 	t.Log("Generate client credentials for integration system")

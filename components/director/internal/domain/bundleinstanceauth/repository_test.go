@@ -22,8 +22,8 @@ import (
 func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
@@ -32,7 +32,7 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.bundle_instance_auths ( id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.bundle_instance_auths ( id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
 			WithArgs(fixCreateArgs(*piaEntity)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -60,8 +60,8 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
@@ -85,7 +85,7 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", *piaModel).Return(bundleinstanceauth.Entity{}, testError)
 		defer mockConverter.AssertExpectations(t)
@@ -103,8 +103,8 @@ func TestRepository_Create(t *testing.T) {
 func TestRepository_GetByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("FromEntity", *piaEntity).Return(*piaModel, nil).Once()
@@ -133,7 +133,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// given
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, nil, fixModelStatusPending())
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("FromEntity", *piaEntity).Return(model.BundleInstanceAuth{}, testError).Once()
@@ -181,8 +181,8 @@ func TestRepository_GetByID(t *testing.T) {
 
 func TestRepository_GetForBundle(t *testing.T) {
 	// given
-	piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-	piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+	piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 	selectQuery := `^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id = \$2 AND bundle_id = \$3`
 
@@ -231,7 +231,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		// given
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, nil, fixModelStatusPending())
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("FromEntity", *piaEntity).Return(model.BundleInstanceAuth{}, testError).Once()
@@ -266,15 +266,15 @@ func TestRepository_ListByBundleID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		piaModels := []*model.BundleInstanceAuth{
-			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
-			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
+			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
 		}
 		piaEntities := []*bundleinstanceauth.Entity{
-			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
-			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
+			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -302,15 +302,15 @@ func TestRepository_ListByBundleID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		piaModels := []*model.BundleInstanceAuth{
-			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
-			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
+			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
 		}
 		piaEntities := []*bundleinstanceauth.Entity{
-			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
-			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
+			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -337,7 +337,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnError(testError)
@@ -354,13 +354,108 @@ func TestRepository_ListByBundleID(t *testing.T) {
 	})
 }
 
+func TestRepository_ListByRuntimeID(t *testing.T) {
+	//GIVEN
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		piaModels := []*model.BundleInstanceAuth{
+			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
+		}
+		piaEntities := []*bundleinstanceauth.Entity{
+			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
+		}
+
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, testRuntimeID).
+			WillReturnRows(fixSQLRows([]sqlRow{
+				fixSQLRowFromEntity(*piaEntities[0]),
+				fixSQLRowFromEntity(*piaEntities[1]),
+			}))
+
+		convMock := automock.EntityConverter{}
+		convMock.On("FromEntity", *piaEntities[0]).Return(*piaModels[0], nil).Once()
+		convMock.On("FromEntity", *piaEntities[1]).Return(*piaModels[1], nil).Once()
+		pgRepository := bundleinstanceauth.NewRepository(&convMock)
+
+		//WHEN
+		result, err := pgRepository.ListByRuntimeID(ctx, testTenant, testRuntimeID)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		dbMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+
+	t.Run("Converter Error", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		piaModels := []*model.BundleInstanceAuth{
+			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
+		}
+		piaEntities := []*bundleinstanceauth.Entity{
+			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
+			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
+		}
+
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, testRuntimeID).
+			WillReturnRows(fixSQLRows([]sqlRow{
+				fixSQLRowFromEntity(*piaEntities[0]),
+				fixSQLRowFromEntity(*piaEntities[1]),
+			}))
+
+		convMock := automock.EntityConverter{}
+		convMock.On("FromEntity", *piaEntities[0]).Return(*piaModels[0], nil).Once()
+		convMock.On("FromEntity", *piaEntities[1]).Return(*piaModels[1], testError).Once()
+		pgRepository := bundleinstanceauth.NewRepository(&convMock)
+
+		//WHEN
+		result, err := pgRepository.ListByRuntimeID(ctx, testTenant, testRuntimeID)
+
+		//THEN
+		require.EqualError(t, err, "while creating BundleInstanceAuth model from entity: test")
+		require.Nil(t, result)
+		dbMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, testRuntimeID).
+			WillReturnError(testError)
+
+		pgRepository := bundleinstanceauth.NewRepository(nil)
+
+		//WHEN
+		result, err := pgRepository.ListByRuntimeID(ctx, testTenant, testRuntimeID)
+
+		//THEN
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		require.Nil(t, result)
+		dbMock.AssertExpectations(t)
+	})
+}
+
 func TestRepository_Update(t *testing.T) {
 	updateStmt := `UPDATE public\.bundle_instance_auths SET auth_value = \?, status_condition = \?, status_timestamp = \?, status_message = \?, status_reason = \? WHERE tenant_id = \? AND id = \?`
 
 	t.Run("Success", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
@@ -397,8 +492,8 @@ func TestRepository_Update(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
@@ -422,7 +517,7 @@ func TestRepository_Update(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", *piaModel).Return(bundleinstanceauth.Entity{}, testError)
 		defer mockConverter.AssertExpectations(t)

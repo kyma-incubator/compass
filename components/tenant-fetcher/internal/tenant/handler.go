@@ -56,7 +56,7 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
 		err := middleware.SynchronizeJWKS(ctx)
 		if err != nil {
-			logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
+			logger.WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
 		}
 	})
 	go periodicExecutor.Run(ctx)

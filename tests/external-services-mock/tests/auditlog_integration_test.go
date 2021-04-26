@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -49,6 +50,12 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	t.Log("Get auditlog from external services mock")
 	auditlogs := fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+
+	assert.Eventually(t, func() bool {
+		auditlogs = fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+		t.Logf("Waiting for auditlog items to be %d, but currently are: %d", 2, len(auditlogs))
+		return len(auditlogs) == 2
+	}, time.Minute, time.Millisecond*500)
 
 	for _, auditlog := range auditlogs {
 		defer fixtures.DeleteAuditlogByID(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, auditlog.UUID)

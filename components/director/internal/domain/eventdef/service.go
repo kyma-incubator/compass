@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventAPIRepository --output=automock --outpkg=automock --case=underscore
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
@@ -27,12 +27,12 @@ type EventAPIRepository interface {
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error

@@ -16,33 +16,33 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
 }
 
-//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=IntegrationSystemService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(model *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
-//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
 	DeleteClientCredentials(ctx context.Context, clientID string) error
@@ -62,19 +62,19 @@ func NewResolver(transactioner persistence.Transactioner, svc Service, appSvc Ap
 	return &Resolver{transact: transactioner, svc: svc, appSvc: appSvc, rtmSvc: rtmSvc, systemAuthSvc: systemAuthSvc, isSvc: isSvc, systemAuthConv: systemAuthConv}
 }
 
-func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.RuntimeReference, id)
 }
 
-func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.ApplicationReference, id)
 }
 
-func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.IntegrationSystemReference, id)
 }
 
-func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (*graphql.SystemAuth, error) {
+func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

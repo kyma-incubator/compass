@@ -28,7 +28,7 @@ var (
 	tenantColumn       = "tenant_id"
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Application) (*Entity, error)
 	FromEntity(entity *Entity) *model.Application
@@ -268,6 +268,14 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 }
 
 func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, model, false)
+}
+
+func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, model, true)
+}
+
+func (r *pgRepository) updateSingle(ctx context.Context, model *model.Application, isTechnical bool) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
@@ -279,6 +287,9 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 	}
 
 	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
+	if isTechnical {
+		return r.updater.TechnicalUpdate(ctx, appEnt)
+	}
 	return r.updater.UpdateSingle(ctx, appEnt)
 }
 

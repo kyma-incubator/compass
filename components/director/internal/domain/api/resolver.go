@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
@@ -22,7 +22,7 @@ type APIService interface {
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
@@ -35,13 +35,13 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }

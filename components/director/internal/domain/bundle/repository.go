@@ -30,7 +30,7 @@ var (
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Bundle) (*Entity, error)
 	FromEntity(entity *Entity) (*model.Bundle, error)

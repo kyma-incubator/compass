@@ -7,13 +7,15 @@ import (
 )
 
 type BundleInstanceAuth struct {
-	ID          string
-	BundleID    string
-	Tenant      string
-	Context     *string
-	InputParams *string
-	Auth        *Auth
-	Status      *BundleInstanceAuthStatus
+	ID               string
+	BundleID         string
+	RuntimeID        *string
+	RuntimeContextID *string
+	Tenant           string
+	Context          *string
+	InputParams      *string
+	Auth             *Auth
+	Status           *BundleInstanceAuthStatus
 }
 
 func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatusCondition, timestamp time.Time) error {
@@ -73,15 +75,17 @@ type BundleInstanceAuthRequestInput struct {
 	InputParams *string
 }
 
-func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus) BundleInstanceAuth {
+func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID *string, runtimeContextID *string) BundleInstanceAuth {
 	return BundleInstanceAuth{
-		ID:          id,
-		BundleID:    bundleID,
-		Tenant:      tenant,
-		Context:     ri.Context,
-		InputParams: ri.InputParams,
-		Auth:        auth,
-		Status:      status,
+		ID:               id,
+		BundleID:         bundleID,
+		RuntimeID:        runtimeID,
+		RuntimeContextID: runtimeContextID,
+		Tenant:           tenant,
+		Context:          ri.Context,
+		InputParams:      ri.InputParams,
+		Auth:             auth,
+		Status:           status,
 	}
 }
 

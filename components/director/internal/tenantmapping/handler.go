@@ -23,22 +23,22 @@ const (
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
 )
 
-//go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
 
-//go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
-//go:generate mockery -name=ObjectContextProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore
 type ObjectContextProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
-//go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
@@ -75,14 +75,14 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while parsing request.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while parsing request: %v", err)
 		respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	authDetails, err := reqData.GetAuthIDWithAuthenticators(ctx, h.authenticators)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request: %v", err)
 		respond(ctx, writer, reqData.Body)
 		return
 	}
@@ -102,7 +102,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) oathkeeper.ReqBody {
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
 		return reqData.Body
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -112,12 +112,12 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData,
 	log.C(ctx).Debug("Getting object context")
 	objCtx, err := h.getObjectContext(newCtx, reqData, authDetails)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context: %v", err)
 		return reqData.Body
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction: %v", err)
 		return reqData.Body
 	}
 
@@ -154,6 +154,6 @@ func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.Re
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data.")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
 }

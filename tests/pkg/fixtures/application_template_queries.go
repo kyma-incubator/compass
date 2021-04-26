@@ -36,6 +36,9 @@ func GetApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.C
 }
 
 func DeleteApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
 	req := FixDeleteApplicationTemplateRequest(id)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)

@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
 	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)

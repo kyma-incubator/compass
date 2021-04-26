@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
@@ -24,12 +24,12 @@ type WebhookRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

@@ -29,7 +29,7 @@ var (
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls"}
 )
 
-//go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
 	ToEntity(apiModel model.APIDefinition) *Entity

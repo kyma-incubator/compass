@@ -17,6 +17,7 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 	testID := "foo"
 	testBundleID := "bar"
 	testTenant := "baz"
+	runtimeID := "d05fb90c-3084-4349-9deb-af23a4ce76be"
 
 	input := BundleInstanceAuthRequestInput{
 		ID:          str.Ptr(`"foo"'`),
@@ -39,17 +40,37 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 	}
 
 	expected := BundleInstanceAuth{
-		ID:          testID,
-		BundleID:    testBundleID,
-		Tenant:      testTenant,
-		Context:     str.Ptr(`"test"`),
-		InputParams: str.Ptr(`"test"`),
-		Auth:        &inputAuth,
-		Status:      &inputStatus,
+		ID:               testID,
+		BundleID:         testBundleID,
+		RuntimeContextID: nil,
+		Tenant:           testTenant,
+		Context:          str.Ptr(`"test"`),
+		InputParams:      str.Ptr(`"test"`),
+		Auth:             &inputAuth,
+		Status:           &inputStatus,
 	}
-	result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus)
-	// THEN
-	require.Equal(t, expected, result)
+
+	t.Run("Success when have runtimeID", func(t *testing.T) {
+		// GIVEN
+		expected.RuntimeID = &runtimeID
+
+		// WHEN
+		result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus, &runtimeID, nil)
+
+		// THEN
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("Success when missing runtimeID", func(t *testing.T) {
+		// GIVEN
+		expected.RuntimeID = nil
+
+		// WHEN
+		result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus, nil, nil)
+
+		// THEN
+		require.Equal(t, expected, result)
+	})
 
 }
 

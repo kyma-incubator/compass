@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventDefService --output=automock --outpkg=automock --case=underscore
 type EventDefService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
@@ -32,12 +32,12 @@ type EventDefConverter interface {
 	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error)
 }
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 }
 
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }

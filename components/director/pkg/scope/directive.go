@@ -3,24 +3,29 @@ package scope
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
-
-type directive struct {
-	scopesGetter ScopesGetter
+type ScopesMismatchErrorProvider interface {
+	Error([]string, []string) error
 }
 
-func NewDirective(getter ScopesGetter) *directive {
+type directive struct {
+	scopesGetter  ScopesGetter
+	errorProvider ScopesMismatchErrorProvider
+}
+
+func NewDirective(getter ScopesGetter, errorProvider ScopesMismatchErrorProvider) *directive {
 	return &directive{
-		scopesGetter: getter,
+		scopesGetter:  getter,
+		errorProvider: errorProvider,
 	}
 }
 
@@ -34,23 +39,8 @@ func (d *directive) VerifyScopes(ctx context.Context, _ interface{}, next graphq
 		return nil, errors.Wrap(err, "while getting required scopes")
 	}
 
-	if !d.matches(actualScopes, requiredScopes) {
-		return nil, apperrors.NewInsufficientScopesError(requiredScopes, actualScopes)
+	if !str.Matches(actualScopes, requiredScopes) {
+		return nil, d.errorProvider.Error(requiredScopes, actualScopes)
 	}
 	return next(ctx)
-}
-
-func (d *directive) matches(actual []string, required []string) bool {
-	actMap := make(map[string]interface{})
-
-	for _, a := range actual {
-		actMap[a] = struct{}{}
-	}
-	for _, r := range required {
-		_, ex := actMap[r]
-		if !ex {
-			return false
-		}
-	}
-	return true
 }

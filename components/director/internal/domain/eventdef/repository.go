@@ -34,7 +34,7 @@ var (
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
-//go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) model.EventDefinition
 	ToEntity(apiModel model.EventDefinition) Entity

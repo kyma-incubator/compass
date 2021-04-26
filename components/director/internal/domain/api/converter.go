@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
@@ -23,7 +23,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
-//go:generate mockery -name=SpecConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
 	InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*model.SpecInput, error)

@@ -19,7 +19,7 @@ var (
 	tenantColumn = "tenant_id"
 )
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.SystemAuth) (Entity, error)
 	FromEntity(in Entity) (model.SystemAuth, error)
@@ -143,6 +143,16 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 
 	err = r.listerGlobal.ListGlobal(ctx, &entities, conditions...)
 	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error) {
+	var entities Collection
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
