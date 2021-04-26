@@ -40,7 +40,8 @@ func (ep eventsPage) getMovedRuntimes() ([]model.MovedRuntimeByLabelMappingInput
 	for _, detail := range eds {
 		mapping, err := ep.eventDataToMovedRuntime(detail)
 		if err != nil {
-			return nil, err
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
+			continue
 		}
 
 		mappings = append(mappings, *mapping)
@@ -55,7 +56,8 @@ func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessT
 	for _, detail := range eds {
 		mapping, err := ep.eventDataToTenant(eventsType, detail)
 		if err != nil {
-			return nil, err
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
+			continue
 		}
 
 		tenants = append(tenants, *mapping)
