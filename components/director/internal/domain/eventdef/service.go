@@ -184,7 +184,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
-	if bundleIDsForCreation != nil && len(bundleIDsForCreation) != 0 {
+	if bundleIDsForCreation != nil {
 		for _, bundleID := range bundleIDsForCreation {
 			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID)
 			if err != nil {
@@ -193,7 +193,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		}
 	}
 
-	if bundleIDsForDeletion != nil && len(bundleIDsForDeletion) != 0 {
+	if bundleIDsForDeletion != nil {
 		for _, bundleID := range bundleIDsForDeletion {
 			err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
 			if err != nil {

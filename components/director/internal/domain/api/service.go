@@ -313,7 +313,7 @@ func (s *service) updateBundleReferences(ctx context.Context, apiID *string, def
 }
 
 func (s *service) createBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForCreation map[string]string) error {
-	if defaultTargetURLPerBundleForCreation != nil && len(defaultTargetURLPerBundleForCreation) != 0 {
+	if defaultTargetURLPerBundleForCreation != nil {
 		for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForCreation {
 			bundleRefInput := &model.BundleReferenceInput{
 				APIDefaultTargetURL: &defaultTargetURL,
@@ -328,7 +328,7 @@ func (s *service) createBundleReferences(ctx context.Context, apiID *string, def
 }
 
 func (s *service) deleteBundleIDs(ctx context.Context, apiID *string, bundleIDsForDeletion []string) error {
-	if bundleIDsForDeletion != nil && len(bundleIDsForDeletion) != 0 {
+	if bundleIDsForDeletion != nil {
 		for _, bundleID := range bundleIDsForDeletion {
 			err := s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleAPIReference, apiID, &bundleID)
 			if err != nil {

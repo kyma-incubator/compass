@@ -16,6 +16,7 @@ import (
 type Lister interface {
 	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
+	Clone() Lister
 }
 
 type ListerGlobal interface {
@@ -70,6 +71,18 @@ func (l *universalLister) List(ctx context.Context, tenant string, dest Collecti
 
 func (l *universalLister) SetSelectedColumns(selectedColumns []string) {
 	l.selectedColumns = strings.Join(selectedColumns, ", ")
+}
+
+func (l *universalLister) Clone() Lister {
+	var clonedLister universalLister
+
+	clonedLister.resourceType = l.resourceType
+	clonedLister.tableName = l.tableName
+	clonedLister.selectedColumns = l.selectedColumns
+	clonedLister.tenantColumn = l.tenantColumn
+	clonedLister.orderByParams = append(clonedLister.orderByParams, l.orderByParams...)
+
+	return &clonedLister
 }
 
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {

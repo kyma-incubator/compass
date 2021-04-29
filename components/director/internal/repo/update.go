@@ -19,6 +19,7 @@ type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
 	SetIDColumns(idColumns []string)
 	SetUpdatableColumns(updatableColumns []string)
+	Clone() Updater
 	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
 }
 
@@ -67,6 +68,18 @@ func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{
 
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingle(ctx, dbEntity, true, false)
+}
+
+func (u *universalUpdater) Clone() Updater {
+	var clonedUpdater universalUpdater
+
+	clonedUpdater.tableName = u.tableName
+	clonedUpdater.resourceType = u.resourceType
+	clonedUpdater.updatableColumns = append(clonedUpdater.updatableColumns, u.updatableColumns...)
+	clonedUpdater.tenantColumn = u.tenantColumn
+	clonedUpdater.idColumns = append(clonedUpdater.idColumns, u.idColumns...)
+
+	return &clonedUpdater
 }
 
 func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {

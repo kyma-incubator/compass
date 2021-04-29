@@ -99,13 +99,14 @@ func (r *repository) GetBundleIDsForObject(ctx context.Context, tenantID string,
 
 	var objectBundleIDs IDs
 
-	r.lister.SetSelectedColumns([]string{bundleIDColumn})
+	lister := r.lister.Clone()
+	lister.SetSelectedColumns([]string{bundleIDColumn})
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(fieldName, objectID),
 	}
 
-	err = r.lister.List(ctx, tenantID, &objectBundleIDs, conditions...)
+	err = lister.List(ctx, tenantID, &objectBundleIDs, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -133,19 +134,21 @@ func (r *repository) Update(ctx context.Context, item *model.BundleReference) er
 		return err
 	}
 
+	updater := r.updater.Clone()
+
 	idColumns := make([]string, 0, 0)
 	if item.BundleID == nil {
 		idColumns = append(idColumns, fieldName)
-		r.updater.SetUpdatableColumns(updatableColumnsWithoutBundleID)
+		updater.SetUpdatableColumns(updatableColumnsWithoutBundleID)
 	} else {
 		idColumns = append(idColumns, fieldName, bundleIDColumn)
 	}
 
-	r.updater.SetIDColumns(idColumns)
+	updater.SetIDColumns(idColumns)
 
 	entity := r.conv.ToEntity(*item)
 
-	return r.updater.UpdateSingle(ctx, entity)
+	return updater.UpdateSingle(ctx, entity)
 }
 
 func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error {
