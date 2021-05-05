@@ -22,6 +22,7 @@ type BundleRepository interface {
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
+	GetApplicationID(ctx context.Context, tenant string, bundleID string) (string, error)
 	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
 }
 
@@ -227,4 +228,8 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	}
 
 	return nil
+}
+
+func (s *service) GetByApplicationID(ctx context.Context, tenant string, bundleID string) (string, error) {
+	return s.bndlRepo.GetApplicationID(ctx, tenant, bundleID)
 }

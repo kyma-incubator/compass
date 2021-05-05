@@ -31,17 +31,33 @@ type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	repo         Repository
-	uidService   UIDService
-	timestampGen timestamp.Generator
+//go:generate mockery --name=AppService --output=automock --outpkg=automock --case=underscore
+type AppService interface {
+	getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error)
 }
 
-func NewService(repo Repository, uidService UIDService) *service {
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+type RuntimeService interface {
+	getScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error)
+}
+
+type service struct {
+	repo           Repository
+	uidService     UIDService
+	timestampGen   timestamp.Generator
+	bundleSvc      BundleService
+	appService     AppService
+	runtimeService RuntimeService
+}
+
+func NewService(repo Repository, uidService UIDService, bundleService BundleService, appService AppService, runtimeService RuntimeService) *service {
 	return &service{
-		repo:         repo,
-		uidService:   uidService,
-		timestampGen: timestamp.DefaultGenerator(),
+		repo:           repo,
+		uidService:     uidService,
+		timestampGen:   timestamp.DefaultGenerator(),
+		bundleSvc:      bundleService,
+		appService:     appService,
+		runtimeService: runtimeService,
 	}
 }
 
@@ -79,6 +95,29 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	err = s.repo.Create(ctx, &bndlInstAuth)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating BundleInstanceAuth with id %s for Bundle with id %s", id, bundleID)
+	}
+
+	applicationID, err := s.bundleSvc.GetByApplicationID(ctx, tnt, bundleID)
+	if err != nil {
+		return "", err //todo
+	}
+	sceanriosForApp, err := s.appService.getScenarioNamesForApplication(ctx, tnt, applicationID)
+	if err != nil {
+		return "", err //todo
+	}
+	sceanriosForRuntime, err := s.runtimeService.getScenarioNamesForRuntime(ctx, *runtimeID)
+	if err != nil {
+		return "", err
+	}
+	appScenarios := make(map[string]bool)
+	var commonScenarios []string
+	for _, elem := range sceanriosForApp {
+		appScenarios[elem] = true
+	}
+	for _, elem := range sceanriosForRuntime {
+		if appScenarios[elem] {
+			commonScenarios = append(commonScenarios, elem)
+		}
 	}
 
 	return id, nil

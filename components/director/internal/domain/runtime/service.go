@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -598,4 +600,24 @@ func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} 
 	}
 
 	return out
+}
+
+func (s *service) getScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error) {
+	log.C(ctx).Infof("Getting scenarios for runtime with id %s", runtimeID)
+
+	runtimeLabels, err := s.GetLabel(ctx, runtimeID, model.ScenariosKey)
+	if err != nil {
+		if apperrors.ErrorCode(err) == apperrors.NotFound {
+			log.C(ctx).Infof("No scenarios found for runtime")
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	scenarios, err := label.ValueToStringsSlice(runtimeLabels.Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing runtime label values")
+	}
+
+	return scenarios, nil
 }

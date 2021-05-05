@@ -33,6 +33,7 @@ type Converter interface {
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error)
+	GetByApplicationID(ctx context.Context, tenant string, bundleID string) (string, error)
 }
 
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
