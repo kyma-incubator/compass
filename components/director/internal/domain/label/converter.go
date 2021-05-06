@@ -28,6 +28,8 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 	var appID sql.NullString
 	var rtmID sql.NullString
 	var rtmCtxID sql.NullString
+	var bundleInstanceAuthId sql.NullString
+
 	switch in.ObjectType {
 	case model.ApplicationLabelableObject:
 		appID = sql.NullString{
@@ -44,16 +46,22 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 			Valid:  true,
 			String: in.ObjectID,
 		}
+	case model.BundleInstanceAuthObject:
+		bundleInstanceAuthId = sql.NullString{
+			Valid:  true,
+			String: in.ObjectID,
+		}
 	}
 
 	return Entity{
-		ID:               in.ID,
-		TenantID:         in.Tenant,
-		AppID:            appID,
-		RuntimeID:        rtmID,
-		RuntimeContextID: rtmCtxID,
-		Key:              in.Key,
-		Value:            string(valueMarshalled),
+		ID:                   in.ID,
+		TenantID:             in.Tenant,
+		AppID:                appID,
+		RuntimeID:            rtmID,
+		RuntimeContextID:     rtmCtxID,
+		BundleInstanceAuthId: bundleInstanceAuthId,
+		Key:                  in.Key,
+		Value:                string(valueMarshalled),
 	}, nil
 }
 
@@ -78,6 +86,9 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 	} else if in.RuntimeContextID.Valid {
 		objectID = in.RuntimeContextID.String
 		objectType = model.RuntimeContextLabelableObject
+	} else if in.BundleInstanceAuthId.Valid {
+		objectID = in.RuntimeContextID.String
+		objectType = model.BundleInstanceAuthObject
 	}
 
 	return model.Label{

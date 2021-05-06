@@ -22,7 +22,7 @@ const (
 	tenantColumn string = "tenant_id"
 )
 
-var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value"}
+var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "bundle_instance_auth_id", "runtime_context_id", "key", "value"}
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
@@ -39,7 +39,7 @@ type repository struct {
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(bundle_instance_auth_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
 		lister:   repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
 		deleter:  repo.NewDeleter(resource.Label, tableName, tenantColumn),
 		conv:     conv,

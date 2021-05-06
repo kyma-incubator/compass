@@ -193,24 +193,17 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 }
 
 func (r *pgRepository) GetApplicationID(ctx context.Context, tenant string, bundleID string) (string, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return "", err
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", bundleID),
+		repo.NewEqualCondition("tenant_id", tenant),
 	}
 
-	prefixedFieldNames := str.PrefixStrings(bundleColumns, "b.")
-	stmt := fmt.Sprintf(`SELECT APP_ID FROM %s where a.tenant_id=$1 AND a.id=$2`,
-		strings.Join(prefixedFieldNames, ", "),
-		bundleTable,
-		bundleInstanceAuthTable,
-		bundleInstanceAuthBundleRefField)
-
-	var appID string
-	if err := persist.Get(&appID, stmt, tenant, bundleID); err != nil {
+	var ent Entity
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return "", errors.Wrap(err, "while getting application id by bundle id")
 	}
 
-	return appID, nil
+	return ent.ApplicationID, nil
 }
 
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {

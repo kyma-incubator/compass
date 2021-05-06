@@ -344,6 +344,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	//TODO: Check if it is scenario lable and the current request remove some of the existing scenarios
 	err = r.runtimeService.SetLabel(ctx, &model.LabelInput{
 		Key:        key,
 		Value:      value,
@@ -379,6 +380,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	//TODO: Check if it is scenario lable and the current request remove some of the existing scenarios
 	label, err := r.runtimeService.GetLabel(ctx, runtimeID, key)
 	if err != nil {
 		return nil, err

@@ -306,7 +306,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, err := s.getScenarioNamesForApplication(ctx, appTenant, id)
+	scenarios, err := s.GetScenarioNamesForApplication(ctx, appTenant, id)
 	if err != nil {
 		return err
 	}
@@ -542,7 +542,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	return true, nil
 }
 
-func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
+func (s *service) GetScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)

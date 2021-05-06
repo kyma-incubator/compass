@@ -35,6 +35,7 @@ const (
 	RuntimeLabelableObject        LabelableObject = "Runtime"
 	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
 	ApplicationLabelableObject    LabelableObject = "Application"
+	BundleInstanceAuthObject      LabelableObject = "BundleInstanceAuth"
 )
 
 func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {

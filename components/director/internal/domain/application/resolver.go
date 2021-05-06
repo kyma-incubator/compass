@@ -355,6 +355,7 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	//TODO: Check if it is scenario lable and the current request remove some of the existing scenarios
 	err = r.appSvc.SetLabel(ctx, &model.LabelInput{
 		Key:        key,
 		Value:      value,
@@ -385,6 +386,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	//TODO: Check if it is scenario lable and the current request remove some of the existing scenarios
 	label, err := r.appSvc.GetLabel(ctx, applicationID, key)
 	if err != nil {
 		return nil, err

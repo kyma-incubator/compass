@@ -602,7 +602,7 @@ func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} 
 	return out
 }
 
-func (s *service) getScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error) {
+func (s *service) GetScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for runtime with id %s", runtimeID)
 
 	runtimeLabels, err := s.GetLabel(ctx, runtimeID, model.ScenariosKey)

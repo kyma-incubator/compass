@@ -33,12 +33,17 @@ type UIDService interface {
 
 //go:generate mockery --name=AppService --output=automock --outpkg=automock --case=underscore
 type AppService interface {
-	getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error)
+	GetScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error)
 }
 
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
-	getScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error)
+	GetScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error)
+}
+
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
+type LabelService interface {
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 type service struct {
@@ -48,9 +53,10 @@ type service struct {
 	bundleSvc      BundleService
 	appService     AppService
 	runtimeService RuntimeService
+	labelService   LabelService
 }
 
-func NewService(repo Repository, uidService UIDService, bundleService BundleService, appService AppService, runtimeService RuntimeService) *service {
+func NewService(repo Repository, uidService UIDService, bundleService BundleService, appService AppService, runtimeService RuntimeService, labelService LabelService) *service {
 	return &service{
 		repo:           repo,
 		uidService:     uidService,
@@ -58,6 +64,7 @@ func NewService(repo Repository, uidService UIDService, bundleService BundleServ
 		bundleSvc:      bundleService,
 		appService:     appService,
 		runtimeService: runtimeService,
+		labelService:   labelService,
 	}
 }
 
@@ -101,14 +108,15 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	if err != nil {
 		return "", err //todo
 	}
-	sceanriosForApp, err := s.appService.getScenarioNamesForApplication(ctx, tnt, applicationID)
+	sceanriosForApp, err := s.appService.GetScenarioNamesForApplication(ctx, tnt, applicationID)
 	if err != nil {
 		return "", err //todo
 	}
-	sceanriosForRuntime, err := s.runtimeService.getScenarioNamesForRuntime(ctx, *runtimeID)
+	sceanriosForRuntime, err := s.runtimeService.GetScenarioNamesForRuntime(ctx, *runtimeID)
 	if err != nil {
 		return "", err
 	}
+
 	appScenarios := make(map[string]bool)
 	var commonScenarios []string
 	for _, elem := range sceanriosForApp {
@@ -118,6 +126,17 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 		if appScenarios[elem] {
 			commonScenarios = append(commonScenarios, elem)
 		}
+	}
+
+	label := &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      commonScenarios,
+		ObjectID:   id,
+		ObjectType: model.BundleInstanceAuthObject,
+	}
+
+	if err = s.labelService.UpsertLabel(ctx, tnt, label); err != nil {
+		return "", errors.Wrap(err, "while creating bundle instance auth scenario label")
 	}
 
 	return id, nil
