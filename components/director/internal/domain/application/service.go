@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -306,7 +307,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, err := s.GetScenarioNamesForApplication(ctx, appTenant, id)
+	scenarios, err := s.GetScenarioNamesForApplication(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -346,6 +347,21 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	if err != nil {
 		return errors.Wrap(err, "while checking Application existence")
 	}
+
+	inputScenarios, exist := getScenarioLabelsFromInput(labelInput)
+	if exist {
+		existingScenarios, err := s.GetScenarioNamesForApplication(ctx, labelInput.ObjectID)
+		if err != nil {
+			//TODO: handle properly
+			return err
+		}
+
+		scToRemove := getScenariosToRemove(existingScenarios, inputScenarios)
+		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, labelInput.ObjectID) {
+			return errors.New("Unable to delete label .....")
+		}
+	}
+
 	if !appExists {
 		return apperrors.NewNotFoundError(resource.Application, labelInput.ObjectID)
 	}
@@ -356,6 +372,29 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	}
 
 	return nil
+}
+
+func (s *service) isAnyBundleInstanceAuthForScenariosExist(ctx context.Context, scenarios []string, appId string) bool {
+	for _, scenario := range scenarios {
+		if s.isBundleInstanceAuthForScenarioExist(ctx, scenario, appId) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *service) isBundleInstanceAuthForScenarioExist(ctx context.Context, scenario, appId string) bool {
+	persist, _ := persistence.FromCtx(ctx)
+
+	var count int
+	query := fmt.Sprintf("SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id INNER JOIN bundles ON bundles.id = bundle_instance_auths.bundle_id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundles.app_id=$2 AND bundle_instance_auths.status_reason='SUCCEEDED'")
+	err := persist.Get(&count, query, scenario, appId)
+	if err != nil {
+		return false
+	}
+
+	return count != 0
 }
 
 func (s *service) GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error) {
@@ -542,7 +581,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	return true, nil
 }
 
-func (s *service) GetScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
+func (s *service) GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
 	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
@@ -594,4 +633,35 @@ func removeDefaultScenario(scenarios []string) []string {
 	}
 
 	return scenarios
+}
+
+func getScenarioLabelsFromInput(label *model.LabelInput) ([]string, bool) {
+	if model.ScenariosKey != label.Key {
+		return nil, false
+	}
+
+	switch val := label.Value.(type) {
+	case string:
+		return []string{val}, true
+	case []string:
+		return val, true
+	default:
+		return nil, false
+	}
+}
+
+func getScenariosToRemove(existing, new []string) []string {
+	newScenariosMap := make(map[string]bool, 0)
+	for _, scenario := range new {
+		newScenariosMap[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range existing {
+		if _, ok := newScenariosMap[scenario]; !ok {
+			result = append(result, scenario)
+		}
+	}
+
+	return result
 }

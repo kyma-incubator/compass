@@ -6,7 +6,7 @@ mutation {
 		healthCheckURL: "https://kyma-project.io",
 		statusCondition: CONNECTED
 	}) {
-    					
+
 		id
 		name
 		providerName
@@ -28,12 +28,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -45,18 +45,18 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
 				additionalQueryParams
 			}
 			}
-		
+
 		}}
 		healthCheckURL
 		bundles {data {
-		
+
 		id
 		name
 		description
@@ -74,12 +74,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -91,7 +91,7 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
@@ -113,12 +113,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -130,7 +130,7 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
@@ -139,7 +139,7 @@ mutation {
 			}
 		}
 		apiDefinitions {data {
-		
+
 		id
 		name
 		description
@@ -159,12 +159,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -176,7 +176,7 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
@@ -200,7 +200,7 @@ mutation {
 	totalCount
 	}
 		eventDefinitions {data {
-		
+
 			id
 			name
 			description
@@ -221,12 +221,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -238,7 +238,7 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
@@ -253,7 +253,7 @@ mutation {
 		deprecated
 		deprecatedSince
 		forRemoval}
-		
+
 	}
 	pageInfo {startCursor
 		endCursor
@@ -261,7 +261,7 @@ mutation {
 	totalCount
 	}
 		documents {data {
-		
+
 		id
 		title
 		displayName
@@ -280,12 +280,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -297,7 +297,7 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
@@ -331,12 +331,12 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				}
 			}
 			additionalHeaders
 			additionalQueryParams
-			requestAuth { 
+			requestAuth {
 			  csrf {
 				tokenEndpointURL
 				credential {
@@ -348,7 +348,7 @@ mutation {
 					clientId
 					clientSecret
 					url
-					
+
 				  }
 			    }
 				additionalHeaders
@@ -357,6 +357,6 @@ mutation {
 			}
 		}}
 		eventingConfiguration { defaultURL }
-	
+
 					}
 				}

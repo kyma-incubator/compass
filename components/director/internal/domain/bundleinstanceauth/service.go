@@ -33,7 +33,7 @@ type UIDService interface {
 
 //go:generate mockery --name=AppService --output=automock --outpkg=automock --case=underscore
 type AppService interface {
-	GetScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error)
+	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
 }
 
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
@@ -108,7 +108,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	if err != nil {
 		return "", err //todo
 	}
-	sceanriosForApp, err := s.appService.GetScenarioNamesForApplication(ctx, tnt, applicationID)
+	sceanriosForApp, err := s.appService.GetScenarioNamesForApplication(ctx, applicationID)
 	if err != nil {
 		return "", err //todo
 	}
