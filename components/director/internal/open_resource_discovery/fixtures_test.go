@@ -40,6 +40,7 @@ const (
 	policyLevel               = "sap"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
+	partners                  = `["microsoft:vendor:Microsoft:"]`
 )
 
 var (
@@ -443,10 +444,10 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		},
 		Vendors: []*model.VendorInput{
 			{
-				OrdID:      vendorORDID,
-				Title:      "SAP",
-				SapPartner: &boolPtr,
-				Labels:     json.RawMessage(labels),
+				OrdID:    vendorORDID,
+				Title:    "SAP",
+				Partners: json.RawMessage(partners),
+				Labels:   json.RawMessage(labels),
 			},
 		},
 	}
@@ -492,7 +493,7 @@ func fixVendors() []*model.Vendor {
 			TenantID:      tenantID,
 			ApplicationID: appID,
 			Title:         "SAP",
-			SapPartner:    &boolPtr,
+			Partners:      json.RawMessage(partners),
 			Labels:        json.RawMessage(labels),
 		},
 	}

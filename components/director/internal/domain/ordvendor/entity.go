@@ -9,6 +9,6 @@ type Entity struct {
 	TenantID      string         `db:"tenant_id"`
 	ApplicationID string         `db:"app_id"`
 	Title         string         `db:"title"`
-	SapPartner    sql.NullBool   `db:"sap_partner"`
+	Partners      sql.NullString `db:"partners"`
 	Labels        sql.NullString `db:"labels"`
 }

@@ -140,6 +140,17 @@ var (
   		]
 	}`
 
+	invalidPartnersWhenValueIsNotArray = `{
+  		"partner-key-1": "partner-value-1"
+	}`
+
+	invalidPartnersWhenValuesAreNotArrayOfStrings = `{
+  		"partners-key-1": [
+    	  "partners-value-1",
+    	  112
+  		]
+	}`
+
 	invalidCountriesElement          = `["DE", "wrongCountry"]`
 	invalidCountriesNonStringElement = `["DE", 992]`
 
@@ -3303,6 +3314,31 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid JSON object `Partners` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Partners = json.RawMessage(`[]`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Partners` values are not array for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidPartnersWhenValueIsNotArray)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Partners` values are not array of strings for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidPartnersWhenValuesAreNotArrayOfStrings)
 
 				return []*open_resource_discovery.Document{doc}
 			},
