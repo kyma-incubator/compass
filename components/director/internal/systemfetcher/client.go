@@ -40,8 +40,6 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config) *Client {
 }
 
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]ProductInstanceExtended, error) {
-	//client := http.Client{}
-	//
 	//reqBody := url.Values{}
 	//reqBody.Set("grant_type", grantType)
 	//reqBody.Set("client_id", clientID)
@@ -75,7 +73,6 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Pr
 	}
 
 	// TODO: Check token, err := cfg.Token(ctx) optimization
-
 	httpClient := cfg.Client(ctx)
 
 	url := c.apiConfig.Endpoint + c.apiConfig.Path

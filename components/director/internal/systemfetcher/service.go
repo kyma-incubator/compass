@@ -6,6 +6,7 @@ import (
 
 	tenantutil "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
@@ -49,16 +50,21 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		return errors.Wrap(err, "failed to list tenants")
 	}
 
+	//TODO: See if running the fetch and save of systems can be ran concurrently for each tenant. Are the DB transaction a bottleneck?
 	for _, t := range tenants {
 		systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant))
+			log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
+			continue
 		}
 
 		err = s.saveSystemsForTenant(ctx, t, systems)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", t.ExternalTenant))
+			log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", t.ExternalTenant)))
+			continue
 		}
+
+		log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", t.ExternalTenant))
 	}
 
 	return nil
