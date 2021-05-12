@@ -2,9 +2,11 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 
@@ -56,6 +58,7 @@ type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
+	Upsert(ctx context.Context, label *model.Label) error
 }
 
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
@@ -358,7 +361,37 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 
 		scToRemove := getScenariosToRemove(existingScenarios, inputScenarios)
 		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, labelInput.ObjectID) {
-			return errors.New("Unable to delete label .....")
+			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+		}
+
+		scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
+		scenariosToKeep := getScenariosToKeep(existingScenarios, inputScenarios)
+		commonRuntimes := s.getCommonRuntimes(ctx, appTenant, scenariosToKeep, scToAdd) // runtimeID -> scenario
+
+		for runtimeID, scenario := range commonRuntimes {
+			bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, labelInput.ObjectID, runtimeID)
+			for _, currentLabel := range bundleInstanceAuthsLabels {
+				if currentLabel.Key == model.ScenariosKey {
+					var scenariosValue []string
+					err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
+					if err != nil {
+						//todo handleErr
+						continue
+					}
+					scenariosValue = append(scenariosValue, scenario)
+					updatedValue, _ := json.Marshal(scenariosValue)
+					currentLabel.Value = string(updatedValue)
+
+					labelConverter := label.NewConverter()
+					labelInput, err := labelConverter.FromEntity(currentLabel)
+					if err != nil {
+						// todo handle
+					}
+					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil { //TODO ObjectID missing
+						return err
+					}
+				}
+			}
 		}
 	}
 
@@ -373,7 +406,6 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 
 	return nil
 }
-
 func (s *service) isAnyBundleInstanceAuthForScenariosExist(ctx context.Context, scenarios []string, appId string) bool {
 	for _, scenario := range scenarios {
 		if s.isBundleInstanceAuthForScenarioExist(ctx, scenario, appId) {
@@ -388,7 +420,7 @@ func (s *service) isBundleInstanceAuthForScenarioExist(ctx context.Context, scen
 	persist, _ := persistence.FromCtx(ctx)
 
 	var count int
-	query := fmt.Sprintf("SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id INNER JOIN bundles ON bundles.id = bundle_instance_auths.bundle_id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundles.app_id=$2 AND bundle_instance_auths.status_reason='SUCCEEDED'")
+	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id INNER JOIN bundles ON bundles.id = bundle_instance_auths.bundle_id WHERE and json_build_array($1::text)::jsonb <@ labels.value AND bundles.app_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
 	err := persist.Get(&count, query, scenario, appId)
 	if err != nil {
 		return false
@@ -619,6 +651,24 @@ func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string
 	return runtimesNames, nil
 }
 
+func (s *service) getRuntimeIdsForScenario(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
+	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
+	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
+
+	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
+	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes")
+	}
+
+	var runtimeIds []string
+	for _, r := range runtimes {
+		runtimeIds = append(runtimeIds, r.ID)
+	}
+
+	return runtimeIds, nil
+}
+
 func removeDefaultScenario(scenarios []string) []string {
 	defaultScenarioIndex := -1
 	for idx, scenario := range scenarios {
@@ -640,11 +690,21 @@ func getScenarioLabelsFromInput(label *model.LabelInput) ([]string, bool) {
 		return nil, false
 	}
 
+	var result []string
 	switch val := label.Value.(type) {
 	case string:
 		return []string{val}, true
-	case []string:
-		return val, true
+	case []interface{}:
+		for _, elem := range val {
+			valAsString, ok := elem.(string)
+			if !ok {
+				// todo think about handling non string types
+				continue
+			} else {
+				result = append(result, valAsString)
+			}
+		}
+		return result, true
 	default:
 		return nil, false
 	}
@@ -662,6 +722,78 @@ func getScenariosToRemove(existing, new []string) []string {
 			result = append(result, scenario)
 		}
 	}
-
 	return result
+}
+
+func getScenariosToAdd(existing, new []string) []string {
+	existingScenarioMap := make(map[string]bool, 0)
+	for _, scenario := range existing {
+		existingScenarioMap[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range new {
+		if _, ok := existingScenarioMap[scenario]; !ok {
+			result = append(result, scenario)
+		}
+	}
+	return result
+}
+
+func getScenariosToKeep(existing []string, input []string) []string {
+	existingScenarioMap := make(map[string]bool, 0)
+	for _, scenario := range existing {
+		existingScenarioMap[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range input {
+		if _, ok := existingScenarioMap[scenario]; ok {
+			result = append(result, scenario)
+		}
+	}
+	return result
+}
+
+func (s *service) getCommonRuntimes(ctx context.Context, tenant string, scenariosToKeep []string, scenariosToAdd []string) map[string]string {
+	runtimeNamesForScenariosToKeep, err := s.getRuntimeIdsForScenario(ctx, tenant, scenariosToKeep)
+	if err != nil {
+		// TODO HANDLE ERROR
+	}
+
+	commonRuntimesScenarios := make(map[string]string)
+	for _, scenario := range scenariosToAdd {
+		runtimeNames, err := s.getRuntimeIdsForScenario(ctx, tenant, []string{scenario})
+		if err != nil {
+			// todo handle
+		}
+		for _, runtime := range runtimeNames {
+			if contains(runtimeNamesForScenariosToKeep, runtime) {
+				commonRuntimesScenarios[runtime] = scenario
+			}
+		}
+	}
+	return commonRuntimesScenarios
+}
+
+func getBundleInstanceAuthsLabels(ctx context.Context, appId, runtimeId string) []label.Entity {
+	persist, _ := persistence.FromCtx(ctx)
+
+	var entities []label.Entity
+	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2"
+	err := persist.Select(&entities, query, appId, runtimeId)
+	if err != nil {
+		return []label.Entity{}
+	}
+
+	return entities
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
