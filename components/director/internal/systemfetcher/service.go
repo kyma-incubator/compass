@@ -50,7 +50,8 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		return errors.Wrap(err, "failed to list tenants")
 	}
 
-	//TODO: See if running the fetch and save of systems can be ran concurrently for each tenant. Are the DB transaction a bottleneck?
+	//TODO: See if running the fetch and save of systems can be ran concurrently for each tenant. Are the DB transaction a bottleneck? It's still worth it if HTTP calls are a lot slower than DB calls.
+	//IDEA: Two types of workers -> ones for fetching systems and others for making DB calls
 	for _, t := range tenants {
 		systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
 		if err != nil {
