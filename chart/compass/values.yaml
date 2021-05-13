@@ -53,10 +53,10 @@ global:
       version: "PR-1828"
     director:
       dir:
-      version: "PR-1850"
+      version: "PR-1844"
     gateway:
       dir:
-      version: "PR-1828"
+      version: "PR-1850"
     operations_controller:
       dir:
       version: "PR-1828"
