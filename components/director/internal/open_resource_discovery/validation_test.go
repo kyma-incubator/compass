@@ -313,6 +313,12 @@ var (
 	invalidEntryPointURI               = `["invalidUrl"]`
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
 	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
+
+	invalidExtensibleDueToInvalidSupportedType                       = `{"supported":true}`
+	invalidExtensibleDueToNoSupportedProperty                        = `{"description":"Please find the extensibility documentation"}`
+	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
+	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty = `{"supported":"automatic"}`
+	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty    = `{"supported":"manual"}`
 )
 
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
@@ -2287,6 +2293,51 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
+		{
+			Name: "Missing `supported` field in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToNoSupportedProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field type in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field value in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedValue)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has an `automatic` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has a `manual` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedManualAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
 
 		// Test invalid entity relations
 
@@ -3012,6 +3063,51 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `supported` field in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToNoSupportedProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field type in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field value in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedValue)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has an `automatic` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has a `manual` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedManualAndNoDescriptionProperty)
 
 				return []*open_resource_discovery.Document{doc}
 			},

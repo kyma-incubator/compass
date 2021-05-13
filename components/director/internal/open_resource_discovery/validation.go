@@ -148,6 +148,7 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&api.Extensible, validation.By(validateExtensibleField)),
 	)
 }
 
@@ -185,6 +186,7 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&event.Extensible, validation.By(validateExtensibleField)),
 	)
 }
 
@@ -459,6 +461,39 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	return nil
 }
 
+func validateJSONObjects(obj interface{}, isOptional bool, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
+	jsonObj, ok := obj.(json.RawMessage)
+	if !ok {
+		return errors.New("should be json")
+	}
+
+	if len(jsonObj) == 0 && isOptional {
+		return nil
+	}
+
+	if !gjson.ValidBytes(jsonObj) && !isOptional {
+		return errors.New("should be valid json")
+	}
+
+	parsedObj := gjson.ParseBytes(jsonObj)
+	if !parsedObj.IsObject() {
+		return errors.New("should be json object")
+	}
+
+	for field, rules := range elementFieldRules {
+		if err := validation.Validate(parsedObj.Get(field).Value(), rules...); err != nil {
+			return errors.Wrapf(err, "error validating field %s", field)
+		}
+		for _, f := range crossFieldRules {
+			if err := f(parsedObj); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func validateCustomType(el gjson.Result) error {
 	if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
 		return errors.New("if customType is provided, type should be set to 'custom'")
@@ -579,4 +614,30 @@ func isValidDate(date *string) validation.RuleFunc {
 		}
 		return errors.New("invalid date")
 	}
+}
+
+func validateExtensibleField(value interface{}) error {
+	return validateJSONObjects(value, true, map[string][]validation.Rule{
+		"supported": {
+			validation.Required,
+			validation.In("no", "manual", "automatic"),
+		},
+		"description": {},
+	}, validateExtensibleInnerFields)
+}
+
+func validateExtensibleInnerFields(el gjson.Result) error {
+	supportedProperty := el.Get("supported")
+	supportedValue, ok := supportedProperty.Value().(string)
+	if !ok {
+		return errors.New("`supported` value not provided")
+	}
+
+	descriptionProperty := el.Get("description")
+	descriptionValue, ok := descriptionProperty.Value().(string)
+
+	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (descriptionValue == "" || !ok) {
+		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
+	}
+	return nil
 }
