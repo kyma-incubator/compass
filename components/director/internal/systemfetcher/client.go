@@ -76,6 +76,26 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Pr
 	httpClient := cfg.Client(ctx)
 
 	url := c.apiConfig.Endpoint + c.apiConfig.Path
+	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
+	}
+
+	if len(systems) > 0 && len(systems[0].CRMCustomerID) == 0 {
+		//TODO: This filter can be made configurable
+		filterQuery := fmt.Sprintf("?$filter=additionalAttributes/globalAccountId eq '%s'", tenant)
+		systems, err := fetchSystemsForTenant(ctx, httpClient, url+filterQuery)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
+		}
+
+		return systems, nil
+	}
+
+	return systems, nil
+}
+
+func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url string) ([]ProductInstanceExtended, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
@@ -88,7 +108,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Pr
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
-			log.D().Println("Failed to close HTTP response body")
+			log.C(ctx).Println("Failed to close HTTP response body")
 		}
 	}()
 
