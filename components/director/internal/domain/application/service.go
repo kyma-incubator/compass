@@ -387,7 +387,8 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 					if err != nil {
 						// todo handle
 					}
-					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil { //TODO ObjectID missing
+					labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
+					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
 						return err
 					}
 				}
@@ -412,7 +413,6 @@ func (s *service) isAnyBundleInstanceAuthForScenariosExist(ctx context.Context, 
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -486,6 +486,16 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 	if !appExists {
 		return fmt.Errorf("application with ID %s doesn't exist", applicationID)
+	}
+
+	if key == model.ScenariosKey {
+		scenarios, err := s.GetScenarioNamesForApplication(ctx, applicationID)
+		if err != nil {
+			// TODO handle err
+		}
+		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scenarios, applicationID) {
+			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+		}
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)

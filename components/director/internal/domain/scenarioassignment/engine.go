@@ -2,7 +2,10 @@ package scenarioassignment
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -63,6 +66,17 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
 	if err != nil {
 		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
+	}
+	for _, label := range labels { //TODO check once again
+		runtimeID := label.ObjectID
+		var scenarios []string
+		err := json.Unmarshal([]byte(label.Value.(string)), &scenarios)
+		if err != nil {
+			// todo handle
+		}
+		if e.isAnyBundleInstanceAuthForScenariosExist(ctx, scenarios, runtimeID) {
+			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+		}
 	}
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
@@ -271,4 +285,26 @@ func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[strin
 	}
 
 	return convertedLabels
+}
+
+func (e *engine) isAnyBundleInstanceAuthForScenariosExist(ctx context.Context, scenarios []string, runtimeId string) bool {
+	for _, scenario := range scenarios {
+		if e.isBundleInstanceAuthForScenarioExist(ctx, scenario, runtimeId) {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *engine) isBundleInstanceAuthForScenarioExist(ctx context.Context, scenario, runtimeId string) bool {
+	persist, _ := persistence.FromCtx(ctx)
+
+	var count int
+	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundle_instance_auths.runtime_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
+	err := persist.Get(&count, query, scenario, runtimeId)
+	if err != nil {
+		return false
+	}
+
+	return count != 0
 }
