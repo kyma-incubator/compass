@@ -1603,8 +1603,10 @@ func TestResolver_Labels(t *testing.T) {
 	// given
 	id := "foo"
 	tenant := "tenant"
-	labelKey := "key"
-	labelValue := "val"
+	labelKey1 := "key1"
+	labelValue1 := "val1"
+	labelKey2 := "key2"
+	labelValue2 := "val2"
 
 	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
 
@@ -1612,24 +1614,28 @@ func TestResolver_Labels(t *testing.T) {
 		"abc": {
 			ID:         "abc",
 			Tenant:     tenant,
-			Key:        labelKey,
-			Value:      labelValue,
+			Key:        labelKey1,
+			Value:      labelValue1,
 			ObjectID:   id,
 			ObjectType: model.RuntimeLabelableObject,
 		},
 		"def": {
 			ID:         "def",
 			Tenant:     tenant,
-			Key:        labelKey,
-			Value:      labelValue,
+			Key:        labelKey2,
+			Value:      labelValue2,
 			ObjectID:   id,
 			ObjectType: model.RuntimeLabelableObject,
 		},
 	}
 
 	gqlLabels := graphql.Labels{
-		labelKey: labelValue,
-		labelKey: labelValue,
+		labelKey1: labelValue1,
+		labelKey2: labelValue2,
+	}
+
+	gqlLabels1 := graphql.Labels{
+		labelKey1: labelValue1,
 	}
 
 	testErr := errors.New("Test error")
@@ -1640,7 +1646,7 @@ func TestResolver_Labels(t *testing.T) {
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn       func() *automock.RuntimeService
 		InputRuntime    *graphql.Runtime
-		InputKey        string
+		InputKey        *string
 		ExpectedResult  graphql.Labels
 		ExpectedErr     error
 	}{
@@ -1662,8 +1668,30 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       nil,
 			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Success when labels are filtered",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       &labelKey1,
+			ExpectedResult: gqlLabels1,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1684,7 +1712,7 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(nil, errors.New("doesn't exist")).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       &labelKey1,
 			ExpectedResult: nil,
 			ExpectedErr:    nil,
 		},
@@ -1705,7 +1733,7 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       &labelKey1,
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1720,7 +1748,7 @@ func TestResolver_Labels(t *testing.T) {
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
-			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
+			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
