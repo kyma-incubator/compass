@@ -261,7 +261,15 @@ func (s *service) CreateManyIfNotExists(ctx context.Context, applicationInputs [
 	var appsToAdd []model.ApplicationRegisterInput
 	for _, ai := range applicationInputs {
 		alreadyExits := false
+
 		for _, a := range allApps {
+			if ai.Name == a.Name {
+				alreadyExits = true
+				break
+			}
+		}
+
+		for _, a := range appsToAdd {
 			if ai.Name == a.Name {
 				alreadyExits = true
 				break
