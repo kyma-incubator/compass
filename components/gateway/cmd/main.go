@@ -62,7 +62,7 @@ func main() {
 	logger := log.C(ctx)
 
 	var auditlogSink proxy.AuditlogService
-	var auditlogSvc proxy.AuditlogService
+	var auditlogSvc proxy.PreAuditlogService
 	if cfg.AuditlogEnabled {
 		logger.Infoln("Auditlog is enabled")
 		auditlogSink, auditlogSvc, err = initAuditLogs(ctx, metricsCollector)
@@ -177,7 +177,7 @@ func exitOnError(err error, context string) {
 
 // initAuditLogs creates proxy.AuditlogService instances, the first one is an asynchronous sink,
 // while the second one is a synchronous service with pre-logging functionality.
-func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (proxy.AuditlogService, proxy.AuditlogService, error) {
+func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (proxy.AuditlogService, proxy.PreAuditlogService, error) {
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
