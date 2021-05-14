@@ -53,7 +53,7 @@ global:
       version: "PR-1828"
     director:
       dir:
-      version: "PR-1845"
+      version: "PR-1852"
     gateway:
       dir:
       version: "PR-1828"

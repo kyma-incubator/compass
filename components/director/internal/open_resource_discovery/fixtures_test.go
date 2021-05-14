@@ -196,7 +196,7 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
-		OpenResourceDiscovery: "1.0-rc.2",
+		OpenResourceDiscovery: "1.0-rc.3",
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),
@@ -294,6 +294,16 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 							},
 						},
 					},
+					{
+						Type:      "edmx",
+						MediaType: "application/xml",
+						URL:       "https://TEST:443//odata/$metadata",
+						AccessStrategy: []model.AccessStrategy{
+							{
+								Type: "open",
+							},
+						},
+					},
 				},
 				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
 					{
@@ -337,6 +347,16 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						Type:      "edmx",
 						MediaType: "application/xml",
 						URL:       "https://TEST:443//odata/$metadata",
+						AccessStrategy: []model.AccessStrategy{
+							{
+								Type: "open",
+							},
+						},
+					},
+					{
+						Type:      "openapi-v3",
+						MediaType: "application/json",
+						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseURL),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -417,6 +437,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
 				Industry:            json.RawMessage(`["automotive","test"]`),
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -740,11 +761,12 @@ func fixEvents() []*model.EventDefinition {
 }
 
 func fixApi1SpecInputs() []*model.SpecInput {
-	apiType := model.APISpecTypeOpenAPIV3
+	openApiType := model.APISpecTypeOpenAPIV3
+	edmxAPIType := model.APISpecTypeEDMX
 	return []*model.SpecInput{
 		{
 			Format:     "application/json",
-			APIType:    &apiType,
+			APIType:    &openApiType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
@@ -752,24 +774,41 @@ func fixApi1SpecInputs() []*model.SpecInput {
 		},
 		{
 			Format:     "text/yaml",
-			APIType:    &apiType,
+			APIType:    &openApiType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: "https://test.com/odata/1.0/catalog",
+			},
+		},
+		{
+			Format:     "application/xml",
+			APIType:    &edmxAPIType,
+			CustomType: str.Ptr(""),
+			FetchRequest: &model.FetchRequestInput{
+				URL: "https://TEST:443//odata/$metadata",
 			},
 		},
 	}
 }
 
 func fixApi2SpecInputs() []*model.SpecInput {
-	apiType := model.APISpecTypeEDMX
+	edmxAPIType := model.APISpecTypeEDMX
+	openApiType := model.APISpecTypeOpenAPIV3
 	return []*model.SpecInput{
 		{
 			Format:     "application/xml",
-			APIType:    &apiType,
+			APIType:    &edmxAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: "https://TEST:443//odata/$metadata",
+			},
+		},
+		{
+			Format:     "application/json",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			FetchRequest: &model.FetchRequestInput{
+				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
 			},
 		},
 	}

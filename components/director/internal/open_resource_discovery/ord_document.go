@@ -67,11 +67,22 @@ func (docs Documents) Validate(webhookURL string) error {
 	}
 
 	packageIDs := make(map[string]bool, 0)
+	packagePolicyLevels := make(map[string]string, 0)
 	bundleIDs := make(map[string]bool, 0)
 	productIDs := make(map[string]bool, 0)
 	apiIDs := make(map[string]bool, 0)
 	eventIDs := make(map[string]bool, 0)
 	vendorIDs := make(map[string]bool, 0)
+
+	for _, doc := range docs {
+		for _, pkg := range doc.Packages {
+			if _, ok := packageIDs[pkg.OrdID]; ok {
+				return errors.Errorf("found duplicate package with ord id %q", pkg.OrdID)
+			}
+			packageIDs[pkg.OrdID] = true
+			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
+		}
+	}
 
 	for _, doc := range docs {
 		if err := validateDocumentInput(doc); err != nil {
@@ -82,10 +93,6 @@ func (docs Documents) Validate(webhookURL string) error {
 			if err := validatePackageInput(pkg); err != nil {
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
 			}
-			if _, ok := packageIDs[pkg.OrdID]; ok {
-				return errors.Errorf("found duplicate package with ord id %q", pkg.OrdID)
-			}
-			packageIDs[pkg.OrdID] = true
 		}
 		for _, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
@@ -106,7 +113,7 @@ func (docs Documents) Validate(webhookURL string) error {
 			productIDs[product.OrdID] = true
 		}
 		for _, api := range doc.APIResources {
-			if err := validateAPIInput(api); err != nil {
+			if err := validateAPIInput(api, packagePolicyLevels); err != nil {
 				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
 			}
 			if _, ok := apiIDs[*api.OrdID]; ok {

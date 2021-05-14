@@ -2,6 +2,7 @@ package open_resource_discovery
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"regexp"
 	"strings"
 	"time"
@@ -52,7 +53,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.2")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.3")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {
@@ -108,7 +109,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	)
 }
 
-func validateAPIInput(api *model.APIDefinitionInput) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
@@ -133,7 +134,40 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&api.ResourceDefinitions, validation.Required),
+		validation.Field(&api.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
+			if value == nil {
+				return nil
+			}
+
+			jsonArr := api.ResourceDefinitions
+
+			if len(jsonArr) == 0 {
+				return nil
+			}
+
+			ordID := str.PtrStrToStr(api.OrdPackageID)
+			apiProtocol := str.PtrStrToStr(api.ApiProtocol)
+			policyLevel := packagePolicyLevels[ordID]
+			resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
+
+			for _, rd := range jsonArr {
+				resourceDefinitionType := rd.Type
+				resourceDefinitionTypes[resourceDefinitionType] = true
+			}
+
+			wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
+			if (policyLevel == "sap" || policyLevel == "sap-partner") && (apiProtocol == "soap-inbound" || apiProtocol == "soap-outbound") && !wsdlTypeExists {
+				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
+			}
+
+			edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
+			openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
+			if (policyLevel == "sap" || policyLevel == "sap-partner") && (apiProtocol == "odata-v2" || apiProtocol == "odata-v4") && !(edmxTypeExists && openAPITypeExists) {
+				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+			}
+
+			return nil
+		})),
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
