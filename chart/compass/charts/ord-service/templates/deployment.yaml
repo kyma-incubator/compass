@@ -87,9 +87,9 @@ spec:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
               path: "/actuator/health"
-            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
-            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+            initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.deployment.livenessProbe.periodSeconds }}
           volumeMounts:
         {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
