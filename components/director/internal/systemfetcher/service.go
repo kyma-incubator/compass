@@ -24,7 +24,7 @@ type SystemsService interface {
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
 type SystemsAPIClient interface {
-	FetchSystemsForTenant(ctx context.Context, tenant string) ([]ProductInstanceExtended, error)
+	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
 type SystemFetcher struct {
@@ -93,7 +93,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 	return tenants, nil
 }
 
-func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systems []ProductInstanceExtended) error {
+func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systems []System) error {
 	var appInputs []model.ApplicationRegisterInput
 	for _, sys := range systems {
 		system := sys
@@ -123,7 +123,7 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.
 	return nil
 }
 
-func (s *SystemFetcher) convertSystemToAppRegisterInput(sc ProductInstanceExtended) model.ApplicationRegisterInput {
+func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) model.ApplicationRegisterInput {
 	initStatusCond := model.ApplicationStatusConditionInitial
 	baseURL := sc.BaseURL
 	if mainURL, ok := sc.AdditionalUrls["mainUrl"]; ok && baseURL == "" {

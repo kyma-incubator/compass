@@ -344,6 +344,8 @@ global:
       maxIdleConnections: 2
     systemsAPIEndpoint: ""
     systemsAPIPath: ""
+    systemsAPIFilterCriteria: ""
+    systemsAPIFilterTenantCriteriaPattern: ""
     oauth:
       client: ""
       secret: ""

@@ -23,8 +23,10 @@ type OAuth2Config struct {
 }
 
 type APIConfig struct {
-	Endpoint string `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
-	Path     string `envconfig:"APP_SYSTEM_INFORMATION_PATH"`
+	Endpoint                    string `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
+	Path                        string `envconfig:"APP_SYSTEM_INFORMATION_PATH"`
+	FilterCriteria              string `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
+	FilterTenantCriteriaPattern string `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
 }
 
 type Client struct {
@@ -39,32 +41,8 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config) *Client {
 	}
 }
 
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]ProductInstanceExtended, error) {
-	//reqBody := url.Values{}
-	//reqBody.Set("grant_type", grantType)
-	//reqBody.Set("client_id", clientID)
-	//reqBody.Set("scope", scope)
-	//
-	//req, err := http.NewRequest("POST", fmt.Sprintf(tokenURLPattern, tenant)+"?"+reqBody.Encode(), nil)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":"+clientSecret)))
-	//
-	//resp, err := client.Do(req)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//respBody, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//fmt.Printf("%+v\n", string(respBody))
-
-	//TODO: See if the custom HTTP client_creds fetch above isn't a better option because this now makes new http clients on every call
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
+	//TODO: See if a custom HTTP fetch with client_creds isn't a better option because this now makes new http clients on every call
 	cfg := clientcredentials.Config{
 		ClientID:     c.oAuth2Config.ClientID,
 		ClientSecret: c.oAuth2Config.ClientSecret,
@@ -75,27 +53,24 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Pr
 	// TODO: Check token, err := cfg.Token(ctx) optimization
 	httpClient := cfg.Client(ctx)
 
-	url := c.apiConfig.Endpoint + c.apiConfig.Path
+	//TODO: The double fetch is a better approach if it doesn't affect that much the performance, this is an alternative approach to loading custom fields from the env and branching from them to execute one of the fetches only
+	url := c.apiConfig.Endpoint + c.apiConfig.Path + "?$filter=" + c.apiConfig.FilterCriteria
 	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
 	}
 
-	if len(systems) > 0 && len(systems[0].CRMCustomerID) == 0 {
-		//TODO: This filter can be made configurable
-		filterQuery := fmt.Sprintf("?$filter=additionalAttributes/globalAccountId eq '%s'", tenant)
-		systems, err := fetchSystemsForTenant(ctx, httpClient, url+filterQuery)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
-		}
-
-		return systems, nil
+	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
+	url = fmt.Sprintf("%s and %s", url, tenantFilter)
+	systemsByTenantFilter, err := fetchSystemsForTenant(ctx, httpClient, url)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
 	}
 
-	return systems, nil
+	return append(systems, systemsByTenantFilter...), nil
 }
 
-func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url string) ([]ProductInstanceExtended, error) {
+func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url string) ([]System, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
@@ -117,7 +92,7 @@ func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url str
 		return nil, errors.Wrap(err, "failed to parse HTTP response body")
 	}
 
-	var systems []ProductInstanceExtended
+	var systems []System
 	if err = json.Unmarshal(respBody, &systems); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal systems response")
 	}
