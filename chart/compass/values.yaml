@@ -56,7 +56,7 @@ global:
       version: "PR-1843"
     gateway:
       dir:
-      version: "PR-1828"
+      version: "PR-1850"
     operations_controller:
       dir:
       version: "PR-1828"
@@ -68,7 +68,7 @@ global:
       version: "PR-23"
     schema_migrator:
       dir:
-      version: "PR-1832"
+      version: "PR-1853"
     system_broker:
       dir:
       version: "PR-1839"
