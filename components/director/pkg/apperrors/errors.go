@@ -293,6 +293,14 @@ func NewInvalidStatusCondition(resourceType resource.Type) error {
 	}
 }
 
+func NewCannotUpdateObjectInManyBundles() error {
+	return Error{
+		errorCode: CannotUpdateObjectInManyBundles,
+		Message:   CannotUpdateObjectInManyBundlesMsg,
+		arguments: map[string]string{},
+	}
+}
+
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == valueNotFoundInConfigMsg
@@ -347,6 +355,10 @@ func IsNewCheckViolationError(err error) bool {
 
 func IsInvalidStatusCondition(err error) bool {
 	return ErrorCode(err) == InvalidStatusCondition
+}
+
+func IsCannotUpdateObjectInManyBundlesError(err error) bool {
+	return ErrorCode(err) == CannotUpdateObjectInManyBundles
 }
 
 func sortMapKey(m map[string]string) []string {

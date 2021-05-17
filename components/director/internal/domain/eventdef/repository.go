@@ -3,6 +3,8 @@ package eventdef
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -21,12 +23,12 @@ var (
 	tenantColumn    = "tenant_id"
 	appColumn       = "app_id"
 	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, tenantColumn, appColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+	eventDefColumns = []string{idColumn, tenantColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{idColumn}
-	updatableColumns = []string{bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
@@ -41,6 +43,7 @@ type EventAPIDefinitionConverter interface {
 type pgRepository struct {
 	singleGetter    repo.SingleGetter
 	pageableQuerier repo.PageableQuerier
+	queryBuilder    repo.QueryBuilder
 	lister          repo.Lister
 	creator         repo.Creator
 	updater         repo.Updater
@@ -53,6 +56,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
 		lister:          repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:         repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
@@ -79,27 +83,13 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &eventAPIDefModel, nil
 }
 
+// the bundleID remains for backwards compatibility above in the layers; we are sure that the correct Event will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
-	var ent Entity
-
-	conditions := repo.Conditions{
-		repo.NewEqualCondition(idColumn, id),
-		repo.NewEqualCondition(bundleColumn, bundleID),
-	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
-		return nil, err
-	}
-
-	eventAPIModel := r.conv.FromEntity(ent)
-	return &eventAPIModel, nil
+	return r.GetByID(ctx, tenant, id)
 }
 
 func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition(bundleColumn, bundleID),
-	}
-
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
@@ -115,9 +105,22 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return events, nil
 }
 
-func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.EventDefinitionPage, error) {
+func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition(bundleColumn, bundleID),
+		repo.NewNotNullCondition(bundlereferences.EventDefIDColumn),
+	}
+	subquery, args, err := r.queryBuilder.BuildQuery(tenant, false, subqueryConditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
 	var eventCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &eventCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &eventCollection, inOperatorConditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -183,5 +186,18 @@ func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) e
 }
 
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition(bundleColumn, bundleID),
+		repo.NewNotNullCondition(bundlereferences.EventDefIDColumn),
+	}
+	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false, subqueryConditions...)
+	if err != nil {
+		return err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
+	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
 }
