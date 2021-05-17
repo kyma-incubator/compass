@@ -32,24 +32,20 @@ type BundleReferenceConverter interface {
 
 type repository struct {
 	creator         repo.Creator
-	pageableQuerier repo.PageableQuerier
 	lister          repo.Lister
 	getter          repo.SingleGetter
 	deleter         repo.Deleter
 	updater         repo.Updater
-	existQuerier    repo.ExistQuerier
 	conv            BundleReferenceConverter
 }
 
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
 		creator:         repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		lister:          repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		getter:          repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		deleter:         repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
 		updater:         repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
-		existQuerier:    repo.NewExistQuerier(resource.BundleReference, BundleReferenceTable, tenantColumn),
 		conv:            conv,
 	}
 }
