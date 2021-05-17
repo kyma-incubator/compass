@@ -31,22 +31,22 @@ type BundleReferenceConverter interface {
 }
 
 type repository struct {
-	creator         repo.Creator
-	lister          repo.Lister
-	getter          repo.SingleGetter
-	deleter         repo.Deleter
-	updater         repo.Updater
-	conv            BundleReferenceConverter
+	creator repo.Creator
+	lister  repo.Lister
+	getter  repo.SingleGetter
+	deleter repo.Deleter
+	updater repo.Updater
+	conv    BundleReferenceConverter
 }
 
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
-		creator:         repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		lister:          repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		getter:          repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		deleter:         repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
-		updater:         repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
-		conv:            conv,
+		creator: repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		lister:  repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
+		getter:  repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
+		deleter: repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
+		updater: repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
+		conv:    conv,
 	}
 }
 
