@@ -24,7 +24,6 @@ type OAuth2Config struct {
 
 type APIConfig struct {
 	Endpoint                    string `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
-	Path                        string `envconfig:"APP_SYSTEM_INFORMATION_PATH"`
 	FilterCriteria              string `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
 	FilterTenantCriteriaPattern string `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
 }
@@ -54,7 +53,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	httpClient := cfg.Client(ctx)
 
 	//TODO: The double fetch is a better approach if it doesn't affect that much the performance, this is an alternative approach to loading custom fields from the env and branching from them to execute one of the fetches only
-	url := c.apiConfig.Endpoint + c.apiConfig.Path + "?$filter=" + c.apiConfig.FilterCriteria
+	url := c.apiConfig.Endpoint + "?$filter=" + c.apiConfig.FilterCriteria
 	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)

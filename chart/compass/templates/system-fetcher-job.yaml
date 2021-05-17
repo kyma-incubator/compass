@@ -33,11 +33,6 @@ spec:
                     configMapKeyRef:
                       name: "{{ $configmapName }}"
                       key: system-information-api-endpoint
-                - name: APP_SYSTEM_INFORMATION_PATH
-                  valueFrom:
-                    configMapKeyRef:
-                      name: "{{ $configmapName }}"
-                      key: system-information-api-path
                 - name: APP_SYSTEM_INFORMATION_FILTER_CRITERIA
                   valueFrom:
                     configMapKeyRef:
@@ -143,7 +138,6 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 data:
   system-information-api-endpoint: "{{ .Values.global.systemFetcher.systemsAPIEndpoint }}"
-  system-information-api-path: "{{ .Values.global.systemFetcher.systemsAPIPath }}"
   system-information-api-filter-criteria: "{{ .Values.global.systemFetcher.systemsAPIFilterCriteria }}"
   system-information-api-filter-tenant-criteria-pattern: "{{ .Values.global.systemFetcher.systemsAPIFilterTenantCriteriaPattern }}"
 {{- if and (eq .Values.global.systemFetcher.enabled true) (eq .Values.global.systemFetcher.manageSecrets true) }}

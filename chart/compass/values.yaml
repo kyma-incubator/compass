@@ -343,7 +343,6 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     systemsAPIEndpoint: ""
-    systemsAPIPath: ""
     systemsAPIFilterCriteria: ""
     systemsAPIFilterTenantCriteriaPattern: ""
     oauth:
