@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -30,6 +32,7 @@ const (
 	CorrelationIDsRegex               = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
 	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
 	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	VendorPartnersRegex               = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
 )
 
 var shortDescriptionRules = []validation.Rule{
@@ -51,7 +54,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.2")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.3")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {
@@ -107,7 +110,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	)
 }
 
-func validateAPIInput(api *model.APIDefinitionInput) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
@@ -132,7 +135,40 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&api.ResourceDefinitions, validation.Required),
+		validation.Field(&api.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
+			if value == nil {
+				return nil
+			}
+
+			jsonArr := api.ResourceDefinitions
+
+			if len(jsonArr) == 0 {
+				return nil
+			}
+
+			ordID := str.PtrStrToStr(api.OrdPackageID)
+			apiProtocol := str.PtrStrToStr(api.ApiProtocol)
+			policyLevel := packagePolicyLevels[ordID]
+			resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
+
+			for _, rd := range jsonArr {
+				resourceDefinitionType := rd.Type
+				resourceDefinitionTypes[resourceDefinitionType] = true
+			}
+
+			wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
+			if (policyLevel == "sap" || policyLevel == "sap-partner") && (apiProtocol == "soap-inbound" || apiProtocol == "soap-outbound") && !wsdlTypeExists {
+				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
+			}
+
+			edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
+			openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
+			if (policyLevel == "sap" || policyLevel == "sap-partner") && (apiProtocol == "odata-v2" || apiProtocol == "odata-v4") && !(edmxTypeExists && openAPITypeExists) {
+				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+			}
+
+			return nil
+		})),
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
@@ -147,6 +183,7 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&api.Extensible, validation.By(validateExtensibleField)),
 	)
 }
 
@@ -184,6 +221,7 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&event.Extensible, validation.By(validateExtensibleField)),
 	)
 }
 
@@ -206,6 +244,9 @@ func validateVendorInput(vendor *model.VendorInput) error {
 		validation.Field(&vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&vendor.Title, validation.Required),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
+		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(VendorPartnersRegex))
+		})),
 	)
 }
 
@@ -338,7 +379,7 @@ func validatePackageLinks(value interface{}) error {
 	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
-			validation.In("terms-of-service", "licence", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
+			validation.In("terms-of-service", "license", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
 		},
 		"url": {
 			validation.Required,
@@ -448,6 +489,39 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 				if err := f(el); err != nil {
 					return err
 				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateJSONObjects(obj interface{}, isOptional bool, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
+	jsonObj, ok := obj.(json.RawMessage)
+	if !ok {
+		return errors.New("should be json")
+	}
+
+	if len(jsonObj) == 0 && isOptional {
+		return nil
+	}
+
+	if !gjson.ValidBytes(jsonObj) && !isOptional {
+		return errors.New("should be valid json")
+	}
+
+	parsedObj := gjson.ParseBytes(jsonObj)
+	if !parsedObj.IsObject() {
+		return errors.New("should be json object")
+	}
+
+	for field, rules := range elementFieldRules {
+		if err := validation.Validate(parsedObj.Get(field).Value(), rules...); err != nil {
+			return errors.Wrapf(err, "error validating field %s", field)
+		}
+		for _, f := range crossFieldRules {
+			if err := f(parsedObj); err != nil {
+				return err
 			}
 		}
 	}
@@ -575,4 +649,30 @@ func isValidDate(date *string) validation.RuleFunc {
 		}
 		return errors.New("invalid date")
 	}
+}
+
+func validateExtensibleField(value interface{}) error {
+	return validateJSONObjects(value, true, map[string][]validation.Rule{
+		"supported": {
+			validation.Required,
+			validation.In("no", "manual", "automatic"),
+		},
+		"description": {},
+	}, validateExtensibleInnerFields)
+}
+
+func validateExtensibleInnerFields(el gjson.Result) error {
+	supportedProperty := el.Get("supported")
+	supportedValue, ok := supportedProperty.Value().(string)
+	if !ok {
+		return errors.New("`supported` value not provided")
+	}
+
+	descriptionProperty := el.Get("description")
+	descriptionValue, ok := descriptionProperty.Value().(string)
+
+	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (descriptionValue == "" || !ok) {
+		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
+	}
+	return nil
 }
