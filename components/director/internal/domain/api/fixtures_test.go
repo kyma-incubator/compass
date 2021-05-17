@@ -27,6 +27,7 @@ const (
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	ordID            = "com.compass.ord.v1"
+	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 )
 
 var fixedTimestamp = time.Now()
@@ -99,6 +100,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		CustomImplementationStandard:            str.Ptr("customImplementationStandard"),
 		CustomImplementationStandardDescription: str.Ptr("customImplementationStandardDescription"),
 		Version:                                 v,
+		Extensible:                              json.RawMessage(extensible),
 		BaseEntity: &model.BaseEntity{
 			ID:        apiDefID,
 			Ready:     true,
@@ -249,6 +251,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		ImplementationStandard:                  repo.NewValidNullableString("implementationStandard"),
 		CustomImplementationStandard:            repo.NewValidNullableString("customImplementationStandard"),
 		CustomImplementationStandardDescription: repo.NewValidNullableString("customImplementationStandardDescription"),
+		Extensible:                              repo.NewValidNullableString(extensible),
 		Version: version.Version{
 			Value:           repo.NewNullableString(str.Ptr("v1.1")),
 			Deprecated:      repo.NewValidNullableBool(false),
@@ -270,7 +273,7 @@ func fixAPIDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
@@ -278,7 +281,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", "successor", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "visibility", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, "implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`)}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, "implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`), extensible}
 }
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
@@ -287,7 +290,7 @@ func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, apiDef.Successor, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
-		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error, apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs)}
+		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error, apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs), extensible}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
