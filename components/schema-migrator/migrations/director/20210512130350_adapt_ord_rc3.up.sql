@@ -23,7 +23,7 @@ SELECT id                  AS api_definition_id,
 FROM api_definitions,
      jsonb_to_record(api_definitions.extensible) AS actions(supported TEXT, description TEXT);
 
-CREATE VIEW event_api_definitions_extensible AS
+CREATE VIEW event_api_definition_extensible AS
 SELECT id                  AS event_definition_id,
        actions.supported   AS supported,
        actions.description AS description
