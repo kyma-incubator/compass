@@ -1,6 +1,8 @@
 package bench
 
 import (
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/pkg/errors"
 	"os"
 	"testing"
 
@@ -30,11 +32,10 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	log.Info("Get Dex id_token")
-	/*dexToken, err := idtokenprovider.GetDexToken()
+	dexToken, err := idtokenprovider.GetDexToken()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting dex token"))
-	}*/
-	dexToken := "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0."
+	}
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	exitVal := m.Run()
