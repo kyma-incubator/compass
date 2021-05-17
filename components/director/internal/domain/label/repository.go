@@ -233,6 +233,33 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return labelModels, nil
 }
 
+func (r *repository) ListForObjectTypeByScenario(ctx context.Context, tenant string, objectType model.LabelableObject, scenario string) ([]model.Label, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching DB from context")
+	}
+
+	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE %s IS NOT NULL AND tenant_id = $1 AND key='scenarios' AND json_build_array($2::text)::jsonb <@ public.labels.value`,
+		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
+
+	var entities []Entity
+	err = persist.Select(&entities, stmt, tenant, scenario)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching Labels from DB")
+	}
+
+	var labels []model.Label
+	for _, entity := range entities {
+		label, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+		labels = append(labels, label)
+	}
+
+	return labels, nil
+}
+
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

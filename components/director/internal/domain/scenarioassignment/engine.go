@@ -30,17 +30,25 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+type ApplicationService interface {
+	GetAppIdsForScenario(ctx context.Context, scenario string) ([]string, error)
+	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
+}
+
 type engine struct {
 	labelRepo              LabelRepository
 	scenarioAssignmentRepo Repository
 	labelService           LabelUpsertService
+	appSvc                 ApplicationService
 }
 
-func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
+func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, appService ApplicationService) *engine {
 	return &engine{
 		labelRepo:              labelRepo,
 		scenarioAssignmentRepo: scenarioAssignmentRepo,
 		labelService:           labelService,
+		appSvc:                 appService,
 	}
 }
 
@@ -56,6 +64,28 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	labels, err := e.labelRepo.GetScenarioLabelsForRuntimes(ctx, in.Tenant, runtimesIDs)
 	if err != nil {
 		return errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
+	}
+
+	applications, err := e.appSvc.GetAppIdsForScenario(ctx, in.ScenarioName)
+	if err != nil {
+		return err
+	}
+
+	for _, label := range labels { //["id1","id2"]
+		var runtimeScenarios []string
+		labelAsString, ok := label.Value.(string)
+		if !ok {
+			return errors.New("while converting label value to string array")
+		}
+		err := json.Unmarshal([]byte(labelAsString), &runtimeScenarios)
+		if err != nil {
+			return err
+		}
+		for _, application := range applications {
+			//check whether <current_app> is in formation with <current_runtime>
+			// if yes, get bundle instance auths for this formation and this runtime
+			// add scenario(from ASA) to each bundle instance auth label
+		}
 	}
 
 	labels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, labels)

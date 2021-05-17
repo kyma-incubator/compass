@@ -58,6 +58,7 @@ type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
+	ListForObjectTypeByScenario(ctx context.Context, tenant string, objectType model.LabelableObject, scenario string) ([]model.Label, error)
 	Upsert(ctx context.Context, label *model.Label) error
 }
 
@@ -677,6 +678,23 @@ func (s *service) getRuntimeIdsForScenario(ctx context.Context, tenant string, s
 	}
 
 	return runtimeIds, nil
+}
+
+func (s *service) GetAppIdsForScenario(ctx context.Context, scenario string) ([]string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	labels, err := s.labelRepo.ListForObjectTypeByScenario(ctx, tnt, model.ApplicationLabelableObject, scenario)
+	if err != nil {
+		return nil, err
+	}
+	var appIDs []string
+	for _, currentLabel := range labels {
+		appIDs = append(appIDs, currentLabel.ObjectID)
+	}
+	return appIDs, nil
 }
 
 func removeDefaultScenario(scenarios []string) []string {
