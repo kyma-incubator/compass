@@ -1,10 +1,11 @@
 package bench
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-	"github.com/pkg/errors"
 	"os"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
@@ -16,8 +17,8 @@ import (
 )
 
 var (
-	conf               = &config.DirectorConfig{}
-	dexGraphQLClient   *graphql.Client
+	conf             = &config.DirectorConfig{}
+	dexGraphQLClient *graphql.Client
 )
 
 func TestMain(m *testing.M) {
