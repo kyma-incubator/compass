@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-bench-director
   labels:
-    benchmark: true
+    benchmark: "true"
     app: {{ .Chart.Name }}-director-bench-app
     app.kubernetes.io/name: {{ .Chart.Name }}-director-bench
     app.kubernetes.io/managed-by: {{ .Release.Service }}
