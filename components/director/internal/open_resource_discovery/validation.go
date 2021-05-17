@@ -2,10 +2,11 @@ package open_resource_discovery
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
