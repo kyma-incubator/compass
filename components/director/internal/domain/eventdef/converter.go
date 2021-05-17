@@ -33,7 +33,7 @@ func NewConverter(vc VersionConverter, sc SpecConverter) *converter {
 	return &converter{vc: vc, sc: sc}
 }
 
-func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error) {
+func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.EventDefinition, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -44,8 +44,8 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 	}
 
 	var bundleID string
-	if in.BundleID != nil {
-		bundleID = *in.BundleID
+	if bundleRef.BundleID != nil {
+		bundleID = *bundleRef.BundleID
 	}
 
 	return &graphql.EventDefinition{
@@ -66,7 +66,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 	}, nil
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error) {
+func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
 	if len(in) != len(specs) {
 		return nil, errors.New("different events and specs count provided")
 	}
@@ -77,7 +77,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 			continue
 		}
 
-		event, err := c.ToGraphQL(e, specs[i])
+		event, err := c.ToGraphQL(e, specs[i], bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,6 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 
 func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	return model.EventDefinition{
-		BundleID:            repo.StringPtrFromNullableString(entity.BundleID),
 		ApplicationID:       entity.ApplicationID,
 		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
 		Tenant:              entity.TenantID,
@@ -163,7 +162,6 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
 	return Entity{
 		TenantID:            eventModel.Tenant,
-		BundleID:            repo.NewNullableString(eventModel.BundleID),
 		ApplicationID:       eventModel.ApplicationID,
 		PackageID:           repo.NewNullableString(eventModel.PackageID),
 		Name:                eventModel.Name,

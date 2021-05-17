@@ -161,9 +161,14 @@ func (docs Documents) Validate(webhookURL string) error {
 			if !packageIDs[*api.OrdPackageID] {
 				return errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
 			}
-			if api.OrdBundleID != nil && !bundleIDs[*api.OrdBundleID] {
-				return errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, *api.OrdBundleID)
+			if api.PartOfConsumptionBundles != nil {
+				for _, apiBndlRef := range api.PartOfConsumptionBundles {
+					if !bundleIDs[apiBndlRef.BundleOrdID] {
+						return errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID)
+					}
+				}
 			}
+
 			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
@@ -175,9 +180,14 @@ func (docs Documents) Validate(webhookURL string) error {
 			if !packageIDs[*event.OrdPackageID] {
 				return errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
 			}
-			if event.OrdBundleID != nil && !bundleIDs[*event.OrdBundleID] {
-				return errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, *event.OrdBundleID)
+			if event.PartOfConsumptionBundles != nil {
+				for _, eventBndlRef := range event.PartOfConsumptionBundles {
+					if !bundleIDs[eventBndlRef.BundleOrdID] {
+						return errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID)
+					}
+				}
 			}
+
 			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
@@ -201,6 +211,7 @@ func (docs Documents) Validate(webhookURL string) error {
 // Sanitize performs all the merging and rewriting rules defined in ORD. This method should be invoked after Documents are validated with the Validate method.
 //  - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //  - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
+//  - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
 func (docs Documents) Sanitize(baseURL string) error {
 	var err error
 
@@ -239,9 +250,10 @@ func (docs Documents) Sanitize(baseURL string) error {
 			if api.ChangeLogEntries, err = rewriteRelativeURIsInJson(api.ChangeLogEntries, baseURL, "url"); err != nil {
 				return err
 			}
-			if !isAbsoluteURL(api.TargetURL) {
-				api.TargetURL = baseURL + api.TargetURL
+			if api.TargetURLs, err = rewriteRelativeURIsInJsonArray(api.TargetURLs, baseURL); err != nil {
+				return err
 			}
+			rewriteDefaultTargetURL(api.PartOfConsumptionBundles, baseURL)
 		}
 
 		for _, event := range doc.EventResources {
@@ -291,6 +303,7 @@ func (docs Documents) Sanitize(baseURL string) error {
 			if api.Labels, err = mergeORDLabels(referredPkg.Labels, api.Labels); err != nil {
 				return errors.Wrapf(err, "error while merging labels for api with ord id %q", *api.OrdID)
 			}
+			assignDefaultEntryPointIfNeeded(api.PartOfConsumptionBundles, api.TargetURLs)
 		}
 		for _, event := range doc.EventResources {
 			referredPkg, ok := packages[*event.OrdPackageID]
@@ -396,6 +409,36 @@ func deduplicate(s []string) []string {
 	return result
 }
 
+func rewriteRelativeURIsInJsonArray(j json.RawMessage, baseURL string) (json.RawMessage, error) {
+	parsedJson := gjson.ParseBytes(j)
+
+	items := make([]interface{}, 0, 0)
+	for _, crrURI := range parsedJson.Array() {
+		if !isAbsoluteURL(crrURI.String()) {
+			rewrittenURI := baseURL + crrURI.String()
+
+			items = append(items, rewrittenURI)
+		} else {
+			items = append(items, crrURI.String())
+		}
+	}
+
+	rewrittenJson, err := json.Marshal(items)
+	if err != nil {
+		return nil, err
+	}
+
+	return rewrittenJson, nil
+}
+
+func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, baseURL string) {
+	for _, br := range bundleRefs {
+		if br.DefaultTargetURL != "" && !isAbsoluteURL(br.DefaultTargetURL) {
+			br.DefaultTargetURL = baseURL + br.DefaultTargetURL
+		}
+	}
+}
+
 func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
 	parsedJson := gjson.ParseBytes(j)
 	if parsedJson.IsArray() {
@@ -415,6 +458,15 @@ func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (jso
 		}
 	}
 	return j, nil
+}
+
+func assignDefaultEntryPointIfNeeded(bundleReferences []*model.ConsumptionBundleReference, targetURLs json.RawMessage) {
+	lenTargetURLs := len(gjson.ParseBytes(targetURLs).Array())
+	for _, br := range bundleReferences {
+		if br.DefaultTargetURL == "" && lenTargetURLs > 1 {
+			br.DefaultTargetURL = gjson.ParseBytes(targetURLs).Array()[0].String()
+		}
+	}
 }
 
 func isAbsoluteURL(str string) bool {

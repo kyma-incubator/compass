@@ -3,6 +3,8 @@ package open_resource_discovery
 import (
 	"context"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -13,34 +15,36 @@ import (
 type Service struct {
 	transact persistence.Transactioner
 
-	appSvc       ApplicationService
-	webhookSvc   WebhookService
-	bundleSvc    BundleService
-	apiSvc       APIService
-	eventSvc     EventService
-	specSvc      SpecService
-	packageSvc   PackageService
-	productSvc   ProductService
-	vendorSvc    VendorService
-	tombstoneSvc TombstoneService
+	appSvc             ApplicationService
+	webhookSvc         WebhookService
+	bundleSvc          BundleService
+	bundleReferenceSvc BundleReferenceService
+	apiSvc             APIService
+	eventSvc           EventService
+	specSvc            SpecService
+	packageSvc         PackageService
+	productSvc         ProductService
+	vendorSvc          VendorService
+	tombstoneSvc       TombstoneService
 
 	ordClient Client
 }
 
-func NewAggregatorService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
+func NewAggregatorService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
 	return &Service{
-		transact:     transact,
-		appSvc:       appSvc,
-		webhookSvc:   webhookSvc,
-		bundleSvc:    bundleSvc,
-		apiSvc:       apiSvc,
-		eventSvc:     eventSvc,
-		specSvc:      specSvc,
-		packageSvc:   packageSvc,
-		productSvc:   productSvc,
-		vendorSvc:    vendorSvc,
-		tombstoneSvc: tombstoneSvc,
-		ordClient:    client,
+		transact:           transact,
+		appSvc:             appSvc,
+		webhookSvc:         webhookSvc,
+		bundleSvc:          bundleSvc,
+		bundleReferenceSvc: bundleReferenceSvc,
+		apiSvc:             apiSvc,
+		eventSvc:           eventSvc,
+		specSvc:            specSvc,
+		packageSvc:         packageSvc,
+		productSvc:         productSvc,
+		vendorSvc:          vendorSvc,
+		tombstoneSvc:       tombstoneSvc,
+		ordClient:          client,
 	}
 }
 
@@ -94,6 +98,10 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	ctx = tenant.SaveToContext(ctx, app.Tenant, "")
+
+	if err := ValidateSystemInstanceInput(app); err != nil {
+		log.C(ctx).WithError(err).Errorf("error validating app %q", app.ID)
+	}
 
 	webhooks, err := s.webhookSvc.ListForApplication(ctx, app.ID)
 	if err != nil {
@@ -387,15 +395,9 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
 	})
 
-	var bundleID *string
+	defaultTargetURLPerBundle := extractAllBundleReferencesForAPI(bundlesFromDB, api)
+
 	var packageID *string
-
-	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
-		return equalStrings(bundlesFromDB[i].OrdID, api.OrdBundleID)
-	}); found {
-		bundleID = &bundlesFromDB[i].ID
-	}
-
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return equalStrings(&packagesFromDB[i].OrdID, api.OrdPackageID)
 	}); found {
@@ -408,11 +410,25 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	}
 
 	if !isAPIFound {
-		_, err := s.apiSvc.Create(ctx, appID, bundleID, packageID, api, specs)
+		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle)
 		return err
 	}
 
-	if err := s.apiSvc.Update(ctx, apisFromDB[i].ID, api, nil); err != nil {
+	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
+	if err != nil {
+		return err
+	}
+
+	// in case of API update, we need to filter which ConsumptionBundleReferences should be deleted - those that are stored in db but not present in the input anymore
+	bundleIDsForDeletion, err := extractBundleReferencesForDeletion(allBundleIDsForAPI, defaultTargetURLPerBundle)
+	if err != nil {
+		return err
+	}
+
+	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
+	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
+
+	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion); err != nil {
 		return err
 	}
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
@@ -425,19 +441,20 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 
 func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput) error {
 	ctx = addFieldToLogger(ctx, "event_ord_id", *event.OrdID)
-	i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
+	i, isEventFound := searchInSlice(len(eventsFromDB), func(i int) bool {
 		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
 	})
 
-	var bundleID *string
-	var packageID *string
-
-	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
-		return equalStrings(bundlesFromDB[i].OrdID, event.OrdBundleID)
-	}); found {
-		bundleID = &bundlesFromDB[i].ID
+	bundleIDsFromBundleReference := make([]string, 0)
+	for _, br := range event.PartOfConsumptionBundles {
+		for _, bndl := range bundlesFromDB {
+			if equalStrings(bndl.OrdID, &br.BundleOrdID) {
+				bundleIDsFromBundleReference = append(bundleIDsFromBundleReference, bndl.ID)
+			}
+		}
 	}
 
+	var packageID *string
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return equalStrings(&packagesFromDB[i].OrdID, event.OrdPackageID)
 	}); found {
@@ -449,12 +466,37 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 		specs = append(specs, resourceDef.ToSpec())
 	}
 
-	if !found {
-		_, err := s.eventSvc.Create(ctx, appID, bundleID, packageID, event, specs)
+	if !isEventFound {
+		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference)
 		return err
 	}
 
-	if err := s.eventSvc.Update(ctx, eventsFromDB[i].ID, event, nil); err != nil {
+	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)
+	if err != nil {
+		return err
+	}
+
+	// in case of Event update, we need to filter which ConsumptionBundleReferences(bundle IDs) should be deleted - those that are stored in db but not present in the input anymore
+	bundleIDsForDeletion := make([]string, 0)
+	for _, id := range allBundleIDsForEvent {
+		if _, found := searchInSlice(len(bundleIDsFromBundleReference), func(i int) bool {
+			return equalStrings(&bundleIDsFromBundleReference[i], &id)
+		}); !found {
+			bundleIDsForDeletion = append(bundleIDsForDeletion, id)
+		}
+	}
+
+	// in case of Event update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
+	bundleIDsForCreation := make([]string, 0)
+	for _, id := range bundleIDsFromBundleReference {
+		if _, found := searchInSlice(len(allBundleIDsForEvent), func(i int) bool {
+			return equalStrings(&allBundleIDsForEvent[i], &id)
+		}); !found {
+			bundleIDsForCreation = append(bundleIDsForCreation, id)
+		}
+	}
+
+	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsForCreation, bundleIDsForDeletion); err != nil {
 		return err
 	}
 	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
@@ -502,6 +544,48 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		Labels:                         in.Labels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 	}
+}
+
+func extractAllBundleReferencesForAPI(bundlesFromDB []*model.Bundle, api model.APIDefinitionInput) map[string]string {
+	defaultTargetURLPerBundle := make(map[string]string)
+	lenTargetURLs := len(gjson.ParseBytes(api.TargetURLs).Array())
+	for _, br := range api.PartOfConsumptionBundles {
+		for _, bndl := range bundlesFromDB {
+			if equalStrings(bndl.OrdID, &br.BundleOrdID) {
+				if br.DefaultTargetURL == "" && lenTargetURLs == 1 {
+					defaultTargetURLPerBundle[bndl.ID] = gjson.ParseBytes(api.TargetURLs).Array()[0].String()
+				} else {
+					defaultTargetURLPerBundle[bndl.ID] = br.DefaultTargetURL
+				}
+			}
+		}
+	}
+	return defaultTargetURLPerBundle
+}
+
+func extractAllBundleReferencesForCreation(defaultTargetURLPerBundle map[string]string, allBundleIDsForAPI []string) map[string]string {
+	defaultTargetURLPerBundleForCreation := make(map[string]string)
+	for bndlID, defaultEntryPoint := range defaultTargetURLPerBundle {
+		if _, found := searchInSlice(len(allBundleIDsForAPI), func(i int) bool {
+			return equalStrings(&allBundleIDsForAPI[i], &bndlID)
+		}); !found {
+			defaultTargetURLPerBundleForCreation[bndlID] = defaultEntryPoint
+			delete(defaultTargetURLPerBundle, bndlID)
+		}
+	}
+	return defaultTargetURLPerBundleForCreation
+}
+
+func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTargetURLPerBundle map[string]string) ([]string, error) {
+	bundleIDsToBeDeleted := make([]string, 0)
+
+	for _, bndlID := range allBundleIDsForAPI {
+		if _, ok := defaultTargetURLPerBundle[bndlID]; !ok {
+			bundleIDsToBeDeleted = append(bundleIDsToBeDeleted, bndlID)
+		}
+	}
+
+	return bundleIDsToBeDeleted, nil
 }
 
 func equalStrings(first, second *string) bool {

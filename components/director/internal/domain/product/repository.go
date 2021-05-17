@@ -15,8 +15,8 @@ const productTable string = `public.products`
 
 var (
 	tenantColumn     = "tenant_id"
-	productColumns   = []string{"ord_id", tenantColumn, "app_id", "title", "short_description", "vendor", "parent", "sap_ppms_object_id", "labels"}
-	updatableColumns = []string{"title", "short_description", "vendor", "parent", "sap_ppms_object_id", "labels"}
+	productColumns   = []string{"ord_id", tenantColumn, "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
+	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore

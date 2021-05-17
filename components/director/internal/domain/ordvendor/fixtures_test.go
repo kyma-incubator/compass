@@ -17,13 +17,15 @@ const (
 	externalTenantID = "externalTenantID"
 )
 
+var boolPtr = true
+
 func fixEntityVendor() *ordvendor.Entity {
 	return &ordvendor.Entity{
 		OrdID:         ordID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
 		Title:         "title",
-		Type:          "type",
+		SapPartner:    repo.NewNullableBool(&boolPtr),
 		Labels:        repo.NewValidNullableString("{}"),
 	}
 }
@@ -34,28 +36,28 @@ func fixVendorModel() *model.Vendor {
 		TenantID:      tenantID,
 		ApplicationID: appID,
 		Title:         "title",
-		Type:          "type",
+		SapPartner:    &boolPtr,
 		Labels:        json.RawMessage("{}"),
 	}
 }
 
 func fixVendorModelInput() *model.VendorInput {
 	return &model.VendorInput{
-		OrdID:  ordID,
-		Title:  "title",
-		Type:   "type",
-		Labels: json.RawMessage("{}"),
+		OrdID:      ordID,
+		Title:      "title",
+		SapPartner: &boolPtr,
+		Labels:     json.RawMessage("{}"),
 	}
 }
 
 func fixVendorColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "title", "type", "labels"}
+	return []string{"ord_id", "tenant_id", "app_id", "title", "labels", "sap_partner"}
 }
 
 func fixVendorRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "title", "type", repo.NewValidNullableString("{}")}
+	return []driver.Value{ordID, tenantID, appID, "title", repo.NewValidNullableString("{}"), repo.NewNullableBool(&boolPtr)}
 }
 
 func fixVendorUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "type", repo.NewValidNullableString("{}")}
+	return []driver.Value{"title", repo.NewValidNullableString("{}"), repo.NewNullableBool(&boolPtr)}
 }

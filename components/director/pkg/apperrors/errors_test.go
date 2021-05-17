@@ -175,6 +175,12 @@ func TestErrors_Is(t *testing.T) {
 				testFunc:       apperrors.IsInvalidStatusCondition,
 				expectedResult: true,
 			},
+			{
+				name:           "IsCannotUpdateObjectInManyBundlesError",
+				input:          apperrors.NewCannotUpdateObjectInManyBundles(),
+				testFunc:       apperrors.IsCannotUpdateObjectInManyBundlesError,
+				expectedResult: true,
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
@@ -249,6 +255,12 @@ func TestErrors_Is(t *testing.T) {
 				name:           "IsInvalidStatusCondition",
 				input:          err,
 				testFunc:       apperrors.IsInvalidStatusCondition,
+				expectedResult: false,
+			},
+			{
+				name:           "IsCannotUpdateObjectInManyBundles",
+				input:          err,
+				testFunc:       apperrors.IsCannotUpdateObjectInManyBundlesError,
 				expectedResult: false,
 			},
 		}
