@@ -13,10 +13,6 @@ import (
 func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 	// given
 	id := "foo"
-<<<<<<< HEAD
-=======
-	//bndlID := "bar"
->>>>>>> c586f15f ([WIP] Remove bundleID from apis/events and adapt layers)
 	appID := "baz"
 	desc := "Sample"
 	name := "sample"
