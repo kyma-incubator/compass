@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	urlpkg "net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -53,14 +54,14 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	httpClient := cfg.Client(ctx)
 
 	//TODO: The double fetch is a better approach if it doesn't affect that much the performance, this is an alternative approach to loading custom fields from the env and branching from them to execute one of the fetches only
-	url := c.apiConfig.Endpoint + "?$filter=" + c.apiConfig.FilterCriteria
+	url := c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)
 	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
 	}
 
 	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
-	url = fmt.Sprintf("%s and %s", url, tenantFilter)
+	url += urlpkg.QueryEscape(" and " + tenantFilter)
 	systemsByTenantFilter, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
