@@ -21,10 +21,6 @@ type Updater interface {
 	SetUpdatableColumns(updatableColumns []string)
 	Clone() Updater
 	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
-	SetIDColumns(idColumns []string)
-	SetUpdatableColumns(updatableColumns []string)
-	Clone() Updater
-	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
 }
 
 type UpdaterGlobal interface {
