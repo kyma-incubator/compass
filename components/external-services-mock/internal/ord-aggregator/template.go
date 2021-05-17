@@ -23,6 +23,7 @@ const ordConfig = `{
 
 // This document is based on marshalling (and optionally enhancing) the returned document from the fixture fixORDDocumentWithBaseURL located in: /compass/components/director/internal/open_resource_discovery/fixtures_test.go
 // If any breaking/validation change is applied to the fixture's Document structure, it must be applied here and in the constants used in the e2e test (/compass/tests/ord-aggregator/tests/handler_test.go) as well. Otherwise, the aggregator e2e test will fail.
+// describedSystemInstance.baseUrl should be the same as the url of external services mock in the cluster
 const ordDocument = `{
 	"$schema": "./spec/v1/generated/Document.schema.json",
 	"apiResources": [{
@@ -72,6 +73,10 @@ const ordDocument = `{
 		"partOfConsumptionBundles": [{
 			"defaultEntryPoint": "https://exmaple.com/test/v1",
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+		{
+			"defaultEntryPoint": "https://exmaple.com/test/v1",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
 		"partOfProducts": ["ns:product:id:"],
@@ -165,6 +170,10 @@ const ordDocument = `{
 		"partOfConsumptionBundles": [{
 			"defaultEntryPoint": "",
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+ 		{
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2",
+			"defaultEntryPoint": ""
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
 		"partOfProducts": ["ns:product:id:"],
@@ -200,38 +209,83 @@ const ordDocument = `{
 		"version": "1.1.0",
 		"visibility": "public"
 	}],
-	"consumptionBundles": [{
-		"credentialExchangeStrategies": [{
-			"callbackUrl": "/credentials/relative",
-			"customType": "ns:credential-exchange:v1",
-			"type": "custom"
-		},
-		{
-			"callbackUrl": "http://example.com/credentials",
-			"customType": "ns:credential-exchange2:v3",
-			"type": "custom"
-		}],
-		"description": "lorem ipsum dolor nsq sme",
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		},
-		{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"ordId": "ns:consumptionBundle:BUNDLE_ID:v1",
-		"shortDescription": "lorem ipsum",
-		"title": "BUNDLE TITLE"
-		}],
+	"consumptionBundles":[
+        {
+            "credentialExchangeStrategies":[
+                {
+                    "callbackUrl":"/credentials/relative",
+                    "customType":"ns:credential-exchange:v1",
+                    "type":"custom"
+                },
+                {
+                    "callbackUrl":"http://example.com/credentials",
+                    "customType":"ns:credential-exchange2:v3",
+                    "type":"custom"
+                }
+            ],
+            "description":"lorem ipsum dolor nsq sme",
+            "labels":{
+                "label-key-1":[
+                    "label-value-1",
+                    "label-value-2"
+                ]
+            },
+            "links":[
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"https://example.com/2018/04/11/testing/"
+                },
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"/testing/relative"
+                }
+            ],
+            "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
+            "shortDescription":"lorem ipsum",
+            "title":"BUNDLE TITLE"
+        },
+        {
+            "title":"BUNDLE TITLE 2",
+            "description":"foo bar",
+            "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
+            "shortDescription":"foo",
+            "links":[
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"https://example.com/2018/04/11/testing/"
+                },
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"/testing/relative"
+                }
+            ],
+            "labels":{
+                "label-key-1":[
+                    "label-value-1",
+                    "label-value-2"
+                ]
+            },
+            "credentialExchangeStrategies":[
+                {
+                    "callbackUrl":"/credentials/relative",
+                    "customType":"ns:credential-exchange:v1",
+                    "type":"custom"
+                },
+                {
+                    "callbackUrl":"http://example.com/credentials",
+                    "customType":"ns:credential-exchange2:v3",
+                    "type":"custom"
+                }
+            ]
+        }
+    ],
 	"describedSystemInstance": {
 		"ApplicationTemplateID": null,
-		"baseUrl": "http://localhost:8080",
+		"baseUrl": "http://compass-external-services-mock.compass-system.svc.cluster.local:8080",
 		"Description": null,
 		"HealthCheckURL": null,
 		"IntegrationSystemID": null,
@@ -278,6 +332,10 @@ const ordDocument = `{
 		"partOfConsumptionBundles": [{
 			"defaultEntryPoint": "",
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+		{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
 		"partOfProducts": ["ns:product:id:"],
@@ -336,6 +394,10 @@ const ordDocument = `{
 		"partOfConsumptionBundles": [{
 			"defaultEntryPoint": "",
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+		{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
 		"partOfProducts": ["ns:product:id:"],
