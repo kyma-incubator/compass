@@ -71,6 +71,7 @@ INSERT INTO bundle_references (
            bundle_id,
            target_url
     FROM api_definitions
+    WHERE bundle_id is not NULL
 );
 
 INSERT INTO bundle_references (
@@ -80,6 +81,7 @@ INSERT INTO bundle_references (
            bundle_id,
            NULL::varchar
     FROM event_api_definitions
+    WHERE bundle_id is not NULL
 );
 
 ALTER TABLE api_definitions
