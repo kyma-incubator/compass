@@ -105,6 +105,9 @@ spec:
               - Failed
               - In Progress
               type: string
+            initialized_at:
+              type: date
+              format: date-time
             webhooks:
               items:
                 description: Webhook is an entity part of the OperationStatus which holds information about the progression of the webhook execution

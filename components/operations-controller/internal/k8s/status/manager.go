@@ -18,6 +18,7 @@ package status
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -66,6 +67,8 @@ func (m *manager) Initialize(operation *v1alpha1.Operation) error {
 			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
 		}
 	}
+
+	status.InitializedAt = time.Now()
 	return nil
 }
 
