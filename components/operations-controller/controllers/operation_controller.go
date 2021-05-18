@@ -310,7 +310,7 @@ func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operati
 }
 
 func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error, webhook *graphql.Webhook) (ctrl.Result, error) {
-	if isCloseToTimeout(operation.Status.InitializedAt, r.determineTimeout(webhook)) {
+	if operation != nil && isCloseToTimeout(operation.Status.InitializedAt, r.determineTimeout(webhook)) {
 		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
 	}
 
@@ -334,6 +334,10 @@ func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, opera
 }
 
 func (r *OperationReconciler) determineTimeout(webhook *graphql.Webhook) time.Duration {
+	if webhook == nil {
+		return r.config.WebhookTimeout
+	}
+
 	if webhook.Timeout == nil {
 		return r.config.WebhookTimeout
 	}
@@ -371,9 +375,13 @@ func extractWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (*
 
 func trimRequestObject(operation *v1alpha1.Operation) string {
 	index := strings.Index(operation.Spec.RequestObject, ",\"Headers\"")
-	requestObj := []rune(operation.Spec.RequestObject)[:index]
-	requestObj = append(requestObj, '}')
-	return string(requestObj)
+	if index != -1 {
+		requestObj := []rune(operation.Spec.RequestObject)[:index]
+		requestObj = append(requestObj, '}')
+		return string(requestObj)
+	}
+
+	return operation.Spec.RequestObject
 }
 
 func isCloseToTimeout(initialization time.Time, timeout time.Duration) bool {

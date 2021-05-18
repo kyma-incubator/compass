@@ -50,15 +50,16 @@ func (fake *FakeWebhookClient) Do(arg1 context.Context, arg2 *webhooka.Request) 
 		arg1 context.Context
 		arg2 *webhooka.Request
 	}{arg1, arg2})
+	stub := fake.DoStub
+	fakeReturns := fake.doReturns
 	fake.recordInvocation("Do", []interface{}{arg1, arg2})
 	fake.doMutex.Unlock()
-	if fake.DoStub != nil {
-		return fake.DoStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.doReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -114,15 +115,16 @@ func (fake *FakeWebhookClient) Poll(arg1 context.Context, arg2 *webhooka.PollReq
 		arg1 context.Context
 		arg2 *webhooka.PollRequest
 	}{arg1, arg2})
+	stub := fake.PollStub
+	fakeReturns := fake.pollReturns
 	fake.recordInvocation("Poll", []interface{}{arg1, arg2})
 	fake.pollMutex.Unlock()
-	if fake.PollStub != nil {
-		return fake.PollStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.pollReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

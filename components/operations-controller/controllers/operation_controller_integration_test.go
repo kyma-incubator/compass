@@ -19,6 +19,7 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 	"path/filepath"
 	"time"
 
@@ -116,7 +117,8 @@ func TestController_Scenarios(t *testing.T) {
 		status.NewManager(kubeClient),
 		k8s.NewClient(kubeClient),
 		directorClient,
-		webhookClient)
+		webhookClient,
+		collector.NewCollector())
 
 	err = controller.SetupWithManager(mgr)
 	require.NoError(t, err)
