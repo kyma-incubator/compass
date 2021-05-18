@@ -29,15 +29,16 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
+	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
+	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
+	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
-	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -100,11 +101,14 @@ func main() {
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
 
+	collector := collector.NewCollector()
+	metrics.Registry.MustRegister(collector)
 	controller := controllers.NewOperationReconciler(cfg.Webhook,
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhook.NewClient(httpClient))
+		webhook.NewClient(httpClient),
+		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
