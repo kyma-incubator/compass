@@ -19,9 +19,10 @@ package controllers_test
 import (
 	"context"
 	"fmt"
-	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 	"path/filepath"
 	"time"
+
+	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
