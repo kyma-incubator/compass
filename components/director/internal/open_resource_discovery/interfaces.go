@@ -24,18 +24,23 @@ type BundleService interface {
 	ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error)
 }
 
+//go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
+type BundleReferenceService interface {
+	GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) ([]string, error)
+}
+
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error
+	Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string) (string, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
 }
 
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
-	Create(ctx context.Context, appId string, bundleID, packageID *string, in model.EventDefinitionInput, spec []*model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error
+	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string) (string, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
 }

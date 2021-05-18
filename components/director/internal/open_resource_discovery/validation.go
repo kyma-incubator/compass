@@ -15,21 +15,21 @@ import (
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.
 const (
-	SemVerRegex       = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	VendorOrdIDRegex  = "^([a-z0-9]+)$"
-	ProductOrdIDRegex = "^([a-z0-9]+):([a-zA-Z0-9._\\-]+)$"
-	BundleOrdIDRegex  = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	SemVerRegex         = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+	PackageOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	VendorOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
+	ProductOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
+	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	//TODO: further clarification is needed as what is required by the spec
-	//TombstoneOrdIDRegex     = "^([a-zA-Z0-9._\\-]+):(package|apiResource|eventResource):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-
-	StringArrayElementRegex = "^[a-zA-Z0-9 -\\.\\/]*$"
-	CountryRegex            = "^[A-Z]{2}$"
-	ApiOrdIDRegex           = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	EventOrdIDRegex         = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	PPMSObjectIDRegex       = "^([0-9]+)$"
-	LabelsKeyRegex          = "^[a-zA-Z0-9-_.]*$"
+	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+$"
+	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
+	CountryRegex                      = "^[A-Z]{2}$"
+	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	EventOrdIDRegex                   = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	CorrelationIDsRegex               = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
+	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
+	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 )
 
 var shortDescriptionRules = []validation.Rule{
@@ -40,8 +40,18 @@ var descriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
 }
 
+func ValidateSystemInstanceInput(app *model.Application) error {
+	return validation.ValidateStruct(app,
+		validation.Field(&app.CorrelationIds, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(CorrelationIDsRegex))
+		})),
+		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
+		validation.Field(&app.Labels, validation.By(validateORDLabels)),
+	)
+}
+
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.1")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.2")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {
@@ -105,7 +115,6 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.OrdBundleID, validation.When(api.OrdBundleID != nil, validation.Match(regexp.MustCompile(BundleOrdIDRegex)))),
 		validation.Field(&api.ApiProtocol, validation.Required, validation.In("odata-v2", "odata-v4", "soap-inbound", "soap-outbound", "rest", "sap-rfc")),
 		validation.Field(&api.Visibility, validation.Required, validation.In("public", "internal", "private")),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
@@ -130,8 +139,14 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
 		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
-		validation.Field(&api.TargetURL, validation.Required, is.RequestURI),
+		validation.Field(&api.TargetURLs, validation.Required, validation.By(validateEntryPoints)),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
+		validation.Field(&api.ImplementationStandard, validation.In("sap:ord-document-api:v1", "cff:open-service-broker:v2", "sap:csn-exposure:v1", "custom")),
+		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required).Else(validation.Empty)),
+		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
+			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
+		})),
 	)
 }
 
@@ -143,7 +158,6 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Description, validation.Required),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.OrdBundleID, validation.When(event.OrdBundleID != nil, validation.Match(regexp.MustCompile(BundleOrdIDRegex)))),
 		validation.Field(&event.Visibility, validation.Required, validation.In("public", "internal", "private")),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
@@ -167,6 +181,9 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
+		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
+			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
+		})),
 	)
 }
 
@@ -177,7 +194,9 @@ func validateProductInput(product *model.ProductInput) error {
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
-		validation.Field(&product.PPMSObjectID, validation.When(product.PPMSObjectID != nil, validation.Match(regexp.MustCompile(PPMSObjectIDRegex)))),
+		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(CorrelationIDsRegex))
+		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),
 	)
 }
@@ -186,16 +205,13 @@ func validateVendorInput(vendor *model.VendorInput) error {
 	return validation.ValidateStruct(vendor,
 		validation.Field(&vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&vendor.Title, validation.Required),
-		validation.Field(&vendor.Type, validation.Required, validation.In("sap", "sap-partner", "client-registration")),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 	)
 }
 
 func validateTombstoneInput(tombstone *model.TombstoneInput) error {
 	return validation.ValidateStruct(tombstone,
-		//TODO: further clarification is needed as what is required by the spec
-		//validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
-
+		validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
 		validation.Field(&tombstone.RemovalDate, validation.Required, validation.Date(time.RFC3339)))
 }
 
@@ -240,6 +256,50 @@ func validateORDLabels(val interface{}) error {
 		return true
 	})
 	return err
+}
+
+func validateEntryPoints(val interface{}) error {
+	if val == nil {
+		return nil
+	}
+
+	entryPoints, ok := val.(json.RawMessage)
+	if !ok {
+		return errors.New("entryPoints should be json")
+	}
+
+	if len(entryPoints) == 0 {
+		return nil
+	}
+
+	if !gjson.ValidBytes(entryPoints) {
+		return errors.New("entryPoints should be valid json")
+	}
+
+	parsedArr := gjson.ParseBytes(entryPoints)
+	if !parsedArr.IsArray() {
+		return errors.New("should be json array")
+	}
+
+	if len(parsedArr.Array()) == 0 {
+		return errors.New("entryPoints should not be empty")
+	}
+
+	if areThereEntryPointDuplicates(parsedArr.Array()) {
+		return errors.New("entryPoints should not contain duplicates")
+	}
+
+	for _, el := range parsedArr.Array() {
+		if el.Type != gjson.String {
+			return errors.New("should be array of strings")
+		}
+
+		err := validation.Validate(el.String(), is.RequestURI)
+		if err != nil {
+			return errors.New("entryPoint should be a valid URI")
+		}
+	}
+	return nil
 }
 
 func validateORDChangeLogEntries(value interface{}) error {
@@ -407,6 +467,102 @@ func validateCustomDescription(el gjson.Result) error {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
 	return nil
+}
+
+func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *regexp.Regexp) error {
+	bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
+	if !ok {
+		return errors.New("error while casting to ConsumptionBundleReference")
+	}
+
+	bundleIDsPerEvent := make(map[string]bool)
+	for _, br := range bundleReferences {
+		if br.BundleOrdID == "" {
+			return errors.New("bundleReference ordId is mandatory field")
+		}
+
+		if !regexPattern.MatchString(br.BundleOrdID) {
+			return errors.Errorf("ordId should match %q", regexPattern.String())
+		}
+
+		if isPresent := bundleIDsPerEvent[br.BundleOrdID]; !isPresent {
+			bundleIDsPerEvent[br.BundleOrdID] = true
+		} else {
+			return errors.Errorf("event can not reference the same bundle with ordId %q more than once", br.BundleOrdID)
+		}
+
+		if br.DefaultTargetURL != "" {
+			return errors.New("events are not supposed to have defaultEntryPoint")
+		}
+	}
+	return nil
+}
+
+func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawMessage, regexPattern *regexp.Regexp) error {
+	bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
+	if !ok {
+		return errors.New("error while casting to ConsumptionBundleReference")
+	}
+
+	bundleIDsPerAPI := make(map[string]bool)
+	for _, br := range bundleReferences {
+		if br.BundleOrdID == "" {
+			return errors.New("bundleReference ordId is mandatory field")
+		}
+
+		if !regexPattern.MatchString(br.BundleOrdID) {
+			return errors.Errorf("ordId should match %q", regexPattern.String())
+		}
+
+		if isPresent := bundleIDsPerAPI[br.BundleOrdID]; !isPresent {
+			bundleIDsPerAPI[br.BundleOrdID] = true
+		} else {
+			return errors.Errorf("api can not reference the same bundle with ordId %q more than once", br.BundleOrdID)
+		}
+
+		err := validation.Validate(br.DefaultTargetURL, is.RequestURI)
+		if err != nil {
+			return errors.New("defaultEntryPoint should be a valid URI")
+		}
+
+		lenTargetURLs := len(gjson.ParseBytes(targetURLs).Array())
+		if br.DefaultTargetURL != "" && lenTargetURLs <= 1 {
+			return errors.New("defaultEntryPoint must only be provided if an API has more than one entry point")
+		}
+
+		if br.DefaultTargetURL != "" && lenTargetURLs > 1 {
+			if isDefaultTargetURLMissingFromTargetURLs(br.DefaultTargetURL, targetURLs) {
+				return errors.New("defaultEntryPoint must be in the list of entryPoints for the given API")
+			}
+		}
+	}
+
+	return nil
+}
+
+func isDefaultTargetURLMissingFromTargetURLs(defaultTargetURL string, targetURLs json.RawMessage) bool {
+	for _, targetURL := range gjson.ParseBytes(targetURLs).Array() {
+		if targetURL.String() == defaultTargetURL {
+			return false
+		}
+	}
+	return true
+}
+
+func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
+	if len(entryPoints) <= 1 {
+		return false
+	}
+
+	seen := make(map[gjson.Result]bool)
+	for _, val := range entryPoints {
+		if seen[val] {
+			return true
+		} else {
+			seen[val] = true
+		}
+	}
+	return false
 }
 
 func isValidDate(date *string) validation.RuleFunc {

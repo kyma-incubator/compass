@@ -22,7 +22,7 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	placeholder := "test"
-	modelEventDefinition, modelSpec := fixFullEventDefinitionModel(placeholder)
+	modelEventDefinition, modelSpec, modelBundleRef := fixFullEventDefinitionModel(placeholder)
 	gqlEventDefinition := fixFullGQLEventDefinition(placeholder)
 	emptyModelEventDefinition := &model.EventDefinition{BaseEntity: &model.BaseEntity{}}
 	emptyGraphQLEventDefinition := &graphql.EventDefinition{BaseEntity: &graphql.BaseEntity{}}
@@ -30,19 +30,21 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	expectedErr := errors.New("error")
 
 	testCases := []struct {
-		Name             string
-		Input            *model.EventDefinition
-		SpecInput        *model.Spec
-		Expected         *graphql.EventDefinition
-		VersionConverter func() *automock.VersionConverter
-		SpecConverter    func() *automock.SpecConverter
-		ExpectedErr      error
+		Name                 string
+		Input                *model.EventDefinition
+		SpecInput            *model.Spec
+		BundleReferenceInput *model.BundleReference
+		Expected             *graphql.EventDefinition
+		VersionConverter     func() *automock.VersionConverter
+		SpecConverter        func() *automock.SpecConverter
+		ExpectedErr          error
 	}{
 		{
-			Name:      "All properties given",
-			Input:     &modelEventDefinition,
-			SpecInput: &modelSpec,
-			Expected:  gqlEventDefinition,
+			Name:                 "All properties given",
+			Input:                &modelEventDefinition,
+			SpecInput:            &modelSpec,
+			BundleReferenceInput: &modelBundleRef,
+			Expected:             gqlEventDefinition,
 			VersionConverter: func() *automock.VersionConverter {
 				conv := &automock.VersionConverter{}
 				conv.On("ToGraphQL", modelEventDefinition.Version).Return(gqlEventDefinition.Version).Once()
@@ -55,10 +57,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name:      "Error while converting spec",
-			Input:     &modelEventDefinition,
-			SpecInput: &modelSpec,
-			Expected:  nil,
+			Name:                 "Error while converting spec",
+			Input:                &modelEventDefinition,
+			SpecInput:            &modelSpec,
+			BundleReferenceInput: &modelBundleRef,
+			Expected:             nil,
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -70,10 +73,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			ExpectedErr: expectedErr,
 		},
 		{
-			Name:      "Empty",
-			Input:     emptyModelEventDefinition,
-			SpecInput: &model.Spec{},
-			Expected:  emptyGraphQLEventDefinition,
+			Name:                 "Empty",
+			Input:                emptyModelEventDefinition,
+			SpecInput:            &model.Spec{},
+			BundleReferenceInput: &model.BundleReference{},
+			Expected:             emptyGraphQLEventDefinition,
 			VersionConverter: func() *automock.VersionConverter {
 				conv := &automock.VersionConverter{}
 				conv.On("ToGraphQL", emptyModelEventDefinition.Version).Return(nil).Once()
@@ -104,7 +108,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 			// when
 			converter := event.NewConverter(versionConverter, specConverter)
-			res, err := converter.ToGraphQL(testCase.Input, testCase.SpecInput)
+			res, err := converter.ToGraphQL(testCase.Input, testCase.SpecInput, testCase.BundleReferenceInput)
 			// then
 			if testCase.ExpectedErr != nil {
 				assert.Error(t, err)
@@ -123,8 +127,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
-	event1, spec1 := fixFullEventDefinitionModel("test1")
-	event2, spec2 := fixFullEventDefinitionModel("test2")
+	event1, spec1, bundleRef1 := fixFullEventDefinitionModel("test1")
+	event2, spec2, bundleRef2 := fixFullEventDefinitionModel("test2")
 
 	inputApis := []*model.EventDefinition{
 		&event1, &event2, {BaseEntity: &model.BaseEntity{}}, nil,
@@ -132,6 +136,10 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	inputSpecs := []*model.Spec{
 		&spec1, &spec2, {}, nil,
+	}
+
+	inputBundleRefs := []*model.BundleReference{
+		&bundleRef1, &bundleRef2, {}, nil,
 	}
 
 	expected := []*graphql.EventDefinition{
@@ -153,7 +161,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	// when
 	converter := event.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs)
+	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then
@@ -344,7 +352,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		eventModel, _ := fixFullEventDefinitionModel("foo")
+		eventModel, _, _ := fixFullEventDefinitionModel("foo")
 
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
@@ -355,14 +363,14 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		eventModel := fixEventDefinitionModel("id", "bndl_id", "name")
+		eventModel := fixEventDefinitionModel("id", "name")
 		require.NotNil(t, eventModel)
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
 		//WHEN
 		entity := conv.ToEntity(*eventModel)
 		//THEN
-		assert.Equal(t, fixEntityEventDefinition("id", "bndl_id", "name"), entity)
+		assert.Equal(t, fixEntityEventDefinition("id", "name"), entity)
 	})
 }
 
@@ -375,18 +383,18 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//WHEN
 		eventModel := conv.FromEntity(entity)
 		//THEN
-		expectedModel, _ := fixFullEventDefinitionModel("placeholder")
+		expectedModel, _, _ := fixFullEventDefinitionModel("placeholder")
 		assert.Equal(t, expectedModel, eventModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixEntityEventDefinition("id", "bndl_id", "name")
+		entity := fixEntityEventDefinition("id", "name")
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
 		//WHEN
 		eventModel := conv.FromEntity(entity)
 		//THEN
-		expectedModel := fixEventDefinitionModel("id", "bndl_id", "name")
+		expectedModel := fixEventDefinitionModel("id", "name")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, eventModel)
 	})

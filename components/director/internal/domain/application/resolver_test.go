@@ -1167,8 +1167,10 @@ func TestResolver_Labels(t *testing.T) {
 
 	id := "foo"
 	tenant := "tenant"
-	labelKey := "key"
-	labelValue := "val"
+	labelKey1 := "key1"
+	labelValue1 := "val1"
+	labelKey2 := "key2"
+	labelValue2 := "val2"
 
 	gqlApp := fixGQLApplication(id, "name", "desc")
 
@@ -1176,24 +1178,28 @@ func TestResolver_Labels(t *testing.T) {
 		"abc": {
 			ID:         "abc",
 			Tenant:     tenant,
-			Key:        labelKey,
-			Value:      labelValue,
+			Key:        labelKey1,
+			Value:      labelValue1,
 			ObjectID:   id,
 			ObjectType: model.ApplicationLabelableObject,
 		},
 		"def": {
 			ID:         "def",
 			Tenant:     tenant,
-			Key:        labelKey,
-			Value:      labelValue,
+			Key:        labelKey2,
+			Value:      labelValue2,
 			ObjectID:   id,
 			ObjectType: model.ApplicationLabelableObject,
 		},
 	}
 
 	gqlLabels := graphql.Labels{
-		labelKey: labelValue,
-		labelKey: labelValue,
+		labelKey1: labelValue1,
+		labelKey2: labelValue2,
+	}
+
+	gqlLabels1 := graphql.Labels{
+		labelKey1: labelValue1,
 	}
 
 	testErr := errors.New("Test error")
@@ -1204,7 +1210,7 @@ func TestResolver_Labels(t *testing.T) {
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn       func() *automock.ApplicationService
 		InputApp        *graphql.Application
-		InputKey        string
+		InputKey        *string
 		ExpectedResult  graphql.Labels
 		ExpectedErr     error
 	}{
@@ -1217,8 +1223,21 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       nil,
 			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Success when labels are filtered",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       &labelKey1,
+			ExpectedResult: gqlLabels1,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1230,7 +1249,7 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       &labelKey1,
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1245,7 +1264,7 @@ func TestResolver_Labels(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
-			result, err := resolver.Labels(context.TODO(), gqlApp, &testCase.InputKey)
+			result, err := resolver.Labels(context.TODO(), gqlApp, testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

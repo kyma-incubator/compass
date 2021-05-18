@@ -53,10 +53,10 @@ global:
       version: "PR-1828"
     director:
       dir:
-      version: "PR-1844"
+      version: "PR-1845"
     gateway:
       dir:
-      version: "PR-1828"
+      version: "PR-1850"
     operations_controller:
       dir:
       version: "PR-1828"
@@ -65,10 +65,10 @@ global:
       version: "PR-1828"
     ord_service:
       dir:
-      version: "PR-23"
+      version: "PR-21"
     schema_migrator:
       dir:
-      version: "PR-1832"
+      version: "PR-1857"
     system_broker:
       dir:
       version: "PR-1839"
@@ -79,13 +79,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1828"
+      version: "PR-1845"
     console:
       dir:
-      version: "PR-30"
+      version: "PR-31"
     e2e_tests:
       dir:
-      version: "PR-1832"
+      version: "PR-1845"
   isLocalEnv: false
   oauth2:
     host: oauth2

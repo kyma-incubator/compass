@@ -26,8 +26,8 @@ type EventDefService interface {
 
 //go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore
 type EventDefConverter interface {
-	ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error)
-	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error)
+	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
+	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error)
 }
@@ -46,17 +46,19 @@ type Resolver struct {
 	transact      persistence.Transactioner
 	svc           EventDefService
 	bndlSvc       BundleService
+	bndlRefSvc    BundleReferenceService
 	converter     EventDefConverter
 	frConverter   FetchRequestConverter
 	specConverter SpecConverter
 	specService   SpecService
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter EventDefConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
 		bndlSvc:       bndlSvc,
+		bndlRefSvc:    bndlRefSvc,
 		converter:     converter,
 		frConverter:   frConverter,
 		specConverter: specConverter,
@@ -103,7 +105,12 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	gqlEvent, err := r.converter.ToGraphQL(event, spec)
+	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleEventReference, &event.ID, &bundleID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", event.ID)
+	}
+
+	gqlEvent, err := r.converter.ToGraphQL(event, spec, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
@@ -148,7 +155,12 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	gqlEvent, err := r.converter.ToGraphQL(event, spec)
+	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleEventReference, &event.ID, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", event.ID)
+	}
+
+	gqlEvent, err := r.converter.ToGraphQL(event, spec, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
@@ -183,7 +195,12 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	gqlEvent, err := r.converter.ToGraphQL(event, spec)
+	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleEventReference, &event.ID, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", event.ID)
+	}
+
+	gqlEvent, err := r.converter.ToGraphQL(event, spec, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}

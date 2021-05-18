@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/require"
@@ -22,9 +24,10 @@ const (
 	invalidType                  = "invalidType"
 	invalidCustomType            = "wrongCustomType"
 	invalidMediaType             = "invalid/type"
+	invalidBundleOrdID           = "ns:wrongConsumptionBundle:v1"
 
-	unknownVendorOrdID  = "vendor2"
-	unknownProductOrdID = "ns:UNKNOWN_PRODUCT_ID"
+	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
+	unknownProductOrdID = "nsUNKNOWN:product:id:"
 	unknownPackageOrdID = "ns:package:UNKNOWN_PACKAGE_ID:v1"
 	unknownBundleOrdID  = "ns:consumptionBundle:UNKNOWN_BUNDLE_ID:v1"
 )
@@ -292,7 +295,162 @@ var (
           "version": "1.0.0"
         }
       ]`
+
+	invalidCorrelationIdsElement          = `["foo.bar.baz:123456", "wrongID"]`
+	invalidCorrelationIdsNonStringElement = `["foo.bar.baz:123456", 992]`
+
+	invalidEntryPointURI               = `["invalidUrl"]`
+	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
+	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
 )
+
+func TestDocuments_ValidateSystemInstance(t *testing.T) {
+	var tests = []struct {
+		Name                   string
+		SystemInstanceProvider func() *model.Application
+		ExpectedToBeValid      bool
+	}{
+		{
+			Name: "Invalid value for `correlationIds` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage(invalidCorrelationIdsElement)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage(invalidJson)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage("{}")
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when the JSON array is empty for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage("[]")
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.CorrelationIds = json.RawMessage(invalidCorrelationIdsNonStringElement)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid `baseUrl` for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.BaseURL = str.Ptr("http://test.com/test/v1")
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid JSON `Labels` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidJson)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid JSON object `Labels` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(`[]`)
+
+				return sysInst
+			},
+		}, {
+			Name: "`Labels` values are not array for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return sysInst
+			},
+		}, {
+			Name: "`Labels` values are not array of strings for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return sysInst
+			},
+		}, {
+			Name: "Invalid key for JSON `Labels` field for SystemInstance",
+			SystemInstanceProvider: func() *model.Application {
+				sysInst := fixSystemInstance()
+				sysInst.Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return sysInst
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			systemInstance := test.SystemInstanceProvider
+			err := open_resource_discovery.ValidateSystemInstanceInput(systemInstance())
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestDocuments_ValidateDocument(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Missing `OpenResourceDiscovery` field for Document",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `OpenResourceDiscovery` field for Document",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = "wrongValue"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
 
 func TestDocuments_ValidatePackage(t *testing.T) {
 	var tests = []struct {
@@ -1236,14 +1394,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `partOfConsumptionBundle` field for API",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].OrdBundleID = str.Ptr(invalidOrdID)
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Missing `apiProtocol` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1905,18 +2055,58 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing field `entryPoint` for API",
+			Name: "Missing field `entryPoints` for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].TargetURL = ""
+				doc.APIResources[0].TargetURLs = nil
 
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid field `entryPoint` for API",
+			Name: "Invalid field `entryPoints` when containing invalid URI for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].TargetURL = invalidUrl
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointURI)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `entryPoints` when containing duplicate URIs for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointsDueToDuplicates)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entryPoints` field when it contains non string value for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointsNonStringElement)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1960,6 +2150,131 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Invalid `implementationStandard` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr(invalidType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandard` field is valid but `implementationStandard` field is missing for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandard` field is valid but `implementationStandard` field is not set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr(invalidType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is missing for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is not `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is not `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `customImplementationStandardDescription` field when `implementationStandard` field is set to `custom` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `ordId` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].BundleOrdID = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordId` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].BundleOrdID = invalidBundleOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Duplicate `ordId` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles = append(doc.APIResources[0].PartOfConsumptionBundles, &model.ConsumptionBundleReference{BundleOrdID: bundleORDID})
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `defaultEntryPoint` field in `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = invalidUrl
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `defaultEntryPoint` field from `entryPoints` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Present `defaultEntryPoint` field even though there is a single element in `entryPoints` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[1].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
@@ -1976,7 +2291,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "API has a reference to an unknown Bundle",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].OrdBundleID = str.Ptr(unknownBundleOrdID)
+				doc.ConsumptionBundles = fixBundleCreateInput()
+				doc.APIResources[0].PartOfConsumptionBundles = fixAPIPartOfConsumptionBundles()
+				doc.APIResources[0].PartOfConsumptionBundles[0].BundleOrdID = unknownBundleOrdID
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2183,14 +2500,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].OrdPackageID = str.Ptr(invalidOrdID)
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Invalid `partOfConsumptionBundle` field for Event",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].OrdBundleID = str.Ptr(invalidOrdID)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2663,6 +2972,38 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Missing `ordId` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles[0].BundleOrdID = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordId` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles[0].BundleOrdID = invalidBundleOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Duplicate `ordId` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles = append(doc.EventResources[0].PartOfConsumptionBundles, &model.ConsumptionBundleReference{BundleOrdID: bundleORDID})
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Present `defaultEntryPoint` field in `PartOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
@@ -2679,7 +3020,9 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Event has a reference to unknown Bundle",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].OrdBundleID = str.Ptr(unknownBundleOrdID)
+				doc.ConsumptionBundles = fixBundleCreateInput()
+				doc.EventResources[0].PartOfConsumptionBundles = fixEventPartOfConsumptionBundles()
+				doc.EventResources[0].PartOfConsumptionBundles[0].BundleOrdID = unknownBundleOrdID
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2786,10 +3129,42 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `ppmsObjectId` field for Product",
+			Name: "Invalid value for `correlationIds` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Products[0].PPMSObjectID = str.Ptr(invalidType)
+				doc.Products[0].CorrelationIds = json.RawMessage(invalidCorrelationIdsElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when the JSON array is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].CorrelationIds = json.RawMessage(invalidCorrelationIdsNonStringElement)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2892,22 +3267,6 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `type` field for Vendor",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Vendors[0].Type = ""
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Invalid `type` field for Vendor",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Vendors[0].Type = invalidType
-
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
 			Name: "Invalid JSON `Labels` field for Product",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2969,8 +3328,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 		DocumentProvider  func() []*open_resource_discovery.Document
 		ExpectedToBeValid bool
 	}{
-		//TODO: further clarification is needed as what is required by the spec
-		/*{
+		{
 			Name: "Missing `ordId` field for Tombstone",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2986,7 +3344,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},*/{
+		}, {
 			Name: "Missing `removalDate` field for Tombstone",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
