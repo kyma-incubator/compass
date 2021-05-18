@@ -39,7 +39,7 @@ then
         concurrency: 1
         selectors:
           matchLabelExpressions:
-            - !benchmark
+            - "!benchmark"
 EOF
 
 else

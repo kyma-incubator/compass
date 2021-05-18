@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-bench-director
   labels:
-    benchmark: "true"
+    benchmark: "true" # This is needed to differentiate benchmarks of regular tests
     app: {{ .Chart.Name }}-director-bench-app
     app.kubernetes.io/name: {{ .Chart.Name }}-director-bench
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -28,7 +28,7 @@ spec:
             - "oauth2.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       containers:
-        - name: director-bench
+        - name: director-bench # This should be unique across all benchmark containers.
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
