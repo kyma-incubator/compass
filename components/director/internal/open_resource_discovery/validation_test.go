@@ -144,12 +144,14 @@ var (
   		"partner-key-1": "partner-value-1"
 	}`
 
-	invalidPartnersWhenValuesAreNotArrayOfStrings = `{
-  		"partners-key-1": [
-    	  "partners-value-1",
+	invalidPartnersWhenValuesAreNotArrayOfStrings = `[
+    	  "microsoft:vendor:Microsoft",
     	  112
-  		]
-	}`
+	]`
+
+	invalidPartnersWhenValuesDoNotSatisfyRegex = `[
+		"partner:partner:partner",
+	]`
 
 	invalidCountriesElement          = `["DE", "wrongCountry"]`
 	invalidCountriesNonStringElement = `["DE", 992]`
@@ -314,6 +316,7 @@ var (
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
 	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
 
+	invalidExtensibleDueToInvalidJson                                = `{invalid}`
 	invalidExtensibleDueToInvalidSupportedType                       = `{"supported":true}`
 	invalidExtensibleDueToNoSupportedProperty                        = `{"description":"Please find the extensibility documentation"}`
 	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
@@ -2294,6 +2297,24 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 		},
 		{
+			Name: "Invalid `Extensible` field due to empty json object",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(`{}`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `Extensible` field due to invalid json",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
 			Name: "Missing `supported` field in the `extensible` object for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2302,6 +2323,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
+
 		{
 			Name: "Invalid `supported` field type in the `extensible` object for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -3238,7 +3260,25 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `supported` field in the `extensible` object for API",
+			Name: "Invalid `Extensible` field due to empty json object",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(`{}`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `Extensible` field due to invalid json",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `supported` field in the `extensible` object for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToNoSupportedProperty)
@@ -3247,7 +3287,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid `supported` field type in the `extensible` object for API",
+			Name: "Invalid `supported` field type in the `extensible` object for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedType)
@@ -3256,7 +3296,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid `supported` field value in the `extensible` object for API",
+			Name: "Invalid `supported` field value in the `extensible` object for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedValue)
@@ -3583,12 +3623,11 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Invalid JSON object `Partners` field for Vendor",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Vendors[0].Partners = json.RawMessage(`[]`)
+				doc.Vendors[0].Partners = json.RawMessage(invalidJson)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3596,7 +3635,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			Name: "`Partners` values are not array for Vendor",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Vendors[0].Labels = json.RawMessage(invalidPartnersWhenValueIsNotArray)
+				doc.Vendors[0].Partners = json.RawMessage(invalidPartnersWhenValueIsNotArray)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3604,7 +3643,23 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			Name: "`Partners` values are not array of strings for Vendor",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Vendors[0].Labels = json.RawMessage(invalidPartnersWhenValuesAreNotArrayOfStrings)
+				doc.Vendors[0].Partners = json.RawMessage(invalidPartnersWhenValuesAreNotArrayOfStrings)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Partners` values do not match the regex rule",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Partners = json.RawMessage(invalidPartnersWhenValuesDoNotSatisfyRegex)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `Partners` field when the JSON array is empty",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Partners = json.RawMessage(`[]`)
 
 				return []*open_resource_discovery.Document{doc}
 			},
