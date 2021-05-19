@@ -260,10 +260,9 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
-	err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Runtime")
-	}
+
+	//TODO:Check whether there are automatic scenario assignment labels defined for this runtime which are not part of the update
+	// we should remove these scenarios but before that, we should check whether there are any bundle instance auths
 
 	if in.Labels == nil {
 		return nil
@@ -276,6 +275,59 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
+
+		scenariosStrings, err := convertInterfaceArrayToStringArray(scenarios)
+		if err != nil {
+			return err
+		}
+
+		existingScenarios, err := s.GetScenarioNamesForRuntime(ctx, id)
+		if err != nil {
+			//TODO: handle properly
+			return err
+		}
+
+		scToRemove := getScenariosToRemove(existingScenarios, scenariosStrings)
+		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, id) {
+			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+		}
+
+		scToAdd := getScenariosToAdd(existingScenarios, scenariosStrings)
+		scenariosToKeep := GetScenariosToKeep(existingScenarios, scenariosStrings)
+		commonApplications := s.getCommonApplications(ctx, rtmTenant, scenariosToKeep, scToAdd)
+
+		for appId, scenario := range commonApplications {
+			bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, appId, id)
+			//TODO: Reuse common logic in engine.go -> upsertScenario(...)
+			for _, currentLabel := range bundleInstanceAuthsLabels {
+				if currentLabel.Key == model.ScenariosKey {
+					var scenariosValue []string
+					err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
+					if err != nil {
+						//todo handleErr
+						continue
+					}
+					scenariosValue = append(scenariosValue, scenario)
+					updatedValue, _ := json.Marshal(scenariosValue)
+					currentLabel.Value = string(updatedValue)
+
+					labelConverter := label.NewConverter()
+					labelInput, err := labelConverter.FromEntity(currentLabel)
+					if err != nil {
+						// todo handle
+					}
+					labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
+					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
@@ -284,6 +336,18 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 
 	return nil
+}
+
+func convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
+	var scenariosString []string
+	for _, scenario := range scenarios {
+		item, ok := scenario.(string)
+		if !ok {
+			return nil, apperrors.NewInternalError("scenario value is not a string")
+		}
+		scenariosString = append(scenariosString, item)
+	}
+	return scenariosString, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -460,16 +524,6 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return err
 	}
 
-	if key == model.ScenariosKey {
-		scenarios, err := s.GetScenarioNamesForRuntime(ctx, runtimeID)
-		if err != nil {
-			// todo handle
-		}
-		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scenarios, runtimeID) {
-			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
-		}
-	}
-
 	newRuntimeLabels := make(map[string]interface{})
 	for k, v := range currentRuntimeLabels {
 		newRuntimeLabels[k] = v
@@ -517,6 +571,16 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	oldScenariosLabel, err := getScenariosLabel(currentRuntimeLabels)
+	if err != nil {
+		return err
+	}
+
+	oldScenariosLabelStringSlice, err := convertInterfaceArrayToStringArray(oldScenariosLabel)
+	if err != nil {
+		return err
+	}
+
 	finalScenarios := make([]interface{}, 0)
 
 	if modifiedLabelKey == model.ScenariosKey {
@@ -529,10 +593,6 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 			finalScenarios = append(finalScenarios, scenario)
 		}
 	} else {
-		oldScenariosLabel, err := getScenariosLabel(currentRuntimeLabels)
-		if err != nil {
-			return err
-		}
 
 		previousScenariosFromAssignments, err := s.getScenariosFromAssignments(ctx, currentRuntimeLabels)
 		if err != nil {
@@ -547,6 +607,50 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		finalScenarios = s.scenarioAssignmentEngine.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
 	}
 
+	// --------- Plug in -----------------------
+	finalScenariosAsStringSlice, err := convertInterfaceArrayToStringArray(finalScenarios)
+	if err != nil {
+		return err
+	}
+
+	scToRemove := getScenariosToRemove(oldScenariosLabelStringSlice, finalScenariosAsStringSlice)
+	if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, runtimeID) {
+		return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+	}
+
+	scToAdd := getScenariosToAdd(oldScenariosLabelStringSlice, finalScenariosAsStringSlice)
+	scenariosToKeep := GetScenariosToKeep(oldScenariosLabelStringSlice, finalScenariosAsStringSlice)
+	commonApplications := s.getCommonApplications(ctx, rtmTenant, scenariosToKeep, scToAdd)
+
+	for appId, scenario := range commonApplications {
+		bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, appId, runtimeID)
+		//TODO: Reuse common logic in engine.go -> upsertScenario(...)
+		for _, currentLabel := range bundleInstanceAuthsLabels {
+			if currentLabel.Key == model.ScenariosKey {
+				var scenariosValue []string
+				err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
+				if err != nil {
+					//todo handleErr
+					continue
+				}
+				scenariosValue = append(scenariosValue, scenario)
+				updatedValue, _ := json.Marshal(scenariosValue)
+				currentLabel.Value = string(updatedValue)
+
+				labelConverter := label.NewConverter()
+				labelInput, err := labelConverter.FromEntity(currentLabel)
+				if err != nil {
+					// todo handle
+				}
+				labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
+				if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	// --------- END Plug in -----------------------
 	//TODO compare finalScenarios and oldScenariosLabel to determine when to delete scenarios label
 	if len(finalScenarios) == 0 {
 		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
