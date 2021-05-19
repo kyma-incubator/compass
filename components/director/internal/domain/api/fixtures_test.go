@@ -31,16 +31,15 @@ const (
 
 var fixedTimestamp = time.Now()
 
-func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		BundleID:   &bndlID,
 		Name:       name,
-		TargetURL:  targetURL,
+		TargetURLs: api.ConvertTargetUrlToJsonArray(targetURL),
 		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
-func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec) {
+func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
 	apiType := model.APISpecTypeOpenAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -61,35 +60,45 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		ForRemoval:      &forRemoval,
 	}
 
+	apiBundleReference := model.BundleReference{
+		Tenant:              tenantID,
+		BundleID:            str.Ptr(bundleID),
+		ObjectType:          model.BundleAPIReference,
+		ObjectID:            str.Ptr(apiDefID),
+		APIDefaultTargetURL: str.Ptr(fmt.Sprintf("https://%s.com", placeholder)),
+	}
+
 	boolVar := false
 	return model.APIDefinition{
-		ApplicationID:       appID,
-		BundleID:            str.Ptr(bundleID),
-		PackageID:           str.Ptr(packageID),
-		Tenant:              tenantID,
-		Name:                placeholder,
-		Description:         str.Ptr("desc_" + placeholder),
-		TargetURL:           fmt.Sprintf("https://%s.com", placeholder),
-		Group:               str.Ptr("group_" + placeholder),
-		OrdID:               str.Ptr(ordID),
-		ShortDescription:    str.Ptr("shortDescription"),
-		SystemInstanceAware: &boolVar,
-		ApiProtocol:         str.Ptr("apiProtocol"),
-		Tags:                json.RawMessage("[]"),
-		Countries:           json.RawMessage("[]"),
-		Links:               json.RawMessage("[]"),
-		APIResourceLinks:    json.RawMessage("[]"),
-		ReleaseStatus:       str.Ptr("releaseStatus"),
-		SunsetDate:          str.Ptr("sunsetDate"),
-		Successor:           str.Ptr("successor"),
-		ChangeLogEntries:    json.RawMessage("[]"),
-		Labels:              json.RawMessage("[]"),
-		Visibility:          str.Ptr("visibility"),
-		Disabled:            &boolVar,
-		PartOfProducts:      json.RawMessage("[]"),
-		LineOfBusiness:      json.RawMessage("[]"),
-		Industry:            json.RawMessage("[]"),
-		Version:             v,
+		ApplicationID:                           appID,
+		PackageID:                               str.Ptr(packageID),
+		Tenant:                                  tenantID,
+		Name:                                    placeholder,
+		Description:                             str.Ptr("desc_" + placeholder),
+		TargetURLs:                              api.ConvertTargetUrlToJsonArray(fmt.Sprintf("https://%s.com", placeholder)),
+		Group:                                   str.Ptr("group_" + placeholder),
+		OrdID:                                   str.Ptr(ordID),
+		ShortDescription:                        str.Ptr("shortDescription"),
+		SystemInstanceAware:                     &boolVar,
+		ApiProtocol:                             str.Ptr("apiProtocol"),
+		Tags:                                    json.RawMessage("[]"),
+		Countries:                               json.RawMessage("[]"),
+		Links:                                   json.RawMessage("[]"),
+		APIResourceLinks:                        json.RawMessage("[]"),
+		ReleaseStatus:                           str.Ptr("releaseStatus"),
+		SunsetDate:                              str.Ptr("sunsetDate"),
+		Successor:                               str.Ptr("successor"),
+		ChangeLogEntries:                        json.RawMessage("[]"),
+		Labels:                                  json.RawMessage("[]"),
+		Visibility:                              str.Ptr("visibility"),
+		Disabled:                                &boolVar,
+		PartOfProducts:                          json.RawMessage("[]"),
+		LineOfBusiness:                          json.RawMessage("[]"),
+		Industry:                                json.RawMessage("[]"),
+		ImplementationStandard:                  str.Ptr("implementationStandard"),
+		CustomImplementationStandard:            str.Ptr("customImplementationStandard"),
+		CustomImplementationStandardDescription: str.Ptr("customImplementationStandardDescription"),
+		Version:                                 v,
 		BaseEntity: &model.BaseEntity{
 			ID:        apiDefID,
 			Ready:     true,
@@ -98,7 +107,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 			DeletedAt: &time.Time{},
 			Error:     nil,
 		},
-	}, spec
+	}, spec, apiBundleReference
 }
 
 func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
@@ -165,7 +174,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) (*model.
 	return &model.APIDefinitionInput{
 		Name:         name,
 		Description:  &description,
-		TargetURL:    "https://test-url.com",
+		TargetURLs:   api.ConvertTargetUrlToJsonArray("https://test-url.com"),
 		Group:        &group,
 		VersionInput: v,
 	}, spec
@@ -202,43 +211,44 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
+func fixEntityAPIDefinition(id string, name, targetUrl string) *api.Entity {
 	return &api.Entity{
-		BndlID:     repo.NewValidNullableString(bndlID),
 		Name:       name,
-		TargetURL:  targetUrl,
+		TargetURLs: repo.NewValidNullableString(`["` + targetUrl + `"]`),
 		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
 func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
-		TenantID:            tenantID,
-		ApplicationID:       appID,
-		BndlID:              repo.NewValidNullableString(bundleID),
-		PackageID:           repo.NewValidNullableString(packageID),
-		Name:                placeholder,
-		Description:         repo.NewValidNullableString("desc_" + placeholder),
-		Group:               repo.NewValidNullableString("group_" + placeholder),
-		TargetURL:           fmt.Sprintf("https://%s.com", placeholder),
-		OrdID:               repo.NewValidNullableString(ordID),
-		ShortDescription:    repo.NewValidNullableString("shortDescription"),
-		SystemInstanceAware: repo.NewValidNullableBool(false),
-		ApiProtocol:         repo.NewValidNullableString("apiProtocol"),
-		Tags:                repo.NewValidNullableString("[]"),
-		Countries:           repo.NewValidNullableString("[]"),
-		Links:               repo.NewValidNullableString("[]"),
-		APIResourceLinks:    repo.NewValidNullableString("[]"),
-		ReleaseStatus:       repo.NewValidNullableString("releaseStatus"),
-		SunsetDate:          repo.NewValidNullableString("sunsetDate"),
-		Successor:           repo.NewValidNullableString("successor"),
-		ChangeLogEntries:    repo.NewValidNullableString("[]"),
-		Labels:              repo.NewValidNullableString("[]"),
-		Visibility:          repo.NewValidNullableString("visibility"),
-		Disabled:            repo.NewValidNullableBool(false),
-		PartOfProducts:      repo.NewValidNullableString("[]"),
-		LineOfBusiness:      repo.NewValidNullableString("[]"),
-		Industry:            repo.NewValidNullableString("[]"),
+		TenantID:                                tenantID,
+		ApplicationID:                           appID,
+		PackageID:                               repo.NewValidNullableString(packageID),
+		Name:                                    placeholder,
+		Description:                             repo.NewValidNullableString("desc_" + placeholder),
+		Group:                                   repo.NewValidNullableString("group_" + placeholder),
+		TargetURLs:                              repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
+		OrdID:                                   repo.NewValidNullableString(ordID),
+		ShortDescription:                        repo.NewValidNullableString("shortDescription"),
+		SystemInstanceAware:                     repo.NewValidNullableBool(false),
+		ApiProtocol:                             repo.NewValidNullableString("apiProtocol"),
+		Tags:                                    repo.NewValidNullableString("[]"),
+		Countries:                               repo.NewValidNullableString("[]"),
+		Links:                                   repo.NewValidNullableString("[]"),
+		APIResourceLinks:                        repo.NewValidNullableString("[]"),
+		ReleaseStatus:                           repo.NewValidNullableString("releaseStatus"),
+		SunsetDate:                              repo.NewValidNullableString("sunsetDate"),
+		Successor:                               repo.NewValidNullableString("successor"),
+		ChangeLogEntries:                        repo.NewValidNullableString("[]"),
+		Labels:                                  repo.NewValidNullableString("[]"),
+		Visibility:                              repo.NewValidNullableString("visibility"),
+		Disabled:                                repo.NewValidNullableBool(false),
+		PartOfProducts:                          repo.NewValidNullableString("[]"),
+		LineOfBusiness:                          repo.NewValidNullableString("[]"),
+		Industry:                                repo.NewValidNullableString("[]"),
+		ImplementationStandard:                  repo.NewValidNullableString("implementationStandard"),
+		CustomImplementationStandard:            repo.NewValidNullableString("customImplementationStandard"),
+		CustomImplementationStandardDescription: repo.NewValidNullableString("customImplementationStandardDescription"),
 		Version: version.Version{
 			Value:           repo.NewNullableString(str.Ptr("v1.1")),
 			Deprecated:      repo.NewValidNullableBool(false),
@@ -257,27 +267,27 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
+	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, tenantID, appID, bundleID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		fmt.Sprintf("https://%s.com", placeholder), ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
+	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+		ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", "successor", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "visibility", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, "implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`)}
 }
 
-func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, appID, bundleID, packageID, api.Name, api.Description, api.Group,
-		api.TargetURL, api.OrdID, api.ShortDescription, api.SystemInstanceAware, api.ApiProtocol, repo.NewNullableStringFromJSONRawMessage(api.Tags), repo.NewNullableStringFromJSONRawMessage(api.Countries),
-		repo.NewNullableStringFromJSONRawMessage(api.Links), repo.NewNullableStringFromJSONRawMessage(api.APIResourceLinks),
-		api.ReleaseStatus, api.SunsetDate, api.Successor, repo.NewNullableStringFromJSONRawMessage(api.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(api.Labels), api.Visibility,
-		api.Disabled, repo.NewNullableStringFromJSONRawMessage(api.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(api.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(api.Industry),
-		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince, api.Version.ForRemoval, api.Ready, api.CreatedAt, api.UpdatedAt, api.DeletedAt, api.Error}
+func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
+	return []driver.Value{id, tenantID, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
+		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, apiDef.ApiProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
+		apiDef.ReleaseStatus, apiDef.SunsetDate, apiDef.Successor, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
+		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
+		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error, apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

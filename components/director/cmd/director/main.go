@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -543,6 +545,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	specConverter := spec.NewConverter(frConverter)
+	bundleReferenceConv := bundlereferences.NewConverter()
 
 	intSysConverter := integrationsystem.NewConverter()
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
@@ -572,8 +575,10 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	specRepo := spec.NewRepository(specConverter)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)

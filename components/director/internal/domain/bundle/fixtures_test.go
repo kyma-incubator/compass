@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -18,9 +20,8 @@ import (
 
 var fixedTimestamp = time.Now()
 
-func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
+func fixModelAPIDefinition(id string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
-		BundleID:    &bndlID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -64,9 +65,8 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 	}
 }
 
-func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -264,8 +264,8 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
+			{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
+			{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
 		},
 		APISpecs: []*model.SpecInput{
 			{Data: &specData1},

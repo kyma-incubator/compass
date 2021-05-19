@@ -12,17 +12,19 @@ import (
 )
 
 const (
-	ordDocURI     = "/open-resource-discovery/v1/documents/example1"
-	baseURL       = "http://localhost:8080"
-	packageORDID  = "ns:package:PACKAGE_ID:v1"
-	productORDID  = "ns:PRODUCT_ID"
-	product2ORDID = "ns:PRODUCT_ID2"
-	bundleORDID   = "ns:consumptionBundle:BUNDLE_ID:v1"
-	vendorORDID   = "sap"
-	api1ORDID     = "ns:apiResource:API_ID:v2"
-	api2ORDID     = "ns:apiResource:API_ID2:v1"
-	event1ORDID   = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID   = "ns2:eventResource:EVENT_ID:v1"
+	ordDocURI             = "/open-resource-discovery/v1/documents/example1"
+	baseURL               = "http://localhost:8080"
+	systemInstanceBaseURL = "http://test.com"
+	packageORDID          = "ns:package:PACKAGE_ID:v1"
+	productORDID          = "ns:product:id:"
+	product2ORDID         = "ns:product:id2:"
+	bundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID     = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID           = "ns:vendor:id:"
+	api1ORDID             = "ns:apiResource:API_ID:v2"
+	api2ORDID             = "ns:apiResource:API_ID2:v1"
+	event1ORDID           = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID           = "ns2:eventResource:EVENT_ID:v1"
 
 	appID     = "testApp"
 	whID      = "testWh"
@@ -34,8 +36,10 @@ const (
 	event1ID  = "testEvent1"
 	event2ID  = "testEvent2"
 
-	cursor      = "cursor"
-	policyLevel = "sap"
+	cursor                    = "cursor"
+	policyLevel               = "sap"
+	apiImplementationStandard = "cff:open-service-broker:v2"
+	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
 )
 
 var (
@@ -123,6 +127,8 @@ var (
           "version": "1.0.0"
         }
       ]`)
+
+	boolPtr = true
 )
 
 func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
@@ -141,6 +147,14 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 				},
 			},
 		},
+	}
+}
+
+func fixSystemInstance() *model.Application {
+	return &model.Application{
+		CorrelationIds: json.RawMessage(correlationIds),
+		BaseURL:        str.Ptr(systemInstanceBaseURL),
+		Labels:         json.RawMessage(labels),
 	}
 }
 
@@ -179,10 +193,9 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 }
 
 func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
-	true := true
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
-		OpenResourceDiscovery: "1.0-rc.1",
+		OpenResourceDiscovery: "1.0-rc.2",
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),
@@ -227,35 +240,37 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription: "lorem ipsum",
 				Vendor:           vendorORDID,
 				Parent:           str.Ptr(product2ORDID),
-				PPMSObjectID:     str.Ptr("12391293812"),
+				CorrelationIds:   json.RawMessage(correlationIds),
 				Labels:           json.RawMessage(labels),
 			},
 		},
 		APIResources: []*model.APIDefinitionInput{
 			{
-				OrdID:               str.Ptr(api1ORDID),
-				OrdBundleID:         str.Ptr(bundleORDID),
-				OrdPackageID:        str.Ptr(packageORDID),
-				Name:                "API TITLE",
-				Description:         str.Ptr("lorem ipsum dolor sit amet"),
-				TargetURL:           "https://exmaple.com/test/v1",
-				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &true,
-				ApiProtocol:         str.Ptr("odata-v2"),
-				Tags:                json.RawMessage(`["apiTestTag"]`),
-				Countries:           json.RawMessage(`["BG","US"]`),
-				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
-				APIResourceLinks:    json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
-				ReleaseStatus:       str.Ptr("active"),
-				SunsetDate:          nil,
-				Successor:           nil,
-				ChangeLogEntries:    json.RawMessage(changeLogEntries),
-				Labels:              json.RawMessage(labels),
-				Visibility:          str.Ptr("public"),
-				Disabled:            &true,
-				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
-				Industry:            json.RawMessage(`["automotive","test"]`),
+				OrdID:                                   str.Ptr(api1ORDID),
+				OrdPackageID:                            str.Ptr(packageORDID),
+				Name:                                    "API TITLE",
+				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+				TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1","https://exmaple.com/test/v2"]`),
+				ShortDescription:                        str.Ptr("lorem ipsum"),
+				SystemInstanceAware:                     &boolPtr,
+				ApiProtocol:                             str.Ptr("odata-v2"),
+				Tags:                                    json.RawMessage(`["apiTestTag"]`),
+				Countries:                               json.RawMessage(`["BG","US"]`),
+				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
+				ReleaseStatus:                           str.Ptr("active"),
+				SunsetDate:                              nil,
+				Successor:                               nil,
+				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+				Labels:                                  json.RawMessage(labels),
+				Visibility:                              str.Ptr("public"),
+				Disabled:                                &boolPtr,
+				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				LineOfBusiness:                          json.RawMessage(`["lineOfBusiness2"]`),
+				Industry:                                json.RawMessage(`["automotive","test"]`),
+				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
+				CustomImplementationStandard:            nil,
+				CustomImplementationStandardDescription: nil,
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "openapi-v3",
@@ -278,34 +293,42 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID:      bundleORDID,
+						DefaultTargetURL: "https://exmaple.com/test/v1",
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
 			},
 			{
-				OrdID:               str.Ptr(api2ORDID),
-				OrdBundleID:         str.Ptr(bundleORDID),
-				OrdPackageID:        str.Ptr(packageORDID),
-				Name:                "Gateway Sample Service",
-				Description:         str.Ptr("lorem ipsum dolor sit amet"),
-				TargetURL:           fmt.Sprintf("%s/some-api/v1", baseURL),
-				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &true,
-				ApiProtocol:         str.Ptr("odata-v2"),
-				Tags:                json.RawMessage(`["ZGWSAMPLE"]`),
-				Countries:           json.RawMessage(`["BR"]`),
-				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
-				APIResourceLinks:    json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
-				ReleaseStatus:       str.Ptr("deprecated"),
-				SunsetDate:          str.Ptr("2020-12-08T15:47:04+0000"),
-				Successor:           str.Ptr(api1ORDID),
-				ChangeLogEntries:    json.RawMessage(changeLogEntries),
-				Labels:              json.RawMessage(labels),
-				Visibility:          str.Ptr("public"),
-				Disabled:            nil,
-				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
-				Industry:            json.RawMessage(`["automotive","test"]`),
+				OrdID:                                   str.Ptr(api2ORDID),
+				OrdPackageID:                            str.Ptr(packageORDID),
+				Name:                                    "Gateway Sample Service",
+				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+				TargetURLs:                              json.RawMessage(`["http://localhost:8080/some-api/v1"]`),
+				ShortDescription:                        str.Ptr("lorem ipsum"),
+				SystemInstanceAware:                     &boolPtr,
+				ApiProtocol:                             str.Ptr("odata-v2"),
+				Tags:                                    json.RawMessage(`["ZGWSAMPLE"]`),
+				Countries:                               json.RawMessage(`["BR"]`),
+				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
+				ReleaseStatus:                           str.Ptr("deprecated"),
+				SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
+				Successor:                               str.Ptr(api1ORDID),
+				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+				Labels:                                  json.RawMessage(labels),
+				Visibility:                              str.Ptr("public"),
+				Disabled:                                nil,
+				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				LineOfBusiness:                          json.RawMessage(`["lineOfBusiness2"]`),
+				Industry:                                json.RawMessage(`["automotive","test"]`),
+				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
+				CustomImplementationStandard:            nil,
+				CustomImplementationStandardDescription: nil,
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "edmx",
@@ -318,6 +341,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "1.1.0",
 				},
@@ -326,12 +354,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		EventResources: []*model.EventDefinitionInput{
 			{
 				OrdID:               str.Ptr(event1ORDID),
-				OrdBundleID:         str.Ptr(bundleORDID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
 				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &true,
+				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
@@ -341,7 +368,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Successor:           nil,
 				Labels:              json.RawMessage(labels),
 				Visibility:          str.Ptr("public"),
-				Disabled:            &true,
+				Disabled:            &boolPtr,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
 				Industry:            json.RawMessage(`["automotive","test"]`),
@@ -357,18 +384,22 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
 			},
 			{
 				OrdID:               str.Ptr(event2ORDID),
-				OrdBundleID:         str.Ptr(bundleORDID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE 2",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
 				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &true,
+				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
 				Tags:                json.RawMessage(`["eventTestTag2"]`),
@@ -394,6 +425,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						},
 					},
 				},
+				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+					{
+						BundleOrdID: bundleORDID,
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "1.1.0",
 				},
@@ -407,10 +443,10 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		},
 		Vendors: []*model.VendorInput{
 			{
-				OrdID:  vendorORDID,
-				Title:  "SAP",
-				Type:   "sap",
-				Labels: json.RawMessage(labels),
+				OrdID:      vendorORDID,
+				Title:      "SAP",
+				SapPartner: &boolPtr,
+				Labels:     json.RawMessage(labels),
 			},
 		},
 	}
@@ -456,7 +492,7 @@ func fixVendors() []*model.Vendor {
 			TenantID:      tenantID,
 			ApplicationID: appID,
 			Title:         "SAP",
-			Type:          "sap",
+			SapPartner:    &boolPtr,
 			Labels:        json.RawMessage(labels),
 		},
 	}
@@ -472,7 +508,7 @@ func fixProducts() []*model.Product {
 			ShortDescription: "lorem ipsum",
 			Vendor:           vendorORDID,
 			Parent:           str.Ptr(product2ORDID),
-			PPMSObjectID:     str.Ptr("12391293812"),
+			CorrelationIds:   json.RawMessage(`["foo.bar.baz:123456"]`),
 			Labels:           json.RawMessage(labels),
 		},
 	}
@@ -524,32 +560,52 @@ func fixBundles() []*model.Bundle {
 	}
 }
 
+func fixBundleCreateInput() []*model.BundleCreateInput {
+	return []*model.BundleCreateInput{
+		{
+			Name:             "BUNDLE TITLE",
+			Description:      str.Ptr("lorem ipsum dolor nsq sme"),
+			OrdID:            str.Ptr(bundleORDID),
+			ShortDescription: str.Ptr("lorem ipsum"),
+			Labels:           json.RawMessage(labels),
+		},
+		{
+			Name:             "BUNDLE TITLE 2 ",
+			Description:      str.Ptr("foo bar"),
+			OrdID:            str.Ptr(secondBundleORDID),
+			ShortDescription: str.Ptr("bar foo"),
+			Labels:           json.RawMessage(labels),
+		},
+	}
+}
+
 func fixAPIs() []*model.APIDefinition {
-	true := true
 	return []*model.APIDefinition{
 		{
-			ApplicationID:    appID,
-			BundleID:         str.Ptr(bundleORDID),
-			PackageID:        str.Ptr(packageORDID),
-			Tenant:           tenantID,
-			Name:             "API TITLE",
-			Description:      str.Ptr("lorem ipsum dolor sit amet"),
-			TargetURL:        "/test/v1",
-			OrdID:            str.Ptr(api1ORDID),
-			ShortDescription: str.Ptr("lorem ipsum"),
-			ApiProtocol:      str.Ptr("odata-v2"),
-			Tags:             json.RawMessage(`["testTag","apiTestTag"]`),
-			Countries:        json.RawMessage(`["BG","EN","US"]`),
-			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			APIResourceLinks: json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
-			ReleaseStatus:    str.Ptr("active"),
-			ChangeLogEntries: json.RawMessage(changeLogEntries),
-			Labels:           json.RawMessage(mergedLabels),
-			Visibility:       str.Ptr("public"),
-			Disabled:         &true,
-			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
-			Industry:         json.RawMessage(`["automotive","finance","test"]`),
+			ApplicationID:                           appID,
+			PackageID:                               str.Ptr(packageORDID),
+			Tenant:                                  tenantID,
+			Name:                                    "API TITLE",
+			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+			TargetURLs:                              json.RawMessage(`["/test/v1"]`),
+			OrdID:                                   str.Ptr(api1ORDID),
+			ShortDescription:                        str.Ptr("lorem ipsum"),
+			ApiProtocol:                             str.Ptr("odata-v2"),
+			Tags:                                    json.RawMessage(`["testTag","apiTestTag"]`),
+			Countries:                               json.RawMessage(`["BG","EN","US"]`),
+			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
+			ReleaseStatus:                           str.Ptr("active"),
+			ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+			Labels:                                  json.RawMessage(mergedLabels),
+			Visibility:                              str.Ptr("public"),
+			Disabled:                                &boolPtr,
+			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+			LineOfBusiness:                          json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
+			Industry:                                json.RawMessage(`["automotive","finance","test"]`),
+			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
+			CustomImplementationStandard:            nil,
+			CustomImplementationStandardDescription: nil,
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
@@ -559,29 +615,31 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 		{
-			ApplicationID:    appID,
-			BundleID:         str.Ptr(bundleORDID),
-			PackageID:        str.Ptr(packageORDID),
-			Tenant:           tenantID,
-			Name:             "Gateway Sample Service",
-			Description:      str.Ptr("lorem ipsum dolor sit amet"),
-			TargetURL:        "/some-api/v1",
-			OrdID:            str.Ptr(api2ORDID),
-			ShortDescription: str.Ptr("lorem ipsum"),
-			ApiProtocol:      str.Ptr("odata-v2"),
-			Tags:             json.RawMessage(`["testTag","ZGWSAMPLE"]`),
-			Countries:        json.RawMessage(`["BG","EN","BR"]`),
-			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			APIResourceLinks: json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
-			ReleaseStatus:    str.Ptr("deprecated"),
-			SunsetDate:       str.Ptr("2020-12-08T15:47:04+0000"),
-			Successor:        str.Ptr(api1ORDID),
-			ChangeLogEntries: json.RawMessage(changeLogEntries),
-			Labels:           json.RawMessage(mergedLabels),
-			Visibility:       str.Ptr("public"),
-			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
-			Industry:         json.RawMessage(`["automotive","finance","test"]`),
+			ApplicationID:                           appID,
+			PackageID:                               str.Ptr(packageORDID),
+			Tenant:                                  tenantID,
+			Name:                                    "Gateway Sample Service",
+			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+			TargetURLs:                              json.RawMessage(`["/some-api/v1"]`),
+			OrdID:                                   str.Ptr(api2ORDID),
+			ShortDescription:                        str.Ptr("lorem ipsum"),
+			ApiProtocol:                             str.Ptr("odata-v2"),
+			Tags:                                    json.RawMessage(`["testTag","ZGWSAMPLE"]`),
+			Countries:                               json.RawMessage(`["BG","EN","BR"]`),
+			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
+			ReleaseStatus:                           str.Ptr("deprecated"),
+			SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
+			Successor:                               str.Ptr(api1ORDID),
+			ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+			Labels:                                  json.RawMessage(mergedLabels),
+			Visibility:                              str.Ptr("public"),
+			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+			LineOfBusiness:                          json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
+			Industry:                                json.RawMessage(`["automotive","finance","test"]`),
+			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
+			CustomImplementationStandard:            nil,
+			CustomImplementationStandardDescription: nil,
 			Version: &model.Version{
 				Value: "1.1.1",
 			},
@@ -593,13 +651,35 @@ func fixAPIs() []*model.APIDefinition {
 	}
 }
 
+func fixAPIPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
+	return []*model.ConsumptionBundleReference{
+		{
+			BundleOrdID:      bundleORDID,
+			DefaultTargetURL: "https://exmaple.com/test/v1",
+		},
+		{
+			BundleOrdID:      secondBundleORDID,
+			DefaultTargetURL: "https://exmaple.com/test/v2",
+		},
+	}
+}
+
+func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
+	return []*model.ConsumptionBundleReference{
+		{
+			BundleOrdID: bundleORDID,
+		},
+		{
+			BundleOrdID: secondBundleORDID,
+		},
+	}
+}
+
 func fixEvents() []*model.EventDefinition {
-	true := true
 	return []*model.EventDefinition{
 		{
 			Tenant:           tenantID,
 			ApplicationID:    appID,
-			BundleID:         str.Ptr(bundleORDID),
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
@@ -612,7 +692,7 @@ func fixEvents() []*model.EventDefinition {
 			ReleaseStatus:    str.Ptr("active"),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       str.Ptr("public"),
-			Disabled:         &true,
+			Disabled:         &boolPtr,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:   json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
 			Industry:         json.RawMessage(`["automotive","finance","test"]`),
@@ -627,7 +707,6 @@ func fixEvents() []*model.EventDefinition {
 		{
 			Tenant:           tenantID,
 			ApplicationID:    appID,
-			BundleID:         str.Ptr(bundleORDID),
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
