@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
@@ -97,6 +98,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	runtimeConverter := runtime.NewConverter()
+	bundleReferenceConv := bundlereferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -110,13 +112,15 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
+	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
