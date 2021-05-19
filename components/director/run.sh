@@ -4,6 +4,7 @@
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
 INVERTED='\033[7m'
 NC='\033[0m' # No Color
 
@@ -140,9 +141,16 @@ else
         if [[ -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
             echo -e "${GREEN}Will reuse existing dump in schema-migrator/seeds/dump.sql ${NC}"
         else
-            echo -e "${RED}Warning: Please ensure that your kubectl context points to an existing Compass cluster${NC}"
+            echo -e "${YELLOW}Warning: Please ensure that your kubectl context points to an existing Compass development cluster${NC}"
+            CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
+
+            if [[ $CURRENT_KUBE_CONTEXT != *dev* ]]; then
+                echo -e "${RED}Error: Current kubectl context does not point to an existing Compass development cluster${NC}"
+                exit 1
+            fi
+
             sleep 2
-            echo -e "${GREEN}Will dump and use database data from connected kubernetes Compass cluster${NC}"
+            echo -e "${GREEN}Will dump and use database data from connected kubernetes Compass development cluster${NC}"
 
             REMOTE_DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
             DIRECTOR_POD_NAME=$(kubectl get pods -n compass-system | grep "director" | head -1 | cut -c -33)
