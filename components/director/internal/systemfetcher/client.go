@@ -61,7 +61,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	}
 
 	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
-	url += urlpkg.QueryEscape(" and " + tenantFilter)
+	url = c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(tenantFilter)
 	systemsByTenantFilter, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
