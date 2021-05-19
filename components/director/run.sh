@@ -141,62 +141,14 @@ else
         if [[ -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
             echo -e "${GREEN}Will reuse existing dump in schema-migrator/seeds/dump.sql ${NC}"
         else
-            echo -e "${YELLOW}Warning: Please ensure that your kubectl context points to an existing Compass development cluster${NC}"
-            CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
-
-            if [[ $CURRENT_KUBE_CONTEXT != *dev* ]]; then
-                echo -e "${RED}Error: Current kubectl context does not point to an existing Compass development cluster${NC}"
-                exit 1
-            fi
-
-            sleep 2
-            echo -e "${GREEN}Will dump and use database data from connected kubernetes Compass development cluster${NC}"
-
-            REMOTE_DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
-            DIRECTOR_POD_NAME=$(kubectl get pods -n compass-system | grep "director" | head -1 | cut -c -33)
-            kubectl port-forward --namespace compass-system $DIRECTOR_POD_NAME 5555:5432 &
-            sleep 5 # necessary for the port-forward to open in time for the next command
-
-            echo -e "${GREEN}Dumping database...${NC}"
-
-            trap cleanup_temp_migrations EXIT
-
-            PGPASSWORD=$REMOTE_DB_PWD pg_dump --dbname=director --file=${ROOT_PATH}/../schema-migrator/seeds/dump.sql --host=localhost --port=5555 --username=director --column-inserts --no-owner --no-privileges
-
-            echo -e "${GREEN}Database dumped!${NC}"
-
-            pkill kubectl
+            bash ${ROOT_PATH}/../schema-migrator/dump_db.sh
         fi
 
         cat ${ROOT_PATH}/../schema-migrator/seeds/dump.sql | \
             docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
 
-
-       LATEST_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
-
-       echo -e "${GREEN}Latest migration version from dump: $LATEST_MIGRATION_VERSION${NC}"
-
-       MIGRATION_REACHED=false
-       for FILE_PATH in ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql
-       do
-           if [[ $MIGRATION_REACHED = true ]]; then
-               cat $FILE_PATH >> ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql
-           fi
-
-
-           FILE_NAME=$(basename $FILE_PATH)
-           if  [[ $FILE_NAME == $LATEST_MIGRATION_VERSION* ]]; then
-               MIGRATION_REACHED=true
-           fi
-       done
-
-       if [[ -f ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql ]]; then
-           echo -e "${GREEN}New migrations will be applied...${NC}"
-           cat ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql | \
-               docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
-       else
-           echo -e "${GREEN}No new migrations will be applied.${NC}"
-       fi
+        CONNECTION_STRING="postgres://$DB_USER:$DB_PWD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+        migrate -path ${ROOT_PATH}/../schema-migrator/migrations/director -database "$CONNECTION_STRING" up
     fi
 fi
 
