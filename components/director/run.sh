@@ -131,7 +131,6 @@ else
     echo -e "${GREEN}Populate DB${NC}"
 
     if [[ ${DUMP_DB} = false ]]; then
-        echo test
         cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
             docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
 
@@ -148,7 +147,7 @@ else
             REMOTE_DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
             DIRECTOR_POD_NAME=$(kubectl get pods -n compass-system | grep "director" | head -1 | cut -c -33)
             kubectl port-forward --namespace compass-system $DIRECTOR_POD_NAME 5555:5432 &
-            sleep 5 # necessary for the port-forward to open in time for the next commaand
+            sleep 5 # necessary for the port-forward to open in time for the next command
 
             echo -e "${GREEN}Dumping database...${NC}"
 
