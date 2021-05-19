@@ -162,38 +162,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&api.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
-			if value == nil {
-				return nil
-			}
-
-			jsonArr := api.ResourceDefinitions
-
-			if len(jsonArr) == 0 {
-				return nil
-			}
-
-			ordID := str.PtrStrToStr(api.OrdPackageID)
-			apiProtocol := str.PtrStrToStr(api.ApiProtocol)
-			policyLevel := packagePolicyLevels[ordID]
-			resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
-
-			for _, rd := range jsonArr {
-				resourceDefinitionType := rd.Type
-				resourceDefinitionTypes[resourceDefinitionType] = true
-			}
-
-			wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
-			if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolSoapInbound || apiProtocol == ApiProtocolSoapOutbound) && !wsdlTypeExists {
-				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
-			}
-
-			edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
-			openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
-			if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
-				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
-			}
-
-			return nil
+			return validateAPIResourceDefinitions(value, *api, packagePolicyLevels)
 		})),
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
@@ -437,6 +406,41 @@ func validateAPILinks(value interface{}) error {
 	})
 }
 
+func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionInput, packagePolicyLevels map[string]string) error {
+	if value == nil {
+		return nil
+	}
+
+	resourceDefinitions := api.ResourceDefinitions
+
+	if len(resourceDefinitions) == 0 {
+		return nil
+	}
+
+	pkgOrdID := str.PtrStrToStr(api.OrdPackageID)
+	apiProtocol := str.PtrStrToStr(api.ApiProtocol)
+	policyLevel := packagePolicyLevels[pkgOrdID]
+	resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
+
+	for _, rd := range resourceDefinitions {
+		resourceDefinitionType := rd.Type
+		resourceDefinitionTypes[resourceDefinitionType] = true
+	}
+
+	wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
+	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolSoapInbound || apiProtocol == ApiProtocolSoapOutbound) && !wsdlTypeExists {
+		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
+	}
+
+	edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
+	openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
+	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
+		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+	}
+
+	return nil
+}
+
 func noNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
 }
@@ -522,17 +526,21 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	return nil
 }
 
-func validateJSONObjects(obj interface{}, isOptional bool, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
+func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
+	if obj == nil {
+		return nil
+	}
+
 	jsonObj, ok := obj.(json.RawMessage)
 	if !ok {
 		return errors.New("should be json")
 	}
 
-	if len(jsonObj) == 0 && isOptional {
+	if len(jsonObj) == 0 {
 		return nil
 	}
 
-	if !gjson.ValidBytes(jsonObj) && !isOptional {
+	if !gjson.ValidBytes(jsonObj) {
 		return errors.New("should be valid json")
 	}
 
@@ -678,7 +686,7 @@ func isValidDate(date *string) validation.RuleFunc {
 }
 
 func validateExtensibleField(value interface{}) error {
-	return validateJSONObjects(value, true, map[string][]validation.Rule{
+	return validateJSONObjects(value, map[string][]validation.Rule{
 		"supported": {
 			validation.Required,
 			validation.In("no", "manual", "automatic"),
