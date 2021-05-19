@@ -260,7 +260,7 @@ func (r *OperationReconciler) requeueUnlessTimeoutOrFatalError(ctx context.Conte
 }
 
 func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg *string, webhook *graphql.Webhook) (ctrl.Result, error) {
-	if isCloseToTimeout(operation.Status.InitializedAt, r.determineTimeout(webhook)) {
+	if isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
 		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
 	}
 
@@ -281,7 +281,7 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 			return ctrl.Result{}, err
 		}
 
-		duration := time.Now().Sub(operation.Status.InitializedAt)
+		duration := time.Now().Sub(operation.Status.InitializedAt.Time)
 		r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
 	}
 
@@ -289,7 +289,7 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 }
 
 func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operation *v1alpha1.Operation, webhook *graphql.Webhook) (ctrl.Result, error) {
-	if isCloseToTimeout(operation.Status.InitializedAt, r.determineTimeout(webhook)) {
+	if isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
 		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
 	}
 
@@ -303,14 +303,14 @@ func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operati
 
 	log.C(ctx).Info("Successfully updated operation status to succeeded")
 
-	duration := time.Now().Sub(operation.Status.InitializedAt)
+	duration := time.Now().Sub(operation.Status.InitializedAt.Time)
 	r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
 
 	return ctrl.Result{}, nil
 }
 
 func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error, webhook *graphql.Webhook) (ctrl.Result, error) {
-	if operation != nil && isCloseToTimeout(operation.Status.InitializedAt, r.determineTimeout(webhook)) {
+	if operation != nil && isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
 		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
 	}
 

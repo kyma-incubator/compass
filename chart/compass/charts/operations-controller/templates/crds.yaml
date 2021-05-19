@@ -33,10 +33,14 @@ spec:
       description: Operation is the Schema for the operations API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -80,7 +84,8 @@ spec:
           properties:
             conditions:
               items:
-                description: Condition defines the states in which the Operation CR can be
+                description: Condition defines the states in which the Operation CR
+                  can be
                 properties:
                   message:
                     type: string
@@ -96,6 +101,9 @@ spec:
                 - type
                 type: object
               type: array
+            initialized_at:
+              format: date-time
+              type: string
             observed_generation:
               format: int64
               type: integer
@@ -105,12 +113,10 @@ spec:
               - Failed
               - In Progress
               type: string
-            initialized_at:
-              type: date
-              format: date-time
             webhooks:
               items:
-                description: Webhook is an entity part of the OperationStatus which holds information about the progression of the webhook execution
+                description: Webhook is an entity part of the OperationStatus which
+                  holds information about the progression of the webhook execution
                 properties:
                   last_poll_timestamp:
                     type: string

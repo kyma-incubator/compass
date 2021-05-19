@@ -18,10 +18,10 @@ package status
 
 import (
 	"context"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -68,7 +68,7 @@ func (m *manager) Initialize(operation *v1alpha1.Operation) error {
 		}
 	}
 
-	status.InitializedAt = time.Now()
+	status.InitializedAt = metav1.Now()
 	return nil
 }
 
