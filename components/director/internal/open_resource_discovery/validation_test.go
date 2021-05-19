@@ -140,6 +140,17 @@ var (
   		]
 	}`
 
+	invalidPartnersWhenValueIsNotArray = `{
+  		"partner-key-1": "partner-value-1"
+	}`
+
+	invalidPartnersWhenValuesAreNotArrayOfStrings = `{
+  		"partners-key-1": [
+    	  "partners-value-1",
+    	  112
+  		]
+	}`
+
 	invalidCountriesElement          = `["DE", "wrongCountry"]`
 	invalidCountriesNonStringElement = `["DE", 992]`
 
@@ -302,6 +313,12 @@ var (
 	invalidEntryPointURI               = `["invalidUrl"]`
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
 	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
+
+	invalidExtensibleDueToInvalidSupportedType                       = `{"supported":true}`
+	invalidExtensibleDueToNoSupportedProperty                        = `{"description":"Please find the extensibility documentation"}`
+	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
+	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty = `{"supported":"automatic"}`
+	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty    = `{"supported":"manual"}`
 )
 
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
@@ -2276,7 +2293,222 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
+		{
+			Name: "Missing `supported` field in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToNoSupportedProperty)
 
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field type in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field value in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedValue)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has an `automatic` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has a `manual` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedManualAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationXML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationXML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationXML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeEDMX
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeEDMX
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeEDMX
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-outbound`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeEDMX
+				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v2`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV2
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v2`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV2
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v4`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV4
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v4`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV4
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
 		// Test invalid entity relations
 
 		{
@@ -3005,6 +3237,51 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
+		{
+			Name: "Missing `supported` field in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToNoSupportedProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field type in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `supported` field value in the `extensible` object for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidSupportedValue)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has an `automatic` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field when `supported` has a `manual` value",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedManualAndNoDescriptionProperty)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
 
 		// Test invalid entity relations
 
@@ -3303,6 +3580,31 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid JSON object `Partners` field for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Partners = json.RawMessage(`[]`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Partners` values are not array for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidPartnersWhenValueIsNotArray)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Partners` values are not array of strings for Vendor",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Labels = json.RawMessage(invalidPartnersWhenValuesAreNotArrayOfStrings)
 
 				return []*open_resource_discovery.Document{doc}
 			},

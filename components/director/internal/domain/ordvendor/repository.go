@@ -15,8 +15,8 @@ const vendorTable string = `public.vendors`
 
 var (
 	tenantColumn     = "tenant_id"
-	vendorColumns    = []string{"ord_id", tenantColumn, "app_id", "title", "labels", "sap_partner"}
-	updatableColumns = []string{"title", "labels", "sap_partner"}
+	vendorColumns    = []string{"ord_id", tenantColumn, "app_id", "title", "labels", "partners"}
+	updatableColumns = []string{"title", "labels", "partners"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore

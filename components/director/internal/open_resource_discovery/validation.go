@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -30,6 +32,33 @@ const (
 	CorrelationIDsRegex               = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
 	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
 	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	VendorPartnersRegex               = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
+)
+
+const (
+	PolicyLevelSap        string = "sap"
+	PolicyLevelSapPartner string = "sap-partner"
+	PolicyLevelCustom     string = "custom"
+
+	ReleaseStatusBeta       string = "beta"
+	ReleaseStatusActive     string = "active"
+	ReleaseStatusDeprecated string = "deprecated"
+
+	ApiProtocolODataV2      string = "odata-v2"
+	ApiProtocolODataV4      string = "odata-v4"
+	ApiProtocolSoapInbound  string = "soap-inbound"
+	ApiProtocolSoapOutbound string = "soap-outbound"
+	ApiProtocolRest         string = "rest"
+	ApiProtocolSapRrc       string = "sap-rfc"
+
+	ApiVisibilityPublic   string = "public"
+	ApiVisibilityPrivate  string = "private"
+	ApiVisibilityInternal string = "internal"
+
+	ApiImplementationStandardDocumentApi   string = "sap:ord-document-api:v1"
+	ApiImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
+	ApiImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
+	ApiImplementationStandardCustom        string = "custom"
 )
 
 var shortDescriptionRules = []validation.Rule{
@@ -51,7 +80,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.2")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.3")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {
@@ -61,8 +90,8 @@ func validatePackageInput(pkg *model.PackageInput) error {
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
-		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In("sap", "sap-partner", "custom"), validation.When(pkg.CustomPolicyLevel != nil, validation.In("custom"))),
-		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != "custom", validation.Empty)),
+		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty)),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
 		validation.Field(&pkg.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
@@ -107,7 +136,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	)
 }
 
-func validateAPIInput(api *model.APIDefinitionInput) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
@@ -115,8 +144,8 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.ApiProtocol, validation.Required, validation.In("odata-v2", "odata-v4", "soap-inbound", "soap-outbound", "rest", "sap-rfc")),
-		validation.Field(&api.Visibility, validation.Required, validation.In("public", "internal", "private")),
+		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRrc)),
+		validation.Field(&api.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -132,21 +161,55 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&api.ResourceDefinitions, validation.Required),
+		validation.Field(&api.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
+			if value == nil {
+				return nil
+			}
+
+			jsonArr := api.ResourceDefinitions
+
+			if len(jsonArr) == 0 {
+				return nil
+			}
+
+			ordID := str.PtrStrToStr(api.OrdPackageID)
+			apiProtocol := str.PtrStrToStr(api.ApiProtocol)
+			policyLevel := packagePolicyLevels[ordID]
+			resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
+
+			for _, rd := range jsonArr {
+				resourceDefinitionType := rd.Type
+				resourceDefinitionTypes[resourceDefinitionType] = true
+			}
+
+			wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
+			if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolSoapInbound || apiProtocol == ApiProtocolSoapOutbound) && !wsdlTypeExists {
+				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
+			}
+
+			edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
+			openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
+			if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
+				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+			}
+
+			return nil
+		})),
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
-		validation.Field(&api.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
-		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
+		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
+		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.Required, validation.By(validateEntryPoints)),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In("sap:ord-document-api:v1", "cff:open-service-broker:v2", "sap:csn-exposure:v1", "custom")),
-		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
-		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required).Else(validation.Empty)),
+		validation.Field(&api.ImplementationStandard, validation.In(ApiImplementationStandardDocumentApi, ApiImplementationStandardServiceBroker, ApiImplementationStandardCsnExposure, ApiImplementationStandardCustom)),
+		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&api.Extensible, validation.By(validateExtensibleField)),
 	)
 }
 
@@ -158,7 +221,7 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Description, validation.Required),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.Visibility, validation.Required, validation.In("public", "internal", "private")),
+		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -176,14 +239,15 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		})),
 		validation.Field(&event.ResourceDefinitions, validation.Required),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
-		validation.Field(&event.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
-		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
+		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
+		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&event.Extensible, validation.By(validateExtensibleField)),
 	)
 }
 
@@ -206,6 +270,9 @@ func validateVendorInput(vendor *model.VendorInput) error {
 		validation.Field(&vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&vendor.Title, validation.Required),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
+		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(VendorPartnersRegex))
+		})),
 	)
 }
 
@@ -310,7 +377,7 @@ func validateORDChangeLogEntries(value interface{}) error {
 		},
 		"releaseStatus": {
 			validation.Required,
-			validation.In("beta", "active", "deprecated"),
+			validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated),
 		},
 		"date": {
 			validation.Required,
@@ -338,7 +405,7 @@ func validatePackageLinks(value interface{}) error {
 	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
-			validation.In("terms-of-service", "licence", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
+			validation.In("terms-of-service", "license", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
 		},
 		"url": {
 			validation.Required,
@@ -448,6 +515,39 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 				if err := f(el); err != nil {
 					return err
 				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateJSONObjects(obj interface{}, isOptional bool, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
+	jsonObj, ok := obj.(json.RawMessage)
+	if !ok {
+		return errors.New("should be json")
+	}
+
+	if len(jsonObj) == 0 && isOptional {
+		return nil
+	}
+
+	if !gjson.ValidBytes(jsonObj) && !isOptional {
+		return errors.New("should be valid json")
+	}
+
+	parsedObj := gjson.ParseBytes(jsonObj)
+	if !parsedObj.IsObject() {
+		return errors.New("should be json object")
+	}
+
+	for field, rules := range elementFieldRules {
+		if err := validation.Validate(parsedObj.Get(field).Value(), rules...); err != nil {
+			return errors.Wrapf(err, "error validating field %s", field)
+		}
+		for _, f := range crossFieldRules {
+			if err := f(parsedObj); err != nil {
+				return err
 			}
 		}
 	}
@@ -575,4 +675,30 @@ func isValidDate(date *string) validation.RuleFunc {
 		}
 		return errors.New("invalid date")
 	}
+}
+
+func validateExtensibleField(value interface{}) error {
+	return validateJSONObjects(value, true, map[string][]validation.Rule{
+		"supported": {
+			validation.Required,
+			validation.In("no", "manual", "automatic"),
+		},
+		"description": {},
+	}, validateExtensibleInnerFields)
+}
+
+func validateExtensibleInnerFields(el gjson.Result) error {
+	supportedProperty := el.Get("supported")
+	supportedValue, ok := supportedProperty.Value().(string)
+	if !ok {
+		return errors.New("`supported` value not provided")
+	}
+
+	descriptionProperty := el.Get("description")
+	descriptionValue, ok := descriptionProperty.Value().(string)
+
+	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (descriptionValue == "" || !ok) {
+		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
+	}
+	return nil
 }
