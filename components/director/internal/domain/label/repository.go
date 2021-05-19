@@ -260,6 +260,40 @@ func (r *repository) ListForObjectTypeByScenario(ctx context.Context, tenant str
 	return labels, nil
 }
 
+func (r *repository) ListScenariosForBundleInstanceAuthsByAppAndRuntimeIdAndCommonScenarios(ctx context.Context, tenant string, appId, runtimeId string, scenarios []string) ([]model.Label, error) {
+	scenarioPlaceholders := make([]string, 0, len(scenarios))
+	for _ = range scenarios {
+		scenarioPlaceholders = append(scenarioPlaceholders, "?")
+	}
+
+	subQuery := fmt.Sprintf(`SELECT labels.id FROM %s INNER JOIN public.bundle_instance_auths ON public.bundle_instance_auths.id=public.labels.bundle_instance_auth_id INNER JOIN public.bundles ON public.bundles.id=public.bundle_instance_auths.bundle_id WHERE %s is NOT NULL AND public.bundles.app_id=? AND public.bundle_instance_auths.runtime_id=? AND public.labels.tenant_id = ? AND public.labels.key='scenarios' AND labels.value ?| array[%s]`,
+		tableName, labelableObjectField(model.BundleInstanceAuthObject), strings.Join(scenarioPlaceholders, ","))
+	subQueryArgs := []interface{}{appId, runtimeId, tenant}
+
+	for _, scenario := range scenarios {
+		subQueryArgs = append(subQueryArgs, scenario)
+	}
+
+	conditions := repo.Conditions{repo.NewInConditionForSubQuery("id", subQuery, subQueryArgs)}
+
+	var collection Collection
+	err := r.lister.List(ctx, tenant, &collection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	var labels []model.Label
+	for _, entity := range collection {
+		label, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+		labels = append(labels, label)
+	}
+
+	return labels, nil
+}
+
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -297,6 +331,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "runtime_id"
 	case model.RuntimeContextLabelableObject:
 		return "runtime_context_id"
+	case model.BundleInstanceAuthObject:
+		return "bundle_instance_auth_id"
 	}
 
 	return ""

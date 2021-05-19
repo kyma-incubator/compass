@@ -2,6 +2,16 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/features"
@@ -100,14 +110,14 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo, nil)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, scenariosService, uidSvc)
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, applicationRepo(), cfg.Features.ProtectedLabelPattern)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {
@@ -115,4 +125,23 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	}
 
 	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey)
+}
+
+func applicationRepo() application.ApplicationRepository {
+	authConverter := auth.NewConverter()
+
+	versionConverter := version.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	docConverter := document.NewConverter(frConverter)
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+
+	return application.NewRepository(appConverter)
 }

@@ -2,7 +2,9 @@ package runtime
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"regexp"
 	"strings"
 	"time"
@@ -42,6 +44,7 @@ type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
+	Upsert(ctx context.Context, label *model.Label) error
 }
 
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
@@ -63,6 +66,10 @@ type ScenarioAssignmentEngine interface {
 	MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{}
 }
 
+type ApplicationRepository interface {
+	ListAllByLabelFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
+}
+
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -76,6 +83,7 @@ type service struct {
 	uidService               UIDService
 	scenariosService         ScenariosService
 	scenarioAssignmentEngine ScenarioAssignmentEngine
+	appRepo                  ApplicationRepository
 
 	protectedLabelPattern string
 }
@@ -86,6 +94,7 @@ func NewService(repo RuntimeRepository,
 	labelUpsertService LabelUpsertService,
 	uidService UIDService,
 	scenarioAssignmentEngine ScenarioAssignmentEngine,
+	appRepo ApplicationRepository,
 	protectedLabelPattern string) *service {
 	return &service{
 		repo:                     repo,
@@ -319,6 +328,38 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		scToRemove := getScenariosToRemove(existingScenarios, inputScenarios)
 		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, labelInput.ObjectID) {
 			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+		}
+
+		scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
+		scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
+		commonApplications := s.getCommonApplications(ctx, rtmTenant, scenariosToKeep, scToAdd)
+
+		for appId, scenario := range commonApplications {
+			bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, appId, labelInput.ObjectID)
+			//TODO: Reuse common logic in engine.go -> upsertScenario(...)
+			for _, currentLabel := range bundleInstanceAuthsLabels {
+				if currentLabel.Key == model.ScenariosKey {
+					var scenariosValue []string
+					err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
+					if err != nil {
+						//todo handleErr
+						continue
+					}
+					scenariosValue = append(scenariosValue, scenario)
+					updatedValue, _ := json.Marshal(scenariosValue)
+					currentLabel.Value = string(updatedValue)
+
+					labelConverter := label.NewConverter()
+					labelInput, err := labelConverter.FromEntity(currentLabel)
+					if err != nil {
+						// todo handle
+					}
+					labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
+					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
+						return err
+					}
+				}
+			}
 		}
 	}
 
@@ -707,4 +748,95 @@ func getScenariosToRemove(existing, new []string) []string {
 		}
 	}
 	return result
+}
+
+func GetScenariosToKeep(existing []string, input []string) []string {
+	existingScenarioMap := make(map[string]bool, 0)
+	for _, scenario := range existing {
+		existingScenarioMap[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range input {
+		if _, ok := existingScenarioMap[scenario]; ok {
+			result = append(result, scenario)
+		}
+	}
+	return result
+}
+
+func (s *service) getCommonApplications(ctx context.Context, tenant string, scenariosToKeep []string, scenariosToAdd []string) map[string]string {
+	appIdsForScenariosToKeep, err := s.getApplicationIdsForScenario(ctx, tenant, scenariosToKeep)
+	if err != nil {
+		// TODO HANDLE ERROR
+	}
+
+	commonApplicationScenarios := make(map[string]string)
+	for _, scenario := range scenariosToAdd {
+		appIds, err := s.getApplicationIdsForScenario(ctx, tenant, []string{scenario})
+		if err != nil {
+			// todo handle
+		}
+		for _, appId := range appIds {
+			if contains(appIdsForScenariosToKeep, appId) {
+				commonApplicationScenarios[appId] = scenario
+			}
+		}
+	}
+	return commonApplicationScenarios
+}
+
+func (s *service) getApplicationIdsForScenario(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
+	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
+	appScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
+
+	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
+	applications, err := s.appRepo.ListAllByLabelFilter(ctx, tenant, appScenariosFilter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes")
+	}
+
+	var appIds []string
+	for _, r := range applications {
+		appIds = append(appIds, r.ID)
+	}
+
+	return appIds, nil
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func getScenariosToAdd(existing, new []string) []string {
+	existingScenarioMap := make(map[string]bool, 0)
+	for _, scenario := range existing {
+		existingScenarioMap[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range new {
+		if _, ok := existingScenarioMap[scenario]; !ok {
+			result = append(result, scenario)
+		}
+	}
+	return result
+}
+
+func getBundleInstanceAuthsLabels(ctx context.Context, appId, runtimeId string) []label.Entity {
+	persist, _ := persistence.FromCtx(ctx)
+
+	var entities []label.Entity
+	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2"
+	err := persist.Select(&entities, query, appId, runtimeId)
+	if err != nil {
+		return []label.Entity{}
+	}
+
+	return entities
 }

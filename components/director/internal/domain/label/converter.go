@@ -87,7 +87,7 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 		objectID = in.RuntimeContextID.String
 		objectType = model.RuntimeContextLabelableObject
 	} else if in.BundleInstanceAuthId.Valid {
-		objectID = in.RuntimeContextID.String
+		objectID = in.BundleInstanceAuthId.String
 		objectType = model.BundleInstanceAuthObject
 	}
 

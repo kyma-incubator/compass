@@ -366,7 +366,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		}
 
 		scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
-		scenariosToKeep := getScenariosToKeep(existingScenarios, inputScenarios)
+		scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
 		commonRuntimes := s.getCommonRuntimes(ctx, appTenant, scenariosToKeep, scToAdd) // runtimeID -> scenario
 
 		for runtimeID, scenario := range commonRuntimes {
@@ -680,23 +680,6 @@ func (s *service) getRuntimeIdsForScenario(ctx context.Context, tenant string, s
 	return runtimeIds, nil
 }
 
-func (s *service) GetAppIdsForScenario(ctx context.Context, scenario string) ([]string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	labels, err := s.labelRepo.ListForObjectTypeByScenario(ctx, tnt, model.ApplicationLabelableObject, scenario)
-	if err != nil {
-		return nil, err
-	}
-	var appIDs []string
-	for _, currentLabel := range labels {
-		appIDs = append(appIDs, currentLabel.ObjectID)
-	}
-	return appIDs, nil
-}
-
 func removeDefaultScenario(scenarios []string) []string {
 	defaultScenarioIndex := -1
 	for idx, scenario := range scenarios {
@@ -768,7 +751,7 @@ func getScenariosToAdd(existing, new []string) []string {
 	return result
 }
 
-func getScenariosToKeep(existing []string, input []string) []string {
+func GetScenariosToKeep(existing []string, input []string) []string {
 	existingScenarioMap := make(map[string]bool, 0)
 	for _, scenario := range existing {
 		existingScenarioMap[scenario] = true
@@ -803,7 +786,6 @@ func (s *service) getCommonRuntimes(ctx context.Context, tenant string, scenario
 	}
 	return commonRuntimesScenarios
 }
-
 func getBundleInstanceAuthsLabels(ctx context.Context, appId, runtimeId string) []label.Entity {
 	persist, _ := persistence.FromCtx(ctx)
 

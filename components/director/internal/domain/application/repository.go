@@ -176,6 +176,30 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		PageInfo:   page}, nil
 }
 
+func (r *pgRepository) ListAllByLabelFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
+	var appsCollection EntityCollection
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if err = r.lister.List(ctx, tenant, &appsCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(appsCollection)
+}
+
 func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 

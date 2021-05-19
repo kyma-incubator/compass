@@ -412,9 +412,9 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 
 	scenarioAssignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo, nil)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, applicationRepoForRuntime(), protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)
@@ -484,6 +484,25 @@ func bundleRepo() mp_bundle.BundleRepository {
 }
 
 func applicationRepo() application.ApplicationRepository {
+	authConverter := auth.NewConverter()
+
+	versionConverter := version.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	docConverter := document.NewConverter(frConverter)
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+
+	return application.NewRepository(appConverter)
+}
+
+func applicationRepoForRuntime() runtime.ApplicationRepository {
 	authConverter := auth.NewConverter()
 
 	versionConverter := version.NewConverter()
