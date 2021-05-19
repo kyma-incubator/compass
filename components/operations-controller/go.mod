@@ -13,6 +13,7 @@ require (
 	github.com/onsi/ginkgo v1.16.1 // indirect
 	github.com/onsi/gomega v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0

@@ -89,6 +89,7 @@ type OperationStatus struct {
 	Webhooks           []Webhook   `json:"webhooks,omitempty"`
 	Conditions         []Condition `json:"conditions,omitempty"`
 	Phase              State       `json:"phase,omitempty"`
+	InitializedAt      metav1.Time `json:"initialized_at,omitempty"`
 	ObservedGeneration *int64      `json:"observed_generation,omitempty"`
 }
 

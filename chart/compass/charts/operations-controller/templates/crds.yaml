@@ -96,6 +96,9 @@ spec:
                 - type
                 type: object
               type: array
+            initialized_at:
+              format: date-time
+              type: string
             observed_generation:
               format: int64
               type: integer
