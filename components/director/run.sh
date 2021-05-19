@@ -13,6 +13,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
+DUMP_DB=false
 DISABLE_ASYNC_MODE=true
 
 POSITIONAL=()
@@ -32,6 +33,10 @@ do
         ;;
         --reuse-db)
             REUSE_DB=true
+            shift
+        ;;
+        --dump-db)
+            DUMP_DB=true
             shift
         ;;
         --debug)
@@ -79,6 +84,10 @@ function cleanup() {
     fi
 }
 
+function cleanup_temp_migrations() {
+    rm ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql
+}
+
 trap cleanup EXIT
 
 if [[ ${REUSE_DB} = true ]]; then
@@ -121,11 +130,76 @@ else
 
     echo -e "${GREEN}Populate DB${NC}"
 
-    cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
-        docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
-    cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
-        docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+    if [[ ${DUMP_DB} = false ]]; then
+        echo test
+        cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
+            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+
+        cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
+            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+    else
+        if [[ -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
+            echo -e "${GREEN}Will reuse existing dump in schema-migrator/seeds/dump.sql ${NC}"
+        else
+            echo -e "${RED}Warning: Please ensure that your kubectl context points to an existing Compass cluster${NC}"
+            sleep 2
+            echo -e "${GREEN}Will dump and use database data from connected kubernetes Compass cluster${NC}"
+
+            REMOTE_DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
+            DIRECTOR_POD_NAME=$(kubectl get pods -n compass-system | grep "director" | head -1 | cut -c -33)
+            kubectl port-forward --namespace compass-system $DIRECTOR_POD_NAME 5555:5432 &
+            sleep 5 # necessary for the port-forward to open in time for the next commaand
+
+            echo -e "${GREEN}Dumping database...${NC}"
+
+            trap cleanup_temp_migrations EXIT
+
+            PGPASSWORD=$REMOTE_DB_PWD pg_dump --dbname=director --file=${ROOT_PATH}/../schema-migrator/seeds/dump.sql --host=localhost --port=5555 --username=director --column-inserts --no-owner --no-privileges
+
+            echo -e "${GREEN}Database dumped!${NC}"
+
+            pkill kubectl
+        fi
+
+        cat ${ROOT_PATH}/../schema-migrator/seeds/dump.sql | \
+            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+
+
+       LATEST_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
+
+       echo -e "${GREEN}Latest migration version from dump: $LATEST_MIGRATION_VERSION${NC}"
+
+       MIGRATION_REACHED=false
+       for FILE_PATH in ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql
+       do
+           if [[ $MIGRATION_REACHED = true ]]; then
+               cat $FILE_PATH >> ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql
+           fi
+
+
+           FILE_NAME=$(basename $FILE_PATH)
+           if  [[ $FILE_NAME == $LATEST_MIGRATION_VERSION* ]]; then
+               MIGRATION_REACHED=true
+           fi
+       done
+
+       if [[ -f ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql ]]; then
+           echo -e "${GREEN}New migrations will be applied...${NC}"
+           cat ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql | \
+               docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+       else
+           echo -e "${GREEN}No new migrations will be applied.${NC}"
+       fi
+    fi
 fi
+
+INTERNAL_TENANT_ID=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT id FROM business_tenant_mappings WHERE external_tenant = '3e64ebae-38b5-46a0-b1ed-9ccee153a0ae'")
+echo -e "${GREEN}Internal Tenant ID for default tenant from dump: $INTERNAL_TENANT_ID${NC}"
+
+JWT_TOKEN=$(go run ${ROOT_PATH}/cmd/jwtgenerator/main.go -tenant $INTERNAL_TENANT_ID)
+echo -e "${GREEN}Use the following JWT token when requesting Director as default tenant:${NC}"
+echo $JWT_TOKEN
+
 
 if [[  ${SKIP_APP_START} ]]; then
     echo -e "${GREEN}Skipping starting application${NC}"
