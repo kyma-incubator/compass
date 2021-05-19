@@ -35,6 +35,32 @@ const (
 	VendorPartnersRegex               = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
 )
 
+const (
+	PolicyLevelSap        string = "sap"
+	PolicyLevelSapPartner string = "sap-partner"
+	PolicyLevelCustom     string = "custom"
+
+	ReleaseStatusBeta       string = "beta"
+	ReleaseStatusActive     string = "active"
+	ReleaseStatusDeprecated string = "deprecated"
+
+	ApiProtocolODataV2      string = "odata-v2"
+	ApiProtocolODataV4      string = "odata-v4"
+	ApiProtocolSoapInbound  string = "soap-inbound"
+	ApiProtocolSoapOutbound string = "soap-outbound"
+	ApiProtocolRest         string = "rest"
+	ApiProtocolSapRrc       string = "sap-rfc"
+
+	ApiVisibilityPublic   string = "public"
+	ApiVisibilityPrivate  string = "private"
+	ApiVisibilityInternal string = "internal"
+
+	ApiImplementationStandardDocumentApi   string = "sap:ord-document-api:v1"
+	ApiImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
+	ApiImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
+	ApiImplementationStandardCustom        string = "custom"
+)
+
 var shortDescriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
@@ -64,8 +90,8 @@ func validatePackageInput(pkg *model.PackageInput) error {
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
-		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In("sap", "sap-partner", "custom"), validation.When(pkg.CustomPolicyLevel != nil, validation.In("custom"))),
-		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != "custom", validation.Empty)),
+		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty)),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
 		validation.Field(&pkg.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
@@ -118,8 +144,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.ApiProtocol, validation.Required, validation.In("odata-v2", "odata-v4", "soap-inbound", "soap-outbound", "rest", "sap-rfc")),
-		validation.Field(&api.Visibility, validation.Required, validation.In("public", "internal", "private")),
+		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRrc)),
+		validation.Field(&api.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -157,13 +183,13 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			}
 
 			wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
-			if (policyLevel == "sap" || policyLevel == "sap-partner") && (apiProtocol == "soap-inbound" || apiProtocol == "soap-outbound") && !wsdlTypeExists {
+			if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolSoapInbound || apiProtocol == ApiProtocolSoapOutbound) && !wsdlTypeExists {
 				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
 			}
 
 			edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
 			openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
-			if (policyLevel == "sap" || policyLevel == "sap-partner") && (apiProtocol == "odata-v2" || apiProtocol == "odata-v4") && !(edmxTypeExists && openAPITypeExists) {
+			if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
 				return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
 			}
 
@@ -171,15 +197,15 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		})),
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
-		validation.Field(&api.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
-		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
+		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
+		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.Required, validation.By(validateEntryPoints)),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In("sap:ord-document-api:v1", "cff:open-service-broker:v2", "sap:csn-exposure:v1", "custom")),
-		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
-		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == "custom", validation.Required).Else(validation.Empty)),
+		validation.Field(&api.ImplementationStandard, validation.In(ApiImplementationStandardDocumentApi, ApiImplementationStandardServiceBroker, ApiImplementationStandardCsnExposure, ApiImplementationStandardCustom)),
+		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
@@ -195,7 +221,7 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Description, validation.Required),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.Visibility, validation.Required, validation.In("public", "internal", "private")),
+		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -213,9 +239,9 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		})),
 		validation.Field(&event.ResourceDefinitions, validation.Required),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
-		validation.Field(&event.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
-		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
+		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
+		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
@@ -351,7 +377,7 @@ func validateORDChangeLogEntries(value interface{}) error {
 		},
 		"releaseStatus": {
 			validation.Required,
-			validation.In("beta", "active", "deprecated"),
+			validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated),
 		},
 		"date": {
 			validation.Required,

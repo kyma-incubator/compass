@@ -2342,9 +2342,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap"
-				*doc.APIResources[0].ApiProtocol = "soap-inbound"
-				*doc.APIResources[1].ApiProtocol = "soap-inbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2359,9 +2359,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap-partner"
-				*doc.APIResources[0].ApiProtocol = "soap-inbound"
-				*doc.APIResources[1].ApiProtocol = "soap-inbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2376,9 +2376,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap"
-				*doc.APIResources[0].ApiProtocol = "soap-outbound"
-				*doc.APIResources[1].ApiProtocol = "soap-outbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2393,9 +2393,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap"
-				*doc.APIResources[0].ApiProtocol = "soap-inbound"
-				*doc.APIResources[1].ApiProtocol = "soap-inbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2409,9 +2409,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap-partner"
-				*doc.APIResources[0].ApiProtocol = "soap-inbound"
-				*doc.APIResources[1].ApiProtocol = "soap-inbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2425,9 +2425,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap"
-				*doc.APIResources[0].ApiProtocol = "soap-outbound"
-				*doc.APIResources[1].ApiProtocol = "soap-outbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2441,9 +2441,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap-partner"
-				*doc.APIResources[0].ApiProtocol = "soap-outbound"
-				*doc.APIResources[1].ApiProtocol = "soap-outbound"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
+				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2457,8 +2457,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v2`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap"
-				*doc.APIResources[0].ApiProtocol = "odata-v2"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2471,8 +2471,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v2`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap-partner"
-				*doc.APIResources[0].ApiProtocol = "odata-v2"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2485,8 +2485,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v4`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap"
-				*doc.APIResources[0].ApiProtocol = "odata-v4"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2499,8 +2499,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v4`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = "sap-partner"
-				*doc.APIResources[0].ApiProtocol = "odata-v4"
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
