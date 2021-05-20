@@ -146,7 +146,8 @@ func NewRootResolver(
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
+	scenariosDefSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
+	scenariosSvc := label.NewScenarioService(labelRepo)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
@@ -158,20 +159,20 @@ func NewRootResolver(
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	runtimeCtxSvc := runtime_context.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosDefSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo, appSvc)
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, applicationRepo, featuresConfig.ProtectedLabelPattern)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosDefSvc, scenariosSvc, bundleSvc, uidSvc, bundleInstanceAuthSvc)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosDefSvc, scenarioAssignmentEngine)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosDefSvc, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, bundleInstanceAuthSvc, applicationRepo, featuresConfig.ProtectedLabelPattern)
 	timeService := time.NewService()
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping, timeService)
-	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc, bundleSvc, appSvc, runtimeSvc, labelUpsertSvc)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,

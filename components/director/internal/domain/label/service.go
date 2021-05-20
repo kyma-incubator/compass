@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -17,6 +18,7 @@ import (
 type LabelRepository interface {
 	Upsert(ctx context.Context, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
 //go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore
@@ -95,6 +97,54 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
+}
+
+func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error {
+	for _, label := range labels {
+		var scenariosString []string
+		switch value := label.Value.(type) {
+		case []string:
+			{
+				scenariosString = value
+			}
+		case []interface{}:
+			{
+				convertedScenarios, err := str.InterfaceSliceToStringSlice(value)
+				if err != nil {
+					return errors.Wrap(err, "while converting array of interfaces to array of strings")
+				}
+				scenariosString = convertedScenarios
+			}
+		default:
+			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
+		}
+
+		newScenarios := mergeFn(scenariosString, newScenario)
+		err := s.updateScenario(ctx, tenantID, label, newScenarios)
+		if err != nil {
+			return errors.Wrap(err, "while updating scenarios label")
+		}
+	}
+	return nil
+}
+
+func UniqueScenarios(scenarios []string, newScenario string) []string {
+	scenarios = append(scenarios, newScenario)
+	return str.Unique(scenarios)
+}
+
+func (s *labelUpsertService) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
+	if len(scenarios) == 0 {
+		return s.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
+	} else {
+		labelInput := model.LabelInput{
+			Key:        label.Key,
+			Value:      scenarios,
+			ObjectID:   label.ObjectID,
+			ObjectType: label.ObjectType,
+		}
+		return s.UpsertLabel(ctx, tenantID, &labelInput)
+	}
 }
 
 func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant string, labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {

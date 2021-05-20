@@ -3,6 +3,7 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -31,26 +32,20 @@ type LabelRepository interface {
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
-}
-
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
-type ApplicationService interface {
-	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
+	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error
 }
 
 type engine struct {
 	labelRepo              LabelRepository
 	scenarioAssignmentRepo Repository
 	labelService           LabelUpsertService
-	appSvc                 ApplicationService
 }
 
-func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, appService ApplicationService) *engine {
+func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
 	return &engine{
 		labelRepo:              labelRepo,
 		scenarioAssignmentRepo: scenarioAssignmentRepo,
 		labelService:           labelService,
-		appSvc:                 appService,
 	}
 }
 
@@ -75,7 +70,7 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	}
 
 	runtimeLabels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, runtimeLabels)
-	return e.upsertScenarios(ctx, in.Tenant, runtimeLabels, in.ScenarioName, e.uniqueScenarios)
+	return e.labelService.UpsertScenarios(ctx, in.Tenant, runtimeLabels, in.ScenarioName, label.UniqueScenarios)
 }
 
 func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx context.Context, runtimeLabels []model.Label, tenant, scenario string) error {
@@ -89,7 +84,7 @@ func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplicatio
 		return errors.Wrap(err, "while getting bundle instance auth labels by common application and runtime scenarios")
 	}
 
-	err = e.upsertScenarios(ctx, tenant, authLabels, scenario, e.uniqueScenarios)
+	err = e.labelService.UpsertScenarios(ctx, tenant, authLabels, scenario, label.UniqueScenarios)
 	if err != nil {
 		return errors.Wrap(err, "while adding scenario to bundle instance auth labels")
 	}
@@ -131,9 +126,9 @@ func (e *engine) parseLabelScenariosToSlice(label model.Label) ([]string, error)
 		return nil, errors.New("while converting label value to []interface{}")
 	}
 
-	convertedScenarios, err := e.convertInterfaceArrayToStringArray(runtimeLabels)
+	convertedScenarios, err := str.InterfaceSliceToStringSlice(runtimeLabels)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.NewInternalError("scenario value is not a string")
 	}
 
 	return convertedScenarios, nil
@@ -155,7 +150,7 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
 		}
 	}
-	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
+	return e.labelService.UpsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
 
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
@@ -279,66 +274,6 @@ func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) mode
 		ObjectID:   rtmID,
 		ObjectType: model.RuntimeLabelableObject,
 	}
-}
-
-func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error {
-	for _, label := range labels {
-		var scenariosString []string
-		switch value := label.Value.(type) {
-		case []string:
-			{
-				scenariosString = value
-			}
-		case []interface{}:
-			{
-				convertedScenarios, err := e.convertInterfaceArrayToStringArray(value)
-				if err != nil {
-					return errors.Wrap(err, "while converting array of interfaces to array of strings")
-				}
-				scenariosString = convertedScenarios
-			}
-		default:
-			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
-		}
-
-		newScenarios := mergeFn(scenariosString, newScenario)
-		err := e.updateScenario(ctx, tenantID, label, newScenarios)
-		if err != nil {
-			return errors.Wrap(err, "while updating scenarios label")
-		}
-	}
-	return nil
-}
-
-func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
-	if len(scenarios) == 0 {
-		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
-	} else {
-		labelInput := model.LabelInput{
-			Key:        label.Key,
-			Value:      scenarios,
-			ObjectID:   label.ObjectID,
-			ObjectType: label.ObjectType,
-		}
-		return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
-	}
-}
-
-func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
-	var scenariosString []string
-	for _, scenario := range scenarios {
-		item, ok := scenario.(string)
-		if !ok {
-			return nil, apperrors.NewInternalError("scenario value is not a string")
-		}
-		scenariosString = append(scenariosString, item)
-	}
-	return scenariosString, nil
-}
-
-func (e *engine) uniqueScenarios(scenarios []string, newScenario string) []string {
-	scenarios = append(scenarios, newScenario)
-	return str.Unique(scenarios)
 }
 
 func (e *engine) removeScenario(scenarios []string, toRemove string) []string {

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -76,6 +77,8 @@ type SystemAuthService interface {
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
+	AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string, appIdsForScenario bundleinstanceauth.AppIdsForScenariosSupplier) error
+	IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error)
 }
 
 type Resolver struct {

@@ -2,16 +2,11 @@ package runtime
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -54,9 +49,13 @@ type LabelUpsertService interface {
 }
 
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
-type ScenariosService interface {
+type ScenariosDefinitionService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
+}
+
+type ScenariosService interface {
+	GetScenarioNamesForRuntime(ctx context.Context, runtimeId string) ([]string, error)
 }
 
 //go:generate mockery --name=ScenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
@@ -79,31 +78,38 @@ type service struct {
 	repo      RuntimeRepository
 	labelRepo LabelRepository
 
-	labelUpsertService       LabelUpsertService
-	uidService               UIDService
-	scenariosService         ScenariosService
-	scenarioAssignmentEngine ScenarioAssignmentEngine
-	appRepo                  ApplicationRepository
+	labelUpsertService         LabelUpsertService
+	uidService                 UIDService
+	scenariosDefinitionService ScenariosDefinitionService
+	scenariosService           ScenariosService
+	scenarioAssignmentEngine   ScenarioAssignmentEngine
+	bundleInstanceAuthService  BundleInstanceAuthService
+	appRepo                    ApplicationRepository
 
 	protectedLabelPattern string
 }
 
 func NewService(repo RuntimeRepository,
 	labelRepo LabelRepository,
+	scenariosDefinitionService ScenariosDefinitionService,
 	scenariosService ScenariosService,
 	labelUpsertService LabelUpsertService,
 	uidService UIDService,
 	scenarioAssignmentEngine ScenarioAssignmentEngine,
+	bundleInstanceAuthService BundleInstanceAuthService,
 	appRepo ApplicationRepository,
 	protectedLabelPattern string) *service {
 	return &service{
-		repo:                     repo,
-		labelRepo:                labelRepo,
-		scenariosService:         scenariosService,
-		labelUpsertService:       labelUpsertService,
-		uidService:               uidService,
-		scenarioAssignmentEngine: scenarioAssignmentEngine,
-		protectedLabelPattern:    protectedLabelPattern,
+		repo:                       repo,
+		labelRepo:                  labelRepo,
+		scenariosDefinitionService: scenariosDefinitionService,
+		scenariosService:           scenariosService,
+		labelUpsertService:         labelUpsertService,
+		uidService:                 uidService,
+		scenarioAssignmentEngine:   scenarioAssignmentEngine,
+		bundleInstanceAuthService:  bundleInstanceAuthService,
+		protectedLabelPattern:      protectedLabelPattern,
+		appRepo:                    appRepo,
 	}
 }
 
@@ -189,7 +195,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
 
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmTenant)
+	err = s.scenariosDefinitionService.EnsureScenariosLabelDefinitionExists(ctx, rtmTenant)
 	if err != nil {
 		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
@@ -202,7 +208,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
+		s.scenariosDefinitionService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 	}
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
@@ -281,47 +287,15 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 			return err
 		}
 
-		existingScenarios, err := s.GetScenarioNamesForRuntime(ctx, id)
+		existingScenarios, err := s.scenariosService.GetScenarioNamesForRuntime(ctx, id)
 		if err != nil {
 			//TODO: handle properly
 			return err
 		}
 
-		scToRemove := getScenariosToRemove(existingScenarios, scenariosStrings)
-		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, id) {
-			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
-		}
-
-		scToAdd := getScenariosToAdd(existingScenarios, scenariosStrings)
-		scenariosToKeep := GetScenariosToKeep(existingScenarios, scenariosStrings)
-		commonApplications := s.getCommonApplications(ctx, rtmTenant, scenariosToKeep, scToAdd)
-
-		for appId, scenario := range commonApplications {
-			bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, appId, id)
-			//TODO: Reuse common logic in engine.go -> upsertScenario(...)
-			for _, currentLabel := range bundleInstanceAuthsLabels {
-				if currentLabel.Key == model.ScenariosKey {
-					var scenariosValue []string
-					err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
-					if err != nil {
-						//todo handleErr
-						continue
-					}
-					scenariosValue = append(scenariosValue, scenario)
-					updatedValue, _ := json.Marshal(scenariosValue)
-					currentLabel.Value = string(updatedValue)
-
-					labelConverter := label.NewConverter()
-					labelInput, err := labelConverter.FromEntity(currentLabel)
-					if err != nil {
-						// todo handle
-					}
-					labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
-					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
-						return err
-					}
-				}
-			}
+		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, existingScenarios, scenariosStrings, id, s.getApplicationIdsForScenario)
+		if err != nil {
+			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
 	}
 
@@ -379,52 +353,6 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, labelInput.ObjectID)
 	if err != nil {
 		return err
-	}
-
-	inputScenarios, exist := getScenarioLabelsFromInput(labelInput)
-	if exist {
-		existingScenarios, err := s.GetScenarioNamesForRuntime(ctx, labelInput.ObjectID)
-		if err != nil {
-			//TODO: handle properly
-			return err
-		}
-
-		scToRemove := getScenariosToRemove(existingScenarios, inputScenarios)
-		if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, labelInput.ObjectID) {
-			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
-		}
-
-		scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
-		scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
-		commonApplications := s.getCommonApplications(ctx, rtmTenant, scenariosToKeep, scToAdd)
-
-		for appId, scenario := range commonApplications {
-			bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, appId, labelInput.ObjectID)
-			//TODO: Reuse common logic in engine.go -> upsertScenario(...)
-			for _, currentLabel := range bundleInstanceAuthsLabels {
-				if currentLabel.Key == model.ScenariosKey {
-					var scenariosValue []string
-					err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
-					if err != nil {
-						//todo handleErr
-						continue
-					}
-					scenariosValue = append(scenariosValue, scenario)
-					updatedValue, _ := json.Marshal(scenariosValue)
-					currentLabel.Value = string(updatedValue)
-
-					labelConverter := label.NewConverter()
-					labelInput, err := labelConverter.FromEntity(currentLabel)
-					if err != nil {
-						// todo handle
-					}
-					labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
-					if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
-						return err
-					}
-				}
-			}
-		}
 	}
 
 	newRuntimeLabels := make(map[string]interface{})
@@ -607,50 +535,16 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		finalScenarios = s.scenarioAssignmentEngine.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
 	}
 
-	// --------- Plug in -----------------------
 	finalScenariosAsStringSlice, err := convertInterfaceArrayToStringArray(finalScenarios)
 	if err != nil {
 		return err
 	}
 
-	scToRemove := getScenariosToRemove(oldScenariosLabelStringSlice, finalScenariosAsStringSlice)
-	if s.isAnyBundleInstanceAuthForScenariosExist(ctx, scToRemove, runtimeID) {
-		return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
+	err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, runtimeID, s.getApplicationIdsForScenario)
+	if err != nil {
+		return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 	}
 
-	scToAdd := getScenariosToAdd(oldScenariosLabelStringSlice, finalScenariosAsStringSlice)
-	scenariosToKeep := GetScenariosToKeep(oldScenariosLabelStringSlice, finalScenariosAsStringSlice)
-	commonApplications := s.getCommonApplications(ctx, rtmTenant, scenariosToKeep, scToAdd)
-
-	for appId, scenario := range commonApplications {
-		bundleInstanceAuthsLabels := getBundleInstanceAuthsLabels(ctx, appId, runtimeID)
-		//TODO: Reuse common logic in engine.go -> upsertScenario(...)
-		for _, currentLabel := range bundleInstanceAuthsLabels {
-			if currentLabel.Key == model.ScenariosKey {
-				var scenariosValue []string
-				err := json.Unmarshal([]byte(currentLabel.Value), &scenariosValue)
-				if err != nil {
-					//todo handleErr
-					continue
-				}
-				scenariosValue = append(scenariosValue, scenario)
-				updatedValue, _ := json.Marshal(scenariosValue)
-				currentLabel.Value = string(updatedValue)
-
-				labelConverter := label.NewConverter()
-				labelInput, err := labelConverter.FromEntity(currentLabel)
-				if err != nil {
-					// todo handle
-				}
-				labelInput.ObjectID = currentLabel.BundleInstanceAuthId.String // TODO find better way to set ObjectID
-				if err := s.labelRepo.Upsert(ctx, &labelInput); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	// --------- END Plug in -----------------------
 	//TODO compare finalScenarios and oldScenariosLabel to determine when to delete scenarios label
 	if len(finalScenarios) == 0 {
 		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
@@ -772,124 +666,6 @@ func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} 
 	return out
 }
 
-func (s *service) GetScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error) {
-	log.C(ctx).Infof("Getting scenarios for runtime with id %s", runtimeID)
-
-	runtimeLabels, err := s.GetLabel(ctx, runtimeID, model.ScenariosKey)
-	if err != nil {
-		if apperrors.ErrorCode(err) == apperrors.NotFound {
-			log.C(ctx).Infof("No scenarios found for runtime")
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	scenarios, err := label.ValueToStringsSlice(runtimeLabels.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while parsing runtime label values")
-	}
-
-	return scenarios, nil
-}
-
-func (s *service) isAnyBundleInstanceAuthForScenariosExist(ctx context.Context, scenarios []string, runtimeId string) bool {
-	for _, scenario := range scenarios {
-		if s.isBundleInstanceAuthForScenarioExist(ctx, scenario, runtimeId) {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *service) isBundleInstanceAuthForScenarioExist(ctx context.Context, scenario, runtimeId string) bool {
-	persist, _ := persistence.FromCtx(ctx)
-
-	var count int
-	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundle_instance_auths.runtime_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
-	err := persist.Get(&count, query, scenario, runtimeId)
-	if err != nil {
-		return false
-	}
-
-	return count != 0
-}
-
-func getScenarioLabelsFromInput(label *model.LabelInput) ([]string, bool) {
-	if model.ScenariosKey != label.Key {
-		return nil, false
-	}
-
-	var result []string
-	switch val := label.Value.(type) {
-	case string:
-		return []string{val}, true
-	case []interface{}:
-		for _, elem := range val {
-			valAsString, ok := elem.(string)
-			if !ok {
-				// todo think about handling non string types
-				continue
-			} else {
-				result = append(result, valAsString)
-			}
-		}
-		return result, true
-	default:
-		return nil, false
-	}
-}
-
-func getScenariosToRemove(existing, new []string) []string {
-	newScenariosMap := make(map[string]bool, 0)
-	for _, scenario := range new {
-		newScenariosMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range existing {
-		if _, ok := newScenariosMap[scenario]; !ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
-}
-
-func GetScenariosToKeep(existing []string, input []string) []string {
-	existingScenarioMap := make(map[string]bool, 0)
-	for _, scenario := range existing {
-		existingScenarioMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range input {
-		if _, ok := existingScenarioMap[scenario]; ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
-}
-
-func (s *service) getCommonApplications(ctx context.Context, tenant string, scenariosToKeep []string, scenariosToAdd []string) map[string]string {
-	appIdsForScenariosToKeep, err := s.getApplicationIdsForScenario(ctx, tenant, scenariosToKeep)
-	if err != nil {
-		// TODO HANDLE ERROR
-	}
-
-	commonApplicationScenarios := make(map[string]string)
-	for _, scenario := range scenariosToAdd {
-		appIds, err := s.getApplicationIdsForScenario(ctx, tenant, []string{scenario})
-		if err != nil {
-			// todo handle
-		}
-		for _, appId := range appIds {
-			if contains(appIdsForScenariosToKeep, appId) {
-				commonApplicationScenarios[appId] = scenario
-			}
-		}
-	}
-	return commonApplicationScenarios
-}
-
 func (s *service) getApplicationIdsForScenario(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
 	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
 	appScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
@@ -906,41 +682,4 @@ func (s *service) getApplicationIdsForScenario(ctx context.Context, tenant strin
 	}
 
 	return appIds, nil
-}
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
-func getScenariosToAdd(existing, new []string) []string {
-	existingScenarioMap := make(map[string]bool, 0)
-	for _, scenario := range existing {
-		existingScenarioMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range new {
-		if _, ok := existingScenarioMap[scenario]; !ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
-}
-
-func getBundleInstanceAuthsLabels(ctx context.Context, appId, runtimeId string) []label.Entity {
-	persist, _ := persistence.FromCtx(ctx)
-
-	var entities []label.Entity
-	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2"
-	err := persist.Select(&entities, query, appId, runtimeId)
-	if err != nil {
-		return []label.Entity{}
-	}
-
-	return entities
 }

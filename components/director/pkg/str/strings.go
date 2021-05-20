@@ -62,6 +62,18 @@ func PtrStrToStr(s *string) string {
 	return *s
 }
 
+func InterfaceSliceToStringSlice(value []interface{}) ([]string, error) {
+	var scenariosString []string
+	for _, scenario := range value {
+		item, ok := scenario.(string)
+		if !ok {
+			return nil, apperrors.NewInternalError("value is not a string")
+		}
+		scenariosString = append(scenariosString, item)
+	}
+	return scenariosString, nil
+}
+
 func Matches(actual []string, required []string) bool {
 	actMap := make(map[string]interface{})
 

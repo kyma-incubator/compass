@@ -323,6 +323,29 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 	return labelModels, nil
 }
 
+func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, appId, runtimeId string) ([]model.Label, error) {
+	persist, _ := persistence.FromCtx(ctx)
+
+	var labels Collection
+	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2"
+	err := persist.Select(&labels, query, appId, runtimeId)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: extract -> convert multiple
+	var labelModels []model.Label
+	for _, label := range labels {
+
+		labelModel, err := r.conv.FromEntity(label)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting label entity to model")
+		}
+		labelModels = append(labelModels, labelModel)
+	}
+	return labelModels, nil
+}
+
 func labelableObjectField(objectType model.LabelableObject) string {
 	switch objectType {
 	case model.ApplicationLabelableObject:

@@ -245,7 +245,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern, httpClient)
 
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
@@ -398,23 +398,50 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string, httpClient *http.Client) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
+	scenariosDefSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
 
 	scenarioAssignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo, nil)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenariosSvc := label.NewScenarioService(labelRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, applicationRepoForRuntime(), protectedLabelPattern)
+	authConverter := auth.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+
+	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+
+	specRepo := spec.NewRepository(specConverter)
+	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	apiRepo := api.NewRepository(apiConverter)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
+
+	docConverter := document.NewConverter(frConverter)
+	docRepo := document.NewRepository(docConverter)
+	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
+
+	bundleSvc := mp_bundle.NewService(bundleRepo(), apiSvc, eventAPISvc, documentSvc, uidSvc)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
+
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosDefSvc, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, bundleInstanceAuthSvc, applicationRepoForRuntime(), protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)
@@ -585,7 +612,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	scenariosDefSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	bundleRepo := mp_bundle.NewRepository(packageConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
@@ -600,7 +627,10 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	scenariosSvc := label.NewScenarioService(labelRepo)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
+
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosDefSvc, scenariosSvc, bundleSvc, uidSvc, bundleInstanceAuthSvc)
 	timeService := directorTime.NewService()
 	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters, timeService)
 }
