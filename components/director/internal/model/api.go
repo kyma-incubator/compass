@@ -30,7 +30,7 @@ type APIDefinition struct {
 	APIResourceLinks                        json.RawMessage
 	ReleaseStatus                           *string
 	SunsetDate                              *string
-	Successor                               *string
+	Successors                              json.RawMessage
 	ChangeLogEntries                        json.RawMessage
 	Labels                                  json.RawMessage
 	Visibility                              *string
@@ -67,7 +67,7 @@ type APIDefinitionInput struct {
 	APIResourceLinks                        json.RawMessage               `json:"apiResourceLinks"`
 	ReleaseStatus                           *string                       `json:"releaseStatus"`
 	SunsetDate                              *string                       `json:"sunsetDate"`
-	Successor                               *string                       `json:"successor"`
+	Successors                              json.RawMessage               `json:"successors"`
 	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
 	Labels                                  json.RawMessage               `json:"labels"`
 	Visibility                              *string                       `json:"visibility"`
@@ -177,7 +177,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		APIResourceLinks:    a.APIResourceLinks,
 		ReleaseStatus:       a.ReleaseStatus,
 		SunsetDate:          a.SunsetDate,
-		Successor:           a.Successor,
+		Successors:          a.Successors,
 		ChangeLogEntries:    a.ChangeLogEntries,
 		Labels:              a.Labels,
 		Visibility:          a.Visibility,

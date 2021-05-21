@@ -115,7 +115,7 @@ const ordDocument = `{
 			"url": "https://TEST:443//odata/$metadata"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successor": null,
+		"successors": null,
 		"sunsetDate": null,
 		"systemInstanceAware": true,
 		"tags": ["apiTestTag"],
@@ -201,7 +201,7 @@ const ordDocument = `{
 			"url": "http://localhost:8080/odata/1.0/catalog.svc/$value?type=json"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successor": "ns:apiResource:API_ID:v2",
+		"successors": ["ns:apiResource:API_ID:v2"],
 		"sunsetDate": "2020-12-08T15:47:04+0000",
 		"systemInstanceAware": true,
 		"tags": ["ZGWSAMPLE"],
@@ -352,7 +352,7 @@ const ordDocument = `{
 			"url": "http://localhost:8080/asyncApi2.json"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successor": null,
+		"successors": null,
 		"sunsetDate": null,
 		"systemInstanceAware": true,
 		"tags": ["eventTestTag"],
@@ -414,7 +414,7 @@ const ordDocument = `{
 			"url": "http://localhost:8080/api/eventCatalog.json"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successor": "ns2:eventResource:EVENT_ID:v1",
+		"successors": ["ns2:eventResource:EVENT_ID:v1"],
 		"sunsetDate": "2020-12-08T15:47:04+0000",
 		"systemInstanceAware": true,
 		"tags": ["eventTestTag2"],

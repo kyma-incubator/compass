@@ -26,7 +26,7 @@ type EventDefinition struct {
 	Countries           json.RawMessage
 	ReleaseStatus       *string
 	SunsetDate          *string
-	Successor           *string
+	Successors          json.RawMessage
 	Labels              json.RawMessage
 	Visibility          *string
 	Disabled            *bool
@@ -65,7 +65,7 @@ type EventDefinitionInput struct {
 	Countries                json.RawMessage               `json:"countries"`
 	ReleaseStatus            *string                       `json:"releaseStatus"`
 	SunsetDate               *string                       `json:"sunsetDate"`
-	Successor                *string                       `json:"successor"`
+	Successors               json.RawMessage               `json:"successors"`
 	Labels                   json.RawMessage               `json:"labels"`
 	Visibility               *string                       `json:"visibility"`
 	Disabled                 *bool                         `json:"disabled"`
@@ -135,7 +135,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Links:               e.Links,
 		ReleaseStatus:       e.ReleaseStatus,
 		SunsetDate:          e.SunsetDate,
-		Successor:           e.Successor,
+		Successors:          e.Successors,
 		ChangeLogEntries:    e.ChangeLogEntries,
 		Labels:              e.Labels,
 		Visibility:          e.Visibility,

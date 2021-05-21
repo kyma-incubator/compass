@@ -322,6 +322,9 @@ var (
 	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
 	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty = `{"supported":"automatic"}`
 	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty    = `{"supported":"manual"}`
+
+	invalidSuccessorsDueToInvalidApiRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
+	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 )
 
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
@@ -1974,12 +1977,12 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
-				doc.APIResources[0].Successor = str.Ptr(api2ORDID)
+				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`[%s]`, api2ORDID))
 
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `successor` field when `releaseStatus` field has value `deprecated` for API",
+			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
@@ -1987,10 +1990,18 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `successor` field for API",
+			Name: "Invalid `successors` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Successor = str.Ptr("invalidValue")
+				doc.APIResources[0].Successors = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` when values do not match the regex for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidApiRegex)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3206,12 +3217,12 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.EventResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
-				doc.EventResources[0].Successor = str.Ptr(event2ORDID)
+				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`[%s]`, event2ORDID))
 
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `successor` field when `releaseStatus` field has value `deprecated` for Event",
+			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
@@ -3219,10 +3230,18 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `successor` field for Event",
+			Name: "Invalid json field `successors` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Successor = str.Ptr("invalidValue")
+				doc.EventResources[0].Successors = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` when values do not match the regex for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidEventRegex)
 
 				return []*open_resource_discovery.Document{doc}
 			},

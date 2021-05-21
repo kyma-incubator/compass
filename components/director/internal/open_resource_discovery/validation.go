@@ -168,7 +168,9 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
-		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
+		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(ApiOrdIDRegex))
+		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.Required, validation.By(validateEntryPoints)),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
@@ -210,7 +212,9 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
-		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
+		validation.Field(&event.Successors, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStrings(value, regexp.MustCompile(EventOrdIDRegex))
+		})),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
