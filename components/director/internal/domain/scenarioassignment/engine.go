@@ -3,6 +3,7 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -32,7 +33,7 @@ type LabelRepository interface {
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
-	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error
+	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
 }
 
 type engine struct {
@@ -70,7 +71,7 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	}
 
 	runtimeLabels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, runtimeLabels)
-	return e.labelService.UpsertScenarios(ctx, in.Tenant, runtimeLabels, in.ScenarioName, label.UniqueScenarios)
+	return e.labelService.UpsertScenarios(ctx, in.Tenant, runtimeLabels, []string{in.ScenarioName}, label.UniqueScenarios)
 }
 
 func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx context.Context, runtimeLabels []model.Label, tenant, scenario string) error {
@@ -84,7 +85,7 @@ func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplicatio
 		return errors.Wrap(err, "while getting bundle instance auth labels by common application and runtime scenarios")
 	}
 
-	err = e.labelService.UpsertScenarios(ctx, tenant, authLabels, scenario, label.UniqueScenarios)
+	err = e.labelService.UpsertScenarios(ctx, tenant, authLabels, []string{scenario}, label.UniqueScenarios)
 	if err != nil {
 		return errors.Wrap(err, "while adding scenario to bundle instance auth labels")
 	}
@@ -150,7 +151,7 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
 		}
 	}
-	return e.labelService.UpsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
+	return e.labelService.UpsertScenarios(ctx, in.Tenant, labels, []string{in.ScenarioName}, e.removeScenario)
 }
 
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
@@ -312,7 +313,7 @@ func (e *engine) isBundleInstanceAuthForScenarioExist(ctx context.Context, scena
 	persist, _ := persistence.FromCtx(ctx)
 
 	var count int
-	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundle_instance_auths.runtime_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
+	query := "SELECT 1 FROM bundle_instance_auths_with_labels WHERE json_build_array($1::text)::jsonb <@ bundle_instance_auths_with_labels.value AND app_id=$2 AND status_condition='SUCCEEDED'"
 	err := persist.Get(&count, query, scenario, runtimeId)
 	if err != nil {
 		return false

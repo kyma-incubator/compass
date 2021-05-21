@@ -3,6 +3,7 @@ package bundleinstanceauth
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -42,7 +43,7 @@ type ScenarioService interface {
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
 type LabelService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
-	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error
+	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
 }
 
 type LabelRepository interface {
@@ -167,9 +168,9 @@ func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx cont
 
 	scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
 	scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
-	commonRuntimes := getCommonRuntimes(ctx, appTenant, scenariosToKeep, scToAdd, runtIdsForScenario) // runtimeID -> scenario
+	commonRuntimes := getCommonRuntimes(ctx, appTenant, scenariosToKeep, scToAdd, runtIdsForScenario) // runtimeID -> [scenario1,scenario2..]
 
-	for runtimeID, scenario := range commonRuntimes {
+	for runtimeID, scenarios := range commonRuntimes {
 		bundleInstanceAuthsLabels, err := s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeID)
 		if err != nil {
 			return err
@@ -183,8 +184,8 @@ func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx cont
 			}
 		}
 
-		if err := s.labelService.UpsertScenarios(ctx, appTenant, assocAuthLabels, scenario, label.UniqueScenarios); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("while associating scenario: '%s' to all bundle_instance_auths for appId: %s and runtimeId: %s", scenario, appId, runtimeID))
+		if err := s.labelService.UpsertScenarios(ctx, appTenant, assocAuthLabels, scenarios, label.UniqueScenarios); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("while associating scenario: '%s' to all bundle_instance_auths for appId: %s and runtimeId: %s", scenarios, appId, runtimeID))
 		}
 	}
 
@@ -211,9 +212,9 @@ func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.
 
 	scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
 	scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
-	commonApplications := s.getCommonApplications(ctx, appTenant, scenariosToKeep, scToAdd, appIdsForScenario) // runtimeID -> scenario
+	commonApplications := s.getCommonApplications(ctx, appTenant, scenariosToKeep, scToAdd, appIdsForScenario)
 
-	for appId, scenario := range commonApplications {
+	for appId, scenarios := range commonApplications {
 		bundleInstanceAuthsLabels, err := s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
 		if err != nil {
 			return err
@@ -227,8 +228,8 @@ func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.
 			}
 		}
 
-		if err := s.labelService.UpsertScenarios(ctx, appTenant, assocAuthLabels, scenario, label.UniqueScenarios); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("while associating scenario: '%s' to all bundle_instance_auths for appId: %s and runtimeId: %s", scenario, appId, runtimeId))
+		if err := s.labelService.UpsertScenarios(ctx, appTenant, assocAuthLabels, scenarios, label.UniqueScenarios); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("while associating scenario: '%s' to all bundle_instance_auths for appId: %s and runtimeId: %s", scenarios, appId, runtimeId))
 		}
 	}
 
@@ -477,8 +478,7 @@ func (s *service) existForAppAndScenario(ctx context.Context, scenario, appId st
 	persist, _ := persistence.FromCtx(ctx)
 
 	var count int
-	//TODO: Merge this query with the one for runtimes and extract in view
-	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id INNER JOIN bundles ON bundles.id = bundle_instance_auths.bundle_id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundles.app_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
+	query := "SELECT 1 FROM bundle_instance_auths_with_labels WHERE json_build_array($1::text)::jsonb <@ bundle_instance_auths_with_labels.value AND app_id=$2 AND status_condition='SUCCEEDED'"
 	err := persist.Get(&count, query, scenario, appId)
 	if err != nil {
 		return false, err
@@ -500,35 +500,35 @@ func (s *service) existForRuntimeAndScenario(ctx context.Context, scenario, runt
 	return count != 0, err
 }
 
-func getCommonRuntimes(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string, supplier RuntimeIdsForScenariosSupplier) map[string]string {
+func getCommonRuntimes(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string, supplier RuntimeIdsForScenariosSupplier) map[string][]string {
 	runtimeNamesForScenariosToKeep, err := supplier(ctx, tenant, scenariosToKeep)
 	if err != nil {
 		// TODO HANDLE ERROR
 	}
 
-	commonRuntimesScenarios := make(map[string]string)
+	commonRuntimesScenarios := make(map[string][]string)
 	for _, scenario := range scenariosToAdd {
-		runtimeNames, err := supplier(ctx, tenant, []string{scenario})
+		runtimeIDs, err := supplier(ctx, tenant, []string{scenario})
 		if err != nil {
 			// todo handle
 		}
-		for _, runtime := range runtimeNames {
+		for _, runtime := range runtimeIDs {
 			if contains(runtimeNamesForScenariosToKeep, runtime) {
-				commonRuntimesScenarios[runtime] = scenario
+				commonRuntimesScenarios[runtime] = append(commonRuntimesScenarios[runtime], scenario)
 			}
 		}
 	}
 	return commonRuntimesScenarios
 }
 
-func (s *service) getCommonApplications(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string, supplier AppIdsForScenariosSupplier) map[string]string {
+func (s *service) getCommonApplications(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string, supplier AppIdsForScenariosSupplier) map[string][]string {
 	//TODO: Skip db queryies if scenariosToAdd is empty
 	appIdsForScenariosToKeep, err := supplier(ctx, tenant, scenariosToKeep)
 	if err != nil {
 		// TODO HANDLE ERROR
 	}
 
-	commonApplicationScenarios := make(map[string]string)
+	commonApplicationScenarios := make(map[string][]string)
 	for _, scenario := range scenariosToAdd {
 		appIds, err := supplier(ctx, tenant, []string{scenario})
 		if err != nil {
@@ -536,7 +536,7 @@ func (s *service) getCommonApplications(ctx context.Context, tenant string, scen
 		}
 		for _, appId := range appIds {
 			if contains(appIdsForScenariosToKeep, appId) {
-				commonApplicationScenarios[appId] = scenario
+				commonApplicationScenarios[appId] = append(commonApplicationScenarios[appId], scenario)
 			}
 		}
 	}

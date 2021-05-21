@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -99,7 +100,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenario string, mergeFn func(scenarios []string, diffScenario string) []string) error {
+func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error {
 	for _, label := range labels {
 		var scenariosString []string
 		switch value := label.Value.(type) {
@@ -119,8 +120,12 @@ func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID strin
 			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
 		}
 
-		newScenarios := mergeFn(scenariosString, newScenario)
-		err := s.updateScenario(ctx, tenantID, label, newScenarios)
+		var scenariosToUpsert []string
+		for _, scenario := range newScenarios {
+			scenariosToUpsert = append(scenariosToUpsert, mergeFn(scenariosString, scenario)...)
+		}
+
+		err := s.updateScenario(ctx, tenantID, label, scenariosToUpsert)
 		if err != nil {
 			return errors.Wrap(err, "while updating scenarios label")
 		}
