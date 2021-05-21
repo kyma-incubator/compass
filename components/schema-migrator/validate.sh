@@ -92,7 +92,10 @@ function migrationProcess() {
 
     echo -e "${GREEN}Migrations for \"${db}\" database and \"${path}\" path${NC}"
     migrationUP "${path}" "${db}"
-    migrationDOWN "${path}" "${db}"
+
+    if [[ ! -f seeds/dump.sql ]]; then
+        migrationDOWN "${path}" "${db}"
+    fi
 }
 
 migrationProcess "director" "compass"
