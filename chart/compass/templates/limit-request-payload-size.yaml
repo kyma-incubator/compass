@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ .Chart.Name }}-limit-request-payload-size
+  namespace: {{ .Values.global.istio.namespace }}
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.buffer
+          typed_config:
+            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+            value:
+              maxRequestBytes: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit }}

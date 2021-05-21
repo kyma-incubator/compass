@@ -155,6 +155,44 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 	})
 }
 
+func TestPgRepository_ListByApplicationID(t *testing.T) {
+	// GIVEN
+	totalCount := 2
+	firstEventDefID := "111111111-1111-1111-1111-111111111111"
+	firstEventDefEntity := fixFullEntityEventDefinition(firstEventDefID, "placeholder")
+	secondEventDefID := "222222222-2222-2222-2222-222222222222"
+	secondEventDefEntity := fixFullEntityEventDefinition(secondEventDefID, "placeholder")
+
+	selectQuery := `^SELECT (.+) FROM "public"."event_api_definitions" 
+		WHERE tenant_id = \$1 AND app_id = \$2`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...).
+			AddRow(fixEventDefinitionRow(secondEventDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EventAPIDefinitionConverter{}
+		convMock.On("FromEntity", firstEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: firstEventDefID}}, nil)
+		convMock.On("FromEntity", secondEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondEventDefID}}, nil)
+		pgRepository := event.NewRepository(convMock)
+		// WHEN
+		modelEventDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelEventDef, totalCount)
+		assert.Equal(t, firstEventDefID, modelEventDef[0].ID)
+		assert.Equal(t, secondEventDefID, modelEventDef[1].ID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}
+
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
 	eventDefModel, _ := fixFullEventDefinitionModel("placeholder")
@@ -276,6 +314,22 @@ func TestPgRepository_Delete(t *testing.T) {
 	pgRepository := event.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.Delete(ctx, tenantID, eventID)
+	//THEN
+	require.NoError(t, err)
+	sqlMock.AssertExpectations(t)
+	convMock.AssertExpectations(t)
+}
+
+func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+	deleteQuery := `^DELETE FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND bundle_id = \$2$`
+
+	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
+	convMock := &automock.EventAPIDefinitionConverter{}
+	pgRepository := event.NewRepository(convMock)
+	//WHEN
+	err := pgRepository.DeleteAllByBundleID(ctx, tenantID, bundleID)
 	//THEN
 	require.NoError(t, err)
 	sqlMock.AssertExpectations(t)

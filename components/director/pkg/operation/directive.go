@@ -23,6 +23,8 @@ import (
 	"math"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
@@ -47,18 +49,20 @@ type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.W
 type directive struct {
 	transact            persistence.Transactioner
 	webhookFetcherFunc  WebhookFetcherFunc
-	tenantLoaderFunc    TenantLoaderFunc
 	resourceFetcherFunc ResourceFetcherFunc
+	resourceUpdaterFunc ResourceUpdaterFunc
+	tenantLoaderFunc    TenantLoaderFunc
 	scheduler           Scheduler
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, resourceUpdaterFunc ResourceUpdaterFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
 	return &directive{
 		transact:            transact,
 		webhookFetcherFunc:  webhookFetcherFunc,
-		tenantLoaderFunc:    tenantLoaderFunc,
 		resourceFetcherFunc: resourceFetcherFunc,
+		resourceUpdaterFunc: resourceUpdaterFunc,
+		tenantLoaderFunc:    tenantLoaderFunc,
 		scheduler:           scheduler,
 	}
 }
@@ -115,8 +119,19 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	entity, ok := resp.(graphql.Entity)
 	if !ok {
-		log.C(ctx).WithError(err).Error("An error occurred while casting the response entity")
+		log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", err)
 		return nil, apperrors.NewInternalError("Failed to process operation")
+	}
+
+	appConditionStatus, err := determineApplicationInProgressStatus(operationType)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("While determining the application status condition: %v", err)
+		return nil, err
+	}
+
+	if err := d.resourceUpdaterFunc(ctx, entity.GetID(), false, nil, *appConditionStatus); err != nil {
+		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s and status condition %v: %v", entity.GetType(), entity.GetID(), appConditionStatus, err)
+		return nil, apperrors.NewInternalError("Unable to update resource %s with id %s", entity.GetType(), entity.GetID())
 	}
 
 	operation.ResourceID = entity.GetID()
@@ -242,14 +257,10 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 	}
 
 	webhookIDs := make([]string, 0)
-	for _, webhook := range webhooks {
-		if graphql.WebhookType(webhook.Type) == webhookType {
-			webhookIDs = append(webhookIDs, webhook.ID)
+	for _, currWebhook := range webhooks {
+		if graphql.WebhookType(currWebhook.Type) == webhookType {
+			webhookIDs = append(webhookIDs, currWebhook.ID)
 		}
-	}
-
-	if len(webhookIDs) == 0 {
-		return nil, errors.New("no webhooks found for operation")
 	}
 
 	if len(webhookIDs) > 1 {
@@ -291,4 +302,20 @@ func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persiste
 
 func isErrored(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
+}
+
+func determineApplicationInProgressStatus(opType graphql.OperationType) (*model.ApplicationStatusCondition, error) {
+	var appStatusCondition model.ApplicationStatusCondition
+	switch opType {
+	case graphql.OperationTypeCreate:
+		appStatusCondition = model.ApplicationStatusConditionCreating
+	case graphql.OperationTypeUpdate:
+		appStatusCondition = model.ApplicationStatusConditionUpdating
+	case graphql.OperationTypeDelete:
+		appStatusCondition = model.ApplicationStatusConditionDeleting
+	default:
+		return nil, apperrors.NewInvalidStatusCondition(resource.Application)
+	}
+
+	return &appStatusCondition, nil
 }

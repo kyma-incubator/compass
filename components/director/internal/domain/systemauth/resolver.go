@@ -9,21 +9,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
 	GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
 }
 
-//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(model *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
 type Resolver struct {
@@ -37,8 +37,8 @@ func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAut
 	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, conv: conv}
 }
 
-func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (*graphql.SystemAuth, error) {
-	return func(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 		tx, err := r.transact.Begin()
 		if err != nil {
 			return nil, err

@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -22,19 +22,16 @@ type Config struct {
 }
 
 func RegisterHandler(router *mux.Router, config Config, directorURL string, directorTimeout time.Duration) error {
-	logger := logrus.New().WithField("component", "connector").Logger
-	logger.SetReportCaller(true)
-
 	directorClientProvider := director.NewClientProvider(directorURL, directorTimeout)
 	connectorClientProvider := connector.NewClientProvider(config.ConnectorEndpoint, config.ClientTimeout)
 
 	authorizationMiddleware := middlewares.NewAuthorizationMiddleware()
 	router.Use(authorizationMiddleware.GetAuthorizationHeaders)
 
-	signingRequestInfoHandler := newSigningRequestInfoHandler(config, connectorClientProvider, directorClientProvider, logger)
-	managementInfoHandler := newManagementInfoHandler(config, connectorClientProvider, directorClientProvider, logger)
-	certificatesHandler := newCertificateHandler(connectorClientProvider, logger)
-	revocationsHandler := newRevocationsHandler(connectorClientProvider, logger)
+	signingRequestInfoHandler := newSigningRequestInfoHandler(config, connectorClientProvider, directorClientProvider)
+	managementInfoHandler := newManagementInfoHandler(config, connectorClientProvider, directorClientProvider)
+	certificatesHandler := newCertificateHandler(connectorClientProvider)
+	revocationsHandler := newRevocationsHandler(connectorClientProvider)
 
 	router.Handle("/signingRequests/info", signingRequestInfoHandler).Methods(http.MethodGet)
 	router.Handle("/management/info", managementInfoHandler).Methods(http.MethodGet)
@@ -45,28 +42,28 @@ func RegisterHandler(router *mux.Router, config Config, directorURL string, dire
 	return nil
 }
 
-func newSigningRequestInfoHandler(config Config, connectorClientProvider connector.ClientProvider, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
-	signingRequestInfo := api.NewInfoHandler(connectorClientProvider, directorClientProvider, logger, model.NewCSRInfoResponseProvider(config.AdapterBaseURL, config.AdapterMtlsBaseURL))
+func newSigningRequestInfoHandler(config Config, connectorClientProvider connector.ClientProvider, directorClientProvider director.ClientProvider) http.Handler {
+	signingRequestInfo := api.NewInfoHandler(connectorClientProvider, directorClientProvider, model.NewCSRInfoResponseProvider(config.AdapterBaseURL, config.AdapterMtlsBaseURL))
 	signingRequestInfoHandler := http.HandlerFunc(signingRequestInfo.GetInfo)
 
 	return signingRequestInfoHandler
 }
 
-func newManagementInfoHandler(config Config, connectorClientProvider connector.ClientProvider, directorClientProvider director.ClientProvider, logger *logrus.Logger) http.Handler {
-	managementInfo := api.NewInfoHandler(connectorClientProvider, directorClientProvider, logger, model.NewManagementInfoResponseProvider(config.AdapterMtlsBaseURL))
+func newManagementInfoHandler(config Config, connectorClientProvider connector.ClientProvider, directorClientProvider director.ClientProvider) http.Handler {
+	managementInfo := api.NewInfoHandler(connectorClientProvider, directorClientProvider, model.NewManagementInfoResponseProvider(config.AdapterMtlsBaseURL))
 	managementInfoHandler := http.HandlerFunc(managementInfo.GetInfo)
 
 	return managementInfoHandler
 }
 
-func newCertificateHandler(connectorClientProvider connector.ClientProvider, logger *logrus.Logger) http.Handler {
-	handler := api.NewCertificatesHandler(connectorClientProvider, logger)
+func newCertificateHandler(connectorClientProvider connector.ClientProvider) http.Handler {
+	handler := api.NewCertificatesHandler(connectorClientProvider)
 
 	return http.HandlerFunc(handler.SignCSR)
 }
 
-func newRevocationsHandler(connectorClientProvider connector.ClientProvider, logger *logrus.Logger) http.Handler {
-	handler := api.NewRevocationsHandler(connectorClientProvider, logger)
+func newRevocationsHandler(connectorClientProvider connector.ClientProvider) http.Handler {
+	handler := api.NewRevocationsHandler(connectorClientProvider)
 
 	return http.HandlerFunc(handler.RevokeCertificate)
 }

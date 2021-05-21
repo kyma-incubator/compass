@@ -94,6 +94,8 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		description
 		integrationSystemID
 		labels
+		deletedAt
+		error
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
@@ -111,8 +113,9 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 		description
 		applicationInput
 		placeholders {%s}
+		webhooks {%s}
 		accessLevel
-	`, fp.ForPlaceholders())
+	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
@@ -138,6 +141,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 	return fmt.Sprintf(
 		`id
 		applicationID
+		applicationTemplateID
 		type
 		mode
 		correlationIdKey

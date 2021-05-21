@@ -13,24 +13,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventAPIRepository --output=automock --outpkg=automock --case=underscore
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
 	Update(ctx context.Context, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
+	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
@@ -68,6 +70,15 @@ func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize i
 	return s.eventAPIRepo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
 }
 
+func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, appID)
+}
+
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -96,21 +107,28 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return eventAPI, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec})
+}
+
+func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	id := s.uidService.Generate()
-	eventAPI := in.ToEventDefinitionWithinBundle(id, bundleID, tnt)
+	eventAPI := in.ToEventDefinition(id, appID, bundleID, packageID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
 		return "", err
 	}
 
-	if spec != nil {
+	for _, spec := range specs {
+		if spec == nil {
+			continue
+		}
 		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID)
 		if err != nil {
 			return "", err
@@ -131,7 +149,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return err
 	}
 
-	event = in.ToEventDefinition(id, event.BundleID, event.PackageID, tnt)
+	event = in.ToEventDefinition(id, event.ApplicationID, event.BundleID, event.PackageID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {
@@ -164,6 +182,20 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	err = s.eventAPIRepo.Delete(ctx, tnt, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventDefinition with id %s", id)
+	}
+
+	return nil
+}
+
+func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	err = s.eventAPIRepo.DeleteAllByBundleID(ctx, tnt, bundleID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting EventDefinitions for Bundle with id %q", bundleID)
 	}
 
 	return nil

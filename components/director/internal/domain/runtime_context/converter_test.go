@@ -126,7 +126,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Input: graphql.RuntimeContextInput{
 				Key:    key,
 				Value:  val,
-				Labels: &labels,
+				Labels: labels,
 			},
 			Expected: model.RuntimeContextInput{
 				Key:       key,

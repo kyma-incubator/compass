@@ -9,13 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ProductRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore
 type ProductRepository interface {
 	Create(ctx context.Context, item *model.Product) error
 	Update(ctx context.Context, item *model.Product) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Product, error)
+	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error)
 }
 
 type service struct {
@@ -105,4 +106,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.Product, error) {
 	}
 
 	return product, nil
+}
+
+func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.productRepo.ListByApplicationID(ctx, tnt, appID)
 }

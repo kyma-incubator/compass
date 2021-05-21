@@ -18,6 +18,9 @@ package operation
 
 import (
 	"context"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -27,9 +30,8 @@ import (
 )
 
 const (
-	OpCtxKey    = "OperationCtx"
-	OpModeKey   = "OperationModeCtx"
-	OpErrCtxKey = "OpErrorCtxKey"
+	OpCtxKey  = "OperationCtx"
+	OpModeKey = "OperationModeCtx"
 )
 
 // OperationStatus denotes the different statuses that an Operation can be in
@@ -66,6 +68,7 @@ type Operation struct {
 	OperationCategory string        `json:"operation_category,omitempty"`
 	ResourceID        string        `json:"resource_id,omitempty"`
 	ResourceType      resource.Type `json:"resource_type,omitempty"`
+	CreationTime      time.Time     `json:"creation_time,omitempty"`
 	CorrelationID     string        `json:"correlation_id,omitempty"`
 	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
 	RequestObject     string        `json:"request_object,omitempty"`
@@ -118,4 +121,36 @@ func ModeFromCtx(ctx context.Context) graphql.OperationMode {
 	}
 
 	return graphql.OperationModeSync
+}
+
+func (opResponse *OperationResponse) initializeOperationType(resource model.Entity) {
+	if !resource.GetDeletedAt().IsZero() {
+		opResponse.OperationType = OperationTypeDelete
+	} else if !resource.GetUpdatedAt().IsZero() {
+		opResponse.OperationType = OperationTypeUpdate
+	} else {
+		opResponse.OperationType = OperationTypeCreate
+	}
+}
+
+func (opResponse *OperationResponse) initializeOperationStatus(resource model.Entity) {
+	if !resource.GetReady() {
+		opResponse.Status = OperationStatusInProgress
+	} else if resource.GetError() == nil {
+		opResponse.Status = OperationStatusSucceeded
+	} else {
+		opResponse.Status = OperationStatusFailed
+	}
+}
+
+func (opResponse *OperationResponse) initializeCreationTime(resource model.Entity) {
+	createdAt, updatedAt, deletedAt := resource.GetCreatedAt(), resource.GetUpdatedAt(), resource.GetDeletedAt()
+
+	if deletedAt.After(createdAt) && deletedAt.After(updatedAt) {
+		opResponse.CreationTime = deletedAt
+	} else if updatedAt.After(createdAt) {
+		opResponse.CreationTime = updatedAt
+	} else {
+		opResponse.CreationTime = createdAt
+	}
 }

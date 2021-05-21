@@ -61,10 +61,11 @@ func (m *manager) Initialize(operation *v1alpha1.Operation) error {
 		{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
 	}
 
-	status.Webhooks = []v1alpha1.Webhook{
-		{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
+	if len(operation.Spec.WebhookIDs) > 0 {
+		status.Webhooks = []v1alpha1.Webhook{
+			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
+		}
 	}
-
 	return nil
 }
 
@@ -85,8 +86,10 @@ func (m *manager) InProgressWithPollURLAndLastPollTimestamp(ctx context.Context,
 			{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
 		}
 
-		status.Webhooks = []v1alpha1.Webhook{
-			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress, WebhookPollURL: pollURL, LastPollTimestamp: lastPollTimestamp, RetriesCount: retryCount},
+		if len(operation.Spec.WebhookIDs) > 0 {
+			status.Webhooks = []v1alpha1.Webhook{
+				{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress, WebhookPollURL: pollURL, LastPollTimestamp: lastPollTimestamp, RetriesCount: retryCount},
+			}
 		}
 	})
 }
@@ -103,14 +106,15 @@ func (m *manager) SuccessStatus(ctx context.Context, operation *v1alpha1.Operati
 			{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
 		}
 
-		webhook := v1alpha1.Webhook{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateSuccess}
-		if len(operation.Status.Webhooks) > 0 {
-			webhook.RetriesCount = operation.Status.Webhooks[0].RetriesCount
-			webhook.WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
-			webhook.LastPollTimestamp = operation.Status.Webhooks[0].LastPollTimestamp
+		if len(operation.Spec.WebhookIDs) > 0 {
+			webhook := v1alpha1.Webhook{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateSuccess}
+			if len(operation.Status.Webhooks) > 0 {
+				webhook.RetriesCount = operation.Status.Webhooks[0].RetriesCount
+				webhook.WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+				webhook.LastPollTimestamp = operation.Status.Webhooks[0].LastPollTimestamp
+			}
+			status.Webhooks = []v1alpha1.Webhook{webhook}
 		}
-
-		status.Webhooks = []v1alpha1.Webhook{webhook}
 	})
 }
 
@@ -126,14 +130,16 @@ func (m *manager) FailedStatus(ctx context.Context, operation *v1alpha1.Operatio
 			{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionTrue, Message: errorMsg},
 		}
 
-		webhook := v1alpha1.Webhook{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateFailed}
-		if len(operation.Status.Webhooks) > 0 {
-			webhook.RetriesCount = operation.Status.Webhooks[0].RetriesCount
-			webhook.WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
-			webhook.LastPollTimestamp = operation.Status.Webhooks[0].LastPollTimestamp
-		}
+		if len(operation.Spec.WebhookIDs) > 0 {
+			webhook := v1alpha1.Webhook{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateFailed}
+			if len(operation.Status.Webhooks) > 0 {
+				webhook.RetriesCount = operation.Status.Webhooks[0].RetriesCount
+				webhook.WebhookPollURL = operation.Status.Webhooks[0].WebhookPollURL
+				webhook.LastPollTimestamp = operation.Status.Webhooks[0].LastPollTimestamp
+			}
 
-		status.Webhooks = []v1alpha1.Webhook{webhook}
+			status.Webhooks = []v1alpha1.Webhook{webhook}
+		}
 	})
 }
 

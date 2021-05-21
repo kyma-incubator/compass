@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=BundleRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
 type BundleRepository interface {
 	Create(ctx context.Context, item *model.Bundle) error
 	Update(ctx context.Context, item *model.Bundle) error
@@ -22,9 +22,10 @@ type BundleRepository interface {
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
+	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
@@ -64,7 +65,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
 
 	log.C(ctx).Infof("Creating related resources in Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
-	err = s.createRelatedResources(ctx, in, id)
+	err = s.createRelatedResources(ctx, in, id, applicationID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", applicationID)
 	}
@@ -194,16 +195,25 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.bndlRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID string) error {
+func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.bndlRepo.ListByApplicationIDNoPaging(ctx, tnt, appID)
+}
+
+func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID, appID string) error {
 	for i := range in.APIDefinitions {
-		_, err := s.apiSvc.CreateInBundle(ctx, bundleID, *in.APIDefinitions[i], in.APISpecs[i])
+		_, err := s.apiSvc.CreateInBundle(ctx, appID, bundleID, *in.APIDefinitions[i], in.APISpecs[i])
 		if err != nil {
 			return errors.Wrapf(err, "while creating APIs for bundle with id %q", bundleID)
 		}
 	}
 
 	for i := range in.EventDefinitions {
-		_, err := s.eventSvc.CreateInBundle(ctx, bundleID, *in.EventDefinitions[i], in.EventSpecs[i])
+		_, err := s.eventSvc.CreateInBundle(ctx, appID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i])
 		if err != nil {
 			return errors.Wrapf(err, "while creating Event for bundle with id %q", bundleID)
 		}

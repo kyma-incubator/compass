@@ -16,7 +16,11 @@
 
 package errors
 
-import "github.com/pkg/errors"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 var (
 	ErrReconciliationTimeoutReached = errors.New("reconciliation timeout reached")
@@ -44,4 +48,22 @@ func NewFatalReconcileErrorFromExisting(err error) *FatalReconcileErr {
 	return &FatalReconcileErr{
 		error: err,
 	}
+}
+
+// WebhookStatusGoneErr represents an error type which represents a gone status code
+// returned in response to calling delete webhook.
+type WebhookStatusGoneErr struct {
+	error
+}
+
+// NewWebhookStatusGoneErr constructs a new WebhookStatusGoneErr with the given error message
+func NewWebhookStatusGoneErr(goneStatusCode int) WebhookStatusGoneErr {
+	return WebhookStatusGoneErr{error: fmt.Errorf("gone response status %d was met while calling webhook", goneStatusCode)}
+}
+
+// IsWebhookStatusGoneErr check whether an error is a WebhookStatusGoneErr
+// and returns true if so.
+func IsWebhookStatusGoneErr(err error) (ok bool) {
+	_, ok = err.(WebhookStatusGoneErr)
+	return
 }

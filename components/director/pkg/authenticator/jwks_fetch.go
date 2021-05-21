@@ -41,7 +41,7 @@ SOFTWARE.
 */
 
 // fetchJWK fetches a JWK resource specified by a URL
-func FetchJWK(ctx context.Context, urlstring string, options ...jwk.Option) (*jwk.Set, error) {
+func FetchJWK(ctx context.Context, urlstring string, options ...jwk.FetchOption) (jwk.Set, error) {
 	u, err := url.Parse(urlstring)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse url")
@@ -49,7 +49,7 @@ func FetchJWK(ctx context.Context, urlstring string, options ...jwk.Option) (*jw
 
 	switch u.Scheme {
 	case "http", "https":
-		return jwk.FetchHTTP(urlstring, options...)
+		return jwk.Fetch(ctx, urlstring, options...)
 	case "file":
 		filePath := strings.TrimPrefix(urlstring, "file://")
 		f, err := os.Open(filePath)
@@ -59,7 +59,7 @@ func FetchJWK(ctx context.Context, urlstring string, options ...jwk.Option) (*jw
 		defer func() {
 			err := f.Close()
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while closing file.")
+				log.C(ctx).WithError(err).Errorf("An error has occurred while closing file: %v", err)
 			}
 		}()
 
@@ -67,7 +67,7 @@ func FetchJWK(ctx context.Context, urlstring string, options ...jwk.Option) (*jw
 		if err != nil {
 			return nil, errors.Wrap(err, "failed read content from jwk file")
 		}
-		return jwk.ParseBytes(buf)
+		return jwk.Parse(buf)
 	}
 	return nil, errors.Errorf("invalid url scheme %s", u.Scheme)
 }

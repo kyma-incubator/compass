@@ -28,23 +28,23 @@ type Package struct {
 }
 
 type PackageInput struct {
-	OrdID             string
-	Vendor            *string
-	Title             string
-	ShortDescription  string
-	Description       string
-	Version           string
-	PackageLinks      json.RawMessage
-	Links             json.RawMessage
-	LicenseType       *string
-	Tags              json.RawMessage
-	Countries         json.RawMessage
-	Labels            json.RawMessage
-	PolicyLevel       string
-	CustomPolicyLevel *string
-	PartOfProducts    json.RawMessage
-	LineOfBusiness    json.RawMessage
-	Industry          json.RawMessage
+	OrdID             string          `json:"ordId"`
+	Vendor            *string         `json:"vendor"`
+	Title             string          `json:"title"`
+	ShortDescription  string          `json:"shortDescription"`
+	Description       string          `json:"description"`
+	Version           string          `json:"version"`
+	PackageLinks      json.RawMessage `json:"packageLinks"`
+	Links             json.RawMessage `json:"links"`
+	LicenseType       *string         `json:"licenseType"`
+	Tags              json.RawMessage `json:"tags"`
+	Countries         json.RawMessage `json:"countries"`
+	Labels            json.RawMessage `json:"labels"`
+	PolicyLevel       string          `json:"policyLevel"`
+	CustomPolicyLevel *string         `json:"customPolicyLevel"`
+	PartOfProducts    json.RawMessage `json:"partOfProducts"`
+	LineOfBusiness    json.RawMessage `json:"lineOfBusiness"`
+	Industry          json.RawMessage `json:"industry"`
 }
 
 func (i *PackageInput) ToPackage(id, tenantID, appID string) *Package {

@@ -3,11 +3,14 @@ FROM golang:1.15.7-alpine3.12 as builder
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/system-broker
 WORKDIR ${BASE_APP_DIR}
 
-COPY . .
+COPY go.mod go.sum ${BASE_APP_DIR}/
+RUN go mod download -x
+
+COPY . ${BASE_APP_DIR}
 
 RUN go build -v -o /app/system-broker ./cmd/main.go
 
-FROM alpine:edge
+FROM alpine:3.12.3
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

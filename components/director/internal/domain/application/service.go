@@ -3,6 +3,9 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -28,21 +31,25 @@ const (
 	nameKey   = "name"
 )
 
-//go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
+type repoCreatorFunc func(ctx context.Context, application *model.Application) error
+
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
+	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
+	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -50,39 +57,40 @@ type LabelRepository interface {
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
-//go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, items []*model.Webhook) error
 }
 
-//go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
-//go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=ApplicationHideCfgProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }
@@ -132,6 +140,14 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
+}
+
+func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
 }
 
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
@@ -220,78 +236,28 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
-
-	applications, err := s.appRepo.ListAll(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
-	normalizedName := s.appNameNormalizer.Normalize(in.Name)
-	for _, app := range applications {
-		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
-			return "", apperrors.NewNotUniqueNameError(resource.Application)
-		}
-	}
-
-	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
-	if err != nil {
-		return "", errors.Wrap(err, "while ensuring integration system exists")
-	}
-
-	if !exists {
-		return "", apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
-	}
-
-	id := s.uidService.Generate()
-	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
-
-	app := in.ToApplication(s.timestampGen(), id, appTenant)
-
-	err = s.appRepo.Create(ctx, app)
-	if err != nil {
-		return "", errors.Wrapf(err, "while creating Application with name %s", in.Name)
-	}
-
-	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
-
-	if in.Labels == nil {
-		in.Labels = map[string]interface{}{}
-	}
-	in.Labels[intSysKey] = ""
-	if in.IntegrationSystemID != nil {
-		in.Labels[intSysKey] = *in.IntegrationSystemID
-	}
-	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
-	if err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
-	}
-
-	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
-	if err != nil {
-		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
-	}
-
-	if in.Bundles != nil {
-		err = s.bndlService.CreateMultiple(ctx, id, in.Bundles)
+	creator := func(ctx context.Context, application *model.Application) (err error) {
+		err = s.appRepo.Create(ctx, application)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
+			return errors.Wrapf(err, "while creating Application with name %s", application.Name)
 		}
+		return
 	}
 
-	return id, nil
+	return s.genericCreate(ctx, in, creator)
+}
+
+func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateId *string) (string, error) {
+	creator := func(ctx context.Context, application *model.Application) (err error) {
+		application.ApplicationTemplateID = appTemplateId
+		err = s.appRepo.Create(ctx, application)
+		if err != nil {
+			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
+		}
+		return
+	}
+
+	return s.genericCreate(ctx, in, creator)
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
@@ -338,6 +304,28 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appTenant, id)
+	if err != nil {
+		return err
+	}
+
+	validScenarios := removeDefaultScenario(scenarios)
+	if len(validScenarios) > 0 {
+		runtimes, err := s.getRuntimeNamesForScenarios(ctx, appTenant, validScenarios)
+		if err != nil {
+			return err
+		}
+
+		if len(runtimes) > 0 {
+			application, err := s.appRepo.GetByID(ctx, appTenant, id)
+			if err != nil {
+				return errors.Wrapf(err, "while getting application with id %s", id)
+			}
+			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+			return apperrors.NewInvalidOperationError(msg)
+		}
 	}
 
 	err = s.appRepo.Delete(ctx, appTenant, id)
@@ -441,7 +429,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	var err error
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), tenant, applicationID))
+		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), &tenant, applicationID))
 	}
 	err = s.webhookRepo.CreateMany(ctx, webhooks)
 	if err != nil {
@@ -450,6 +438,82 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 
 	return nil
 }
+
+func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegisterInput, repoCreatorFunc repoCreatorFunc) (string, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
+
+	applications, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	normalizedName := s.appNameNormalizer.Normalize(in.Name)
+	for _, app := range applications {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
+			return "", apperrors.NewNotUniqueNameError(resource.Application)
+		}
+	}
+
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	if err != nil {
+		return "", errors.Wrap(err, "while ensuring integration system exists")
+	}
+
+	if !exists {
+		return "", apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
+	}
+
+	id := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
+
+	app := in.ToApplication(s.timestampGen(), id, appTenant)
+
+	err = repoCreatorFunc(ctx, app)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
+	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
+
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+	in.Labels[intSysKey] = ""
+	if in.IntegrationSystemID != nil {
+		in.Labels[intSysKey] = *in.IntegrationSystemID
+	}
+	in.Labels[nameKey] = normalizedName
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
+	}
+
+	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
+	}
+
+	if in.Bundles != nil {
+		err = s.bndlService.CreateMultiple(ctx, id, in.Bundles)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
+		}
+	}
+
+	return id, nil
+}
+
 func createLabel(key string, value string, objectID string) *model.LabelInput {
 	return &model.LabelInput{
 		Key:        key,
@@ -476,4 +540,58 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	}
 	log.C(ctx).Infof("Integration System with id %s exists", *id)
 	return true, nil
+}
+
+func (s *service) getScenarioNamesForApplication(ctx context.Context, tenant, applicationID string) ([]string, error) {
+	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
+
+	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
+	if err != nil {
+		if apperrors.ErrorCode(err) == apperrors.NotFound {
+			log.C(ctx).Infof("No scenarios found for application")
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing application label values")
+	}
+
+	return scenarios, nil
+}
+
+func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
+	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
+	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
+
+	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
+	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes")
+	}
+
+	var runtimesNames []string
+	for _, r := range runtimes {
+		runtimesNames = append(runtimesNames, r.Name)
+	}
+
+	return runtimesNames, nil
+}
+
+func removeDefaultScenario(scenarios []string) []string {
+	defaultScenarioIndex := -1
+	for idx, scenario := range scenarios {
+		if scenario == model.ScenariosDefaultValue[0] {
+			defaultScenarioIndex = idx
+			break
+		}
+	}
+
+	if defaultScenarioIndex >= 0 {
+		return append(scenarios[:defaultScenarioIndex], scenarios[defaultScenarioIndex+1:]...)
+	}
+
+	return scenarios
 }

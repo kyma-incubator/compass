@@ -23,7 +23,7 @@ func TestRequestContextProvider_ForRequest(t *testing.T) {
 	rq.Header.Set(gqlcli.AuthorizationHeaderKey, "foo")
 
 	gqlCli := gqlcli.NewAuthorizedGraphQLClient("", time.Second, rq)
-	app := graphql.ApplicationExt{Application: graphql.Application{ID: "app-id"}}
+	app := graphql.ApplicationExt{Application: graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "app-id"}}}
 	expected := service.RequestContext{
 		AppID:          app.ID,
 		DirectorClient: director.NewClient(gqlCli, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{}),

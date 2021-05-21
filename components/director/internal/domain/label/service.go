@@ -13,20 +13,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	Upsert(ctx context.Context, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
-//go:generate mockery -name=LabelDefinitionRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore
 type LabelDefinitionRepository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }

@@ -1,0 +1,99 @@
+{{if .Values.global.ordAggregator.enabled }}
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "{{ $.Chart.Name }}-ord-aggregator"
+spec:
+  schedule: "{{ .Values.global.ordAggregator.schedule }}"
+  failedJobsHistoryLimit: 5
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60 # Fix for https://github.com/kyma-incubator/compass/issues/1155
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: {{ .Values.global.ordAggregator.name }}
+    spec:
+      template:
+        metadata:
+          labels:
+            cronjob: {{ .Values.global.ordAggregator.name }}
+        spec:
+          containers:
+            - name: aggregator
+              image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: director-config
+                  mountPath: /config
+              env:
+                - name: APP_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-director-username
+                - name: APP_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-director-password
+                - name: APP_DB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-serviceName
+                - name: APP_DB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-servicePort
+                - name: APP_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-director-db-name
+                - name: APP_DB_SSL
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-sslMode
+                - name: APP_CONFIGURATION_FILE
+                  value: /config/config.yaml
+                - name: APP_DB_MAX_OPEN_CONNECTIONS
+                  value: "{{ .Values.global.ordAggregator.dbPool.maxOpenConnections }}"
+                - name: APP_DB_MAX_IDLE_CONNECTIONS
+                  value: "{{ .Values.global.ordAggregator.dbPool.maxIdleConnections }}"
+                {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
+                - name: APP_METRICS_PUSH_ENDPOINT
+                  value: {{ $.Values.global.metrics.pushEndpoint}}
+              {{ end }}
+              command:
+                - "/bin/sh"
+              args:
+                - "-c"
+                - "./ordaggregator; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+            {{if eq $.Values.global.database.embedded.enabled false}}
+            - name: cloudsql-proxy
+              image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ $.Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+          {{end}}
+          restartPolicy: Never
+          shareProcessNamespace: true
+          volumes:
+            {{if eq $.Values.global.database.embedded.enabled false}}
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+            {{end}}
+            - name: director-config
+              configMap:
+                name: compass-director-config
+  {{ end }}

@@ -35,15 +35,16 @@ func (fake *FakeBundleCredentialsDeleteRequester) RequestBundleInstanceCredentia
 		arg1 context.Context
 		arg2 *director.BundleInstanceAuthDeletionInput
 	}{arg1, arg2})
+	stub := fake.RequestBundleInstanceCredentialsDeletionStub
+	fakeReturns := fake.requestBundleInstanceCredentialsDeletionReturns
 	fake.recordInvocation("RequestBundleInstanceCredentialsDeletion", []interface{}{arg1, arg2})
 	fake.requestBundleInstanceCredentialsDeletionMutex.Unlock()
-	if fake.RequestBundleInstanceCredentialsDeletionStub != nil {
-		return fake.RequestBundleInstanceCredentialsDeletionStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.requestBundleInstanceCredentialsDeletionReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

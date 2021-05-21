@@ -25,7 +25,7 @@ func TestUnmarshalBasicAuth(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	scopes := a.AdditionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
@@ -52,7 +52,7 @@ func TestUnmarshalOAuth(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	scopes := a.AdditionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
@@ -79,7 +79,7 @@ func TestUnmarshalCSRFBasicAuth(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	scopes := a.AdditionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
@@ -106,7 +106,7 @@ func TestUnmarshalCSRFOAuth(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	scopes := a.AdditionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")

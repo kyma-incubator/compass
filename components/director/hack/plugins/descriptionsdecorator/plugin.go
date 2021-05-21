@@ -11,9 +11,8 @@ import (
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"github.com/vektah/gqlparser/ast"
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 type GraphqlOperationType string
@@ -43,15 +42,11 @@ func (p *descriptionsDecoratorPlugin) Name() string {
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
 
-	if err := cfg.Check(); err != nil {
+	if err := cfg.Init(); err != nil {
 		return err
 	}
 
-	schema, _, err := cfg.LoadSchema()
-	if err != nil {
-		return err
-	}
-
+	schema := cfg.Schema
 	if schema.Query != nil {
 		for _, f := range schema.Query.Fields {
 			err := p.ensureDescription(f, Query)
@@ -69,7 +64,7 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 			}
 		}
 	}
-	if err := cfg.Check(); err != nil {
+	if err := cfg.LoadSchema(); err != nil {
 		return err
 	}
 
@@ -88,7 +83,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
-		log.D().Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
+		fmt.Printf("no examples under %s directory, skipping adding description", p.examplesDirectory)
 		return nil
 	}
 	for _, dir := range dirs {

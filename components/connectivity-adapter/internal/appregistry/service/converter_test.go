@@ -114,7 +114,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in YAML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: json.RawMessage(`openapi: "3.0.0"`),
+					Spec: ptrSpecResponse(`openapi: "3.0.0"`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -122,7 +122,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
 						Spec: &graphql.APISpecInput{
-							Data:   ptrClob(graphql.CLOB(`openapi: "3.0.0"`)),
+							Data:   ptrClob(`openapi: "3.0.0"`),
 							Type:   graphql.APISpecTypeOpenAPI,
 							Format: graphql.SpecFormatYaml,
 						},
@@ -134,7 +134,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in JSON": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
+					Spec: ptrSpecResponse(`{"spec":"v0.0.1"}`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -142,7 +142,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
 						Spec: &graphql.APISpecInput{
-							Data:   ptrClob(graphql.CLOB(`{"spec":"v0.0.1"}`)),
+							Data:   ptrClob(`{"spec":"v0.0.1"}`),
 							Type:   graphql.APISpecTypeOpenAPI,
 							Format: graphql.SpecFormatJSON,
 						},
@@ -154,7 +154,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 		"API with directly spec provided in XML": {
 			given: model.ServiceDetails{
 				Api: &model.API{
-					Spec: json.RawMessage(`<spec></spec>"`),
+					Spec: ptrSpecResponse(`<spec></spec>"`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -162,7 +162,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
 						Spec: &graphql.APISpecInput{
-							Data:   ptrClob(graphql.CLOB(`<spec></spec>"`)),
+							Data:   ptrClob(`<spec></spec>"`),
 							Type:   graphql.APISpecTypeOpenAPI,
 							Format: graphql.SpecFormatXML,
 						},
@@ -458,7 +458,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 			given: model.ServiceDetails{
 				Name: "foo",
 				Events: &model.Events{
-					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
+					Spec: ptrSpecResponse(`asyncapi: "1.2.0"`),
 				},
 			},
 			expected: graphql.BundleCreateInput{
@@ -542,11 +542,11 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			given: graphql.BundleExt{
 				Bundle: graphql.Bundle{
 					DefaultInstanceAuth: &graphql.Auth{
-						AdditionalQueryParams: &graphql.QueryParams{
+						AdditionalQueryParams: graphql.QueryParams{
 							"q1": []string{"a", "b"},
 							"q2": []string{"c", "d"},
 						},
-						AdditionalHeaders: &graphql.HttpHeaders{
+						AdditionalHeaders: graphql.HttpHeaders{
 							"h1": []string{"e", "f"},
 							"h2": []string{"g", "h"},
 						},
@@ -666,11 +666,11 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 								FetchRequest: &graphql.FetchRequest{
 									URL: "http://apispec.url",
 									Auth: &graphql.Auth{
-										AdditionalQueryParams: &graphql.QueryParams{
+										AdditionalQueryParams: graphql.QueryParams{
 											"q1": {"a", "b"},
 											"q2": {"c", "d"},
 										},
-										AdditionalHeaders: &graphql.HttpHeaders{
+										AdditionalHeaders: graphql.HttpHeaders{
 											"h1": {"e", "f"},
 											"h2": {"g", "h"},
 										},
@@ -762,7 +762,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 					Data: []*graphql.EventAPIDefinitionExt{{
 						Spec: &graphql.EventAPISpecExt{
 							EventSpec: graphql.EventSpec{
-								Data: ptrClob(`asyncapi: "1.2.0"`),
+								Data: ptrClob(`{"asyncapi": "1.2.0"}`),
 							},
 						}},
 					},
@@ -770,7 +770,45 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 			expected: model.ServiceDetails{
 				Events: &model.Events{
-					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
+					Spec: ptrSpecResponse(`{"asyncapi": "1.2.0"}`),
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"events with XML spec": {
+			given: graphql.BundleExt{
+				EventDefinitions: graphql.EventAPIDefinitionPageExt{
+					Data: []*graphql.EventAPIDefinitionExt{{
+						Spec: &graphql.EventAPISpecExt{
+							EventSpec: graphql.EventSpec{
+								Data: ptrClob(`<xml></xml>`),
+							},
+						}},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Events: &model.Events{
+					Spec: ptrSpecResponse(`<xml></xml>`),
+				},
+				Labels: emptyLabels(),
+			},
+		},
+		"API with XML spec": {
+			given: graphql.BundleExt{
+				APIDefinitions: graphql.APIDefinitionPageExt{
+					Data: []*graphql.APIDefinitionExt{{
+						Spec: &graphql.APISpecExt{
+							APISpec: graphql.APISpec{
+								Data: ptrClob(`<xml></xml>`),
+							},
+						}},
+					},
+				},
+			},
+			expected: model.ServiceDetails{
+				Api: &model.API{
+					Spec: ptrSpecResponse(`<xml></xml>`),
 				},
 				Labels: emptyLabels(),
 			},
@@ -782,6 +820,8 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			// THEN
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, actual)
+			_, err = json.Marshal(actual)
+			require.NoError(t, err)
 		})
 	}
 
@@ -823,7 +863,7 @@ func TestConverter_ServiceDetailsToService(t *testing.T) {
 		Name:             "name",
 		Description:      "description",
 		ShortDescription: "short description",
-		Identifier:       "identifie",
+		Identifier:       "identifier",
 		Labels:           &map[string]string{"blalb": "blalba"},
 	}
 	id := "id"
@@ -962,5 +1002,9 @@ func ptrString(in string) *string {
 }
 
 func ptrClob(in graphql.CLOB) *graphql.CLOB {
+	return &in
+}
+
+func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
 	return &in
 }

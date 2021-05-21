@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 )
 
-//go:generate mockery -name=Service
+//go:generate mockery --name=Service
 type Service interface {
 	// SignCSR takes encoded CSR, validates subject and generates Certificate based on CA stored in secret
 	// returns base64 encoded certificate chain
@@ -47,14 +47,14 @@ func NewCertificateService(
 func (svc *certificateService) SignCSR(ctx context.Context, encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError) {
 	csr, err := svc.certUtil.LoadCSR(encodedCSR)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error occurred while loading the CSR with Common Name %s", subject.CommonName)
+		log.C(ctx).WithError(err).Errorf("Error occurred while loading the CSR with Common Name %s: %v", subject.CommonName, err)
 		return EncodedCertificateChain{}, err
 	}
 	log.C(ctx).Debugf("Successfully loaded the CSR with Common Name %s", subject.CommonName)
 
 	err = svc.checkCSR(csr, subject)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error occurred while checking the values of the CSR with Common Name %s", subject.CommonName)
+		log.C(ctx).WithError(err).Errorf("Error occurred while checking the values of the CSR with Common Name %s: %v", subject.CommonName, err)
 		return EncodedCertificateChain{}, err
 	}
 	log.C(ctx).Debugf("Successfully checked the values of the CSR with Common Name %s", subject.CommonName)

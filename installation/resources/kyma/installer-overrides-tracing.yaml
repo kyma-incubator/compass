@@ -9,3 +9,5 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.tracing.enabled: "true"
+  kcproxy.resources.limits.memory: 40Mi
+  kcproxy.resources.requests.memory: 10Mi

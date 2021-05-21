@@ -373,3 +373,78 @@ func TestService_Get(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
+
+func TestService_ListByApplicationID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	vendors := []*model.Vendor{
+		fixVendorModel(),
+		fixVendorModel(),
+		fixVendorModel(),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.VendorRepository
+		ExpectedResult     []*model.Vendor
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(vendors, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     vendors,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Vendor listing failed",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := ordvendor.NewService(repo)
+
+			// when
+			docs, err := svc.ListByApplicationID(ctx, appID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := ordvendor.NewService(nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}

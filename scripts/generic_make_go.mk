@@ -91,7 +91,7 @@ endef
 verify:: test check-imports check-fmt errcheck
 format:: imports fmt
 
-release: resolve dep-status verify build-image push-image
+release: verify build-image push-image
 
 .PHONY: build-image push-image
 build-image: pull-licenses
@@ -103,7 +103,7 @@ docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
+MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
@@ -113,15 +113,6 @@ build-to-minikube: pull-licenses
 build-local:
 	env CGO_ENABLED=0 go build -o $(APP_NAME) ./$(ENTRYPOINT)
 	rm $(APP_NAME)
-
-resolve-local:
-	dep ensure -vendor-only -v
-
-ensure-local:
-	dep ensure -v
-
-dep-status-local:
-	dep status -v
 
 check-imports-local:
 	@if [ -n "$$(goimports -l $$($(FILES_TO_CHECK)))" ]; then \
@@ -156,10 +147,10 @@ gqlgen-local:
 	./gqlgen.sh
 
 check-gqlgen:
-	@echo make gqlgen-check
-	@if [ -n "$$(git status -s pkg/graphql | grep -v '_test.go')" ]; then \
+	@echo make check-gqlgen
+	@if [ -n "$$(git status -s pkg/graphql | grep -v '_test.go' | grep -v 'graphqlizer.go')" ]; then \
 		echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}"; \
-		git status -s pkg/graphql | grep -v "_test.go"; \
+		git status -s pkg/graphql | grep -v "_test.go" | grep -v 'graphqlizer.go'; \
 		exit 1; \
 	fi;
 
@@ -189,5 +180,6 @@ exec:
 
 # Sets locally built image for a given component in Minikube cluster 
 deploy-on-minikube: build-to-minikube
+	kubectl config use-context minikube
 	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=$(DEPLOYMENT_NAME):latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)

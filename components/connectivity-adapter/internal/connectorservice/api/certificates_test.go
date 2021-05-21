@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -40,7 +39,7 @@ func TestHandler_Certificates(t *testing.T) {
 		connectorClientProviderMock := &mocks.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		handler := NewCertificatesHandler(connectorClientProviderMock, logrus.New())
+		handler := NewCertificatesHandler(connectorClientProviderMock)
 		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
@@ -72,7 +71,7 @@ func TestHandler_Certificates(t *testing.T) {
 		connectorClientProviderMock := &mocks.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		handler := NewCertificatesHandler(connectorClientProviderMock, logrus.New())
+		handler := NewCertificatesHandler(connectorClientProviderMock)
 		req := newRequestWithContext(bytes.NewReader(signatureRequestRaw), headersFromToken)
 
 		r := httptest.NewRecorder()
@@ -93,7 +92,7 @@ func TestHandler_Certificates(t *testing.T) {
 
 		r := httptest.NewRecorder()
 		req := newRequestWithContext(strings.NewReader(""), nil)
-		handler := NewCertificatesHandler(connectorClientProviderMock, logrus.New())
+		handler := NewCertificatesHandler(connectorClientProviderMock)
 
 		// when
 		handler.SignCSR(r, req)

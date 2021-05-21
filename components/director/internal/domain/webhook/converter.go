@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
 	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
@@ -44,22 +44,23 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	}
 
 	return &graphql.Webhook{
-		ID:                  in.ID,
-		ApplicationID:       in.ApplicationID,
-		RuntimeID:           in.RuntimeID,
-		IntegrationSystemID: in.IntegrationSystemID,
-		Type:                graphql.WebhookType(in.Type),
-		Mode:                webhookMode,
-		URL:                 in.URL,
-		Auth:                auth,
-		CorrelationIDKey:    in.CorrelationIDKey,
-		RetryInterval:       in.RetryInterval,
-		Timeout:             in.Timeout,
-		URLTemplate:         in.URLTemplate,
-		InputTemplate:       in.InputTemplate,
-		HeaderTemplate:      in.HeaderTemplate,
-		OutputTemplate:      in.OutputTemplate,
-		StatusTemplate:      in.StatusTemplate,
+		ID:                    in.ID,
+		ApplicationID:         in.ApplicationID,
+		ApplicationTemplateID: in.ApplicationTemplateID,
+		RuntimeID:             in.RuntimeID,
+		IntegrationSystemID:   in.IntegrationSystemID,
+		Type:                  graphql.WebhookType(in.Type),
+		Mode:                  webhookMode,
+		URL:                   in.URL,
+		Auth:                  auth,
+		CorrelationIDKey:      in.CorrelationIDKey,
+		RetryInterval:         in.RetryInterval,
+		Timeout:               in.Timeout,
+		URLTemplate:           in.URLTemplate,
+		InputTemplate:         in.InputTemplate,
+		HeaderTemplate:        in.HeaderTemplate,
+		OutputTemplate:        in.OutputTemplate,
+		StatusTemplate:        in.StatusTemplate,
 	}, nil
 }
 
@@ -143,23 +144,24 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 	}
 
 	return Entity{
-		ID:                  in.ID,
-		TenantID:            in.TenantID,
-		ApplicationID:       repo.NewNullableString(in.ApplicationID),
-		RuntimeID:           repo.NewNullableString(in.RuntimeID),
-		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
-		CollectionIDKey:     repo.NewNullableString(in.CorrelationIDKey),
-		Type:                string(in.Type),
-		URL:                 repo.NewNullableString(in.URL),
-		Auth:                optionalAuth,
-		Mode:                webhookMode,
-		RetryInterval:       repo.NewNullableInt(in.RetryInterval),
-		Timeout:             repo.NewNullableInt(in.Timeout),
-		URLTemplate:         repo.NewNullableString(in.URLTemplate),
-		InputTemplate:       repo.NewNullableString(in.InputTemplate),
-		HeaderTemplate:      repo.NewNullableString(in.HeaderTemplate),
-		OutputTemplate:      repo.NewNullableString(in.OutputTemplate),
-		StatusTemplate:      repo.NewNullableString(in.StatusTemplate),
+		ID:                    in.ID,
+		TenantID:              repo.NewNullableString(in.TenantID),
+		ApplicationID:         repo.NewNullableString(in.ApplicationID),
+		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
+		RuntimeID:             repo.NewNullableString(in.RuntimeID),
+		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
+		CollectionIDKey:       repo.NewNullableString(in.CorrelationIDKey),
+		Type:                  string(in.Type),
+		URL:                   repo.NewNullableString(in.URL),
+		Auth:                  optionalAuth,
+		Mode:                  webhookMode,
+		RetryInterval:         repo.NewNullableInt(in.RetryInterval),
+		Timeout:               repo.NewNullableInt(in.Timeout),
+		URLTemplate:           repo.NewNullableString(in.URLTemplate),
+		InputTemplate:         repo.NewNullableString(in.InputTemplate),
+		HeaderTemplate:        repo.NewNullableString(in.HeaderTemplate),
+		OutputTemplate:        repo.NewNullableString(in.OutputTemplate),
+		StatusTemplate:        repo.NewNullableString(in.StatusTemplate),
 	}, nil
 }
 
@@ -193,23 +195,24 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 	}
 
 	return model.Webhook{
-		ID:                  in.ID,
-		TenantID:            in.TenantID,
-		ApplicationID:       repo.StringPtrFromNullableString(in.ApplicationID),
-		RuntimeID:           repo.StringPtrFromNullableString(in.RuntimeID),
-		IntegrationSystemID: repo.StringPtrFromNullableString(in.IntegrationSystemID),
-		CorrelationIDKey:    repo.StringPtrFromNullableString(in.CollectionIDKey),
-		Type:                model.WebhookType(in.Type),
-		URL:                 repo.StringPtrFromNullableString(in.URL),
-		Auth:                auth,
-		Mode:                webhookMode,
-		RetryInterval:       repo.IntPtrFromNullableInt(in.RetryInterval),
-		Timeout:             repo.IntPtrFromNullableInt(in.Timeout),
-		URLTemplate:         repo.StringPtrFromNullableString(in.URLTemplate),
-		InputTemplate:       repo.StringPtrFromNullableString(in.InputTemplate),
-		HeaderTemplate:      repo.StringPtrFromNullableString(in.HeaderTemplate),
-		OutputTemplate:      repo.StringPtrFromNullableString(in.OutputTemplate),
-		StatusTemplate:      repo.StringPtrFromNullableString(in.StatusTemplate),
+		ID:                    in.ID,
+		TenantID:              repo.StringPtrFromNullableString(in.TenantID),
+		ApplicationID:         repo.StringPtrFromNullableString(in.ApplicationID),
+		ApplicationTemplateID: repo.StringPtrFromNullableString(in.ApplicationTemplateID),
+		RuntimeID:             repo.StringPtrFromNullableString(in.RuntimeID),
+		IntegrationSystemID:   repo.StringPtrFromNullableString(in.IntegrationSystemID),
+		CorrelationIDKey:      repo.StringPtrFromNullableString(in.CollectionIDKey),
+		Type:                  model.WebhookType(in.Type),
+		URL:                   repo.StringPtrFromNullableString(in.URL),
+		Auth:                  auth,
+		Mode:                  webhookMode,
+		RetryInterval:         repo.IntPtrFromNullableInt(in.RetryInterval),
+		Timeout:               repo.IntPtrFromNullableInt(in.Timeout),
+		URLTemplate:           repo.StringPtrFromNullableString(in.URLTemplate),
+		InputTemplate:         repo.StringPtrFromNullableString(in.InputTemplate),
+		HeaderTemplate:        repo.StringPtrFromNullableString(in.HeaderTemplate),
+		OutputTemplate:        repo.StringPtrFromNullableString(in.OutputTemplate),
+		StatusTemplate:        repo.StringPtrFromNullableString(in.StatusTemplate),
 	}, nil
 }
 

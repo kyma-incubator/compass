@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TokenService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
-	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (model.OneTimeToken, error)
+	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
 }
 
-//go:generate mockery -name=TokenConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
 type TokenConverter interface {
 	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
@@ -51,7 +51,7 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
 
-	gqlToken := r.conv.ToGraphQLForRuntime(token)
+	gqlToken := r.conv.ToGraphQLForRuntime(*token)
 	return &gqlToken, nil
 }
 
@@ -72,7 +72,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	if err != nil {
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
-	gqlToken, err := r.conv.ToGraphQLForApplication(token)
+	gqlToken, err := r.conv.ToGraphQLForApplication(*token)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting one-time token to graphql")
 	}

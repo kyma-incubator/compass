@@ -24,6 +24,10 @@ type Pageable interface {
 	IsPageable()
 }
 
+type SystemAuth interface {
+	IsSystemAuth()
+}
+
 type APIDefinitionInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
@@ -55,6 +59,13 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
+type AppSystemAuth struct {
+	ID   string `json:"id"`
+	Auth *Auth  `json:"auth"`
+}
+
+func (AppSystemAuth) IsSystemAuth() {}
+
 type ApplicationEventingConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
@@ -82,7 +93,7 @@ type ApplicationRegisterInput struct {
 	// **Validation:** max=2000
 	Description *string `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels   *Labels         `json:"labels"`
+	Labels   Labels          `json:"labels"`
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
@@ -96,20 +107,12 @@ type ApplicationStatus struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
-type ApplicationTemplate struct {
-	ID               string                         `json:"id"`
-	Name             string                         `json:"name"`
-	Description      *string                        `json:"description"`
-	ApplicationInput string                         `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinition       `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
-}
-
 // **Validation:** provided placeholders' names are unique and used in applicationInput
 type ApplicationTemplateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
+	Webhooks         []*WebhookInput                `json:"webhooks"`
 	Description      *string                        `json:"description"`
 	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
 	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
@@ -124,6 +127,16 @@ type ApplicationTemplatePage struct {
 
 func (ApplicationTemplatePage) IsPageable() {}
 
+type ApplicationTemplateUpdateInput struct {
+	// **Validation:** ASCII printable characters, max=100
+	Name string `json:"name"`
+	// **Validation:** max=2000
+	Description      *string                        `json:"description"`
+	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
+	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
+	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+}
+
 type ApplicationUpdateInput struct {
 	// **Validation:** max=256
 	ProviderName *string `json:"providerName"`
@@ -137,9 +150,9 @@ type ApplicationUpdateInput struct {
 
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
-	AdditionalHeaders               *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders               HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 	RequestAuth                     *CredentialRequestAuth `json:"requestAuth"`
 }
@@ -147,10 +160,10 @@ type Auth struct {
 type AuthInput struct {
 	Credential *CredentialDataInput `json:"credential"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders           *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders           HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams           *QueryParams                `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams                 `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized"`
 	RequestAuth                     *CredentialRequestAuthInput `json:"requestAuth"`
 }
@@ -275,9 +288,9 @@ type BundleUpdateInput struct {
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL                string                 `json:"tokenEndpointURL"`
 	Credential                      CredentialData         `json:"credential"`
-	AdditionalHeaders               *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders               HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
@@ -286,10 +299,10 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	TokenEndpointURL string               `json:"tokenEndpointURL"`
 	Credential       *CredentialDataInput `json:"credential"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders           *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeaders           HttpHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
@@ -402,6 +415,13 @@ type HealthCheckPage struct {
 
 func (HealthCheckPage) IsPageable() {}
 
+type IntSysSystemAuth struct {
+	ID   string `json:"id"`
+	Auth *Auth  `json:"auth"`
+}
+
+func (IntSysSystemAuth) IsSystemAuth() {}
+
 type IntegrationSystemInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
@@ -491,7 +511,7 @@ type RuntimeContextInput struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels *Labels `json:"labels"`
+	Labels Labels `json:"labels"`
 }
 
 type RuntimeContextPage struct {
@@ -512,7 +532,7 @@ type RuntimeInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          *Labels                 `json:"labels"`
+	Labels          Labels                  `json:"labels"`
 	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
 }
 
@@ -533,10 +553,12 @@ type RuntimeStatus struct {
 	Timestamp Timestamp              `json:"timestamp"`
 }
 
-type SystemAuth struct {
+type RuntimeSystemAuth struct {
 	ID   string `json:"id"`
 	Auth *Auth  `json:"auth"`
 }
+
+func (RuntimeSystemAuth) IsSystemAuth() {}
 
 type TemplateValueInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -576,22 +598,23 @@ type Viewer struct {
 }
 
 type Webhook struct {
-	ID                  string       `json:"id"`
-	ApplicationID       *string      `json:"applicationID"`
-	RuntimeID           *string      `json:"runtimeID"`
-	IntegrationSystemID *string      `json:"integrationSystemID"`
-	Type                WebhookType  `json:"type"`
-	Mode                *WebhookMode `json:"mode"`
-	CorrelationIDKey    *string      `json:"correlationIdKey"`
-	RetryInterval       *int         `json:"retryInterval"`
-	Timeout             *int         `json:"timeout"`
-	URL                 *string      `json:"url"`
-	Auth                *Auth        `json:"auth"`
-	URLTemplate         *string      `json:"urlTemplate"`
-	InputTemplate       *string      `json:"inputTemplate"`
-	HeaderTemplate      *string      `json:"headerTemplate"`
-	OutputTemplate      *string      `json:"outputTemplate"`
-	StatusTemplate      *string      `json:"statusTemplate"`
+	ID                    string       `json:"id"`
+	ApplicationID         *string      `json:"applicationID"`
+	ApplicationTemplateID *string      `json:"applicationTemplateID"`
+	RuntimeID             *string      `json:"runtimeID"`
+	IntegrationSystemID   *string      `json:"integrationSystemID"`
+	Type                  WebhookType  `json:"type"`
+	Mode                  *WebhookMode `json:"mode"`
+	CorrelationIDKey      *string      `json:"correlationIdKey"`
+	RetryInterval         *int         `json:"retryInterval"`
+	Timeout               *int         `json:"timeout"`
+	URL                   *string      `json:"url"`
+	Auth                  *Auth        `json:"auth"`
+	URLTemplate           *string      `json:"urlTemplate"`
+	InputTemplate         *string      `json:"inputTemplate"`
+	HeaderTemplate        *string      `json:"headerTemplate"`
+	OutputTemplate        *string      `json:"outputTemplate"`
+	StatusTemplate        *string      `json:"statusTemplate"`
 }
 
 type WebhookInput struct {
@@ -654,20 +677,38 @@ func (e APISpecType) MarshalGQL(w io.Writer) {
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial   ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
-	ApplicationStatusConditionFailed    ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionInitial         ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionConnected       ApplicationStatusCondition = "CONNECTED"
+	ApplicationStatusConditionFailed          ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionCreating        ApplicationStatusCondition = "CREATING"
+	ApplicationStatusConditionCreateFailed    ApplicationStatusCondition = "CREATE_FAILED"
+	ApplicationStatusConditionCreateSucceeded ApplicationStatusCondition = "CREATE_SUCCEEDED"
+	ApplicationStatusConditionUpdating        ApplicationStatusCondition = "UPDATING"
+	ApplicationStatusConditionUpdateFailed    ApplicationStatusCondition = "UPDATE_FAILED"
+	ApplicationStatusConditionUpdateSucceeded ApplicationStatusCondition = "UPDATE_SUCCEEDED"
+	ApplicationStatusConditionDeleting        ApplicationStatusCondition = "DELETING"
+	ApplicationStatusConditionDeleteFailed    ApplicationStatusCondition = "DELETE_FAILED"
+	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
 )
 
 var AllApplicationStatusCondition = []ApplicationStatusCondition{
 	ApplicationStatusConditionInitial,
 	ApplicationStatusConditionConnected,
 	ApplicationStatusConditionFailed,
+	ApplicationStatusConditionCreating,
+	ApplicationStatusConditionCreateFailed,
+	ApplicationStatusConditionCreateSucceeded,
+	ApplicationStatusConditionUpdating,
+	ApplicationStatusConditionUpdateFailed,
+	ApplicationStatusConditionUpdateSucceeded,
+	ApplicationStatusConditionDeleting,
+	ApplicationStatusConditionDeleteFailed,
+	ApplicationStatusConditionDeleteSucceeded,
 }
 
 func (e ApplicationStatusCondition) IsValid() bool {
 	switch e {
-	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed:
+	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed, ApplicationStatusConditionCreating, ApplicationStatusConditionCreateFailed, ApplicationStatusConditionCreateSucceeded, ApplicationStatusConditionUpdating, ApplicationStatusConditionUpdateFailed, ApplicationStatusConditionUpdateSucceeded, ApplicationStatusConditionDeleting, ApplicationStatusConditionDeleteFailed, ApplicationStatusConditionDeleteSucceeded:
 		return true
 	}
 	return false
@@ -1329,17 +1370,19 @@ const (
 	WebhookTypeConfigurationChanged  WebhookType = "CONFIGURATION_CHANGED"
 	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication WebhookType = "UNREGISTER_APPLICATION"
+	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
 )
 
 var AllWebhookType = []WebhookType{
 	WebhookTypeConfigurationChanged,
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
+	WebhookTypeOpenResourceDiscovery,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication:
+	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
 		return true
 	}
 	return false

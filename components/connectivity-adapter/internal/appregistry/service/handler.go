@@ -10,13 +10,13 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 type DirectorClient interface {
 	CreateBundle(ctx context.Context, appID string, in graphql.BundleCreateInput) (string, error)
 	GetBundle(ctx context.Context, appID string, bundleID string) (graphql.BundleExt, error)
@@ -34,7 +34,7 @@ type DirectorClient interface {
 	SetApplicationLabel(ctx context.Context, appID string, label graphql.LabelInput) error
 }
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.BundleCreateInput, error)
 	GraphQLCreateInputToUpdateInput(in graphql.BundleCreateInput) graphql.BundleUpdateInput
@@ -42,17 +42,17 @@ type Converter interface {
 	ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error)
 }
 
-//go:generate mockery -name=RequestContextProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RequestContextProvider --output=automock --outpkg=automock --case=underscore
 type RequestContextProvider interface {
 	ForRequest(r *http.Request) (RequestContext, error)
 }
 
-//go:generate mockery -name=Validator -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Validator --output=automock --outpkg=automock --case=underscore
 type Validator interface {
 	Validate(details model.ServiceDetails) apperrors.AppError
 }
 
-//go:generate mockery -name=AppLabeler -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AppLabeler --output=automock --outpkg=automock --case=underscore
 type AppLabeler interface {
 	WriteServiceReference(appLabels graphql.Labels, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
 	DeleteServiceReference(appLabels graphql.Labels, serviceID string) (graphql.LabelInput, error)
@@ -63,19 +63,17 @@ type AppLabeler interface {
 const serviceIDVarKey = "serviceId"
 
 type Handler struct {
-	logger             *log.Logger
 	validator          Validator
 	converter          Converter
 	reqContextProvider RequestContextProvider
 	appLabeler         AppLabeler
 }
 
-func NewHandler(converter Converter, validator Validator, reqContextProvider RequestContextProvider, logger *log.Logger, appLabeler AppLabeler) *Handler {
+func NewHandler(converter Converter, validator Validator, reqContextProvider RequestContextProvider, appLabeler AppLabeler) *Handler {
 	return &Handler{
 		converter:          converter,
 		validator:          validator,
 		reqContextProvider: reqContextProvider,
-		logger:             logger,
 		appLabeler:         appLabeler,
 	}
 }
@@ -83,9 +81,10 @@ func NewHandler(converter Converter, validator Validator, reqContextProvider Req
 func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
+	logger := log.C(request.Context())
 	serviceDetails, err := h.decodeAndValidateInput(request)
 	if err != nil {
-		h.logger.Error(err)
+		logger.Error(err)
 		res.WriteAppError(writer, err)
 		return
 	}
@@ -93,7 +92,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	converted, err := h.converter.DetailsToGraphQLCreateInput(serviceDetails)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -105,18 +104,18 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	if err := h.ensureUniqueIdentifier(serviceDetails.Identifier, reqContext); err != nil {
-		h.logger.Error(errors.Wrap(err, "while ensuring legacy service identifier is unique"))
+		logger.Error(errors.Wrap(err, "while ensuring legacy service identifier is unique"))
 		res.WriteAppError(writer, err)
 		return
 	}
 
-	h.logger.Infoln("doing GraphQL request...")
+	logger.Infoln("doing GraphQL request...")
 
 	appID := reqContext.AppID
 	serviceID, err := reqContext.DirectorClient.CreateBundle(request.Context(), appID, converted)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating Service")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -129,7 +128,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	err = h.setAppLabelWithServiceRef(request.Context(), legacyServiceRef, reqContext)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while setting Application label with legacy service metadata")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -138,10 +137,10 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		ID: serviceID,
 	}
 
-	err = res.WriteJSONResponse(writer, &successResponse)
+	err = res.WriteJSONResponse(writer, request.Context(), &successResponse)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -168,6 +167,7 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
+	logger := log.C(request.Context())
 	reqContext, err := h.reqContextProvider.ForRequest(request)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while requesting Request Context")
@@ -179,7 +179,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	bundles, err := reqContext.DirectorClient.ListBundles(request.Context(), appID)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while fetching Services")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -193,7 +193,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, bndl.ID)
 		if err != nil {
 			wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Bundle with ID '%s'", bndl.ID)
-			h.logger.Error(wrappedErr)
+			logger.Error(wrappedErr)
 			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
@@ -201,7 +201,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		detailedService, err := h.converter.GraphQLToServiceDetails(*bndl, legacyServiceReference)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting graphql to detailed service")
-			h.logger.Error(wrappedErr)
+			logger.Error(wrappedErr)
 			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
@@ -209,17 +209,17 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 		service, err := h.converter.ServiceDetailsToService(detailedService, bndl.ID)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting detailed service to service")
-			h.logger.Error(wrappedErr)
+			logger.Error(wrappedErr)
 			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
 
 		services = append(services, service)
 	}
-	err = res.WriteJSONResponse(writer, &services)
+	err = res.WriteJSONResponse(writer, request.Context(), &services)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -228,11 +228,12 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
+	logger := log.C(request.Context())
 	id := h.getServiceID(request)
 
 	serviceDetails, err := h.decodeAndValidateInput(request)
 	if err != nil {
-		h.logger.Error(err)
+		logger.Error(err)
 		res.WriteAppError(writer, err)
 		return
 	}
@@ -240,14 +241,14 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	createInput, err := h.converter.DetailsToGraphQLCreateInput(serviceDetails)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
 	reqContext, err := h.loadRequestContext(request)
 	if err != nil {
-		h.logger.Error(err)
+		logger.Error(err)
 		h.writeErrorInternal(writer, err)
 		return
 	}
@@ -260,17 +261,17 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 		wrappedErr := errors.Wrap(err, "while fetching service")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
-	bndlID := previousBundle.ID
+	bndlID := previousBundle.BaseEntity.ID
 
 	err = dirCli.UpdateBundle(request.Context(), id, h.converter.GraphQLCreateInputToUpdateInput(createInput))
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while updating Service")
-		h.logger.WithField("ID", id).Error(wrappedErr)
+		logger.WithField("ID", id).Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -278,7 +279,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	err = h.deleteRelatedObjectsForBundle(request.Context(), dirCli, previousBundle)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while deleting related objects for Service")
-		h.logger.WithField("ID", id).Error(wrappedErr)
+		logger.WithField("ID", id).Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -286,7 +287,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	err = h.createRelatedObjectsForBundle(request.Context(), dirCli, bndlID, createInput)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating related objects for Service")
-		h.logger.WithField("ID", id).Error(wrappedErr)
+		logger.WithField("ID", id).Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -300,6 +301,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 	defer h.closeBody(request)
 
+	logger := log.C(request.Context())
 	id := h.getServiceID(request)
 
 	reqContext, err := h.loadRequestContext(request)
@@ -315,7 +317,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 
-		h.logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
+		logger.WithField("ID", id).Error(errors.Wrap(err, "while deleting service"))
 		res.WriteError(writer, err, apperrors.CodeInternal)
 		return
 	}
@@ -323,7 +325,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 	label, err := h.appLabeler.DeleteServiceReference(reqContext.AppLabels, id)
 	if err != nil {
 		wrappedError := errors.Wrap(err, "while writing Application label")
-		h.logger.Error(wrappedError)
+		logger.Error(wrappedError)
 		res.WriteError(writer, wrappedError, apperrors.CodeInternal)
 		return
 	}
@@ -331,7 +333,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 	err = reqContext.DirectorClient.SetApplicationLabel(request.Context(), reqContext.AppID, label)
 	if err != nil {
 		wrappedError := errors.Wrap(err, "while setting Application label")
-		h.logger.Error(wrappedError)
+		logger.Error(wrappedError)
 		res.WriteError(writer, wrappedError, apperrors.CodeInternal)
 		return
 	}
@@ -342,23 +344,24 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) closeBody(rq *http.Request) {
 	err := rq.Body.Close()
 	if err != nil {
-		h.logger.Error(errors.Wrap(err, "while closing body"))
+		log.C(rq.Context()).Error(errors.Wrap(err, "while closing body"))
 	}
 }
 
 func (h *Handler) decodeAndValidateInput(request *http.Request) (model.ServiceDetails, error) {
 	var details model.ServiceDetails
+	logger := log.C(request.Context())
 
 	err := json.NewDecoder(request.Body).Decode(&details)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while unmarshalling service")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 
 		appErr := apperrors.WrongInput(wrappedErr.Error())
 		return model.ServiceDetails{}, appErr
 	}
 
-	h.logger.Infoln("body decoded. validating...")
+	logger.Infoln("body decoded. validating...")
 
 	appErr := h.validator.Validate(details)
 	if appErr != nil {
@@ -373,7 +376,7 @@ func (h *Handler) loadRequestContext(request *http.Request) (RequestContext, err
 	reqContext, err := h.reqContextProvider.ForRequest(request)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while requesting Request Context")
-		h.logger.Error(wrappedErr)
+		log.C(request.Context()).Error(wrappedErr)
 		return RequestContext{}, wrappedErr
 	}
 
@@ -470,6 +473,7 @@ func (h *Handler) deleteRelatedObjectsForBundle(ctx context.Context, dirCli Dire
 }
 
 func (h *Handler) getAndWriteServiceByID(ctx context.Context, writer http.ResponseWriter, serviceID string, reqContext RequestContext) {
+	logger := log.C(ctx)
 	output, err := reqContext.DirectorClient.GetBundle(ctx, reqContext.AppID, serviceID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -477,7 +481,7 @@ func (h *Handler) getAndWriteServiceByID(ctx context.Context, writer http.Respon
 			return
 		}
 		wrappedErr := errors.Wrap(err, "while fetching service")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -485,7 +489,7 @@ func (h *Handler) getAndWriteServiceByID(ctx context.Context, writer http.Respon
 	legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, serviceID)
 	if err != nil {
 		wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Bundle with ID '%s'", serviceID)
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
@@ -493,15 +497,15 @@ func (h *Handler) getAndWriteServiceByID(ctx context.Context, writer http.Respon
 	service, err := h.converter.GraphQLToServiceDetails(output, legacyServiceReference)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
-	err = res.WriteJSONResponse(writer, &service)
+	err = res.WriteJSONResponse(writer, ctx, &service)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while encoding response")
-		h.logger.Error(wrappedErr)
+		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}

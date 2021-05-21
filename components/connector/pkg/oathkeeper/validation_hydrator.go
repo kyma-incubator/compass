@@ -5,75 +5,26 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
 type ValidationHydrator interface {
-	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 	ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request)
 }
 
 type validationHydrator struct {
-	tokenService           tokens.Service
 	certHeaderParser       CertificateHeaderParser
 	revokedCertsRepository revocation.RevokedCertificatesRepository
 }
 
-func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository) ValidationHydrator {
+func NewValidationHydrator(certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository) ValidationHydrator {
 	return &validationHydrator{
-		tokenService:           tokenService,
 		certHeaderParser:       certHeaderParser,
 		revokedCertsRepository: revokedCertsRepository,
 	}
-}
-
-func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var authSession AuthenticationSession
-	err := json.NewDecoder(r.Body).Decode(&authSession)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to decode request body")
-		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
-		return
-	}
-	defer httputils.Close(ctx, r.Body)
-
-	connectorToken := r.Header.Get(ConnectorTokenHeader)
-	if connectorToken == "" {
-		connectorToken = r.URL.Query().Get(ConnectorTokenQueryParam)
-	}
-
-	if connectorToken == "" {
-		log.C(ctx).Info("Token not provided")
-		respondWithAuthSession(ctx, w, authSession)
-		return
-	}
-
-	log.C(ctx).Info("Trying to resolve token...")
-
-	tokenData, err := tvh.tokenService.Resolve(connectorToken)
-	if err != nil {
-		log.C(ctx).Infof("Invalid token provided: %s", err.Error())
-		respondWithAuthSession(ctx, w, authSession)
-		return
-	}
-
-	if authSession.Header == nil {
-		authSession.Header = map[string][]string{}
-	}
-
-	authSession.Header.Add(ClientIdFromTokenHeader, tokenData.ClientId)
-
-	tvh.tokenService.Delete(connectorToken)
-
-	log.C(ctx).Infof("Token for %s resolved successfully", tokenData.ClientId)
-	respondWithAuthSession(ctx, w, authSession)
 }
 
 func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +33,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 	var authSession AuthenticationSession
 	err := json.NewDecoder(r.Body).Decode(&authSession)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to decode request body")
+		log.C(ctx).WithError(err).Errorf("Failed to decode request body: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
 	}

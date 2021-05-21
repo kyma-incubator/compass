@@ -34,7 +34,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 	return nil, apperrors.NewInternalError("unable to fetch database from context")
 }
 
-//go:generate mockery -name=Transactioner -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Transactioner --output=automock --outpkg=automock --case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
 	RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx)
@@ -101,14 +101,14 @@ func (db *Transaction) Commit() error {
 	return nil
 }
 
-//go:generate mockery -name=PersistenceTx -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=PersistenceTx --output=automock --outpkg=automock --case=underscore
 type PersistenceTx interface {
 	Commit() error
 	Rollback() error
 	PersistenceOp
 }
 
-//go:generate mockery -name=PersistenceOp -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=PersistenceOp --output=automock --outpkg=automock --case=underscore
 type PersistenceOp interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 	Select(dest interface{}, query string, args ...interface{}) error

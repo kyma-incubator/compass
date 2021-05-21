@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 )
 
-//go:generate mockery -name=CertificateHeaderParser
+//go:generate mockery --name=CertificateHeaderParser
 type CertificateHeaderParser interface {
 	GetCertificateData(r *http.Request) (string, string, bool)
 }

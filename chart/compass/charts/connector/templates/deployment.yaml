@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
+  replicas: {{ .Values.deployment.minReplicas }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
@@ -38,9 +39,6 @@ spec:
             - name: http-gql-ext
               containerPort: {{ .Values.global.connector.graphql.external.port }}
               protocol: TCP
-            - name: http-gql-int
-              containerPort: {{ .Values.global.connector.graphql.internal.port }}
-              protocol: TCP
             - name: http-validator
               containerPort: {{ .Values.global.connector.validator.port }}
               protocol: TCP
@@ -49,18 +47,10 @@ spec:
           env:
             - name: APP_EXTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.connector.graphql.external.port }}"
-            - name: APP_INTERNAL_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.connector.graphql.internal.port }}"
             - name: APP_HYDRATOR_ADDRESS
               value: "0.0.0.0:{{ .Values.global.connector.validator.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.connector.prefix }}/graphql"
-            - name: APP_TOKEN_LENGTH
-              value: {{ .Values.deployment.args.token.length | quote }}
-            - name: APP_TOKEN_RUNTIME_EXPIRATION
-              value: {{ .Values.deployment.args.token.runtimeExpiration | quote }}
-            - name: APP_TOKEN_APPLICATION_EXPIRATION
-              value: {{ .Values.deployment.args.token.applicationExpiration | quote }}
             - name: APP_CERTIFICATE_VALIDITY_TIME
               value: {{ .Values.deployment.args.certificateValidityTime | quote }}
             - name: APP_CA_SECRET_NAME
@@ -97,6 +87,8 @@ spec:
               value: {{ .Values.deployment.kubernetesClient.pollInterval | quote }}
             - name: APP_KUBERNETES_CLIENT_POLL_TIMEOUT
               value: {{ .Values.deployment.kubernetesClient.pollTimeout | quote }}
+            - name: APP_ONE_TIME_TOKEN_URL
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.internal.port }}/graphql"
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

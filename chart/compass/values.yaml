@@ -8,39 +8,70 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
+    - name: TestTenantSeparation
+      id: f1c4b5be-b0e1-41f9-b0bc-b378200dcca0
+    - name: TestDeleteLastScenarioForApplication
+      id: f739b36c-813f-4fc3-996e-dd03c7d13aa0
+    - name: Test_DeleteAutomaticScenarioAssignmentForSelector
+      id: d9553135-6115-4c67-b4d9-962c00f3725f
+    - name: Test_AutomaticScenarioAssigmentForRuntime
+      id: 8c733a45-d988-4472-af10-1256b82c70c0
+    - name: TestAutomaticScenarioAssignmentsWholeScenario
+      id: 65a63692-c00a-4a7d-8376-8615ee37f45c
+    - name: TestTenantsQueryTenantNotInitialized
+      id: 72329135-27fd-4284-9bcb-37ea8d6307d0
+    - name: Test Default
+      id: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestListLabelDefinitions
+      id: 2bf03de1-23b1-4063-9d3e-67096800accc
+    - name: Test_AutomaticScenarioAssignmentQueries
+      id: 8263cc13-5698-4a2d-9257-e8e76b543e88
+    - name: TestGetScenariosLabelDefinitionCreatesOneIfNotExists
+      id: 2263cc13-5698-4a2d-9257-e8e76b543e33
+    - name: TestApplicationsForRuntime
+      id: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: Test_DeleteAutomaticScenarioAssignmentForScenario
+      id: d08e4cb6-a77f-4a07-b021-e3317a373597
+    - name: TestApplicationsForRuntimeWithHiddenApps
+      id: 7e1f2df8-36dc-4e40-8be3-d1555d50c91c
+    - name: TestTenantsQueryTenantInitialized
+      id: 8cf0c909-f816-4fe3-a507-a7917ccd8380
+    - name: TestDeleteApplicationIfInScenario
+      id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
+
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1720"
+      version: "PR-1768"
     connectivity_adapter:
       dir:
-      version: "PR-1732"
+      version: "PR-1808"
     pairing_adapter:
       dir:
-      version: "PR-1720"
+      version: "PR-1808"
     director:
       dir:
-      version: "PR-1733"
+      version: "PR-1835"
     gateway:
       dir:
-      version: "PR-1756"
+      version: "PR-1783"
     operations_controller:
       dir:
-      version: "PR-1747"
+      version: "PR-1826"
     tenant_fetcher:
       dir:
-      version: "PR-1754"
+      version: "PR-1820"
     ord_service:
       dir:
-      version: "PR-14"
+      version: "PR-20"
     schema_migrator:
       dir:
-      version: "PR-1736"
+      version: "PR-1780"
     system_broker:
       dir:
-      version: "PR-1733"
+      version: "PR-1783"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -48,32 +79,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1726"
+      version: "PR-1826"
     console:
       dir:
-      version: "PR-19"
-    tests:
-      director:
-        dir:
-        version: "PR-1738"
-      connector:
-        dir:
-        version: "PR-1715"
-      connectivity_adapter:
-        dir:
-        version: "PR-1693"
-      operations_controller:
-        dir:
-        version: "PR-1717"
-      tenant_fetcher:
-        dir:
-        version: "PR-1754"
-      system_broker:
-        dir:
-        version: "PR-1738"
-      ord_service:
-        dir:
-        version: "PR-1719"
+      version: "PR-28"
+    e2e_tests:
+      dir:
+      version: "PR-1826"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -90,9 +102,19 @@ global:
 
   director:
     prefix: /director
-    port: 3000
+    graphql:
+      external:
+        port: 3000
+      internal:
+        port: 3001
+    validator:
+      port: 8080
+    metrics:
+      port: 3003
     operations:
       port: 3002
+      path: "/operation"
+      lastOperationPath: "/last_operation"
 
     clientIDHeaderKey: client_user
 
@@ -121,8 +143,6 @@ global:
     graphql:
       external:
         port: 3000
-      internal:
-        port: 3001
     validator:
       port: 8080
     # If secrets do not exist they will be created
@@ -208,6 +228,7 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
+      requestPayloadSizeLimit: 2097152 # 2 MB
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
@@ -280,7 +301,7 @@ global:
       tokenResolverService:
         config:
           api:
-            url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
+            url: http://compass-director.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
               give_up_after: 3s
               max_delay: 2000ms
@@ -291,7 +312,7 @@ global:
     port: 3000
     authentication:
       allowJWTSigningNone: true
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
       identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"
@@ -304,6 +325,14 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
+
+  ordAggregator:
+    name: ord-aggregator
+    enabled: true
+    schedule: "*/5 * * * *"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
 
   tenantFetchers:
     job1:
@@ -360,5 +389,24 @@ global:
     enabled: false
     auditlog: false
 
+  tests:
+    namespace: kyma-system
+    connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
+    directorFQDN: http://compass-director.compass-system.svc.cluster.local
+    connectorFQDN: http://compass-connector.compass-system.svc.cluster.local
+    externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
+    ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
+    systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
+    tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    db:
+      maxOpenConnections: 3
+      maxIdleConnections: 1
+    skipTLSVerify: true
 pairing-adapter:
   enabled: false
+
+test:
+  token:
+    server:
+      enabled: false
+      port: 5000

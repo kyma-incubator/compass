@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
@@ -37,7 +37,7 @@ type ApplicationService interface {
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 }
 
-//go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
@@ -46,27 +46,27 @@ type ApplicationConverter interface {
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
-//go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
-//go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.Webhook, error)
-	List(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	Create(ctx context.Context, applicationID string, in model.WebhookInput) (string, error)
+	ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+	Create(ctx context.Context, resourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error)
 	Update(ctx context.Context, id string, in model.WebhookInput) error
 	Delete(ctx context.Context, id string) error
 }
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
-//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -74,30 +74,30 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
-//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
-//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 }
 
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
-//go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 	MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error)
@@ -416,8 +416,11 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhooks, err := r.webhookSvc.List(ctx, obj.ID)
+	webhooks, err := r.webhookSvc.ListAllApplicationWebhooks(ctx, obj.ID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
 		return nil, err
 	}
 
@@ -428,7 +431,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	return r.webhookConverter.MultipleToGraphQL(webhooks)
 }
 
-func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
@@ -446,7 +449,6 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 		if strings.Contains(err.Error(), "doesn't exist") {
 			return nil, tx.Commit()
 		}
-
 		return nil, err
 	}
 
@@ -462,11 +464,10 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	}
 
 	var gqlLabels graphql.Labels = resultLabels
-
-	return &gqlLabels, nil
+	return gqlLabels, nil
 }
 
-func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
+func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.AppSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
@@ -488,14 +489,14 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		return nil, err
 	}
 
-	var out []*graphql.SystemAuth
+	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
 		if err != nil {
 			return nil, err
 		}
 
-		out = append(out, c)
+		out = append(out, c.(*graphql.AppSystemAuth))
 	}
 
 	return out, nil

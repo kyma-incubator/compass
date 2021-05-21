@@ -1,6 +1,6 @@
 package healthcheck
 
-//go:generate mockery -name=HealthCheckRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=HealthCheckRepository --output=automock --outpkg=automock --case=underscore
 type HealthCheckRepository interface {
 }
 

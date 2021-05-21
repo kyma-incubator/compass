@@ -98,10 +98,9 @@ func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
 	}
 
 	// when
-	modelRuntime, err := entityRuntime.ToModel()
+	modelRuntime := entityRuntime.ToModel()
 
 	// then
-	require.NoError(t, err)
 	assert.Equal(t, entityRuntime.ID, modelRuntime.ID)
 	assert.Equal(t, entityRuntime.TenantID, modelRuntime.Tenant)
 	assert.Equal(t, entityRuntime.Name, modelRuntime.Name)
@@ -132,10 +131,9 @@ func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
 	}
 
 	// when
-	modelRuntime, err := entityRuntime.ToModel()
+	modelRuntime := entityRuntime.ToModel()
 
 	// then
-	require.NoError(t, err)
 	assert.Equal(t, entityRuntime.ID, modelRuntime.ID)
 	assert.Equal(t, entityRuntime.TenantID, modelRuntime.Tenant)
 	assert.Equal(t, entityRuntime.Name, modelRuntime.Name)

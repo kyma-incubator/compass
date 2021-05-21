@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -21,6 +23,7 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
+	testWebhookID      = "webhook-id-1"
 	testName           = "bar"
 	testPageSize       = 3
 	testCursor         = ""
@@ -36,7 +39,7 @@ var (
 	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
 
-func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
+func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
 	desc := testDescription
 	out := model.ApplicationTemplate{
 		ID:                   id,
@@ -44,20 +47,21 @@ func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
 		Description:          &desc,
 		ApplicationInputJSON: appInputJSONString,
 		Placeholders:         fixModelPlaceholders(),
+		Webhooks:             modelPtrsToWebhooks(webhooks),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 
 	return &out
 }
 
-func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string) *model.ApplicationTemplate {
-	out := fixModelAppTemplate(id, name)
+func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string, webhooks []*model.Webhook) *model.ApplicationTemplate {
+	out := fixModelApplicationTemplate(id, name, webhooks)
 	out.ApplicationInputJSON = appInputJSON
 
 	return out
 }
 
-func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
+func fixGQLAppTemplate(id, name string, webhooks []*graphql.Webhook) *graphql.ApplicationTemplate {
 	desc := testDescription
 
 	return &graphql.ApplicationTemplate{
@@ -66,6 +70,7 @@ func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
 		Description:      &desc,
 		ApplicationInput: appInputGQLString,
 		Placeholders:     fixGQLPlaceholders(),
+		Webhooks:         gqlPtrsToWebhooks(webhooks),
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
@@ -106,6 +111,18 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	}
 }
 
+func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.ApplicationTemplateUpdateInput {
+	desc := testDescription
+
+	return &model.ApplicationTemplateUpdateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
 func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescription
 
@@ -121,7 +138,22 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	}
 }
 
-func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
+func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdateInput {
+	desc := testDescription
+
+	return &graphql.ApplicationTemplateUpdateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.Entity {
 	marshalledAppInput := `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
 	placeholders := fixModelPlaceholders()
@@ -148,6 +180,30 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	}
 }
 
+func fixModelApplicationWebhooks(webhookID, applicationID string) []*model.Webhook {
+	return []*model.Webhook{
+		{
+			ApplicationID: str.Ptr(applicationID),
+			ID:            webhookID,
+			Type:          model.WebhookTypeConfigurationChanged,
+			URL:           str.Ptr("foourl"),
+			Auth:          &model.Auth{},
+		},
+	}
+}
+
+func fixModelApplicationTemplateWebhooks(webhookID, applicationTemplateID string) []*model.Webhook {
+	return []*model.Webhook{
+		{
+			ApplicationTemplateID: str.Ptr(applicationTemplateID),
+			ID:                    webhookID,
+			Type:                  model.WebhookTypeConfigurationChanged,
+			URL:                   str.Ptr("foourl"),
+			Auth:                  &model.Auth{},
+		},
+	}
+}
+
 func fixGQLPlaceholderDefinitionInput() []*graphql.PlaceholderDefinitionInput {
 	placeholderDesc := testDescription
 	return []*graphql.PlaceholderDefinitionInput{
@@ -164,6 +220,30 @@ func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
+		},
+	}
+}
+
+func fixGQLApplicationWebhooks(webhookID, applicationID string) []*graphql.Webhook {
+	return []*graphql.Webhook{
+		{
+			ID:            webhookID,
+			ApplicationID: str.Ptr(applicationID),
+			Type:          graphql.WebhookTypeConfigurationChanged,
+			URL:           str.Ptr("foourl"),
+			Auth:          &graphql.Auth{},
+		},
+	}
+}
+
+func fixGQLApplicationTemplateWebhooks(webhookID, applicationTemplateID string) []*graphql.Webhook {
+	return []*graphql.Webhook{
+		{
+			ID:                    webhookID,
+			ApplicationTemplateID: str.Ptr(applicationTemplateID),
+			Type:                  graphql.WebhookTypeConfigurationChanged,
+			URL:                   str.Ptr("foourl"),
+			Auth:                  &graphql.Auth{},
 		},
 	}
 }
@@ -239,5 +319,42 @@ func fixGQLApplication(id, name string) graphql.Application {
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+	}
+}
+
+func modelPtrsToWebhooks(in []*model.Webhook) []model.Webhook {
+	if in == nil {
+		return nil
+	}
+	webhookPtrs := []model.Webhook{}
+	for i, _ := range in {
+		webhookPtrs = append(webhookPtrs, *in[i])
+	}
+	return webhookPtrs
+}
+
+func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
+	for i, _ := range in {
+		webhookPtrs = append(webhookPtrs, *in[i])
+	}
+	return
+}
+
+func fixModelWebhook(appID, id string) *model.Webhook {
+	return &model.Webhook{
+		ApplicationID: &appID,
+		ID:            id,
+		Type:          model.WebhookTypeConfigurationChanged,
+		URL:           str.Ptr("foourl"),
+		Auth:          &model.Auth{},
+	}
+}
+
+func fixGQLWebhook(id string) *graphql.Webhook {
+	return &graphql.Webhook{
+		ID:   id,
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  str.Ptr("foourl"),
+		Auth: &graphql.Auth{},
 	}
 }

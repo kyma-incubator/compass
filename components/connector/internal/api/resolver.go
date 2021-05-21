@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
 )
 
 type ExternalResolver struct {
@@ -22,23 +21,4 @@ func (r *ExternalResolver) Mutation() externalschema.MutationResolver {
 }
 func (r *ExternalResolver) Query() externalschema.QueryResolver {
 	return &externalQueryResolver{r}
-}
-
-type InternalResolver struct {
-	TokenResolver
-}
-
-type internalMutationResolver struct {
-	*InternalResolver
-}
-
-type internalQueryResolver struct {
-	*InternalResolver
-}
-
-func (r *InternalResolver) Mutation() internalschema.MutationResolver {
-	return &internalMutationResolver{r}
-}
-func (r *InternalResolver) Query() internalschema.QueryResolver {
-	return &internalQueryResolver{r}
 }

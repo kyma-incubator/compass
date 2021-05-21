@@ -24,7 +24,7 @@ type Config struct {
 func NewKubernetesClientSet(ctx context.Context, interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	kubeConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error has occurred while trying to read in cluster Config")
+		log.C(ctx).WithError(err).Errorf("An error has occurred while trying to read in cluster Config: %v", err)
 		log.C(ctx).Debug("Trying to initialize Kubernetes Client with local Config")
 		home := homedir.HomeDir()
 		kubeConfPath := filepath.Join(home, ".kube", "Config")
@@ -44,7 +44,7 @@ func NewKubernetesClientSet(ctx context.Context, interval, pollingTimeout, timeo
 	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
 		_, err := kubeClientSet.ServerVersion()
 		if err != nil {
-			log.C(ctx).WithError(err).Error("An error has occurred while trying to access API Server")
+			log.C(ctx).WithError(err).Errorf("An error has occurred while trying to access API Server: %v", err)
 			return false, nil
 		}
 		return true, nil

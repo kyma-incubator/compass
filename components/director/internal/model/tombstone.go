@@ -8,10 +8,8 @@ type Tombstone struct {
 }
 
 type TombstoneInput struct {
-	OrdID         string
-	TenantID      string
-	ApplicationID string
-	RemovalDate   string
+	OrdID       string `json:"ordId"`
+	RemovalDate string `json:"removalDate"`
 }
 
 func (i *TombstoneInput) ToTombstone(tenantID, appID string) *Tombstone {

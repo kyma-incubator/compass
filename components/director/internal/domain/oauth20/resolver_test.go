@@ -33,7 +33,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 	testCases := []struct {
 		Name                       string
 		ObjType                    model.SystemAuthReferenceObjectType
-		Method                     func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error)
+		Method                     func(resolver *oauth20.Resolver, ctx context.Context, id string) (graphql.SystemAuth, error)
 		RtmID                      *string
 		AppID                      *string
 		IntSysID                   *string
@@ -58,7 +58,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 				isSvc := &automock.IntegrationSystemService{}
 				return isSvc
 			},
-			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
+			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (graphql.SystemAuth, error) {
 				return resolver.RequestClientCredentialsForRuntime(ctx, id)
 			},
 		},
@@ -79,7 +79,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 				isSvc := &automock.IntegrationSystemService{}
 				return isSvc
 			},
-			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
+			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (graphql.SystemAuth, error) {
 				return resolver.RequestClientCredentialsForApplication(ctx, id)
 			},
 		},
@@ -100,7 +100,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 				isSvc.On("Exists", txtest.CtxWithDBMatcher(), id).Return(true, nil).Once()
 				return isSvc
 			},
-			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
+			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (graphql.SystemAuth, error) {
 				return resolver.RequestClientCredentialsForIntegrationSystem(ctx, id)
 			},
 		},
@@ -396,13 +396,13 @@ func fixModelSystemAuth(clientID string, rtmID, appID, isID *string) *model.Syst
 	}
 }
 
-func fixGQLSystemAuth(clientID string) *graphql.SystemAuth {
+func fixGQLSystemAuth(clientID string) graphql.SystemAuth {
 	oauthCredsData := graphql.OAuthCredentialData{
 		ClientID:     clientID,
 		ClientSecret: "secret",
 		URL:          "url",
 	}
-	return &graphql.SystemAuth{
+	return &graphql.IntSysSystemAuth{
 		ID: "sysauth-id",
 		Auth: &graphql.Auth{
 			Credential: oauthCredsData,

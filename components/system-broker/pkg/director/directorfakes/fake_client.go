@@ -35,15 +35,16 @@ func (fake *FakeClient) Do(arg1 context.Context, arg2 *graphql.Request, arg3 int
 		arg2 *graphql.Request
 		arg3 interface{}
 	}{arg1, arg2, arg3})
+	stub := fake.DoStub
+	fakeReturns := fake.doReturns
 	fake.recordInvocation("Do", []interface{}{arg1, arg2, arg3})
 	fake.doMutex.Unlock()
-	if fake.DoStub != nil {
-		return fake.DoStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.doReturns
 	return fakeReturns.result1
 }
 

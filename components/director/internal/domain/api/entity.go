@@ -9,6 +9,7 @@ import (
 
 type Entity struct {
 	TenantID            string         `db:"tenant_id"`
+	ApplicationID       string         `db:"app_id"`
 	BndlID              sql.NullString `db:"bundle_id"`
 	PackageID           sql.NullString `db:"package_id"`
 	Name                string         `db:"name"`

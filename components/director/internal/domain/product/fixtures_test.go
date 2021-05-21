@@ -59,8 +59,6 @@ func fixProductModelInput() *model.ProductInput {
 	ppmsID := "ppms_id"
 	return &model.ProductInput{
 		OrdID:            ordID,
-		TenantID:         tenantID,
-		ApplicationID:    appID,
 		Title:            "title",
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",

@@ -130,8 +130,8 @@ func (o *OperationValidationErr) Error() string {
 // Validate implements validation logic for the Operation CR
 func (in *Operation) Validate() error {
 	webhookCount := len(in.Spec.WebhookIDs)
-	if webhookCount != 1 {
-		return &OperationValidationErr{Description: fmt.Sprintf("expected 1 webhook for execution, found: %d", webhookCount)}
+	if webhookCount > 1 {
+		return &OperationValidationErr{Description: fmt.Sprintf("expected 0 or 1 webhook for execution, found: %d", webhookCount)}
 	}
 
 	return nil

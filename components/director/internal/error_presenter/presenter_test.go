@@ -40,7 +40,7 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 
 		//then
 		require.NotNil(t, entry)
-		assert.Equal(t, "Unknown error", entry.Message)
+		assert.Equal(t, fmt.Sprintf("Unknown error: %s", errMsg), entry.Message)
 		assert.Equal(t, errMsg, actualErrMsg.Error())
 		assert.Contains(t, err.Error(), "Internal Server Error")
 		hook.Reset()
@@ -61,7 +61,7 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 
 		//then
 		require.NotNil(t, entry)
-		assert.Equal(t, "Internal Server Error", entry.Message)
+		assert.Equal(t, fmt.Sprintf("Internal Server Error: %s", actualErrMsg.Error()), entry.Message)
 		assert.Equal(t, fmt.Sprintf("Internal Server Error: %s", errMsg), actualErrMsg.Error())
 		assert.Contains(t, err.Error(), "Internal Server Error")
 		hook.Reset()

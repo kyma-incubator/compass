@@ -13,21 +13,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
 }
 
-//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
-//go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error)
 	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error)
@@ -35,26 +35,20 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
-//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
-type ApplicationService interface {
-	Exist(ctx context.Context, id string) (bool, error)
-}
-
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
-	Exist(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 type Resolver struct {
 	transact      persistence.Transactioner
 	svc           APIService
-	appSvc        ApplicationService
 	bndlSvc       BundleService
 	rtmSvc        RuntimeService
 	converter     APIConverter
@@ -63,11 +57,10 @@ type Resolver struct {
 	specConverter SpecConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, bndlSvc BundleService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
-		appSvc:        appSvc,
 		rtmSvc:        rtmSvc,
 		bndlSvc:       bndlSvc,
 		converter:     converter,
@@ -93,16 +86,15 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, errors.Wrap(err, "while converting GraphQL input to APIDefinition")
 	}
 
-	found, err := r.bndlSvc.Exist(ctx, bundleID)
+	bndl, err := r.bndlSvc.Get(ctx, bundleID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Bundle with id %s when adding APIDefinition", bundleID)
+		if apperrors.IsNotFoundError(err) {
+			return nil, apperrors.NewInvalidDataError("cannot add API to not existing bundle")
+		}
+		return nil, errors.Wrapf(err, "while getting Bundle with id %s when adding APIDefinition", bundleID)
 	}
 
-	if !found {
-		return nil, apperrors.NewInvalidDataError("cannot add API to not existing bundle")
-	}
-
-	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Bundle with id %s", bundleID)
 	}

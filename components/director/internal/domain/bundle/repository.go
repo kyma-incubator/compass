@@ -30,7 +30,7 @@ var (
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Bundle) (*Entity, error)
 	FromEntity(entity *Entity) (*model.Bundle, error)
@@ -41,6 +41,7 @@ type pgRepository struct {
 	singleGetter    repo.SingleGetter
 	deleter         repo.Deleter
 	pageableQuerier repo.PageableQuerier
+	lister          repo.Lister
 	creator         repo.Creator
 	updater         repo.Updater
 	conv            EntityConverter
@@ -52,6 +53,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		singleGetter:    repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		lister:          repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
 		updater:         repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
 		conv:            conv,
@@ -188,4 +190,20 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
+	bundleCollection := BundleCollection{}
+	if err := r.lister.List(ctx, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	bundles := make([]*model.Bundle, 0, bundleCollection.Len())
+	for _, bundle := range bundleCollection {
+		bundleModel, err := r.conv.FromEntity(&bundle)
+		if err != nil {
+			return nil, err
+		}
+		bundles = append(bundles, bundleModel)
+	}
+	return bundles, nil
 }

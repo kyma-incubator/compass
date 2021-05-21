@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -22,42 +23,44 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	applicationColumns = []string{"id", "app_template_id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn       = "tenant_id"
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Application) (*Entity, error)
 	FromEntity(entity *Entity) *model.Application
 }
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	globalGetter    repo.SingleGetterGlobal
-	globalDeleter   repo.DeleterGlobal
-	lister          repo.Lister
-	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
-	creator         repo.Creator
-	updater         repo.Updater
-	conv            EntityConverter
+	existQuerier          repo.ExistQuerier
+	singleGetter          repo.SingleGetter
+	globalGetter          repo.SingleGetterGlobal
+	globalDeleter         repo.DeleterGlobal
+	lister                repo.Lister
+	deleter               repo.Deleter
+	pageableQuerier       repo.PageableQuerier
+	globalPageableQuerier repo.PageableQuerierGlobal
+	creator               repo.Creator
+	updater               repo.Updater
+	conv                  EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		globalGetter:    repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
-		globalDeleter:   repo.NewDeleterGlobal(resource.Application, applicationTable),
-		deleter:         repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
-		lister:          repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		creator:         repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:         repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
-		conv:            conv,
+		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
+		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
+		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
+		deleter:               repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
+		lister:                repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
+		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
+		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
+		conv:                  conv,
 	}
 }
 
@@ -173,6 +176,27 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		PageInfo:   page}, nil
 }
 
+func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobal(ctx, pageSize, cursor, "id", &appsCollection)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
 func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
@@ -244,6 +268,14 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 }
 
 func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, model, false)
+}
+
+func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, model, true)
+}
+
+func (r *pgRepository) updateSingle(ctx context.Context, model *model.Application, isTechnical bool) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
@@ -255,6 +287,9 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 	}
 
 	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
+	if isTechnical {
+		return r.updater.TechnicalUpdate(ctx, appEnt)
+	}
 	return r.updater.UpdateSingle(ctx, appEnt)
 }
 

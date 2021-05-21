@@ -3,7 +3,7 @@ package plugins
 import (
 	"strings"
 
-	"github.com/vektah/gqlparser/ast"
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 const QueryTypeName = "Query"

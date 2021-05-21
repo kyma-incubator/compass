@@ -20,19 +20,19 @@ import "github.com/pkg/errors"
 
 // Settings type to be loaded from the environment
 type Config struct {
-	InternalAddress string `mapstructure:"internal_address" description:"the internal address of the Director component"`
+	OperationEndpoint string `mapstructure:"operation_endpoint" description:"the operation endpoint of the Director component"`
 }
 
 // DefaultSettings returns the default values for configuring the System Broker
 func DefaultConfig() *Config {
 	return &Config{
-		InternalAddress: "http://localhost:3002",
+		OperationEndpoint: "http://localhost:3002/operation",
 	}
 }
 
 // Validate ensures that the director config properties have valid values
 func (c *Config) Validate() error {
-	if len(c.InternalAddress) == 0 {
+	if len(c.OperationEndpoint) == 0 {
 		return errors.New("validate director settings: missing internal address")
 	}
 	return nil

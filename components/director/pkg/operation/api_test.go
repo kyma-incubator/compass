@@ -21,14 +21,17 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -44,7 +47,7 @@ func TestServeHTTP(t *testing.T) {
 
 	t.Run("when tenant is missing it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, context.Background())
+		req := fixEmptyRequest(t, context.Background(), string(resource.Application), resourceID)
 
 		handler := operation.NewHandler(nil, nil, func(ctx context.Context) (string, error) {
 			return "", mockedError()
@@ -59,7 +62,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
+		req := fixEmptyRequest(t, ctx, "", "")
 
 		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
@@ -72,12 +75,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
-
-		queryValues := req.URL.Query()
-		queryValues.Add(operation.ResourceIDParam, "123")
-
-		req.URL.RawQuery = queryValues.Encode()
+		req := fixEmptyRequest(t, ctx, string(resource.Application), "123")
 
 		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
@@ -90,7 +88,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
+		req := fixEmptyRequest(t, ctx, string(resource.Runtime), resourceID)
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceTypeParam, "runtime")
@@ -108,13 +106,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
-
-		queryValues := req.URL.Query()
-		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
-
-		req.URL.RawQuery = queryValues.Encode()
+		req := fixEmptyRequest(t, ctx, string(resource.Application), resourceID)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
@@ -131,7 +123,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
+		req := fixEmptyRequest(t, ctx, string(resource.Application), resourceID)
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
@@ -156,7 +148,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
+		req := fixEmptyRequest(t, ctx, string(resource.Application), resourceID)
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
@@ -181,7 +173,7 @@ func TestServeHTTP(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()
-		req := fixEmptyRequest(t, ctx)
+		req := fixEmptyRequest(t, ctx, string(resource.Application), resourceID)
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
@@ -205,13 +197,7 @@ func TestServeHTTP(t *testing.T) {
 	t.Run("when application is successfully fetched it should return a respective operation", func(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
-		req := fixEmptyRequest(t, ctx)
-
-		queryValues := req.URL.Query()
-		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
-
-		req.URL.RawQuery = queryValues.Encode()
+		req := fixEmptyRequest(t, ctx, string(resource.Application), resourceID)
 
 		mockedErr := mockedError().Error()
 		now := time.Now()
@@ -230,6 +216,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeCreate,
+						CreationTime:  now,
 					},
 					Status: operation.OperationStatusSucceeded,
 				},
@@ -242,6 +229,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeUpdate,
+						CreationTime:  now.Add(1 * time.Minute),
 					},
 					Status: operation.OperationStatusSucceeded,
 				},
@@ -254,6 +242,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeDelete,
+						CreationTime:  now.Add(1 * time.Minute),
 					},
 					Status: operation.OperationStatusSucceeded,
 				},
@@ -266,6 +255,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeCreate,
+						CreationTime:  now,
 					},
 					Status: operation.OperationStatusInProgress,
 				},
@@ -278,6 +268,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeUpdate,
+						CreationTime:  now.Add(1 * time.Minute),
 					},
 					Status: operation.OperationStatusInProgress,
 				},
@@ -290,6 +281,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeDelete,
+						CreationTime:  now.Add(1 * time.Minute),
 					},
 					Status: operation.OperationStatusInProgress,
 				},
@@ -302,6 +294,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeCreate,
+						CreationTime:  now,
 					},
 					Status: operation.OperationStatusFailed,
 					Error:  &mockedErr,
@@ -315,6 +308,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeUpdate,
+						CreationTime:  now.Add(1 * time.Minute),
 					},
 					Status: operation.OperationStatusFailed,
 					Error:  &mockedErr,
@@ -328,6 +322,7 @@ func TestServeHTTP(t *testing.T) {
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeDelete,
+						CreationTime:  now.Add(1 * time.Minute),
 					},
 					Status: operation.OperationStatusFailed,
 					Error:  &mockedErr,
@@ -359,8 +354,11 @@ func TestServeHTTP(t *testing.T) {
 
 }
 
-func fixEmptyRequest(t *testing.T, ctx context.Context) *http.Request {
-	req, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
+func fixEmptyRequest(t *testing.T, ctx context.Context, resourceType string, resourceId string) *http.Request {
+	endpointPath := path.Join("/", resourceType, resourceId)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointPath, nil)
+	vars := map[string]string{"resource_type": resourceType, "resource_id": resourceId}
+	req = mux.SetURLVars(req, vars)
 	require.NoError(t, err)
 
 	return req

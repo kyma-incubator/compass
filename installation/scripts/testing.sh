@@ -8,7 +8,9 @@ readonly TMP_DIR=$(mktemp -d)
 echo "ARTIFACTS: ${ARTIFACTS}"
 readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-suite.xml"
 
-suiteName="testsuite-all"
+suiteName="compass-e2e-tests"
+testDefinitionName=$1
+echo "${1:-All tests}"
 echo "----------------------------"
 echo "- Testing Compass..."
 echo "----------------------------"
@@ -23,18 +25,38 @@ then
 fi
 
 # match all tests
-
-cat <<EOF | ${kc} apply -f -
-apiVersion: testing.kyma-project.io/v1alpha1
-kind: ClusterTestSuite
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: ${suiteName}
-spec:
-  maxRetries: 1
-  concurrency: 1
+if [ -z "$testDefinitionName" ]
+then
+      cat <<EOF | ${kc} apply -f -
+      apiVersion: testing.kyma-project.io/v1alpha1
+      kind: ClusterTestSuite
+      metadata:
+        labels:
+          controller-tools.k8s.io: "1.0"
+        name: ${suiteName}
+      spec:
+        maxRetries: 1
+        concurrency: 1
 EOF
+
+else
+      cat <<EOF | ${kc} apply -f -
+      apiVersion: testing.kyma-project.io/v1alpha1
+      kind: ClusterTestSuite
+      metadata:
+        labels:
+          controller-tools.k8s.io: "1.0"
+        name: ${suiteName}
+      spec:
+        maxRetries: 1
+        concurrency: 1
+        selectors:
+          matchNames:
+            - name: compass-e2e-${testDefinitionName}
+              namespace: kyma-system
+EOF
+
+fi
 
 startTime=$(date +%s)
 

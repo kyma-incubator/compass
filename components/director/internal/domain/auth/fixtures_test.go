@@ -54,9 +54,9 @@ func fixDetailedGQLAuth() *graphql.Auth {
 			Username: authUsername,
 			Password: authPassword,
 		},
-		AdditionalHeaders:               &authHeaders,
+		AdditionalHeaders:               authHeaders,
 		AdditionalHeadersSerialized:     &authHeadersSerialized,
-		AdditionalQueryParams:           &authParams,
+		AdditionalQueryParams:           authParams,
 		AdditionalQueryParamsSerialized: &authParamsSerialized,
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -65,8 +65,8 @@ func fixDetailedGQLAuth() *graphql.Auth {
 					Username: authUsername,
 					Password: authPassword,
 				},
-				AdditionalHeaders:     &authHeaders,
-				AdditionalQueryParams: &authParams,
+				AdditionalHeaders:     authHeaders,
+				AdditionalQueryParams: authParams,
 			},
 		},
 	}
@@ -137,8 +137,8 @@ func fixDetailedGQLAuthInputDeprecated() *graphql.AuthInput {
 			},
 			Oauth: nil,
 		},
-		AdditionalHeaders:     &authHeaders,
-		AdditionalQueryParams: &authParams,
+		AdditionalHeaders:     authHeaders,
+		AdditionalQueryParams: authParams,
 		RequestAuth: &graphql.CredentialRequestAuthInput{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
 				TokenEndpointURL: authEndpoint,
@@ -149,8 +149,8 @@ func fixDetailedGQLAuthInputDeprecated() *graphql.AuthInput {
 					},
 					Oauth: nil,
 				},
-				AdditionalHeaders:     &authHeaders,
-				AdditionalQueryParams: &authParams,
+				AdditionalHeaders:     authHeaders,
+				AdditionalQueryParams: authParams,
 			},
 		},
 	}

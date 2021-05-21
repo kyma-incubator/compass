@@ -185,7 +185,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			ExpectedSpec: modelSpec,
 			VersionConverter: func() *automock.VersionConverter {
 				conv := &automock.VersionConverter{}
-				conv.On("InputFromGraphQL", gqlEventDefinitionInput.Version).Return(modelEventDefinitionInput.Version).Once()
+				conv.On("InputFromGraphQL", gqlEventDefinitionInput.Version).Return(modelEventDefinitionInput.VersionInput).Once()
 				return conv
 			},
 			SpecConverter: func() *automock.SpecConverter {
@@ -287,7 +287,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			VersionConverter: func() *automock.VersionConverter {
 				conv := &automock.VersionConverter{}
 				for i, eventDef := range gqlEventDefinitionInputs {
-					conv.On("InputFromGraphQL", eventDef.Version).Return(modelEventDefinitionInputs[i].Version).Once()
+					conv.On("InputFromGraphQL", eventDef.Version).Return(modelEventDefinitionInputs[i].VersionInput).Once()
 				}
 				return conv
 			},

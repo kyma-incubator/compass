@@ -6,10 +6,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=HealthCheckService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=HealthCheckService --output=automock --outpkg=automock --case=underscore
 type HealthCheckService interface{}
 
-//go:generate mockery -name=HealthCheckConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=HealthCheckConverter --output=automock --outpkg=automock --case=underscore
 type HealthCheckConverter interface{}
 
 type Resolver struct {

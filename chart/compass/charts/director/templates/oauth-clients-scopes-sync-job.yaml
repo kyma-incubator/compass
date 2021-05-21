@@ -1,0 +1,106 @@
+{{- $jobName := (printf "%s-clients-scopes-synchronization" (include "fullname" .)) }}
+{{- $job := (lookup "batch/v1" "Job" .Release.Namespace $jobName) }}
+{{- $currentChecksum := (.Files.Glob .Values.configFile.name ).AsConfig | sha256sum | quote }}
+{{- $jobChecksum := "" }}
+{{- if not (empty $job) }}
+  {{- $jobChecksum = $job.metadata.annotations.configChecksum | quote }}
+{{- end}}
+{{- if ne $currentChecksum $jobChecksum }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $jobName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $jobName }}
+    release: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+    configChecksum: {{ $currentChecksum }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ $jobName }}
+        release: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      shareProcessNamespace: true
+      containers:
+        - name: sync
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "{{.Values.global.tenantConfig.dbPool.maxOpenConnections}}"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "{{.Values.global.tenantConfig.dbPool.maxIdleConnections}}"
+            - name: APP_CONFIGURATION_FILE
+              value: /config/config.yaml
+            - name: APP_OAUTH20_URL
+              value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445
+            - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
+              value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+          command:
+            - "/bin/sh"
+          args:
+            - "-c"
+            - "./scopessynchronizer; exit_code=$?; sleep 5; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          volumeMounts:
+          - name: director-config
+            mountPath: /config
+        {{- if eq .Values.global.database.embedded.enabled false }}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+        {{- end}}
+      volumes:
+      - name: director-config
+        configMap:
+          name: {{ template "fullname" . }}-config
+      {{- if eq .Values.global.database.embedded.enabled false }}
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      {{- end }}
+{{- end }}

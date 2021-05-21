@@ -35,16 +35,17 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	return &Entity{
-		TenantID:            in.Tenant,
-		Name:                in.Name,
-		ProviderName:        repo.NewNullableString(in.ProviderName),
-		Description:         repo.NewNullableString(in.Description),
-		StatusCondition:     string(in.Status.Condition),
-		StatusTimestamp:     in.Status.Timestamp,
-		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
-		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
-		BaseURL:             repo.NewNullableString(in.BaseURL),
-		Labels:              repo.NewNullableStringFromJSONRawMessage(in.Labels),
+		TenantID:              in.Tenant,
+		Name:                  in.Name,
+		ProviderName:          repo.NewNullableString(in.ProviderName),
+		Description:           repo.NewNullableString(in.Description),
+		StatusCondition:       string(in.Status.Condition),
+		StatusTimestamp:       in.Status.Timestamp,
+		HealthCheckURL:        repo.NewNullableString(in.HealthCheckURL),
+		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
+		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
+		BaseURL:               repo.NewNullableString(in.BaseURL),
+		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -70,10 +71,11 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 			Condition: model.ApplicationStatusCondition(entity.StatusCondition),
 			Timestamp: entity.StatusTimestamp,
 		},
-		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
-		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
-		BaseURL:             repo.StringPtrFromNullableString(entity.BaseURL),
-		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
+		HealthCheckURL:        repo.StringPtrFromNullableString(entity.HealthCheckURL),
+		IntegrationSystemID:   repo.StringPtrFromNullableString(entity.IntegrationSystemID),
+		ApplicationTemplateID: repo.StringPtrFromNullableString(entity.ApplicationTemplateID),
+		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
+		Labels:                repo.JSONRawMessageFromNullableString(entity.Labels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -91,7 +93,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		Status:              c.statusToGraphQL(in.Status),
+		Status:              c.statusModelToGraphQL(in.Status),
 		Name:                in.Name,
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
@@ -124,7 +126,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	var labels map[string]interface{}
 	if in.Labels != nil {
-		labels = *in.Labels
+		labels = in.Labels
 	}
 
 	log.C(ctx).Debugf("Converting Webhooks from Application registration GraphQL input with name %s", in.Name)
@@ -139,13 +141,18 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Bundles")
 	}
 
+	var statusCondition *model.ApplicationStatusCondition
+	if in.StatusCondition != nil {
+		condition := model.ApplicationStatusCondition(*in.StatusCondition)
+		statusCondition = &condition
+	}
 	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
-		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
+		StatusCondition:     statusCondition,
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
 		Bundles:             bundles,
@@ -153,12 +160,17 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
+	var statusCondition *model.ApplicationStatusCondition
+	if in.StatusCondition != nil {
+		condition := model.ApplicationStatusCondition(*in.StatusCondition)
+		statusCondition = &condition
+	}
 	return model.ApplicationUpdateInput{
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
-		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
+		StatusCondition:     statusCondition,
 	}
 }
 
@@ -191,7 +203,7 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Tenant:              tenantID,
 		Name:                obj.Name,
 		Description:         obj.Description,
-		Status:              c.statusToModel(obj.Status),
+		Status:              c.statusGraphQLToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
 		BaseEntity: &model.BaseEntity{
@@ -200,71 +212,26 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 	}
 }
 
-func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
+func (c *converter) statusModelToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
 	if in == nil {
 		return &graphql.ApplicationStatus{Condition: graphql.ApplicationStatusConditionInitial}
 	}
 
-	var condition graphql.ApplicationStatusCondition
-
-	switch in.Condition {
-	case model.ApplicationStatusConditionInitial:
-		condition = graphql.ApplicationStatusConditionInitial
-	case model.ApplicationStatusConditionFailed:
-		condition = graphql.ApplicationStatusConditionFailed
-	case model.ApplicationStatusConditionConnected:
-		condition = graphql.ApplicationStatusConditionConnected
-	default:
-		condition = graphql.ApplicationStatusConditionInitial
-	}
-
 	return &graphql.ApplicationStatus{
-		Condition: condition,
+		Condition: graphql.ApplicationStatusCondition(in.Condition),
 		Timestamp: graphql.Timestamp(in.Timestamp),
 	}
 }
 
-func (c *converter) statusToModel(in *graphql.ApplicationStatus) *model.ApplicationStatus {
+func (c *converter) statusGraphQLToModel(in *graphql.ApplicationStatus) *model.ApplicationStatus {
 	if in == nil {
 		return &model.ApplicationStatus{Condition: model.ApplicationStatusConditionInitial}
 	}
 
-	var condition model.ApplicationStatusCondition
-
-	switch in.Condition {
-	case graphql.ApplicationStatusConditionInitial:
-		condition = model.ApplicationStatusConditionInitial
-	case graphql.ApplicationStatusConditionFailed:
-		condition = model.ApplicationStatusConditionFailed
-	case graphql.ApplicationStatusConditionConnected:
-		condition = model.ApplicationStatusConditionConnected
-	default:
-		condition = model.ApplicationStatusConditionInitial
-	}
 	return &model.ApplicationStatus{
-		Condition: condition,
+		Condition: model.ApplicationStatusCondition(in.Condition),
 		Timestamp: time.Time(in.Timestamp),
 	}
-}
-
-func (c *converter) statusConditionToModel(in *graphql.ApplicationStatusCondition) *model.ApplicationStatusCondition {
-	if in == nil {
-		return nil
-	}
-
-	var condition model.ApplicationStatusCondition
-	switch *in {
-	case graphql.ApplicationStatusConditionConnected:
-		condition = model.ApplicationStatusConditionConnected
-	case graphql.ApplicationStatusConditionFailed:
-		condition = model.ApplicationStatusConditionFailed
-	case graphql.ApplicationStatusConditionInitial:
-		fallthrough
-	default:
-		condition = model.ApplicationStatusConditionInitial
-	}
-
-	return &condition
 }
 
 func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {

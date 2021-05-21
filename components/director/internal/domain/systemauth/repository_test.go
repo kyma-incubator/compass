@@ -547,6 +547,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Success deleting auth for Application", func(t *testing.T) {
@@ -563,6 +564,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		err := repo.DeleteAllForObject(ctx, testTenant, model.ApplicationReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Success deleting auth for Integration System", func(t *testing.T) {
@@ -579,6 +581,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		err := repo.DeleteAllForObject(ctx, "", model.IntegrationSystemReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Error when deleting", func(t *testing.T) {
@@ -596,6 +599,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Error listing auths for unsupported reference object type", func(t *testing.T) {
@@ -629,6 +633,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Success when deleting by runtime", func(t *testing.T) {
@@ -645,6 +650,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.RuntimeReference)
 		// THEN
 		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Success when deleting by integration system", func(t *testing.T) {
@@ -661,6 +667,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		err := repo.DeleteByIDForObjectGlobal(ctx, sysAuthID, model.IntegrationSystemReference)
 		// THEN
 		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Error when deleting application", func(t *testing.T) {
@@ -678,9 +685,189 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		dbMock.AssertExpectations(t)
 	})
 }
 
+func TestRepository_Update(t *testing.T) {
+
+	sysAuthID := "foo"
+	objID := "bar"
+	modelAuth := fixModelAuth()
+
+	t.Run("success when updating systemAuth", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `UPDATE public.system_auths SET value = ? WHERE tenant_id = ? AND id = ?`
+		dbMock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(testMarshalledSchema, testTenant, sysAuthID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.RuntimeReference, objID, true)
+
+		convMock := &automock.Converter{}
+		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
+		repo := systemauth.NewRepository(convMock)
+
+		// WHEN
+		err := repo.Update(ctx, modelSysAuth)
+
+		// THEN
+		assert.NoError(t, err)
+		dbMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+
+	t.Run("error when updating systemAuth", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `UPDATE public.system_auths SET value = ? WHERE tenant_id = ? AND id = ?`
+		dbMock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(testMarshalledSchema, testTenant, sysAuthID).
+			WillReturnError(testErr)
+
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.RuntimeReference, objID, true)
+
+		convMock := &automock.Converter{}
+		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
+		repo := systemauth.NewRepository(convMock)
+
+		// WHEN
+		err := repo.Update(ctx, modelSysAuth)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		dbMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+
+	t.Run("error when item is nil", func(t *testing.T) {
+		// GIVEN
+		repo := systemauth.NewRepository(nil)
+
+		// WHEN
+		err := repo.Update(context.TODO(), nil)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: item cannot be nil")
+	})
+
+	t.Run("error when converter returns error", func(t *testing.T) {
+		// GIVEN
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		convMock := &automock.Converter{}
+		convMock.On("ToEntity", *modelSysAuth).Return(systemauth.Entity{}, testErr).Once()
+		repo := systemauth.NewRepository(convMock)
+
+		// WHEN
+		err := repo.Update(context.TODO(), modelSysAuth)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while converting model to entity: test error")
+		convMock.AssertExpectations(t)
+	})
+}
+
+func TestRepository_GetByJSONValue(t *testing.T) {
+
+	t.Run("error when GetGlobal fails", func(t *testing.T) {
+		// GIVEN
+		value := make(map[string]interface{})
+		value["key"] = "value"
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE value @> $1`
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs("{\"key\":\"value\"}").
+			WillReturnError(testErr)
+		repo := systemauth.NewRepository(nil)
+
+		// WHEN
+		sysAuth, err := repo.GetByJSONValue(ctx, value)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		assert.Nil(t, sysAuth)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("error when converter fails", func(t *testing.T) {
+		// GIVEN
+		value := make(map[string]interface{})
+		value["key"] = "value"
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+		objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
+
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE value @> $1`
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs("{\"key\":\"value\"}").
+			WillReturnRows(rows)
+		convMock := &automock.Converter{}
+		convMock.On("FromEntity", saEntity).Return(model.SystemAuth{}, testErr).Once()
+		repo := systemauth.NewRepository(convMock)
+
+		// WHEN
+		sysAuth, err := repo.GetByJSONValue(ctx, value)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while converting SystemAuth entity to model: test error")
+		assert.Nil(t, sysAuth)
+		dbMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+
+	t.Run("success when getting by json value", func(t *testing.T) {
+		// GIVEN
+		value := make(map[string]interface{})
+		value["key"] = "value"
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+		objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
+
+		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE value @> $1`
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs("{\"key\":\"value\"}").
+			WillReturnRows(rows)
+		convMock := &automock.Converter{}
+		expectedModel := model.SystemAuth{}
+		convMock.On("FromEntity", saEntity).Return(expectedModel, nil).Once()
+		repo := systemauth.NewRepository(convMock)
+
+		// WHEN
+		sysAuth, err := repo.GetByJSONValue(ctx, value)
+
+		// THEN
+		assert.Nil(t, err)
+		assert.Equal(t, &expectedModel, sysAuth)
+		dbMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+}
 func givenError() error {
 	return errors.New("some error")
 }

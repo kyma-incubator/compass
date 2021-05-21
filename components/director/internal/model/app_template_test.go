@@ -22,6 +22,24 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 	}
 	testAccessLevel := model.GlobalApplicationTemplateAccessLevel
 
+	webhookMode := model.WebhookModeSync
+	webhookURL := "foourl"
+	testWebhooks := []*model.WebhookInput{
+		{
+			Type: model.WebhookTypeConfigurationChanged,
+			URL:  &webhookURL,
+			Mode: &webhookMode,
+		},
+	}
+	expectedTestWebhooks := []model.Webhook{
+		{
+			ApplicationTemplateID: str.Ptr(testID),
+			Type:                  testWebhooks[0].Type,
+			URL:                   testWebhooks[0].URL,
+			Mode:                  testWebhooks[0].Mode,
+		},
+	}
+
 	testCases := []struct {
 		Name     string
 		Input    *model.ApplicationTemplateInput
@@ -35,6 +53,7 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 				ApplicationInputJSON: testAppInputJSON,
 				Placeholders:         testPlaceholders,
 				AccessLevel:          testAccessLevel,
+				Webhooks:             testWebhooks,
 			},
 			Expected: model.ApplicationTemplate{
 				ID:                   testID,
@@ -43,6 +62,7 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 				ApplicationInputJSON: testAppInputJSON,
 				Placeholders:         testPlaceholders,
 				AccessLevel:          testAccessLevel,
+				Webhooks:             expectedTestWebhooks,
 			},
 		},
 		{
@@ -57,6 +77,10 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 
 			// when
 			result := testCase.Input.ToApplicationTemplate(testID)
+
+			for i, webhook := range result.Webhooks {
+				testCase.Expected.Webhooks[i].ID = webhook.ID
+			}
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

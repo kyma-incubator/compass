@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -37,10 +37,12 @@ const (
 	ClientIDHeaderKey      = "client_user"
 
 	defaultTenant   = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
-	PublicJWKSURL   = "file://testdata/jwks-public.json"
 	PrivateJWKSURL  = "file://testdata/jwks-private.json"
 	PrivateJWKS2URL = "file://testdata/jwks-private2.json"
+	PrivateJWKS3URL = "file://testdata/jwks-private3.json"
+	PublicJWKSURL   = "file://testdata/jwks-public.json"
 	PublicJWKS2URL  = "file://testdata/jwks-public2.json"
+	PublicJWKS3URL  = "file://testdata/jwks-public3.json"
 	fakeJWKSURL     = "file://testdata/invalid.json"
 )
 
@@ -65,7 +67,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK: invalid character '<' looking for beginning of value", fakeJWKSURL))
+		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK set: invalid character '<' looking for beginning of value", fakeJWKSURL))
 	})
 }
 
@@ -76,14 +78,23 @@ func TestAuthenticator_Handler(t *testing.T) {
 	privateJWKS, err := auths.FetchJWK(context.TODO(), PrivateJWKSURL)
 	require.NoError(t, err)
 
+	privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
+	require.NoError(t, err)
+
+	privateJWKS3, err := auths.FetchJWK(context.TODO(), PrivateJWKS3URL)
+	require.NoError(t, err)
+
 	t.Run("Success - token with signing method", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS.Keys[0])
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -120,8 +131,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 		handler := testHandlerWithClientUser(t, defaultTenant, clientUser, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS.Keys[0])
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		req.Header.Add(ClientIDHeaderKey, clientUser)
 
@@ -167,10 +181,65 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
+		//given
+		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
+		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		middleware := auth.Handler()
+
+		handler := testHandler(t, defaultTenant, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		key, ok := privateJWKS3.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
+		//given
+		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
+		err := auth.SynchronizeJWKS(context.TODO())
+		require.NoError(t, err)
+
+		middleware := auth.Handler()
+
+		handler := testHandler(t, defaultTenant, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		key, ok := privateJWKS3.Get(1)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -195,10 +264,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
-		require.NoError(t, err)
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -209,7 +279,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		err = json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(t, err)
 
-		expected := fixGraphqlResponse("Internal Server Error: while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme ", apperrors.InternalError)
+		expected := fixGraphqlResponse("Internal Server Error: while synchronizing JWKS during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme ", apperrors.InternalError)
 		assertGraphqlResponse(t, expected, response)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})
@@ -262,18 +332,102 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assertGraphqlResponse(t, expected, response)
 	})
 
+	t.Run("Error - invalid header and bearer token", func(t *testing.T) {
+		//given
+		middleware := createMiddleware(t, false)
+		handler := testHandler(t, defaultTenant, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		req.Header.Add("invalidHeader", "Bearer fake-token")
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Unauthorized [reason=invalid bearer token]", apperrors.Unauthorized)
+		assertGraphqlResponse(t, expected, response)
+	})
+
+	t.Run("Error - token without signing key", func(t *testing.T) {
+		//given
+		middleware := createMiddleware(t, false)
+		handler := testHandler(t, defaultTenant, scopes)
+
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		key, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, nil, false)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Unauthorized [reason=while getting the key ID: Internal Server Error: unable to find the key ID in the token]", apperrors.Unauthorized)
+		assertGraphqlResponse(t, expected, response)
+	})
+
+	t.Run("Error - after successful parsing claims there is no tenant", func(t *testing.T) {
+		//given
+		middleware := createMiddleware(t, false)
+		handler := testHandler(t, "", scopes)
+
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, "", scopes, key, &keyID, true)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Tenant not found [externalTenant=externalTenantName]", apperrors.TenantNotFound)
+		assertGraphqlResponse(t, expected, response)
+	})
+
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
 		handler := testHandler(t, defaultTenant, scopes)
 
-		privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
-		require.NoError(t, err)
-
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
+		oldKey, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		newKey, ok := privateJWKS2.Get(0)
+		assert.True(t, ok)
+
+		oldKeyID := oldKey.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, newKey, &oldKeyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -304,17 +458,24 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	return signedToken
 }
 
-func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key) string {
+func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
-		Tenant:       tnt,
-		Scopes:       scopes,
-		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
-		ConsumerType: consumer.Runtime,
+		Tenant:         tnt,
+		ExternalTenant: "externalTenantName",
+		Scopes:         scopes,
+		ConsumerID:     "1e176e48-e258-4091-a584-feb1bf708b7e",
+		ConsumerType:   consumer.Runtime,
 	})
 
-	materializedKey, err := key.Materialize()
+	if isSigningKeyAvailable {
+		token.Header[authenticator.JwksKeyIDKey] = keyID
+	}
+
+	var rawKey interface{}
+	err := key.Raw(&rawKey)
 	require.NoError(t, err)
-	signedToken, err := token.SignedString(materializedKey)
+
+	signedToken, err := token.SignedString(rawKey)
 	require.NoError(t, err)
 
 	return signedToken

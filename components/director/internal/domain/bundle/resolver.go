@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
 	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
@@ -23,68 +23,70 @@ type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
-//go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 	CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error)
 	UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error)
 }
 
-//go:generate mockery -name=BundleInstanceAuthService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.BundleInstanceAuth, error)
 	List(ctx context.Context, id string) ([]*model.BundleInstanceAuth, error)
 }
 
-//go:generate mockery -name=BundleInstanceAuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleInstanceAuthConverter --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthConverter interface {
 	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
 	MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error)
 }
 
-//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
-	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
-//go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error)
 	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
 }
 
-//go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
-	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
-//go:generate mockery -name=EventConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventConverter --output=automock --outpkg=automock --case=underscore
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error)
 	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 }
 
-//go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
 	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
 }
 
-//go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
 	MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error)
 }
 
-//go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
@@ -231,6 +233,16 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	bndl, err := r.bundleSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.apiSvc.DeleteAllByBundleID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.eventSvc.DeleteAllByBundleID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

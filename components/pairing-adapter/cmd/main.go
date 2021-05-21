@@ -20,7 +20,7 @@ import (
 func main() {
 	conf := adapter.Configuration{}
 	err := envconfig.Init(&conf)
-	exitOnError(err, "while reading Pairing Adapter Configuration")
+	exitOnError(err, "while reading Pairing Adapter configuration")
 
 	authStyle, err := getAuthStyle(conf.OAuth.AuthStyle)
 	exitOnError(err, "while getting Auth Style")

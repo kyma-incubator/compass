@@ -25,24 +25,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/header"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	tx_automock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/vektah/gqlparser/v2/ast"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation/automock"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/vektah/gqlparser/ast"
 )
 
 const (
@@ -66,7 +64,7 @@ func TestHandleOperation(t *testing.T) {
 	t.Run("missing operation mode param causes internal server error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field:  gqlgen.CollectedField{},
 			Args: map[string]interface{}{
@@ -74,9 +72,9 @@ func TestHandleOperation(t *testing.T) {
 			},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
-		directive := operation.NewDirective(nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
@@ -88,19 +86,19 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		// WHEN
 		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
@@ -113,19 +111,19 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -141,19 +139,19 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -169,19 +167,19 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeSync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object:   "RegisterApplication",
 			Field:    gqlgen.CollectedField{},
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -197,7 +195,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -207,13 +205,13 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -232,7 +230,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -242,13 +240,13 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -267,7 +265,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -277,7 +275,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -285,7 +283,7 @@ func TestHandleOperation(t *testing.T) {
 
 		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 			return nil, mockedError()
-		}, nil, nil, nil)
+		}, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -304,7 +302,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -314,13 +312,13 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, func(_ context.Context) (string, error) {
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, func(_ context.Context) (string, error) {
 			return "", mockedError()
 		}, nil)
 
@@ -341,7 +339,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -351,13 +349,13 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedTenantLoaderFunc, nil)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -376,7 +374,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -386,13 +384,13 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedTenantLoaderFunc, nil)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -411,7 +409,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -421,7 +419,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -429,41 +427,7 @@ func TestHandleOperation(t *testing.T) {
 
 		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 			return nil, mockedError()
-		}, nil, mockedTenantLoaderFunc, nil)
-
-		dummyResolver := &dummyResolver{}
-
-		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
-		// THEN
-		require.Error(t, err, "Unable to prepare webhooks")
-		require.Empty(t, res)
-		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
-	})
-
-	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due missing webhooks", func(t *testing.T) {
-		// GIVEN
-		ctx := context.Background()
-		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
-			Object: "RegisterApplication",
-			Field: gqlgen.CollectedField{
-				Field: &ast.Field{
-					Name: "registerApplication",
-				},
-			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
-			IsMethod: false,
-		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
-
-		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
-		defer mockedTx.AssertExpectations(t)
-		defer mockedTransactioner.AssertExpectations(t)
-
-		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
-			return nil, nil
-		}, nil, mockedTenantLoaderFunc, nil)
+		}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -479,7 +443,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -489,7 +453,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -501,7 +465,7 @@ func TestHandleOperation(t *testing.T) {
 				{ID: webhookID2, Type: model.WebhookTypeRegisterApplication},
 				{ID: webhookID3, Type: model.WebhookTypeRegisterApplication},
 			}, nil
-		}, nil, mockedTenantLoaderFunc, nil)
+		}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -517,7 +481,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -527,7 +491,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -537,7 +501,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return("", mockedError())
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
 
 		dummyResolver := &dummyResolver{}
 
@@ -556,7 +520,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -566,7 +530,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
@@ -578,7 +542,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(testID, nil)
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
 
 		dummyResolver := &dummyResolver{}
 
@@ -600,7 +564,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -610,7 +574,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
@@ -618,7 +582,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 		dummyResolver := &dummyResolver{}
 		scheduler := &operation.DisabledScheduler{}
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedTenantLoaderFunc, scheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, scheduler)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, nil, nil)
@@ -635,7 +599,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -645,7 +609,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
@@ -661,7 +625,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler := &automock.Scheduler{}
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, errorWebhooksResponse, nil, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, errorWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, &whTypeApplicationRegister, nil)
@@ -677,7 +641,7 @@ func TestHandleOperation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "RegisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -687,7 +651,7 @@ func TestHandleOperation(t *testing.T) {
 			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
 			IsMethod: false,
 		}
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
@@ -701,9 +665,9 @@ func TestHandleOperation(t *testing.T) {
 			{ID: webhookID3, Type: model.WebhookType(webhookType)},
 		}
 		expectedWebhookIDs := make([]string, 0)
-		for _, webhook := range webhooks {
-			if graphql.WebhookType(webhook.Type) == webhookType {
-				expectedWebhookIDs = append(expectedWebhookIDs, webhook.ID)
+		for _, currWebhook := range webhooks {
+			if graphql.WebhookType(currWebhook.Type) == webhookType {
+				expectedWebhookIDs = append(expectedWebhookIDs, currWebhook.ID)
 			}
 		}
 
@@ -738,7 +702,7 @@ func TestHandleOperation(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 					return testCase.Webhooks, nil
-				}, nil, mockedTenantLoaderFunc, mockedScheduler)
+				}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
 
 				dummyResolver := &dummyResolver{}
 
@@ -757,7 +721,7 @@ func TestHandleOperation(t *testing.T) {
 
 				op := (*operations)[0]
 				require.Equal(t, operationID, op.OperationID)
-				require.Equal(t, operation.OperationType(operationType), op.OperationType)
+				require.Equal(t, operationType, op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
 				headers := make(map[string]string, 0)
@@ -780,6 +744,455 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, testCase.ExpectedWebhookIDs, op.WebhookIDs)
 			})
 		}
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func fails should return error", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedResourceUpdaterFuncWithError, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, nil)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Unable to update resource application with id")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with CREATE operation type should finish successfully and update application status to CREATING", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		operationCategory := "registerApplication"
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			IsMethod: false,
+		}
+
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedScheduler := &automock.Scheduler{}
+		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
+		defer mockedScheduler.AssertExpectations(t)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
+			require.NotNil(t, ctx)
+			require.Equal(t, resourceID, id)
+			require.Equal(t, false, ready)
+			require.Nil(t, errorMsg)
+			require.Equal(t, model.ApplicationStatusConditionCreating, appStatusCondition)
+			return nil
+		}, mockedTenantLoaderFunc, mockedScheduler)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, mockedNextResponse(), res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		operations, ok := opsFromCtx.(*[]*operation.Operation)
+		require.True(t, ok)
+		require.Len(t, *operations, 1)
+
+		op := (*operations)[0]
+		require.Equal(t, operationID, op.OperationID)
+		require.Equal(t, operation.OperationTypeCreate, op.OperationType)
+		require.Equal(t, operationCategory, op.OperationCategory)
+
+		headers := make(map[string]string, 0)
+		for key, value := range mockedHeaders {
+			headers[key] = value[0]
+		}
+
+		expectedRequestObject := &webhook.RequestObject{
+			Application: mockedNextResponse().(webhook.Resource),
+			TenantID:    tenantID,
+			Headers:     headers,
+		}
+
+		expectedObj, err := json.Marshal(expectedRequestObject)
+		require.NoError(t, err)
+
+		require.Equal(t, string(expectedObj), op.RequestObject)
+
+		require.Len(t, op.WebhookIDs, 1)
+		require.Equal(t, webhookID1, op.WebhookIDs[0])
+	})
+
+	t.Run("when mutation is in ASYNC mode, and no webhooks are provided operation should finish successfully and update application status to CREATING", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		operationCategory := "registerApplication"
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			IsMethod: false,
+		}
+
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedScheduler := &automock.Scheduler{}
+		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
+		defer mockedScheduler.AssertExpectations(t)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedEmptyWebhooksResponse, mockedResourceFetcherFunc, func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
+			require.NotNil(t, ctx)
+			require.Equal(t, resourceID, id)
+			require.Equal(t, false, ready)
+			require.Nil(t, errorMsg)
+			require.Equal(t, model.ApplicationStatusConditionCreating, appStatusCondition)
+			return nil
+		}, mockedTenantLoaderFunc, mockedScheduler)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, mockedNextResponse(), res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		operations, ok := opsFromCtx.(*[]*operation.Operation)
+		require.True(t, ok)
+		require.Len(t, *operations, 1)
+
+		op := (*operations)[0]
+		require.Equal(t, operationID, op.OperationID)
+		require.Equal(t, operation.OperationTypeCreate, op.OperationType)
+		require.Equal(t, operationCategory, op.OperationCategory)
+
+		headers := make(map[string]string, 0)
+		for key, value := range mockedHeaders {
+			headers[key] = value[0]
+		}
+
+		expectedRequestObject := &webhook.RequestObject{
+			Application: mockedNextResponse().(webhook.Resource),
+			TenantID:    tenantID,
+			Headers:     headers,
+		}
+
+		expectedObj, err := json.Marshal(expectedRequestObject)
+		require.NoError(t, err)
+		require.Equal(t, string(expectedObj), op.RequestObject)
+		require.Len(t, op.WebhookIDs, 0)
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with UPDATE operation type should finish successfully and update application status to UPDATING", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		operationCategory := "registerApplication"
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			IsMethod: false,
+		}
+
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedScheduler := &automock.Scheduler{}
+		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
+		defer mockedScheduler.AssertExpectations(t)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
+			require.NotNil(t, ctx)
+			require.Equal(t, resourceID, id)
+			require.Equal(t, false, ready)
+			require.Nil(t, errorMsg)
+			require.Equal(t, model.ApplicationStatusConditionUpdating, appStatusCondition)
+			return nil
+		}, mockedTenantLoaderFunc, mockedScheduler)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeUpdate, &whTypeApplicationRegister, &resourceIdField)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, mockedNextResponse(), res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		operations, ok := opsFromCtx.(*[]*operation.Operation)
+		require.True(t, ok)
+		require.Len(t, *operations, 1)
+
+		op := (*operations)[0]
+		require.Equal(t, operationID, op.OperationID)
+		require.Equal(t, operation.OperationTypeUpdate, op.OperationType)
+		require.Equal(t, operationCategory, op.OperationCategory)
+
+		headers := make(map[string]string, 0)
+		for key, value := range mockedHeaders {
+			headers[key] = value[0]
+		}
+
+		expectedRequestObject := &webhook.RequestObject{
+			Application: mockedNextResponse().(webhook.Resource),
+			TenantID:    tenantID,
+			Headers:     headers,
+		}
+
+		expectedObj, err := json.Marshal(expectedRequestObject)
+		require.NoError(t, err)
+
+		require.Equal(t, string(expectedObj), op.RequestObject)
+
+		require.Len(t, op.WebhookIDs, 1)
+		require.Equal(t, webhookID1, op.WebhookIDs[0])
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with DELETE operation type should finish successfully and update application status to DELETING", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		operationCategory := "registerApplication"
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			IsMethod: false,
+		}
+
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedScheduler := &automock.Scheduler{}
+		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
+		defer mockedScheduler.AssertExpectations(t)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
+			require.NotNil(t, ctx)
+			require.Equal(t, resourceID, id)
+			require.Equal(t, false, ready)
+			require.Nil(t, errorMsg)
+			require.Equal(t, model.ApplicationStatusConditionDeleting, appStatusCondition)
+			return nil
+		}, mockedTenantLoaderFunc, mockedScheduler)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeDelete, &whTypeApplicationRegister, &resourceIdField)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, mockedNextResponse(), res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		operations, ok := opsFromCtx.(*[]*operation.Operation)
+		require.True(t, ok)
+		require.Len(t, *operations, 1)
+
+		op := (*operations)[0]
+		require.Equal(t, operationID, op.OperationID)
+		require.Equal(t, operation.OperationTypeDelete, op.OperationType)
+		require.Equal(t, operationCategory, op.OperationCategory)
+
+		headers := make(map[string]string, 0)
+		for key, value := range mockedHeaders {
+			headers[key] = value[0]
+		}
+
+		expectedRequestObject := &webhook.RequestObject{
+			Application: mockedNextResponse().(webhook.Resource),
+			TenantID:    tenantID,
+			Headers:     headers,
+		}
+
+		expectedObj, err := json.Marshal(expectedRequestObject)
+		require.NoError(t, err)
+
+		require.Equal(t, string(expectedObj), op.RequestObject)
+
+		require.Len(t, op.WebhookIDs, 1)
+		require.Equal(t, webhookID1, op.WebhookIDs[0])
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation without webhooks in context and resource updater func is executed with DELETE operation type should finish successfully and update application status to DELETING", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		operationCategory := "registerApplication"
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			IsMethod: false,
+		}
+
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+
+		mockedScheduler := &automock.Scheduler{}
+		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, nil)
+		defer mockedScheduler.AssertExpectations(t)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedEmptyWebhooksResponse, mockedResourceFetcherFunc, func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error {
+			require.NotNil(t, ctx)
+			require.Equal(t, resourceID, id)
+			require.Equal(t, false, ready)
+			require.Nil(t, errorMsg)
+			require.Equal(t, model.ApplicationStatusConditionDeleting, appStatusCondition)
+			return nil
+		}, mockedTenantLoaderFunc, mockedScheduler)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeDelete, &whTypeApplicationRegister, &resourceIdField)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, mockedNextResponse(), res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		operations, ok := opsFromCtx.(*[]*operation.Operation)
+		require.True(t, ok)
+		require.Len(t, *operations, 1)
+
+		op := (*operations)[0]
+		require.Equal(t, operationID, op.OperationID)
+		require.Equal(t, operation.OperationTypeDelete, op.OperationType)
+		require.Equal(t, operationCategory, op.OperationCategory)
+
+		headers := make(map[string]string, 0)
+		for key, value := range mockedHeaders {
+			headers[key] = value[0]
+		}
+
+		expectedRequestObject := &webhook.RequestObject{
+			Application: mockedNextResponse().(webhook.Resource),
+			TenantID:    tenantID,
+			Headers:     headers,
+		}
+
+		expectedObj, err := json.Marshal(expectedRequestObject)
+		require.NoError(t, err)
+		require.Equal(t, string(expectedObj), op.RequestObject)
+		require.Len(t, op.WebhookIDs, 0)
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context and resource updater func is executed with invalid operation type should return error", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		operationCategory := "registerApplication"
+		rCtx := &gqlgen.FieldContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: operationCategory,
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			IsMethod: false,
+		}
+
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, "invalid", &whTypeApplicationRegister, &resourceIdField)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Invalid status condition")
+		require.Nil(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 }
 
@@ -913,17 +1326,9 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 			transactionFunc: func() (*tx_automock.PersistenceTx, *tx_automock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 			},
-			tenantLoaderFunc: tenantLoaderWithOptionalErr(nil),
-			resourceFetcherFunc: func(ctx context.Context, tenant, id string) (model.Entity, error) {
-				return &model.Application{
-					BaseEntity: &model.BaseEntity{
-						ID:        resourceID,
-						Ready:     true,
-						CreatedAt: timeToTimePtr(time.Now()),
-					},
-				}, nil
-			},
-			resolverFunc: (&dummyResolver{}).SuccessResolve,
+			tenantLoaderFunc:    tenantLoaderWithOptionalErr(nil),
+			resourceFetcherFunc: mockedResourceFetcherFunc,
+			resolverFunc:        (&dummyResolver{}).SuccessResolve,
 			validationFunc: func(t *testing.T, res interface{}, err error) {
 				require.NoError(t, err)
 				require.Equal(t, mockedNextResponse(), res)
@@ -935,7 +1340,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			// GIVEN
 			ctx := context.Background()
-			rCtx := &gqlgen.ResolverContext{
+			rCtx := &gqlgen.FieldContext{
 				Object: test.mutation,
 				Field: gqlgen.CollectedField{
 					Field: &ast.Field{
@@ -946,7 +1351,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 				IsMethod: false,
 			}
 
-			ctx = gqlgen.WithResolverContext(ctx, rCtx)
+			ctx = gqlgen.WithFieldContext(ctx, rCtx)
 			ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 			mockedTx, mockedTransactioner := test.transactionFunc()
 			defer mockedTx.AssertExpectations(t)
@@ -958,7 +1363,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 
 			directive := operation.NewDirective(mockedTransactioner, func(ctx context.Context, resourceID string) ([]*model.Webhook, error) {
 				return nil, nil
-			}, test.resourceFetcherFunc, test.tenantLoaderFunc, test.scheduler)
+			}, test.resourceFetcherFunc, mockedEmptyResourceUpdaterFunc, test.tenantLoaderFunc, test.scheduler)
 
 			// WHEN
 			res, err := directive.HandleOperation(ctx, nil, test.resolverFunc, graphql.OperationTypeDelete, nil, &resourceIdField)
@@ -971,7 +1376,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 		// GIVEN
 		operationCategory := "registerApplication"
 		ctx := context.Background()
-		rCtx := &gqlgen.ResolverContext{
+		rCtx := &gqlgen.FieldContext{
 			Object: "UnregisterApplication",
 			Field: gqlgen.CollectedField{
 				Field: &ast.Field{
@@ -982,12 +1387,12 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 			IsMethod: false,
 		}
 
-		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeDelete, &whTypeApplicationUnregister, nil)
@@ -1031,8 +1436,30 @@ func mockedWebhooksResponse(_ context.Context, _ string) ([]*model.Webhook, erro
 	}, nil
 }
 
+func mockedEmptyWebhooksResponse(_ context.Context, _ string) ([]*model.Webhook, error) {
+	return nil, nil
+}
+
+func mockedResourceFetcherFunc(context.Context, string, string) (model.Entity, error) {
+	return &model.Application{
+		BaseEntity: &model.BaseEntity{
+			ID:        resourceID,
+			Ready:     true,
+			CreatedAt: timeToTimePtr(time.Now()),
+		},
+	}, nil
+}
+
 func mockedTenantLoaderFunc(_ context.Context) (string, error) {
 	return tenantID, nil
+}
+
+func mockedResourceUpdaterFuncWithError(context.Context, string, bool, *string, model.ApplicationStatusCondition) error {
+	return mockedError()
+}
+
+func mockedEmptyResourceUpdaterFunc(context.Context, string, bool, *string, model.ApplicationStatusCondition) error {
+	return nil
 }
 
 func mockedError() error {

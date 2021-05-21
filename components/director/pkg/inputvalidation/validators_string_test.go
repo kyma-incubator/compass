@@ -3,13 +3,10 @@ package inputvalidation_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation/inputvalidationtest"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation/inputvalidationtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 

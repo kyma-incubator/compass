@@ -3,9 +3,8 @@ package inputvalidation
 import (
 	"reflect"
 
-	k8svalidation "k8s.io/apimachinery/pkg/api/validation"
-
 	"github.com/pkg/errors"
+	k8svalidation "k8s.io/apimachinery/pkg/api/validation"
 )
 
 var (

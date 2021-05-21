@@ -9,13 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=TombstoneRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TombstoneRepository --output=automock --outpkg=automock --case=underscore
 type TombstoneRepository interface {
 	Create(ctx context.Context, item *model.Tombstone) error
 	Update(ctx context.Context, item *model.Tombstone) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Tombstone, error)
+	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error)
 }
 
 type service struct {
@@ -105,4 +106,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.Tombstone, error) 
 	}
 
 	return tombstone, nil
+}
+
+func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.tombstoneRepo.ListByApplicationID(ctx, tnt, appID)
 }

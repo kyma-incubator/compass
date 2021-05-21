@@ -1394,6 +1394,8 @@ func TestResolver_DeleteBundle(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.BundleService
+		ApiDefFn        func() *automock.APIService
+		EventDefFn      func() *automock.EventService
 		ConverterFn     func() *automock.BundleConverter
 		ExpectedBundle  *graphql.Bundle
 		ExpectedErr     error
@@ -1406,6 +1408,16 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
+			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return eventSvc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
@@ -1422,6 +1434,14 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc := &automock.BundleService{}
 				return svc
 			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				return eventSvc
+			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
 				return conv
@@ -1436,6 +1456,63 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
+			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				return eventSvc
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				return conv
+			},
+			ExpectedBundle: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when APIs deletion failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
+				return svc
+			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				return eventSvc
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				return conv
+			},
+			ExpectedBundle: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when Events deletion failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
+				return svc
+			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
+				return eventSvc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
@@ -1453,6 +1530,16 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
 				return svc
 			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return eventSvc
+			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
 				return conv
@@ -1468,6 +1555,16 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
+			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return eventSvc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
@@ -1486,6 +1583,16 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
 			},
+			ApiDefFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return apiSvc
+			},
+			EventDefFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				return eventSvc
+			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
 				conv.On("ToGraphQL", modelBundle).Return(nil, testErr).Once()
@@ -1501,9 +1608,11 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			// given
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
+			apiSvc := testCase.ApiDefFn()
+			eventSvc := testCase.EventDefFn()
 			converter := testCase.ConverterFn()
 
-			resolver := mp_bundle.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
+			resolver := mp_bundle.NewResolver(transact, svc, nil, apiSvc, eventSvc, nil, converter, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.DeleteBundle(context.TODO(), id)

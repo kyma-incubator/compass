@@ -2,15 +2,13 @@ package systemauth
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +19,7 @@ var (
 	tenantColumn = "tenant_id"
 )
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.SystemAuth) (Entity, error)
 	FromEntity(in Entity) (model.SystemAuth, error)
@@ -35,6 +33,7 @@ type repository struct {
 	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
 	deleterGlobal      repo.DeleterGlobal
+	updater            repo.Updater
 
 	conv Converter
 }
@@ -48,6 +47,7 @@ func NewRepository(conv Converter) *repository {
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
 		deleter:            repo.NewDeleter(resource.SystemAuth, tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
+		updater:            repo.NewUpdater(resource.SystemAuth, tableName, []string{"value"}, tenantColumn, []string{"id"}),
 		conv:               conv,
 	}
 }
@@ -79,6 +79,24 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Sys
 func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	itemModel, err := r.conv.FromEntity(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting SystemAuth entity to model")
+	}
+
+	return &itemModel, nil
+}
+
+func (r *repository) GetByJSONValue(ctx context.Context, value map[string]interface{}) (*model.SystemAuth, error) {
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not marshal")
+	}
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewJSONCondition("value", string(valueBytes))}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -125,6 +143,16 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 
 	err = r.listerGlobal.ListGlobal(ctx, &entities, conditions...)
 	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error) {
+	var entities Collection
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -180,6 +208,19 @@ func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, o
 	objTypeCond = repo.NewNotNullCondition(column)
 
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
+}
+
+func (r *repository) Update(ctx context.Context, item *model.SystemAuth) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity, err := r.conv.ToEntity(*item)
+	if err != nil {
+		return errors.Wrap(err, "while converting model to entity")
+	}
+
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
 func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {

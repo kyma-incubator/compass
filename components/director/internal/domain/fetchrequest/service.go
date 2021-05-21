@@ -26,7 +26,7 @@ type service struct {
 	timestampGen timestamp.Generator
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Update(ctx context.Context, item *model.FetchRequest) error
 }
@@ -45,7 +45,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 
 	err := s.repo.Update(ctx, fr)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status.")
+		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	}
 
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error has occurred while fetching Spec.")
+		log.C(ctx).WithError(err).Errorf("An error has occurred while fetching Spec: %v", err)
 		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", err.Error())), s.timestampGen())
 	}
 
@@ -75,20 +75,19 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		if resp.Body != nil {
 			err := resp.Body.Close()
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body.")
+				log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
 			}
 		}
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		errMsg := fmt.Sprintf("While fetching Spec status code: %d", resp.StatusCode)
-		log.C(ctx).Errorf(errMsg)
+		log.C(ctx).WithError(err).Errorf("Failed to execute fetch request for %s with id %q: status code: %d: %v", fr.ObjectType, fr.ObjectID, resp.StatusCode, err)
 		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec status code: %d", resp.StatusCode)), s.timestampGen())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error has occurred while reading Spec.")
+		log.C(ctx).WithError(err).Errorf("An error has occurred while reading Spec: %v", err)
 		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading Spec: %s", err.Error())), s.timestampGen())
 	}
 

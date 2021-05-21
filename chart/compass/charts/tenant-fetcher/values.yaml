@@ -1,5 +1,7 @@
 deployment:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
   image:
     pullPolicy: IfNotPresent
   resources: {}
@@ -17,8 +19,8 @@ deployment:
 
 database:
   dbPool:
-    maxOpenConnections: 30
-    maxIdleConnections: 2
+    maxOpenConnections: 2
+    maxIdleConnections: 1
 
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"

@@ -16,7 +16,7 @@ type update struct {
 	repo     StatusUpdateRepository
 }
 
-//go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
 	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)
@@ -44,7 +44,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			logger := log.C(ctx)
 
 			if err != nil {
-				logger.WithError(err).Error("An error has occurred while fetching consumer info from context.")
+				logger.WithError(err).Errorf("An error has occurred while fetching consumer info from context: %v", err)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -61,7 +61,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			tx, err := u.transact.Begin()
 			if err != nil {
-				logger.WithError(err).Error("An error has occurred while opening transaction.")
+				logger.WithError(err).Errorf("An error has occurred while opening transaction: %v", err)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -71,7 +71,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
 			if err != nil {
-				logger.WithError(err).Error("An error has occurred while checking repository status.")
+				logger.WithError(err).Errorf("An error has occurred while checking repository status: %v", err)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -79,14 +79,14 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			if !isConnected {
 				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, object)
 				if err != nil {
-					logger.WithError(err).Error("An error has occurred while updating repository status.")
+					logger.WithError(err).Errorf("An error has occurred while updating repository status: %v", err)
 					next.ServeHTTP(w, r)
 					return
 				}
 			}
 
 			if err := tx.Commit(); err != nil {
-				logger.WithError(err).Error("An error has occurred while committing transaction.")
+				logger.WithError(err).Errorf("An error has occurred while committing transaction: %v", err)
 				next.ServeHTTP(w, r)
 				return
 			}

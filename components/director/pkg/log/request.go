@@ -30,10 +30,8 @@ func RequestLogger() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			entry := C(ctx)
-			if correlationID := correlation.CorrelationIDForRequest(r); correlationID != "" {
-				entry = entry.WithField(FieldRequestID, correlationID)
-			}
+			entry := LoggerWithCorrelationId(r)
+
 			ctx = ContextWithLogger(ctx, entry)
 			r = r.WithContext(ctx)
 
@@ -65,4 +63,14 @@ func RequestLogger() func(next http.Handler) http.Handler {
 			afterLogger.Info("Finished handling request...")
 		})
 	}
+}
+
+func LoggerWithCorrelationId(r *http.Request) *logrus.Entry {
+	ctx := r.Context()
+	entry := C(ctx)
+	if correlationID := correlation.CorrelationIDForRequest(r); correlationID != "" {
+		entry = entry.WithField(FieldRequestID, correlationID)
+	}
+
+	return entry
 }

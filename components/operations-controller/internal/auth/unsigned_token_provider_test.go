@@ -89,7 +89,7 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAutho
 
 	suite.Require().NoError(err)
 	suite.Require().Equal(tenantID, claims.Tenant)
-	suite.Require().Equal("application:read", claims.Scopes)
+	suite.Require().Equal("application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read", claims.Scopes)
 
 }
 

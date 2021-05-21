@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=Client -output=automock -outpkg=automock
+//go:generate mockery --name=Client --output=automock --outpkg=automock
 type Client interface {
 	Do(ctx context.Context, req RequestData) (*ExternalToken, error)
 }

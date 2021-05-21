@@ -11,6 +11,10 @@ HasScopes directive is added automatically to every query and mutation by scopes
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
 """
+Sanitize directive marks mutation arguments that will be validated.
+"""
+directive @sanitize(path: String!) on FIELD_DEFINITION
+"""
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
@@ -51,6 +55,15 @@ enum ApplicationStatusCondition {
 	INITIAL
 	CONNECTED
 	FAILED
+	CREATING
+	CREATE_FAILED
+	CREATE_SUCCEEDED
+	UPDATING
+	UPDATE_FAILED
+	UPDATE_SUCCEEDED
+	DELETING
+	DELETE_FAILED
+	DELETE_SUCCEEDED
 }
 
 enum ApplicationTemplateAccessLevel {
@@ -144,6 +157,7 @@ enum WebhookType {
 	CONFIGURATION_CHANGED
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
+	OPEN_RESOURCE_DISCOVERY
 }
 
 interface OneTimeToken {
@@ -162,6 +176,11 @@ For requesting next page, set `after` to `pageInfo.endCursor` returned from prev
 interface Pageable {
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+interface SystemAuth {
+	id: ID!
+	auth: Auth
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
@@ -241,6 +260,21 @@ input ApplicationRegisterInput {
 **Validation:** provided placeholders' names are unique and used in applicationInput
 """
 input ApplicationTemplateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	webhooks: [WebhookInput!]
+	description: String
+	applicationInput: ApplicationRegisterInput!
+	placeholders: [PlaceholderDefinitionInput!]
+	accessLevel: ApplicationTemplateAccessLevel!
+}
+
+input ApplicationTemplateUpdateInput {
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -620,7 +654,6 @@ type APIDefinition {
 	"""
 	group: String
 	version: Version
-	ready: Boolean!
 	created_at: Timestamp
 	updated_at: Timestamp
 	deleted_at: Timestamp
@@ -641,7 +674,12 @@ type APISpec {
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.api_spec.fetch_request")
+}
+
+type AppSystemAuth implements SystemAuth {
+	id: ID!
+	auth: Auth @sanitize(path: "graphql.field.application.auths")
 }
 
 type Application {
@@ -650,15 +688,15 @@ type Application {
 	providerName: String
 	description: String
 	integrationSystemID: ID
+	applicationTemplateID: ID
 	labels(key: String): Labels
 	status: ApplicationStatus!
-	webhooks: [Webhook!]
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
-	auths: [SystemAuth!]
+	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -684,6 +722,7 @@ type ApplicationTemplate {
 	id: ID!
 	name: String!
 	description: String
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -725,19 +764,18 @@ type Bundle {
 	name: String!
 	description: String
 	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): BundleInstanceAuth
-	instanceAuths: [BundleInstanceAuth!]!
+	instanceAuth(id: ID!): BundleInstanceAuth @sanitize(path: "graphql.field.bundle.instance_auth")
+	instanceAuths: [BundleInstanceAuth!] @sanitize(path: "graphql.field.bundle.instance_auths")
 	"""
 	When defined, all Auth requests fallback to defaultInstanceAuth.
 	"""
-	defaultInstanceAuth: Auth
+	defaultInstanceAuth: Auth @sanitize(path: "graphql.field.bundle.default_instance_auth")
 	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
 	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
 	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -807,8 +845,7 @@ type Document {
 	"""
 	kind: String
 	data: CLOB
-	fetchRequest: FetchRequest
-	ready: Boolean!
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.document.fetch_request")
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -831,7 +868,6 @@ type EventDefinition {
 	group: String
 	spec: EventSpec
 	version: Version
-	ready: Boolean!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -849,7 +885,7 @@ type EventSpec {
 	data: CLOB
 	type: EventSpecType!
 	format: SpecFormat!
-	fetchRequest: FetchRequest
+	fetchRequest: FetchRequest @sanitize(path: "graphql.field.event_spec.fetch_request")
 }
 
 """
@@ -857,7 +893,7 @@ Compass performs fetch to validate if request is correct and stores a copy
 """
 type FetchRequest {
 	url: String!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.fetch_request.auth")
 	mode: FetchMode!
 	filter: String
 	status: FetchRequestStatus!
@@ -883,11 +919,16 @@ type HealthCheckPage implements Pageable {
 	totalCount: Int!
 }
 
+type IntSysSystemAuth implements SystemAuth {
+	id: ID!
+	auth: Auth @sanitize(path: "graphql.field.integration_system.auths")
+}
+
 type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!]
+	auths: [IntSysSystemAuth!]
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -951,7 +992,7 @@ type Runtime {
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!]
+	auths: [RuntimeSystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
@@ -987,9 +1028,9 @@ type RuntimeStatus {
 	timestamp: Timestamp!
 }
 
-type SystemAuth {
+type RuntimeSystemAuth implements SystemAuth {
 	id: ID!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.runtime.auths")
 }
 
 type Tenant {
@@ -1023,6 +1064,7 @@ type Viewer {
 type Webhook {
 	id: ID!
 	applicationID: ID
+	applicationTemplateID: ID
 	runtimeID: ID
 	integrationSystemID: ID
 	type: WebhookType!
@@ -1031,7 +1073,7 @@ type Webhook {
 	retryInterval: Int
 	timeout: Int
 	url: String
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String
@@ -1165,7 +1207,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
@@ -1208,7 +1250,7 @@ type Mutation {
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)

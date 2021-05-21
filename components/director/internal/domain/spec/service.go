@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery -name=SpecRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore
 type SpecRepository interface {
 	Create(ctx context.Context, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error)
@@ -23,19 +23,19 @@ type SpecRepository interface {
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 }
 
-//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore
 type FetchRequestService interface {
 	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
@@ -156,6 +156,15 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	}
 
 	return nil
+}
+
+func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {

@@ -15,7 +15,7 @@ type StaticUser struct {
 	Scopes   []string `json:"scopes"`
 }
 
-//go:generate mockery -name=StaticUserRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=StaticUserRepository --output=automock --outpkg=automock --case=underscore
 type StaticUserRepository interface {
 	Get(username string) (StaticUser, error)
 }

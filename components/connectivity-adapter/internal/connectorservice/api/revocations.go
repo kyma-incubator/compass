@@ -9,32 +9,30 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 type revocationsHandler struct {
 	connectorClientProvider connector.ClientProvider
-	logger                  *log.Logger
 }
 
-func NewRevocationsHandler(connectorClientProvider connector.ClientProvider, logger *log.Logger) revocationsHandler {
+func NewRevocationsHandler(connectorClientProvider connector.ClientProvider) revocationsHandler {
 	return revocationsHandler{
 		connectorClientProvider: connectorClientProvider,
-		logger:                  logger,
 	}
 }
 
 func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.Request) {
 	authorizationHeaders, err := middlewares.GetAuthHeadersFromContext(r.Context(), middlewares.AuthorizationHeadersKey)
 	if err != nil {
-		rh.logger.Errorf("Failed to read authorization context: %s.", err)
+		log.C(r.Context()).Errorf("Failed to read authorization context: %s.", err)
 		res.WriteErrorMessage(w, "Failed to read authorization context.", apperrors.CodeForbidden)
 
 		return
 	}
 
-	contextLogger := contextLogger(rh.logger, authorizationHeaders.GetSystemAuthID())
+	contextLogger := contextLogger(r.Context(), authorizationHeaders.GetSystemAuthID())
 
 	contextLogger.Info("Revoke certificate")
 

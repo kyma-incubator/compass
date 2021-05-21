@@ -17,15 +17,13 @@ type Product struct {
 }
 
 type ProductInput struct {
-	OrdID            string
-	TenantID         string
-	ApplicationID    string
-	Title            string
-	ShortDescription string
-	Vendor           string
-	Parent           *string
-	PPMSObjectID     *string
-	Labels           json.RawMessage
+	OrdID            string          `json:"id"`
+	Title            string          `json:"title"`
+	ShortDescription string          `json:"shortDescription"`
+	Vendor           string          `json:"vendor"`
+	Parent           *string         `json:"parent"`
+	PPMSObjectID     *string         `json:"sapPpmsObjectId"`
+	Labels           json.RawMessage `json:"labels"`
 }
 
 func (i *ProductInput) ToProduct(tenantID, appID string) *Product {

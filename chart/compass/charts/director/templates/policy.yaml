@@ -8,5 +8,5 @@ spec:
     matchLabels:
       app: {{ .Chart.Name }}
   portLevelMtls:
-    {{ .Values.metrics.port }}:
+    {{ .Values.global.director.metrics.port }}:
       mode: "PERMISSIVE"

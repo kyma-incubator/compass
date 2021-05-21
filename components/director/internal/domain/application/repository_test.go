@@ -307,8 +307,8 @@ func TestRepository_Create(t *testing.T) {
 			db, dbMock := testdb.MockDatabase(t)
 			defer dbMock.AssertExpectations(t)
 
-			dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, tenant_id, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
-				WithArgs(givenID(), givenTenant(), appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error).
+			dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, tenant_id,  name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+				WithArgs(givenID(), nil, givenTenant(), appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error).
 				WillReturnResult(sqlmock.NewResult(-1, 1))
 
 			ctx = persistence.SaveToContext(ctx, db)
@@ -588,6 +588,83 @@ func TestPgRepository_List(t *testing.T) {
 
 		// when
 		_, err := pgRepository.List(ctx, givenTenant(), nil, inputPageSize, inputCursor)
+
+		//then
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "while fetching list of objects from DB: some error")
+	})
+}
+
+func TestPgRepository_ListGlobal(t *testing.T) {
+	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appEntity2 := fixDetailedEntityApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
+
+	appModel1 := fixDetailedModelApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appModel2 := fixDetailedModelApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
+
+	inputPageSize := 3
+	inputCursor := ""
+	totalCount := 2
+
+	pageableQuery := `^SELECT (.+) FROM public\.applications ORDER BY id LIMIT %d OFFSET %d$`
+	countQuery := `SELECT COUNT\(\*\) FROM public\.applications`
+
+	t.Run("Success", func(t *testing.T) {
+		// given
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}).
+			AddRow(appEntity1.ID, appEntity1.TenantID, appEntity1.Name, appEntity1.Description, appEntity1.StatusCondition, appEntity1.StatusTimestamp, appEntity1.HealthCheckURL, appEntity1.IntegrationSystemID, appEntity1.ProviderName, appEntity1.BaseURL, appEntity1.Labels, appEntity1.Ready, appEntity1.CreatedAt, appEntity1.UpdatedAt, appEntity1.DeletedAt, appEntity1.Error).
+			AddRow(appEntity2.ID, appEntity2.TenantID, appEntity2.Name, appEntity2.Description, appEntity2.StatusCondition, appEntity2.StatusTimestamp, appEntity2.HealthCheckURL, appEntity2.IntegrationSystemID, appEntity2.ProviderName, appEntity2.BaseURL, appEntity2.Labels, appEntity2.Ready, appEntity2.CreatedAt, appEntity2.UpdatedAt, appEntity2.DeletedAt, appEntity2.Error)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+
+		sqlMock.ExpectQuery(fmt.Sprintf(pageableQuery, inputPageSize, 0)).
+			WithArgs().
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs().
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		conv := &automock.EntityConverter{}
+		conv.On("FromEntity", appEntity2).Return(appModel2).Once()
+		conv.On("FromEntity", appEntity1).Return(appModel1).Once()
+		defer conv.AssertExpectations(t)
+
+		pgRepository := application.NewRepository(conv)
+
+		// when
+		modelApp, err := pgRepository.ListGlobal(ctx, inputPageSize, inputCursor)
+
+		// then
+		require.NoError(t, err)
+		require.Len(t, modelApp.Data, 2)
+		assert.Equal(t, appEntity1.ID, modelApp.Data[0].ID)
+		assert.Equal(t, appEntity2.ID, modelApp.Data[1].ID)
+		assert.Equal(t, "", modelApp.PageInfo.StartCursor)
+		assert.Equal(t, totalCount, modelApp.TotalCount)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+
+		sqlMock.ExpectQuery(fmt.Sprintf(pageableQuery, inputPageSize, 0)).
+			WithArgs().
+			WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		conv := &automock.EntityConverter{}
+		defer conv.AssertExpectations(t)
+
+		pgRepository := application.NewRepository(conv)
+
+		// when
+		_, err := pgRepository.ListGlobal(ctx, inputPageSize, inputCursor)
 
 		//then
 		require.Error(t, err)

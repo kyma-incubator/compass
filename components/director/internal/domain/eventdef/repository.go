@@ -19,8 +19,9 @@ const eventAPIDefTable string = `"public"."event_api_definitions"`
 var (
 	idColumn        = "id"
 	tenantColumn    = "tenant_id"
+	appColumn       = "app_id"
 	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, tenantColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+	eventDefColumns = []string{idColumn, tenantColumn, appColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
@@ -31,7 +32,7 @@ var (
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
-//go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) model.EventDefinition
 	ToEntity(apiModel model.EventDefinition) Entity
@@ -40,6 +41,7 @@ type EventAPIDefinitionConverter interface {
 type pgRepository struct {
 	singleGetter    repo.SingleGetter
 	pageableQuerier repo.PageableQuerier
+	lister          repo.Lister
 	creator         repo.Creator
 	updater         repo.Updater
 	deleter         repo.Deleter
@@ -51,6 +53,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		lister:          repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:         repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
@@ -97,6 +100,19 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 	}
 
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
+	eventCollection := EventAPIDefCollection{}
+	if err := r.lister.List(ctx, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	events := make([]*model.EventDefinition, 0, eventCollection.Len())
+	for _, event := range eventCollection {
+		eventModel := r.conv.FromEntity(event)
+		events = append(events, &eventModel)
+	}
+	return events, nil
 }
 
 func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.EventDefinitionPage, error) {
@@ -164,4 +180,8 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
+}
+
+func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
 }

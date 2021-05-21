@@ -28,7 +28,7 @@ func TestMessageFactory(t *testing.T) {
 		assert.Equal(t, expected, output)
 	})
 
-	t.Run("Configuration change", func(t *testing.T) {
+	t.Run("configuration change", func(t *testing.T) {
 		expected := model.ConfigurationChange{User: "user", Metadata: model.Metadata{
 			UUID:   TestMsgID,
 			Time:   Timestamp_text,

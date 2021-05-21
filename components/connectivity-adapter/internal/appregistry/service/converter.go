@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -132,15 +131,14 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			if apiDef.Spec == nil {
 				apiDef.Spec = &graphql.APISpecInput{}
 			}
-			asClob := graphql.CLOB(string(deprecated.Api.Spec))
-			apiDef.Spec.Data = &asClob
+			apiDef.Spec.Data = ptrClob(graphql.CLOB(*deprecated.Api.Spec))
 			if apiDef.Spec.Type == "" {
 				apiDef.Spec.Type = graphql.APISpecTypeOpenAPI
 			}
 
-			if c.isXML(string(deprecated.Api.Spec)) {
+			if model.IsXML(string(*deprecated.Api.Spec)) {
 				apiDef.Spec.Format = graphql.SpecFormatXML
-			} else if c.isJSON(deprecated.Api.Spec) {
+			} else if c.isJSON(string(*deprecated.Api.Spec)) {
 				apiDef.Spec.Format = graphql.SpecFormatJSON
 			} else {
 				apiDef.Spec.Format = graphql.SpecFormatYaml
@@ -229,9 +227,9 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 		// TODO add tests
 		var format graphql.SpecFormat
-		if c.isXML(string(deprecated.Events.Spec)) {
+		if model.IsXML(string(*deprecated.Events.Spec)) {
 			format = graphql.SpecFormatXML
-		} else if c.isJSON(deprecated.Events.Spec) {
+		} else if c.isJSON(string(*deprecated.Events.Spec)) {
 			format = graphql.SpecFormatJSON
 		} else {
 			format = graphql.SpecFormatYaml
@@ -241,7 +239,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			&graphql.EventDefinitionInput{
 				Name: deprecated.Name,
 				Spec: &graphql.EventSpecInput{
-					Data:   ptrClob(graphql.CLOB(deprecated.Events.Spec)),
+					Data:   ptrClob(graphql.CLOB(*deprecated.Events.Spec)),
 					Type:   graphql.EventSpecTypeAsyncAPI,
 					Format: format,
 				},
@@ -350,7 +348,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		if apiDef.Spec != nil {
 			outDeprecated.Api.ApiType = string(apiDef.Spec.Type)
 			if apiDef.Spec.Data != nil {
-				outDeprecated.Api.Spec = json.RawMessage(*apiDef.Spec.Data)
+				outDeprecated.Api.Spec = ptrSpecResponse(model.SpecResponse(*apiDef.Spec.Data))
 			}
 		}
 
@@ -394,7 +392,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		}
 
 		if in.DefaultInstanceAuth != nil && in.DefaultInstanceAuth.AdditionalHeaders != nil {
-			inHeaders := *in.DefaultInstanceAuth.AdditionalHeaders
+			inHeaders := in.DefaultInstanceAuth.AdditionalHeaders
 			outDeprecated.Api.Headers = &map[string][]string{}
 			if outDeprecated.Api.RequestParameters == nil {
 				outDeprecated.Api.RequestParameters = &model.RequestParameters{}
@@ -410,7 +408,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		}
 
 		if in.DefaultInstanceAuth != nil && in.DefaultInstanceAuth.AdditionalQueryParams != nil {
-			in := *in.DefaultInstanceAuth.AdditionalQueryParams
+			in := in.DefaultInstanceAuth.AdditionalQueryParams
 			outQueryParameters := &map[string][]string{}
 
 			for k, v := range in {
@@ -431,12 +429,12 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 				}
 
 				if apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams != nil {
-					asMap := (map[string][]string)(*apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams)
+					asMap := (map[string][]string)(apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams)
 					outDeprecated.Api.SpecificationRequestParameters.QueryParameters = &asMap
 				}
 
 				if apiDef.Spec.FetchRequest.Auth.AdditionalHeaders != nil {
-					asMap := (map[string][]string)(*apiDef.Spec.FetchRequest.Auth.AdditionalHeaders)
+					asMap := (map[string][]string)(apiDef.Spec.FetchRequest.Auth.AdditionalHeaders)
 					outDeprecated.Api.SpecificationRequestParameters.Headers = &asMap
 				}
 
@@ -477,7 +475,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 
 		if eventDef.Spec != nil && eventDef.Spec.Data != nil {
 			outDeprecated.Events = &model.Events{
-				Spec: []byte(string(*eventDef.Spec.Data)),
+				Spec: ptrSpecResponse(model.SpecResponse(*eventDef.Spec.Data)),
 			}
 		}
 		//TODO: convert also fetchRequest
@@ -510,33 +508,16 @@ func (c *converter) ServiceDetailsToService(in model.ServiceDetails, serviceID s
 	}, nil
 }
 
+func (c *converter) isJSON(content string) bool {
+	out := map[string]interface{}{}
+	err := json.Unmarshal([]byte(content), &out)
+	return err == nil
+}
+
 func ptrClob(in graphql.CLOB) *graphql.CLOB {
 	return &in
 }
 
-func (c *converter) isXML(content string) bool {
-	const snippetLength = 512
-
-	if unquoted, err := strconv.Unquote(content); err == nil {
-		content = unquoted
-	}
-
-	var snippet string
-	length := len(content)
-	if length < snippetLength {
-		snippet = content
-	} else {
-		snippet = content[:snippetLength]
-	}
-
-	openingIndex := strings.Index(snippet, "<")
-	closingIndex := strings.Index(snippet, ">")
-
-	return openingIndex == 0 && openingIndex < closingIndex
-}
-
-func (c *converter) isJSON(content []byte) bool {
-	out := map[string]interface{}{}
-	err := json.Unmarshal(content, &out)
-	return err == nil
+func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
+	return &in
 }

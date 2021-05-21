@@ -38,7 +38,7 @@ func (w *Worker) Start(ctx context.Context) {
 			ctx := context.WithValue(ctx, correlation.HeadersContextKey, msg.CorrelationIDHeaders)
 			err := w.svc.Log(ctx, msg)
 			if err != nil {
-				logger.WithError(err).Error("while saving auditlog message")
+				logger.WithError(err).Errorf("while saving auditlog message: %v", err)
 			}
 		}
 	}

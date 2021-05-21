@@ -15,16 +15,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventDefService --output=automock --outpkg=automock --case=underscore
 type EventDefService interface {
-	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
 }
 
-//go:generate mockery -name=EventDefConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore
 type EventDefConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error)
 	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error)
@@ -32,25 +32,19 @@ type EventDefConverter interface {
 	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error)
 }
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 }
 
-//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
-type ApplicationService interface {
-	Exist(ctx context.Context, id string) (bool, error)
-}
-
-//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
-	Exist(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 type Resolver struct {
 	transact      persistence.Transactioner
 	svc           EventDefService
-	appSvc        ApplicationService
 	bndlSvc       BundleService
 	converter     EventDefConverter
 	frConverter   FetchRequestConverter
@@ -58,11 +52,10 @@ type Resolver struct {
 	specService   SpecService
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, bndlSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
-		appSvc:        appSvc,
 		bndlSvc:       bndlSvc,
 		converter:     converter,
 		frConverter:   frConverter,
@@ -87,16 +80,15 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, errors.Wrap(err, "while converting GraphQL input to EventDefinition")
 	}
 
-	found, err := r.bndlSvc.Exist(ctx, bundleID)
+	bndl, err := r.bndlSvc.Get(ctx, bundleID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Bundle")
+		}
 		return nil, errors.Wrapf(err, "while checking existence of Bundle with id %s when adding EventDefinition", bundleID)
 	}
 
-	if !found {
-		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Bundle")
-	}
-
-	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating EventDefinition in Bundle with id %s", bundleID)
 	}

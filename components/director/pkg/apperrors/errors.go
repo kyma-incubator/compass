@@ -284,6 +284,15 @@ func NewConcurrentOperationInProgressError(msg string) error {
 		arguments: map[string]string{"reason": msg},
 	}
 }
+
+func NewInvalidStatusCondition(resourceType resource.Type) error {
+	return Error{
+		errorCode: InvalidStatusCondition,
+		Message:   InvalidStatusConditionMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == valueNotFoundInConfigMsg
@@ -334,6 +343,10 @@ func IsNewNotNullViolationError(err error) bool {
 
 func IsNewCheckViolationError(err error) bool {
 	return ErrorCode(err) == InconsistentData
+}
+
+func IsInvalidStatusCondition(err error) bool {
+	return ErrorCode(err) == InvalidStatusCondition
 }
 
 func sortMapKey(m map[string]string) []string {

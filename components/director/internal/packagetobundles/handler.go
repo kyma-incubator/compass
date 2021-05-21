@@ -39,12 +39,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 const usesBundlesLabel = "useBundles"
 
-//go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
@@ -74,7 +74,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 			reqBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("Error reading request body")
+				log.C(ctx).WithError(err).Errorf("Error reading request body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while reading request body")
 				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
 				return
@@ -126,7 +126,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			if usingBundles {
 				consumerInfo, err := consumer.LoadFromContext(ctx)
 				if err != nil {
-					log.C(ctx).WithError(err).Error("Error determining request consumer")
+					log.C(ctx).WithError(err).Errorf("Error determining request consumer: %v", err)
 					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
 					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
 					return
@@ -138,7 +138,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 				if strings.Contains(strings.ToLower(body), "bundle") && consumerInfo.ConsumerType == consumer.Runtime {
 					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
-						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q", usesBundlesLabel)
+						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q: %v", usesBundlesLabel, err)
 					}
 				}
 
@@ -157,7 +157,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 			respBody, err := ioutil.ReadAll(recorder.Body)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("Error reading response body")
+				log.C(ctx).WithError(err).Errorf("Error reading response body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while reading response body")
 				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
 				return
@@ -189,7 +189,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 			w.WriteHeader(recorder.Code)
 			if _, err := w.Write([]byte(body)); err != nil {
-				log.C(ctx).WithError(err).Error("Error writing response body")
+				log.C(ctx).WithError(err).Errorf("Error writing response body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while writing response body")
 				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
 				return
@@ -242,6 +242,6 @@ func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, sta
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while encoding data. ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
 }

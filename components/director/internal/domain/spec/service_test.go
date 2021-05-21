@@ -89,6 +89,77 @@ func TestService_ListByReferenceObjectID(t *testing.T) {
 	})
 }
 
+func TestService_DeleteByReferenceObjectID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	specs := []*model.Spec{
+		fixModelAPISpec(),
+		fixModelAPISpec(),
+		fixModelAPISpec(),
+	}
+
+	ctx := context.TODO()
+	ctx = tnt.SaveToContext(ctx, tenant, externalTenant)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.SpecRepository
+		ExpectedResult     []*model.Spec
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("DeleteByReferenceObjectID", ctx, tenant, model.APISpecReference, apiID).Return(nil).Once()
+				return repo
+			},
+			ExpectedResult:     specs,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("DeleteByReferenceObjectID", ctx, tenant, model.APISpecReference, apiID).Return(testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := spec.NewService(repo, nil, nil, nil)
+
+			// when
+			err := svc.DeleteByReferenceObjectID(ctx, model.APISpecReference, apiID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := spec.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.DeleteByReferenceObjectID(context.TODO(), model.APISpecReference, apiID)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_GetByReferenceObjectID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")

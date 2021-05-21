@@ -169,6 +169,12 @@ func TestErrors_Is(t *testing.T) {
 				testFunc:       apperrors.IsNotFoundError,
 				expectedResult: true,
 			},
+			{
+				name:           "IsInvalidStatusCondition",
+				input:          apperrors.NewInvalidStatusCondition(resource.Application),
+				testFunc:       apperrors.IsInvalidStatusCondition,
+				expectedResult: true,
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
@@ -237,6 +243,12 @@ func TestErrors_Is(t *testing.T) {
 				name:           "IsNotFoundError",
 				input:          err,
 				testFunc:       apperrors.IsNotFoundError,
+				expectedResult: false,
+			},
+			{
+				name:           "IsInvalidStatusCondition",
+				input:          err,
+				testFunc:       apperrors.IsInvalidStatusCondition,
 				expectedResult: false,
 			},
 		}

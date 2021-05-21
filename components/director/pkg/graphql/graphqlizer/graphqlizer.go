@@ -85,6 +85,29 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 			{{- end }} ],
 		{{- end }}
 		accessLevel: {{.AccessLevel}},
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }} 
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}	
+	}`)
+}
+
+func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.ApplicationTemplateUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
+		{{- if .Placeholders }}
+		placeholders: [
+			{{- range $i, $e := .Placeholders }} 
+				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		accessLevel: {{.AccessLevel}},
 	}`)
 }
 
@@ -226,11 +249,39 @@ func (g *Graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
 	return g.genericToGQL(in, `{
 		type: {{.Type}},
+		{{- if .URL }}
 		url: "{{.URL }}",
+		{{- end }}
 		{{- if .Auth }} 
 		auth: {{- AuthInputToGQL .Auth }},
 		{{- end }}
-
+		{{- if .Mode }} 
+		mode: {{.Mode }},
+		{{- end }}
+		{{- if .CorrelationIDKey }} 
+		correlationIdKey: "{{.CorrelationIDKey }}",
+		{{- end }}
+		{{- if .RetryInterval }} 
+		retryInterval: {{.RetryInterval }},
+		{{- end }}
+		{{- if .Timeout }} 
+		timeout: {{.Timeout }},
+		{{- end }}
+		{{- if .URLTemplate }} 
+		urlTemplate: "{{.URLTemplate }}",
+		{{- end }}
+		{{- if .InputTemplate }} 
+		inputTemplate: "{{.InputTemplate }}",
+		{{- end }}
+		{{- if .HeaderTemplate }} 
+		headerTemplate: "{{.HeaderTemplate }}",
+		{{- end }}
+		{{- if .OutputTemplate }} 
+		outputTemplate: "{{.OutputTemplate }}",
+		{{- end }}
+		{{- if .StatusTemplate }} 
+		statusTemplate: "{{.StatusTemplate }}",
+		{{- end }}
 	}`)
 }
 

@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const applicationReadScope = "application:read"
+const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
 
 // UnsignedTokenAuthorizationProvider presents an AuthorizationProvider implementation which fabricates its own unsigned tokens for the Authorization header
 type unsignedTokenAuthorizationProvider struct{}
@@ -65,7 +65,7 @@ func (u unsignedTokenAuthorizationProvider) GetAuthorization(ctx context.Context
 
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
 		Tenant: tenantID,
-		Scopes: applicationReadScope,
+		Scopes: requiredScopes,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)

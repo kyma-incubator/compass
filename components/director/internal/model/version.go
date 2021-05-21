@@ -11,10 +11,10 @@ type Version struct {
 }
 
 type VersionInput struct {
-	Value           string
-	Deprecated      *bool
-	DeprecatedSince *string
-	ForRemoval      *bool
+	Value           string  `json:"version"`
+	Deprecated      *bool   `json:",omitempty"`
+	DeprecatedSince *string `json:",omitempty"`
+	ForRemoval      *bool   `json:",omitempty"`
 }
 
 func (v *VersionInput) ToVersion() *Version {

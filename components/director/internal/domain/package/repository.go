@@ -22,7 +22,7 @@ var (
 		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Package) *Entity
 	FromEntity(entity *Entity) (*model.Package, error)
@@ -31,6 +31,7 @@ type EntityConverter interface {
 type pgRepository struct {
 	conv         EntityConverter
 	existQuerier repo.ExistQuerier
+	lister       repo.Lister
 	singleGetter repo.SingleGetter
 	deleter      repo.Deleter
 	creator      repo.Creator
@@ -41,6 +42,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
 		existQuerier: repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
+		lister:       repo.NewLister(resource.Package, packageTable, tenantColumn, packageColumns),
 		singleGetter: repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
 		deleter:      repo.NewDeleter(resource.Package, packageTable, tenantColumn),
 		creator:      repo.NewCreator(resource.Package, packageTable, packageColumns),
@@ -87,4 +89,26 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 	}
 
 	return pkgModel, nil
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error) {
+	pkgCollection := pkgCollection{}
+	if err := r.lister.List(ctx, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	pkgs := make([]*model.Package, 0, pkgCollection.Len())
+	for _, pkg := range pkgCollection {
+		pkgModel, err := r.conv.FromEntity(&pkg)
+		if err != nil {
+			return nil, err
+		}
+		pkgs = append(pkgs, pkgModel)
+	}
+	return pkgs, nil
+}
+
+type pkgCollection []Entity
+
+func (pc pkgCollection) Len() int {
+	return len(pc)
 }

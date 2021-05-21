@@ -9,13 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=VendorRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
 type VendorRepository interface {
 	Create(ctx context.Context, item *model.Vendor) error
 	Update(ctx context.Context, item *model.Vendor) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error)
+	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error)
 }
 
 type service struct {
@@ -105,4 +106,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.Vendor, error) {
 	}
 
 	return vendor, nil
+}
+
+func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.vendorRepo.ListByApplicationID(ctx, tnt, appID)
 }

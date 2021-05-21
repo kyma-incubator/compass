@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 type UUIDService interface {
@@ -30,15 +30,16 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 	errID := p.uuidService.Generate()
 
 	if found := errors.As(err, &customErr); !found {
-		log.C(ctx).WithField("errorID", errID).WithError(err).Error("Unknown error")
+		log.C(ctx).WithField("errorID", errID).WithError(err).Errorf("Unknown error: %v", err)
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 
 	if apperrors.ErrorCode(customErr) == apperrors.InternalError {
-		log.C(ctx).WithField("errorID", errID).WithError(err).Error("Internal Server Error")
+		log.C(ctx).WithField("errorID", errID).WithError(err).Errorf("Internal Server Error: %v", err)
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 
+	log.C(ctx).WithField("errorID", errID).WithError(err).Error()
 	return newGraphqlErrorResponse(ctx, apperrors.ErrorCode(customErr), customErr.Error())
 }
 

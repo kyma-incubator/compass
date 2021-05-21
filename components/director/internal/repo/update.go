@@ -17,6 +17,7 @@ import (
 
 type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
+	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
 }
 
 type UpdaterGlobal interface {
@@ -51,14 +52,18 @@ func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableCol
 }
 
 func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, false)
+	return u.unsafeUpdateSingle(ctx, dbEntity, false, false)
 }
 
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, true)
+	return u.unsafeUpdateSingle(ctx, dbEntity, true, false)
 }
 
-func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal bool) error {
+func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
+	return u.unsafeUpdateSingle(ctx, dbEntity, false, true)
+}
+
+func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal, isTechnical bool) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -94,7 +99,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	}
 
 	entity, ok := dbEntity.(Entity)
-	if ok && entity.GetDeletedAt().IsZero() {
+	if ok && entity.GetDeletedAt().IsZero() && !isTechnical {
 		entity.SetUpdatedAt(time.Now())
 		dbEntity = entity
 	}

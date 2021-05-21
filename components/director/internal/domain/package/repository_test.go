@@ -200,3 +200,39 @@ func TestPgRepository_GetByID(t *testing.T) {
 		convMock.AssertExpectations(t)
 	})
 }
+
+func TestPgRepository_ListByApplicationID(t *testing.T) {
+	// GIVEN
+	totalCount := 2
+	firstPkgEntity := fixEntityPackage()
+	secondPkgEntity := fixEntityPackage()
+
+	selectQuery := `^SELECT (.+) FROM public.packages 
+		WHERE tenant_id = \$1 AND app_id = \$2`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixPackageColumns()).
+			AddRow(fixPackageRow()...).
+			AddRow(fixPackageRow()...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{ID: firstPkgEntity.ID}, nil)
+		convMock.On("FromEntity", secondPkgEntity).Return(&model.Package{ID: secondPkgEntity.ID}, nil)
+		pgRepository := mp_package.NewRepository(convMock)
+		// WHEN
+		modelPkg, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelPkg, totalCount)
+		assert.Equal(t, firstPkgEntity.ID, modelPkg[0].ID)
+		assert.Equal(t, secondPkgEntity.ID, modelPkg[1].ID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}

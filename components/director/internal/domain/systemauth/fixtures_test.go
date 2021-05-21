@@ -16,14 +16,28 @@ import (
 var (
 	testTenant           = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	testExternalTenant   = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	testMarshalledSchema = "{\"Credential\":{\"Basic\":{\"Username\":\"foo\",\"Password\":\"bar\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]},\"RequestAuth\":{\"Csrf\":{\"TokenEndpointURL\":\"foo.url\",\"Credential\":{\"Basic\":{\"Username\":\"boo\",\"Password\":\"far\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]}}}}"
+	testMarshalledSchema = "{\"Credential\":{\"Basic\":{\"Username\":\"foo\",\"Password\":\"bar\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]},\"RequestAuth\":{\"Csrf\":{\"TokenEndpointURL\":\"foo.url\",\"Credential\":{\"Basic\":{\"Username\":\"boo\",\"Password\":\"far\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]}}},\"OneTimeToken\":null}"
 	testErr              = errors.New("test error")
 )
 
 var testTableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}
 
-func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
-	return &graphql.SystemAuth{
+func fixGQLAppSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+	return &graphql.AppSystemAuth{
+		ID:   id,
+		Auth: auth,
+	}
+}
+
+func fixGQLIntSysSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+	return &graphql.IntSysSystemAuth{
+		ID:   id,
+		Auth: auth,
+	}
+}
+
+func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+	return &graphql.RuntimeSystemAuth{
 		ID:   id,
 		Auth: auth,
 	}
@@ -82,8 +96,8 @@ func fixGQLAuth() *graphql.Auth {
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
+		AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
 				TokenEndpointURL: "foo.url",
@@ -91,8 +105,8 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
+				AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},
 	}

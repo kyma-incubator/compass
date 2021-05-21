@@ -22,6 +22,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -43,7 +47,7 @@ type OperationRequest struct {
 }
 
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
-type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorMsg *string) error
+type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error
 
 // ResourceFetcherFunc defines a function which deletes a particular resource by ID
 type ResourceDeleterFunc func(ctx context.Context, id string) error
@@ -113,26 +117,28 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		return
 	}
 
+	appConditionStatus := determineApplicationFinalStatus(operation.OperationType, opError)
+
 	switch operation.OperationType {
 	case OperationTypeCreate:
 		fallthrough
 	case OperationTypeUpdate:
-		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError); err != nil {
-			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
+		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError, appConditionStatus); err != nil {
+			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 			return
 		}
 	case OperationTypeDelete:
 		resourceDeleterFunc := h.resourceDeleterFuncs[operation.ResourceType]
 		if operation.Error != "" {
-			if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError); err != nil {
-				log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
+			if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError, appConditionStatus); err != nil {
+				log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 				return
 			}
 		} else {
 			if err := resourceDeleterFunc(ctx, operation.ResourceID); err != nil {
-				log.C(ctx).WithError(err).Errorf("While deleting resource %s with id %s", operation.ResourceType, operation.ResourceID)
+				log.C(ctx).WithError(err).Errorf("While deleting resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to delete resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
 				return
 			}
@@ -156,7 +162,7 @@ func operationRequestFromBody(ctx context.Context, request *http.Request) (*Oper
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
-			log.C(ctx).WithError(err).Error("Failed to close request body")
+			log.C(ctx).WithError(err).Errorf("Failed to close request body: %v", err)
 		}
 	}()
 
@@ -181,4 +187,27 @@ func stringifiedJsonError(errorMsg string) (*string, error) {
 
 	stringifiedErr := string(bytesErr)
 	return &stringifiedErr, nil
+}
+
+func determineApplicationFinalStatus(opType OperationType, opError *string) model.ApplicationStatusCondition {
+	appConditionStatus := model.ApplicationStatusConditionInitial
+	switch opType {
+	case OperationTypeCreate:
+		appConditionStatus = model.ApplicationStatusConditionCreateSucceeded
+		if opError != nil || str.PtrStrToStr(opError) != "" {
+			appConditionStatus = model.ApplicationStatusConditionCreateFailed
+		}
+	case OperationTypeUpdate:
+		appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
+		if opError != nil || str.PtrStrToStr(opError) != "" {
+			appConditionStatus = model.ApplicationStatusConditionUpdateFailed
+		}
+	case OperationTypeDelete:
+		appConditionStatus = model.ApplicationStatusConditionDeleteSucceeded
+		if opError != nil || str.PtrStrToStr(opError) != "" {
+			appConditionStatus = model.ApplicationStatusConditionDeleteFailed
+		}
+	}
+
+	return appConditionStatus
 }

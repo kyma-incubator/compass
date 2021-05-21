@@ -39,20 +39,20 @@ func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 }
 
 type BundleCreateInput struct {
-	Name                           string
-	Description                    *string
-	InstanceAuthRequestInputSchema *string
-	DefaultInstanceAuth            *AuthInput
-	OrdID                          *string
-	ShortDescription               *string
-	Links                          json.RawMessage
-	Labels                         json.RawMessage
-	CredentialExchangeStrategies   json.RawMessage
-	APIDefinitions                 []*APIDefinitionInput
-	APISpecs                       []*SpecInput
-	EventDefinitions               []*EventDefinitionInput
-	EventSpecs                     []*SpecInput
-	Documents                      []*DocumentInput
+	Name                           string                  `json:"title"`
+	Description                    *string                 `json:"description"`
+	InstanceAuthRequestInputSchema *string                 `json:",omitempty"`
+	DefaultInstanceAuth            *AuthInput              `json:",omitempty"`
+	OrdID                          *string                 `json:"ordId"`
+	ShortDescription               *string                 `json:"shortDescription"`
+	Links                          json.RawMessage         `json:"links"`
+	Labels                         json.RawMessage         `json:"labels"`
+	CredentialExchangeStrategies   json.RawMessage         `json:"credentialExchangeStrategies"`
+	APIDefinitions                 []*APIDefinitionInput   `json:",omitempty"`
+	APISpecs                       []*SpecInput            `json:",omitempty"`
+	EventDefinitions               []*EventDefinitionInput `json:",omitempty"`
+	EventSpecs                     []*SpecInput            `json:",omitempty"`
+	Documents                      []*DocumentInput        `json:",omitempty"`
 }
 
 type BundleUpdateInput struct {

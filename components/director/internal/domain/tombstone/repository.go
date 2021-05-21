@@ -19,7 +19,7 @@ var (
 	updatableColumns = []string{"removal_date"}
 )
 
-//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Tombstone) *Entity
 	FromEntity(entity *Entity) (*model.Tombstone, error)
@@ -29,6 +29,7 @@ type pgRepository struct {
 	conv         EntityConverter
 	existQuerier repo.ExistQuerier
 	singleGetter repo.SingleGetter
+	lister       repo.Lister
 	deleter      repo.Deleter
 	creator      repo.Creator
 	updater      repo.Updater
@@ -39,6 +40,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		conv:         conv,
 		existQuerier: repo.NewExistQuerier(resource.Tombstone, tombstoneTable, tenantColumn),
 		singleGetter: repo.NewSingleGetter(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
+		lister:       repo.NewLister(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
 		deleter:      repo.NewDeleter(resource.Tombstone, tombstoneTable, tenantColumn),
 		creator:      repo.NewCreator(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		updater:      repo.NewUpdater(resource.Tombstone, tombstoneTable, updatableColumns, tenantColumn, []string{"ord_id"}),
@@ -84,4 +86,26 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.T
 	}
 
 	return tombstoneModel, nil
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error) {
+	tombstoneCollection := tombstoneCollection{}
+	if err := r.lister.List(ctx, tenantID, &tombstoneCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	tombstones := make([]*model.Tombstone, 0, tombstoneCollection.Len())
+	for _, tombstone := range tombstoneCollection {
+		tombstoneModel, err := r.conv.FromEntity(&tombstone)
+		if err != nil {
+			return nil, err
+		}
+		tombstones = append(tombstones, tombstoneModel)
+	}
+	return tombstones, nil
+}
+
+type tombstoneCollection []Entity
+
+func (pc tombstoneCollection) Len() int {
+	return len(pc)
 }

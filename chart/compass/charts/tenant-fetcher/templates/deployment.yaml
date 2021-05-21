@@ -7,7 +7,7 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 spec:
-  replicas: {{ .Values.deployment.replicaCount }}
+  replicas: {{ .Values.deployment.minReplicas }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
@@ -62,8 +62,8 @@ spec:
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: APP_HANDLER_ENDPOINT
               value: "{{ .Values.server.handlerEndpoint }}"
-            - name: APP_JWKS_ENDPOINT
-              value: {{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}
+            - name: APP_JWKS_ENDPOINTS
+              value: {{ .Values.global.tenantFetcher.authentication.jwksEndpoints | quote }}
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
             - name: APP_DB_USER
@@ -134,7 +134,7 @@ spec:
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+          image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json",

@@ -15,7 +15,8 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
-	apiDefColumns = []string{"id", "tenant_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
+	bundleColumn  = "bundle_id"
+	apiDefColumns = []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
@@ -26,7 +27,7 @@ var (
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
-//go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
 	ToEntity(apiModel model.APIDefinition) *Entity
@@ -36,6 +37,7 @@ type pgRepository struct {
 	creator         repo.Creator
 	singleGetter    repo.SingleGetter
 	pageableQuerier repo.PageableQuerier
+	lister          repo.Lister
 	updater         repo.Updater
 	deleter         repo.Deleter
 	existQuerier    repo.ExistQuerier
@@ -46,6 +48,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
+		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
 		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
@@ -65,6 +68,19 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
+	apiCollection := APIDefCollection{}
+	if err := r.lister.List(ctx, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	apis := make([]*model.APIDefinition, 0, apiCollection.Len())
+	for _, api := range apiCollection {
+		apiModel := r.conv.FromEntity(api)
+		apis = append(apis, &apiModel)
+	}
+	return apis, nil
 }
 
 func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.APIDefinitionPage, error) {
@@ -160,4 +176,8 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
 }

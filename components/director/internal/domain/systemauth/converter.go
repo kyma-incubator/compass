@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
 }
@@ -27,7 +27,7 @@ func NewConverter(authConverter AuthConverter) *converter {
 	}
 }
 
-func (c *converter) ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error) {
+func (c *converter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -37,10 +37,31 @@ func (c *converter) ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
 		return nil, errors.Wrap(err, "while converting Auth")
 	}
 
-	return &graphql.SystemAuth{
-		ID:   in.ID,
-		Auth: auth,
-	}, nil
+	objectType, err := in.GetReferenceObjectType()
+	if err != nil {
+		return nil, err
+	}
+
+	switch objectType {
+	case model.ApplicationReference:
+		return &graphql.AppSystemAuth{
+			ID:   in.ID,
+			Auth: auth,
+		}, nil
+	case model.IntegrationSystemReference:
+		return &graphql.IntSysSystemAuth{
+			ID:   in.ID,
+			Auth: auth,
+		}, nil
+	case model.RuntimeReference:
+		return &graphql.RuntimeSystemAuth{
+			ID:   in.ID,
+			Auth: auth,
+		}, nil
+	default:
+		return nil, errors.New("invalid object type")
+	}
+
 }
 
 func (c *converter) ToEntity(in model.SystemAuth) (Entity, error) {

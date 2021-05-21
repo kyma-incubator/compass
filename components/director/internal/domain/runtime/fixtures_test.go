@@ -121,7 +121,7 @@ func fixGQLRuntimeInput(name, description string) graphql.RuntimeInput {
 	return graphql.RuntimeInput{
 		Name:        name,
 		Description: &description,
-		Labels:      &labels,
+		Labels:      labels,
 	}
 }
 
@@ -205,8 +205,8 @@ func fixGQLAuth() *graphql.Auth {
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
+		AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
 				TokenEndpointURL: "foo.url",
@@ -214,8 +214,8 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
+				AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},
 	}
@@ -230,8 +230,8 @@ func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) model.Sy
 	}
 }
 
-func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
-	return &graphql.SystemAuth{
+func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.RuntimeSystemAuth {
+	return &graphql.RuntimeSystemAuth{
 		ID:   id,
 		Auth: auth,
 	}

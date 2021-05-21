@@ -10,15 +10,17 @@ import (
 )
 
 type Application struct {
-	ProviderName        *string
-	Tenant              string
-	Name                string
-	Description         *string
-	Status              *ApplicationStatus
-	HealthCheckURL      *string
-	IntegrationSystemID *string
-	BaseURL             *string
-	Labels              json.RawMessage
+	ProviderName          *string
+	Tenant                string
+	Name                  string
+	Description           *string
+	Status                *ApplicationStatus
+	HealthCheckURL        *string
+	IntegrationSystemID   *string
+	ApplicationTemplateID *string
+	BaseURL               *string         `json:"baseUrl"`
+	Labels                json.RawMessage `json:"labels"`
+
 	*BaseEntity
 }
 
@@ -60,9 +62,18 @@ type ApplicationStatus struct {
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial   ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
-	ApplicationStatusConditionFailed    ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionInitial         ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionConnected       ApplicationStatusCondition = "CONNECTED"
+	ApplicationStatusConditionFailed          ApplicationStatusCondition = "FAILED"
+	ApplicationStatusConditionCreating        ApplicationStatusCondition = "CREATING"
+	ApplicationStatusConditionCreateFailed    ApplicationStatusCondition = "CREATE_FAILED"
+	ApplicationStatusConditionCreateSucceeded ApplicationStatusCondition = "CREATE_SUCCEEDED"
+	ApplicationStatusConditionUpdating        ApplicationStatusCondition = "UPDATING"
+	ApplicationStatusConditionUpdateFailed    ApplicationStatusCondition = "UPDATE_FAILED"
+	ApplicationStatusConditionUpdateSucceeded ApplicationStatusCondition = "UPDATE_SUCCEEDED"
+	ApplicationStatusConditionDeleting        ApplicationStatusCondition = "DELETING"
+	ApplicationStatusConditionDeleteFailed    ApplicationStatusCondition = "DELETE_FAILED"
+	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
 )
 
 type ApplicationPage struct {

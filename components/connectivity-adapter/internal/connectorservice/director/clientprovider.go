@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 )
 
-//go:generate mockery -name=ClientProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ClientProvider --output=automock --outpkg=automock --case=underscore
 type ClientProvider interface {
 	Client(r *http.Request) Client
 }

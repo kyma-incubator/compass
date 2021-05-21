@@ -373,3 +373,78 @@ func TestService_Get(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
+
+func TestService_ListByApplicationID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	tombstones := []*model.Tombstone{
+		fixTombstoneModel(),
+		fixTombstoneModel(),
+		fixTombstoneModel(),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.TombstoneRepository
+		ExpectedResult     []*model.Tombstone
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(tombstones, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     tombstones,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Tombstone listing failed",
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := tombstone.NewService(repo)
+
+			// when
+			docs, err := svc.ListByApplicationID(ctx, appID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := tombstone.NewService(nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}

@@ -132,3 +132,23 @@ func NewNotRegexConditionString(field string, value string) Condition {
 		value: value,
 	}
 }
+
+func NewJSONCondition(field string, val interface{}) Condition {
+	return &jsonCondition{
+		field: field,
+		val:   val,
+	}
+}
+
+type jsonCondition struct {
+	field string
+	val   interface{}
+}
+
+func (c *jsonCondition) GetQueryPart() string {
+	return fmt.Sprintf("%s @> ?", c.field)
+}
+
+func (c *jsonCondition) GetQueryArgs() ([]interface{}, bool) {
+	return []interface{}{c.val}, true
+}

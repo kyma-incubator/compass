@@ -1,5 +1,7 @@
 deployment:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
   image:
     pullPolicy: IfNotPresent
   resources: {}
@@ -8,7 +10,11 @@ deployment:
     requests: {}
     limits: {}
   args:
-    containerPort: 3000
+    token:
+      length: 64
+      runtimeExpiration: 60m
+      applicationExpiration: 5m
+      csrExpiration: 5m
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false
@@ -19,11 +25,11 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
 
-metrics:
-  port: 3001
-
 adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
 operatorGroupNames: "runtimeOperator"
+
+configFile:
+  name: "config.yaml"
 
 applicationHideSelectors: |-
   applicationHideSelectorKey:
@@ -33,4 +39,5 @@ istio:
   rbac:
     enabled: true
     directorInternalApi:
+      compassConnector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector
       compassOperationsController: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-operations-controller

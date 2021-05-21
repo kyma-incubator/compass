@@ -35,15 +35,16 @@ func (fake *FakeBundleCredentialsCreateRequester) RequestBundleInstanceCredentia
 		arg1 context.Context
 		arg2 *director.BundleInstanceCredentialsInput
 	}{arg1, arg2})
+	stub := fake.RequestBundleInstanceCredentialsCreationStub
+	fakeReturns := fake.requestBundleInstanceCredentialsCreationReturns
 	fake.recordInvocation("RequestBundleInstanceCredentialsCreation", []interface{}{arg1, arg2})
 	fake.requestBundleInstanceCredentialsCreationMutex.Unlock()
-	if fake.RequestBundleInstanceCredentialsCreationStub != nil {
-		return fake.RequestBundleInstanceCredentialsCreationStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.requestBundleInstanceCredentialsCreationReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

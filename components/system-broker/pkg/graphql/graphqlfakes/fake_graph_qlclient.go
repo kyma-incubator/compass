@@ -35,15 +35,16 @@ func (fake *FakeGraphQLClient) Run(arg1 context.Context, arg2 *graphqla.Request,
 		arg2 *graphqla.Request
 		arg3 interface{}
 	}{arg1, arg2, arg3})
+	stub := fake.RunStub
+	fakeReturns := fake.runReturns
 	fake.recordInvocation("Run", []interface{}{arg1, arg2, arg3})
 	fake.runMutex.Unlock()
-	if fake.RunStub != nil {
-		return fake.RunStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.runReturns
 	return fakeReturns.result1
 }
 

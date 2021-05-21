@@ -199,3 +199,39 @@ func TestPgRepository_GetByID(t *testing.T) {
 		convMock.AssertExpectations(t)
 	})
 }
+
+func TestPgRepository_ListByApplicationID(t *testing.T) {
+	// GIVEN
+	totalCount := 2
+	firstVendorEntity := fixEntityVendor()
+	secondVendorEntity := fixEntityVendor()
+
+	selectQuery := `^SELECT (.+) FROM public.vendors
+		WHERE tenant_id = \$1 AND app_id = \$2`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixVendorColumns()).
+			AddRow(fixVendorRow()...).
+			AddRow(fixVendorRow()...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", firstVendorEntity).Return(&model.Vendor{OrdID: firstVendorEntity.OrdID}, nil)
+		convMock.On("FromEntity", secondVendorEntity).Return(&model.Vendor{OrdID: secondVendorEntity.OrdID}, nil)
+		pgRepository := ordvendor.NewRepository(convMock)
+		// WHEN
+		modelVendor, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelVendor, totalCount)
+		assert.Equal(t, firstVendorEntity.OrdID, modelVendor[0].OrdID)
+		assert.Equal(t, secondVendorEntity.OrdID, modelVendor[1].OrdID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}

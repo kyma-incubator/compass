@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"
 	connector "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/health"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
@@ -44,7 +44,7 @@ func main() {
 		ReadHeaderTimeout: cfg.ServerTimeout,
 	}
 
-	log.Printf("API listening on %s", cfg.Address)
+	log.D().Printf("API listening on %s", cfg.Address)
 	exitOnError(server.ListenAndServe(), fmt.Sprintf("while listening on %s", cfg.Address))
 }
 
@@ -52,7 +52,7 @@ func initAPIHandler(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
 
-	router.Use(correlation.AttachCorrelationIDToContext())
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	applicationRegistryRouter := router.PathPrefix("/{app-name}/v1").Subrouter()
 	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
@@ -70,6 +70,6 @@ func initAPIHandler(cfg config) (http.Handler, error) {
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }

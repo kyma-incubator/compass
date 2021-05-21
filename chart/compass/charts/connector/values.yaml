@@ -1,4 +1,7 @@
 deployment:
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
   image:
     pullPolicy: IfNotPresent
   resources: {}
@@ -37,4 +40,5 @@ istio:
     enabled: true
     connectorInternalApi:
       compassDirector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director
-      compassConnectorTests: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector-tests
+      compassConnectorTests: cluster.local/ns/{{ .Values.global.tests.namespace }}/sa/compass-connector-tests
+

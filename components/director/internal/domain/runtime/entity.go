@@ -42,7 +42,7 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 }
 
 // GraphQLToModel converts Runtime entity to Runtime model
-func (e Runtime) ToModel() (*model.Runtime, error) {
+func (e Runtime) ToModel() *model.Runtime {
 	var description *string
 	if e.Description.Valid {
 		description = new(string)
@@ -59,5 +59,5 @@ func (e Runtime) ToModel() (*model.Runtime, error) {
 			Timestamp: e.StatusTimestamp,
 		},
 		CreationTimestamp: e.CreationTimestamp,
-	}, nil
+	}
 }

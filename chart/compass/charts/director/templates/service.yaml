@@ -9,7 +9,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.global.director.port }}
+    - port: {{ .Values.global.director.graphql.external.port }}
       protocol: TCP
       name: http
     - port: {{ .Values.global.director.operations.port }}
@@ -18,6 +18,12 @@ spec:
     - port: {{ .Values.global.istio.proxy.port }}
       protocol: TCP
       name: proxy-status
+    - port: {{ .Values.global.director.validator.port }}
+      protocol: TCP
+      name: http-validator
+    - port: {{ .Values.global.director.graphql.internal.port }}
+      protocol: TCP
+      name: http-gql-int
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -34,7 +40,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.metrics.port }}
+    - port: {{ .Values.global.director.metrics.port }}
       protocol: TCP
       name: metrics
   selector:

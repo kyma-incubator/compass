@@ -92,29 +92,31 @@ func TestHasScenario(t *testing.T) {
 			idField       = "id"
 			tenantID      = "42"
 			applicationID = "24"
+			runtimeID     = "23"
 		)
 
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: runtimeID})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "Application",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{idField: applicationID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		notFoundErr := apperrors.NewNotFoundError(resource.Label, model.ScenariosKey)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(nil, notFoundErr)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil, notFoundErr)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationID, idField)
 		// THEN
@@ -141,13 +143,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, nil, bndlRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bundleIDField: bundleID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Bundle)
@@ -178,13 +180,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, nil, nil, bndlAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.BundleInstanceAuth)
@@ -216,13 +218,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "Application",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{idField: applicationID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
@@ -256,13 +258,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "Application",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{idField: applicationID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
@@ -300,13 +302,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bundleIDField: bundleID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedBndl := &model.Bundle{ApplicationID: applicationID}
@@ -346,13 +348,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bundleIDField: bundleID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedBndl := &model.Bundle{ApplicationID: applicationID}
@@ -397,13 +399,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, bndlAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedBndlAuth := &model.BundleInstanceAuth{BundleID: bundleID}
@@ -450,13 +452,13 @@ func TestHasScenario(t *testing.T) {
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, bndlAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
-		rCtx := &graphql.ResolverContext{
+		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
 		}
-		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctx = graphql.WithFieldContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedBndlAuth := &model.BundleInstanceAuth{BundleID: bundleID}

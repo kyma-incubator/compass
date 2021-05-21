@@ -1,7 +1,6 @@
 package revocation
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -55,20 +54,19 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 
 	t.Run("should insert value to the list", func(t *testing.T) {
 		// given
-		ctx := context.TODO()
 		cache := NewCache()
 		someHash := "someHash"
 		configListManagerMock := &mocks.Manager{}
 
-		configListManagerMock.On("Get", ctx, configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
+		configListManagerMock.On("Get", configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
 			&v1.ConfigMap{
 				Data: nil,
 			}, nil)
 
-		configListManagerMock.On("Update", ctx, &v1.ConfigMap{
+		configListManagerMock.On("Update", &v1.ConfigMap{
 			Data: map[string]string{
 				someHash: someHash,
-			}}, mock.AnythingOfType("v1.UpdateOptions")).Return(&v1.ConfigMap{
+			}}).Return(&v1.ConfigMap{
 			Data: map[string]string{
 				someHash: someHash,
 			}}, nil)
@@ -76,7 +74,7 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
-		err := repository.Insert(ctx, someHash)
+		err := repository.Insert(someHash)
 		require.NoError(t, err)
 
 		// then
@@ -85,25 +83,24 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 
 	t.Run("should return error when failed to update config map", func(t *testing.T) {
 		// given
-		ctx := context.TODO()
 		cache := NewCache()
 		someHash := "someHash"
 		configListManagerMock := &mocks.Manager{}
 
-		configListManagerMock.On("Get", ctx, configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
+		configListManagerMock.On("Get", configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
 			&v1.ConfigMap{
 				Data: nil,
 			}, nil)
 
-		configListManagerMock.On("Update", ctx, &v1.ConfigMap{
+		configListManagerMock.On("Update", &v1.ConfigMap{
 			Data: map[string]string{
 				someHash: someHash,
-			}}, mock.AnythingOfType("v1.UpdateOptions")).Return(nil, errors.New("some error"))
+			}}).Return(nil, errors.New("some error"))
 
 		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
-		err := repository.Insert(ctx, someHash)
+		err := repository.Insert(someHash)
 		require.Error(t, err)
 
 		// then

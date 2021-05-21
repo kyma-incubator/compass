@@ -55,16 +55,16 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed authentication while fetching the configuration. ")
+		log.C(ctx).WithError(err).Errorf("Failed authentication while fetching the configuration: %v", err)
 		return nil, err
 	}
 	log.C(ctx).Infof("Fetching configuration for client with id %s", clientId)
 
-	log.C(ctx).Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
-	token, err := r.tokenService.CreateToken(ctx, clientId, tokens.CSRToken)
+	log.C(ctx).Infof("Getting one-time token as part of fetching configuration process for client with id %s", clientId)
+	token, err := r.tokenService.GetToken(ctx, clientId)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process", clientId)
-		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
+		log.C(ctx).WithError(err).Errorf("Error occurred while getting one-time token for client with id %s during fetching configuration process: %v", clientId, err)
+		return nil, errors.Wrap(err, "Failed to get one-time token during fetching configuration process")
 	}
 
 	csrInfo := &externalschema.CertificateSigningRequestInfo{
@@ -89,7 +89,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed authentication during the signing CSR process.")
+		log.C(ctx).WithError(err).Errorf("Failed authentication during the signing CSR process: %v", err)
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
@@ -97,7 +97,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process.", clientId)
+		log.C(ctx).WithError(err).Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process: %v", clientId, err)
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -108,7 +108,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(ctx, rawCSR, subject)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s", subject.CommonName, clientId)
+		log.C(ctx).WithError(err).Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s: %v", subject.CommonName, clientId, err)
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
@@ -123,16 +123,16 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 
 	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed authentication while revoking the certificate.")
+		log.C(ctx).WithError(err).Errorf("Failed authentication while revoking the certificate: %v", err)
 		return false, errors.Wrap(err, "Failed to authenticate with certificate")
 	}
 
 	log.C(ctx).Infof("Revoking certificate for client with id %s", clientId)
 
 	log.C(ctx).Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
-	err = r.revokedCertsRepository.Insert(ctx, certificateHash)
+	err = r.revokedCertsRepository.Insert(certificateHash)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to add certificate hash of client with id %s to revocation list.", clientId)
+		log.C(ctx).WithError(err).Errorf("Failed to add certificate hash of client with id %s to revocation list: %v", clientId, err)
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")
 	}
 

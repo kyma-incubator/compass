@@ -35,15 +35,16 @@ func (fake *FakeBundleCredentialsFetcher) FetchBundleInstanceAuth(arg1 context.C
 		arg1 context.Context
 		arg2 *director.BundleInstanceInput
 	}{arg1, arg2})
+	stub := fake.FetchBundleInstanceAuthStub
+	fakeReturns := fake.fetchBundleInstanceAuthReturns
 	fake.recordInvocation("FetchBundleInstanceAuth", []interface{}{arg1, arg2})
 	fake.fetchBundleInstanceAuthMutex.Unlock()
-	if fake.FetchBundleInstanceAuthStub != nil {
-		return fake.FetchBundleInstanceAuthStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.fetchBundleInstanceAuthReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

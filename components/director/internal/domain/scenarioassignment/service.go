@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
 	ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
@@ -21,13 +21,13 @@ type Repository interface {
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
 
-//go:generate mockery -name=ScenariosDefService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ScenariosDefService --output=automock --outpkg=automock --case=underscore
 type ScenariosDefService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
-//go:generate mockery -name=AssignmentEngine -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AssignmentEngine --output=automock --outpkg=automock --case=underscore
 type AssignmentEngine interface {
 	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
 	RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error

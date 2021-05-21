@@ -26,14 +26,14 @@ const (
 	RuntimeDefaultEventingLabelf = "%s_defaultEventing"
 )
 
-//go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeRepository interface {
 	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 }
 
-//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -394,7 +394,7 @@ func (s *service) getScenariosFilter(ctx context.Context, tenantID string, appID
 		return nil, false, errors.Wrap(err, fmt.Sprintf("while converting label [key=%s] value to a slice of strings", model.ScenariosKey))
 	}
 
-	scenariosQuery := buildQueryForScenarios(scenarios)
+	scenariosQuery := BuildQueryForScenarios(scenarios)
 	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
 
 	return runtimeScenariosFilter, true, nil
@@ -409,7 +409,7 @@ func (s *service) setRuntimeForAppEventing(ctx context.Context, runtime model.Ru
 	return nil
 }
 
-func buildQueryForScenarios(scenarios []string) string {
+func BuildQueryForScenarios(scenarios []string) string {
 	var queryBuilder strings.Builder
 	for idx, scenario := range scenarios {
 		if idx > 0 {

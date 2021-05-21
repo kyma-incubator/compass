@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -67,11 +69,13 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	queryParams := request.URL.Query()
+	routeVariables := mux.Vars(request)
+	resourceId := routeVariables[ResourceIDParam]
+	resourceType := routeVariables[ResourceTypeParam]
 
 	op := &Operation{
-		ResourceID:   queryParams.Get(ResourceIDParam),
-		ResourceType: resource.Type(queryParams.Get(ResourceTypeParam)),
+		ResourceID:   resourceId,
+		ResourceType: resource.Type(resourceType),
 	}
 
 	log.C(ctx).Infof("Executing Operation API with resourceType: %s and resourceID: %s", op.ResourceType, op.ResourceID)
@@ -111,15 +115,15 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	opResponse := prepareLastOperation(res)
+	opResponse := buildLastOperation(res)
 
 	err = json.NewEncoder(writer).Encode(opResponse)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while encoding operation data")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding operation data: %v", err)
 	}
 }
 
-func prepareLastOperation(resource model.Entity) *OperationResponse {
+func buildLastOperation(resource model.Entity) *OperationResponse {
 	opResponse := &OperationResponse{
 		Operation: &Operation{
 			ResourceID:   resource.GetID(),
@@ -128,21 +132,9 @@ func prepareLastOperation(resource model.Entity) *OperationResponse {
 		Error: resource.GetError(),
 	}
 
-	if !resource.GetDeletedAt().IsZero() {
-		opResponse.OperationType = OperationTypeDelete
-	} else if !resource.GetUpdatedAt().IsZero() {
-		opResponse.OperationType = OperationTypeUpdate
-	} else {
-		opResponse.OperationType = OperationTypeCreate
-	}
-
-	if !resource.GetReady() {
-		opResponse.Status = OperationStatusInProgress
-	} else if resource.GetError() == nil {
-		opResponse.Status = OperationStatusSucceeded
-	} else {
-		opResponse.Status = OperationStatusFailed
-	}
+	opResponse.initializeOperationType(resource)
+	opResponse.initializeOperationStatus(resource)
+	opResponse.initializeCreationTime(resource)
 
 	return opResponse
 }

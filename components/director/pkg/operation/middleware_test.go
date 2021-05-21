@@ -1,17 +1,17 @@
 /*
- * Copyright 2020 The Compass Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* Copyright 2020 The Compass Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
  */
 
 package operation_test
@@ -22,11 +22,13 @@ import (
 	"testing"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/require"
-	"github.com/vektah/gqlparser/ast"
+	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 const (
@@ -34,8 +36,7 @@ const (
 	operationID = "6188b606-5a60-451a-8065-d2d13b2245ff"
 )
 
-func TestExtensionHandlerOperation(t *testing.T) {
-
+func TestInterceptResponse(t *testing.T) {
 	t.Run("when no operations are found in the context, no location extensions would be attached", func(t *testing.T) {
 		gqlResults := []gqlResult{
 			{
@@ -48,9 +49,9 @@ func TestExtensionHandlerOperation(t *testing.T) {
 		}
 
 		middleware := operation.NewMiddleware(directorURL)
-		resp := middleware.ExtensionHandler(context.Background(), dummyResolver.SuccessResolve)
+		resp := middleware.InterceptResponse(context.Background(), dummyResolver.SuccessResolve)
 
-		require.Equal(t, gqlResultResponse(gqlResults[0].resultName), resp)
+		require.Equal(t, gqlResultResponse(gqlResults[0].resultName), []byte(resp.Data))
 	})
 
 	t.Run("when an async operation is found in the context, location extension would be attached and data would be dropped", func(t *testing.T) {
@@ -60,10 +61,6 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				operationType: graphql.OperationModeAsync,
 			},
 		}
-
-		rCtx := gqlRequestContextWithSelections(gqlResults...)
-		ctx := gqlgen.WithRequestContext(context.Background(), rCtx)
-
 		operations := &[]*operation.Operation{
 			{
 				OperationType:     operation.OperationTypeCreate,
@@ -73,17 +70,21 @@ func TestExtensionHandlerOperation(t *testing.T) {
 			},
 		}
 
+		ctx := gqlContext(gqlResults, operations)
 		dummyResolver := dummyMiddlewareResolver{
-			operationToAttach: operations,
-			gqlResults:        gqlResults,
+			gqlResults: gqlResults,
 		}
 
 		middleware := operation.NewMiddleware(directorURL)
-		resp := middleware.ExtensionHandler(ctx, dummyResolver.SuccessResolve)
+		resp := middleware.InterceptResponse(ctx, dummyResolver.SuccessResolve)
 
-		require.Equal(t, "{}", string(resp))
+		require.Equal(t, "{}", string(resp.Data))
+		ext, ok := resp.Extensions[operation.LocationsParam]
+		require.True(t, ok)
+		require.Len(t, ext, len(*operations))
+
 		for _, op := range *operations {
-			require.Contains(t, rCtx.Extensions[operation.LocationsParam], operationURL(op, directorURL))
+			assertOperationInResponseExtension(t, ext, op)
 		}
 	})
 
@@ -97,9 +98,6 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				operationType: graphql.OperationModeAsync,
 			},
 		}
-
-		rCtx := gqlRequestContextWithSelections(gqlResults...)
-		ctx := gqlgen.WithRequestContext(context.Background(), rCtx)
 
 		operations := &[]*operation.Operation{
 			{
@@ -116,17 +114,21 @@ func TestExtensionHandlerOperation(t *testing.T) {
 			},
 		}
 
+		ctx := gqlContext(gqlResults, operations)
 		dummyResolver := dummyMiddlewareResolver{
-			operationToAttach: operations,
-			gqlResults:        gqlResults,
+			gqlResults: gqlResults,
 		}
 
 		middleware := operation.NewMiddleware(directorURL)
-		resp := middleware.ExtensionHandler(ctx, dummyResolver.SuccessResolve)
+		resp := middleware.InterceptResponse(ctx, dummyResolver.SuccessResolve)
 
-		require.Equal(t, "{}", string(resp))
+		require.Equal(t, "{}", string(resp.Data))
+		ext, ok := resp.Extensions[operation.LocationsParam]
+		require.True(t, ok)
+		require.Len(t, ext, len(*operations))
+
 		for _, op := range *operations {
-			require.Contains(t, rCtx.Extensions[operation.LocationsParam], operationURL(op, directorURL))
+			assertOperationInResponseExtension(t, ext, op)
 		}
 	})
 
@@ -141,9 +143,6 @@ func TestExtensionHandlerOperation(t *testing.T) {
 			},
 		}
 
-		rCtx := gqlRequestContextWithSelections(gqlResults...)
-		ctx := gqlgen.WithRequestContext(context.Background(), rCtx)
-
 		operations := &[]*operation.Operation{
 			{
 				OperationType:     operation.OperationTypeCreate,
@@ -153,58 +152,55 @@ func TestExtensionHandlerOperation(t *testing.T) {
 			},
 		}
 
+		ctx := gqlContext(gqlResults, operations)
 		dummyResolver := dummyMiddlewareResolver{
-			operationToAttach: operations,
-			gqlResults:        gqlResults,
+			gqlResults: gqlResults,
 		}
 
 		middleware := operation.NewMiddleware(directorURL)
-		resp := middleware.ExtensionHandler(ctx, dummyResolver.SuccessResolve)
+		resp := middleware.InterceptResponse(ctx, dummyResolver.SuccessResolve)
 
-		require.Equal(t, fmt.Sprintf("{%s}", gqlResultItem(gqlResults[1].resultName)), string(resp))
-		require.Len(t, rCtx.Extensions[operation.LocationsParam], 1)
-		require.Contains(t, rCtx.Extensions[operation.LocationsParam], operationURL((*operations)[0], directorURL))
+		require.Equal(t, fmt.Sprintf("{%s}", gqlResultItem(gqlResults[1].resultName)), string(resp.Data))
+
+		ext, ok := resp.Extensions[operation.LocationsParam]
+		require.True(t, ok)
+		require.Len(t, ext, 1)
+		assertOperationInResponseExtension(t, ext, (*operations)[0])
 	})
+}
 
-	t.Run("when RegisterExtension fails, should return error message", func(t *testing.T) {
-		reqCtx := &gqlgen.RequestContext{
-			Extensions: map[string]interface{}{
-				operation.LocationsParam: []string{"http://test-url/"},
-			},
-		}
-
-		ctx := gqlgen.WithRequestContext(context.Background(), reqCtx)
-		operations := &[]*operation.Operation{
-			{
-				OperationType:     operation.OperationTypeCreate,
-				OperationCategory: "registerApplication",
-				ResourceID:        operationID,
-				ResourceType:      resource.Application,
-			},
-		}
-
-		dummyResolver := dummyMiddlewareResolver{
-			operationToAttach: operations,
-		}
-
+func TestInterceptOperation(t *testing.T) {
+	t.Run("adds empty operations slice to context", func(t *testing.T) {
 		middleware := operation.NewMiddleware(directorURL)
-		resp := middleware.ExtensionHandler(ctx, dummyResolver.SuccessResolve)
-
-		require.Equal(t, `{"error": "unable to finalize operation location"}`, string(resp))
+		middleware.InterceptOperation(context.Background(), func(ctx context.Context) gqlgen.ResponseHandler {
+			operations, ok := operation.FromCtx(ctx)
+			require.True(t, ok)
+			require.NotNil(t, operations)
+			require.Len(t, *operations, 0)
+			return nil
+		})
 	})
+}
 
+func assertOperationInResponseExtension(t *testing.T, ext interface{}, op *operation.Operation) {
+	extArray, ok := ext.([]string)
+	require.True(t, ok)
+	require.Contains(t, extArray, operationURL(op, directorURL))
+}
+
+func gqlContext(results []gqlResult, operations *[]*operation.Operation) context.Context {
+	ctx := operation.SaveToContext(context.Background(), operations)
+	rCtx := gqlRequestContextWithSelections(results...)
+	ctx = gqlgen.WithOperationContext(ctx, rCtx)
+	ctx = gqlgen.WithResponseContext(ctx, func(ctx context.Context, err error) *gqlerror.Error { return nil }, panic_handler.RecoverFn)
+	return ctx
 }
 
 type dummyMiddlewareResolver struct {
-	operationToAttach *[]*operation.Operation
-	gqlResults        []gqlResult
+	gqlResults []gqlResult
 }
 
-func (d *dummyMiddlewareResolver) SuccessResolve(ctx context.Context) []byte {
-	if d.operationToAttach != nil {
-		operation.SaveToContext(ctx, d.operationToAttach)
-	}
-
+func (d *dummyMiddlewareResolver) SuccessResolve(_ context.Context) *gqlgen.Response {
 	body := ""
 	for i, gqlResult := range d.gqlResults {
 		body += gqlResultItem(gqlResult.resultName)
@@ -213,12 +209,11 @@ func (d *dummyMiddlewareResolver) SuccessResolve(ctx context.Context) []byte {
 			body += ","
 		}
 	}
-
-	return []byte(fmt.Sprintf("{%s}", body))
+	return &gqlgen.Response{Data: []byte(fmt.Sprintf("{%s}", body))}
 }
 
 func operationURL(op *operation.Operation, directorURL string) string {
-	return fmt.Sprintf("%s/operations?%s=%s&%s=%s", directorURL, operation.ResourceIDParam, op.ResourceID, operation.ResourceTypeParam, op.ResourceType)
+	return fmt.Sprintf("%s/%s/%s", directorURL, op.ResourceType, op.ResourceID)
 }
 
 func gqlResultItem(resultName string) string {
@@ -234,8 +229,11 @@ type gqlResult struct {
 	operationType graphql.OperationMode
 }
 
-func gqlRequestContextWithSelections(results ...gqlResult) *gqlgen.RequestContext {
-	reqCtx := &gqlgen.RequestContext{
+func gqlRequestContextWithSelections(results ...gqlResult) *gqlgen.OperationContext {
+	reqCtx := &gqlgen.OperationContext{
+		RawQuery:      "",
+		Variables:     nil,
+		OperationName: "",
 		Doc: &ast.QueryDocument{
 			Operations: ast.OperationList{
 				&ast.OperationDefinition{

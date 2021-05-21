@@ -7,7 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 func WriteAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
@@ -23,6 +23,6 @@ func WriteAppError(ctx context.Context, w http.ResponseWriter, appErr error, sta
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while encoding data. ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
 }

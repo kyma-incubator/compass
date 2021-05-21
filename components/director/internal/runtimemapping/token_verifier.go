@@ -8,6 +8,10 @@ import (
 	"path"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
+	"github.com/lestrrat-go/iter/arrayiter"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -88,7 +92,7 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return nil, errors.Wrap(err, "while getting the JWKs URI")
 	}
 
-	jwksSet, err := jwk.Fetch(jwksURI)
+	jwksSet, err := jwk.Fetch(ctx, jwksURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching JWKs")
 	}
@@ -98,11 +102,21 @@ func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return nil, errors.Wrap(err, "while getting the key ID")
 	}
 
-	keys := jwksSet.LookupKeyID(keyID)
-	for _, key := range keys {
-		if key.Algorithm() == token.Method.Alg() {
-			return key.Materialize()
-		}
+	keyIterator := &authenticator.JWTKeyIterator{
+		AlgorithmCriteria: func(alg string) bool {
+			return token.Method.Alg() == alg
+		},
+		IDCriteria: func(id string) bool {
+			return id == keyID
+		},
+	}
+
+	if err := arrayiter.Walk(ctx, jwksSet, keyIterator); err != nil {
+		return nil, err
+	}
+
+	if keyIterator.ResultingKey != nil {
+		return keyIterator.ResultingKey, nil
 	}
 
 	return nil, apperrors.NewInternalError("unable to find a proper key")
@@ -120,7 +134,7 @@ func (f *jwksFetch) getJWKsURI(ctx context.Context, token jwt.Token) (string, er
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			log.C(ctx).WithError(err).Error("An error has occurred while closing response body.")
+			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
 		}
 	}()
 

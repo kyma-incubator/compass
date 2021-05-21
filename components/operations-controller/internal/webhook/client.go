@@ -103,6 +103,12 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.C(ctx).Error(err, "Failed to close HTTP response body")
+		}
+	}()
 
 	responseObject, err := parseResponseObject(resp)
 	if err != nil {
@@ -116,11 +122,15 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response into webhook output template"))
 	}
 
+	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
+		return response, err
+	}
+
 	isLocationEmpty := response.Location != nil && *response.Location == ""
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
-		return nil, errors.New("missing location url after executing async webhook")
+		return nil, errors.New(fmt.Sprintf("missing location url after executing async webhook: HTTP response status %+v with body %s", resp.Status, responseObject.Body))
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
@@ -160,6 +170,12 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.C(ctx).Error(err, "Failed to close HTTP response body")
+		}
+	}()
 
 	responseObject, err := parseResponseObject(resp)
 	if err != nil {
@@ -177,15 +193,23 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 }
 
 func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) {
-	bytes, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	body := make(map[string]string, 0)
-	if len(bytes) > 0 {
-		if err := json.Unmarshal(bytes, &body); err != nil {
-			return nil, err
+	if len(respBody) > 0 {
+		tmpBody := make(map[string]interface{})
+		if err := json.Unmarshal(respBody, &tmpBody); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body %s", respBody))
+		}
+
+		for k, v := range tmpBody {
+			if v == nil {
+				continue
+			}
+			body[k] = fmt.Sprintf("%v", v)
 		}
 	}
 
@@ -203,7 +227,7 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 func checkForErr(resp *http.Response, successStatusCode *int, error *string) error {
 	var errMsg string
 	if *successStatusCode != resp.StatusCode {
-		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *successStatusCode, resp.StatusCode)
+		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d; ", *successStatusCode, resp.StatusCode)
 	}
 
 	if error != nil && *error != "" {
@@ -214,5 +238,12 @@ func checkForErr(resp *http.Response, successStatusCode *int, error *string) err
 		return errors.New(errMsg)
 	}
 
+	return nil
+}
+
+func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
+	if goneStatusCode != nil && resp.StatusCode == *goneStatusCode {
+		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
+	}
 	return nil
 }
