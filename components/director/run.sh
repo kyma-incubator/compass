@@ -85,10 +85,6 @@ function cleanup() {
     fi
 }
 
-function cleanup_temp_migrations() {
-    rm ${ROOT_PATH}/../schema-migrator/migrations/new_migrations.sql
-}
-
 trap cleanup EXIT
 
 if [[ ${REUSE_DB} = true ]]; then
