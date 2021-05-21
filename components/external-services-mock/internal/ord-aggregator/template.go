@@ -23,387 +23,471 @@ const ordConfig = `{
 
 // This document is based on marshalling (and optionally enhancing) the returned document from the fixture fixORDDocumentWithBaseURL located in: /compass/components/director/internal/open_resource_discovery/fixtures_test.go
 // If any breaking/validation change is applied to the fixture's Document structure, it must be applied here and in the constants used in the e2e test (/compass/tests/ord-aggregator/tests/handler_test.go) as well. Otherwise, the aggregator e2e test will fail.
+// describedSystemInstance.baseUrl should be the same as the url of external services mock in the cluster
 const ordDocument = `{
 	"$schema": "./spec/v1/generated/Document.schema.json",
-	"openResourceDiscovery": "1.0-rc.2",
-	"description": "Test Document",
-	"describedSystemInstance": {
-		"ProviderName": null,
-		"Tenant": "",
-		"Name": "",
-		"Description": null,
-		"Status": null,
-		"HealthCheckURL": null,
-		"IntegrationSystemID": null,
-		"ApplicationTemplateID": null,
-		"baseUrl": "http://compass-external-services-mock.compass-system.svc.cluster.local:8080",
+	"apiResources": [{
+		"apiProtocol": "odata-v2",
+		"apiResourceLinks": [{
+			"type": "console",
+			"url": "https://example.com/shell/discover"
+		},
+		{
+			"type": "console",
+			"url": "/shell/discover/relative"
+		}],
+		"changelogEntries": [{
+			"date": "2020-04-29",
+			"description": "loremipsumdolorsitamet",
+			"releaseStatus": "active",
+			"url": "https://example.com/changelog/v1",
+			"version": "1.0.0"
+		}],
+		"countries": ["BG", "US"],
+		"customImplementationStandard": null,
+		"customImplementationStandardDescription": null,
+		"description": "lorem ipsum dolor sit amet",
+		"disabled": true,
+		"entryPoints": ["https://exmaple.com/test/v1", "https://exmaple.com/test/v2"],
+		"extensible": {
+			"description": "Please find the extensibility documentation",
+			"supported": "automatic"
+		},
+		"implementationStandard": "cff:open-service-broker:v2",
+		"industry": ["automotive","test"],
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
-		}
-	},
-	"providerSystemInstance": null,
-	"packages": [{
-		"ordId": "ns:package:PACKAGE_ID:v1",
-		"vendor": "ns:vendor:id:",
-		"title": "PACKAGE 1 TITLE",
-		"shortDescription": "lorem ipsum",
-		"description": "lorem ipsum dolor set",
-		"version": "1.1.2",
-		"packageLinks": [{
-			"type": "terms-of-service",
-			"url": "https://example.com/en/legal/terms-of-use.html"
-		}, {
-			"type": "client-registration",
-			"url": "/ui/public/showRegisterForm"
-		}],
+		},
+		"lineOfBusiness": ["lineOfBusiness2"],
 		"links": [{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
 			"url": "https://example.com/2018/04/11/testing/"
-		}, {
+		},
+		{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
 			"url": "/testing/relative"
 		}],
-		"licenseType": "licence",
-		"tags": ["testTag"],
+		"ordId": "ns:apiResource:API_ID:v2",
+		"partOfConsumptionBundles": [{
+			"defaultEntryPoint": "https://exmaple.com/test/v1",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+		{
+			"defaultEntryPoint": "https://exmaple.com/test/v1",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
+		}],
+		"partOfPackage": "ns:package:PACKAGE_ID:v1",
+		"partOfProducts": ["ns:product:id:"],
+		"releaseStatus": "active",
+		"resourceDefinitions": [{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "application/json",
+			"type": "openapi-v3",
+			"url": "http://localhost:8080/odata/1.0/catalog.svc/$value?type=json"
+		},
+		{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "text/yaml",
+			"type": "openapi-v3",
+			"url": "https://test.com/odata/1.0/catalog"
+		},
+		{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "application/xml",
+			"type": "edmx",
+			"url": "https://TEST:443//odata/$metadata"
+		}],
+		"shortDescription": "lorem ipsum",
+		"successor": null,
+		"sunsetDate": null,
+		"systemInstanceAware": true,
+		"tags": ["apiTestTag"],
+		"title": "API TITLE",
+		"version": "2.1.2",
+		"visibility": "public"
+	},
+	{
+		"apiProtocol": "odata-v2",
+		"apiResourceLinks": [{
+			"type": "console",
+			"url": "https://example.com/shell/discover"
+		},
+		{
+			"type": "console",
+			"url": "/shell/discover/relative"
+		}],
+		"changelogEntries": [{
+			"date": "2020-04-29",
+			"description": "loremipsumdolorsitamet",
+			"releaseStatus": "active",
+			"url": "https://example.com/changelog/v1",
+			"version": "1.0.0"
+		}],
+		"countries": ["BR"],
+		"customImplementationStandard": null,
+		"customImplementationStandardDescription": null,
+		"description": "lorem ipsum dolor sit amet",
+		"disabled": null,
+		"entryPoints": ["http://localhost:8080/some-api/v1"],
+		"extensible": {
+			"description": "Please find the extensibility documentation",
+			"supported": "automatic"
+		},
+		"implementationStandard": "cff:open-service-broker:v2",
+		"industry": ["automotive","test"],
+		"labels": {
+			"label-key-1": ["label-value-1", "label-value-2"]
+		},
+		"lineOfBusiness": ["lineOfBusiness2"],
+		"links": [{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "/testing/relative"
+		}],
+		"ordId": "ns:apiResource:API_ID2:v1",
+		"partOfConsumptionBundles": [{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+ 		{
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2",
+			"defaultEntryPoint": ""
+		}],
+		"partOfPackage": "ns:package:PACKAGE_ID:v1",
+		"partOfProducts": ["ns:product:id:"],
+		"releaseStatus": "deprecated",
+		"resourceDefinitions": [{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "application/xml",
+			"type": "edmx",
+			"url": "https://TEST:443//odata/$metadata"
+		},
+		{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "application/json",
+			"type": "openapi-v3",
+			"url": "http://localhost:8080/odata/1.0/catalog.svc/$value?type=json"
+		}],
+		"shortDescription": "lorem ipsum",
+		"successor": "ns:apiResource:API_ID:v2",
+		"sunsetDate": "2020-12-08T15:47:04+0000",
+		"systemInstanceAware": true,
+		"tags": ["ZGWSAMPLE"],
+		"title": "Gateway Sample Service",
+		"version": "1.1.0",
+		"visibility": "public"
+	}],
+	"consumptionBundles":[
+        {
+            "credentialExchangeStrategies":[
+                {
+                    "callbackUrl":"/credentials/relative",
+                    "customType":"ns:credential-exchange:v1",
+                    "type":"custom"
+                },
+                {
+                    "callbackUrl":"http://example.com/credentials",
+                    "customType":"ns:credential-exchange2:v3",
+                    "type":"custom"
+                }
+            ],
+            "description":"lorem ipsum dolor nsq sme",
+            "labels":{
+                "label-key-1":[
+                    "label-value-1",
+                    "label-value-2"
+                ]
+            },
+            "links":[
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"https://example.com/2018/04/11/testing/"
+                },
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"/testing/relative"
+                }
+            ],
+            "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
+            "shortDescription":"lorem ipsum",
+            "title":"BUNDLE TITLE"
+        },
+        {
+            "title":"BUNDLE TITLE 2",
+            "description":"foo bar",
+            "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
+            "shortDescription":"foo",
+            "links":[
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"https://example.com/2018/04/11/testing/"
+                },
+                {
+                    "description":"loremipsumdolornem",
+                    "title":"LinkTitle",
+                    "url":"/testing/relative"
+                }
+            ],
+            "labels":{
+                "label-key-1":[
+                    "label-value-1",
+                    "label-value-2"
+                ]
+            },
+            "credentialExchangeStrategies":[
+                {
+                    "callbackUrl":"/credentials/relative",
+                    "customType":"ns:credential-exchange:v1",
+                    "type":"custom"
+                },
+                {
+                    "callbackUrl":"http://example.com/credentials",
+                    "customType":"ns:credential-exchange2:v3",
+                    "type":"custom"
+                }
+            ]
+        }
+    ],
+	"describedSystemInstance": {
+		"ApplicationTemplateID": null,
+		"baseUrl": "http://compass-external-services-mock.compass-system.svc.cluster.local:8080",
+		"Description": null,
+		"HealthCheckURL": null,
+		"IntegrationSystemID": null,
+		"labels": {
+			"label-key-1": ["label-value-1", "label-value-2"]
+		},
+		"Name": "",
+		"ProviderName": null,
+		"Status": null,
+		"Tenant": ""
+	},
+	"description": "Test Document",
+	"eventResources": [{
+		"changelogEntries": [{
+			"date": "2020-04-29",
+			"description": "loremipsumdolorsitamet",
+			"releaseStatus": "active",
+			"url": "https://example.com/changelog/v1",
+			"version": "1.0.0"
+		}],
+		"countries": ["BG", "US"],
+		"description": "lorem ipsum dolor sit amet",
+		"disabled": true,
+		"extensible": {
+			"description": "Please find the extensibility documentation",
+			"supported": "automatic"
+		},
+		"industry": ["automotive", "test"],
+		"labels": {
+			"label-key-1": ["label-value-1", "label-value-2"]
+		},
+		"lineOfBusiness": ["lineOfBusiness2"],
+		"links": [{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "/testing/relative"
+		}],
+		"ordId": "ns:eventResource:EVENT_ID:v1",
+		"partOfConsumptionBundles": [{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+		{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
+		}],
+		"partOfPackage": "ns:package:PACKAGE_ID:v1",
+		"partOfProducts": ["ns:product:id:"],
+		"releaseStatus": "active",
+		"resourceDefinitions": [{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "application/json",
+			"type": "asyncapi-v2",
+			"url": "http://localhost:8080/asyncApi2.json"
+		}],
+		"shortDescription": "lorem ipsum",
+		"successor": null,
+		"sunsetDate": null,
+		"systemInstanceAware": true,
+		"tags": ["eventTestTag"],
+		"title": "EVENT TITLE",
+		"version": "2.1.2",
+		"visibility": "public"
+	},
+	{
+		"changelogEntries": [{
+			"date": "2020-04-29",
+			"description": "loremipsumdolorsitamet",
+			"releaseStatus": "active",
+			"url": "https://example.com/changelog/v1",
+			"version": "1.0.0"
+		}],
+		"countries": ["BR"],
+		"description": "lorem ipsum dolor sit amet",
+		"disabled": null,
+		"extensible": {
+			"description": "Please find the extensibility documentation",
+			"supported": "automatic"
+		},
+		"industry": ["automotive", "test"],
+		"labels": {
+			"label-key-1": ["label-value-1", "label-value-2"]
+		},
+		"lineOfBusiness": ["lineOfBusiness2"],
+		"links": [{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "/testing/relative"
+		}],
+		"ordId": "ns2:eventResource:EVENT_ID:v1",
+		"partOfConsumptionBundles": [{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
+		},
+		{
+			"defaultEntryPoint": "",
+			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
+		}],
+		"partOfPackage": "ns:package:PACKAGE_ID:v1",
+		"partOfProducts": ["ns:product:id:"],
+		"releaseStatus": "deprecated",
+		"resourceDefinitions": [{
+			"accessStrategies": [{
+				"customDescription": "",
+				"customType": "",
+				"type": "open"
+			}],
+			"customType": "",
+			"mediaType": "application/json",
+			"type": "asyncapi-v2",
+			"url": "http://localhost:8080/api/eventCatalog.json"
+		}],
+		"shortDescription": "lorem ipsum",
+		"successor": "ns2:eventResource:EVENT_ID:v1",
+		"sunsetDate": "2020-12-08T15:47:04+0000",
+		"systemInstanceAware": true,
+		"tags": ["eventTestTag2"],
+		"title": "EVENT TITLE 2",
+		"version": "1.1.0",
+		"visibility": "public"
+	}],
+	"openResourceDiscovery": "1.0-rc.3",
+	"packages": [{
 		"countries": ["BG", "EN"],
+		"customPolicyLevel": null,
+		"description": "lorem ipsum dolor set",
+		"industry": ["automotive", "finance"],
 		"labels": {
 			"label-key-1": ["label-val"],
 			"pkg-label": ["label-val"]
 		},
-		"policyLevel": "sap",
-		"customPolicyLevel": null,
-		"partOfProducts": ["ns:product:id:"],
+		"licenseType": "licence",
 		"lineOfBusiness": ["lineOfBusiness"],
-		"industry": ["automotive", "finance"]
-	}],
-	"consumptionBundles": [{
-		"title": "BUNDLE TITLE",
-		"description": "lorem ipsum dolor nsq sme",
-		"ordId": "ns:consumptionBundle:BUNDLE_ID:v1",
+		"links": [{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+			"description": "loremipsumdolornem",
+			"title": "LinkTitle",
+			"url": "/testing/relative"
+		}],
+		"ordId": "ns:package:PACKAGE_ID:v1",
+		"packageLinks": [{
+			"type": "terms-of-service",
+			"url": "https://example.com/en/legal/terms-of-use.html"
+		},
+		{
+			"type": "client-registration",
+			"url": "/ui/public/showRegisterForm"
+		}],
+		"partOfProducts": ["ns:product:id:"],
+		"policyLevel": "sap",
 		"shortDescription": "lorem ipsum",
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		}, {
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"credentialExchangeStrategies": [{
-			"callbackUrl": "/credentials/relative",
-			"customType": "ns:credential-exchange:v1",
-			"type": "custom"
-		}, {
-			"callbackUrl": "http://example.com/credentials",
-			"customType": "ns:credential-exchange2:v3",
-			"type": "custom"
-		}]
-	}, {
-		"title": "BUNDLE TITLE 2",
-		"description": "foo bar",
-		"ordId": "ns:consumptionBundle:BUNDLE_ID:v2",
-		"shortDescription": "foo",
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		}, {
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"credentialExchangeStrategies": [{
-			"callbackUrl": "/credentials/relative",
-			"customType": "ns:credential-exchange:v1",
-			"type": "custom"
-		}, {
-			"callbackUrl": "http://example.com/credentials",
-			"customType": "ns:credential-exchange2:v3",
-			"type": "custom"
-		}]
+		"tags": ["testTag"],
+		"title": "PACKAGE 1 TITLE",
+		"vendor": "ns:vendor:id:",
+		"version": "1.1.2"
 	}],
 	"products": [{
+		"correlationIds": [
+			"foo.bar.baz:123456",
+			"foo.bar.baz:654321"
+		],
+		"labels": {
+			"label-key-1": ["label-value-1", "label-value-2"]
+		},
 		"ordId": "ns:product:id:",
-		"title": "PRODUCT TITLE",
-		"shortDescription": "lorem ipsum",
-		"vendor": "ns:vendor:id:",
 		"parent": "ns:product:id2:",
-		"correlationIds": ["foo.bar.baz:123456", "foo.bar.baz:654321"],
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		}
+		"shortDescription": "lorem ipsum",
+		"title": "PRODUCT TITLE",
+		"vendor": "ns:vendor:id:"
 	}],
-	"apiResources": [{
-		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"title": "API TITLE",
-		"description": "lorem ipsum dolor sit amet",
-		"entryPoints": ["https://exmaple.com/test/v1", "https://exmaple.com/test/v2"],
-		"ordId": "ns:apiResource:API_ID:v2",
-		"shortDescription": "lorem ipsum",
-		"systemInstanceAware": true,
-		"apiProtocol": "odata-v2",
-		"tags": ["apiTestTag"],
-		"countries": ["BG", "US"],
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		}, {
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"apiResourceLinks": [{
-			"type": "console",
-			"url": "https://example.com/shell/discover"
-		}, {
-			"type": "console",
-			"url": "/shell/discover/relative"
-		}],
-		"releaseStatus": "active",
-		"sunsetDate": null,
-		"successor": null,
-		"changelogEntries": [{
-			"date": "2020-04-29",
-			"description": "loremipsumdolorsitamet",
-			"releaseStatus": "active",
-			"url": "https://example.com/changelog/v1",
-			"version": "1.0.0"
-		}],
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"visibility": "public",
-		"disabled": true,
-		"partOfProducts": ["ns:product:id:"],
-		"lineOfBusiness": ["lineOfBusiness2"],
-		"industry": ["automotive", "test"],
-		"implementationStandard": "cff:open-service-broker:v2",
-		"customImplementationStandard": null,
-		"customImplementationStandardDescription": null,
-		"resourceDefinitions": [{
-			"type": "openapi-v3",
-			"customType": "",
-			"mediaType": "application/json",
-			"url": "http://localhost:8080/odata/1.0/catalog.svc/$value?type=json",
-			"accessStrategies": [{
-				"type": "open",
-				"customType": "",
-				"customDescription": ""
-			}]
-		}, {
-			"type": "openapi-v3",
-			"customType": "",
-			"mediaType": "text/yaml",
-			"url": "https://test.com/odata/1.0/catalog",
-			"accessStrategies": [{
-				"type": "open",
-				"customType": "",
-				"customDescription": ""
-			}]
-		}],
-		"partOfConsumptionBundles": [{
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1",
-			"defaultEntryPoint": "https://exmaple.com/test/v1"
-		}, {
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2",
-			"defaultEntryPoint": "https://exmaple.com/test/v2"
-		}],
-		"version": "2.1.2"
-	}, {
-		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"title": "Gateway Sample Service",
-		"description": "lorem ipsum dolor sit amet",
-		"entryPoints": ["http://localhost:8080/some-api/v1"],
-		"ordId": "ns:apiResource:API_ID2:v1",
-		"shortDescription": "lorem ipsum",
-		"systemInstanceAware": true,
-		"apiProtocol": "odata-v2",
-		"tags": ["ZGWSAMPLE"],
-		"countries": ["BR"],
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		}, {
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"apiResourceLinks": [{
-			"type": "console",
-			"url": "https://example.com/shell/discover"
-		}, {
-			"type": "console",
-			"url": "/shell/discover/relative"
-		}],
-		"releaseStatus": "deprecated",
-		"sunsetDate": "2020-12-08T15:47:04+0000",
-		"successor": "ns:apiResource:API_ID:v2",
-		"changelogEntries": [{
-			"date": "2020-04-29",
-			"description": "loremipsumdolorsitamet",
-			"releaseStatus": "active",
-			"url": "https://example.com/changelog/v1",
-			"version": "1.0.0"
-		}],
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"visibility": "public",
-		"disabled": null,
-		"partOfProducts": ["ns:product:id:"],
-		"lineOfBusiness": ["lineOfBusiness2"],
-		"industry": ["automotive", "test"],
-		"implementationStandard": "cff:open-service-broker:v2",
-		"customImplementationStandard": null,
-		"customImplementationStandardDescription": null,
-		"resourceDefinitions": [{
-			"type": "edmx",
-			"customType": "",
-			"mediaType": "application/xml",
-			"url": "https://TEST:443//odata/$metadata",
-			"accessStrategies": [{
-				"type": "open",
-				"customType": "",
-				"customDescription": ""
-			}]
-		}],
-		"partOfConsumptionBundles": [{
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1",
-			"defaultEntryPoint": ""
-		}, {
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2",
-			"defaultEntryPoint": ""
-		}],
-		"version": "1.1.0"
-	}],
-	"eventResources": [{
-		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"title": "EVENT TITLE",
-		"description": "lorem ipsum dolor sit amet",
-		"ordId": "ns:eventResource:EVENT_ID:v1",
-		"shortDescription": "lorem ipsum",
-		"systemInstanceAware": true,
-		"changelogEntries": [{
-			"date": "2020-04-29",
-			"description": "loremipsumdolorsitamet",
-			"releaseStatus": "active",
-			"url": "https://example.com/changelog/v1",
-			"version": "1.0.0"
-		}],
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		}, {
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"tags": ["eventTestTag"],
-		"countries": ["BG", "US"],
-		"releaseStatus": "active",
-		"sunsetDate": null,
-		"successor": null,
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"visibility": "public",
-		"disabled": true,
-		"partOfProducts": ["ns:product:id:"],
-		"lineOfBusiness": ["lineOfBusiness2"],
-		"industry": ["automotive", "test"],
-		"resourceDefinitions": [{
-			"type": "asyncapi-v2",
-			"customType": "",
-			"mediaType": "application/json",
-			"url": "http://localhost:8080/asyncApi2.json",
-			"accessStrategies": [{
-				"type": "open",
-				"customType": "",
-				"customDescription": ""
-			}]
-		}],
-		"partOfConsumptionBundles": [{
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
-		}, {
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"	
-		}],
-		"version": "2.1.2"
-	}, {
-		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"title": "EVENT TITLE 2",
-		"description": "lorem ipsum dolor sit amet",
-		"ordId": "ns2:eventResource:EVENT_ID:v1",
-		"shortDescription": "lorem ipsum",
-		"systemInstanceAware": true,
-		"changelogEntries": [{
-			"date": "2020-04-29",
-			"description": "loremipsumdolorsitamet",
-			"releaseStatus": "active",
-			"url": "https://example.com/changelog/v1",
-			"version": "1.0.0"
-		}],
-		"links": [{
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "https://example.com/2018/04/11/testing/"
-		}, {
-			"description": "loremipsumdolornem",
-			"title": "LinkTitle",
-			"url": "/testing/relative"
-		}],
-		"tags": ["eventTestTag2"],
-		"countries": ["BR"],
-		"releaseStatus": "deprecated",
-		"sunsetDate": "2020-12-08T15:47:04+0000",
-		"successor": "ns2:eventResource:EVENT_ID:v1",
-		"labels": {
-			"label-key-1": ["label-value-1", "label-value-2"]
-		},
-		"visibility": "public",
-		"disabled": null,
-		"partOfProducts": ["ns:product:id:"],
-		"lineOfBusiness": ["lineOfBusiness2"],
-		"industry": ["automotive", "test"],
-		"resourceDefinitions": [{
-			"type": "asyncapi-v2",
-			"customType": "",
-			"mediaType": "application/json",
-			"url": "http://localhost:8080/api/eventCatalog.json",
-			"accessStrategies": [{
-				"type": "open",
-				"customType": "",
-				"customDescription": ""
-			}]
-		}],
-		"partOfConsumptionBundles": [{
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v1"
-		}, {
-			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
-		}],
-		"version": "1.1.0"
-	}],
+	"providerSystemInstance": null,
 	"tombstones": [{
 		"ordId": "ns:apiResource:API_ID2:v1",
 		"removalDate": "2020-12-02T14:12:59Z"
 	}],
 	"vendors": [{
-		"ordId": "ns:vendor:id:",
-		"title": "SAP",
-		"sapPartner": true,
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
-		}
+		},
+		"ordId": "ns:vendor:id:",
+		"partners": [
+		"microsoft:vendor:Microsoft:"
+		],
+		"title": "SAP"
 	}]
 }`

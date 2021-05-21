@@ -21,6 +21,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -66,6 +67,8 @@ func (m *manager) Initialize(operation *v1alpha1.Operation) error {
 			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
 		}
 	}
+
+	status.InitializedAt = metav1.Now()
 	return nil
 }
 

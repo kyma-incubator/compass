@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"time"
 
+	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -116,7 +118,8 @@ func TestController_Scenarios(t *testing.T) {
 		status.NewManager(kubeClient),
 		k8s.NewClient(kubeClient),
 		directorClient,
-		webhookClient)
+		webhookClient,
+		collector.NewCollector())
 
 	err = controller.SetupWithManager(mgr)
 	require.NoError(t, err)
