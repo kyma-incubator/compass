@@ -428,11 +428,16 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+
+	bundleReferenceConv := bundlereferences.NewConverter()
+	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	apiRepo := api.NewRepository(apiConverter)
-	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 
 	docConverter := document.NewConverter(frConverter)
 	docRepo := document.NewRepository(docConverter)
