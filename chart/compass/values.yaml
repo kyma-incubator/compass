@@ -407,4 +407,5 @@ pairing-adapter:
 test:
   token:
     server:
+      enabled: false
       port: 5000

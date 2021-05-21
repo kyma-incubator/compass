@@ -98,7 +98,7 @@ spec:
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
             - name: APP_IS_WITH_TOKEN
-              value: "true" # TODO: Make this configurable
+              value: "{{.Values.test.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.test.token.server.port}}"
           {{ if .Values.global.isLocalEnv }}
