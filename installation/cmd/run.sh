@@ -41,6 +41,10 @@ do
             DOCKER_DRIVER=true
             shift # past argument
         ;;
+        --dump-db)
+            DUMP_DB=true
+            shift # past argument
+        ;;
         --minikube-cpus)
             checkInputParameterValue "${2}"
             MINIKUBE_CPUS="${2}"
@@ -79,6 +83,13 @@ if [ -z "$KYMA_INSTALLATION" ]; then
   KYMA_INSTALLATION="minimal"
 fi
 
+if [[ ${DUMP_DB} ]]; then
+    sed -i - "s/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:latest/" "${ROOT_PATH}"/chart/compass/templates/migrator-job.yaml
+    rm "${ROOT_PATH}"/chart/compass/templates/migrator-job.yaml-
+
+    bash "${ROOT_PATH}"/components/schema-migrator/dump_db.sh
+fi
+
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."
   if [[ ! ${DOCKER_DRIVER} ]]; then
@@ -86,6 +97,10 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   else
     kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
   fi
+fi
+
+if [[ ${DUMP_DB} ]]; then
+    make -C "${ROOT_PATH}"/components/schema-migrator build-to-minikube
 fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then

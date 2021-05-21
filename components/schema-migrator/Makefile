@@ -29,8 +29,5 @@ check-imports:
 check-fmt:
 	@echo ${SKIP_CHECK_FMT_MESSAGE}
 
-build-to-minikube:
-	@echo ${SKIP_DEPLOY_MESSAGE}
-
 deploy-on-minikube:
 	@echo ${SKIP_DEPLOY_MESSAGE}

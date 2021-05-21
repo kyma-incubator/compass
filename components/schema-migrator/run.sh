@@ -36,11 +36,21 @@ if [ "${dbReady}" != true ] ; then
     exit 1
 fi
 
+DB_NAME_SSL=$DB_NAME
+SSL_OPTION=""
 if [ -n "${DB_SSL}" ] ; then
-  DB_NAME="${DB_NAME}?sslmode=${DB_SSL}"
+  DB_NAME_SSL="${DB_NAME}?sslmode=${DB_SSL}"
+  SSL_OPTION="sslmode=${DB_SSL}"
 fi
 
-CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
+
+if [[ -f seeds/dump.sql ]]; then
+    echo "Will reuse existing dump in seeds/dump.sql"
+    cat seeds/dump.sql | \
+        PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" --set="${SSL_OPTION}"
+fi
+
+CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME_SSL"
 
 CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 echo '# STARTING MIGRATION #'
