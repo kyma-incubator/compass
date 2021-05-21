@@ -10,7 +10,6 @@ import (
 type Entity struct {
 	TenantID            string         `db:"tenant_id"`
 	ApplicationID       string         `db:"app_id"`
-	BundleID            sql.NullString `db:"bundle_id"`
 	PackageID           sql.NullString `db:"package_id"`
 	Name                string         `db:"name"`
 	Description         sql.NullString `db:"description"`
@@ -31,6 +30,7 @@ type Entity struct {
 	PartOfProducts      sql.NullString `db:"part_of_products"`
 	LineOfBusiness      sql.NullString `db:"line_of_business"`
 	Industry            sql.NullString `db:"industry"`
+	Extensible          sql.NullString `db:"extensible"`
 	version.Version
 
 	*repo.BaseEntity

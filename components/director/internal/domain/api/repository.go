@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,15 +17,16 @@ const apiDefTable string = `"public"."api_definitions"`
 var (
 	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
+	idColumn      = "id"
+	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible"}
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
+	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible"}
 )
 
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
@@ -37,6 +39,7 @@ type pgRepository struct {
 	creator         repo.Creator
 	singleGetter    repo.SingleGetter
 	pageableQuerier repo.PageableQuerier
+	queryBuilder    repo.QueryBuilder
 	lister          repo.Lister
 	updater         repo.Updater
 	deleter         repo.Deleter
@@ -48,6 +51,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
+		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.APIDefIDColumn}),
 		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
 		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, tenantColumn, idColumns),
@@ -64,10 +68,7 @@ func (r APIDefCollection) Len() int {
 }
 
 func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("bundle_id", bundleID),
-	}
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
@@ -83,9 +84,22 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return apis, nil
 }
 
-func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.APIDefinitionPage, error) {
+func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition(bundleColumn, bundleID),
+		repo.NewNotNullCondition(bundlereferences.APIDefIDColumn),
+	}
+	subquery, args, err := r.queryBuilder.BuildQuery(tenant, false, subqueryConditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
 	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &apiDefCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &apiDefCollection, inOperatorConditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -117,20 +131,9 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &apiDefModel, nil
 }
 
+// the bundleID remains for backwards compatibility above in the layers; we are sure that the correct API will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error) {
-	var ent Entity
-
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("bundle_id", bundleID),
-	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
-		return nil, err
-	}
-
-	apiDefModel := r.conv.FromEntity(ent)
-
-	return &apiDefModel, nil
+	return r.GetByID(ctx, tenant, id)
 }
 
 func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
@@ -179,5 +182,18 @@ func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) e
 }
 
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(bundleColumn, bundleID)})
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition(bundleColumn, bundleID),
+		repo.NewNotNullCondition(bundlereferences.APIDefIDColumn),
+	}
+	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false, subqueryConditions...)
+	if err != nil {
+		return err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
+	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
 }

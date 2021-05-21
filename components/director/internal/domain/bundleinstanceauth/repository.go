@@ -20,7 +20,7 @@ var (
 	tenantColumn     = "tenant_id"
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
-	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -106,6 +106,22 @@ func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundle
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("bundle_id", bundleID),
+	}
+
+	err := r.lister.List(ctx, tenantID, &entities, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *repository) ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error) {
+	var entities Collection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("runtime_id", runtimeID),
 	}
 
 	err := r.lister.List(ctx, tenantID, &entities, conditions...)

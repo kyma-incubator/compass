@@ -41,7 +41,7 @@ func TestTenantErrors(t *testing.T) {
 
 	req := fixtures.FixRequestClientCredentialsForIntegrationSystem(is.ID)
 
-	var credentials graphql.SystemAuth
+	var credentials graphql.IntSysSystemAuth
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)

@@ -29,8 +29,8 @@ type RuntimeService interface {
 
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
 type APIConverter interface {
-	ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error)
-	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error)
+	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
+	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
@@ -50,6 +50,7 @@ type Resolver struct {
 	transact      persistence.Transactioner
 	svc           APIService
 	bndlSvc       BundleService
+	bndlRefSvc    BundleReferenceService
 	rtmSvc        RuntimeService
 	converter     APIConverter
 	frConverter   FetchRequestConverter
@@ -57,12 +58,13 @@ type Resolver struct {
 	specConverter SpecConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
 		rtmSvc:        rtmSvc,
 		bndlSvc:       bndlSvc,
+		bndlRefSvc:    bndlRefSvc,
 		converter:     converter,
 		frConverter:   frConverter,
 		specService:   specService,
@@ -109,7 +111,12 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.converter.ToGraphQL(api, spec)
+	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, &bundleID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -154,7 +161,12 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.converter.ToGraphQL(api, spec)
+	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -188,7 +200,12 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.converter.ToGraphQL(api, spec)
+	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}

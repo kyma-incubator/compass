@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -2334,6 +2336,162 @@ func TestService_DeleteLabel(t *testing.T) {
 		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.DeleteLabel(context.TODO(), "id", "key")
+		// then
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+}
+
+func TestService_UpdateTenantID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	runtimeID := "sample-runtime-id"
+	tntID := "tenantID"
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("UpdateTenantID", ctx, runtimeID, tntID).Return(nil).Once()
+				return repo
+			},
+
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Fails on repository error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("UpdateTenantID", ctx, runtimeID, tntID).Return(testErr).Once()
+				return repo
+			},
+
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepository := &automock.LabelRepository{}
+			labelUpsertService := &automock.LabelUpsertService{}
+			scenariosService := &automock.ScenariosService{}
+			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
+			uidSvc := &automock.UIDService{}
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+
+			// when
+			err := svc.UpdateTenantID(ctx, runtimeID, tntID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepository.AssertExpectations(t)
+			labelUpsertService.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
+			scenarioAssignmentEngine.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		// given
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		// when
+		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
+		// then
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+}
+
+func TestService_GetByFiltersGlobal(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	filters := []*labelfilter.LabelFilter{
+		&labelfilter.LabelFilter{Key: "test-key", Query: str.Ptr("test-filter")},
+	}
+	testRuntime := &model.Runtime{
+		ID:     "test-id",
+		Name:   "test-runtime",
+		Tenant: "test-tenant-id",
+	}
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByFiltersGlobal", ctx, filters).Return(testRuntime, nil).Once()
+				return repo
+			},
+
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Fails on repository error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByFiltersGlobal", ctx, filters).Return(nil, testErr).Once()
+				return repo
+			},
+
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepository := &automock.LabelRepository{}
+			labelUpsertService := &automock.LabelUpsertService{}
+			scenariosService := &automock.ScenariosService{}
+			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
+			uidSvc := &automock.UIDService{}
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+
+			// when
+			actualRuntime, err := svc.GetByFiltersGlobal(ctx, filters)
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.Equal(t, testRuntime, actualRuntime)
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepository.AssertExpectations(t)
+			labelUpsertService.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
+			scenarioAssignmentEngine.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		// given
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		// when
+		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
 		// then
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")

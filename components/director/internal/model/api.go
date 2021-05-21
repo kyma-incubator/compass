@@ -13,33 +13,36 @@ import (
 )
 
 type APIDefinition struct {
-	ApplicationID       string
-	BundleID            *string
-	PackageID           *string
-	Tenant              string
-	Name                string
-	Description         *string
-	TargetURL           string
-	Group               *string //  group allows you to find the same API but in different version
-	OrdID               *string
-	ShortDescription    *string
-	SystemInstanceAware *bool
-	ApiProtocol         *string
-	Tags                json.RawMessage
-	Countries           json.RawMessage
-	Links               json.RawMessage
-	APIResourceLinks    json.RawMessage
-	ReleaseStatus       *string
-	SunsetDate          *string
-	Successor           *string
-	ChangeLogEntries    json.RawMessage
-	Labels              json.RawMessage
-	Visibility          *string
-	Disabled            *bool
-	PartOfProducts      json.RawMessage
-	LineOfBusiness      json.RawMessage
-	Industry            json.RawMessage
-	Version             *Version
+	ApplicationID                           string
+	PackageID                               *string
+	Tenant                                  string
+	Name                                    string
+	Description                             *string
+	TargetURLs                              json.RawMessage
+	Group                                   *string //  group allows you to find the same API but in different version
+	OrdID                                   *string
+	ShortDescription                        *string
+	SystemInstanceAware                     *bool
+	ApiProtocol                             *string
+	Tags                                    json.RawMessage
+	Countries                               json.RawMessage
+	Links                                   json.RawMessage
+	APIResourceLinks                        json.RawMessage
+	ReleaseStatus                           *string
+	SunsetDate                              *string
+	Successor                               *string
+	ChangeLogEntries                        json.RawMessage
+	Labels                                  json.RawMessage
+	Visibility                              *string
+	Disabled                                *bool
+	PartOfProducts                          json.RawMessage
+	LineOfBusiness                          json.RawMessage
+	Industry                                json.RawMessage
+	ImplementationStandard                  *string
+	CustomImplementationStandard            *string
+	CustomImplementationStandardDescription *string
+	Version                                 *Version
+	Extensible                              json.RawMessage
 	*BaseEntity
 }
 
@@ -48,33 +51,36 @@ func (_ *APIDefinition) GetType() resource.Type {
 }
 
 type APIDefinitionInput struct {
-	OrdBundleID         *string         `json:"partOfConsumptionBundle"`
-	OrdPackageID        *string         `json:"partOfPackage"`
-	Tenant              string          `json:",omitempty"`
-	Name                string          `json:"title"`
-	Description         *string         `json:"description"`
-	TargetURL           string          `json:"entryPoint"`
-	Group               *string         `json:",omitempty"` //  group allows you to find the same API but in different version
-	OrdID               *string         `json:"ordId"`
-	ShortDescription    *string         `json:"shortDescription"`
-	SystemInstanceAware *bool           `json:"systemInstanceAware"`
-	ApiProtocol         *string         `json:"apiProtocol"`
-	Tags                json.RawMessage `json:"tags"`
-	Countries           json.RawMessage `json:"countries"`
-	Links               json.RawMessage `json:"links"`
-	APIResourceLinks    json.RawMessage `json:"apiResourceLinks"`
-	ReleaseStatus       *string         `json:"releaseStatus"`
-	SunsetDate          *string         `json:"sunsetDate"`
-	Successor           *string         `json:"successor"`
-	ChangeLogEntries    json.RawMessage `json:"changelogEntries"`
-	Labels              json.RawMessage `json:"labels"`
-	Visibility          *string         `json:"visibility"`
-	Disabled            *bool           `json:"disabled"`
-	PartOfProducts      json.RawMessage `json:"partOfProducts"`
-	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
-	Industry            json.RawMessage `json:"industry"`
-
-	ResourceDefinitions []*APIResourceDefinition `json:"resourceDefinitions"`
+	OrdPackageID                            *string                       `json:"partOfPackage"`
+	Tenant                                  string                        `json:",omitempty"`
+	Name                                    string                        `json:"title"`
+	Description                             *string                       `json:"description"`
+	TargetURLs                              json.RawMessage               `json:"entryPoints"`
+	Group                                   *string                       `json:",omitempty"` //  group allows you to find the same API but in different version
+	OrdID                                   *string                       `json:"ordId"`
+	ShortDescription                        *string                       `json:"shortDescription"`
+	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
+	ApiProtocol                             *string                       `json:"apiProtocol"`
+	Tags                                    json.RawMessage               `json:"tags"`
+	Countries                               json.RawMessage               `json:"countries"`
+	Links                                   json.RawMessage               `json:"links"`
+	APIResourceLinks                        json.RawMessage               `json:"apiResourceLinks"`
+	ReleaseStatus                           *string                       `json:"releaseStatus"`
+	SunsetDate                              *string                       `json:"sunsetDate"`
+	Successor                               *string                       `json:"successor"`
+	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
+	Labels                                  json.RawMessage               `json:"labels"`
+	Visibility                              *string                       `json:"visibility"`
+	Disabled                                *bool                         `json:"disabled"`
+	PartOfProducts                          json.RawMessage               `json:"partOfProducts"`
+	LineOfBusiness                          json.RawMessage               `json:"lineOfBusiness"`
+	Industry                                json.RawMessage               `json:"industry"`
+	ImplementationStandard                  *string                       `json:"implementationStandard"`
+	CustomImplementationStandard            *string                       `json:"customImplementationStandard"`
+	CustomImplementationStandardDescription *string                       `json:"customImplementationStandardDescription"`
+	Extensible                              json.RawMessage               `json:"extensible"`
+	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
+	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
 	*VersionInput
 }
@@ -131,6 +137,11 @@ func (as AccessStrategy) Validate() error {
 	)
 }
 
+type ConsumptionBundleReference struct {
+	BundleOrdID      string `json:"ordId"`
+	DefaultTargetURL string `json:"defaultEntryPoint"`
+}
+
 type APIDefinitionPage struct {
 	Data       []*APIDefinition
 	PageInfo   *pagination.Page
@@ -139,23 +150,22 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, bundleID, tenant string) *APIDefinition {
-	return a.ToAPIDefinition(id, appID, &bundleID, nil, tenant)
+func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, tenant string) *APIDefinition {
+	return a.ToAPIDefinition(id, appID, nil, tenant)
 }
 
-func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, bundleID *string, packageID *string, tenant string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
 
 	return &APIDefinition{
 		ApplicationID:       appID,
-		BundleID:            bundleID,
 		PackageID:           packageID,
 		Tenant:              tenant,
 		Name:                a.Name,
 		Description:         a.Description,
-		TargetURL:           a.TargetURL,
+		TargetURLs:          a.TargetURLs,
 		Group:               a.Group,
 		OrdID:               a.OrdID,
 		ShortDescription:    a.ShortDescription,
@@ -175,6 +185,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, bundleID *string,
 		PartOfProducts:      a.PartOfProducts,
 		LineOfBusiness:      a.LineOfBusiness,
 		Industry:            a.Industry,
+		Extensible:          a.Extensible,
 		Version:             a.VersionInput.ToVersion(),
 		BaseEntity: &BaseEntity{
 			ID:    id,

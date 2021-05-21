@@ -52,6 +52,10 @@ func (sink *NoOpService) Log(context.Context, proxy.AuditlogMessage) error {
 	return nil
 }
 
+func (sink *NoOpService) PreLog(context.Context, proxy.AuditlogMessage) error {
+	return nil
+}
+
 const (
 	PreAuditlogOperation  = "pre-operation"
 	PostAuditlogOperation = "post-operation"

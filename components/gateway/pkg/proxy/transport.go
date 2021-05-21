@@ -44,10 +44,10 @@ type AuditlogMessage struct {
 type Transport struct {
 	http.RoundTripper
 	auditlogSink AuditlogService
-	auditlogSvc  AuditlogService
+	auditlogSvc  PreAuditlogService
 }
 
-func NewTransport(sink AuditlogService, svc AuditlogService, trip RoundTrip) *Transport {
+func NewTransport(sink AuditlogService, svc PreAuditlogService, trip RoundTrip) *Transport {
 	return &Transport{
 		RoundTripper: trip,
 		auditlogSink: sink,
@@ -79,10 +79,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return t.RoundTripper.RoundTrip(req)
 	}
 
-	preAuditLogger, ok := t.auditlogSvc.(PreAuditlogService)
-	if !ok {
-		return nil, errors.New("Failed to type cast PreAuditlogService")
-	}
+	preAuditLogger := t.auditlogSvc
 
 	claims, err := t.getClaims(req.Header)
 	if err != nil {

@@ -17,7 +17,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -40,20 +43,22 @@ import (
 
 // OperationReconciler reconciles an Operation object
 type OperationReconciler struct {
-	config         *webhook.Config
-	statusManager  StatusManager
-	k8sClient      KubernetesClient
-	directorClient DirectorClient
-	webhookClient  WebhookClient
+	config           *webhook.Config
+	statusManager    StatusManager
+	k8sClient        KubernetesClient
+	directorClient   DirectorClient
+	webhookClient    WebhookClient
+	metricsCollector *metrics.Collector
 }
 
-func NewOperationReconciler(config *webhook.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient) *OperationReconciler {
+func NewOperationReconciler(config *webhook.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient, collector *metrics.Collector) *OperationReconciler {
 	return &OperationReconciler{
-		config:         config,
-		statusManager:  statusManager,
-		k8sClient:      k8sClient,
-		directorClient: directorClient,
-		webhookClient:  webhookClient,
+		config:           config,
+		statusManager:    statusManager,
+		k8sClient:        k8sClient,
+		directorClient:   directorClient,
+		webhookClient:    webhookClient,
+		metricsCollector: collector,
 	}
 }
 
@@ -77,7 +82,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	requestObject, err := operation.RequestObject()
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to parse request object")
-		return r.finalizeStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err, nil)
 	}
 
 	ctx = tenant.SaveToContext(ctx, requestObject.TenantID)
@@ -87,23 +92,23 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if app.Result.Ready {
-		return r.finalizeStatus(ctx, operation, app.Result.Error)
+		return r.finalizeStatus(ctx, operation, app.Result.Error, nil)
 	}
 
 	if len(operation.Spec.WebhookIDs) == 0 {
 		log.C(ctx).Info("No webhook defined. Operation executed successfully")
-		return r.finalizeStatusSuccess(ctx, operation)
+		return r.finalizeStatusSuccess(ctx, operation, nil)
 	}
 
 	webhookEntity, err := extractWebhook(app.Result.Webhooks, operation.Spec.WebhookIDs[0])
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to retrieve webhook")
-		return r.finalizeStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err, nil)
 	}
 
 	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
-		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached)
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached, webhookEntity)
 	}
 
 	if !operation.HasPollURL() {
@@ -113,7 +118,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		response, err := r.webhookClient.Do(ctx, request)
 		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
 			log.C(ctx).Info(fmt.Sprintf("%s webhook initial request returned gone status %d", *(webhookEntity.Mode), *response.GoneStatusCode))
-			return r.finalizeStatusSuccess(ctx, operation)
+			return r.finalizeStatusSuccess(ctx, operation, webhookEntity)
 		}
 		if err != nil {
 			log.C(ctx).Error(err, "Unable to execute Webhook request")
@@ -127,7 +132,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	requeueAfter, err := operation.NextPollTime(webhookEntity.RetryInterval, r.config.TimeLayout)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to calculate next poll time")
-		return r.finalizeStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err, webhookEntity)
 	}
 
 	if requeueAfter > 0 {
@@ -162,7 +167,7 @@ func (r *OperationReconciler) handleInitializationError(ctx context.Context, err
 	log.C(ctx).Error(err, "Failed to initialize operation status")
 	if _, ok := err.(*v1alpha1.OperationValidationErr); ok {
 		log.C(ctx).Error(err, "Validation error occurred during operation status initialization")
-		return r.finalizeStatusWithError(ctx, operation, err)
+		return r.finalizeStatusWithError(ctx, operation, err, nil)
 	}
 
 	return ctrl.Result{}, err
@@ -208,7 +213,7 @@ func (r *OperationReconciler) handleWebhookResponse(ctx context.Context, operati
 		return ctrl.Result{Requeue: true}, nil
 	case graphql.WebhookModeSync:
 		log.C(ctx).Info("Synchronous webhook has been executed successfully")
-		return r.finalizeStatusSuccess(ctx, operation)
+		return r.finalizeStatusSuccess(ctx, operation, nil)
 	default:
 		log.C(ctx).Error(errors.ErrUnsupportedWebhookMode, "Unable to post-process Webhook response")
 		return ctrl.Result{}, nil
@@ -227,9 +232,9 @@ func (r *OperationReconciler) handleWebhookPollResponse(ctx context.Context, ope
 		log.C(ctx).Info(fmt.Sprintf("Successfully updated operation status last poll timestamp to %s", lastPollTimestamp), "status", operation.Status)
 		return r.requeueUnlessTimeoutOrFatalError(ctx, operation, webhookEntity, errors.ErrWebhookPollTimeExpired)
 	case *response.SuccessStatusIdentifier:
-		return r.finalizeStatusSuccess(ctx, operation)
+		return r.finalizeStatusSuccess(ctx, operation, webhookEntity)
 	case *response.FailedStatusIdentifier:
-		return r.finalizeStatusWithError(ctx, operation, errors.ErrFailedWebhookStatus)
+		return r.finalizeStatusWithError(ctx, operation, errors.ErrFailedWebhookStatus, webhookEntity)
 	default:
 		log.C(ctx).Error(fmt.Errorf("unexpected poll status response: %s", *response.Status), "Polling will be stopped due to an unknown status code received")
 		return ctrl.Result{}, nil
@@ -251,11 +256,23 @@ func (r *OperationReconciler) requeueUnlessTimeoutOrFatalError(ctx context.Conte
 		webhookErr = fmt.Errorf("%s: %s", errors.ErrWebhookTimeoutReached, webhookErr)
 	}
 
-	return r.finalizeStatusWithError(ctx, operation, webhookErr)
+	return r.finalizeStatusWithError(ctx, operation, webhookErr, webhookEntity)
 }
 
-func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg *string) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg *string, webhook *graphql.Webhook) (ctrl.Result, error) {
+	if isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
+		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
+	}
+
 	if errorMsg != nil && *errorMsg != "" {
+
+		r.metricsCollector.RecordError(operation.ObjectMeta.Name,
+			operation.Spec.CorrelationID,
+			string(operation.Spec.OperationType),
+			operation.Spec.OperationCategory,
+			trimRequestObject(operation),
+			*errorMsg)
+
 		if err := r.statusManager.FailedStatus(ctx, operation, *errorMsg); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -263,12 +280,19 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 		if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
+
+		duration := time.Now().Sub(operation.Status.InitializedAt.Time)
+		r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operation *v1alpha1.Operation, webhook *graphql.Webhook) (ctrl.Result, error) {
+	if isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
+		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
+	}
+
 	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequest(operation)); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -278,10 +302,25 @@ func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operati
 	}
 
 	log.C(ctx).Info("Successfully updated operation status to succeeded")
+
+	duration := time.Now().Sub(operation.Status.InitializedAt.Time)
+	r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
+
 	return ctrl.Result{}, nil
 }
 
-func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error) (ctrl.Result, error) {
+func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error, webhook *graphql.Webhook) (ctrl.Result, error) {
+	if operation != nil && isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
+		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
+	}
+
+	r.metricsCollector.RecordError(operation.ObjectMeta.Name,
+		operation.Spec.CorrelationID,
+		string(operation.Spec.OperationType),
+		operation.Spec.OperationCategory,
+		trimRequestObject(operation),
+		opErr.Error())
+
 	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequestWithError(operation, opErr)); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -295,6 +334,10 @@ func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, opera
 }
 
 func (r *OperationReconciler) determineTimeout(webhook *graphql.Webhook) time.Duration {
+	if webhook == nil {
+		return r.config.WebhookTimeout
+	}
+
 	if webhook.Timeout == nil {
 		return r.config.WebhookTimeout
 	}
@@ -328,4 +371,20 @@ func extractWebhook(appWebhooks []graphql.Webhook, operationWebhookID string) (*
 	}
 
 	return nil, fmt.Errorf("missing webhook with ID: %s", operationWebhookID)
+}
+
+func trimRequestObject(operation *v1alpha1.Operation) string {
+	index := strings.Index(operation.Spec.RequestObject, ",\"Headers\"")
+	if index != -1 {
+		requestObj := []rune(operation.Spec.RequestObject)[:index]
+		requestObj = append(requestObj, '}')
+		return string(requestObj)
+	}
+
+	return operation.Spec.RequestObject
+}
+
+func isCloseToTimeout(initialization time.Time, timeout time.Duration) bool {
+	inProgress := time.Now().Sub(initialization)
+	return inProgress.Seconds() > timeout.Seconds()*0.9
 }

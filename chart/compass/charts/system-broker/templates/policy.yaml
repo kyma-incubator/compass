@@ -1,0 +1,12 @@
+# Required because Prometheus Operator doesn't have Istio Sidecar
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  portLevelMtls:
+    {{ .Values.metrics.port }}:
+      mode: "PERMISSIVE"

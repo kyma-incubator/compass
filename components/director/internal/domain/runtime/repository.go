@@ -202,6 +202,16 @@ func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
 	return r.updater.UpdateSingle(ctx, runtimeEnt)
 }
 
+func (r *pgRepository) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
+	updaterGlobal := repo.NewUpdaterGlobal(resource.Runtime, runtimeTable, []string{tenantColumn}, []string{"id"})
+
+	runtimeEnt := &Runtime{
+		ID:       runtimeID,
+		TenantID: newTenantID,
+	}
+	return updaterGlobal.UpdateSingleGlobal(ctx, runtimeEnt)
+}
+
 func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {

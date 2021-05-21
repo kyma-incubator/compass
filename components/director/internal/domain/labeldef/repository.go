@@ -13,6 +13,8 @@ import (
 const (
 	tableName    = "public.label_definitions"
 	tenantColumn = "tenant_id"
+	keyColumn    = "key"
+	schemaColumn = "schema"
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -23,7 +25,7 @@ type EntityConverter interface {
 
 var (
 	idColumns        = []string{"id"}
-	labeldefColumns  = []string{"id", tenantColumn, "key", "schema"}
+	labeldefColumns  = []string{"id", tenantColumn, keyColumn, schemaColumn}
 	updatableColumns = []string{"schema"}
 )
 
@@ -35,6 +37,7 @@ type repository struct {
 	existQuerier repo.ExistQuerier
 	deleter      repo.Deleter
 	updater      repo.Updater
+	upserter     repo.Upserter
 }
 
 func NewRepository(conv EntityConverter) *repository {
@@ -45,7 +48,9 @@ func NewRepository(conv EntityConverter) *repository {
 		existQuerier: repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
 		lister:       repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		deleter:      repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
-		updater:      repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns)}
+		updater:      repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
+		upserter:     repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
+	}
 }
 
 func (r *repository) Create(ctx context.Context, def model.LabelDefinition) error {
@@ -59,6 +64,15 @@ func (r *repository) Create(ctx context.Context, def model.LabelDefinition) erro
 		return errors.Wrap(err, "while inserting Label Definition")
 	}
 	return nil
+}
+
+func (r *repository) Upsert(ctx context.Context, label model.LabelDefinition) error {
+	labelEntity, err := r.conv.ToEntity(label)
+	if err != nil {
+		return errors.Wrap(err, "while creating label definition entity from model")
+	}
+
+	return r.upserter.Upsert(ctx, labelEntity)
 }
 
 func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {

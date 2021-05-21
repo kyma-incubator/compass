@@ -2,6 +2,10 @@ deployment:
   minReplicas: 1
   maxReplicas: 1
   targetCPUUtilizationPercentage: 80
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 10
+    periodSeconds: 10
   image:
     pullPolicy: IfNotPresent
   resources: {}

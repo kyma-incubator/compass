@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -111,6 +113,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("base_url"),
 		Labels:              json.RawMessage("[]"),
+		CorrelationIds:      json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -162,6 +165,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		BaseURL:             repo.NewValidNullableString("base_url"),
 		Labels:              repo.NewValidNullableString("[]"),
+		CorrelationIds:      repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -193,8 +197,8 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{
 				Name: "foo",
 				APIDefinitions: []*model.APIDefinitionInput{
-					{Name: "api1", TargetURL: "foo.bar"},
-					{Name: "api2", TargetURL: "foo.bar2"},
+					{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
+					{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
 				},
 				EventDefinitions: []*model.EventDefinitionInput{
 					{Name: "event1", Description: &desc},
@@ -369,9 +373,8 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -379,9 +382,8 @@ func fixModelEventAPIDefinition(id string, appId, bundleID string, name, descrip
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	bundleID := "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: &bundleID, Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
+		Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{

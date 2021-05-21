@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,60 +47,6 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 }
 
-func TestPgRepository_GetForBundle(t *testing.T) {
-	// given
-	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
-
-	selectQuery := `^SELECT (.+) FROM "public"."api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND bundle_id = \$3`
-
-	t.Run("success", func(t *testing.T) {
-		bundleID := bundleID
-
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, apiDefID, bundleID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{Tenant: tenantID, BundleID: &bundleID, BaseEntity: &model.BaseEntity{ID: apiDefID}}, nil).Once()
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelApiDef, err := pgRepository.GetForBundle(ctx, tenantID, apiDefID, bundleID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, apiDefID, modelApiDef.ID)
-		assert.Equal(t, tenantID, modelApiDef.Tenant)
-		assert.Equal(t, bundleID, *modelApiDef.BundleID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		repo := api.NewRepository(nil)
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, apiDefID, bundleID).
-			WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		// when
-		modelApiDef, err := repo.GetForBundle(ctx, tenantID, apiDefID, bundleID)
-		// then
-
-		sqlMock.AssertExpectations(t)
-		assert.Nil(t, modelApiDef)
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-}
-
 func TestPgRepository_ListForBundle(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
@@ -115,13 +60,12 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 	secondApiDefID := "222222222-2222-2222-2222-222222222222"
 	secondApiDefEntity := fixFullEntityAPIDefinition(secondApiDefID, "placeholder")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."api_definitions" 
-		WHERE tenant_id = \$1 AND bundle_id = \$2
+	selectQuery := fmt.Sprintf(`SELECT (.+) FROM "public"."api_definitions"
+		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND api_def_id IS NOT NULL\) 
 		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := `SELECT COUNT(*) FROM "public"."api_definitions" 
-		WHERE tenant_id = $1 AND bundle_id = $2`
-	countQuery := regexp.QuoteMeta(rawCountQuery)
+	countQuery := `SELECT COUNT\(\*\) FROM "public"."api_definitions"
+		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND api_def_id IS NOT NULL\)`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -130,11 +74,11 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 			AddRow(fixAPIDefinitionRow(secondApiDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, bundleID).
+			WithArgs(tenantID, tenantID, bundleID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID, bundleID).
+			WithArgs(tenantID, tenantID, bundleID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -196,7 +140,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	apiDefModel, _ := fixFullAPIDefinitionModel("placeholder")
+	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 	insertQuery := `^INSERT INTO "public"."api_definitions" \(.+\) VALUES \(.+\)$`
 
@@ -238,9 +182,9 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		first, _ := fixFullAPIDefinitionModel("first")
-		second, _ := fixFullAPIDefinitionModel("second")
-		third, _ := fixFullAPIDefinitionModel("third")
+		first, _, _ := fixFullAPIDefinitionModel("first")
+		second, _, _ := fixFullAPIDefinitionModel("second")
+		third, _, _ := fixFullAPIDefinitionModel("third")
 		items := []*model.APIDefinition{&first, &second, &third}
 
 		convMock := &automock.APIDefinitionConverter{}
@@ -262,15 +206,15 @@ func TestPgRepository_CreateMany(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET bundle_id = ?, package_id = ?, name = ?, description = ?, group_name = ?, target_url = ?, ord_id = ?,
+	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, api_protocol = ?, tags = ?, countries = ?, links = ?, api_resource_links = ?, release_status = ?,
 		sunset_date = ?, successor = ?, changelog_entries = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?,
-		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE tenant_id = ? AND id = ?`)
+		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, implementation_standard = ?, custom_implementation_standard = ?, custom_implementation_standard_description = ?, target_urls = ?, extensible = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel, _ := fixFullAPIDefinitionModel("update")
+		apiModel, _, _ := fixFullAPIDefinitionModel("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
 		entity.UpdatedAt = &fixedTimestamp
 		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
@@ -278,10 +222,10 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(&entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.BndlID, entity.PackageID, entity.Name, entity.Description, entity.Group,
-				entity.TargetURL, entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ApiProtocol, entity.Tags, entity.Countries,
+			WithArgs(entity.PackageID, entity.Name, entity.Description, entity.Group,
+				entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ApiProtocol, entity.Tags, entity.Countries,
 				entity.Links, entity.APIResourceLinks, entity.ReleaseStatus, entity.SunsetDate, entity.Successor, entity.ChangeLogEntries, entity.Labels, entity.Visibility,
-				entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, tenantID, entity.ID).
+				entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ImplementationStandard, entity.CustomImplementationStandard, entity.CustomImplementationStandardDescription, entity.TargetURLs, entity.Extensible, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := api.NewRepository(convMock)
@@ -326,9 +270,10 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM "public"."api_definitions" WHERE tenant_id = \$1 AND bundle_id = \$2$`
+	deleteQuery := `DELETE FROM "public"."api_definitions"
+		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND api_def_id IS NOT NULL\)`
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
+	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.APIDefinitionConverter{}
 	pgRepository := api.NewRepository(convMock)
 	//WHEN

@@ -17,7 +17,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
@@ -126,7 +125,7 @@ func TestAppRegistry(t *testing.T) {
 			},
 			Labels: &map[string]string{},
 			Events: &model.Events{
-				Spec: json.RawMessage(`{"asyncapi":"1.2.0"}`),
+				Spec: ptrSpecResponse(`{"asyncapi":"1.2.0"}`),
 			},
 		}
 
@@ -160,4 +159,8 @@ func TestAppRegistry(t *testing.T) {
 		require.Nil(t, errorResponse)
 		require.Len(t, services, 0)
 	})
+}
+
+func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
+	return &in
 }

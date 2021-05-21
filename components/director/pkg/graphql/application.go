@@ -30,7 +30,7 @@ type ApplicationExt struct {
 	Application
 	Labels                Labels                           `json:"labels"`
 	Webhooks              []Webhook                        `json:"webhooks"`
-	Auths                 []*SystemAuth                    `json:"auths"`
+	Auths                 []*AppSystemAuth                 `json:"auths"`
 	Bundle                BundleExt                        `json:"bundle"`
 	Bundles               BundlePageExt                    `json:"bundles"`
 	EventingConfiguration ApplicationEventingConfiguration `json:"eventingConfiguration"`

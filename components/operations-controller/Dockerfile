@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.15.7-alpine3.12 as builder
+FROM golang:1.16.3-alpine3.13 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -7,7 +7,7 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+RUN go mod download -x
 
 # Copy the go source
 COPY cmd/ cmd/
