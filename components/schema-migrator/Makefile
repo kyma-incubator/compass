@@ -13,7 +13,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 .PHONY: validate
 
 validate:
-	./validate.sh
+	./validate.sh --dump-db
 
 verify:: validate
 

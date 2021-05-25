@@ -84,10 +84,13 @@ if [ -z "$KYMA_INSTALLATION" ]; then
 fi
 
 if [[ ${DUMP_DB} ]]; then
-    sed -i - "s/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:latest/" "${ROOT_PATH}"/chart/compass/templates/migrator-job.yaml
-    rm "${ROOT_PATH}"/chart/compass/templates/migrator-job.yaml-
+    sed -i - "s/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:latest/" ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+    rm ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml-
 
-    bash "${ROOT_PATH}"/components/schema-migrator/dump_db.sh
+    if [[ ! -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
+        echo "Will pull DB dump from GCR bucket"
+        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql
+    fi
 fi
 
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
@@ -100,7 +103,7 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
 fi
 
 if [[ ${DUMP_DB} ]]; then
-    make -C "${ROOT_PATH}"/components/schema-migrator build-to-minikube
+    make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
 fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then

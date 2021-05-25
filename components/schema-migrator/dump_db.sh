@@ -7,7 +7,7 @@ NC='\033[0m' # No Color
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-if [[ -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
+if [[ -f ${ROOT_PATH}/seeds/dump.sql ]]; then
     echo -e "${GREEN}Will reuse existing DB dump in schema-migrator/seeds/dump.sql ${NC}"
 else
     echo -e "${YELLOW}Warning: Please ensure that your kubectl context points to an existing Compass development cluster${NC}"
@@ -28,7 +28,7 @@ else
 
     echo -e "${GREEN}Dumping database. This will take about 2-3 minutes...${NC}"
 
-    PGPASSWORD=$REMOTE_DB_PWD pg_dump --dbname=director --file=${ROOT_PATH}/../schema-migrator/seeds/dump.sql --host=localhost --port=5555 --username=director --column-inserts --no-owner --no-privileges
+    PGPASSWORD=$REMOTE_DB_PWD pg_dump --dbname=director --file=${ROOT_PATH}/seeds/dump.sql --host=localhost --port=5555 --username=director --column-inserts --no-owner --no-privileges
 
     echo -e "${GREEN}Database dumped!${NC}"
 

@@ -11,6 +11,7 @@ NC='\033[0m' # No Color
 
 set -e
 
+COMPONENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
@@ -23,6 +24,29 @@ DB_PORT="5432"
 DB_SSL_PARAM="disable"
 POSTGRES_MULTIPLE_DATABASES="compass"
 
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case ${key} in
+        --dump-db)
+            DUMP_DB=true
+            shift # past argument
+        ;;
+        --*)
+            echo "Unknown flag ${1}"
+            exit 1
+        ;;
+        *)    # unknown option
+            POSITIONAL+=("$1") # save it in an array for later
+            shift # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
     docker rm --force ${POSTGRES_CONTAINER}
@@ -30,6 +54,14 @@ function cleanup() {
 }
 
 trap cleanup EXIT
+
+if [[ ${DUMP_DB} ]]; then
+    if [ ! -f ${ROOT_PATH}/seeds/dump.sql ]; then
+        echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
+        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
+    fi
+fi
+exit
 
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
