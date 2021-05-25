@@ -122,7 +122,7 @@ func (docs Documents) Validate(webhookURL string) error {
 			apiIDs[*api.OrdID] = true
 		}
 		for _, event := range doc.EventResources {
-			if err := validateEventInput(event); err != nil {
+			if err := validateEventInput(event, packagePolicyLevels); err != nil {
 				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
 			}
 			if _, ok := eventIDs[*event.OrdID]; ok {

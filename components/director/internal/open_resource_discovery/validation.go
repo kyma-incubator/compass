@@ -2,6 +2,7 @@ package open_resource_discovery
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -181,11 +182,13 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
-		validation.Field(&api.Extensible, validation.By(validateExtensibleField)),
+		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
+			return validateExtensibleField(value, api.OrdPackageID, packagePolicyLevels)
+		})),
 	)
 }
 
-func validateEventInput(event *model.EventDefinitionInput) error {
+func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.Name, validation.Required),
@@ -221,7 +224,9 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
 		})),
-		validation.Field(&event.Extensible, validation.By(validateExtensibleField)),
+		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
+			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
+		})),
 	)
 }
 
@@ -690,7 +695,14 @@ func isValidDate(date *string) validation.RuleFunc {
 	}
 }
 
-func validateExtensibleField(value interface{}) error {
+func validateExtensibleField(value interface{}, ordPackageID *string, packagePolicyLevels map[string]string) error {
+	pkgOrdID := str.PtrStrToStr(ordPackageID)
+	policyLevel := packagePolicyLevels[pkgOrdID]
+
+	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
+		return errors.New(fmt.Sprintf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner))
+	}
+
 	return validateJSONObjects(value, map[string][]validation.Rule{
 		"supported": {
 			validation.Required,

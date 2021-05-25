@@ -2318,6 +2318,26 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 		},
 		{
+			Name: "Invalid `Extensible` field when `policyLevel` is sap",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `Extensible` field when `policyLevel` is sap partner",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
 			Name: "Invalid `Extensible` field due to empty json object",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3284,6 +3304,26 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `Extensible` field when `policyLevel` is sap",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `Extensible` field when `policyLevel` is sap partner",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
 
 				return []*open_resource_discovery.Document{doc}
 			},
