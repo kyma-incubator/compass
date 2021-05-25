@@ -120,9 +120,9 @@ func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID strin
 			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
 		}
 
-		var scenariosToUpsert []string
+		scenariosToUpsert := append([]string(nil), scenariosString...)
 		for _, scenario := range newScenarios {
-			scenariosToUpsert = append(scenariosToUpsert, mergeFn(scenariosString, scenario)...)
+			scenariosToUpsert = mergeFn(scenariosToUpsert, scenario)
 		}
 
 		err := s.updateScenario(ctx, tenantID, label, scenariosToUpsert)

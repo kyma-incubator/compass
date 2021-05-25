@@ -3,6 +3,7 @@ package bundleinstanceauth
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -481,7 +482,11 @@ func (s *service) existForAppAndScenario(ctx context.Context, scenario, appId st
 	query := "SELECT 1 FROM bundle_instance_auths_with_labels WHERE json_build_array($1::text)::jsonb <@ bundle_instance_auths_with_labels.value AND app_id=$2 AND status_condition='SUCCEEDED'"
 	err := persist.Get(&count, query, scenario, appId)
 	if err != nil {
-		return false, err
+		mappedErr := persistence.MapSQLError(ctx, err, resource.Label, resource.List, "while fetching list of objects from '%s' table", "bundle_instance_auths_with_labels")
+		if apperrors.IsNotFoundError(mappedErr) {
+			return false, nil
+		}
+		return false, mappedErr
 	}
 
 	return count != 0, nil
@@ -494,7 +499,11 @@ func (s *service) existForRuntimeAndScenario(ctx context.Context, scenario, runt
 	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundle_instance_auths.runtime_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
 	err := persist.Get(&count, query, scenario, runtimeId)
 	if err != nil {
-		return false, err
+		mappedErr := persistence.MapSQLError(ctx, err, resource.Label, resource.List, "while fetching list of objects from '%s' table", "bundle_instance_auths_with_labels")
+		if apperrors.IsNotFoundError(mappedErr) {
+			return false, nil
+		}
+		return false, mappedErr
 	}
 
 	return count != 0, err
