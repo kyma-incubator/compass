@@ -24,6 +24,8 @@ then
    exit 1
 fi
 
+kubectl patch testdefinitions.testing.kyma-project.io dex-connection  -n  kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
+
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
