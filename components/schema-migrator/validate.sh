@@ -61,7 +61,6 @@ if [[ ${DUMP_DB} ]]; then
         gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
     fi
 fi
-exit
 
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
