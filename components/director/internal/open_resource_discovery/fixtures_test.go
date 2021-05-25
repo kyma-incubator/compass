@@ -37,7 +37,7 @@ const (
 	event2ID  = "testEvent2"
 
 	cursor                    = "cursor"
-	policyLevel               = "sap"
+	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`

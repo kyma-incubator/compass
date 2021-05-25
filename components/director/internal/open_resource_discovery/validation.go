@@ -37,8 +37,8 @@ const (
 )
 
 const (
-	PolicyLevelSap        string = "sap"
-	PolicyLevelSapPartner string = "sap-partner"
+	PolicyLevelSap        string = "sap:core:v1"
+	PolicyLevelSapPartner string = "sap:partner:v1"
 	PolicyLevelCustom     string = "custom"
 
 	ReleaseStatusBeta       string = "beta"

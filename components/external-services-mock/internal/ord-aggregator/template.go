@@ -454,7 +454,7 @@ const ordDocument = `{
 			"url": "/ui/public/showRegisterForm"
 		}],
 		"partOfProducts": ["ns:product:id:"],
-		"policyLevel": "sap",
+		"policyLevel": "sap:core:v1",
 		"shortDescription": "lorem ipsum",
 		"tags": ["testTag"],
 		"title": "PACKAGE 1 TITLE",
