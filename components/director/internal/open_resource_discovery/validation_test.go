@@ -1667,6 +1667,17 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Valid missing `resourceDefinitions` field for API when `policyLevel` is sap and `visibility` is private",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions = nil
+				doc.APIResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
+				doc.Packages[0].PolicyLevel = policyLevel
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Missing field `type` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2902,6 +2913,17 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Valid missing `resourceDefinitions` field for Event when `policyLevel` is sap and `visibility` is private",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions = nil
+				doc.EventResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
+				doc.Packages[0].PolicyLevel = policyLevel
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {

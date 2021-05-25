@@ -163,7 +163,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&api.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&api.ResourceDefinitions, validation.By(func(value interface{}) error {
 			return validateAPIResourceDefinitions(value, *api, packagePolicyLevels)
 		})),
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
@@ -212,7 +212,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&event.ResourceDefinitions, validation.Required),
+		validation.Field(&event.ResourceDefinitions, validation.By(func(value interface{}) error {
+			return validateEventResourceDefinition(value, *event, packagePolicyLevels)
+		})),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
@@ -421,15 +423,21 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 		return nil
 	}
 
+	pkgOrdID := str.PtrStrToStr(api.OrdPackageID)
+	policyLevel := packagePolicyLevels[pkgOrdID]
+	apiVisibility := str.PtrStrToStr(api.Visibility)
+	apiProtocol := str.PtrStrToStr(api.ApiProtocol)
 	resourceDefinitions := api.ResourceDefinitions
 
-	if len(resourceDefinitions) == 0 {
+	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == ApiVisibilityPrivate)
+	if len(resourceDefinitions) == 0 && isResourceDefinitionMandatory {
+		return errors.New("when api resource visibility is public or internal, resource definitions must be provided")
+	}
+
+	if len(resourceDefinitions) == 0 && !isResourceDefinitionMandatory {
 		return nil
 	}
 
-	pkgOrdID := str.PtrStrToStr(api.OrdPackageID)
-	apiProtocol := str.PtrStrToStr(api.ApiProtocol)
-	policyLevel := packagePolicyLevels[pkgOrdID]
 	resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
 
 	for _, rd := range resourceDefinitions {
@@ -446,6 +454,31 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
 	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+	}
+
+	return nil
+}
+
+func validateEventResourceDefinition(value interface{}, event model.EventDefinitionInput, packagePolicyLevels map[string]string) error {
+	if value == nil {
+		return nil
+	}
+
+	pkgOrdID := str.PtrStrToStr(event.OrdPackageID)
+	policyLevel := packagePolicyLevels[pkgOrdID]
+	apiVisibility := str.PtrStrToStr(event.Visibility)
+
+	if policyLevel == PolicyLevelSap && apiVisibility == ApiVisibilityPrivate {
+		return nil
+	}
+
+	eventResourceDef, ok := value.([]*model.EventResourceDefinition)
+	if !ok {
+		return errors.New("error while casting to EventResourceDefinition")
+	}
+
+	if len(eventResourceDef) == 0 {
+		return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
 	}
 
 	return nil
