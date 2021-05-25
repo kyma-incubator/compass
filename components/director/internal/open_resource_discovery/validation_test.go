@@ -617,6 +617,16 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `CustomPolicyLevel` field value for Package when `PolicyLevel` is set to `custom`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].CustomPolicyLevel = str.Ptr("invalid-value")
+				doc.Packages[0].PolicyLevel = "custom"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
 			Name: "Missing `type` from `PackageLinks` for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
