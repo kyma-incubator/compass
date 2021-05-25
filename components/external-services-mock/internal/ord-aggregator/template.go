@@ -475,7 +475,6 @@ const ordDocument = `{
 		"title": "PRODUCT TITLE",
 		"vendor": "ns:vendor:id:"
 	}],
-	"providerSystemInstance": null,
 	"tombstones": [{
 		"ordId": "ns:apiResource:API_ID2:v1",
 		"removalDate": "2020-12-02T14:12:59Z"

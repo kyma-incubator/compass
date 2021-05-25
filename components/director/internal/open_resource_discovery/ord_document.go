@@ -39,9 +39,7 @@ type Document struct {
 
 	// TODO: In the current state of ORD and it's implementation we are missing system landscape discovery and an id correlation in the system instances. Because of that in the first phase we will rely on:
 	//  - DescribedSystemInstance is the application in our DB and it's baseURL should match with the one in the webhook.
-	//  - ProviderSystemInstance is not supported since we do not support information of a system instance to be provided by a different system instance due to missing correlation.
 	DescribedSystemInstance *model.Application `json:"describedSystemInstance"`
-	ProviderSystemInstance  *model.Application `json:"providerSystemInstance"`
 
 	Packages           []*model.PackageInput         `json:"packages"`
 	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
@@ -56,13 +54,9 @@ type Documents []*Document
 
 // Validate validates all the documents for a system instance
 func (docs Documents) Validate(webhookURL string) error {
-	// TODO: Revisit after DescribedSystemInstance vs. ProviderSystemInstance is aligned. Currently we rely on that described system instance is identical with the provider system instance. See TODO above.
 	for _, doc := range docs {
-		if doc.ProviderSystemInstance != nil {
-			return errors.New("providerSystemInstance not supported")
-		}
 		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != webhookURL {
-			return errors.New("describedSystemInstance should be the same as the one providing the documents or providerSystemInstance should be defined")
+			return errors.New("describedSystemInstance should be the same as the one providing the documents")
 		}
 	}
 

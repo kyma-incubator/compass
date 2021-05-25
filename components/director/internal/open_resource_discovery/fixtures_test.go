@@ -202,7 +202,6 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 			BaseURL: str.Ptr(baseURL),
 			Labels:  json.RawMessage(labels),
 		},
-		ProviderSystemInstance: nil,
 		Packages: []*model.PackageInput{
 			{
 				OrdID:            packageORDID,
