@@ -86,15 +86,16 @@ func (fake *FakeStatusManager) FailedStatus(arg1 context.Context, arg2 *v1alpha1
 		arg2 *v1alpha1.Operation
 		arg3 string
 	}{arg1, arg2, arg3})
+	stub := fake.FailedStatusStub
+	fakeReturns := fake.failedStatusReturns
 	fake.recordInvocation("FailedStatus", []interface{}{arg1, arg2, arg3})
 	fake.failedStatusMutex.Unlock()
-	if fake.FailedStatusStub != nil {
-		return fake.FailedStatusStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.failedStatusReturns
 	return fakeReturns.result1
 }
 
@@ -148,15 +149,16 @@ func (fake *FakeStatusManager) InProgressWithPollURL(arg1 context.Context, arg2 
 		arg2 *v1alpha1.Operation
 		arg3 string
 	}{arg1, arg2, arg3})
+	stub := fake.InProgressWithPollURLStub
+	fakeReturns := fake.inProgressWithPollURLReturns
 	fake.recordInvocation("InProgressWithPollURL", []interface{}{arg1, arg2, arg3})
 	fake.inProgressWithPollURLMutex.Unlock()
-	if fake.InProgressWithPollURLStub != nil {
-		return fake.InProgressWithPollURLStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.inProgressWithPollURLReturns
 	return fakeReturns.result1
 }
 
@@ -212,15 +214,16 @@ func (fake *FakeStatusManager) InProgressWithPollURLAndLastPollTimestamp(arg1 co
 		arg4 string
 		arg5 int
 	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.InProgressWithPollURLAndLastPollTimestampStub
+	fakeReturns := fake.inProgressWithPollURLAndLastPollTimestampReturns
 	fake.recordInvocation("InProgressWithPollURLAndLastPollTimestamp", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.inProgressWithPollURLAndLastPollTimestampMutex.Unlock()
-	if fake.InProgressWithPollURLAndLastPollTimestampStub != nil {
-		return fake.InProgressWithPollURLAndLastPollTimestampStub(arg1, arg2, arg3, arg4, arg5)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.inProgressWithPollURLAndLastPollTimestampReturns
 	return fakeReturns.result1
 }
 
@@ -272,15 +275,16 @@ func (fake *FakeStatusManager) Initialize(arg1 *v1alpha1.Operation) error {
 	fake.initializeArgsForCall = append(fake.initializeArgsForCall, struct {
 		arg1 *v1alpha1.Operation
 	}{arg1})
+	stub := fake.InitializeStub
+	fakeReturns := fake.initializeReturns
 	fake.recordInvocation("Initialize", []interface{}{arg1})
 	fake.initializeMutex.Unlock()
-	if fake.InitializeStub != nil {
-		return fake.InitializeStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.initializeReturns
 	return fakeReturns.result1
 }
 
@@ -333,15 +337,16 @@ func (fake *FakeStatusManager) SuccessStatus(arg1 context.Context, arg2 *v1alpha
 		arg1 context.Context
 		arg2 *v1alpha1.Operation
 	}{arg1, arg2})
+	stub := fake.SuccessStatusStub
+	fakeReturns := fake.successStatusReturns
 	fake.recordInvocation("SuccessStatus", []interface{}{arg1, arg2})
 	fake.successStatusMutex.Unlock()
-	if fake.SuccessStatusStub != nil {
-		return fake.SuccessStatusStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.successStatusReturns
 	return fakeReturns.result1
 }
 
