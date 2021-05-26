@@ -6,6 +6,7 @@
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
 INVERTED='\033[7m'
 NC='\033[0m' # No Color
 
@@ -17,6 +18,9 @@ IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="9.6"
+
+PROJECT="sap-cp-cmp"
+ENV="dev"
 
 DB_USER="usr"
 DB_PWD="pwd"
@@ -54,9 +58,14 @@ function cleanup() {
 
 trap cleanup EXIT
 
-if [[ ${DUMP_DB} ]] && [[ ! -f ${COMPONENT_PATH}/seeds/dump.sql ]]; then
-    echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
-    gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
+if [[ ${DUMP_DB} ]] ; then
+    echo -e "${GREEN}DB dump will be used to validate migrations${NC}"
+    if [[ ! -f ${COMPONENT_PATH}/seeds/dump.sql ]]; then
+        echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
+        gsutil cp gs://$PROJECT-$ENV-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
+    else
+        echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
+    fi
 fi
 
 echo -e "${GREEN}Create network${NC}"

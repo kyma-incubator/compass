@@ -13,9 +13,13 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 .PHONY: validate
 
 validate:
-	./validate.sh --dump-db
+	@if [ "$(COMPASS_DUMP_DB)" == "true" ]; then\
+		./validate.sh --dump-db;\
+    else\
+		./validate.sh;\
+    fi
 
-verify:: validate
+verify:: validate clean-dump
 
 test-local:
 	@echo ${SKIP_TEST_MESSAGE}
@@ -31,3 +35,6 @@ check-fmt:
 
 deploy-on-minikube:
 	@echo ${SKIP_DEPLOY_MESSAGE}
+
+clean-dump:
+	@rm -f ./seeds/dump.sql
