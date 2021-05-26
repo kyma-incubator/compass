@@ -59,7 +59,7 @@ global:
       version: "PR-1850"
     operations_controller:
       dir:
-      version: "PR-1859"
+      version: "PR-1863"
     tenant_fetcher:
       dir:
       version: "PR-1828"
@@ -68,7 +68,7 @@ global:
       version: "PR-25"
     schema_migrator:
       dir:
-      version: "PR-1858"
+      version: "PR-1864"
     system_broker:
       dir:
       version: "PR-1839"
