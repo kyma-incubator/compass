@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/external-services-mock
 go 1.15
 
 require (
-	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
+	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210416142045-25b90bbc9ee6
