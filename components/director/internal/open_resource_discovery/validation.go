@@ -132,7 +132,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.3")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.4")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {

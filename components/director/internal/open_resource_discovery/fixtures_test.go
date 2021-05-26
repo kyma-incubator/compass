@@ -21,6 +21,7 @@ const (
 	bundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v1"
 	secondBundleORDID     = "ns:consumptionBundle:BUNDLE_ID:v2"
 	vendorORDID           = "sap:vendor:SAP:"
+	vendor2ORDID          = "partner:vendor:SAP:"
 	api1ORDID             = "ns:apiResource:API_ID:v2"
 	api2ORDID             = "ns:apiResource:API_ID2:v1"
 	event1ORDID           = "ns:eventResource:EVENT_ID:v1"
@@ -168,25 +169,25 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 
 	sanitizedDoc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
 	sanitizedDoc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance", "Sales"]`)
+	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.APIResources[0].Labels = json.RawMessage(mergedLabels)
 
 	sanitizedDoc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
 	sanitizedDoc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance", "Sales"]`)
+	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.APIResources[1].Labels = json.RawMessage(mergedLabels)
 
 	sanitizedDoc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	sanitizedDoc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance", "Sales"]`)
+	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.EventResources[0].Labels = json.RawMessage(mergedLabels)
 
 	sanitizedDoc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
 	sanitizedDoc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance", "Sales"]`)
+	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.EventResources[1].Labels = json.RawMessage(mergedLabels)
 
@@ -218,8 +219,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Labels:           json.RawMessage(packageLabels),
 				PolicyLevel:      policyLevel,
 				PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:   json.RawMessage(`["Commerce"]`),
-				Industry:         json.RawMessage(`["Automotive","Banking"]`),
+				LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
+				Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			},
 		},
 		ConsumptionBundles: []*model.BundleCreateInput{
@@ -266,8 +267,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                &boolPtr,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:                          json.RawMessage(`["Finance"]`),
-				Industry:                                json.RawMessage(`["Automotive","Banking"]`),
+				LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+				Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
@@ -336,8 +337,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                nil,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:                          json.RawMessage(`["Finance"]`),
-				Industry:                                json.RawMessage(`["Automotive","Banking"]`),
+				LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+				Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
@@ -392,8 +393,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Visibility:          str.Ptr("public"),
 				Disabled:            &boolPtr,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["Asset Management"]`),
-				Industry:            json.RawMessage(`["Automotive","Chemicals"]`),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
@@ -434,8 +435,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Visibility:          str.Ptr("public"),
 				Disabled:            nil,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["Asset Management"]`),
-				Industry:            json.RawMessage(`["Automotive","Banking"]`),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
@@ -468,6 +469,12 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		Vendors: []*model.VendorInput{
 			{
 				OrdID:    vendorORDID,
+				Title:    "SAP",
+				Partners: json.RawMessage(partners),
+				Labels:   json.RawMessage(labels),
+			},
+			{
+				OrdID:    vendor2ORDID,
 				Title:    "SAP",
 				Partners: json.RawMessage(partners),
 				Labels:   json.RawMessage(labels),
@@ -519,6 +526,12 @@ func fixVendors() []*model.Vendor {
 			Partners:      json.RawMessage(partners),
 			Labels:        json.RawMessage(labels),
 		},
+		{
+			OrdID:    vendor2ORDID,
+			Title:    "SAP",
+			Partners: json.RawMessage(partners),
+			Labels:   json.RawMessage(labels),
+		},
 	}
 }
 
@@ -558,8 +571,8 @@ func fixPackages() []*model.Package {
 			Labels:           json.RawMessage(packageLabels),
 			PolicyLevel:      policyLevel,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["Human Resources"]`),
-			Industry:         json.RawMessage(`["Automotive","Banking"]`),
+			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
+			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 		},
 	}
 }
@@ -625,7 +638,7 @@ func fixAPIs() []*model.APIDefinition {
 			Visibility:                              str.Ptr("public"),
 			Disabled:                                &boolPtr,
 			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:                          json.RawMessage(`["Manufacturing","Marketing"]`),
+			LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
 			Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 			CustomImplementationStandard:            nil,
@@ -659,7 +672,7 @@ func fixAPIs() []*model.APIDefinition {
 			Labels:                                  json.RawMessage(mergedLabels),
 			Visibility:                              str.Ptr("public"),
 			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:                          json.RawMessage(`["R&D Engineering","Commerce"]`),
+			LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
 			Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 			CustomImplementationStandard:            nil,
@@ -718,7 +731,7 @@ func fixEvents() []*model.EventDefinition {
 			Visibility:       str.Ptr("public"),
 			Disabled:         &boolPtr,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["Finance","Marketing"]`),
+			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
 			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			Version: &model.Version{
 				Value: "2.1.3",
@@ -746,7 +759,7 @@ func fixEvents() []*model.EventDefinition {
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       str.Ptr("public"),
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["R&D Engineering","Finance"]`),
+			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
 			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			Version: &model.Version{
 				Value: "1.1.1",

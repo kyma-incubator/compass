@@ -2433,6 +2433,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
