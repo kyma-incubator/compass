@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
 for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD MIGRATION_PATH DIRECTION; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"
@@ -44,7 +49,7 @@ if [ -n "${DB_SSL}" ] ; then
 fi
 
 
-if [[ -f seeds/dump.sql ]]; then
+if [[ -f seeds/dump.sql ]] && [[ "${DIRECTION}" == "up" ]]; then
     echo "Will reuse existing dump in seeds/dump.sql"
     cat seeds/dump.sql | \
         PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" --set="${SSL_OPTION}"
@@ -53,11 +58,11 @@ if [[ -f seeds/dump.sql ]]; then
     LOCAL_MIGRATION_VERSION=$(echo $(ls migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
 
     if [[ ${REMOTE_MIGRATION_VERSION} = ${LOCAL_MIGRATION_VERSION} ]]; then
-        echo "Both remote and local migrations are at the same version."
+        echo -e "${GREEN}Both remote and local migrations are at the same version.${NC}"
     else
-        echo "NOTE: Remote and local migrations are at different versions."
-        echo "REMOTE: $REMOTE_MIGRATION_VERSION"
-        echo "LOCAL: $LOCAL_MIGRATION_VERSION"
+        echo -e "${RED}Remote and local migrations are at different versions.${NC}"
+        echo -e "${YELLOW}REMOTE: $REMOTE_MIGRATION_VERSION${NC}"
+        echo -e "${YELLOW}LOCAL: $LOCAL_MIGRATION_VERSION${NC}"
     fi
 fi
 

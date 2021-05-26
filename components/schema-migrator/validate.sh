@@ -55,11 +55,9 @@ function cleanup() {
 
 trap cleanup EXIT
 
-if [[ ${DUMP_DB} ]]; then
-    if [ ! -f ${ROOT_PATH}/seeds/dump.sql ]; then
-        echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
-        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
-    fi
+if [[ ${DUMP_DB} ]] && [[ ! -f ${COMPONENT_PATH}/seeds/dump.sql ]]; then
+    echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
+    gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
 fi
 
 echo -e "${GREEN}Create network${NC}"
@@ -123,10 +121,7 @@ function migrationProcess() {
 
     echo -e "${GREEN}Migrations for \"${db}\" database and \"${path}\" path${NC}"
     migrationUP "${path}" "${db}"
-
-    if [[ ! -f seeds/dump.sql ]]; then
-        migrationDOWN "${path}" "${db}"
-    fi
+    migrationDOWN "${path}" "${db}"
 }
 
 migrationProcess "director" "compass"
