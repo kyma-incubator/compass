@@ -7,6 +7,7 @@ SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
+MIGRATOR_FILE=$(cat $ROOT_PATH/chart/compass/templates/migrator-job.yaml)
 
 MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
@@ -74,6 +75,14 @@ do
     esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
+
+function revert_migrator_file() {
+    echo $MIGRATOR_FILE > $ROOT_PATH/chart/compass/templates/migrator-job.yaml
+}
+
+if [[ ${DUMP_DB} ]]; then
+    trap revert_migrator_file EXIT
+fi
 
 if [ -z "$KYMA_RELEASE" ]; then
   KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)

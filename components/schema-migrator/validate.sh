@@ -46,7 +46,6 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
     docker rm --force ${POSTGRES_CONTAINER}
@@ -121,7 +120,10 @@ function migrationProcess() {
 
     echo -e "${GREEN}Migrations for \"${db}\" database and \"${path}\" path${NC}"
     migrationUP "${path}" "${db}"
-    migrationDOWN "${path}" "${db}"
+
+    if [[ ! -f seeds/dump.sql ]]; then
+        migrationDOWN "${path}" "${db}"
+    fi
 }
 
 migrationProcess "director" "compass"
