@@ -100,6 +100,11 @@ if [[ `kubectl get TestDefinition logging -n kyma-system` ]]; then
   kubectl patch TestDefinition logging -n kyma-system  --type='merge' -p "$PATCH_TO"
 fi
 
+if [[ `kubectl get TestDefinition dex-connection -n kyma-system` ]]; then
+  # Patch dex-connection TestDefinition
+  kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
+fi
+
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
