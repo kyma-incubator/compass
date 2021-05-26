@@ -124,11 +124,8 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.
 }
 
 func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) model.ApplicationRegisterInput {
-	initStatusCond := model.ApplicationStatusConditionInitial
+	initStatusCond := model.ApplicationStatusConditionManaged
 	baseURL := sc.BaseURL
-	if mainURL, ok := sc.AdditionalUrls["mainUrl"]; ok && baseURL == "" {
-		baseURL = mainURL
-	}
 
 	appRegisterInput := model.ApplicationRegisterInput{
 		Name:                sc.DisplayName,

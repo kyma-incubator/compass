@@ -67,6 +67,7 @@ type ApplicationStatusCondition string
 
 const (
 	ApplicationStatusConditionInitial         ApplicationStatusCondition = "INITIAL"
+	ApplicationStatusConditionManaged         ApplicationStatusCondition = "MANAGED"
 	ApplicationStatusConditionConnected       ApplicationStatusCondition = "CONNECTED"
 	ApplicationStatusConditionFailed          ApplicationStatusCondition = "FAILED"
 	ApplicationStatusConditionCreating        ApplicationStatusCondition = "CREATING"
