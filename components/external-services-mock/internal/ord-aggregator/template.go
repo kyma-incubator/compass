@@ -54,11 +54,11 @@ const ordDocument = `{
 			"supported": "automatic"
 		},
 		"implementationStandard": "cff:open-service-broker:v2",
-		"industry": ["automotive","test"],
+		"industry": ["Automotive","Banking"],
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
 		},
-		"lineOfBusiness": ["lineOfBusiness2"],
+		"lineOfBusiness": ["R&D Engineering"],
 		"links": [{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
@@ -115,7 +115,7 @@ const ordDocument = `{
 			"url": "https://TEST:443//odata/$metadata"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successors": null,
+		"successors": ["ns:apiResource:API_ID:v2"],
 		"sunsetDate": null,
 		"systemInstanceAware": true,
 		"tags": ["apiTestTag"],
@@ -151,11 +151,11 @@ const ordDocument = `{
 			"supported": "automatic"
 		},
 		"implementationStandard": "cff:open-service-broker:v2",
-		"industry": ["automotive","test"],
+		"industry": ["Automotive","Banking"],
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
 		},
-		"lineOfBusiness": ["lineOfBusiness2"],
+		"lineOfBusiness": ["Finance"],
 		"links": [{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
@@ -313,11 +313,11 @@ const ordDocument = `{
 			"description": "Please find the extensibility documentation",
 			"supported": "automatic"
 		},
-		"industry": ["automotive", "test"],
+		"industry": ["Automotive","Banking"],
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
 		},
-		"lineOfBusiness": ["lineOfBusiness2"],
+		"lineOfBusiness": ["Finance"],
 		"links": [{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
@@ -352,7 +352,7 @@ const ordDocument = `{
 			"url": "http://localhost:8080/asyncApi2.json"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successors": null,
+		"successors": ["ns:eventResource:API_ID:v2"],
 		"sunsetDate": null,
 		"systemInstanceAware": true,
 		"tags": ["eventTestTag"],
@@ -375,11 +375,11 @@ const ordDocument = `{
 			"description": "Please find the extensibility documentation",
 			"supported": "automatic"
 		},
-		"industry": ["automotive", "test"],
+		"industry": ["Automotive","Chemicals"],
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
 		},
-		"lineOfBusiness": ["lineOfBusiness2"],
+		"lineOfBusiness": ["R&D Engineering"],
 		"links": [{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
@@ -422,18 +422,18 @@ const ordDocument = `{
 		"version": "1.1.0",
 		"visibility": "public"
 	}],
-	"openResourceDiscovery": "1.0-rc.3",
+	"openResourceDiscovery": "1.0-rc.4",
 	"packages": [{
 		"countries": ["BG", "EN"],
 		"customPolicyLevel": null,
 		"description": "lorem ipsum dolor set",
-		"industry": ["automotive", "finance"],
+		"industry": ["Automotive","Banking"],
 		"labels": {
 			"label-key-1": ["label-val"],
 			"pkg-label": ["label-val"]
 		},
 		"licenseType": "licence",
-		"lineOfBusiness": ["lineOfBusiness"],
+		"lineOfBusiness": ["Sales"],
 		"links": [{
 			"description": "loremipsumdolornem",
 			"title": "LinkTitle",
@@ -458,7 +458,7 @@ const ordDocument = `{
 		"shortDescription": "lorem ipsum",
 		"tags": ["testTag"],
 		"title": "PACKAGE 1 TITLE",
-		"vendor": "ns:vendor:id:",
+		"vendor": "sap:vendor:SAP:",
 		"version": "1.1.2"
 	}],
 	"products": [{
@@ -473,7 +473,7 @@ const ordDocument = `{
 		"parent": "ns:product:id2:",
 		"shortDescription": "lorem ipsum",
 		"title": "PRODUCT TITLE",
-		"vendor": "ns:vendor:id:"
+		"vendor": "sap:vendor:SAP:"
 	}],
 	"tombstones": [{
 		"ordId": "ns:apiResource:API_ID2:v1",
@@ -483,9 +483,9 @@ const ordDocument = `{
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
 		},
-		"ordId": "ns:vendor:id:",
+		"ordId": "sap:vendor:SAP:",
 		"partners": [
-		"microsoft:vendor:Microsoft:"
+			"microsoft:vendor:Microsoft:"
 		],
 		"title": "SAP"
 	}]
