@@ -53,7 +53,7 @@ global:
       version: "PR-1828"
     director:
       dir:
-      version: "PR-1861"
+      version: "PR-1869"
     gateway:
       dir:
       version: "PR-1850"
@@ -65,10 +65,10 @@ global:
       version: "PR-1828"
     ord_service:
       dir:
-      version: "PR-25"
+      version: "PR-26"
     schema_migrator:
       dir:
-      version: "PR-1864"
+      version: "PR-1869"
     system_broker:
       dir:
       version: "PR-1839"
@@ -79,7 +79,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1858"
+      version: "PR-1869"
     console:
       dir:
       version: "PR-31"
