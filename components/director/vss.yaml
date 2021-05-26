@@ -1,0 +1,815 @@
+apiVersion: v1
+items:
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app: cockpit
+      app.kubernetes.io/managed-by: Helm
+      chart: cockpit-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-cockpit
+    namespace: compass-system
+    resourceVersion: "96604"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-cockpit
+    uid: 4c194083-b18c-44a6-b683-543162b33d41
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - compass.cmp-main.dev.kyma.cloud.sap
+    http:
+    - match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: compass-cockpit
+          port:
+            number: 81
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app: cockpit
+      app.kubernetes.io/managed-by: Helm
+      chart: cockpit-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-cockpit-mf
+    namespace: compass-system
+    resourceVersion: "96605"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-cockpit-mf
+    uid: 8bbc91d2-4451-4b99-a74b-72536a3ff074
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - compass-mf.cmp-main.dev.kyma.cloud.sap
+    http:
+    - match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: compass-cockpit
+          port:
+            number: 8888
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app: connectivity-adapter
+      app.kubernetes.io/instance: compass
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: connectivity-adapter
+      helm.sh/chart: connectivity-adapter-0.1.0
+      release: compass
+    name: compass-connectivity-adapter
+    namespace: compass-system
+    resourceVersion: "96598"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-connectivity-adapter
+    uid: 11c83a82-cc81-405f-a443-457bf46ab467
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - adapter-gateway.cmp-main.dev.kyma.cloud.sap
+    http:
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        - tenant
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        allowOrigins:
+        - regex: .*
+      headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app: connectivity-adapter
+      app.kubernetes.io/instance: compass
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: connectivity-adapter
+      helm.sh/chart: connectivity-adapter-0.1.0
+      release: compass
+    name: compass-connectivity-adapter-mtls
+    namespace: compass-system
+    resourceVersion: "96597"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-connectivity-adapter-mtls
+    uid: 6b9a6815-62f0-499c-afbc-778796ee5930
+  spec:
+    gateways:
+    - compass-system/compass-gateway-mtls
+    hosts:
+    - adapter-gateway-mtls.cmp-main.dev.kyma.cloud.sap
+    http:
+    - headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: compass
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: connector
+      helm.sh/chart: connector-0.1.0
+      release: compass
+    name: compass-connector
+    namespace: compass-system
+    resourceVersion: "96626"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-connector
+    uid: c27aec96-646a-4796-b33f-20b12fc8571c
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - connector.cmp-main.dev.kyma.cloud.sap
+    http:
+    - match:
+      - uri:
+          exact: /healthz
+      route:
+      - destination:
+          host: compass-connector
+          port:
+            number: 3000
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 3
+    labels:
+      app: gateway
+      app.kubernetes.io/managed-by: Helm
+      chart: gateway-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-gateway
+    namespace: compass-system
+    resourceVersion: "22128475"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-gateway
+    uid: 35b432c7-7250-4743-bda4-e85354267b2b
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - compass-gateway.cmp-main.dev.kyma.cloud.sap
+    http:
+    - headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          prefix: /connector
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+    - match:
+      - uri:
+          prefix: /tenants
+      route:
+      - destination:
+          host: compass-tenant-fetcher.compass-system.svc.cluster.local
+          port:
+            number: 3000
+    - match:
+      - uri:
+          prefix: /open-resource-discovery-docs
+      route:
+      - destination:
+          host: compass-ord-service.compass-system.svc.cluster.local
+          port:
+            number: 3000
+    - match:
+      - uri:
+          prefix: /open-resource-discovery-service/v0
+      - uri:
+          prefix: /open-resource-discovery-static/v0
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        - tenant
+        - client_user
+        allowMethods:
+        - GET
+        allowOrigins:
+        - regex: .*
+      headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          exact: /director
+      redirect:
+        uri: /director/
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        - tenant
+        - client_user
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        allowOrigins:
+        - regex: .*
+      headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-02-23T12:57:46Z"
+    generation: 1
+    labels:
+      app: gateway
+      app.kubernetes.io/managed-by: Helm
+      chart: gateway-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-gateway-authenticator0
+    namespace: compass-system
+    resourceVersion: "20242910"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-gateway-authenticator0
+    uid: 9d75524c-ddec-4380-a142-e72ef764ab0f
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - compass-gateway-authenticator0.cmp-main.dev.kyma.cloud.sap
+    http:
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        allowOrigins:
+        - regex: .*
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 3
+    labels:
+      app: gateway
+      app.kubernetes.io/managed-by: Helm
+      chart: gateway-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-gateway-mtls
+    namespace: compass-system
+    resourceVersion: "20242911"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-gateway-mtls
+    uid: c591a801-8b8b-4abb-8566-9fd84d699aeb
+  spec:
+    gateways:
+    - compass-system/compass-gateway-mtls
+    hosts:
+    - compass-gateway-mtls.cmp-main.dev.kyma.cloud.sap
+    http:
+    - headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          exact: /broker
+      redirect:
+        uri: /broker/
+    - headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          exact: /open-resource-discovery-static/v0
+      redirect:
+        uri: /open-resource-discovery-static/v0/
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        - tenant
+        allowMethods:
+        - GET
+        allowOrigins:
+        - regex: .*
+      headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          exact: /director
+      redirect:
+        uri: /director/
+    - headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app: gateway
+      app.kubernetes.io/managed-by: Helm
+      chart: gateway-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-gateway-secure
+    namespace: compass-system
+    resourceVersion: "96602"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-gateway-secure
+    uid: 1269ec82-7d26-402e-9036-d08d8366beb6
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - compass-gateway-auth-oauth.cmp-main.dev.kyma.cloud.sap
+    http:
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        - tenant
+        allowMethods:
+        - GET
+        allowOrigins:
+        - regex: .*
+      headers:
+        request:
+          remove:
+          - Client-Id-From-Token
+          - Client-Id-From-Certificate
+          - Client-Certificate-Hash
+          - Certificate-Data
+      match:
+      - uri:
+          exact: /director
+      redirect:
+        uri: /director/
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        - tenant
+        - client_user
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        allowOrigins:
+        - regex: .*
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app: gateway
+      app.kubernetes.io/managed-by: Helm
+      chart: gateway-0.1.0
+      heritage: Helm
+      release: compass
+    name: compass-gateway-xsuaa
+    namespace: compass-system
+    resourceVersion: "96627"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-gateway-xsuaa
+    uid: c983930c-f12b-47e4-8c39-0d1ebc0f107a
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - compass-gateway-xsuaa.cmp-main.dev.kyma.cloud.sap
+    http:
+    - corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        allowOrigins:
+        - regex: .*
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: compass
+      meta.helm.sh/release-namespace: compass-system
+    creationTimestamp: "2021-01-21T21:54:44Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: Helm
+      release: compass
+    name: compass-pairing-adapter
+    namespace: compass-system
+    resourceVersion: "96595"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/compass-system/virtualservices/compass-pairing-adapter
+    uid: dc6bcef1-8095-4d45-8e94-a3ce606fb96a
+  spec:
+    hosts:
+    - compass-pairing-adapter.compass-system.svc.cluster.local
+    http:
+    - match:
+      - uri:
+          prefix: /s4hana-cloud
+      name: s4hana-cloud-route
+      rewrite:
+        uri: /adapter
+      route:
+      - destination:
+          host: compass-pairing-adapter.compass-system.svc.cluster.local
+          subset: s4hana-cloud-subset
+    - match:
+      - uri:
+          prefix: /sfsf
+      name: sfsf-route
+      rewrite:
+        uri: /adapter
+      route:
+      - destination:
+          host: compass-pairing-adapter.compass-system.svc.cluster.local
+          subset: sfsf-subset
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: dex
+      meta.helm.sh/release-namespace: kyma-system
+    creationTimestamp: "2021-01-21T20:32:21Z"
+    generation: 1
+    labels:
+      app: dex
+      app.kubernetes.io/managed-by: Helm
+      chart: dex-1.0.0
+    name: dex-virtualservice
+    namespace: kyma-system
+    resourceVersion: "59829"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/kyma-system/virtualservices/dex-virtualservice
+    uid: 8977b681-27af-4851-84d1-988232913084
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - dex.cmp-main.dev.kyma.cloud.sap
+    http:
+    - corsPolicy:
+        allowOrigins:
+        - regex: .*
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: dex-service
+          port:
+            number: 5556
+        headers:
+          response:
+            add:
+              Vary: Origin
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: kiali
+      meta.helm.sh/release-namespace: kyma-system
+    creationTimestamp: "2021-01-21T21:46:40Z"
+    generation: 1
+    labels:
+      app: kiali
+      app.kubernetes.io/instance: kiali
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: kiali
+      app.kubernetes.io/part-of: kiali
+      app.kubernetes.io/version: ""
+      helm.sh/chart: kiali-1.0.0
+      version: ""
+    name: kiali
+    namespace: kyma-system
+    resourceVersion: "50471596"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/kyma-system/virtualservices/kiali
+    uid: 982b988f-a485-47c9-9266-733e823cdd38
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - kiali.cmp-main.dev.kyma.cloud.sap
+    http:
+    - route:
+      - destination:
+          host: kiali-secured
+          port:
+            number: 20001
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    creationTimestamp: "2021-04-07T12:23:05Z"
+    generateName: logging-loki-
+    generation: 1
+    labels:
+      apirule.gateway.kyma-project.io/v1alpha1: logging-loki.kyma-system
+    name: logging-loki-c6pjt
+    namespace: kyma-system
+    ownerReferences:
+    - apiVersion: gateway.kyma-project.io/v1alpha1
+      controller: true
+      kind: APIRule
+      name: logging-loki
+      uid: c169fed2-c75c-4e96-8f97-75abd84d3555
+    resourceVersion: "50469062"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/kyma-system/virtualservices/logging-loki-c6pjt
+    uid: a399bf9c-c183-4ad7-b151-9e4b343a58a5
+  spec:
+    gateways:
+    - kyma-gateway.kyma-system.svc.cluster.local
+    hosts:
+    - loki.cmp-main.dev.kyma.cloud.sap
+    http:
+    - corsPolicy:
+        allowHeaders:
+        - Authorization
+        - Content-Type
+        - '*'
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        allowOrigins:
+        - regex: .*
+      match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+          port:
+            number: 4455
+        weight: 100
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: monitoring
+      meta.helm.sh/release-namespace: kyma-system
+    creationTimestamp: "2021-01-21T20:34:49Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: monitoring
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/version: 7.3.3
+      helm.sh/chart: grafana-6.1.9
+    name: monitoring-grafana
+    namespace: kyma-system
+    resourceVersion: "50467425"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/kyma-system/virtualservices/monitoring-grafana
+    uid: 5b6b4fde-69b8-40ee-a692-15d39dc13f84
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - grafana.cmp-main.dev.kyma.cloud.sap
+    http:
+    - match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: monitoring-grafana
+          port:
+            number: 80
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: ory
+      meta.helm.sh/release-namespace: kyma-system
+    creationTimestamp: "2021-01-21T20:33:07Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: Helm
+    name: ory-hydra
+    namespace: kyma-system
+    resourceVersion: "60281"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/kyma-system/virtualservices/ory-hydra
+    uid: 73010137-30ff-496f-b0dc-0b7f388da538
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - oauth2.cmp-main.dev.kyma.cloud.sap
+    http:
+    - match:
+      - uri:
+          exact: /oauth2/introspect
+      route:
+      - destination:
+          host: ory-hydra-admin
+          port:
+            number: 4445
+    - match:
+      - uri:
+          prefix: /.well-known
+      - uri:
+          prefix: /oauth2
+      - uri:
+          exact: /userinfo
+      route:
+      - destination:
+          host: ory-hydra-public
+          port:
+            number: 4444
+- apiVersion: networking.istio.io/v1beta1
+  kind: VirtualService
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: tracing
+      meta.helm.sh/release-namespace: kyma-system
+    creationTimestamp: "2021-01-21T20:36:10Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: tracing
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: tracing-jaeger-operator
+      helm.sh/chart: tracing-1.0.0
+    name: tracing
+    namespace: kyma-system
+    resourceVersion: "62346"
+    selfLink: /apis/networking.istio.io/v1beta1/namespaces/kyma-system/virtualservices/tracing
+    uid: a91d863e-d6e8-49a4-a8a0-dbe6091632d2
+  spec:
+    gateways:
+    - kyma-system/kyma-gateway
+    hosts:
+    - jaeger.cmp-main.dev.kyma.cloud.sap
+    http:
+    - route:
+      - destination:
+          host: tracing-jaeger-query-secured
+          port:
+            number: 16686
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
