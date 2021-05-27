@@ -2,6 +2,10 @@
 
 set -o errexit
 
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
@@ -77,7 +81,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 function revert_migrator_file() {
-    echo $MIGRATOR_FILE > $ROOT_PATH/chart/compass/templates/migrator-job.yaml
+    echo "$MIGRATOR_FILE" > $ROOT_PATH/chart/compass/templates/migrator-job.yaml
 }
 
 if [[ ${DUMP_DB} ]]; then
@@ -93,14 +97,19 @@ if [ -z "$KYMA_INSTALLATION" ]; then
 fi
 
 if [[ ${DUMP_DB} ]]; then
+    echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
+
     sed -i - "s/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:latest/" ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
     rm ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml-
 
-    if [[ ! -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
-        echo "Will pull DB dump from GCR bucket"
+    if [[ ! -f ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql ]]; then
+        echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
         gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql
+    else
+        echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
     fi
 fi
+exit 1
 
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."

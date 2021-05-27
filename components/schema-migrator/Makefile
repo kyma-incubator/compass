@@ -12,12 +12,11 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: validate
 
-validate:
-	@if [ "$(COMPASS_DUMP_DB)" == "true" ]; then\
-		./validate.sh --dump-db;\
-    else\
-		./validate.sh;\
-    fi
+validate: clean-dump
+	@echo "Will validate UP and DOWN migrations without data"
+	./validate.sh
+	@echo "Will validate UP migrations with data"
+	./validate.sh --dump-db;
 
 verify:: validate clean-dump
 
