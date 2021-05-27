@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"log"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vrischmann/envconfig"
@@ -186,7 +185,7 @@ func (mgr TestTenantsManager) Cleanup() {
 	}
 }
 
-func (mgr TestTenantsManager) GetIDByName(t *testing.T, name string) string {
+func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) string {
 	val, ok := mgr.tenantsByName[name]
 	require.True(t, ok)
 	return val.ID

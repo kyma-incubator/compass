@@ -18,7 +18,6 @@ package fixtures
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	gqlTools "github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -32,7 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
+func CreateAutomaticScenarioAssignmentInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.AutomaticScenarioAssignmentSetInput, tenantID string) *graphql.AutomaticScenarioAssignment {
 	assignmentInput, err := testctx.Tc.Graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(in)
 	require.NoError(t, err)
 
@@ -45,7 +44,7 @@ func CreateAutomaticScenarioAssignmentInTenant(t *testing.T, ctx context.Context
 	return &assignment
 }
 
-func ListAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string) graphql.AutomaticScenarioAssignmentPage {
+func ListAutomaticScenarioAssignmentsWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string) graphql.AutomaticScenarioAssignmentPage {
 	assignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
 	req := FixAutomaticScenarioAssignmentsRequest()
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignmentsPage)
@@ -53,7 +52,7 @@ func ListAutomaticScenarioAssignmentsWithinTenant(t *testing.T, ctx context.Cont
 	return assignmentsPage
 }
 
-func DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
+func DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, scenarioName string) graphql.AutomaticScenarioAssignment {
 	assignment := graphql.AutomaticScenarioAssignment{}
 	req := FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
@@ -61,7 +60,7 @@ func DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx 
 	return assignment
 }
 
-func DeleteAutomaticScenarioAssigmentForSelector(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, selector graphql.LabelSelectorInput) []graphql.AutomaticScenarioAssignment {
+func DeleteAutomaticScenarioAssigmentForSelector(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, selector graphql.LabelSelectorInput) []graphql.AutomaticScenarioAssignment {
 	paylaod, err := testctx.Tc.Graphqlizer.LabelSelectorInputToGQL(selector)
 	require.NoError(t, err)
 	req := FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(paylaod)

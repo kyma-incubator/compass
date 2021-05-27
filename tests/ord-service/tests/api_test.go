@@ -33,7 +33,6 @@ import (
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -47,8 +46,8 @@ const (
 
 func TestORDService(t *testing.T) {
 	// Cannot use tenant constants as the names become too long and cannot be inserted
-	appInput := createApp("tenant1")
-	appInput2 := createApp("tenant2")
+	appInput := fixtures.CreateApp("tenant1")
+	appInput2 := fixtures.CreateApp("tenant2")
 
 	apisMap := make(map[string]directorSchema.APIDefinitionInput, 0)
 	for _, apiDefinition := range appInput.Bundles[0].APIDefinitions {
@@ -560,92 +559,4 @@ func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, h
 
 func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
-}
-
-func createApp(suffix string) directorSchema.ApplicationRegisterInput {
-	return generateAppInputForDifferentTenants(directorSchema.ApplicationRegisterInput{
-		Name:        "test-app",
-		Description: ptr.String("my application"),
-		Bundles: []*directorSchema.BundleCreateInput{
-			{
-				Name:        "foo-bndl",
-				Description: ptr.String("foo-descr"),
-				APIDefinitions: []*directorSchema.APIDefinitionInput{
-					{
-						Name:        "comments-v1",
-						Description: ptr.String("api for adding comments"),
-						TargetURL:   "http://mywordpress.com/comments",
-						Group:       ptr.String("comments"),
-						Version:     fixtures.FixDeprecatedVersion(),
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOpenAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"openapi":"3.0.2"}`),
-						},
-					},
-					{
-						Name:        "reviews-v1",
-						Description: ptr.String("api for adding reviews"),
-						TargetURL:   "http://mywordpress.com/reviews",
-						Version:     fixtures.FixActiveVersion(),
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOdata,
-							Format: directorSchema.SpecFormatJSON,
-							Data:   ptr.CLOB(`{"openapi":"3.0.1"}`),
-						},
-					},
-					{
-						Name:        "xml",
-						Description: ptr.String("xml api"),
-						Version:     fixtures.FixDecommissionedVersion(),
-						TargetURL:   "http://mywordpress.com/xml",
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOdata,
-							Format: directorSchema.SpecFormatXML,
-							Data:   ptr.CLOB("odata"),
-						},
-					},
-				},
-				EventDefinitions: []*directorSchema.EventDefinitionInput{
-					{
-						Name:        "comments-v1",
-						Description: ptr.String("comments events"),
-						Version:     fixtures.FixDeprecatedVersion(),
-						Group:       ptr.String("comments"),
-						Spec: &directorSchema.EventSpecInput{
-							Type:   directorSchema.EventSpecTypeAsyncAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"asyncapi":"1.2.0"}`),
-						},
-					},
-					{
-						Name:        "reviews-v1",
-						Description: ptr.String("review events"),
-						Version:     fixtures.FixActiveVersion(),
-						Spec: &directorSchema.EventSpecInput{
-							Type:   directorSchema.EventSpecTypeAsyncAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"asyncapi":"1.1.0"}`),
-						},
-					},
-				},
-			},
-		},
-	}, suffix)
-}
-
-func generateAppInputForDifferentTenants(appInput directorSchema.ApplicationRegisterInput, suffix string) directorSchema.ApplicationRegisterInput {
-	appInput.Name += "-" + suffix
-	for _, bndl := range appInput.Bundles {
-		bndl.Name = bndl.Name + "-" + suffix
-
-		for _, apiDef := range bndl.APIDefinitions {
-			apiDef.Name = apiDef.Name + "-" + suffix
-		}
-
-		for _, eventDef := range bndl.EventDefinitions {
-			eventDef.Name = eventDef.Name + "-" + suffix
-		}
-	}
-	return appInput
 }
