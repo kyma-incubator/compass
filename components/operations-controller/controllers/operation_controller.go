@@ -261,7 +261,7 @@ func (r *OperationReconciler) requeueUnlessTimeoutOrFatalError(ctx context.Conte
 
 func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1alpha1.Operation, errorMsg *string, webhook *graphql.Webhook) (ctrl.Result, error) {
 	if isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
-		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
+		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType), operation.ObjectMeta.Name)
 	}
 
 	if errorMsg != nil && *errorMsg != "" {
@@ -290,7 +290,7 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 
 func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operation *v1alpha1.Operation, webhook *graphql.Webhook) (ctrl.Result, error) {
 	if isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
-		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
+		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType), operation.ObjectMeta.Name)
 	}
 
 	if err := r.directorClient.UpdateOperation(ctx, prepareDirectorRequest(operation)); err != nil {
@@ -311,7 +311,7 @@ func (r *OperationReconciler) finalizeStatusSuccess(ctx context.Context, operati
 
 func (r *OperationReconciler) finalizeStatusWithError(ctx context.Context, operation *v1alpha1.Operation, opErr error, webhook *graphql.Webhook) (ctrl.Result, error) {
 	if operation != nil && isCloseToTimeout(operation.Status.InitializedAt.Time, r.determineTimeout(webhook)) {
-		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType))
+		r.metricsCollector.RecordOperationInProgressNearTimeout(string(operation.Spec.OperationType), operation.ObjectMeta.Name)
 	}
 
 	r.metricsCollector.RecordError(operation.ObjectMeta.Name,
