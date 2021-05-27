@@ -2460,6 +2460,29 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
+			Name: "Valid `SAP RFC Metadata` definitions when APIResources has policyLevel `sap` and apiProtocol is `sap-rfc`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRrc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `SAP RFC Metadata` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRrc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2611,11 +2634,37 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc-metadata-v1`",
+			Name: "Missing `SAP RFC` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc-metadata-v1`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRrc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap` and apiProtocol is `rest`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `rest`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
