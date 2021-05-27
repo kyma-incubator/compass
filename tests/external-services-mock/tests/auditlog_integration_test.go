@@ -40,10 +40,10 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	t.Log("Register Application through Gateway with Dex id Token")
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
 	require.NoError(t, err)
 
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
 	t.Log("Get auditlog service Token")
 	auditlogToken := fixtures.GetAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
