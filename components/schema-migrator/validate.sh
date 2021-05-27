@@ -66,6 +66,8 @@ if [[ ${DUMP_DB} ]] ; then
     else
         echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
     fi
+else
+    rm -f ${COMPONENT_PATH}/seeds/dump.sql # necessary, so that a dump is not left behind by accident and used in the building of the image
 fi
 
 echo -e "${GREEN}Create network${NC}"
