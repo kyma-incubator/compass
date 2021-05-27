@@ -18,7 +18,8 @@ RUN CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapte
     CGO_ENABLED=0 go test -c ./ord-service/tests -o ord-service.test && \
     CGO_ENABLED=0 go test -c ./system-broker/tests -o system-broker.test && \
     CGO_ENABLED=0 go test -c ./tenant-fetcher/tests -o tenant-fetcher.test && \
-    CGO_ENABLED=0 go test -c ./istio/tests -o istio.test
+    CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
+    CGO_ENABLED=0 go test -c ./director/bench -o director.bench
 
 FROM alpine:3.13.5
 
@@ -37,4 +38,6 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/istio.test .
+
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.bench .
 #COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/licenses ./licenses
