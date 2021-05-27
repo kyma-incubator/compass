@@ -3,13 +3,12 @@ package json
 import (
 	"encoding/json"
 	"strconv"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
 )
 
-func MarshalJSON(t *testing.T, data interface{}) *graphql.JSON {
+func MarshalJSON(t require.TestingT, data interface{}) *graphql.JSON {
 	out, err := json.Marshal(data)
 	require.NoError(t, err)
 	output := strconv.Quote(string(out))
@@ -17,7 +16,7 @@ func MarshalJSON(t *testing.T, data interface{}) *graphql.JSON {
 	return &j
 }
 
-func UnmarshalJSON(t *testing.T, j *graphql.JSON) interface{} {
+func UnmarshalJSON(t require.TestingT, j *graphql.JSON) interface{} {
 	require.NotNil(t, j)
 	var output interface{}
 	err := json.Unmarshal([]byte(*j), &output)
@@ -26,7 +25,7 @@ func UnmarshalJSON(t *testing.T, j *graphql.JSON) interface{} {
 	return output
 }
 
-func MarshalJSONSchema(t *testing.T, schema interface{}) *graphql.JSONSchema {
+func MarshalJSONSchema(t require.TestingT, schema interface{}) *graphql.JSONSchema {
 	out, err := json.Marshal(schema)
 	require.NoError(t, err)
 	output := strconv.Quote(string(out))
@@ -34,7 +33,7 @@ func MarshalJSONSchema(t *testing.T, schema interface{}) *graphql.JSONSchema {
 	return &jsonSchema
 }
 
-func UnmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
+func UnmarshalJSONSchema(t require.TestingT, schema *graphql.JSONSchema) interface{} {
 	require.NotNil(t, schema)
 	var output interface{}
 	err := json.Unmarshal([]byte(*schema), &output)

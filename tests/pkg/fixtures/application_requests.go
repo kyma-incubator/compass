@@ -2,7 +2,8 @@ package fixtures
 
 import (
 	"fmt"
-	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -82,7 +83,7 @@ func FixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 	}
 }
 
-func FixApplicationRegisterInputWithBundles(t *testing.T) graphql.ApplicationRegisterInput {
+func FixApplicationRegisterInputWithBundles(t require.TestingT) graphql.ApplicationRegisterInput {
 	bndl1 := FixBundleCreateInputWithRelatedObjects(t, "foo")
 	bndl2 := FixBundleCreateInputWithRelatedObjects(t, "bar")
 	return graphql.ApplicationRegisterInput{
@@ -172,12 +173,16 @@ func FixRequestOneTimeTokenForApplication(id string) *gcli.Request {
 }
 
 func FixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
+	return FixApplicationForRuntimeRequestWithPageSize(runtimeID, 4)
+}
+
+func FixApplicationForRuntimeRequestWithPageSize(runtimeID string, pageSize int) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
   			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") { 
 					%s 
 				}
-			}`, runtimeID, 4, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
+			}`, runtimeID, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
 func FixGetApplicationsRequestWithPagination() *gcli.Request {
@@ -1654,4 +1659,92 @@ func FixApplicationsForRuntimeWithPackagesRequest(runtimeID string) *gcli.Reques
 					totalCount
 				  }
 				}`, runtimeID))
+}
+
+func CreateApp(suffix string) graphql.ApplicationRegisterInput {
+	return generateAppInputForDifferentTenants(graphql.ApplicationRegisterInput{
+		Name:        "test-app",
+		Description: ptr.String("my application"),
+		Bundles: []*graphql.BundleCreateInput{
+			{
+				Name:        "foo-bndl",
+				Description: ptr.String("foo-descr"),
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Name:        "comments-v1",
+						Description: ptr.String("api for adding comments"),
+						TargetURL:   "http://mywordpress.com/comments",
+						Group:       ptr.String("comments"),
+						Version:     FixDeprecatedVersion(),
+						Spec: &graphql.APISpecInput{
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatYaml,
+							Data:   ptr.CLOB(`{"openapi":"3.0.2"}`),
+						},
+					},
+					{
+						Name:        "reviews-v1",
+						Description: ptr.String("api for adding reviews"),
+						TargetURL:   "http://mywordpress.com/reviews",
+						Version:     FixActiveVersion(),
+						Spec: &graphql.APISpecInput{
+							Type:   graphql.APISpecTypeOdata,
+							Format: graphql.SpecFormatJSON,
+							Data:   ptr.CLOB(`{"openapi":"3.0.1"}`),
+						},
+					},
+					{
+						Name:        "xml",
+						Description: ptr.String("xml api"),
+						Version:     FixDecommissionedVersion(),
+						TargetURL:   "http://mywordpress.com/xml",
+						Spec: &graphql.APISpecInput{
+							Type:   graphql.APISpecTypeOdata,
+							Format: graphql.SpecFormatXML,
+							Data:   ptr.CLOB("odata"),
+						},
+					},
+				},
+				EventDefinitions: []*graphql.EventDefinitionInput{
+					{
+						Name:        "comments-v1",
+						Description: ptr.String("comments events"),
+						Version:     FixDeprecatedVersion(),
+						Group:       ptr.String("comments"),
+						Spec: &graphql.EventSpecInput{
+							Type:   graphql.EventSpecTypeAsyncAPI,
+							Format: graphql.SpecFormatYaml,
+							Data:   ptr.CLOB(`{"asyncapi":"1.2.0"}`),
+						},
+					},
+					{
+						Name:        "reviews-v1",
+						Description: ptr.String("review events"),
+						Version:     FixActiveVersion(),
+						Spec: &graphql.EventSpecInput{
+							Type:   graphql.EventSpecTypeAsyncAPI,
+							Format: graphql.SpecFormatYaml,
+							Data:   ptr.CLOB(`{"asyncapi":"1.1.0"}`),
+						},
+					},
+				},
+			},
+		},
+	}, suffix)
+}
+
+func generateAppInputForDifferentTenants(appInput graphql.ApplicationRegisterInput, suffix string) graphql.ApplicationRegisterInput {
+	appInput.Name += "-" + suffix
+	for _, bndl := range appInput.Bundles {
+		bndl.Name = bndl.Name + "-" + suffix
+
+		for _, apiDef := range bndl.APIDefinitions {
+			apiDef.Name = apiDef.Name + "-" + suffix
+		}
+
+		for _, eventDef := range bndl.EventDefinitions {
+			eventDef.Name = eventDef.Name + "-" + suffix
+		}
+	}
+	return appInput
 }

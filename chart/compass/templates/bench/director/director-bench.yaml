@@ -1,0 +1,101 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-bench-director
+  labels:
+    benchmark: "true" # This is needed to differentiate benchmarks of regular tests
+    app: {{ .Chart.Name }}-director-bench-app
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-bench
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-director-bench-app
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "oauth2.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      containers:
+        - name: director-bench # This should be unique across all benchmark containers.
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./director.bench -test.v -test.bench=. -test.benchtime 5s -test.count 5; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          restartPolicy: Never
+          env:
+            - name: DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: DIRECTOR_HEALTHZ_URL
+              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
+            - name: ALL_SCOPES
+              value: "{{ .Values.global.director.tests.scopes }}"
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
+            - name: DEFAULT_TENANT
+              value: "{{.Values.global.defaultTenant}}"
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
+            - name: GATEWAY_OAUTH20_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.secure.oauth.host }}"
+            - name: GATEWAY_JWT_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.host }}"
+            - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
+              value: "{{ .Values.global.gateway.mtls.host }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_WEBHOOK_URL
+              value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO
+              value: "DEFAULT"
+            - name: APP_DEFAULT_NORMALIZATION_PREFIX
+              value: "mp-"
