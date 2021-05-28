@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -20,9 +21,10 @@ import (
 const (
 	tableName    string = "public.labels"
 	tenantColumn string = "tenant_id"
+	idColumn     string = "id"
 )
 
-var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "bundle_instance_auth_id", "runtime_context_id", "key", "value"}
+var tableColumns = []string{idColumn, tenantColumn, "app_id", "runtime_id", "bundle_instance_auth_id", "runtime_context_id", "key", "value"}
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
@@ -30,19 +32,29 @@ type Converter interface {
 	FromEntity(in Entity) (model.Label, error)
 }
 
+type scenariosView struct {
+	repo.Lister
+}
+
 type repository struct {
-	upserter repo.Upserter
-	lister   repo.Lister
-	deleter  repo.Deleter
-	conv     Converter
+	upserter             repo.Upserter
+	lister               repo.Lister
+	deleter              repo.Deleter
+	conv                 Converter
+	scenariosView        *scenariosView
+	scenarioQueryBuilder repo.QueryBuilder
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(bundle_instance_auth_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
-		lister:   repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
-		deleter:  repo.NewDeleter(resource.Label, tableName, tenantColumn),
-		conv:     conv,
+		upserter:             repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(bundle_instance_auth_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		lister:               repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		deleter:              repo.NewDeleter(resource.Label, tableName, tenantColumn),
+		conv:                 conv,
+		scenarioQueryBuilder: repo.NewQueryBuilder(resource.Label, bundleinstanceauth.ScenariosViewName, tenantColumn, []string{"label_id"}),
+		scenariosView: &scenariosView{
+			repo.NewLister(resource.BundleInstanceAuth, bundleinstanceauth.ScenariosViewName, tenantColumn, tableColumns),
+		},
 	}
 }
 
@@ -66,7 +78,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	}
 
 	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`,
-		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
+		strings.Join(tableColumns, ", "), tableName, labelObjectField(objectType))
 
 	var entity Entity
 	err = persist.Get(&entity, stmt, key, objectID, tenant)
@@ -92,7 +104,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	}
 
 	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE  %s = $1 AND tenant_id = $2`,
-		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
+		strings.Join(tableColumns, ", "), tableName, labelObjectField(objectType))
 
 	var entities []Entity
 	err = persist.Select(&entities, stmt, objectID, tenant)
@@ -149,7 +161,7 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`, tableName, labelableObjectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`, tableName, labelObjectField(objectType))
 	_, err = persist.Exec(stmt, key, objectID, tenant)
 
 	return errors.Wrap(err, "while deleting the Label entity from database")
@@ -161,7 +173,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE %s = $1 AND tenant_id = $2`, tableName, labelableObjectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE %s = $1 AND tenant_id = $2`, tableName, labelObjectField(objectType))
 	_, err = persist.Exec(stmt, objectID, tenant)
 
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
@@ -169,7 +181,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
-		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
+		repo.NewEqualCondition(labelObjectField(objectType), objectID),
 		repo.NewEqualCondition(tenantColumn, tenant),
 		repo.NewNotRegexConditionString("key", labelKeyPattern),
 	})
@@ -262,14 +274,26 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 	return labelModels, nil
 }
 
-func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, appId, runtimeId string) ([]model.Label, error) {
-	persist, _ := persistence.FromCtx(ctx)
+func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, tenant, appId, runtimeId string) ([]model.Label, error) {
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition("app_id", appId),
+		repo.NewEqualCondition("runtime_id", runtimeId),
+		repo.NewEqualCondition("key", model.ScenariosKey),
+	}
 
-	var labels Collection
-	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2 and labels.key='scenarios'"
-	err := persist.Select(&labels, query, appId, runtimeId)
+	subquery, args, err := r.scenarioQueryBuilder.BuildQuery(tenant, false, subqueryConditions...)
 	if err != nil {
 		return nil, err
+	}
+
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, subquery, args),
+	}
+
+	var labels Collection
+	err = r.scenariosView.List(ctx, tenant, &labels, inOperatorConditions...)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching bundle_instance_auth scenario labels")
 	}
 
 	//TODO: extract -> convert multiple
@@ -293,7 +317,7 @@ func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, te
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("key", model.ScenariosKey),
-		repo.NewNotNullCondition(labelableObjectField(objectType)),
+		repo.NewNotNullCondition(labelObjectField(objectType)),
 		repo.NewJSONArrAnyMatchCondition("value", values),
 	}
 
@@ -303,8 +327,12 @@ func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, te
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
+	return r.multipleFromEntities(labels)
+}
+
+func (r *repository) multipleFromEntities(entities Collection) ([]model.Label, error) {
 	var labelModels []model.Label
-	for _, label := range labels {
+	for _, label := range entities {
 
 		labelModel, err := r.conv.FromEntity(label)
 		if err != nil {
@@ -315,7 +343,7 @@ func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, te
 	return labelModels, nil
 }
 
-func labelableObjectField(objectType model.LabelableObject) string {
+func labelObjectField(objectType model.LabelableObject) string {
 	switch objectType {
 	case model.ApplicationLabelableObject:
 		return "app_id"

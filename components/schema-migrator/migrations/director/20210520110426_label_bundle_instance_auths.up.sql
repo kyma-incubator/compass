@@ -13,7 +13,7 @@ ALTER TABLE labels
         CHECK (app_id IS NOT NULL OR runtime_id IS NOT NULL OR runtime_context_id IS NOT NULL OR bundle_instance_auth_id IS NOT NULL);
 
 CREATE VIEW bundle_instance_auths_with_labels AS
-    SELECT labels.key, labels.value, labels.tenant_id, bundles.id as bundle_id, bundles.app_id, bundle_instance_auths.runtime_id, bundle_instance_auths.status_condition
+    SELECT labels.key, labels.value, labels.tenant_id, labels.id as label_id, bundles.id as bundle_id, bundles.app_id, bundle_instance_auths.runtime_id, bundle_instance_auths.status_condition
     FROM labels
     INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id
     INNER JOIN bundles ON bundles.id = bundle_instance_auths.bundle_id;

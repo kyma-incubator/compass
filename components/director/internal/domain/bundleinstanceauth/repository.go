@@ -16,7 +16,7 @@ import (
 )
 
 const tableName string = `public.bundle_instance_auths`
-const scenariosViewName = `public.bundle_instance_auths_with_labels`
+const ScenariosViewName = `public.bundle_instance_auths_with_labels`
 
 var (
 	tenantColumn         = "tenant_id"
@@ -33,8 +33,7 @@ type EntityConverter interface {
 }
 
 type scenariosView struct {
-	lister       repo.Lister
-	existQuerier repo.ExistQuerier
+	repo.ExistQuerier
 }
 
 type repository struct {
@@ -49,16 +48,13 @@ type repository struct {
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(resource.BundleInstanceAuth, tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
-		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
-		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
-		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, scenariosViewColumns, tenantColumn, idColumns),
-		conv:         conv,
-		scenariosView: &scenariosView{
-			lister:       repo.NewLister(resource.BundleInstanceAuth, scenariosViewName, tenantColumn, tableColumns),
-			existQuerier: repo.NewExistQuerier(resource.BundleInstanceAuth, scenariosViewName, tenantColumn),
-		},
+		creator:       repo.NewCreator(resource.BundleInstanceAuth, tableName, tableColumns),
+		singleGetter:  repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
+		lister:        repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
+		deleter:       repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
+		updater:       repo.NewUpdater(resource.BundleInstanceAuth, tableName, scenariosViewColumns, tenantColumn, idColumns),
+		conv:          conv,
+		scenariosView: &scenariosView{repo.NewExistQuerier(resource.BundleInstanceAuth, ScenariosViewName, tenantColumn)},
 	}
 }
 
@@ -196,5 +192,5 @@ func (r *repository) existForObjectAndScenario(ctx context.Context, tenant, scen
 		repo.NewEqualCondition("status_condition", operation.OperationStatusSucceeded),
 	}
 
-	return r.scenariosView.existQuerier.Exists(ctx, tenant, conditions)
+	return r.scenariosView.Exists(ctx, tenant, conditions)
 }

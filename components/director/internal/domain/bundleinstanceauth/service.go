@@ -49,7 +49,7 @@ type LabelService interface {
 }
 
 type LabelRepository interface {
-	GetBundleInstanceAuthsScenarioLabels(ctx context.Context, appId, runtimeId string) ([]model.Label, error)
+	GetBundleInstanceAuthsScenarioLabels(ctx context.Context, tenant, appId, runtimeId string) ([]model.Label, error)
 }
 
 type scenarioReAssociator struct {
@@ -129,11 +129,16 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 }
 
 func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	assoc := &scenarioReAssociator{
 		isAnyBundleInstanceAuthExist: s.IsAnyExistForAppAndScenario,
 		relatedObjectScenarioLabels:  s.scenarioSvc.GetRuntimeScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(runtimeId string) ([]model.Label, error) {
-			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
+			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, tnt, appId, runtimeId)
 		},
 		labelService: s.labelService,
 		//labelRepo:    s.labelRepo,
@@ -143,11 +148,16 @@ func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx cont
 }
 
 func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	assoc := &scenarioReAssociator{
 		isAnyBundleInstanceAuthExist: s.IsAnyExistForRuntimeAndScenario,
 		relatedObjectScenarioLabels:  s.scenarioSvc.GetApplicationScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(appId string) ([]model.Label, error) {
-			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
+			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, tnt, appId, runtimeId)
 		},
 		labelService: s.labelService,
 		//labelRepo:    s.labelRepo,
