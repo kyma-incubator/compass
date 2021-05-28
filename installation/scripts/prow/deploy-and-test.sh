@@ -12,5 +12,33 @@ INSTALLATION_DIR=${CURRENT_DIR}/../../
 export ARTIFACTS="/var/log/prow_artifacts"
 sudo mkdir -p "${ARTIFACTS}"
 
-sudo ${INSTALLATION_DIR}/cmd/run.sh
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case ${key} in
+        --dump-db)
+            DUMP_DB=true
+            shift # past argument
+        ;;
+        --*)
+            echo "Unknown flag ${1}"
+            exit 1
+        ;;
+        *)    # unknown option
+            POSITIONAL+=("$1") # save it in an array for later
+            shift # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+
+if [[ ${DUMP_DB} ]]; then
+    sudo ${INSTALLATION_DIR}/cmd/run.sh --dump-db
+else
+    sudo ${INSTALLATION_DIR}/cmd/run.sh
+fi
+
 sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh

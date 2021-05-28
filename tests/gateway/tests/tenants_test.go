@@ -36,8 +36,8 @@ func TestTenantErrors(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
-	is := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
+	is := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "test")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, is.ID)
 
 	req := fixtures.FixRequestClientCredentialsForIntegrationSystem(is.ID)
 
