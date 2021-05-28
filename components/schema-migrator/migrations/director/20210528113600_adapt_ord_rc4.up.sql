@@ -24,6 +24,11 @@ ALTER TYPE policy_level RENAME TO policy_level_old;
 
 CREATE TYPE policy_level AS ENUM ('custom', 'sap:core:v1','sap:partner:v1');
 
+ALTER TABLE packages ALTER COLUMN policy_level TYPE TEXT;
+
+UPDATE packages SET policy_level = 'sap:core:v1' WHERE policy_level = 'sap';
+UPDATE packages SET policy_level = 'sap:partner:v1' WHERE policy_level = 'sap-partner';
+
 ALTER TABLE packages
     ALTER COLUMN policy_level TYPE policy_level
     USING policy_level::text::policy_level;
