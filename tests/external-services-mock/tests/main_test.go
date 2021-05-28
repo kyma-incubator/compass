@@ -15,7 +15,7 @@ import (
 )
 
 type config struct {
-	DefaultTenant               string
+	DefaultTestTenant           string
 	DirectorURL                 string
 	ExternalServicesMockBaseURL string
 	BasicCredentialsUsername    string

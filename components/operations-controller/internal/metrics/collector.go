@@ -35,7 +35,7 @@ func NewCollector() *Collector {
 			Subsystem: Subsystem,
 			Name:      "operations_near_reconciliation_timeout_count",
 			Help:      "Count of Operations succeeded/failed which were InProgress close to reconciliation timeout.",
-		}, []string{"type"}),
+		}, []string{"type", "name"}),
 	}
 }
 
@@ -59,6 +59,6 @@ func (c *Collector) RecordError(name, correlationID, operationType, category, re
 	c.operationErrorCount.WithLabelValues(name, correlationID, operationType, category, requestObject, error).Inc()
 }
 
-func (c *Collector) RecordOperationInProgressNearTimeout(operationType string) {
-	c.operationNearTimeoutCount.WithLabelValues(operationType).Inc()
+func (c *Collector) RecordOperationInProgressNearTimeout(operationType, operationName string) {
+	c.operationNearTimeoutCount.WithLabelValues(operationType, operationName).Inc()
 }

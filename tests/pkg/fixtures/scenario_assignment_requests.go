@@ -3,12 +3,12 @@ package fixtures
 import (
 	"fmt"
 	"regexp"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/require"
 )
 
 func FixAutomaticScenarioAssigmentInput(automaticScenario, selectorKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
@@ -111,7 +111,7 @@ func FixAPIDefinitionInput() graphql.APIDefinitionInput {
 	}
 }
 
-func FixDocumentInput(t *testing.T) graphql.DocumentInput {
+func FixDocumentInput(t require.TestingT) graphql.DocumentInput {
 	return graphql.DocumentInput{
 		Title:       "Readme",
 		Description: "Detailed description of project",

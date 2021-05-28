@@ -41,7 +41,7 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 
 	t.Run("Access playground via client certificate subdomain", func(t *testing.T) {
 		subdomain := cfg.Gateway.ClientCertsSubdomain
-		tenant := cfg.DefaultTenant
+		tenant := cfg.DefaultTestTenant
 
 		ctx := context.Background()
 		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGraphQLClient)

@@ -56,10 +56,10 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
-            - name: DEFAULT_TENANT
-              value: "{{.Values.global.defaultTenant}}"
-            - name: TENANT
-              value: "{{ (index .Values.global.tenants 1).id }}"
+            - name: DEFAULT_TEST_TENANT
+              value: "{{ (index .Values.global.tenants 9).id }}"
+            - name: SECONDARY_TENANT
+              value: "{{ (index .Values.global.tenants 3).id }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
       restartPolicy: Never

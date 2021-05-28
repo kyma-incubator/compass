@@ -1,10 +1,11 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}-e2e-director
+  name: {{ .Chart.Name }}-bench-director
   labels:
-    app: {{ .Chart.Name }}-director-tests-app
-    app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
+    benchmark: "true" # This is needed to differentiate benchmarks of regular tests
+    app: {{ .Chart.Name }}-director-bench-app
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-bench
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -15,7 +16,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-director-tests-app
+        app: {{ .Chart.Name }}-director-bench-app
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -27,11 +28,12 @@ spec:
             - "oauth2.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       containers:
-        - name: director-tests
+        - name: director-bench # This should be unique across all benchmark containers.
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "/director.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./director.bench -test.v -test.bench=. -test.benchtime 5s -test.count 5; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          restartPolicy: Never
           env:
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
@@ -79,8 +81,8 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
-            - name: DEFAULT_TEST_TENANT
-              value: "{{ (index .Values.global.tenants 9).id }}"
+            - name: DEFAULT_TENANT
+              value: "{{.Values.global.defaultTenant}}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
             - name: GATEWAY_OAUTH20_SUBDOMAIN
@@ -97,16 +99,3 @@ spec:
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
-          {{ if .Values.global.isLocalEnv }}
-          volumeMounts:
-            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
-              name: examples
-          {{ end }}
-      {{ if .Values.global.isLocalEnv }}
-      volumes:
-        - name: examples
-          hostPath:
-            path: "/examples"
-            type: DirectoryOrCreate
-      {{ end }}
-      restartPolicy: Never
