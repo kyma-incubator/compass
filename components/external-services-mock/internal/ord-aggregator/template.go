@@ -422,7 +422,7 @@ const ordDocument = `{
 		"version": "1.1.0",
 		"visibility": "public"
 	}],
-	"openResourceDiscovery": "1.0-rc.3",
+	"openResourceDiscovery": "1.0",
 	"packages": [{
 		"countries": ["BG", "EN"],
 		"customPolicyLevel": null,
