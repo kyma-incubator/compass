@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"reflect"
 	"regexp"
 	"testing"
 
@@ -547,5 +548,69 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		err := repo.DeleteByKey(ctx, tnt, key)
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: delete should remove single row, but removed 0 rows")
+	})
+}
+
+func TestRepository_Upsert(t *testing.T) {
+	t.Run("Success - Label for Runtime", func(t *testing.T) {
+		// GIVEN
+		key := "test"
+		tnt := "tenant"
+		schema := "{}"
+		schemaInterface := reflect.ValueOf(schema).Interface()
+
+		labeldefModel := model.LabelDefinition{
+			ID:     "foo",
+			Tenant: tnt,
+			Key:    key,
+			Schema: &schemaInterface,
+		}
+		labeldefEntity := labeldef.Entity{
+			ID:       "foo",
+			TenantID: tnt,
+			Key:      key,
+			SchemaJSON: sql.NullString{
+				String: schema,
+				Valid:  true,
+			},
+		}
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("ToEntity", labeldefModel).Return(labeldefEntity, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		labelRepo := labeldef.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? ) ON CONFLICT ( tenant_id, key ) DO UPDATE SET schema=EXCLUDED.schema`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(labeldefEntity.ID, labeldefEntity.TenantID, labeldefEntity.Key, labeldefEntity.SchemaJSON).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.Upsert(ctx, labeldefModel)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when entityConverting fails", func(t *testing.T) {
+		labeldefModel := model.LabelDefinition{}
+		labeldefEntity := labeldef.Entity{}
+		testErr := errors.New("test-err")
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("ToEntity", labeldefModel).Return(labeldefEntity, testErr).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		labelRepo := labeldef.NewRepository(mockConverter)
+
+		// WHEN
+		ctx := context.TODO()
+		err := labelRepo.Upsert(ctx, labeldefModel)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
 	})
 }

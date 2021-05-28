@@ -76,7 +76,7 @@ type WebhookConverter interface {
 
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
@@ -460,14 +460,16 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	resultLabels := make(map[string]interface{})
 
 	for _, label := range itemMap {
-		resultLabels[label.Key] = label.Value
+		if key == nil || label.Key == *key {
+			resultLabels[label.Key] = label.Value
+		}
 	}
 
 	var gqlLabels graphql.Labels = resultLabels
 	return gqlLabels, nil
 }
 
-func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
+func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.AppSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
@@ -489,14 +491,14 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		return nil, err
 	}
 
-	var out []*graphql.SystemAuth
+	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
 		if err != nil {
 			return nil, err
 		}
 
-		out = append(out, c)
+		out = append(out, c.(*graphql.AppSystemAuth))
 	}
 
 	return out, nil

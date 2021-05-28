@@ -26,17 +26,13 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	t.Log("Creating application template")
 	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
-	var appTemplateID string
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplateID)
 	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
-	appTemplateID = appTemplate.ID
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
-	var runtimeID string
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtimeID)
 	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
-	runtimeID = runtime.ID
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
 
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
@@ -48,10 +44,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
-	var appID string
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, appID)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
-	appID = app.ID
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
 
 	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
@@ -71,10 +65,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 	applicationOAuthGraphQLClient := gqlClient(t, appOauthCredentialData, token.ApplicationScopes)
 
 	t.Log(fmt.Sprintf("Registering integration system %q", intSysName))
-	var intSystemID string
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSystemID)
 	integrationSystem := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSysName)
-	intSystemID = integrationSystem.ID
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem.ID)
 
 	t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), dexGraphQLClient, tenantId, integrationSystem.ID)
@@ -171,7 +163,12 @@ func TestSensitiveDataStrip(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				application := fixtures.GetApplication(t, ctx, test.consumer, tenantId, app.ID)
 
-				require.Equal(t, application.Auths != nil, test.fieldExpectations.appAuths)
+				require.Greater(t, len(application.Auths), 0)
+				for _, applicationAuth := range application.Auths {
+					require.NotEmpty(t, applicationAuth.ID)
+					require.Equal(t, applicationAuth.Auth != nil, test.fieldExpectations.appAuths)
+
+				}
 				require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
 
 				require.Equal(t, application.Webhooks != nil, test.fieldExpectations.appWebhooks)

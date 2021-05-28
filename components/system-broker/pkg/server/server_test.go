@@ -49,47 +49,6 @@ func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 	}
 }
 
-func TestNewAddsSystemRoutes(t *testing.T) {
-	config := server.DefaultConfig()
-
-	var tests = []struct {
-		Msg   string
-		Route string
-	}{
-		{
-			Msg:   "Metrics route should exist",
-			Route: "/metrics",
-		},
-		{
-			Msg:   "Pprof root route should exist",
-			Route: "/debug/pprof/",
-		},
-		{
-			Msg:   "Pprof cmdline route should exist",
-			Route: "/debug/pprof/cmdline",
-		},
-		{
-			Msg:   "Pprof profile route should exist",
-			Route: "/debug/pprof/profile",
-		},
-		{
-			Msg:   "Pprof symbol route should exist",
-			Route: "/debug/pprof/symbol",
-		},
-		{
-			Msg:   "Pprof trace route should exist",
-			Route: "/debug/pprof/trace",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, []mux.MiddlewareFunc{})
-			AssertRouteExists(t, server, config.RootAPI+test.Route)
-		})
-	}
-}
-
 func AssertRouteExists(t *testing.T, server *server.Server, path string) {
 	handler := server.Handler
 

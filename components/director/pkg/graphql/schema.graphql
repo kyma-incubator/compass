@@ -178,6 +178,11 @@ interface Pageable {
 	totalCount: Int!
 }
 
+interface SystemAuth {
+	id: ID!
+	auth: Auth
+}
+
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
@@ -672,6 +677,11 @@ type APISpec {
 	fetchRequest: FetchRequest @sanitize(path: "graphql.field.api_spec.fetch_request")
 }
 
+type AppSystemAuth implements SystemAuth {
+	id: ID!
+	auth: Auth @sanitize(path: "graphql.field.application.auths")
+}
+
 type Application {
 	id: ID!
 	name: String!
@@ -685,7 +695,7 @@ type Application {
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
-	auths: [SystemAuth!] @sanitize(path: "graphql.field.application.auths")
+	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -788,6 +798,8 @@ type BundleInstanceAuth {
 	"""
 	auth: Auth
 	status: BundleInstanceAuthStatus!
+	runtimeID: ID
+	runtimeContextID: ID
 }
 
 type BundleInstanceAuthStatus {
@@ -909,11 +921,16 @@ type HealthCheckPage implements Pageable {
 	totalCount: Int!
 }
 
+type IntSysSystemAuth implements SystemAuth {
+	id: ID!
+	auth: Auth @sanitize(path: "graphql.field.integration_system.auths")
+}
+
 type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!] @sanitize(path: "graphql.field.integration_system.auths")
+	auths: [IntSysSystemAuth!]
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -977,7 +994,7 @@ type Runtime {
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!] @sanitize(path: "graphql.field.runtime.auths")
+	auths: [RuntimeSystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
@@ -1013,9 +1030,9 @@ type RuntimeStatus {
 	timestamp: Timestamp!
 }
 
-type SystemAuth {
+type RuntimeSystemAuth implements SystemAuth {
 	id: ID!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.runtime.auths")
 }
 
 type Tenant {

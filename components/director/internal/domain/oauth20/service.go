@@ -14,14 +14,14 @@ import (
 )
 
 const (
-	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
+	clientCredentialScopesPrefix     = "clientCredentialsRegistrationScopes"
+	clientCredentialGrantTypesPrefix = "clientCredentialsRegistrationGrantTypes"
 )
 
-var defaultGrantTypes = []string{"client_credentials"}
-
-//go:generate mockery --name=ScopeCfgProvider --output=automock --outpkg=automock --case=underscore
-type ScopeCfgProvider interface {
+//go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore
+type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
+	GetRequiredGrantTypes(path string) ([]string, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -37,14 +37,19 @@ type OryHydraService interface {
 	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams) (*admin.DeleteOAuth2ClientNoContent, error)
 }
 
+type ClientDetails struct {
+	Scopes     []string
+	GrantTypes []string
+}
+
 type service struct {
 	publicAccessTokenEndpoint string
-	scopeCfgProvider          ScopeCfgProvider
+	scopeCfgProvider          ClientDetailsConfigProvider
 	uidService                UIDService
 	hydraCLi                  OryHydraService
 }
 
-func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
+func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
 		publicAccessTokenEndpoint: publicAccessTokenEndpoint,
@@ -54,14 +59,14 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, public
 }
 
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
-	scopes, err := s.GetClientCredentialScopes(objectType)
+	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Debugf("Fetched client credential scopes: %s for %s", scopes, objectType)
+	log.C(ctx).Debugf("Fetched client credential scopes: %s for %s", details.Scopes, objectType)
 
 	clientID := s.uidService.Generate()
-	clientSecret, err := s.registerClient(ctx, clientID, scopes)
+	clientSecret, err := s.registerClient(ctx, clientID, details)
 	if err != nil {
 		return nil, errors.Wrap(err, "while registering client credentials in Hydra")
 	}
@@ -75,14 +80,14 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 	return credentialData, nil
 }
 
-func (s *service) UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
-	scopes, err := s.GetClientCredentialScopes(objectType)
+func (s *service) UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
+	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Debugf("Fetched Client credential scopes: %s for %s", scopes, objectType)
+	log.C(ctx).Debugf("Fetched Client credential scopes: %s for %s", details.Scopes, objectType)
 
-	if err := s.updateClient(ctx, clientID, scopes); err != nil {
+	if err := s.updateClient(ctx, clientID, details); err != nil {
 		return errors.Wrapf(err, "while updating Client with ID %s in Hydra", clientID)
 	}
 
@@ -125,22 +130,30 @@ func (s *service) ListClients() ([]*models.OAuth2Client, error) {
 	return listClientsOK.Payload, nil
 }
 
-func (s *service) GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
+func (s *service) GetClientDetails(objType model.SystemAuthReferenceObjectType) (*ClientDetails, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scopes for registering Client Credentials for %s", objType)
 	}
 
-	return scopes, nil
+	grantTypes, err := s.scopeCfgProvider.GetRequiredGrantTypes(clientCredentialGrantTypesPrefix)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting grant_types for registering Client Credentials for %s", objType)
+	}
+
+	return &ClientDetails{
+		Scopes:     scopes,
+		GrantTypes: grantTypes,
+	}, nil
 }
 
-func (s *service) registerClient(ctx context.Context, clientID string, scopes []string) (string, error) {
-	log.C(ctx).Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
+func (s *service) registerClient(ctx context.Context, clientID string, details *ClientDetails) (string, error) {
+	log.C(ctx).Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s and grant_types %s", clientID, details.Scopes, details.GrantTypes)
 
 	created, err := s.hydraCLi.CreateOAuth2Client(admin.NewCreateOAuth2ClientParams().WithBody(&models.OAuth2Client{
 		ClientID:   clientID,
-		GrantTypes: defaultGrantTypes,
-		Scope:      strings.Join(scopes, " "),
+		GrantTypes: details.GrantTypes,
+		Scope:      strings.Join(details.Scopes, " "),
 	}))
 
 	if err != nil {
@@ -150,9 +163,11 @@ func (s *service) registerClient(ctx context.Context, clientID string, scopes []
 	return created.Payload.ClientSecret, nil
 }
 
-func (s *service) updateClient(ctx context.Context, clientID string, scopes []string) error {
+func (s *service) updateClient(ctx context.Context, clientID string, details *ClientDetails) error {
 	_, err := s.hydraCLi.UpdateOAuth2Client(admin.NewUpdateOAuth2ClientParams().WithID(clientID).WithBody(&models.OAuth2Client{
-		Scope: strings.Join(scopes, " "),
+		ClientID:   clientID,
+		GrantTypes: details.GrantTypes,
+		Scope:      strings.Join(details.Scopes, " "),
 	}))
 	if err != nil {
 		return err

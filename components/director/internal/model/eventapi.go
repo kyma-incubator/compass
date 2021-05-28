@@ -13,7 +13,6 @@ import (
 type EventDefinition struct {
 	Tenant              string
 	ApplicationID       string
-	BundleID            *string
 	PackageID           *string
 	Name                string
 	Description         *string
@@ -34,6 +33,7 @@ type EventDefinition struct {
 	PartOfProducts      json.RawMessage
 	LineOfBusiness      json.RawMessage
 	Industry            json.RawMessage
+	Extensible          json.RawMessage
 
 	Version *Version
 	*BaseEntity
@@ -52,29 +52,29 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	OrdBundleID         *string         `json:"partOfConsumptionBundle"`
-	OrdPackageID        *string         `json:"partOfPackage"`
-	Name                string          `json:"title"`
-	Description         *string         `json:"description"`
-	Group               *string         `json:",omitempty"`
-	OrdID               *string         `json:"ordId"`
-	ShortDescription    *string         `json:"shortDescription"`
-	SystemInstanceAware *bool           `json:"systemInstanceAware"`
-	ChangeLogEntries    json.RawMessage `json:"changelogEntries"`
-	Links               json.RawMessage `json:"links"`
-	Tags                json.RawMessage `json:"tags"`
-	Countries           json.RawMessage `json:"countries"`
-	ReleaseStatus       *string         `json:"releaseStatus"`
-	SunsetDate          *string         `json:"sunsetDate"`
-	Successor           *string         `json:"successor"`
-	Labels              json.RawMessage `json:"labels"`
-	Visibility          *string         `json:"visibility"`
-	Disabled            *bool           `json:"disabled"`
-	PartOfProducts      json.RawMessage `json:"partOfProducts"`
-	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
-	Industry            json.RawMessage `json:"industry"`
-
-	ResourceDefinitions []*EventResourceDefinition `json:"resourceDefinitions"`
+	OrdPackageID             *string                       `json:"partOfPackage"`
+	Name                     string                        `json:"title"`
+	Description              *string                       `json:"description"`
+	Group                    *string                       `json:",omitempty"`
+	OrdID                    *string                       `json:"ordId"`
+	ShortDescription         *string                       `json:"shortDescription"`
+	SystemInstanceAware      *bool                         `json:"systemInstanceAware"`
+	ChangeLogEntries         json.RawMessage               `json:"changelogEntries"`
+	Links                    json.RawMessage               `json:"links"`
+	Tags                     json.RawMessage               `json:"tags"`
+	Countries                json.RawMessage               `json:"countries"`
+	ReleaseStatus            *string                       `json:"releaseStatus"`
+	SunsetDate               *string                       `json:"sunsetDate"`
+	Successor                *string                       `json:"successor"`
+	Labels                   json.RawMessage               `json:"labels"`
+	Visibility               *string                       `json:"visibility"`
+	Disabled                 *bool                         `json:"disabled"`
+	PartOfProducts           json.RawMessage               `json:"partOfProducts"`
+	LineOfBusiness           json.RawMessage               `json:"lineOfBusiness"`
+	Industry                 json.RawMessage               `json:"industry"`
+	Extensible               json.RawMessage               `json:"extensible"`
+	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
+	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
 	*VersionInput
 }
@@ -112,16 +112,15 @@ func (a *EventResourceDefinition) ToSpec() *SpecInput {
 }
 
 func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string) *EventDefinition {
-	return e.ToEventDefinition(id, appID, &bndlID, nil, tenant)
+	return e.ToEventDefinition(id, appID, nil, tenant)
 }
 
-func (e *EventDefinitionInput) ToEventDefinition(id, appID string, bundleID *string, packageID *string, tenant string) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
 
 	return &EventDefinition{
-		BundleID:            bundleID,
 		ApplicationID:       appID,
 		PackageID:           packageID,
 		Tenant:              tenant,
@@ -145,6 +144,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, bundleID *str
 		LineOfBusiness:      e.LineOfBusiness,
 		Industry:            e.Industry,
 		Version:             e.VersionInput.ToVersion(),
+		Extensible:          e.Extensible,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

@@ -32,6 +32,12 @@ type BusinessTenantMappingInput struct {
 	Provider       string
 }
 
+type MovedRuntimeByLabelMappingInput struct {
+	LabelValue   string
+	SourceTenant string
+	TargetTenant string
+}
+
 func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *BusinessTenantMapping {
 	return &BusinessTenantMapping{
 		ID:             id,

@@ -25,19 +25,19 @@ const (
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	ordID            = "com.compass.ord.v1"
+	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 )
 
 var fixedTimestamp = time.Now()
 
-func fixEventDefinitionModel(id string, bndlID string, name string) *model.EventDefinition {
+func fixEventDefinitionModel(id string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:   &bndlID,
 		Name:       name,
 		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
-func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, model.Spec) {
+func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, model.Spec, model.BundleReference) {
 	eventType := model.EventSpecTypeAsyncAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -58,10 +58,16 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		ForRemoval:      &forRemoval,
 	}
 
+	eventBundleReference := model.BundleReference{
+		Tenant:     tenantID,
+		BundleID:   str.Ptr(bundleID),
+		ObjectType: model.BundleEventReference,
+		ObjectID:   str.Ptr(eventID),
+	}
+
 	boolVar := false
 	return model.EventDefinition{
 		ApplicationID:       appID,
-		BundleID:            str.Ptr(bundleID),
 		PackageID:           str.Ptr(packageID),
 		Tenant:              tenantID,
 		Name:                placeholder,
@@ -83,6 +89,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		PartOfProducts:      json.RawMessage("[]"),
 		LineOfBusiness:      json.RawMessage("[]"),
 		Industry:            json.RawMessage("[]"),
+		Extensible:          json.RawMessage(extensible),
 		Version:             v,
 		BaseEntity: &model.BaseEntity{
 			ID:        eventID,
@@ -92,7 +99,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 			DeletedAt: &time.Time{},
 			Error:     nil,
 		},
-	}, spec
+	}, spec, eventBundleReference
 }
 
 func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
@@ -193,9 +200,8 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 	}
 }
 
-func fixEntityEventDefinition(id string, bndlID string, name string) event.Entity {
+func fixEntityEventDefinition(id string, name string) event.Entity {
 	return event.Entity{
-		BundleID:   repo.NewValidNullableString(bndlID),
 		Name:       name,
 		BaseEntity: &repo.BaseEntity{ID: id},
 	}
@@ -205,7 +211,6 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 	return event.Entity{
 		TenantID:            tenantID,
 		ApplicationID:       appID,
-		BundleID:            repo.NewValidNullableString(bundleID),
 		PackageID:           repo.NewValidNullableString(packageID),
 		Name:                placeholder,
 		Description:         repo.NewValidNullableString("desc_" + placeholder),
@@ -226,6 +231,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 		PartOfProducts:      repo.NewValidNullableString("[]"),
 		LineOfBusiness:      repo.NewValidNullableString("[]"),
 		Industry:            repo.NewValidNullableString("[]"),
+		Extensible:          repo.NewValidNullableString(extensible),
 		Version: version.Version{
 			Value:           repo.NewNullableString(str.Ptr("v1.1")),
 			Deprecated:      repo.NewValidNullableBool(false),
@@ -244,26 +250,26 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "ord_id",
+	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, tenantID, appID, bundleID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
+	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", "successor", repo.NewValidNullableString("[]"), "visibility", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible)}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, appID, bundleID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
+	return []driver.Value{id, tenantID, appID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
 		event.SystemInstanceAware, repo.NewNullableStringFromJSONRawMessage(event.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(event.Links),
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate, event.Successor,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,
 		event.Disabled, repo.NewNullableStringFromJSONRawMessage(event.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(event.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(event.Industry),
-		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error}
+		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error, repo.NewNullableStringFromJSONRawMessage(event.Extensible)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

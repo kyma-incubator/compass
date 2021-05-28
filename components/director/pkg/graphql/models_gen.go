@@ -24,6 +24,10 @@ type Pageable interface {
 	IsPageable()
 }
 
+type SystemAuth interface {
+	IsSystemAuth()
+}
+
 type APIDefinitionInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
@@ -54,6 +58,13 @@ type APISpecInput struct {
 	Format       SpecFormat         `json:"format"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
+
+type AppSystemAuth struct {
+	ID   string `json:"id"`
+	Auth *Auth  `json:"auth"`
+}
+
+func (AppSystemAuth) IsSystemAuth() {}
 
 type ApplicationEventingConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
@@ -208,8 +219,10 @@ type BundleInstanceAuth struct {
 	InputParams *JSON `json:"inputParams"`
 	// It may be empty if status is PENDING.
 	// Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth   *Auth                     `json:"auth"`
-	Status *BundleInstanceAuthStatus `json:"status"`
+	Auth             *Auth                     `json:"auth"`
+	Status           *BundleInstanceAuthStatus `json:"status"`
+	RuntimeID        *string                   `json:"runtimeID"`
+	RuntimeContextID *string                   `json:"runtimeContextID"`
 }
 
 type BundleInstanceAuthRequestInput struct {
@@ -404,6 +417,13 @@ type HealthCheckPage struct {
 
 func (HealthCheckPage) IsPageable() {}
 
+type IntSysSystemAuth struct {
+	ID   string `json:"id"`
+	Auth *Auth  `json:"auth"`
+}
+
+func (IntSysSystemAuth) IsSystemAuth() {}
+
 type IntegrationSystemInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
@@ -535,10 +555,12 @@ type RuntimeStatus struct {
 	Timestamp Timestamp              `json:"timestamp"`
 }
 
-type SystemAuth struct {
+type RuntimeSystemAuth struct {
 	ID   string `json:"id"`
 	Auth *Auth  `json:"auth"`
 }
+
+func (RuntimeSystemAuth) IsSystemAuth() {}
 
 type TemplateValueInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .

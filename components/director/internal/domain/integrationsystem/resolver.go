@@ -33,7 +33,7 @@ type SystemAuthService interface {
 
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
@@ -226,7 +226,7 @@ func (r *Resolver) UnregisterIntegrationSystem(ctx context.Context, id string) (
 	return deletedIntSys, nil
 }
 
-func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.SystemAuth, error) {
+func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.IntSysSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Integration System cannot be empty")
 	}
@@ -249,13 +249,13 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([
 		return nil, err
 	}
 
-	var out []*graphql.SystemAuth
+	var out []*graphql.IntSysSystemAuth
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConverter.ToGraphQL(&sa)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, c)
+		out = append(out, c.(*graphql.IntSysSystemAuth))
 	}
 
 	return out, nil

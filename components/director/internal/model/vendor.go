@@ -9,15 +9,15 @@ type Vendor struct {
 	TenantID      string
 	ApplicationID string
 	Title         string
-	Type          string
+	Partners      json.RawMessage
 	Labels        json.RawMessage
 }
 
 type VendorInput struct {
-	OrdID         string `json:"id"`
-	Title         string `json:"title"`
-	Type          string `json:"type"`
-	Labels        json.RawMessage `json:"labels"`
+	OrdID    string          `json:"ordId"`
+	Title    string          `json:"title"`
+	Partners json.RawMessage `json:"partners"`
+	Labels   json.RawMessage `json:"labels"`
 }
 
 func (i *VendorInput) ToVendor(tenantID, appID string) *Vendor {
@@ -30,13 +30,13 @@ func (i *VendorInput) ToVendor(tenantID, appID string) *Vendor {
 		TenantID:      tenantID,
 		ApplicationID: appID,
 		Title:         i.Title,
-		Type:          i.Type,
+		Partners:      i.Partners,
 		Labels:        i.Labels,
 	}
 }
 
 func (p *Vendor) SetFromUpdateInput(update VendorInput) {
 	p.Title = update.Title
-	p.Type = update.Type
+	p.Partners = update.Partners
 	p.Labels = update.Labels
 }

@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/http/pprof"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,35 +31,24 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {
 	*http.Server
 
 	healthy         int32
-	routesProvider  []func(router *mux.Router)
 	shutdownTimeout time.Duration
 }
 
 func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(router *mux.Router)) *Server {
 	s := &Server{
 		shutdownTimeout: c.ShutdownTimeout,
-		routesProvider:  routesProvider,
 	}
 
 	router := mux.NewRouter()
 
 	router.Handle("/healthz", s.livenessHandler())
 	router.Handle("/readyz", s.readinessHandler())
-
-	router.Handle(c.RootAPI+"/metrics", promhttp.Handler())
-
-	router.HandleFunc(c.RootAPI+"/debug/pprof/", pprof.Index)
-	router.HandleFunc(c.RootAPI+"/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc(c.RootAPI+"/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc(c.RootAPI+"/debug/pprof/symbol", pprof.Symbol)
-	router.HandleFunc(c.RootAPI+"/debug/pprof/trace", pprof.Trace)
 
 	router.Use(correlation.AttachCorrelationIDToContext())
 	router.Use(log.RequestLogger())
@@ -90,12 +79,31 @@ func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(rou
 	return s
 }
 
-func (s *Server) Start(parentCtx context.Context) {
+func NewServerWithRouter(c *Config, router *mux.Router) *Server {
+	s := &Server{
+		shutdownTimeout: c.ShutdownTimeout,
+	}
+	handlerWithTimeout, err := handler.WithTimeout(router, c.Timeout)
+	if err != nil {
+		log.D().Fatalf("Could not create timeout handler: %v\n", err)
+	}
+	s.Server = &http.Server{
+		Addr:         ":" + strconv.Itoa(c.Port),
+		Handler:      handlerWithTimeout,
+		ReadTimeout:  c.Timeout,
+		WriteTimeout: c.Timeout,
+		IdleTimeout:  c.Timeout,
+	}
+	return s
+}
+
+func (s *Server) Start(parentCtx context.Context, wg *sync.WaitGroup) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
 	idleConnsClosed := make(chan struct{})
 	go func() {
+		defer wg.Done()
 		<-ctx.Done()
 		s.stop()
 		close(idleConnsClosed)

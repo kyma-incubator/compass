@@ -4,14 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ory/hydra-client-go/models"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
 )
 
@@ -27,8 +26,8 @@ type SystemAuthRepo interface {
 //go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore
 type OAuthService interface {
 	ListClients() ([]*models.OAuth2Client, error)
-	GetClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error)
-	UpdateClientScopes(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
+	UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
+	GetClientDetails(objType model.SystemAuthReferenceObjectType) (*oauth20.ClientDetails, error)
 }
 
 type service struct {
@@ -46,11 +45,10 @@ func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, rep
 }
 
 func (s *service) SynchronizeClientScopes(ctx context.Context) error {
-	hydraClients, err := s.oAuth20Svc.ListClients()
+	hydraClients, err := s.listHydraClients()
 	if err != nil {
-		return errors.Wrap(err, "while listing clients from hydra")
+		return err
 	}
-	hydraClientsScopes := convertScopesToMap(hydraClients)
 
 	auths, err := s.systemAuthsWithOAuth(ctx)
 	if err != nil {
@@ -74,24 +72,24 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 			continue
 		}
 
-		expectedScopes, err := s.oAuth20Svc.GetClientCredentialScopes(objType)
+		requiredClientDetails, err := s.oAuth20Svc.GetClientDetails(objType)
 		if err != nil {
 			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while getting client credentials scopes for client with ID %s: %v", clientID, err)
 			continue
 		}
 
-		scopesFromHydra, ok := hydraClientsScopes[clientID]
+		clientDetails, ok := hydraClients[clientID]
 		if !ok {
 			log.C(ctx).Errorf("Client with ID %s is not present in Hydra", clientID)
 			continue
 		}
-		if str.Matches(scopesFromHydra, expectedScopes) {
-			log.C(ctx).Infof("Scopes for client with ID %s and type %s are in sync", clientID, objType)
+		if str.Matches(clientDetails.Scopes, requiredClientDetails.Scopes) && str.Matches(clientDetails.GrantTypes, requiredClientDetails.GrantTypes) {
+			log.C(ctx).Infof("Scopes and grant types for client with ID %s and type %s are in sync", clientID, objType)
 			continue
 		}
 
-		if err = s.oAuth20Svc.UpdateClientScopes(ctx, clientID, objType); err != nil {
+		if err = s.oAuth20Svc.UpdateClient(ctx, clientID, objType); err != nil {
 			areAllClientsUpdated = false
 			log.C(ctx).WithError(err).Errorf("Error while updating scopes of client with ID %s: %v", clientID, err)
 		}
@@ -104,12 +102,20 @@ func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 	return nil
 }
 
-func convertScopesToMap(clientsFromHydra []*models.OAuth2Client) map[string][]string {
-	clientScopes := make(map[string][]string)
-	for _, s := range clientsFromHydra {
-		clientScopes[s.ClientID] = strings.Split(s.Scope, " ")
+func (s *service) listHydraClients() (map[string]*oauth20.ClientDetails, error) {
+	clients, err := s.oAuth20Svc.ListClients()
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing clients from hydra")
 	}
-	return clientScopes
+
+	clientsMap := make(map[string]*oauth20.ClientDetails)
+	for _, c := range clients {
+		clientsMap[c.ClientID] = &oauth20.ClientDetails{
+			Scopes:     strings.Split(c.Scope, " "),
+			GrantTypes: c.GrantTypes,
+		}
+	}
+	return clientsMap, nil
 }
 
 func (s *service) systemAuthsWithOAuth(ctx context.Context) ([]model.SystemAuth, error) {

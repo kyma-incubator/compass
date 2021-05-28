@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
@@ -62,12 +64,18 @@ type RuntimeConverter interface {
 
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
+	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+}
+
+//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
+type BundleInstanceAuthService interface {
+	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
+	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 }
 
 type Resolver struct {
@@ -79,9 +87,10 @@ type Resolver struct {
 	sysAuthConv               SystemAuthConverter
 	oAuth20Svc                OAuth20Service
 	eventingSvc               EventingService
+	bundleInstanceAuthSvc     BundleInstanceAuthService
 }
 
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -91,6 +100,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		converter:                 conv,
 		sysAuthConv:               sysAuthConv,
 		eventingSvc:               eventingSvc,
+		bundleInstanceAuthSvc:     bundleInstanceAuthSvc,
 	}
 }
 
@@ -238,30 +248,45 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
+	bundleInstanceAuths, err := r.bundleInstanceAuthSvc.ListByRuntimeID(ctx, runtime.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	currentTimestamp := timestamp.DefaultGenerator()
+	for _, auth := range bundleInstanceAuths {
+		if auth.Status.Condition != model.BundleInstanceAuthStatusConditionUnused {
+			if err := auth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionUnused, currentTimestamp()); err != nil {
+				log.C(ctx).WithError(err).Errorf("while update bundle instance auth status condition: %v", err)
+				return nil, err
+			}
+			if err := r.bundleInstanceAuthSvc.Update(ctx, auth); err != nil {
+				log.C(ctx).WithError(err).Errorf("Unable to update bundle instance auth with ID: %s for corresponding bundle with ID: %s: %v", auth.ID, auth.BundleID, err)
+				return nil, err
+			}
+		}
+	}
+
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, runtime.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
-	if err != nil {
-		return nil, err
-	}
-
-	err = r.deleteAssociatedScenarioAssignments(ctx, runtime.ID)
-	if err != nil {
+	if err = r.deleteAssociatedScenarioAssignments(ctx, runtime.ID); err != nil {
 		return nil, err
 	}
 
 	deletedRuntime := r.converter.ToGraphQL(runtime)
 
-	err = r.runtimeService.Delete(ctx, id)
-	if err != nil {
+	if err = r.runtimeService.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -404,14 +429,16 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	resultLabels := make(map[string]interface{})
 
 	for _, label := range itemMap {
-		resultLabels[label.Key] = label.Value
+		if key == nil || label.Key == *key {
+			resultLabels[label.Key] = label.Value
+		}
 	}
 
 	var gqlLabels graphql.Labels = resultLabels
 	return gqlLabels, nil
 }
 
-func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
+func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.RuntimeSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime cannot be empty")
 	}
@@ -434,13 +461,13 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 		return nil, err
 	}
 
-	var out []*graphql.SystemAuth
+	var out []*graphql.RuntimeSystemAuth
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, c)
+		out = append(out, c.(*graphql.RuntimeSystemAuth))
 	}
 
 	return out, nil

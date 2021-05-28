@@ -138,3 +138,6 @@ clientCredentialsRegistrationScopes:
     - "automatic_scenario_assignment:write"
     - "integration_system.auths:read"
     - "application_template.webhooks:read"
+
+clientCredentialsRegistrationGrantTypes:
+  - "client_credentials"

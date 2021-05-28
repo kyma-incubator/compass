@@ -164,8 +164,8 @@ func fixModelSystemAuth(id, intSysID string, auth *model.Auth) model.SystemAuth 
 	}
 }
 
-func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
-	return &graphql.SystemAuth{
+func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.IntSysSystemAuth {
+	return &graphql.IntSysSystemAuth{
 		ID:   id,
 		Auth: auth,
 	}

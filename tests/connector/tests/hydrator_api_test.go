@@ -40,7 +40,6 @@ func TestHydrators(t *testing.T) {
 			clientType:          "Application",
 			clientId:            appID,
 			tokenGenerationFunc: directorClient.GenerateApplicationToken,
-
 			expectedCertsHeaders: http.Header{
 				oathkeeper.ClientCertificateHashHeader: []string{hash},
 			},
@@ -67,15 +66,24 @@ func TestHydrators(t *testing.T) {
 			//when
 			authSession := directorHydratorClient.ResolveToken(t, headers)
 
-			var auths []*graphql.SystemAuth
+			var appSystemAuths []*graphql.AppSystemAuth
+			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
+
 			if testCase.clientType == "Application" {
-				auths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			} else {
-				auths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
 
 			hasAuth := false
-			for _, auth := range auths {
+			for _, auth := range appSystemAuths {
+				if auth.ID == authSession.Header.Get(oathkeeper.ClientIdFromTokenHeader) {
+					hasAuth = true
+					break
+				}
+			}
+
+			for _, auth := range runtimeSystemAuths {
 				if auth.ID == authSession.Header.Get(oathkeeper.ClientIdFromTokenHeader) {
 					hasAuth = true
 					break
@@ -104,16 +112,24 @@ func TestHydrators(t *testing.T) {
 			//when
 			authSession := connectorHydratorClient.ResolveCertificateData(t, headers)
 
-			//then
-			var auths []*graphql.SystemAuth
+			var appSystemAuths []*graphql.AppSystemAuth
+			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
+
 			if testCase.clientType == "Application" {
-				auths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			} else {
-				auths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
 
 			hasAuth := false
-			for _, auth := range auths {
+			for _, auth := range appSystemAuths {
+				if auth.ID == authSession.Header.Get(oathkeeper.ClientIdFromCertificateHeader) {
+					hasAuth = true
+					break
+				}
+			}
+
+			for _, auth := range runtimeSystemAuths {
 				if auth.ID == authSession.Header.Get(oathkeeper.ClientIdFromCertificateHeader) {
 					hasAuth = true
 					break
@@ -137,5 +153,4 @@ func TestHydrators(t *testing.T) {
 			assert.Empty(t, authSession)
 		})
 	}
-
 }

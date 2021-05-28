@@ -17,6 +17,9 @@ import (
 
 type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
+	SetIDColumns(idColumns []string)
+	SetUpdatableColumns(updatableColumns []string)
+	Clone() Updater
 	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
 }
 
@@ -51,12 +54,32 @@ func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableCol
 	}
 }
 
+func (u *universalUpdater) SetIDColumns(idColumns []string) {
+	u.idColumns = idColumns
+}
+
+func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
+	u.updatableColumns = updatableColumns
+}
+
 func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingle(ctx, dbEntity, false, false)
 }
 
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingle(ctx, dbEntity, true, false)
+}
+
+func (u *universalUpdater) Clone() Updater {
+	var clonedUpdater universalUpdater
+
+	clonedUpdater.tableName = u.tableName
+	clonedUpdater.resourceType = u.resourceType
+	clonedUpdater.updatableColumns = append(clonedUpdater.updatableColumns, u.updatableColumns...)
+	clonedUpdater.tenantColumn = u.tenantColumn
+	clonedUpdater.idColumns = append(clonedUpdater.idColumns, u.idColumns...)
+
+	return &clonedUpdater
 }
 
 func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
@@ -115,6 +138,9 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return errors.Wrap(err, "while checking affected rows")
 	}
 	if affected != 1 {
+		if u.resourceType == resource.BundleReference {
+			return apperrors.NewCannotUpdateObjectInManyBundles()
+		}
 		return apperrors.NewInternalError("should update single row, but updated %d rows", affected)
 	}
 

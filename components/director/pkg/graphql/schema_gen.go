@@ -87,6 +87,11 @@ type ComplexityRoot struct {
 		Type         func(childComplexity int) int
 	}
 
+	AppSystemAuth struct {
+		Auth func(childComplexity int) int
+		ID   func(childComplexity int) int
+	}
+
 	Application struct {
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
@@ -185,11 +190,13 @@ type ComplexityRoot struct {
 	}
 
 	BundleInstanceAuth struct {
-		Auth        func(childComplexity int) int
-		Context     func(childComplexity int) int
-		ID          func(childComplexity int) int
-		InputParams func(childComplexity int) int
-		Status      func(childComplexity int) int
+		Auth             func(childComplexity int) int
+		Context          func(childComplexity int) int
+		ID               func(childComplexity int) int
+		InputParams      func(childComplexity int) int
+		RuntimeContextID func(childComplexity int) int
+		RuntimeID        func(childComplexity int) int
+		Status           func(childComplexity int) int
 	}
 
 	BundleInstanceAuthStatus struct {
@@ -292,6 +299,11 @@ type ComplexityRoot struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
 		TotalCount func(childComplexity int) int
+	}
+
+	IntSysSystemAuth struct {
+		Auth func(childComplexity int) int
+		ID   func(childComplexity int) int
 	}
 
 	IntegrationSystem struct {
@@ -475,7 +487,7 @@ type ComplexityRoot struct {
 		Timestamp func(childComplexity int) int
 	}
 
-	SystemAuth struct {
+	RuntimeSystemAuth struct {
 		Auth func(childComplexity int) int
 		ID   func(childComplexity int) int
 	}
@@ -530,7 +542,7 @@ type ApplicationResolver interface {
 
 	Bundles(ctx context.Context, obj *Application, first *int, after *PageCursor) (*BundlePage, error)
 	Bundle(ctx context.Context, obj *Application, id string) (*Bundle, error)
-	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
+	Auths(ctx context.Context, obj *Application) ([]*AppSystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
 }
 type ApplicationTemplateResolver interface {
@@ -554,7 +566,7 @@ type EventSpecResolver interface {
 	FetchRequest(ctx context.Context, obj *EventSpec) (*FetchRequest, error)
 }
 type IntegrationSystemResolver interface {
-	Auths(ctx context.Context, obj *IntegrationSystem) ([]*SystemAuth, error)
+	Auths(ctx context.Context, obj *IntegrationSystem) ([]*IntSysSystemAuth, error)
 }
 type MutationResolver interface {
 	RegisterApplication(ctx context.Context, in ApplicationRegisterInput, mode *OperationMode) (*Application, error)
@@ -582,12 +594,12 @@ type MutationResolver interface {
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
 	RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*OneTimeTokenForRuntime, error)
 	RequestOneTimeTokenForApplication(ctx context.Context, id string) (*OneTimeTokenForApplication, error)
-	RequestClientCredentialsForRuntime(ctx context.Context, id string) (*SystemAuth, error)
-	RequestClientCredentialsForApplication(ctx context.Context, id string) (*SystemAuth, error)
-	RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*SystemAuth, error)
-	DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*SystemAuth, error)
-	DeleteSystemAuthForApplication(ctx context.Context, authID string) (*SystemAuth, error)
-	DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (*SystemAuth, error)
+	RequestClientCredentialsForRuntime(ctx context.Context, id string) (SystemAuth, error)
+	RequestClientCredentialsForApplication(ctx context.Context, id string) (SystemAuth, error)
+	RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (SystemAuth, error)
+	DeleteSystemAuthForRuntime(ctx context.Context, authID string) (SystemAuth, error)
+	DeleteSystemAuthForApplication(ctx context.Context, authID string) (SystemAuth, error)
+	DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (SystemAuth, error)
 	AddEventDefinitionToBundle(ctx context.Context, bundleID string, in EventDefinitionInput) (*EventDefinition, error)
 	UpdateEventDefinition(ctx context.Context, id string, in EventDefinitionInput) (*EventDefinition, error)
 	DeleteEventDefinition(ctx context.Context, id string) (*EventDefinition, error)
@@ -648,7 +660,7 @@ type QueryResolver interface {
 type RuntimeResolver interface {
 	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
 
-	Auths(ctx context.Context, obj *Runtime) ([]*SystemAuth, error)
+	Auths(ctx context.Context, obj *Runtime) ([]*RuntimeSystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Runtime) (*RuntimeEventingConfiguration, error)
 }
 type RuntimeContextResolver interface {
@@ -802,6 +814,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APISpec.Type(childComplexity), true
+
+	case "AppSystemAuth.auth":
+		if e.complexity.AppSystemAuth.Auth == nil {
+			break
+		}
+
+		return e.complexity.AppSystemAuth.Auth(childComplexity), true
+
+	case "AppSystemAuth.id":
+		if e.complexity.AppSystemAuth.ID == nil {
+			break
+		}
+
+		return e.complexity.AppSystemAuth.ID(childComplexity), true
 
 	case "Application.applicationTemplateID":
 		if e.complexity.Application.ApplicationTemplateID == nil {
@@ -1329,6 +1355,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BundleInstanceAuth.InputParams(childComplexity), true
 
+	case "BundleInstanceAuth.runtimeContextID":
+		if e.complexity.BundleInstanceAuth.RuntimeContextID == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.RuntimeContextID(childComplexity), true
+
+	case "BundleInstanceAuth.runtimeID":
+		if e.complexity.BundleInstanceAuth.RuntimeID == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.RuntimeID(childComplexity), true
+
 	case "BundleInstanceAuth.status":
 		if e.complexity.BundleInstanceAuth.Status == nil {
 			break
@@ -1776,6 +1816,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HealthCheckPage.TotalCount(childComplexity), true
+
+	case "IntSysSystemAuth.auth":
+		if e.complexity.IntSysSystemAuth.Auth == nil {
+			break
+		}
+
+		return e.complexity.IntSysSystemAuth.Auth(childComplexity), true
+
+	case "IntSysSystemAuth.id":
+		if e.complexity.IntSysSystemAuth.ID == nil {
+			break
+		}
+
+		return e.complexity.IntSysSystemAuth.ID(childComplexity), true
 
 	case "IntegrationSystem.auths":
 		if e.complexity.IntegrationSystem.Auths == nil {
@@ -3046,19 +3100,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeStatus.Timestamp(childComplexity), true
 
-	case "SystemAuth.auth":
-		if e.complexity.SystemAuth.Auth == nil {
+	case "RuntimeSystemAuth.auth":
+		if e.complexity.RuntimeSystemAuth.Auth == nil {
 			break
 		}
 
-		return e.complexity.SystemAuth.Auth(childComplexity), true
+		return e.complexity.RuntimeSystemAuth.Auth(childComplexity), true
 
-	case "SystemAuth.id":
-		if e.complexity.SystemAuth.ID == nil {
+	case "RuntimeSystemAuth.id":
+		if e.complexity.RuntimeSystemAuth.ID == nil {
 			break
 		}
 
-		return e.complexity.SystemAuth.ID(childComplexity), true
+		return e.complexity.RuntimeSystemAuth.ID(childComplexity), true
 
 	case "Tenant.id":
 		if e.complexity.Tenant.ID == nil {
@@ -3491,6 +3545,11 @@ For requesting next page, set ` + "`" + `after` + "`" + ` to ` + "`" + `pageInfo
 interface Pageable {
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+interface SystemAuth {
+	id: ID!
+	auth: Auth
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
@@ -3987,6 +4046,11 @@ type APISpec {
 	fetchRequest: FetchRequest @sanitize(path: "graphql.field.api_spec.fetch_request")
 }
 
+type AppSystemAuth implements SystemAuth {
+	id: ID!
+	auth: Auth @sanitize(path: "graphql.field.application.auths")
+}
+
 type Application {
 	id: ID!
 	name: String!
@@ -4000,7 +4064,7 @@ type Application {
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
-	auths: [SystemAuth!] @sanitize(path: "graphql.field.application.auths")
+	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -4103,6 +4167,8 @@ type BundleInstanceAuth {
 	"""
 	auth: Auth
 	status: BundleInstanceAuthStatus!
+	runtimeID: ID
+	runtimeContextID: ID
 }
 
 type BundleInstanceAuthStatus {
@@ -4224,11 +4290,16 @@ type HealthCheckPage implements Pageable {
 	totalCount: Int!
 }
 
+type IntSysSystemAuth implements SystemAuth {
+	id: ID!
+	auth: Auth @sanitize(path: "graphql.field.integration_system.auths")
+}
+
 type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!] @sanitize(path: "graphql.field.integration_system.auths")
+	auths: [IntSysSystemAuth!]
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -4292,7 +4363,7 @@ type Runtime {
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!] @sanitize(path: "graphql.field.runtime.auths")
+	auths: [RuntimeSystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
@@ -4328,9 +4399,9 @@ type RuntimeStatus {
 	timestamp: Timestamp!
 }
 
-type SystemAuth {
+type RuntimeSystemAuth implements SystemAuth {
 	id: ID!
-	auth: Auth
+	auth: Auth @sanitize(path: "graphql.field.runtime.auths")
 }
 
 type Tenant {
@@ -7432,6 +7503,95 @@ func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field gra
 	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _AppSystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *AppSystemAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AppSystemAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AppSystemAuth_auth(ctx context.Context, field graphql.CollectedField, obj *AppSystemAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AppSystemAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application.auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	fc.Result = res
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Application_id(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7874,32 +8034,8 @@ func (ec *executionContext) _Application_auths(ctx context.Context, field graphq
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Application().Auths(rctx, obj)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application.auths")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.Sanitize == nil {
-				return nil, errors.New("directive sanitize is not implemented")
-			}
-			return ec.directives.Sanitize(ctx, obj, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*SystemAuth); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().Auths(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7908,9 +8044,9 @@ func (ec *executionContext) _Application_auths(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*SystemAuth)
+	res := resTmp.([]*AppSystemAuth)
 	fc.Result = res
-	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuthᚄ(ctx, field.Selections, res)
+	return ec.marshalOAppSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAppSystemAuthᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_eventingConfiguration(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -9867,6 +10003,68 @@ func (ec *executionContext) _BundleInstanceAuth_status(ctx context.Context, fiel
 	res := resTmp.(*BundleInstanceAuthStatus)
 	fc.Result = res
 	return ec.marshalNBundleInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_runtimeID(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_runtimeContextID(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeContextID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BundleInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
@@ -11999,6 +12197,95 @@ func (ec *executionContext) _HealthCheckPage_totalCount(ctx context.Context, fie
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _IntSysSystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *IntSysSystemAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntSysSystemAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntSysSystemAuth_auth(ctx context.Context, field graphql.CollectedField, obj *IntSysSystemAuth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntSysSystemAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.integration_system.auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	fc.Result = res
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _IntegrationSystem_id(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystem) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -12114,32 +12401,8 @@ func (ec *executionContext) _IntegrationSystem_auths(ctx context.Context, field 
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.IntegrationSystem().Auths(rctx, obj)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.field.integration_system.auths")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.Sanitize == nil {
-				return nil, errors.New("directive sanitize is not implemented")
-			}
-			return ec.directives.Sanitize(ctx, obj, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*SystemAuth); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.IntegrationSystem().Auths(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12148,9 +12411,9 @@ func (ec *executionContext) _IntegrationSystem_auths(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*SystemAuth)
+	res := resTmp.([]*IntSysSystemAuth)
 	fc.Result = res
-	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuthᚄ(ctx, field.Selections, res)
+	return ec.marshalOIntSysSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntSysSystemAuthᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _IntegrationSystemPage_data(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystemPage) (ret graphql.Marshaler) {
@@ -14104,10 +14367,10 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForRuntime(ctx con
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*SystemAuth); ok {
+		if data, ok := tmp.(SystemAuth); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14119,9 +14382,9 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForRuntime(ctx con
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*SystemAuth)
+	res := resTmp.(SystemAuth)
 	fc.Result = res
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestClientCredentialsForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14169,10 +14432,10 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForApplication(ctx
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*SystemAuth); ok {
+		if data, ok := tmp.(SystemAuth); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14184,9 +14447,9 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForApplication(ctx
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*SystemAuth)
+	res := resTmp.(SystemAuth)
 	fc.Result = res
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestClientCredentialsForIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14234,10 +14497,10 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForIntegrationSyst
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*SystemAuth); ok {
+		if data, ok := tmp.(SystemAuth); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14249,9 +14512,9 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForIntegrationSyst
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*SystemAuth)
+	res := resTmp.(SystemAuth)
 	fc.Result = res
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14299,10 +14562,10 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForRuntime(ctx context.Con
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*SystemAuth); ok {
+		if data, ok := tmp.(SystemAuth); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14314,9 +14577,9 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForRuntime(ctx context.Con
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*SystemAuth)
+	res := resTmp.(SystemAuth)
 	fc.Result = res
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14364,10 +14627,10 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForApplication(ctx context
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*SystemAuth); ok {
+		if data, ok := tmp.(SystemAuth); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14379,9 +14642,9 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForApplication(ctx context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*SystemAuth)
+	res := resTmp.(SystemAuth)
 	fc.Result = res
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14429,10 +14692,10 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForIntegrationSystem(ctx c
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*SystemAuth); ok {
+		if data, ok := tmp.(SystemAuth); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14444,9 +14707,9 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForIntegrationSystem(ctx c
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*SystemAuth)
+	res := resTmp.(SystemAuth)
 	fc.Result = res
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addEventDefinitionToBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -18277,32 +18540,8 @@ func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.Co
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Runtime().Auths(rctx, obj)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.field.runtime.auths")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.Sanitize == nil {
-				return nil, errors.New("directive sanitize is not implemented")
-			}
-			return ec.directives.Sanitize(ctx, obj, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*SystemAuth); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.SystemAuth`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Runtime().Auths(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18311,9 +18550,9 @@ func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*SystemAuth)
+	res := resTmp.([]*RuntimeSystemAuth)
 	fc.Result = res
-	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuthᚄ(ctx, field.Selections, res)
+	return ec.marshalORuntimeSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeSystemAuthᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_eventingConfiguration(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -18827,7 +19066,7 @@ func (ec *executionContext) _RuntimeStatus_timestamp(ctx context.Context, field 
 	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) (ret graphql.Marshaler) {
+func (ec *executionContext) _RuntimeSystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *RuntimeSystemAuth) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18835,7 +19074,7 @@ func (ec *executionContext) _SystemAuth_id(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "SystemAuth",
+		Object:   "RuntimeSystemAuth",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -18861,7 +19100,7 @@ func (ec *executionContext) _SystemAuth_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) (ret graphql.Marshaler) {
+func (ec *executionContext) _RuntimeSystemAuth_auth(ctx context.Context, field graphql.CollectedField, obj *RuntimeSystemAuth) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18869,7 +19108,7 @@ func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "SystemAuth",
+		Object:   "RuntimeSystemAuth",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -18877,8 +19116,32 @@ func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Auth, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.runtime.auths")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Auth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Auth`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22187,6 +22450,36 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 	}
 }
 
+func (ec *executionContext) _SystemAuth(ctx context.Context, sel ast.SelectionSet, obj SystemAuth) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case AppSystemAuth:
+		return ec._AppSystemAuth(ctx, sel, &obj)
+	case *AppSystemAuth:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AppSystemAuth(ctx, sel, obj)
+	case IntSysSystemAuth:
+		return ec._IntSysSystemAuth(ctx, sel, &obj)
+	case *IntSysSystemAuth:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._IntSysSystemAuth(ctx, sel, obj)
+	case RuntimeSystemAuth:
+		return ec._RuntimeSystemAuth(ctx, sel, &obj)
+	case *RuntimeSystemAuth:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RuntimeSystemAuth(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -22320,6 +22613,35 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._APISpec_fetchRequest(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var appSystemAuthImplementors = []string{"AppSystemAuth", "SystemAuth"}
+
+func (ec *executionContext) _AppSystemAuth(ctx context.Context, sel ast.SelectionSet, obj *AppSystemAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, appSystemAuthImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AppSystemAuth")
+		case "id":
+			out.Values[i] = ec._AppSystemAuth_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auth":
+			out.Values[i] = ec._AppSystemAuth_auth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -22941,6 +23263,10 @@ func (ec *executionContext) _BundleInstanceAuth(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "runtimeID":
+			out.Values[i] = ec._BundleInstanceAuth_runtimeID(ctx, field, obj)
+		case "runtimeContextID":
+			out.Values[i] = ec._BundleInstanceAuth_runtimeContextID(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23476,6 +23802,35 @@ func (ec *executionContext) _HealthCheckPage(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var intSysSystemAuthImplementors = []string{"IntSysSystemAuth", "SystemAuth"}
+
+func (ec *executionContext) _IntSysSystemAuth(ctx context.Context, sel ast.SelectionSet, obj *IntSysSystemAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, intSysSystemAuthImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IntSysSystemAuth")
+		case "id":
+			out.Values[i] = ec._IntSysSystemAuth_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auth":
+			out.Values[i] = ec._IntSysSystemAuth_auth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24725,24 +25080,24 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var systemAuthImplementors = []string{"SystemAuth"}
+var runtimeSystemAuthImplementors = []string{"RuntimeSystemAuth", "SystemAuth"}
 
-func (ec *executionContext) _SystemAuth(ctx context.Context, sel ast.SelectionSet, obj *SystemAuth) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, systemAuthImplementors)
+func (ec *executionContext) _RuntimeSystemAuth(ctx context.Context, sel ast.SelectionSet, obj *RuntimeSystemAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeSystemAuthImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("SystemAuth")
+			out.Values[i] = graphql.MarshalString("RuntimeSystemAuth")
 		case "id":
-			out.Values[i] = ec._SystemAuth_id(ctx, field, obj)
+			out.Values[i] = ec._RuntimeSystemAuth_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "auth":
-			out.Values[i] = ec._SystemAuth_auth(ctx, field, obj)
+			out.Values[i] = ec._RuntimeSystemAuth_auth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -25269,6 +25624,20 @@ func (ec *executionContext) marshalNAny2interface(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNAppSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAppSystemAuth(ctx context.Context, sel ast.SelectionSet, v AppSystemAuth) graphql.Marshaler {
+	return ec._AppSystemAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAppSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAppSystemAuth(ctx context.Context, sel ast.SelectionSet, v *AppSystemAuth) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AppSystemAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
@@ -25966,6 +26335,20 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNIntSysSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntSysSystemAuth(ctx context.Context, sel ast.SelectionSet, v IntSysSystemAuth) graphql.Marshaler {
+	return ec._IntSysSystemAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIntSysSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntSysSystemAuth(ctx context.Context, sel ast.SelectionSet, v *IntSysSystemAuth) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._IntSysSystemAuth(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
 	return ec._IntegrationSystem(ctx, sel, &v)
 }
@@ -26426,6 +26809,20 @@ func (ec *executionContext) marshalNRuntimeStatusCondition2githubᚗcomᚋkyma�
 	return v
 }
 
+func (ec *executionContext) marshalNRuntimeSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeSystemAuth(ctx context.Context, sel ast.SelectionSet, v RuntimeSystemAuth) graphql.Marshaler {
+	return ec._RuntimeSystemAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRuntimeSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeSystemAuth(ctx context.Context, sel ast.SelectionSet, v *RuntimeSystemAuth) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RuntimeSystemAuth(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
 	var res SpecFormat
 	return res, res.UnmarshalGQL(v)
@@ -26450,10 +26847,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 }
 
 func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v SystemAuth) graphql.Marshaler {
-	return ec._SystemAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v *SystemAuth) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -26882,6 +27275,46 @@ func (ec *executionContext) unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincu
 	}
 	res, err := ec.unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOAppSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAppSystemAuthᚄ(ctx context.Context, sel ast.SelectionSet, v []*AppSystemAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAppSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAppSystemAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
@@ -27514,6 +27947,46 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
+func (ec *executionContext) marshalOIntSysSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntSysSystemAuthᚄ(ctx context.Context, sel ast.SelectionSet, v []*IntSysSystemAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNIntSysSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntSysSystemAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalOIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
 	return ec._IntegrationSystem(ctx, sel, &v)
 }
@@ -27795,30 +28268,7 @@ func (ec *executionContext) marshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkym
 	return v
 }
 
-func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalString(v)
-}
-
-func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOString2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOString2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuthᚄ(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeSystemAuthᚄ(ctx context.Context, sel ast.SelectionSet, v []*RuntimeSystemAuth) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -27845,7 +28295,7 @@ func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincub
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
+			ret[i] = ec.marshalNRuntimeSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeSystemAuth(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -27856,6 +28306,29 @@ func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincub
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOString2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOString2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInputᚄ(ctx context.Context, v interface{}) ([]*TemplateValueInput, error) {

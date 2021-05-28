@@ -23,13 +23,12 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	modelRtmSysAuth := fixModelSystemAuth(sysAuthID, model.RuntimeReference, objectID, modelAuth)
 	modelAppSysAuth := fixModelSystemAuth(sysAuthID, model.ApplicationReference, objectID, modelAuth)
 	modelIntSysAuth := fixModelSystemAuth(sysAuthID, model.IntegrationSystemReference, objectID, modelAuth)
-	gqlSysAuth := fixGQLSystemAuth(sysAuthID, gqlAuth)
 
 	testCases := []struct {
 		Name           string
 		AuthConvFn     func() *automock.AuthConverter
 		Input          *model.SystemAuth
-		ExpectedOutput *graphql.SystemAuth
+		ExpectedOutput graphql.SystemAuth
 	}{
 		{
 			Name: "Success when converting auth for Runtime",
@@ -39,7 +38,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				return authConv
 			},
 			Input:          modelRtmSysAuth,
-			ExpectedOutput: gqlSysAuth,
+			ExpectedOutput: fixGQLRuntimeSystemAuth(sysAuthID, gqlAuth),
 		},
 		{
 			Name: "Success when converting auth for Application",
@@ -49,7 +48,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				return authConv
 			},
 			Input:          modelAppSysAuth,
-			ExpectedOutput: gqlSysAuth,
+			ExpectedOutput: fixGQLAppSystemAuth(sysAuthID, gqlAuth),
 		},
 		{
 			Name: "Success when converting auth for Integration System",
@@ -59,7 +58,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				return authConv
 			},
 			Input:          modelIntSysAuth,
-			ExpectedOutput: gqlSysAuth,
+			ExpectedOutput: fixGQLIntSysSystemAuth(sysAuthID, gqlAuth),
 		},
 		{
 			Name: "Returns nil when input is nil",

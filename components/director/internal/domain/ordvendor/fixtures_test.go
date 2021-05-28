@@ -15,6 +15,7 @@ const (
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
+	partners         = `["microsoft:vendor:Microsoft:"]`
 )
 
 func fixEntityVendor() *ordvendor.Entity {
@@ -23,7 +24,7 @@ func fixEntityVendor() *ordvendor.Entity {
 		TenantID:      tenantID,
 		ApplicationID: appID,
 		Title:         "title",
-		Type:          "type",
+		Partners:      repo.NewValidNullableString(partners),
 		Labels:        repo.NewValidNullableString("{}"),
 	}
 }
@@ -34,28 +35,29 @@ func fixVendorModel() *model.Vendor {
 		TenantID:      tenantID,
 		ApplicationID: appID,
 		Title:         "title",
-		Type:          "type",
+		Partners:      json.RawMessage(partners),
 		Labels:        json.RawMessage("{}"),
 	}
 }
 
 func fixVendorModelInput() *model.VendorInput {
 	return &model.VendorInput{
-		OrdID:  ordID,
-		Title:  "title",
-		Type:   "type",
-		Labels: json.RawMessage("{}"),
+		OrdID:    ordID,
+		Title:    "title",
+		Partners: json.RawMessage(partners),
+		Labels:   json.RawMessage("{}"),
 	}
 }
 
 func fixVendorColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "title", "type", "labels"}
+	return []string{"ord_id", "tenant_id", "app_id", "title", "labels", "partners"}
 }
 
 func fixVendorRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "title", "type", repo.NewValidNullableString("{}")}
+	return []driver.Value{ordID, tenantID, appID, "title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners)}
 }
 
+/**/
 func fixVendorUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "type", repo.NewValidNullableString("{}")}
+	return []driver.Value{"title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners)}
 }

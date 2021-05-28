@@ -83,6 +83,8 @@ spec:
                 value: {{ $config.endpoints.tenantDeleted }}
               - name: APP_ENDPOINT_TENANT_UPDATED
                 value: {{ $config.endpoints.tenantUpdated }}
+              - name: APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL
+                value: {{ $config.endpoints.movedRuntimeByLabel }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
               - name: APP_CLIENT_ID
@@ -132,6 +134,14 @@ spec:
                 value: "{{ $config.query.startPage}}"
               - name: APP_QUERY_PAGE_SIZE
                 value: "{{ $config.query.pageSize}}"
+              - name: APP_DEFAULT_SCENARIO_ENABLED
+                value: {{ $.Values.global.enableCompassDefaultScenarioAssignment | quote }}
+              - name: APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD
+                value: {{ $config.queryMapping.movedRuntimeByLabelSourceField }}
+              - name: APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD
+                value: {{ $config.queryMapping.movedRuntimeByLabelTargetField }}
+              - name: APP_MOVED_RUNTIME_LABEL_KEY
+                value: {{ $config.movedRuntimeLabelKey }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}

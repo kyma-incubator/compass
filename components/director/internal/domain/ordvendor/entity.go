@@ -9,6 +9,6 @@ type Entity struct {
 	TenantID      string         `db:"tenant_id"`
 	ApplicationID string         `db:"app_id"`
 	Title         string         `db:"title"`
-	Type          string         `db:"type"`
+	Partners      sql.NullString `db:"partners"`
 	Labels        sql.NullString `db:"labels"`
 }

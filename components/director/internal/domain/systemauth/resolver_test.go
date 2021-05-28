@@ -36,7 +36,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 		},
 	})
-	gqlSystemAuth := fixGQLSystemAuth(id, fixGQLAuth())
+	gqlSystemAuth := fixGQLIntSysSystemAuth(id, fixGQLAuth())
 
 	testCases := []struct {
 		Name               string
@@ -44,7 +44,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 		ServiceFn          func() *automock.SystemAuthService
 		OAuthServiceFn     func() *automock.OAuth20Service
 		ConverterFn        func() *automock.SystemAuthConverter
-		ExpectedSystemAuth *graphql.SystemAuth
+		ExpectedSystemAuth graphql.SystemAuth
 		ExpectedErr        error
 	}{
 		{

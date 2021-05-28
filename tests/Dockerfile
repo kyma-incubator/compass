@@ -1,4 +1,4 @@
-FROM golang:1.15.7-alpine3.13 as builder
+FROM golang:1.16.3-alpine3.13 as builder
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests
 WORKDIR ${BASE_TEST_DIR}
@@ -18,9 +18,10 @@ RUN CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapte
     CGO_ENABLED=0 go test -c ./ord-service/tests -o ord-service.test && \
     CGO_ENABLED=0 go test -c ./system-broker/tests -o system-broker.test && \
     CGO_ENABLED=0 go test -c ./tenant-fetcher/tests -o tenant-fetcher.test && \
-    CGO_ENABLED=0 go test -c ./istio/tests -o istio.test
+    CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
+    CGO_ENABLED=0 go test -c ./director/bench -o director.bench
 
-FROM alpine:3.13.2
+FROM alpine:3.13.5
 
 RUN apk add --no-cache curl
 
@@ -37,4 +38,6 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/istio.test .
+
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.bench .
 #COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/licenses ./licenses

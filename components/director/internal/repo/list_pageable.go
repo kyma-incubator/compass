@@ -80,7 +80,7 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int,
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, OrderByParams{})
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}
@@ -118,6 +118,5 @@ func (g *universalPageableQuerier) getTotalCount(persist persistence.Persistence
 	if err != nil {
 		return -1, errors.Wrap(err, "while counting objects")
 	}
-
 	return totalCount, nil
 }

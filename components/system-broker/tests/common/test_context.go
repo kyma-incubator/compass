@@ -11,8 +11,11 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/system-broker/internal/metrics"
 
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
@@ -198,7 +201,8 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 	directorGraphQLClient, err := prepareGQLClient(cfg)
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
-	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
+	collector := metrics.NewCollector()
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter(), collector)
 
 	middlewares := []mux.MiddlewareFunc{
 		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
@@ -207,7 +211,9 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 
-	go sbServer.Start(ctx)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go sbServer.Start(ctx, wg)
 
 	err = wait.PollImmediate(time.Millisecond*250, time.Second*5, func() (bool, error) {
 		_, err := http.Get(fmt.Sprintf("http://%s", sbServer.Addr))

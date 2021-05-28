@@ -160,7 +160,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
@@ -299,7 +299,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -327,16 +327,17 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 	multiScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0", "scenario-1", "scenario-2", "scenario-3"}}
 
 	testCases := []struct {
-		Name                 string
-		TransactionerFn      func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn            func() *automock.RuntimeService
-		ScenarioAssignmentFn func() *automock.ScenarioAssignmentService
-		SysAuthServiceFn     func() *automock.SystemAuthService
-		OAuth20ServiceFn     func() *automock.OAuth20Service
-		ConverterFn          func() *automock.RuntimeConverter
-		InputID              string
-		ExpectedRuntime      *graphql.Runtime
-		ExpectedErr          error
+		Name                    string
+		TransactionerFn         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn               func() *automock.RuntimeService
+		ScenarioAssignmentFn    func() *automock.ScenarioAssignmentService
+		SysAuthServiceFn        func() *automock.SystemAuthService
+		OAuth20ServiceFn        func() *automock.OAuth20Service
+		ConverterFn             func() *automock.RuntimeConverter
+		BundleInstanceAuthSvcFn func() *automock.BundleInstanceAuthService
+		InputID                 string
+		ExpectedRuntime         *graphql.Runtime
+		ExpectedErr             error
 	}{
 		{
 			Name:            "Success",
@@ -365,7 +366,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				auth := &model.BundleInstanceAuth{
+					RuntimeID: &modelRuntime.ID,
+					Status: &model.BundleInstanceAuthStatus{
+						Condition: model.BundleInstanceAuthStatusConditionSucceeded,
+					},
+				}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{auth}, nil)
+				svc.On("Update", contextParam, auth).Return(nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -398,8 +410,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				auth := &model.BundleInstanceAuth{
+					RuntimeID: &modelRuntime.ID,
+					Status: &model.BundleInstanceAuthStatus{
+						Condition: model.BundleInstanceAuthStatusConditionSucceeded,
+					},
+				}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{auth}, nil)
+				svc.On("Update", contextParam, auth).Return(nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -430,6 +452,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				return svc
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
@@ -455,6 +481,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
 				return svc
 			},
 			InputID:         "foo",
@@ -490,12 +520,17 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
+				return svc
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Return error when listing all auths failed",
+			Name:            "Return error when listing all system auths failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -519,17 +554,21 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
+				return svc
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Return error when removing oauth from hydra",
+			Name:            "Fails when cannot list bundle instance auths by runtime id",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -542,12 +581,93 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return(nil, testErr)
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Fails when cannot update bundle instance auths status to unused",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				auth := &model.BundleInstanceAuth{
+					RuntimeID: &modelRuntime.ID,
+					Status: &model.BundleInstanceAuthStatus{
+						Condition: model.BundleInstanceAuthStatusConditionSucceeded,
+					},
+				}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{auth}, nil)
+				svc.On("Update", contextParam, auth).Return(testErr)
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Return error when removing oauth from hydra",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(testErr)
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -578,8 +698,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -617,6 +740,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 				return svc
 			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
+				return svc
+			},
 			InputID:         "foo",
 			ExpectedRuntime: gqlRuntime,
 			ExpectedErr:     nil,
@@ -649,8 +777,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -687,7 +818,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -723,8 +858,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -763,7 +901,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -812,7 +954,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -864,7 +1010,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -908,7 +1058,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -916,7 +1070,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 	}
-
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
@@ -925,8 +1078,9 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			converter := testCase.ConverterFn()
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
+			bundleInstanceAuthSvc := testCase.BundleInstanceAuthSvcFn()
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -1053,7 +1207,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -1165,7 +1319,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -1285,7 +1439,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -1299,7 +1453,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -1431,7 +1585,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -1449,8 +1603,10 @@ func TestResolver_Labels(t *testing.T) {
 	// given
 	id := "foo"
 	tenant := "tenant"
-	labelKey := "key"
-	labelValue := "val"
+	labelKey1 := "key1"
+	labelValue1 := "val1"
+	labelKey2 := "key2"
+	labelValue2 := "val2"
 
 	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
 
@@ -1458,24 +1614,28 @@ func TestResolver_Labels(t *testing.T) {
 		"abc": {
 			ID:         "abc",
 			Tenant:     tenant,
-			Key:        labelKey,
-			Value:      labelValue,
+			Key:        labelKey1,
+			Value:      labelValue1,
 			ObjectID:   id,
 			ObjectType: model.RuntimeLabelableObject,
 		},
 		"def": {
 			ID:         "def",
 			Tenant:     tenant,
-			Key:        labelKey,
-			Value:      labelValue,
+			Key:        labelKey2,
+			Value:      labelValue2,
 			ObjectID:   id,
 			ObjectType: model.RuntimeLabelableObject,
 		},
 	}
 
 	gqlLabels := graphql.Labels{
-		labelKey: labelValue,
-		labelKey: labelValue,
+		labelKey1: labelValue1,
+		labelKey2: labelValue2,
+	}
+
+	gqlLabels1 := graphql.Labels{
+		labelKey1: labelValue1,
 	}
 
 	testErr := errors.New("Test error")
@@ -1486,7 +1646,7 @@ func TestResolver_Labels(t *testing.T) {
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn       func() *automock.RuntimeService
 		InputRuntime    *graphql.Runtime
-		InputKey        string
+		InputKey        *string
 		ExpectedResult  graphql.Labels
 		ExpectedErr     error
 	}{
@@ -1508,8 +1668,30 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       nil,
 			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Success when labels are filtered",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       &labelKey1,
+			ExpectedResult: gqlLabels1,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1530,7 +1712,7 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(nil, errors.New("doesn't exist")).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       &labelKey1,
 			ExpectedResult: nil,
 			ExpectedErr:    nil,
 		},
@@ -1551,7 +1733,7 @@ func TestResolver_Labels(t *testing.T) {
 				svc.On("ListLabels", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			InputKey:       labelKey,
+			InputKey:       &labelKey1,
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1563,10 +1745,10 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
-			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
+			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1682,7 +1864,7 @@ func TestResolver_GetLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
@@ -1711,7 +1893,7 @@ func TestResolver_Auths(t *testing.T) {
 		fixModelSystemAuth("faz", tnt, parentRuntime.ID, fixModelAuth()),
 	}
 
-	gqlSysAuths := []*graphql.SystemAuth{
+	gqlSysAuths := []*graphql.RuntimeSystemAuth{
 		fixGQLSystemAuth("bar", fixGQLAuth()),
 		fixGQLSystemAuth("baz", fixGQLAuth()),
 		fixGQLSystemAuth("faz", fixGQLAuth()),
@@ -1725,7 +1907,7 @@ func TestResolver_Auths(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		SysAuthSvcFn    func() *automock.SystemAuthService
 		SysAuthConvFn   func() *automock.SystemAuthConverter
-		ExpectedOutput  []*graphql.SystemAuth
+		ExpectedOutput  []*graphql.RuntimeSystemAuth
 		ExpectedError   error
 	}{
 		{
@@ -1798,7 +1980,7 @@ func TestResolver_Auths(t *testing.T) {
 			sysAuthSvc := testCase.SysAuthSvcFn()
 			sysAuthConv := testCase.SysAuthConvFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -1817,7 +1999,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -1903,7 +2085,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
@@ -1923,7 +2105,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
@@ -1936,7 +2118,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)
