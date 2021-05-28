@@ -29,10 +29,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Name:         "app-static-user",
 			ProviderName: ptr.String("compass"),
 		}
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		require.NoError(t, err)
 
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
@@ -42,7 +42,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Description:     str.Ptr("New description"),
 			StatusCondition: &status,
 		}
-		appUpdated, err := fixtures.UpdateApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID, appUpdateInput)
+		appUpdated, err := fixtures.UpdateApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID, appUpdateInput)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
@@ -51,13 +51,13 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 	t.Run("Test status update as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
-		intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
+		intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
 
 		t.Logf("Registered Integration System with [id=%s]", intSys.ID)
-		defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+		defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 		t.Log("Request Client Credentials for Integration System")
-		intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+		intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 		intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
@@ -72,10 +72,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		require.NoError(t, err)
 
-		defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionInitial, app.Status.Condition)
 
@@ -85,7 +85,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Description:     str.Ptr("New description"),
 			StatusCondition: &status,
 		}
-		appUpdated, err := fixtures.UpdateApplicationWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, app.ID, appUpdateInput)
+		appUpdated, err := fixtures.UpdateApplicationWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, app.ID, appUpdateInput)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")
@@ -103,14 +103,14 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Application with Dex id token")
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
 
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")
-		appAuth := fixtures.RequestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		appAuth := fixtures.RequestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 		appOauthCredentialData, ok := appAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
 		require.NotEmpty(t, appOauthCredentialData.ClientSecret)
@@ -126,7 +126,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.ApplicationStatusConditionFailed, app.Status.Condition)
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &actualApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &actualApp)
 		require.NoError(t, err)
 
 		assert.Equal(t, graphql.ApplicationStatusConditionConnected, actualApp.Status.Condition)
@@ -143,13 +143,13 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Runtime with Dex id token")
-		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
+		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
-		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
 		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
 		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
@@ -165,7 +165,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.RuntimeStatusConditionFailed, runtime.Status.Condition)
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &actualRuntime)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &actualRuntime)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")

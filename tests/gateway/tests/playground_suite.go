@@ -24,7 +24,7 @@ type playgroundTestConfig struct {
 	}
 	DirectorURLFormat          string `envconfig:"default=https://%s.%s/director"`
 	DirectorGraphQLExamplePath string `envconfig:"default=examples/register-application/register-application.graphql"`
-	DefaultTenant              string
+	DefaultTestTenant          string
 }
 
 type playgroundTestSuite struct {
