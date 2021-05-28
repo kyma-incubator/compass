@@ -345,6 +345,9 @@ global:
     systemsAPIEndpoint: ""
     systemsAPIFilterCriteria: ""
     systemsAPIFilterTenantCriteriaPattern: ""
+    systemToTemplateMappings:
+      systemTemplate1: ""
+      systemTemplate2: ""
     oauth:
       client: ""
       secret: ""

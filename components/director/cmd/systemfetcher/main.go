@@ -34,9 +34,10 @@ import (
 )
 
 type config struct {
-	APIConfig    systemfetcher.APIConfig
-	OAuth2Config systemfetcher.OAuth2Config
-	Database     persistence.DatabaseConfig
+	APIConfig                systemfetcher.APIConfig
+	OAuth2Config             systemfetcher.OAuth2Config
+	Database                 persistence.DatabaseConfig
+	SystemToTemplateMappings map[string]string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
 
 	Log log.Config
 
@@ -127,7 +128,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config)
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient)
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, cfg.SystemToTemplateMappings)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

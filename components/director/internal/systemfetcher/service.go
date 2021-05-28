@@ -19,7 +19,7 @@ type TenantService interface {
 
 //go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
 type SystemsService interface {
-	CreateManyIfNotExists(ctx context.Context, applicationInputs []model.ApplicationRegisterInput) error
+	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemToTemplateMapping map[string]string) error
 }
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
@@ -28,18 +28,20 @@ type SystemsAPIClient interface {
 }
 
 type SystemFetcher struct {
-	transaction      persistence.Transactioner
-	tenantService    TenantService
-	systemsService   SystemsService
-	systemsAPIClient SystemsAPIClient
+	transaction              persistence.Transactioner
+	tenantService            TenantService
+	systemsService           SystemsService
+	systemsAPIClient         SystemsAPIClient
+	systemToTemplateMappings map[string]string
 }
 
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, systemToTemplateMappings map[string]string) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:      tx,
-		tenantService:    ts,
-		systemsService:   ss,
-		systemsAPIClient: sac,
+		transaction:              tx,
+		tenantService:            ts,
+		systemsService:           ss,
+		systemsAPIClient:         sac,
+		systemToTemplateMappings: systemToTemplateMappings,
 	}
 }
 
@@ -110,7 +112,7 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.
 
 	ctx = tenantutil.SaveToContext(ctx, tenant.ID, tenant.ExternalTenant)
 	ctx = persistence.SaveToContext(ctx, tx)
-	err = s.systemsService.CreateManyIfNotExists(ctx, appInputs)
+	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs, s.systemToTemplateMappings)
 	if err != nil {
 		return errors.Wrap(err, "failed to create applications")
 	}

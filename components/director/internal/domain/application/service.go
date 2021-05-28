@@ -248,37 +248,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 }
 
 func (s *service) CreateManyIfNotExists(ctx context.Context, applicationInputs []model.ApplicationRegisterInput) error {
-	appTenant, err := tenant.LoadFromContext(ctx)
+	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
 	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
-	}
-
-	allApps, err := s.appRepo.ListAll(ctx, appTenant)
-	if err != nil {
-		return errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
-	}
-
-	var appsToAdd []model.ApplicationRegisterInput
-	for _, ai := range applicationInputs {
-		alreadyExits := false
-
-		for _, a := range allApps {
-			if ai.Name == a.Name {
-				alreadyExits = true
-				break
-			}
-		}
-
-		for _, a := range appsToAdd {
-			if ai.Name == a.Name {
-				alreadyExits = true
-				break
-			}
-		}
-
-		if !alreadyExits {
-			appsToAdd = append(appsToAdd, ai)
-		}
+		return errors.Wrap(err, "while filtering unique and non-existing applications")
 	}
 
 	for _, a := range appsToAdd {
@@ -302,6 +274,30 @@ func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRe
 	}
 
 	return s.genericCreate(ctx, in, creator)
+}
+
+func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemNameToTemplateMappings map[string]string) error {
+	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
+	if err != nil {
+		return errors.Wrap(err, "while filtering unique and non-existing applications")
+	}
+
+	for _, a := range appsToAdd {
+		template := systemNameToTemplateMappings[*a.Description]
+		if template == "" {
+			_, err = s.Create(ctx, a)
+			if err != nil {
+				return errors.Wrap(err, "while creating application")
+			}
+			continue
+		}
+		_, err = s.CreateFromTemplate(ctx, a, &template)
+		if err != nil {
+			return errors.Wrap(err, "while creating application")
+		}
+	}
+
+	return nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
@@ -556,6 +552,43 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 
 	return id, nil
+}
+
+func (s *service) filterUniqueNonExistingApplications(ctx context.Context, applicationInputs []model.ApplicationRegisterInput) ([]model.ApplicationRegisterInput, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while loading tenant from context")
+	}
+
+	allApps, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
+	}
+
+	var uniqueNonExistingApps []model.ApplicationRegisterInput
+	for _, ai := range applicationInputs {
+		alreadyExits := false
+
+		for _, a := range allApps {
+			if ai.Name == a.Name {
+				alreadyExits = true
+				break
+			}
+		}
+
+		for _, a := range uniqueNonExistingApps {
+			if ai.Name == a.Name {
+				alreadyExits = true
+				break
+			}
+		}
+
+		if !alreadyExits {
+			uniqueNonExistingApps = append(uniqueNonExistingApps, ai)
+		}
+	}
+
+	return uniqueNonExistingApps, nil
 }
 
 func createLabel(key string, value string, objectID string) *model.LabelInput {
