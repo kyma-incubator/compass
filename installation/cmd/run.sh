@@ -48,6 +48,7 @@ do
         ;;
         --dump-db)
             DUMP_DB=true
+            DUMP_IMAGE_TAG="dump"
             shift # past argument
         ;;
         --minikube-cpus)
@@ -99,7 +100,12 @@ fi
 if [[ ${DUMP_DB} ]]; then
     echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
 
-    sed -i '' 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:latest/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+    if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
+        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+    else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
+        sed -i 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+    fi
+
 
     if [[ ! -f ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql ]]; then
         echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
@@ -119,6 +125,7 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
 fi
 
 if [[ ${DUMP_DB} ]]; then
+    export DOCKER_TAG=$DUMP_IMAGE_TAG
     make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
 fi
 
