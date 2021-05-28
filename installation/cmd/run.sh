@@ -15,7 +15,7 @@ MIGRATOR_FILE=$(cat $ROOT_PATH/chart/compass/templates/migrator-job.yaml)
 
 MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
-MINIKUBE_CPUS=5
+MINIKUBE_CPUS=4
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -42,8 +42,8 @@ do
             SKIP_KYMA_START=true
             shift # past argument
         ;;
-        --docker-driver)
-            DOCKER_DRIVER=true
+        --hyperkit)
+            HYPERKIT=true
             shift # past argument
         ;;
         --dump-db)
@@ -117,10 +117,18 @@ fi
 
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."
-  if [[ ! ${DOCKER_DRIVER} ]]; then
-    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT}
-  else
+  if [[ ! ${HYPERKIT} ]]; then
+    DOCKER_CPUS=$(docker info --format '{{json .}}' | jq -r '.NCPU')
+    DOCKER_MEMORY=$(($(docker info --format '{{json .}}' | jq -r '.MemTotal') / 1000000))
+    echo "Docker CPUS: " $DOCKER_CPUS
+    echo "Docker Memory: " $DOCKER_MEMORY
+    if [[ ("$DOCKER_CPUS" -lt "$MINIKUBE_CPUS") || ("$DOCKER_MEMORY" -lt "$MINIKUBE_MEMORY")]]; then
+      echo "Insufficient resources. Required CPU: min 4, RAM: min 8.0 GB. Please edit Docker configuration"
+      exit 1
+    fi
     kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
+  else
+    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT}
   fi
 fi
 
