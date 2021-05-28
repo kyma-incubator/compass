@@ -79,7 +79,7 @@ const ordDocument = `{
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"partOfProducts": ["ns:product:id:"],
+		"partOfProducts": ["sap:product:id:"],
 		"releaseStatus": "active",
 		"resourceDefinitions": [{
 			"accessStrategies": [{
@@ -176,7 +176,7 @@ const ordDocument = `{
 			"defaultEntryPoint": ""
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"partOfProducts": ["ns:product:id:"],
+		"partOfProducts": ["sap:product:id:"],
 		"releaseStatus": "deprecated",
 		"resourceDefinitions": [{
 			"accessStrategies": [{
@@ -338,7 +338,7 @@ const ordDocument = `{
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"partOfProducts": ["ns:product:id:"],
+		"partOfProducts": ["sap:product:id:"],
 		"releaseStatus": "active",
 		"resourceDefinitions": [{
 			"accessStrategies": [{
@@ -400,7 +400,7 @@ const ordDocument = `{
 			"ordId": "ns:consumptionBundle:BUNDLE_ID:v2"
 		}],
 		"partOfPackage": "ns:package:PACKAGE_ID:v1",
-		"partOfProducts": ["ns:product:id:"],
+		"partOfProducts": ["sap:product:id:"],
 		"releaseStatus": "deprecated",
 		"resourceDefinitions": [{
 			"accessStrategies": [{
@@ -453,7 +453,7 @@ const ordDocument = `{
 			"type": "client-registration",
 			"url": "/ui/public/showRegisterForm"
 		}],
-		"partOfProducts": ["ns:product:id:"],
+		"partOfProducts": ["sap:product:id:"],
 		"policyLevel": "sap:core:v1",
 		"shortDescription": "lorem ipsum",
 		"tags": ["testTag"],
