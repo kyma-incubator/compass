@@ -313,11 +313,16 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 }
 
 func validateProductInput(product *model.ProductInput) error {
+	productOrdIDNamespace := strings.Split(product.OrdID, ":")[0]
+
 	return validation.ValidateStruct(product,
 		validation.Field(&product.OrdID, validation.Required, validation.Match(regexp.MustCompile(ProductOrdIDRegex))),
 		validation.Field(&product.Title, validation.Required),
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
-		validation.Field(&product.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
+		validation.Field(&product.Vendor, validation.Required,
+			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
+			validation.When(regexp.MustCompile("^(sap)((\\.)([a-zA-Z0-9])+)*$").MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
+		),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
 		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))

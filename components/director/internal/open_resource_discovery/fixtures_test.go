@@ -16,7 +16,7 @@ const (
 	baseURL               = "http://localhost:8080"
 	systemInstanceBaseURL = "http://test.com"
 	packageORDID          = "ns:package:PACKAGE_ID:v1"
-	productORDID          = "ns:product:id:"
+	productORDID          = "sap:product:id:"
 	product2ORDID         = "ns:product:id2:"
 	bundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v1"
 	secondBundleORDID     = "ns:consumptionBundle:BUNDLE_ID:v2"

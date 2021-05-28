@@ -469,7 +469,7 @@ const ordDocument = `{
 		"labels": {
 			"label-key-1": ["label-value-1", "label-value-2"]
 		},
-		"ordId": "ns:product:id:",
+		"ordId": "sap:product:id:",
 		"parent": "ns:product:id2:",
 		"shortDescription": "lorem ipsum",
 		"title": "PRODUCT TITLE",

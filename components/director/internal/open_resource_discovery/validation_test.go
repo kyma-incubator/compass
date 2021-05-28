@@ -3619,6 +3619,24 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `vendor` field when namespace in the `id` is `sap` for Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].OrdID = "sap:product:S4HANA_OD:"
+				doc.Products[0].Vendor = vendor2ORDID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `vendor` field when namespace in the `id` is not `sap` for Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].OrdID = "strange:product:S4HANA_OD:"
+				doc.Products[0].Vendor = vendorORDID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid `parent` field for Product",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
