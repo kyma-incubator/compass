@@ -27,8 +27,8 @@ import (
 )
 
 type config struct {
-	DefaultTenant                 string
-	Tenant                        string
+	DefaultTestTenant             string
+	SecondaryTenant               string
 	DirectorURL                   string
 	ORDServiceURL                 string
 	ORDServiceStaticURL           string

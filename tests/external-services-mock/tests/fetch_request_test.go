@@ -59,7 +59,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			ctx := context.Background()
-			tenant := testConfig.DefaultTenant
+			tenant := testConfig.DefaultTestTenant
 
 			appName := "app-test-bundle"
 			application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
@@ -146,7 +146,7 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			ctx := context.Background()
-			tenant := testConfig.DefaultTenant
+			tenant := testConfig.DefaultTestTenant
 
 			appName := "app-test-bundle"
 			application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
