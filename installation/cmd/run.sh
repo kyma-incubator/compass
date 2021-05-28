@@ -124,6 +124,9 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   fi
 fi
 
+echo "Label Minikube node for benchmark execution..."
+kubectl label node minikube benchmark=true
+
 if [[ ${DUMP_DB} ]]; then
     export DOCKER_TAG=$DUMP_IMAGE_TAG
     make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
