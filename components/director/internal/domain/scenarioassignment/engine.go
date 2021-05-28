@@ -3,6 +3,7 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
+
 	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -92,7 +93,7 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	if err != nil {
 		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
 	}
-	for _, label := range labels { //TODO check once again
+	for _, label := range labels {
 		runtimeID := label.ObjectID
 		scenarios, err := labelpkg.GetScenariosAsStringSlice(label)
 		if err != nil {

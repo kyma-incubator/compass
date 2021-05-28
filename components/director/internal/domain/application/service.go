@@ -381,12 +381,10 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	if len(inputScenarios) > 0 {
 		existingScenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, labelInput.ObjectID)
 		if err != nil {
-			//TODO: handle properly
 			return err
 		}
 
-		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewApplicationScenarios(ctx, existingScenarios, inputScenarios, labelInput.ObjectID)
-		if err != nil {
+		if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewApplicationScenarios(ctx, existingScenarios, inputScenarios, labelInput.ObjectID); err != nil {
 			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
 	}

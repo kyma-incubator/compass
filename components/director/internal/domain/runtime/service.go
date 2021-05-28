@@ -64,10 +64,6 @@ type ScenarioAssignmentEngine interface {
 	MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{}
 }
 
-type ApplicationRepository interface {
-	ListAllByLabelFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
-}
-
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -83,7 +79,6 @@ type service struct {
 	scenariosService           ScenariosService
 	scenarioAssignmentEngine   ScenarioAssignmentEngine
 	bundleInstanceAuthService  BundleInstanceAuthService
-	appRepo                    ApplicationRepository
 
 	protectedLabelPattern string
 }
@@ -96,7 +91,6 @@ func NewService(repo RuntimeRepository,
 	uidService UIDService,
 	scenarioAssignmentEngine ScenarioAssignmentEngine,
 	bundleInstanceAuthService BundleInstanceAuthService,
-	appRepo ApplicationRepository,
 	protectedLabelPattern string) *service {
 	return &service{
 		repo:                       repo,
@@ -108,7 +102,6 @@ func NewService(repo RuntimeRepository,
 		scenarioAssignmentEngine:   scenarioAssignmentEngine,
 		bundleInstanceAuthService:  bundleInstanceAuthService,
 		protectedLabelPattern:      protectedLabelPattern,
-		appRepo:                    appRepo,
 	}
 }
 
@@ -266,9 +259,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
 
-	//TODO:Check whether there are automatic scenario assignment labels defined for this runtime which are not part of the update
-	// we should remove these scenarios but before that, we should check whether there are any bundle instance auths
-
 	if in.Labels == nil {
 		return nil
 	}
@@ -288,12 +278,10 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 		existingScenarios, err := s.scenariosService.GetScenarioNamesForRuntime(ctx, id)
 		if err != nil {
-			//TODO: handle properly
 			return err
 		}
 
-		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, existingScenarios, scenariosStrings, id)
-		if err != nil {
+		if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, existingScenarios, scenariosStrings, id); err != nil {
 			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
 	}
@@ -539,15 +527,12 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		return err
 	}
 
-	err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, runtimeID)
-	if err != nil {
+	if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, runtimeID); err != nil {
 		return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 	}
 
-	//TODO compare finalScenarios and oldScenariosLabel to determine when to delete scenarios label
 	if len(finalScenarios) == 0 {
-		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
-		if err != nil {
+		if err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey); err != nil {
 			return errors.Wrapf(err, "while deleting scenarios label from runtime with id [%s]", runtimeID)
 		}
 		return nil

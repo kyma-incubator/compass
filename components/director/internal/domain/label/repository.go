@@ -4,24 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
 const (
-	tableName    string = "public.labels"
-	tenantColumn string = "tenant_id"
-	idColumn     string = "id"
+	ScenariosViewName        = `public.bundle_instance_auths_with_labels`
+	tableName         string = "public.labels"
+	tenantColumn      string = "tenant_id"
+	idColumn          string = "id"
 )
 
 var tableColumns = []string{idColumn, tenantColumn, "app_id", "runtime_id", "bundle_instance_auth_id", "runtime_context_id", "key", "value"}
@@ -51,9 +48,9 @@ func NewRepository(conv Converter) *repository {
 		lister:               repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
 		deleter:              repo.NewDeleter(resource.Label, tableName, tenantColumn),
 		conv:                 conv,
-		scenarioQueryBuilder: repo.NewQueryBuilder(resource.Label, bundleinstanceauth.ScenariosViewName, tenantColumn, []string{"label_id"}),
+		scenarioQueryBuilder: repo.NewQueryBuilder(resource.Label, ScenariosViewName, tenantColumn, []string{"label_id"}),
 		scenariosView: &scenariosView{
-			repo.NewLister(resource.BundleInstanceAuth, bundleinstanceauth.ScenariosViewName, tenantColumn, tableColumns),
+			repo.NewLister(resource.BundleInstanceAuth, ScenariosViewName, tenantColumn, tableColumns),
 		},
 	}
 }
@@ -296,17 +293,7 @@ func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, t
 		return nil, errors.Wrap(err, "while fetching bundle_instance_auth scenario labels")
 	}
 
-	//TODO: extract -> convert multiple
-	var labelModels []model.Label
-	for _, label := range labels {
-
-		labelModel, err := r.conv.FromEntity(label)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting label entity to model")
-		}
-		labelModels = append(labelModels, labelModel)
-	}
-	return labelModels, nil
+	return r.multipleFromEntities(labels)
 }
 
 func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error) {
