@@ -168,7 +168,7 @@ func NewRootResolver(
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosDefSvc, scenariosSvc, bundleSvc, uidSvc, bundleInstanceAuthSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo, bundleInstanceAuthSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosDefSvc, scenarioAssignmentEngine)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosDefSvc, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, bundleInstanceAuthSvc, applicationRepo, featuresConfig.ProtectedLabelPattern)
 	timeService := time.NewService()

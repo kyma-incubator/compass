@@ -3,13 +3,10 @@ package bundleinstanceauth
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -29,6 +26,8 @@ type Repository interface {
 	ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, item *model.BundleInstanceAuth) error
 	Delete(ctx context.Context, tenantID string, id string) error
+	ExistForAppAndScenario(ctx context.Context, tenant, scenario, appId string) (bool, error)
+	ExistForRuntimeAndScenario(ctx context.Context, tenant, scenario, runtimeId string) (bool, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -39,6 +38,8 @@ type UIDService interface {
 type ScenarioService interface {
 	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
 	GetScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error)
+	GetRuntimeScenarioLabelsForAnyMatchingScenario(ctx context.Context, scenarios []string) ([]model.Label, error)
+	GetApplicationScenarioLabelsForAnyMatchingScenario(ctx context.Context, scenarios []string) ([]model.Label, error)
 }
 
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
@@ -51,8 +52,13 @@ type LabelRepository interface {
 	GetBundleInstanceAuthsScenarioLabels(ctx context.Context, appId, runtimeId string) ([]model.Label, error)
 }
 
-type RuntimeIdsForScenariosSupplier func(ctx context.Context, tenant string, scenarios []string) ([]string, error)
-type AppIdsForScenariosSupplier func(ctx context.Context, tenant string, scenarios []string) ([]string, error)
+type scenarioReAssociator struct {
+	isAnyBundleInstanceAuthExist         func(ctx context.Context, scenarios []string, objectId string) (bool, error)
+	relatedObjectScenarioLabels          func(ctx context.Context, scenarios []string) ([]model.Label, error)
+	getBundleInstanceAuthsScenarioLabels func(relatedObjId string) ([]model.Label, error)
+	labelService                         LabelService
+	labelRepo                            LabelRepository
+}
 
 type service struct {
 	repo         Repository
@@ -112,134 +118,42 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 		return "", errors.Wrapf(err, "while creating BundleInstanceAuth with id %s for Bundle with id %s", id, bundleID)
 	}
 
-	applicationID, err := s.bundleSvc.GetByApplicationID(ctx, tnt, bundleID)
-	if err != nil {
-		return "", err //todo
-	}
-	sceanriosForApp, err := s.scenarioSvc.GetScenarioNamesForApplication(ctx, applicationID)
-	if err != nil {
-		return "", err //todo
-	}
-	sceanriosForRuntime, err := s.scenarioSvc.GetScenarioNamesForRuntime(ctx, *runtimeID)
-	if err != nil {
-		return "", err
-	}
-
-	appScenarios := make(map[string]bool)
-	var commonScenarios []string
-	for _, elem := range sceanriosForApp {
-		appScenarios[elem] = true
-	}
-	for _, elem := range sceanriosForRuntime {
-		if appScenarios[elem] {
-			commonScenarios = append(commonScenarios, elem)
+	if con.ConsumerType == consumer.Runtime {
+		err := s.createInitialBundleInstanceAuthScenarioAssociation(ctx, tnt, id, bundleID, con.ConsumerID)
+		if err != nil {
+			return "", err
 		}
-	}
-
-	authLabel := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      commonScenarios,
-		ObjectID:   id,
-		ObjectType: model.BundleInstanceAuthObject,
-	}
-
-	if err = s.labelService.UpsertLabel(ctx, tnt, authLabel); err != nil {
-		return "", errors.Wrap(err, "while creating bundle instance auth scenario label")
 	}
 
 	return id, nil
 }
 
-func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string, runtIdsForScenario RuntimeIdsForScenariosSupplier) error {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
+func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error {
+	assoc := &scenarioReAssociator{
+		isAnyBundleInstanceAuthExist: s.IsAnyExistForAppAndScenario,
+		relatedObjectScenarioLabels:  s.scenarioSvc.GetRuntimeScenarioLabelsForAnyMatchingScenario,
+		getBundleInstanceAuthsScenarioLabels: func(runtimeId string) ([]model.Label, error) {
+			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
+		},
+		labelService: s.labelService,
+		//labelRepo:    s.labelRepo,
 	}
 
-	scToRemove := getScenariosToRemove(existingScenarios, inputScenarios)
-
-	authExist, err := s.IsAnyExistForAppAndScenario(ctx, scToRemove, appId)
-	if err != nil {
-		return err
-	}
-
-	if authExist {
-		return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
-	}
-
-	scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
-	scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
-	commonRuntimes := getCommonRuntimes(ctx, appTenant, scenariosToKeep, scToAdd, runtIdsForScenario) // runtimeID -> [scenario1,scenario2..]
-
-	for runtimeID, scenarios := range commonRuntimes {
-		bundleInstanceAuthsLabels, err := s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeID)
-		if err != nil {
-			return err
-		}
-
-		assocAuthLabels := make([]model.Label, 0)
-		for _, currentLabel := range bundleInstanceAuthsLabels {
-			if currentLabel.Key == model.ScenariosKey {
-				//TODO: apply in SQL query
-				assocAuthLabels = append(assocAuthLabels, currentLabel)
-			}
-		}
-
-		if err := s.labelService.UpsertScenarios(ctx, appTenant, assocAuthLabels, scenarios, label.UniqueScenarios); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("while associating scenario: '%s' to all bundle_instance_auths for appId: %s and runtimeId: %s", scenarios, appId, runtimeID))
-		}
-	}
-
-	return nil
+	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios, appId)
 }
 
-func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string, appIdsForScenario AppIdsForScenariosSupplier) error {
-	//TODO: unify with AssociateBundleInstanceAuthForNewApplicationScenarios
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
+func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error {
+	assoc := &scenarioReAssociator{
+		isAnyBundleInstanceAuthExist: s.IsAnyExistForRuntimeAndScenario,
+		relatedObjectScenarioLabels:  s.scenarioSvc.GetApplicationScenarioLabelsForAnyMatchingScenario,
+		getBundleInstanceAuthsScenarioLabels: func(appId string) ([]model.Label, error) {
+			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
+		},
+		labelService: s.labelService,
+		//labelRepo:    s.labelRepo,
 	}
 
-	scToRemove := getScenariosToRemove(existingScenarios, inputScenarios)
-
-	authExist, err := s.IsAnyExistForRuntimeAndScenario(ctx, scToRemove, runtimeId)
-	if err != nil {
-		return err
-	}
-
-	if authExist {
-		return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
-	}
-
-	scToAdd := getScenariosToAdd(existingScenarios, inputScenarios)
-	scenariosToKeep := GetScenariosToKeep(existingScenarios, inputScenarios)
-	commonApplications := s.getCommonApplications(ctx, appTenant, scenariosToKeep, scToAdd, appIdsForScenario)
-
-	for appId, scenarios := range commonApplications {
-		bundleInstanceAuthsLabels, err := s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
-		if err != nil {
-			return err
-		}
-
-		assocAuthLabels := make([]model.Label, 0)
-		for _, currentLabel := range bundleInstanceAuthsLabels {
-			if currentLabel.Key == model.ScenariosKey {
-				//TODO: apply in SQL query
-				assocAuthLabels = append(assocAuthLabels, currentLabel)
-			}
-		}
-
-		if err := s.labelService.UpsertScenarios(ctx, appTenant, assocAuthLabels, scenarios, label.UniqueScenarios); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("while associating scenario: '%s' to all bundle_instance_auths for appId: %s and runtimeId: %s", scenarios, appId, runtimeId))
-		}
-	}
-
-	return nil
-}
-
-func (s *service) associateBundleInstanceAuthForNewObject(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string, commonRelatedObject func(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string) map[string]string) error {
-	//TODO: common implementation
-	return nil
+	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios, runtimeId)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error) {
@@ -380,6 +294,18 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return errors.Wrapf(err, "while deleting BundleInstanceAuth with id %s", id)
 }
 
+func (s *service) IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error) {
+	return s.isAnyExistForScenario(ctx, scenarios, func(tenant, currScenario string) (bool, error) {
+		return s.repo.ExistForAppAndScenario(ctx, tenant, currScenario, appId)
+	})
+}
+
+func (s *service) IsAnyExistForRuntimeAndScenario(ctx context.Context, scenarios []string, runtimeId string) (bool, error) {
+	return s.isAnyExistForScenario(ctx, scenarios, func(tenant, currScenario string) (bool, error) {
+		return s.repo.ExistForRuntimeAndScenario(ctx, tenant, currScenario, runtimeId)
+	})
+}
+
 func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *model.BundleInstanceAuth, in model.BundleInstanceAuthSetInput) error {
 	if instanceAuth == nil {
 		return nil
@@ -444,9 +370,45 @@ func (s *service) validateInputParamsAgainstSchema(inputParams *string, schema *
 	return nil
 }
 
-func (s *service) IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error) {
+func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context.Context, tnt, bundleInstanceAuthId, bundleID, runtimeId string) error {
+	applicationID, err := s.bundleSvc.GetByApplicationID(ctx, tnt, bundleID)
+	if err != nil {
+		return errors.Wrap(err, "While getting application id")
+	}
+	scenariosForApp, err := s.scenarioSvc.GetScenarioNamesForApplication(ctx, applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while fetching scenario names for application: %s", applicationID)
+	}
+
+	scenariosForRuntime, err := s.scenarioSvc.GetScenarioNamesForRuntime(ctx, runtimeId)
+	if err != nil {
+		return errors.Wrapf(err, "white fetching scenario names for runtime: %s", runtimeId)
+	}
+
+	commonScenarios := str.IntersectSlice(scenariosForApp, scenariosForRuntime)
+
+	authLabel := &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      commonScenarios,
+		ObjectID:   bundleInstanceAuthId,
+		ObjectType: model.BundleInstanceAuthObject,
+	}
+
+	if err = s.labelService.UpsertLabel(ctx, tnt, authLabel); err != nil {
+		return errors.Wrap(err, "while creating bundle instance auth scenario label")
+	}
+
+	return nil
+}
+
+func (s service) isAnyExistForScenario(ctx context.Context, scenarios []string, existFn func(tenant, scenario string) (bool, error)) (bool, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
 	for _, scenario := range scenarios {
-		exist, err := s.existForAppAndScenario(ctx, scenario, appId)
+		exist, err := existFn(tnt, scenario)
 
 		if err != nil {
 			return false, err
@@ -459,149 +421,83 @@ func (s *service) IsAnyExistForAppAndScenario(ctx context.Context, scenarios []s
 	return false, nil
 }
 
-func (s *service) IsAnyExistForRuntimeAndScenario(ctx context.Context, scenarios []string, runtimeId string) (bool, error) {
-	for _, scenario := range scenarios {
-		exist, err := s.existForRuntimeAndScenario(ctx, scenario, runtimeId)
+func (sa *scenarioReAssociator) getCommonRelatedObjects(ctx context.Context, scenariosToKeep, scenariosToAdd []string) (map[string][]string, error) {
+	relatedObjScenarioLabels, err := sa.relatedObjectScenarioLabels(ctx, scenariosToKeep)
+	if err != nil {
+		return nil, err
+	}
 
+	relatedObjIdsPerScenario := make(map[string]map[string]bool, 0)
+
+	for _, lbl := range relatedObjScenarioLabels {
+		scenariosSlice, err := label.GetScenariosAsStringSlice(lbl)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 
-		if exist {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (s *service) existForAppAndScenario(ctx context.Context, scenario, appId string) (bool, error) {
-	persist, _ := persistence.FromCtx(ctx)
-
-	var count int
-	query := "SELECT 1 FROM bundle_instance_auths_with_labels WHERE json_build_array($1::text)::jsonb <@ bundle_instance_auths_with_labels.value AND app_id=$2 AND status_condition='SUCCEEDED'"
-	err := persist.Get(&count, query, scenario, appId)
-	if err != nil {
-		mappedErr := persistence.MapSQLError(ctx, err, resource.Label, resource.List, "while fetching list of objects from '%s' table", "bundle_instance_auths_with_labels")
-		if apperrors.IsNotFoundError(mappedErr) {
-			return false, nil
-		}
-		return false, mappedErr
-	}
-
-	return count != 0, nil
-}
-
-func (s *service) existForRuntimeAndScenario(ctx context.Context, scenario, runtimeId string) (bool, error) {
-	persist, _ := persistence.FromCtx(ctx)
-
-	var count int
-	query := "SELECT 1 FROM labels INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id WHERE json_build_array($1::text)::jsonb <@ labels.value AND bundle_instance_auths.runtime_id=$2 AND bundle_instance_auths.status_condition='SUCCEEDED'"
-	err := persist.Get(&count, query, scenario, runtimeId)
-	if err != nil {
-		mappedErr := persistence.MapSQLError(ctx, err, resource.Label, resource.List, "while fetching list of objects from '%s' table", "bundle_instance_auths_with_labels")
-		if apperrors.IsNotFoundError(mappedErr) {
-			return false, nil
-		}
-		return false, mappedErr
-	}
-
-	return count != 0, err
-}
-
-func getCommonRuntimes(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string, supplier RuntimeIdsForScenariosSupplier) map[string][]string {
-	runtimeNamesForScenariosToKeep, err := supplier(ctx, tenant, scenariosToKeep)
-	if err != nil {
-		// TODO HANDLE ERROR
-	}
-
-	commonRuntimesScenarios := make(map[string][]string)
-	for _, scenario := range scenariosToAdd {
-		runtimeIDs, err := supplier(ctx, tenant, []string{scenario})
-		if err != nil {
-			// todo handle
-		}
-		for _, runtime := range runtimeIDs {
-			if contains(runtimeNamesForScenariosToKeep, runtime) {
-				commonRuntimesScenarios[runtime] = append(commonRuntimesScenarios[runtime], scenario)
+		for _, scenario := range scenariosSlice {
+			if _, ok := relatedObjIdsPerScenario[scenario]; !ok {
+				relatedObjIdsPerScenario[scenario] = make(map[string]bool, 0)
 			}
+
+			relatedObjIdsPerScenario[scenario][lbl.ObjectID] = true
 		}
 	}
-	return commonRuntimesScenarios
-}
 
-func (s *service) getCommonApplications(ctx context.Context, tenant string, scenariosToKeep, scenariosToAdd []string, supplier AppIdsForScenariosSupplier) map[string][]string {
-	//TODO: Skip db queryies if scenariosToAdd is empty
-	appIdsForScenariosToKeep, err := supplier(ctx, tenant, scenariosToKeep)
-	if err != nil {
-		// TODO HANDLE ERROR
-	}
-
-	commonApplicationScenarios := make(map[string][]string)
+	newScenariosPerRelatedObjId := make(map[string][]string, 0)
 	for _, scenario := range scenariosToAdd {
-		appIds, err := supplier(ctx, tenant, []string{scenario})
+		if _, ok := relatedObjIdsPerScenario[scenario]; !ok {
+			continue
+		}
+
+		for id := range relatedObjIdsPerScenario[scenario] {
+			newScenariosPerRelatedObjId[id] = append(newScenariosPerRelatedObjId[id], scenario)
+		}
+	}
+
+	return newScenariosPerRelatedObjId, nil
+}
+
+func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, inputScenarios []string, objId string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	scenariosToRemove := str.SubstractSlice(existingScenarios, inputScenarios)
+
+	authExist, err := sa.isAnyBundleInstanceAuthExist(ctx, scenariosToRemove, objId)
+	if err != nil {
+		return err
+	}
+
+	if authExist {
+		return errors.New("Unable to delete label. Bundle Instance Auths should be deleted first")
+	}
+
+	scToAdd := str.SubstractSlice(inputScenarios, existingScenarios)
+	scenariosToKeep := str.IntersectSlice(existingScenarios, inputScenarios)
+
+	commonRelatedObjects, err := sa.getCommonRelatedObjects(ctx, scenariosToKeep, scToAdd)
+	if err != nil {
+		return err
+	}
+
+	for relatedObjId, scenarios := range commonRelatedObjects {
+		bundleInstanceAuthsLabels, err := sa.getBundleInstanceAuthsScenarioLabels(relatedObjId)
 		if err != nil {
-			// todo handle
+			return err
 		}
-		for _, appId := range appIds {
-			if contains(appIdsForScenariosToKeep, appId) {
-				commonApplicationScenarios[appId] = append(commonApplicationScenarios[appId], scenario)
+
+		if err := sa.labelService.UpsertScenarios(ctx, tnt, bundleInstanceAuthsLabels, scenarios, label.UniqueScenarios); err != nil {
+			authIds := make([]string, 0, len(bundleInstanceAuthsLabels))
+			for _, authLabel := range bundleInstanceAuthsLabels {
+				authIds = append(authIds, authLabel.ID)
 			}
+
+			return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to all bundle_instance_auths: %s", scenarios))
 		}
 	}
-	return commonApplicationScenarios
-}
 
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
-func getScenariosToRemove(existing, new []string) []string {
-	newScenariosMap := make(map[string]bool, 0)
-	for _, scenario := range new {
-		newScenariosMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range existing {
-		if _, ok := newScenariosMap[scenario]; !ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
-}
-
-func getScenariosToAdd(existing, new []string) []string {
-	existingScenarioMap := make(map[string]bool, 0)
-	for _, scenario := range existing {
-		existingScenarioMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range new {
-		if _, ok := existingScenarioMap[scenario]; !ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
-}
-
-func GetScenariosToKeep(existing []string, input []string) []string {
-	existingScenarioMap := make(map[string]bool, 0)
-	for _, scenario := range existing {
-		existingScenarioMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range input {
-		if _, ok := existingScenarioMap[scenario]; ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
+	return nil
 }

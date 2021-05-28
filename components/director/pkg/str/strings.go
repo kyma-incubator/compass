@@ -88,3 +88,33 @@ func Matches(actual []string, required []string) bool {
 	}
 	return true
 }
+
+func SubstractSlice(s1, s2 []string) []string {
+	s2Set := make(map[string]bool, 0)
+	for _, scenario := range s2 {
+		s2Set[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range s1 {
+		if _, ok := s2Set[scenario]; !ok {
+			result = append(result, scenario)
+		}
+	}
+	return result
+}
+
+func IntersectSlice(s1, s2 []string) []string {
+	existingScenarioMap := make(map[string]bool, 0)
+	for _, scenario := range s1 {
+		existingScenarioMap[scenario] = true
+	}
+
+	result := make([]string, 0)
+	for _, scenario := range s2 {
+		if _, ok := existingScenarioMap[scenario]; ok {
+			result = append(result, scenario)
+		}
+	}
+	return result
+}

@@ -3,7 +3,6 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"regexp"
 	"strings"
 	"time"
@@ -293,7 +292,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 			return err
 		}
 
-		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, existingScenarios, scenariosStrings, id, s.getApplicationIdsForScenario)
+		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, existingScenarios, scenariosStrings, id)
 		if err != nil {
 			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
@@ -540,7 +539,7 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		return err
 	}
 
-	err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, runtimeID, s.getApplicationIdsForScenario)
+	err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 	}
@@ -664,22 +663,4 @@ func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} 
 	}
 
 	return out
-}
-
-func (s *service) getApplicationIdsForScenario(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
-	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
-	appScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
-
-	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
-	applications, err := s.appRepo.ListAllByLabelFilter(ctx, tenant, appScenariosFilter)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes")
-	}
-
-	var appIds []string
-	for _, r := range applications {
-		appIds = append(appIds, r.ID)
-	}
-
-	return appIds, nil
 }

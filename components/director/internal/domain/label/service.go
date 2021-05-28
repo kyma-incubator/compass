@@ -20,6 +20,7 @@ type LabelRepository interface {
 	Upsert(ctx context.Context, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
+	ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error)
 }
 
 //go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore
@@ -102,22 +103,9 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 
 func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error {
 	for _, label := range labels {
-		var scenariosString []string
-		switch value := label.Value.(type) {
-		case []string:
-			{
-				scenariosString = value
-			}
-		case []interface{}:
-			{
-				convertedScenarios, err := str.InterfaceSliceToStringSlice(value)
-				if err != nil {
-					return errors.Wrap(err, "while converting array of interfaces to array of strings")
-				}
-				scenariosString = convertedScenarios
-			}
-		default:
-			return errors.Errorf("scenarios value is invalid type: %t", label.Value)
+		scenariosString, err := GetScenariosAsStringSlice(label)
+		if err != nil {
+			return err
 		}
 
 		scenariosToUpsert := append([]string(nil), scenariosString...)
@@ -125,12 +113,39 @@ func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID strin
 			scenariosToUpsert = mergeFn(scenariosToUpsert, scenario)
 		}
 
-		err := s.updateScenario(ctx, tenantID, label, scenariosToUpsert)
+		err = s.updateScenario(ctx, tenantID, label, scenariosToUpsert)
 		if err != nil {
 			return errors.Wrap(err, "while updating scenarios label")
 		}
 	}
 	return nil
+}
+
+func GetScenariosAsStringSlice(label model.Label) ([]string, error) {
+	return GetScenariosFromValueAsStringSlice(label.Value)
+}
+
+func GetScenariosFromValueAsStringSlice(labelValue interface{}) ([]string, error) {
+	var result []string
+
+	switch value := labelValue.(type) {
+	case []string:
+		{
+			result = value
+		}
+	case []interface{}:
+		{
+			convertedScenarios, err := str.InterfaceSliceToStringSlice(value)
+			if err != nil {
+				return nil, errors.Wrap(err, "while converting array of interfaces to array of strings")
+			}
+			result = convertedScenarios
+		}
+	default:
+		return nil, errors.Errorf("scenarios value is invalid type: %t", labelValue)
+	}
+
+	return result, nil
 }
 
 func UniqueScenarios(scenarios []string, newScenario string) []string {

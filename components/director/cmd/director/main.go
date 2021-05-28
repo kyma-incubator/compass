@@ -410,9 +410,6 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
 
-	scenarioAssignmentConv := scenarioassignment.NewConverter()
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 	scenariosSvc := label.NewScenarioService(labelRepo)
 
 	authConverter := auth.NewConverter()
@@ -445,6 +442,10 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 
 	bundleSvc := mp_bundle.NewService(bundleRepo(), apiSvc, eventAPISvc, documentSvc, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
+
+	scenarioAssignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo, bundleInstanceAuthSvc)
 
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosDefSvc, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, bundleInstanceAuthSvc, applicationRepoForRuntime(), protectedLabelPattern)
 

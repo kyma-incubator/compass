@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -14,7 +13,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -56,7 +55,6 @@ type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
-	ListForObjectTypeByScenario(ctx context.Context, tenant string, objectType model.LabelableObject, scenario string) ([]model.Label, error)
 	Upsert(ctx context.Context, label *model.Label) error
 }
 
@@ -89,7 +87,7 @@ type ScenariosDefinitionService interface {
 }
 
 type BundleInstanceAuthService interface {
-	AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string, runtIdsForScenario bundleinstanceauth.RuntimeIdsForScenariosSupplier) error
+	AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error
 	IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error)
 }
 
@@ -199,7 +197,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, errors.Wrap(err, "while getting scenarios for runtime")
 	}
 
-	scenarios, err := label.ValueToStringsSlice(scenariosLabel.Value)
+	scenarios, err := labelpkg.ValueToStringsSlice(scenariosLabel.Value)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting scenarios labels")
 	}
@@ -375,15 +373,19 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return apperrors.NewNotFoundError(resource.Application, labelInput.ObjectID)
 	}
 
-	inputScenarios, exist := getScenarioLabelsFromInput(labelInput)
-	if exist {
+	inputScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(labelInput.Value)
+	if err != nil {
+		return errors.Wrap(err, "while parsing label value")
+	}
+
+	if len(inputScenarios) > 0 {
 		existingScenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, labelInput.ObjectID)
 		if err != nil {
 			//TODO: handle properly
 			return err
 		}
 
-		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewApplicationScenarios(ctx, existingScenarios, inputScenarios, labelInput.ObjectID, s.getRuntimeIdsForScenario)
+		err = s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewApplicationScenarios(ctx, existingScenarios, inputScenarios, labelInput.ObjectID)
 		if err != nil {
 			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
@@ -607,24 +609,6 @@ func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string
 	return runtimesNames, nil
 }
 
-func (s *service) getRuntimeIdsForScenario(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
-	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
-	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
-
-	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
-	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes")
-	}
-
-	var runtimeIds []string
-	for _, r := range runtimes {
-		runtimeIds = append(runtimeIds, r.ID)
-	}
-
-	return runtimeIds, nil
-}
-
 func removeDefaultScenario(scenarios []string) []string {
 	defaultScenarioIndex := -1
 	for idx, scenario := range scenarios {
@@ -639,44 +623,4 @@ func removeDefaultScenario(scenarios []string) []string {
 	}
 
 	return scenarios
-}
-
-func getScenarioLabelsFromInput(label *model.LabelInput) ([]string, bool) {
-	if model.ScenariosKey != label.Key {
-		return nil, false
-	}
-
-	var result []string
-	switch val := label.Value.(type) {
-	case string:
-		return []string{val}, true
-	case []interface{}:
-		for _, elem := range val {
-			valAsString, ok := elem.(string)
-			if !ok {
-				// todo think about handling non string types
-				continue
-			} else {
-				result = append(result, valAsString)
-			}
-		}
-		return result, true
-	default:
-		return nil, false
-	}
-}
-
-func GetScenariosToKeep(existing []string, input []string) []string {
-	existingScenarioMap := make(map[string]bool, 0)
-	for _, scenario := range existing {
-		existingScenarioMap[scenario] = true
-	}
-
-	result := make([]string, 0)
-	for _, scenario := range input {
-		if _, ok := existingScenarioMap[scenario]; ok {
-			result = append(result, scenario)
-		}
-	}
-	return result
 }

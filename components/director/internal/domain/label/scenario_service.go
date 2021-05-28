@@ -26,6 +26,24 @@ func (s *scenarioService) GetScenarioNamesForRuntime(ctx context.Context, runtim
 	return s.getScenarioNamesForObject(ctx, model.RuntimeLabelableObject, runtimeId)
 }
 
+func (s *scenarioService) GetRuntimeScenarioLabelsForAnyMatchingScenario(ctx context.Context, scenarios []string) ([]model.Label, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.labelRepo.ListByObjectTypeAndMatchAnyScenario(ctx, tnt, model.RuntimeLabelableObject, scenarios)
+}
+
+func (s *scenarioService) GetApplicationScenarioLabelsForAnyMatchingScenario(ctx context.Context, scenarios []string) ([]model.Label, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.labelRepo.ListByObjectTypeAndMatchAnyScenario(ctx, tnt, model.ApplicationLabelableObject, scenarios)
+}
+
 func (s *scenarioService) getScenarioNamesForObject(ctx context.Context, objectType model.LabelableObject, objectId string) ([]string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

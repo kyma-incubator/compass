@@ -233,67 +233,6 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return labelModels, nil
 }
 
-func (r *repository) ListForObjectTypeByScenario(ctx context.Context, tenant string, objectType model.LabelableObject, scenario string) ([]model.Label, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching DB from context")
-	}
-
-	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE %s IS NOT NULL AND tenant_id = $1 AND key='scenarios' AND json_build_array($2::text)::jsonb <@ public.labels.value`,
-		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
-
-	var entities []Entity
-	err = persist.Select(&entities, stmt, tenant, scenario)
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching Labels from DB")
-	}
-
-	var labels []model.Label
-	for _, entity := range entities {
-		label, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-		labels = append(labels, label)
-	}
-
-	return labels, nil
-}
-
-func (r *repository) ListScenariosForBundleInstanceAuthsByAppAndRuntimeIdAndCommonScenarios(ctx context.Context, tenant string, appId, runtimeId string, scenarios []string) ([]model.Label, error) {
-	scenarioPlaceholders := make([]string, 0, len(scenarios))
-	for _ = range scenarios {
-		scenarioPlaceholders = append(scenarioPlaceholders, "?")
-	}
-
-	subQuery := fmt.Sprintf(`SELECT labels.id FROM %s INNER JOIN public.bundle_instance_auths ON public.bundle_instance_auths.id=public.labels.bundle_instance_auth_id INNER JOIN public.bundles ON public.bundles.id=public.bundle_instance_auths.bundle_id WHERE %s is NOT NULL AND public.bundles.app_id=? AND public.bundle_instance_auths.runtime_id=? AND public.labels.tenant_id = ? AND public.labels.key='scenarios' AND labels.value ?| array[%s]`,
-		tableName, labelableObjectField(model.BundleInstanceAuthObject), strings.Join(scenarioPlaceholders, ","))
-	subQueryArgs := []interface{}{appId, runtimeId, tenant}
-
-	for _, scenario := range scenarios {
-		subQueryArgs = append(subQueryArgs, scenario)
-	}
-
-	conditions := repo.Conditions{repo.NewInConditionForSubQuery("id", subQuery, subQueryArgs)}
-
-	var collection Collection
-	err := r.lister.List(ctx, tenant, &collection, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var labels []model.Label
-	for _, entity := range collection {
-		label, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-		labels = append(labels, label)
-	}
-
-	return labels, nil
-}
-
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -327,13 +266,43 @@ func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, a
 	persist, _ := persistence.FromCtx(ctx)
 
 	var labels Collection
-	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2"
+	query := "SELECT labels.* FROM bundle_instance_auths INNER JOIN bundles ON bundle_instance_auths.bundle_id=bundles.id INNER JOIN labels on bundle_instance_auths.id=labels.bundle_instance_auth_id WHERE bundles.app_id=$1 AND bundle_instance_auths.runtime_id=$2 and labels.key='scenarios'"
 	err := persist.Select(&labels, query, appId, runtimeId)
 	if err != nil {
 		return nil, err
 	}
 
 	//TODO: extract -> convert multiple
+	var labelModels []model.Label
+	for _, label := range labels {
+
+		labelModel, err := r.conv.FromEntity(label)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting label entity to model")
+		}
+		labelModels = append(labelModels, labelModel)
+	}
+	return labelModels, nil
+}
+
+func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error) {
+	values := make([]interface{}, 0, len(scenarios))
+	for _, scenario := range scenarios {
+		values = append(values, scenario)
+	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("key", model.ScenariosKey),
+		repo.NewNotNullCondition(labelableObjectField(objectType)),
+		repo.NewJSONArrAnyMatchCondition("value", values),
+	}
+
+	var labels Collection
+	err := r.lister.List(ctx, tenantId, &labels, conditions...)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
+	}
+
 	var labelModels []model.Label
 	for _, label := range labels {
 

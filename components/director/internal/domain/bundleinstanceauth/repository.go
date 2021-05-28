@@ -2,8 +2,9 @@ package bundleinstanceauth
 
 import (
 	"context"
-
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -15,12 +16,14 @@ import (
 )
 
 const tableName string = `public.bundle_instance_auths`
+const scenariosViewName = `public.bundle_instance_auths_with_labels`
 
 var (
-	tenantColumn     = "tenant_id"
-	idColumns        = []string{"id"}
-	updatableColumns = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
-	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
+	tenantColumn         = "tenant_id"
+	idColumns            = []string{"id"}
+	updatableColumns     = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	tableColumns         = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
+	scenariosViewColumns = []string{"key", "value", "bundle_id", "app_id", "runtime_id", "status_condition"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -29,13 +32,19 @@ type EntityConverter interface {
 	FromEntity(entity Entity) (model.BundleInstanceAuth, error)
 }
 
-type repository struct {
-	creator      repo.Creator
-	singleGetter repo.SingleGetter
+type scenariosView struct {
 	lister       repo.Lister
-	updater      repo.Updater
-	deleter      repo.Deleter
-	conv         EntityConverter
+	existQuerier repo.ExistQuerier
+}
+
+type repository struct {
+	creator       repo.Creator
+	singleGetter  repo.SingleGetter
+	lister        repo.Lister
+	updater       repo.Updater
+	deleter       repo.Deleter
+	conv          EntityConverter
+	scenariosView *scenariosView
 }
 
 func NewRepository(conv EntityConverter) *repository {
@@ -44,8 +53,12 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
-		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, tenantColumn, idColumns),
+		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, scenariosViewColumns, tenantColumn, idColumns),
 		conv:         conv,
+		scenariosView: &scenariosView{
+			lister:       repo.NewLister(resource.BundleInstanceAuth, scenariosViewName, tenantColumn, tableColumns),
+			existQuerier: repo.NewExistQuerier(resource.BundleInstanceAuth, scenariosViewName, tenantColumn),
+		},
 	}
 }
 
@@ -161,4 +174,27 @@ func (r *repository) multipleFromEntities(entities Collection) ([]*model.BundleI
 		items = append(items, &m)
 	}
 	return items, nil
+}
+
+func (r *repository) ExistForAppAndScenario(ctx context.Context, tenant, scenario, appId string) (bool, error) {
+	return r.existForObjectAndScenario(ctx, tenant, scenario, repo.NewEqualCondition("app_id", appId))
+}
+
+func (r *repository) ExistForRuntimeAndScenario(ctx context.Context, tenant, scenario, runtimeId string) (bool, error) {
+	return r.existForObjectAndScenario(ctx, tenant, scenario, repo.NewEqualCondition("runtime_id", runtimeId))
+}
+
+func (r *repository) existForObjectAndScenario(ctx context.Context, tenant, scenario string, objCondition repo.Condition) (bool, error) {
+	valueBytes, err := json.Marshal([]string{scenario})
+	if err != nil {
+		return false, errors.Wrap(err, "could not marshal")
+	}
+
+	conditions := repo.Conditions{
+		repo.NewJSONCondition("value", string(valueBytes)),
+		objCondition,
+		repo.NewEqualCondition("status_condition", operation.OperationStatusSucceeded),
+	}
+
+	return r.scenariosView.existQuerier.Exists(ctx, tenant, conditions)
 }

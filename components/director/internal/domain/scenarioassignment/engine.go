@@ -3,18 +3,12 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/pkg/errors"
 
-	app "github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -24,29 +18,32 @@ type LabelRepository interface {
 	GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error)
 	GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error)
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
-	ListForObjectTypeByScenario(ctx context.Context, tenant string, objectType model.LabelableObject, scenario string) ([]model.Label, error)
-	ListScenariosForBundleInstanceAuthsByAppAndRuntimeIdAndCommonScenarios(ctx context.Context, tenant string, appId, runtimeId string, scenarios []string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
-	Upsert(ctx context.Context, label *model.Label) error
 }
 
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
-	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
 }
 
-type engine struct {
-	labelRepo              LabelRepository
-	scenarioAssignmentRepo Repository
-	labelService           LabelUpsertService
+type BundleInstanceAuthService interface {
+	AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error
+	IsAnyExistForRuntimeAndScenario(ctx context.Context, scenarios []string, runtimeId string) (bool, error)
 }
 
-func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
+type engine struct {
+	labelRepo                 LabelRepository
+	scenarioAssignmentRepo    Repository
+	labelService              LabelUpsertService
+	bundleInstanceAuthService BundleInstanceAuthService
+}
+
+func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, bundleInstanceAuthService BundleInstanceAuthService) *engine {
 	return &engine{
-		labelRepo:              labelRepo,
-		scenarioAssignmentRepo: scenarioAssignmentRepo,
-		labelService:           labelService,
+		labelRepo:                 labelRepo,
+		scenarioAssignmentRepo:    scenarioAssignmentRepo,
+		labelService:              labelService,
+		bundleInstanceAuthService: bundleInstanceAuthService,
 	}
 }
 
@@ -65,74 +62,29 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 		return errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
 	}
 
-	err = e.addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx, runtimeLabels, in.Tenant, in.ScenarioName)
+	err = e.addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx, runtimeLabels, in.ScenarioName)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("while adding new scenario to already existing bundle instance auth between app and runtime matched by scenario: "))
 	}
 
 	runtimeLabels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, runtimeLabels)
-	return e.labelService.UpsertScenarios(ctx, in.Tenant, runtimeLabels, []string{in.ScenarioName}, label.UniqueScenarios)
+	return e.labelService.UpsertScenarios(ctx, in.Tenant, runtimeLabels, []string{in.ScenarioName}, labelpkg.UniqueScenarios)
 }
 
-func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx context.Context, runtimeLabels []model.Label, tenant, scenario string) error {
-	appLabels, err := e.labelRepo.ListForObjectTypeByScenario(ctx, tenant, model.ApplicationLabelableObject, scenario)
-	if err != nil {
-		return errors.Wrap(err, "while fetching scenarios labels for application")
-	}
+func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx context.Context, runtimeLabels []model.Label, scenario string) error {
+	for _, runtimeLabel := range runtimeLabels {
+		runtimeScenarios, err := labelpkg.GetScenariosAsStringSlice(runtimeLabel)
+		if err != nil {
+			return errors.Wrap(err, "while parsing runtime label value")
+		}
 
-	authLabels, err := e.getBundleInstanceAuthLabelsByCommonAppAndRuntimeScenarios(ctx, runtimeLabels, appLabels, tenant)
-	if err != nil {
-		return errors.Wrap(err, "while getting bundle instance auth labels by common application and runtime scenarios")
-	}
-
-	err = e.labelService.UpsertScenarios(ctx, tenant, authLabels, []string{scenario}, label.UniqueScenarios)
-	if err != nil {
-		return errors.Wrap(err, "while adding scenario to bundle instance auth labels")
+		err = e.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, runtimeScenarios, []string{scenario}, runtimeLabel.ObjectID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
-}
-
-func (e *engine) getBundleInstanceAuthLabelsByCommonAppAndRuntimeScenarios(ctx context.Context, runtimeLabels, appLabels []model.Label, tenant string) ([]model.Label, error) {
-	authsResult := make([]model.Label, 0)
-
-	for _, runtimeLabel := range runtimeLabels { //["id1","id2"]
-		runtimeScenarios, err := e.parseLabelScenariosToSlice(runtimeLabel)
-		if err != nil {
-			return nil, errors.Wrap(err, "while parsing runtime label value")
-		}
-
-		for _, appLabel := range appLabels {
-			appScenarios, err := e.parseLabelScenariosToSlice(appLabel)
-			if err != nil {
-				return nil, errors.Wrap(err, "while parsing application label value")
-			}
-
-			commonScenarios := app.GetScenariosToKeep(runtimeScenarios, appScenarios)
-			bundleInstanceAuthLabels, err := e.labelRepo.ListScenariosForBundleInstanceAuthsByAppAndRuntimeIdAndCommonScenarios(ctx, tenant, appLabel.ObjectID, runtimeLabel.ObjectID, commonScenarios)
-			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("while getting scenario labels for bundle instance auths for application id: '%s' and runtime id '%s'", appLabel.ObjectID, runtimeLabel.ObjectID))
-			}
-
-			authsResult = append(authsResult, bundleInstanceAuthLabels...)
-		}
-	}
-
-	return authsResult, nil
-}
-
-func (e *engine) parseLabelScenariosToSlice(label model.Label) ([]string, error) {
-	runtimeLabels, ok := label.Value.([]interface{})
-	if !ok {
-		return nil, errors.New("while converting label value to []interface{}")
-	}
-
-	convertedScenarios, err := str.InterfaceSliceToStringSlice(runtimeLabels)
-	if err != nil {
-		return nil, apperrors.NewInternalError("scenario value is not a string")
-	}
-
-	return convertedScenarios, nil
 }
 
 func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
@@ -142,12 +94,17 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	}
 	for _, label := range labels { //TODO check once again
 		runtimeID := label.ObjectID
-		scenarios, err := e.parseLabelScenariosToSlice(label)
+		scenarios, err := labelpkg.GetScenariosAsStringSlice(label)
 		if err != nil {
 			return errors.Wrap(err, "while parsing runtime label value")
 		}
 
-		if e.isAnyBundleInstanceAuthForScenariosExist(ctx, scenarios, runtimeID) {
+		anyExist, err := e.bundleInstanceAuthService.IsAnyExistForRuntimeAndScenario(ctx, scenarios, runtimeID)
+		if err != nil {
+			return err
+		}
+
+		if anyExist {
 			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
 		}
 	}
@@ -298,26 +255,4 @@ func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[strin
 	}
 
 	return convertedLabels
-}
-
-func (e *engine) isAnyBundleInstanceAuthForScenariosExist(ctx context.Context, scenarios []string, runtimeId string) bool {
-	for _, scenario := range scenarios {
-		if e.isBundleInstanceAuthForScenarioExist(ctx, scenario, runtimeId) {
-			return true
-		}
-	}
-	return false
-}
-
-func (e *engine) isBundleInstanceAuthForScenarioExist(ctx context.Context, scenario, runtimeId string) bool {
-	persist, _ := persistence.FromCtx(ctx)
-
-	var count int
-	query := "SELECT 1 FROM bundle_instance_auths_with_labels WHERE json_build_array($1::text)::jsonb <@ bundle_instance_auths_with_labels.value AND app_id=$2 AND status_condition='SUCCEEDED'"
-	err := persist.Get(&count, query, scenario, runtimeId)
-	if err != nil {
-		return false
-	}
-
-	return count != 0
 }
