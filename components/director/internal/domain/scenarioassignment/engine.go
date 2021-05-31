@@ -96,12 +96,8 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	}
 	for _, label := range labels {
 		runtimeID := label.ObjectID
-		scenarios, err := labelpkg.GetScenariosAsStringSlice(label)
-		if err != nil {
-			return errors.Wrap(err, "while parsing runtime label value")
-		}
 
-		anyExist, err := e.bundleInstanceAuthService.IsAnyExistForRuntimeAndScenario(ctx, scenarios, runtimeID)
+		anyExist, err := e.bundleInstanceAuthService.IsAnyExistForRuntimeAndScenario(ctx, []string{in.ScenarioName}, runtimeID)
 		if err != nil {
 			return err
 		}

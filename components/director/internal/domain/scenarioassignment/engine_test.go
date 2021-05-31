@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,8 +31,8 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	rtmIDWithoutScenario := "rtm1_no_scenario"
 
 	expectedScenarios := map[string][]string{
-		rtmIDWithScenario:    append(stringScenarios, selectorScenario),
-		rtmIDWithoutScenario: []string{selectorScenario},
+		rtmIDWithScenario:    stringScenarios,
+		rtmIDWithoutScenario: {},
 	}
 	runtimesIDs := []string{rtmIDWithoutScenario, rtmIDWithScenario}
 	scenarioLabel := model.Label{
@@ -51,22 +52,24 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(nil).Once()
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(nil).Once()
 
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+		matchExpectedScenariosAddFn := mock.MatchedBy(matchAddNewScenarioFn([][]string{stringScenarios, {}}, in.ScenarioName))
+		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(expectedScenarios)), []string{in.ScenarioName}, matchExpectedScenariosAddFn).Return(nil).Once()
+
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(nil).Once()
+
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
 		//THEN
 		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, labelRepo)
-		labelRepo.AssertExpectations(t)
-		upsertSvc.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, bundleInstanceAuthSvc)
 	})
 
-	t.Run("Failed when insert new Label on upsert failed ", func(t *testing.T) {
+	t.Run("Failed when upsert runtime scenario labels returns error ", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimesIDsByStringLabel", ctx, tenantID, selectorKey, selectorValue).
@@ -75,10 +78,13 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(nil).Once()
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(testErr).Once()
+		matchExpectedScenariosAddFn := mock.MatchedBy(matchAddNewScenarioFn([][]string{stringScenarios, {}}, in.ScenarioName))
+		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(expectedScenarios)), []string{in.ScenarioName}, matchExpectedScenariosAddFn).Return(testErr).Once()
 
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(nil).Once()
+
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -86,28 +92,22 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		labelRepo.AssertExpectations(t)
-		upsertSvc.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, bundleInstanceAuthSvc)
 	})
 
-	t.Run("Failed when Label update on upsert failed ", func(t *testing.T) {
-		scenarioLabel := model.Label{
-			Key:      model.ScenariosKey,
-			Value:    scenarios,
-			ObjectID: rtmIDWithScenario,
-		}
-
+	t.Run("Failed when associating existing bundle instance auths with scenarios returns error ", func(t *testing.T) {
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimesIDsByStringLabel", ctx, tenantID, selectorKey, selectorValue).
-			Return([]string{rtmIDWithScenario}, nil).Once()
-		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, []string{rtmIDWithScenario}).
+			Return(runtimesIDs, nil).Once()
+		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, runtimesIDs).
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).Return(testErr).Once()
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(testErr).Once()
 
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -115,8 +115,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		labelRepo.AssertExpectations(t)
-		upsertSvc.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, bundleInstanceAuthSvc)
 	})
 
 	t.Run("Failed when GetScenarioLabelsForRuntimes returns error", func(t *testing.T) {
@@ -126,7 +125,8 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 			Return(runtimesIDs, nil).Once()
 		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, runtimesIDs).Return(nil, testErr)
 
-		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -134,7 +134,8 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		labelRepo.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo, bundleInstanceAuthSvc)
+
 	})
 
 	t.Run("Failed when GetRuntimesIDsByStringLabel returns error", func(t *testing.T) {
@@ -143,7 +144,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		labelRepo.On("GetRuntimesIDsByStringLabel", ctx, tenantID, selectorKey, selectorValue).
 			Return(runtimesIDs, testErr).Once()
 
-		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, nil)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
@@ -151,7 +152,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		labelRepo.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo)
 	})
 
 	t.Run("Success, no runtimes found", func(t *testing.T) {
@@ -160,13 +161,14 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		labelRepo.On("GetRuntimesIDsByStringLabel", ctx, tenantID, selectorKey, selectorValue).
 			Return([]string{}, nil).Once()
 
-		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, nil)
 
 		//WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
 		//THEN
 		require.NoError(t, err)
+		mock.AssertExpectationsForObjects(t, labelRepo)
 	})
 }
 
@@ -186,8 +188,9 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			ObjectID: rtmID,
 		}
 
-		expectedScenarios := map[string][]string{
-			rtmID: {"OTHER", "SCENARIO"},
+		existingScenariosSlice := []string{"OTHER", "SCENARIO", selectorScenario}
+		existingScenarios := map[string][]string{
+			rtmID: existingScenariosSlice,
 		}
 
 		ctx := context.TODO()
@@ -198,74 +201,52 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
+		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(existingScenarios)), []string{in.ScenarioName}, mock.MatchedBy(matchRemoveScenarioFn([][]string{existingScenariosSlice}, in.ScenarioName))).
 			Return(nil).Once()
 
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{in.ScenarioName}, scenarioLabel.ObjectID).
+			Return(false, nil).Once()
+
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
 		//THEN
 		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, labelRepo)
-		labelRepo.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, bundleInstanceAuthSvc)
 	})
 
-	t.Run("Success, empty scenarios label deleted", func(t *testing.T) {
-		scenarioLabel := model.Label{
-			Key:      model.ScenariosKey,
-			Value:    []interface{}{selectorScenario},
-			ObjectID: rtmID,
-		}
-		expectedScenarios := map[string][]string{
-			rtmID: {},
-		}
-
-		ctx := context.TODO()
-
-		labels := []model.Label{scenarioLabel}
-		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
-			Return(labels, nil).Once()
-		labelRepo.On("Delete", ctx, tenantID, model.RuntimeLabelableObject, rtmID, model.ScenariosKey).Return(nil)
-
-		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
-			Return(nil).Once()
-
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
-
-		//WHEN
-		err := eng.RemoveAssignedScenario(ctx, in)
-
-		//THEN
-		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, labelRepo)
-		labelRepo.AssertExpectations(t)
-	})
-
-	t.Run("Failed when Label Upsert failed ", func(t *testing.T) {
+	t.Run("Failed when upsert scenario label returns error ", func(t *testing.T) {
 		scenarios := []interface{}{"OTHER", "SCENARIO"}
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
 			Value:    append(scenarios, selectorScenario),
 			ObjectID: rtmID,
 		}
-		expectedScenarios := map[string][]string{rtmID: {"OTHER", "SCENARIO"}}
+
+		existingScenariosSlice := []string{"OTHER", "SCENARIO", selectorScenario}
+		existingScenarios := map[string][]string{
+			rtmID: existingScenariosSlice,
+		}
 
 		ctx := context.TODO()
 
-		labels := []model.Label{scenarioLabel, {Key: selectorKey}}
+		labels := []model.Label{scenarioLabel}
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
+		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(existingScenarios)), []string{in.ScenarioName}, mock.MatchedBy(matchRemoveScenarioFn([][]string{existingScenariosSlice}, in.ScenarioName))).
 			Return(testErr).Once()
 
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{in.ScenarioName}, scenarioLabel.ObjectID).
+			Return(false, nil).Once()
+
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
@@ -273,7 +254,71 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		labelRepo.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, bundleInstanceAuthSvc)
+	})
+
+	t.Run("Failed when check for existing bundle instance auths for runtime and scenario returns error", func(t *testing.T) {
+		scenarios := []interface{}{"OTHER", "SCENARIO"}
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    append(scenarios, selectorScenario),
+			ObjectID: rtmID,
+		}
+
+		ctx := context.TODO()
+
+		runtimeIdForLabelThatCauseError := "foo"
+		labels := []model.Label{scenarioLabel, {ObjectID: runtimeIdForLabelThatCauseError}}
+
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(false, nil).Once()
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{in.ScenarioName}, runtimeIdForLabelThatCauseError).Return(false, testErr).Once()
+
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, bundleInstanceAuthSvc)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, labelRepo, bundleInstanceAuthSvc)
+	})
+
+	t.Run("Failed when there are any existing bundle instance auths for this scenario", func(t *testing.T) {
+		scenarios := []interface{}{"OTHER", "SCENARIO"}
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    append(scenarios, selectorScenario),
+			ObjectID: rtmID,
+		}
+
+		ctx := context.TODO()
+
+		runtimeIdThatHasExistingBundleInstanceAuths := "foo"
+		labels := []model.Label{scenarioLabel, {ObjectID: runtimeIdThatHasExistingBundleInstanceAuths}}
+
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(false, nil).Once()
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{in.ScenarioName}, runtimeIdThatHasExistingBundleInstanceAuths).Return(true, nil).Once()
+
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, bundleInstanceAuthSvc)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Bundle Instance Auths should be deleted first")
+		mock.AssertExpectationsForObjects(t, labelRepo, bundleInstanceAuthSvc)
 	})
 
 	t.Run("Failed when GetRuntimeScenariosWhereRuntimesLabelsMatchSelector returns error", func(t *testing.T) {
@@ -283,7 +328,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return([]model.Label{}, testErr).Once()
 
-		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, nil)
 
 		//WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
@@ -291,12 +336,15 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		labelRepo.AssertExpectations(t)
+		mock.AssertExpectationsForObjects(t, labelRepo)
+
 	})
 }
 
 func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	selectorKey, selectorValue := "KEY", "VALUE"
+	selectorScenario := "SCENARIO1"
+
 	in := []*model.AutomaticScenarioAssignment{
 		{
 			ScenarioName: "SCENARIO1",
@@ -314,8 +362,9 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
-		expectedScenarios := map[string][]string{
-			rtmID: {"SCENARIO2"},
+		existingScenariosSlice := []string{"SCENARIO2", selectorScenario}
+		existingScenarios := map[string][]string{
+			rtmID: existingScenariosSlice,
 		}
 
 		ctx := context.TODO()
@@ -324,10 +373,14 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertLabel", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(t, expectedScenarios))).
+		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(existingScenarios)), []string{selectorScenario}, mock.MatchedBy(matchRemoveScenarioFn([][]string{existingScenariosSlice}, selectorScenario))).
 			Return(nil).Once()
 
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil)
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{selectorScenario}, rtmID).
+			Return(false, nil).Once()
+
+		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc)
 
 		//WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
@@ -344,7 +397,9 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return(labels, testErr).Once()
-		eng := scenarioassignment.NewEngine(nil, labelRepo, nil)
+
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, bundleInstanceAuthSvc)
 		//WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
 
@@ -355,14 +410,77 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	})
 }
 
-func matchExpectedScenarios(t *testing.T, expected map[string][]string) func(label *model.LabelInput) bool {
-	return func(actual *model.LabelInput) bool {
-		actualArray, ok := actual.Value.([]string)
-		require.True(t, ok)
+func matchRemoveScenarioFn(scenariosPerRuntime [][]string, toRemove string) func(removeFn func(scenarios []string, toRemove string) []string) bool {
+	return func(removeFn func(scenarios []string, toRemove string) []string) bool {
+		for _, scenarios := range scenariosPerRuntime {
+			result := removeFn(scenarios, toRemove)
+			existForCurrentRuntimeScenarios := false
 
-		expectedArray, ok := expected[actual.ObjectID]
-		require.True(t, ok)
-		require.ElementsMatch(t, expectedArray, actualArray)
+			for _, scenario := range result {
+				if scenario == toRemove {
+					existForCurrentRuntimeScenarios = true
+					break
+				}
+			}
+
+			if existForCurrentRuntimeScenarios {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
+func matchAddNewScenarioFn(scenariosPerRuntime [][]string, toAdd string) func(addFn func(scenarios []string, toAdd string) []string) bool {
+	return func(addFn func(scenarios []string, toRemove string) []string) bool {
+		for _, scenarios := range scenariosPerRuntime {
+			result := addFn(scenarios, toAdd)
+			existForCurrentRuntimeScenarios := false
+
+			for _, scenario := range result {
+				if scenario == toAdd {
+					existForCurrentRuntimeScenarios = true
+					break
+				}
+			}
+
+			if !existForCurrentRuntimeScenarios {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
+func matchExpectedScenarios(expectedByRuntimeId map[string][]string) func(labels []model.Label) bool {
+	return func(actual []model.Label) bool {
+		labelsByRuntimeID := make(map[string]model.Label, 0)
+		for _, label := range actual {
+			labelsByRuntimeID[label.ObjectID] = label
+		}
+
+		if len(expectedByRuntimeId) != len(labelsByRuntimeID) {
+			return false
+		}
+
+		for runtimeId, expectedScenarios := range expectedByRuntimeId {
+			actualLabel, ok := labelsByRuntimeID[runtimeId]
+			if !ok {
+				return false
+			}
+
+			actualScenarios, err := labelpkg.GetScenariosAsStringSlice(actualLabel)
+			if err != nil {
+				return false
+			}
+
+			if !assert.ElementsMatch(dummyTest{}, expectedScenarios, actualScenarios) {
+				return false
+			}
+		}
+
 		return true
 	}
 }
@@ -409,7 +527,7 @@ func TestEngine_GetScenariosForSelectorLabels_Success(t *testing.T) {
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
 	defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
 	// when
 	actualScenarios, err := engineSvc.GetScenariosForSelectorLabels(fixCtxWithTenant(), selectorLabels)
@@ -438,7 +556,7 @@ func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnGettingForSelector(t *
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(nil, testErr)
 	defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
 	// when
 	_, err := engineSvc.GetScenariosForSelectorLabels(fixCtxWithTenant(), selectorLabels)
@@ -450,7 +568,7 @@ func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnGettingForSelector(t *
 
 func TestEngine_GetScenariosForSelectorLabels_ShouldFailOnLoadingTenant(t *testing.T) {
 	// given
-	svc := scenarioassignment.NewEngine(nil, nil, nil)
+	svc := scenarioassignment.NewEngine(nil, nil, nil, nil)
 	// when
 	_, err := svc.GetScenariosForSelectorLabels(context.TODO(), nil)
 	// then
@@ -486,7 +604,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
 	// when
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -530,7 +648,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
 	// when
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -559,7 +677,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListFo
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(nil, testErr)
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
 	// when
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -599,7 +717,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenar
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListForSelector", fixCtxWithTenant(), selector, tenantID).Return(assignments, nil)
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
 	// when
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels)
@@ -618,7 +736,7 @@ func TestEngine_MergeScenarios_Success(t *testing.T) {
 
 	expectedScenarios := []interface{}{"CUSTOM"}
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, nil)
+	engineSvc := scenarioassignment.NewEngine(nil, nil, nil, nil)
 
 	// when
 	actualScenarios := engineSvc.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
@@ -626,3 +744,7 @@ func TestEngine_MergeScenarios_Success(t *testing.T) {
 	// then
 	assert.Equal(t, expectedScenarios, actualScenarios)
 }
+
+type dummyTest struct{}
+
+func (t dummyTest) Errorf(string, ...interface{}) {}
