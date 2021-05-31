@@ -49,10 +49,12 @@ if [ -n "${DB_SSL}" ] ; then
 fi
 
 
+set -e
+
 if [[ -f seeds/dump.sql ]] && [[ "${DIRECTION}" == "up" ]]; then
     echo "Will reuse existing dump in seeds/dump.sql"
     cat seeds/dump.sql | \
-        PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" --set="${SSL_OPTION}"
+        PGPASSWORD="${DB_PASSWORD}" psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" --set="${SSL_OPTION}"
 
     REMOTE_MIGRATION_VERSION=$(PGPASSWORD="${DB_PASSWORD}" psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
     LOCAL_MIGRATION_VERSION=$(echo $(ls migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
@@ -75,3 +77,5 @@ if [[ "${NON_INTERACTIVE}" == "true" ]]; then
 else
     $CMD
 fi
+
+set +e
