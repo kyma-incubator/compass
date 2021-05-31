@@ -402,11 +402,14 @@ global:
       maxOpenConnections: 3
       maxIdleConnections: 1
     skipTLSVerify: true
+
+    token:
+      server:
+        enabled: false
+        port: 5000
+    securityContext: # Set on container level
+      runAsUser: 2000
+      allowPrivilegeEscalation: false
+
 pairing-adapter:
   enabled: false
-
-test:
-  token:
-    server:
-      enabled: false
-      port: 5000

@@ -84,6 +84,10 @@ spec:
               value: "{{ .Values.global.gateway.mtls.host }}"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.tests.token.server.port}}"
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---

@@ -14,7 +14,11 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/server"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 
@@ -44,9 +48,25 @@ func TestCallingCompassGateways(t *testing.T) {
 		tenant = tenant.TestTenants.GetDefaultTenantID()
 	)
 
-	t.Log("Getting Dex id_token")
-	dexToken, err = idtokenprovider.GetDexToken()
-	require.NoError(t, err)
+	var dexToken string
+
+	tokenConfig := server.Config{}
+	err = envconfig.InitWithPrefix(&tokenConfig, "APP")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Info("Get Dex id_token")
+	if tokenConfig.IsWithToken {
+		tokenConfig.Log = log.Infof
+		ts := server.New(&tokenConfig)
+		dexToken = server.WaitForToken(ts)
+	} else {
+		dexToken, err = idtokenprovider.GetDexToken()
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "while getting dex token"))
+		}
+	}
 
 	authorizedClient := gql.NewAuthorizedHTTPClient(dexToken)
 

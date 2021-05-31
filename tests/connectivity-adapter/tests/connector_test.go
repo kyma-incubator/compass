@@ -347,8 +347,9 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 		require.NotEmpty(t, crtResponse.CRTChain)
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
-		certificates := certs.DecodeAndParseCerts(t, crtResponse)
-		client := clients.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
+		client, err := clients.NewSecuredClient(config.SkipSslVerify, clientKey, crtChainBytes, config.Tenant)
+		require.NoError(t, err)
 
 		// when
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -386,8 +387,9 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 		require.NotEmpty(t, infoResponse.Certificate)
 
-		certificates := certs.DecodeAndParseCerts(t, crtResponse)
-		client := clients.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
+		client, err := clients.NewSecuredClient(config.SkipSslVerify, clientKey, crtChainBytes, config.Tenant)
+		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
@@ -403,10 +405,11 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 		// then
 		require.Nil(t, errorResponse)
 
-		certificates = certs.DecodeAndParseCerts(t, certificateResponse)
-		clientWithRenewedCert := clients.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		crtChainBytesRenewed := certs.DecodeBase64Cert(t, certificateResponse.CRTChain)
+		clientWithRenewedCert, err := clients.NewSecuredClient(config.SkipSslVerify, clientKey, crtChainBytesRenewed, config.Tenant)
+		require.NoError(t, err)
 
-		mgmInfoResponse, errorResponse = clientWithRenewedCert.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
+		_, errorResponse = clientWithRenewedCert.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
 	})
 }
@@ -425,8 +428,9 @@ func certificateRevocationSuite(t *testing.T, directorClient clients.Client, app
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
 		// when
-		certificates := certs.DecodeAndParseCerts(t, crtResponse)
-		client := clients.NewSecuredClient(skipVerify, clientKey, certificates.ClientCRT.Raw, tenant)
+		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
+		client, err := clients.NewSecuredClient(skipVerify, clientKey, crtChainBytes, tenant)
+		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 

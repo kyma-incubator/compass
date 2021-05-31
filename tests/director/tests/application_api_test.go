@@ -54,6 +54,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
+	require.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
 	t.Log("SCOPES: ", testctx.Tc.CurrentScopes)
@@ -1295,14 +1296,15 @@ func TestDeleteApplicationWithNoScenarios(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
 	require.NoError(t, err)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+
+	app := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
 	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "integrationSystemID")
 	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "name")
-	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "scenarios")
-
-	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
-	require.NoError(t, err)
+	if _, found := app.Labels["scenarios"]; found {
+		fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "scenarios")
+	}
 }
 
 func TestApplicationDeletionInScenario(t *testing.T) {

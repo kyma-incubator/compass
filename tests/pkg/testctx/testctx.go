@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/vrischmann/envconfig"
 
@@ -122,23 +121,6 @@ func (tc *TestContext) RunOperationWithoutTenant(ctx context.Context, cli *gcli.
 
 func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant string, req *gcli.Request, resp interface{}) error {
 	return tc.NewOperation(ctx).WithTenant(tenant).Run(req, cli, resp)
-}
-
-func (tc *TestContext) RunOperationWithQueryParam(ctx context.Context, key, value, tenant string, req *gcli.Request, resp interface{}) error {
-	o := tc.NewOperation(ctx).WithTenant(tenant).WithQueryParam(key, value)
-
-	url, err := o.AddQueryParamsToURL()
-	if err != nil {
-		return errors.Wrap(err, "while adding query params to URL")
-	}
-
-	dexToken, err := idtokenprovider.GetDexToken()
-	if err != nil {
-		return errors.Wrap(err, "while getting DEX token")
-	}
-
-	cli := gql.NewAuthorizedGraphQLClientWithCustomURL(dexToken, url.String())
-	return o.Run(req, cli, resp)
 }
 
 func withRetryOnTemporaryConnectionProblems(risky func() error) error {

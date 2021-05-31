@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -27,12 +26,7 @@ type SystemBrokerTestContext struct {
 	DexGraphqlClient            *gcli.Client
 }
 
-func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBrokerTestContext, error) {
-	token, err := idtokenprovider.GetDexToken()
-	if err != nil {
-		return nil, err
-	}
-
+func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig, dexToken string) (*SystemBrokerTestContext, error) {
 	clientKey, err := certs.GenerateKey()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to generate private key")
@@ -46,6 +40,6 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		ORDServiceURL:               cfg.ORDServiceURL,
 		ClientKey:                   clientKey,
 		ConnectorTokenSecuredClient: clients.NewTokenSecuredClient(cfg.ConnectorURL),
-		DexGraphqlClient:            gql.NewAuthorizedGraphQLClientWithCustomURL(token, cfg.DirectorURL),
+		DexGraphqlClient:            gql.NewAuthorizedGraphQLClientWithCustomURL(dexToken, cfg.DirectorURL),
 	}, nil
 }

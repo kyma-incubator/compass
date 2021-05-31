@@ -1,15 +1,15 @@
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: {{ .Chart.Name }}-e2e-director-ts
+  name: {{ .Chart.Name }}-e2e-external-services-mock-ts
   namespace: {{ .Values.global.tests.namespace }}
   labels:
-    app: {{ .Chart.Name }}-director-tests-app
+    app: {{ .Chart.Name }}-external-services-mock-tests-app
 spec:
   gateways:
   - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   hosts:
-  - 'compass-director-ts.{{ .Values.global.ingress.domainName }}'
+  - 'compass-external-services-mock-ts.{{ .Values.global.ingress.domainName }}'
   http:
   - corsPolicy:
       allowOrigins:
@@ -19,6 +19,6 @@ spec:
         regex: /.*
     route:
     - destination:
-        host: {{ .Chart.Name }}-e2e-director-ts.kyma-system.svc.cluster.local
+        host: {{ .Chart.Name }}-e2e-external-services-mock-ts.kyma-system.svc.cluster.local
         port:
           number: {{.Values.tests.token.server.port}}
