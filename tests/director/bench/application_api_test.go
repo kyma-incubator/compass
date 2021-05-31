@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,16 +37,23 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	defer fixtures.UnregisterRuntime(b, ctx, dexGraphQLClient, tenantID, rt.ID)
 
 	request := fixtures.FixApplicationForRuntimeRequestWithPageSize(rt.ID, appsCount)
+	request.Header.Set("Tenant", tenantID)
+
+	res := struct {
+		Result interface{} `json:"result"`
+	}{}
 
 	b.ResetTimer() // Reset timer after the initialization
 
 	for i := 0; i < b.N; i++ {
-		applicationPage := graphql.ApplicationPage{}
+		res.Result = &graphql.ApplicationPage{}
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, request, &applicationPage)
+		err := dexGraphQLClient.Run(ctx, request, &res)
 
 		//THEN
 		require.NoError(b, err)
-		require.Len(b, applicationPage.Data, appsCount)
+		require.Len(b, res.Result.(*graphql.ApplicationPage).Data, appsCount)
 	}
+
+	b.StopTimer() // Stop timer in order to exclude defers from the time
 }

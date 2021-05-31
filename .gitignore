@@ -52,6 +52,7 @@ local/tmp/
 
 # Installer temporary files
 /temp-*
+components/schema-migrator/seeds/dump.sql
 
 # Changelog temporary directory
 .changelog/

@@ -11,7 +11,7 @@ global:
     - name: TestTenantSeparation
       id: f1c4b5be-b0e1-41f9-b0bc-b378200dcca0
     - name: TestDeleteLastScenarioForApplication
-      id: f739b36c-813f-4fc3-996e-dd03c7d13aa0
+      id: 0403be1e-f854-475e-9074-922120277af5
     - name: Test_DeleteAutomaticScenarioAssignmentForSelector
       id: d9553135-6115-4c67-b4d9-962c00f3725f
     - name: Test_AutomaticScenarioAssigmentForRuntime
@@ -23,7 +23,7 @@ global:
     - name: Test Default
       id: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestListLabelDefinitions
-      id: 2bf03de1-23b1-4063-9d3e-67096800accc
+      id: 3f641cf5-2d14-4e0f-a122-16e7569926f1
     - name: Test_AutomaticScenarioAssignmentQueries
       id: 8263cc13-5698-4a2d-9257-e8e76b543e88
     - name: TestGetScenariosLabelDefinitionCreatesOneIfNotExists
@@ -65,10 +65,10 @@ global:
       version: "PR-1868"
     ord_service:
       dir:
-      version: "PR-25"
+      version: "PR-27"
     schema_migrator:
       dir:
-      version: "PR-1864"
+      version: "PR-1860"
     system_broker:
       dir:
       version: "PR-1868"
@@ -82,7 +82,7 @@ global:
       version: "PR-1868"
     console:
       dir:
-      version: "PR-31"
+      version: "PR-33"
     e2e_tests:
       dir:
       version: "PR-1868"
