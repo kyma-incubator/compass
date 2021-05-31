@@ -332,7 +332,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	scenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, id)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "while fetching scenario names for application")
 	}
 
 	validScenarios := removeDefaultScenario(scenarios)
@@ -375,19 +375,9 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return apperrors.NewNotFoundError(resource.Application, labelInput.ObjectID)
 	}
 
-	inputScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(labelInput.Value)
-	if err != nil {
-		return errors.Wrap(err, "while parsing label value")
-	}
-
-	if len(inputScenarios) > 0 {
-		existingScenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, labelInput.ObjectID)
-		if err != nil {
+	if labelInput.Key == model.ScenariosKey {
+		if err = s.associateRelatedBundleInstanceAuthWithNewScenarios(ctx, appTenant, labelInput); err != nil {
 			return err
-		}
-
-		if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewApplicationScenarios(ctx, existingScenarios, inputScenarios, labelInput.ObjectID); err != nil {
-			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
 	}
 
@@ -396,6 +386,27 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return errors.Wrapf(err, "while creating label for Application")
 	}
 
+	return nil
+}
+
+func (s *service) associateRelatedBundleInstanceAuthWithNewScenarios(ctx context.Context, appTenant string, labelInput *model.LabelInput) error {
+	inputScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(labelInput.Value)
+	if err != nil {
+		return errors.Wrap(err, "while parsing label value")
+	}
+
+	if len(inputScenarios) < 1 {
+		return nil
+	}
+
+	existingScenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, labelInput.ObjectID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewApplicationScenarios(ctx, existingScenarios, inputScenarios, labelInput.ObjectID); err != nil {
+		return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
+	}
 	return nil
 }
 
