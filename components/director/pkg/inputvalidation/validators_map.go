@@ -27,7 +27,7 @@ import (
 	"errors"
 	"reflect"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type eachKeyRule []validation.Rule

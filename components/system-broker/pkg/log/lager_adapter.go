@@ -19,7 +19,7 @@ package log
 import (
 	. "code.cloudfoundry.org/lager"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pivotal-cf/brokerapi/middlewares"
+	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 	"github.com/sirupsen/logrus"
 )
 
