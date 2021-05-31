@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"net/http"
 	"time"
 
@@ -96,6 +97,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	tombstoneConverter := tombstone.NewConverter()
 	runtimeConverter := runtime.NewConverter()
 	bundleReferenceConv := bundlereferences.NewConverter()
+	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(auth.NewConverter())
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -114,10 +116,12 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorRepo := ordvendor.NewRepository(vendorConverter)
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
+	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleInstanceAuthConv)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
+	scenariosDefSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
+	scenariosSvc := label.NewScenarioService(labelRepo)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
@@ -126,7 +130,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosDefSvc, scenariosSvc, bundleSvc, uidSvc, bundleInstanceAuthSvc)
 	packageSvc := mp_package.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo)
 	vendorSvc := ordvendor.NewService(vendorRepo)
