@@ -1967,7 +1967,7 @@ func TestService_Delete(t *testing.T) {
 		ExpectedErrMessage string
 	}{
 		{
-			Name: "Success",
+			Name: "Success when application is not part of any scenario",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
@@ -1976,7 +1976,6 @@ func TestService_Delete(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -2024,7 +2023,6 @@ func TestService_Delete(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID:            id,
