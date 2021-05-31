@@ -90,7 +90,7 @@ fi
 USED_DRIVER=$(minikube profile list -o json | jq -r ".valid[0].Config.Driver")
 
 if [[ $USED_DRIVER == "docker" ]]; then
-  MINIKUBE_IP=$(minikube ssh cat /etc/hosts | grep "minikube" | head -n 1 | cut -f1)
+  MINIKUBE_IP=$(minikube ssh egrep "minikube$" /etc/hosts | cut -f1)
 else
   MINIKUBE_IP=$(minikube ip)
 fi
