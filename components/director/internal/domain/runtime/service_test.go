@@ -7,12 +7,13 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -59,14 +60,16 @@ func TestService_Create(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
-		Name                 string
-		RuntimeRepositoryFn  func() *automock.RuntimeRepository
-		ScenariosServiceFn   func() *automock.ScenariosService
-		LabelUpsertServiceFn func() *automock.LabelUpsertService
-		UIDServiceFn         func() *automock.UIDService
-		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
-		Input                model.RuntimeInput
-		ExpectedErr          error
+		Name                        string
+		RuntimeRepositoryFn         func() *automock.RuntimeRepository
+		ScenariosDefServiceFn       func() *automock.ScenariosDefinitionService
+		ScenariosServiceFn          func() *automock.ScenariosService
+		LabelUpsertServiceFn        func() *automock.LabelUpsertService
+		UIDServiceFn                func() *automock.UIDService
+		EngineServiceFn             func() *automock.ScenarioAssignmentEngine
+		BundleInstanceAuthServiceFn func() *automock.BundleInstanceAuthService
+		Input                       model.RuntimeInput
+		ExpectedErr                 error
 	}{
 		{
 			Name: "Success",
@@ -75,10 +78,13 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
+			ScenariosDefServiceFn: func() *automock.ScenariosDefinitionService {
+				repo := &automock.ScenariosDefinitionService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -95,6 +101,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -105,11 +114,14 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
+			ScenariosDefServiceFn: func() *automock.ScenariosDefinitionService {
+				repo := &automock.ScenariosDefinitionService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -126,6 +138,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, nilLabels).Return([]interface{}{}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			Input:       modelInputWithoutLabels,
 			ExpectedErr: nil,
 		},
@@ -136,10 +151,13 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
+			ScenariosDefServiceFn: func() *automock.ScenariosDefinitionService {
+				repo := &automock.ScenariosDefinitionService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -153,6 +171,9 @@ func TestService_Create(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -168,9 +189,12 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.LabelUpsertService{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
+			ScenariosDefServiceFn: func() *automock.ScenariosDefinitionService {
+				repo := &automock.ScenariosDefinitionService{}
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -180,6 +204,9 @@ func TestService_Create(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -191,10 +218,13 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
+			ScenariosDefServiceFn: func() *automock.ScenariosDefinitionService {
+				repo := &automock.ScenariosDefinitionService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -210,6 +240,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return(nil, testErr)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -220,10 +253,13 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
+			ScenariosDefServiceFn: func() *automock.ScenariosDefinitionService {
+				repo := &automock.ScenariosDefinitionService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -240,6 +276,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"DEFAULT"}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -250,9 +289,11 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RuntimeRepositoryFn()
 			idSvc := testCase.UIDServiceFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
-			scenariosSvc := testCase.ScenariosServiceFn()
+			scenariosDefSvc := testCase.ScenariosDefServiceFn()
+			scenariosService := testCase.ScenariosServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, ".*_defaultEventing$")
+			bundleInstanceAuthService := testCase.BundleInstanceAuthServiceFn()
+			svc := runtime.NewService(repo, nil, scenariosDefSvc, scenariosService, labelSvc, idSvc, engineSvc, bundleInstanceAuthService, ".*_defaultEventing$")
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -269,14 +310,16 @@ func TestService_Create(t *testing.T) {
 			repo.AssertExpectations(t)
 			idSvc.AssertExpectations(t)
 			labelSvc.AssertExpectations(t)
-			scenariosSvc.AssertExpectations(t)
+			scenariosDefSvc.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
 			engineSvc.AssertExpectations(t)
+			bundleInstanceAuthService.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.Create(context.TODO(), model.RuntimeInput{})
 		// then
@@ -291,11 +334,11 @@ func TestService_Update(t *testing.T) {
 
 	desc := "Lorem ipsum"
 
-	labelsDbMock := map[string]interface{}{
-		"label1":                  "val1",
-		"scenarios":               []interface{}{"SCENARIO"},
-		runtime.IsNormalizedLabel: "true",
-	}
+	//labelsDbMock := map[string]interface{}{
+	//	"label1":                  "val1",
+	//	"scenarios":               []interface{}{"SCENARIO"},
+	//	runtime.IsNormalizedLabel: "true",
+	//}
 	labels := map[string]interface{}{
 		"label1": "val1",
 	}
@@ -333,14 +376,16 @@ func TestService_Update(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.RuntimeRepository
-		LabelRepositoryFn    func() *automock.LabelRepository
-		LabelUpsertServiceFn func() *automock.LabelUpsertService
-		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
-		Input                model.RuntimeInput
-		InputID              string
-		ExpectedErrMessage   string
+		Name                        string
+		RepositoryFn                func() *automock.RuntimeRepository
+		ScenariosServiceFn          func() *automock.ScenariosService
+		LabelRepositoryFn           func() *automock.LabelRepository
+		LabelUpsertServiceFn        func() *automock.LabelUpsertService
+		EngineServiceFn             func() *automock.ScenarioAssignmentEngine
+		BundleInstanceAuthServiceFn func() *automock.BundleInstanceAuthService
+		Input                       model.RuntimeInput
+		InputID                     string
+		ExpectedErrMessage          string
 	}{
 		{
 			Name: "Success",
@@ -349,6 +394,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -365,6 +413,9 @@ func TestService_Update(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputID:            "foo",
 			Input:              modelInput,
 			ExpectedErrMessage: "",
@@ -376,6 +427,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", ctx, inputProtectedRuntimeModel).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -392,6 +446,9 @@ func TestService_Update(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputID:            "foo",
 			Input:              modelInputWithProtectedLabels,
 			ExpectedErrMessage: "",
@@ -404,24 +461,32 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("GetScenarioNamesForRuntime", ctx, "foo").Return(nil, testErr).Once()
+				return svc
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteByKeyNegationPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
-				return repo
+				return &automock.LabelRepository{}
+				//repo.On("DeleteByKeyNegationPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
+				//return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, labelsDbMock).Return(nil).Once()
-				return repo
+				return &automock.LabelUpsertService{}
+				//repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, labelsDbMock).Return(nil).Once()
+				//return repo
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"SCENARIO"}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputID:            "foo",
 			Input:              modelInput,
-			ExpectedErrMessage: "",
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Success when labels are nil",
@@ -430,6 +495,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -446,6 +514,9 @@ func TestService_Update(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labelsWithNormalization).Return([]interface{}{}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputID: "foo",
 			Input: model.RuntimeInput{
 				Name: "bar",
@@ -460,6 +531,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctx, inputRuntimeModel).Return(testErr).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				return repo
@@ -471,6 +545,9 @@ func TestService_Update(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputID:            "foo",
 			Input:              modelInput,
@@ -483,6 +560,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, "foo").Return(nil, testErr).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				return repo
@@ -494,6 +574,9 @@ func TestService_Update(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputID:            "foo",
 			Input:              modelInput,
@@ -507,6 +590,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("DeleteByKeyNegationPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(testErr).Once()
@@ -518,7 +604,11 @@ func TestService_Update(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, modelInput.Labels).Return([]interface{}{}, nil).Once()
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputID:            "foo",
 			Input:              modelInput,
@@ -532,10 +622,13 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteByKeyNegationPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
-				return repo
+				return &automock.LabelRepository{}
+				//repo.On("DeleteByKeyNegationPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
+				//return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -545,6 +638,9 @@ func TestService_Update(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return(nil, testErr)
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputID:            "foo",
 			Input:              modelInput,
@@ -557,6 +653,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
 				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -573,6 +672,42 @@ func TestService_Update(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{}, nil)
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
+			InputID:            "foo",
+			Input:              modelInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when cannot associate bundle instance auth for new runtime scenarios",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
+				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("GetScenarioNamesForRuntime", ctx, "foo").Return([]string{"existingScenario"}, nil)
+				return svc
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels).Return([]interface{}{"scenario"}, nil)
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string{"existingScenario"}, []string{"scenario"}, "foo").Return(testErr)
+				return svc
+			},
 			InputID:            "foo",
 			Input:              modelInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -582,10 +717,12 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
+			scenariosService := testCase.ScenariosServiceFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, ".*_defaultEventing$")
+			bundleInstanceAuthService := testCase.BundleInstanceAuthServiceFn()
+			svc := runtime.NewService(repo, labelRepo, nil, scenariosService, labelSvc, nil, engineSvc, bundleInstanceAuthService, ".*_defaultEventing$")
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -598,15 +735,17 @@ func TestService_Update(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
 			labelRepo.AssertExpectations(t)
 			labelSvc.AssertExpectations(t)
 			engineSvc.AssertExpectations(t)
+			bundleInstanceAuthService.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
 		// then
@@ -666,7 +805,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "")
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -684,7 +823,7 @@ func TestService_Delete(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		err := svc.Delete(context.TODO(), "id")
 		// then
@@ -747,7 +886,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "")
 
 			// when
 			rtm, err := svc.Get(ctx, testCase.InputID)
@@ -766,7 +905,7 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		_, err := svc.Get(context.TODO(), "id")
 		// then
@@ -828,7 +967,7 @@ func TestService_GetByTokenIssuer(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "")
 
 			// when
 			rtm, err := svc.GetByTokenIssuer(ctx, tokenIssuer)
@@ -901,7 +1040,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			rtmRepo := testCase.RepositoryFn()
-			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil, nil, "")
+			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil, nil, nil, nil, "")
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputRuntimeID)
@@ -920,7 +1059,7 @@ func TestService_Exist(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		_, err := svc.Exist(context.TODO(), "id")
 		// then
@@ -1022,7 +1161,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "")
 
 			// when
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -1041,7 +1180,7 @@ func TestService_List(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		_, err := svc.List(context.TODO(), nil, 1, "")
 		// then
@@ -1162,7 +1301,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, "")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, nil, nil, "")
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputRuntimeID, testCase.InputLabel.Key)
@@ -1182,7 +1321,7 @@ func TestService_GetLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		_, err := svc.GetLabel(context.TODO(), "id", "key")
 		// then
@@ -1314,7 +1453,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, ".*_defaultEventing$")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeID)
@@ -1334,7 +1473,7 @@ func TestService_ListLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		_, err := svc.ListLabels(context.TODO(), "id")
 		// then
@@ -1414,14 +1553,15 @@ func TestService_SetLabel(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.RuntimeRepository
-		LabelUpsertServiceFn func() *automock.LabelUpsertService
-		LabelRepositoryFn    func() *automock.LabelRepository
-		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
-		InputRuntimeID       string
-		InputLabel           *model.LabelInput
-		ExpectedErrMessage   string
+		Name                        string
+		RepositoryFn                func() *automock.RuntimeRepository
+		LabelUpsertServiceFn        func() *automock.LabelUpsertService
+		LabelRepositoryFn           func() *automock.LabelRepository
+		EngineServiceFn             func() *automock.ScenarioAssignmentEngine
+		BundleInstanceAuthServiceFn func() *automock.BundleInstanceAuthService
+		InputRuntimeID              string
+		InputLabel                  *model.LabelInput
+		ExpectedErrMessage          string
 	}{
 		{
 			Name: "Success",
@@ -1450,6 +1590,11 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
 			ExpectedErrMessage: "",
@@ -1474,6 +1619,11 @@ func TestService_SetLabel(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(scenariosLabelValue, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string{"SCENARIO"}, []string{"SCENARIO"}, runtimeID).Return(nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1507,6 +1657,11 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string{"SCENARIO"}, runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
 			ExpectedErrMessage: "",
@@ -1529,6 +1684,9 @@ func TestService_SetLabel(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
@@ -1553,6 +1711,9 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
 			ExpectedErrMessage: fmt.Sprintf("Runtime with ID %s doesn't exist", runtimeID),
@@ -1576,6 +1737,9 @@ func TestService_SetLabel(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
@@ -1602,6 +1766,9 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(nil, testErr).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelScenariosLabelInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -1626,6 +1793,9 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return(nil, testErr).Once()
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
@@ -1652,6 +1822,9 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return(nil, testErr).Once()
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
@@ -1681,6 +1854,11 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string{"SCENARIO"}, runtimeID).Return(nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1714,6 +1892,11 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return(scenariosLabelValue, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string{"SCENARIO"}, runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -1737,6 +1920,9 @@ func TestService_SetLabel(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelLabelInput,
@@ -1768,9 +1954,43 @@ func TestService_SetLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         &modelProtectedLabelInput,
 			ExpectedErrMessage: "could not set protected label key protected_defaultEventing",
+		},
+		{
+			Name: "Returns error when cannot associate bundle instance auth for new runtime scenarios",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMapWithScenariosLabel, nil).Once()
+				return repo
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValue}).Return(scenariosLabelValue, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string{"SCENARIO"}, []string{"SCENARIO"}, runtimeID).Return(testErr).Once()
+				return svc
+			},
+			InputRuntimeID:     runtimeID,
+			InputLabel:         &modelScenariosLabelInput,
+			ExpectedErrMessage: testErr.Error(),
 		},
 	}
 
@@ -1780,7 +2000,8 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, ".*_defaultEventing$")
+			bundleInstanceAuthService := testCase.BundleInstanceAuthServiceFn()
+			svc := runtime.NewService(repo, labelRepo, nil, nil, labelSvc, nil, engineSvc, bundleInstanceAuthService, ".*_defaultEventing$")
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1796,12 +2017,13 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc.AssertExpectations(t)
 			labelRepo.AssertExpectations(t)
 			engineSvc.AssertExpectations(t)
+			bundleInstanceAuthService.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.SetLabel(context.TODO(), &model.LabelInput{})
 		// then
@@ -1894,14 +2116,15 @@ func TestService_DeleteLabel(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.RuntimeRepository
-		LabelRepositoryFn    func() *automock.LabelRepository
-		LabelUpsertServiceFn func() *automock.LabelUpsertService
-		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
-		InputRuntimeID       string
-		InputKey             string
-		ExpectedErrMessage   string
+		Name                        string
+		RepositoryFn                func() *automock.RuntimeRepository
+		LabelRepositoryFn           func() *automock.LabelRepository
+		LabelUpsertServiceFn        func() *automock.LabelUpsertService
+		EngineServiceFn             func() *automock.ScenarioAssignmentEngine
+		BundleInstanceAuthServiceFn func() *automock.BundleInstanceAuthService
+		InputRuntimeID              string
+		InputKey                    string
+		ExpectedErrMessage          string
 	}{
 		{
 			Name: "Success",
@@ -1928,6 +2151,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -1962,6 +2190,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{labelKey: labelValue}).Return(scenariosLabelValueWithMultipleValues, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string{"SCENARIO", "SECOND_SCENARIO"}, []string{"SCENARIO", "SECOND_SCENARIO"}, runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           model.ScenariosKey,
 			ExpectedErrMessage: "",
@@ -1991,6 +2224,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return([]string{}, nil).Once()
 				svc.On("MergeScenarios", nilInterface, scenariosLabelValue, []interface{}{}).Return([]interface{}{}, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -2030,6 +2268,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, []interface{}{scenario, secondScenario}, []interface{}{secondScenario}).Return([]interface{}{secondScenario}, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string{"SECOND_SCENARIO"}, runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: "",
@@ -2052,6 +2295,9 @@ func TestService_DeleteLabel(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
@@ -2076,6 +2322,9 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: fmt.Sprintf("Runtime with ID %s doesn't exist", runtimeID),
@@ -2099,6 +2348,9 @@ func TestService_DeleteLabel(t *testing.T) {
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
@@ -2125,6 +2377,9 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{}).Return(nil, testErr).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           model.ScenariosKey,
 			ExpectedErrMessage: testErr.Error(),
@@ -2149,6 +2404,9 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return(nil, testErr).Once()
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
@@ -2175,6 +2433,9 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return(nil, testErr).Once()
 				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				return &automock.BundleInstanceAuthService{}
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
@@ -2206,6 +2467,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, scenariosLabelValue, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: testErr.Error(),
@@ -2235,6 +2501,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey: labelSelectorValue, labelKey2: labelSelectorValue}).Return([]string{scenario}, nil).Once()
 				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{labelKey2: labelSelectorValue}).Return([]string{}, nil).Once()
 				svc.On("MergeScenarios", nilInterface, scenariosLabelValue, []interface{}{}).Return([]interface{}{}, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -2269,6 +2540,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{labelKey: labelValue}).Return(scenariosLabelValueWithMultipleValues, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string{"SCENARIO", "SECOND_SCENARIO"}, []string{"SCENARIO", "SECOND_SCENARIO"}, runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           model.ScenariosKey,
 			ExpectedErrMessage: testErr.Error(),
@@ -2299,6 +2575,11 @@ func TestService_DeleteLabel(t *testing.T) {
 				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
 				return svc
 			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, []string(nil), []string(nil), runtimeID).Return(nil).Once()
+				return svc
+			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           protectedLabelKey,
 			ExpectedErrMessage: "could not delete protected label key protected_defaultEventing",
@@ -2311,7 +2592,8 @@ func TestService_DeleteLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			labelUpsertSvc := testCase.LabelUpsertServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelUpsertSvc, nil, engineSvc, ".*_defaultEventing$")
+			bundleInstanceAuthService := testCase.BundleInstanceAuthServiceFn()
+			svc := runtime.NewService(repo, labelRepo, nil, nil, labelUpsertSvc, nil, engineSvc, bundleInstanceAuthService, ".*_defaultEventing$")
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -2328,12 +2610,13 @@ func TestService_DeleteLabel(t *testing.T) {
 			labelRepo.AssertExpectations(t)
 			labelUpsertSvc.AssertExpectations(t)
 			engineSvc.AssertExpectations(t)
+			bundleInstanceAuthService.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.DeleteLabel(context.TODO(), "id", "key")
 		// then
@@ -2384,7 +2667,7 @@ func TestService_UpdateTenantID(t *testing.T) {
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
 			uidSvc := &automock.UIDService{}
-			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+			svc := runtime.NewService(repo, labelRepository, nil, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, nil, ".*_defaultEventing$")
 
 			// when
 			err := svc.UpdateTenantID(ctx, runtimeID, tntID)
@@ -2408,7 +2691,7 @@ func TestService_UpdateTenantID(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
 		// then
@@ -2465,7 +2748,7 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
 			uidSvc := &automock.UIDService{}
-			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+			svc := runtime.NewService(repo, labelRepository, nil, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, nil, ".*_defaultEventing$")
 
 			// when
 			actualRuntime, err := svc.GetByFiltersGlobal(ctx, filters)
@@ -2489,7 +2772,7 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "")
 		// when
 		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
 		// then
