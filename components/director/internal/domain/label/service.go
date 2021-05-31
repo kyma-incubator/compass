@@ -19,6 +19,7 @@ type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error)
+	GetBundleInstanceAuthsScenarioLabels(ctx context.Context, tenant, appId, runtimeId string) ([]model.Label, error)
 }
 
 //go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore

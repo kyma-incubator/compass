@@ -21,6 +21,7 @@ import (
 var (
 	testID             = "foo"
 	testBundleID       = "bar"
+	testApplicationID  = "app-bar"
 	testRuntimeID      = "d05fb90c-3084-4349-9deb-af23a4ce76be"
 	testTenant         = "baz"
 	testExternalTenant = "foobaz"

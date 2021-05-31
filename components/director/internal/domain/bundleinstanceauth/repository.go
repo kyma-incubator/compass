@@ -19,11 +19,10 @@ const tableName string = `public.bundle_instance_auths`
 const ScenariosViewName = `public.bundle_instance_auths_with_labels`
 
 var (
-	tenantColumn         = "tenant_id"
-	idColumns            = []string{"id"}
-	updatableColumns     = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
-	tableColumns         = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
-	scenariosViewColumns = []string{"key", "value", "bundle_id", "app_id", "runtime_id", "status_condition"}
+	tenantColumn     = "tenant_id"
+	idColumns        = []string{"id"}
+	updatableColumns = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -52,7 +51,7 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetter:  repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		lister:        repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		deleter:       repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
-		updater:       repo.NewUpdater(resource.BundleInstanceAuth, tableName, scenariosViewColumns, tenantColumn, idColumns),
+		updater:       repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, tenantColumn, idColumns),
 		conv:          conv,
 		scenariosView: &scenariosView{repo.NewExistQuerier(resource.BundleInstanceAuth, ScenariosViewName, tenantColumn)},
 	}

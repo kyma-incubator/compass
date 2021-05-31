@@ -47,12 +47,13 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenariosDefinitionService --output=automock --outpkg=automock --case=underscore
 type ScenariosDefinitionService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	GetScenarioNamesForRuntime(ctx context.Context, runtimeId string) ([]string, error)
 }

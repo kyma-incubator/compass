@@ -27,6 +27,7 @@ type LabelUpsertService interface {
 	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
 }
 
+//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error
 	IsAnyExistForRuntimeAndScenario(ctx context.Context, scenarios []string, runtimeId string) (bool, error)

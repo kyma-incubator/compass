@@ -64,3 +64,12 @@ func (s *scenarioService) getScenarioNamesForObject(ctx context.Context, objectT
 
 	return scenarios, nil
 }
+
+func (s *scenarioService) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, appId, runtimeId string) ([]model.Label, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, tnt, appId, runtimeId)
+}

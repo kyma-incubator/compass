@@ -34,11 +34,13 @@ type UIDService interface {
 	Generate() string
 }
 
+//go:generate mockery --name=ScenarioService --output=automock --outpkg=automock --case=underscore
 type ScenarioService interface {
 	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
 	GetScenarioNamesForRuntime(ctx context.Context, runtimeID string) ([]string, error)
 	GetRuntimeScenarioLabelsForAnyMatchingScenario(ctx context.Context, scenarios []string) ([]model.Label, error)
 	GetApplicationScenarioLabelsForAnyMatchingScenario(ctx context.Context, scenarios []string) ([]model.Label, error)
+	GetBundleInstanceAuthsScenarioLabels(ctx context.Context, appId, runtimeId string) ([]model.Label, error)
 }
 
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
@@ -47,16 +49,11 @@ type LabelService interface {
 	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
 }
 
-type LabelRepository interface {
-	GetBundleInstanceAuthsScenarioLabels(ctx context.Context, tenant, appId, runtimeId string) ([]model.Label, error)
-}
-
 type scenarioReAssociator struct {
 	isAnyBundleInstanceAuthExist         func(ctx context.Context, scenarios []string, objectId string) (bool, error)
 	relatedObjectScenarioLabels          func(ctx context.Context, scenarios []string) ([]model.Label, error)
 	getBundleInstanceAuthsScenarioLabels func(relatedObjId string) ([]model.Label, error)
 	labelService                         LabelService
-	labelRepo                            LabelRepository
 }
 
 type service struct {
@@ -66,10 +63,9 @@ type service struct {
 	bundleSvc    BundleService
 	scenarioSvc  ScenarioService
 	labelService LabelService
-	labelRepo    LabelRepository
 }
 
-func NewService(repo Repository, uidService UIDService, bundleService BundleService, scenarioSvc ScenarioService, labelSvc LabelService, labelRepo LabelRepository) *service {
+func NewService(repo Repository, uidService UIDService, bundleService BundleService, scenarioSvc ScenarioService, labelSvc LabelService) *service {
 	return &service{
 		repo:         repo,
 		uidService:   uidService,
@@ -77,7 +73,6 @@ func NewService(repo Repository, uidService UIDService, bundleService BundleServ
 		bundleSvc:    bundleService,
 		scenarioSvc:  scenarioSvc,
 		labelService: labelSvc,
-		labelRepo:    labelRepo,
 	}
 }
 
@@ -128,16 +123,11 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 }
 
 func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
 	assoc := &scenarioReAssociator{
 		isAnyBundleInstanceAuthExist: s.IsAnyExistForAppAndScenario,
 		relatedObjectScenarioLabels:  s.scenarioSvc.GetRuntimeScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(runtimeId string) ([]model.Label, error) {
-			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, tnt, appId, runtimeId)
+			return s.scenarioSvc.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
 		},
 		labelService: s.labelService,
 		//labelRepo:    s.labelRepo,
@@ -147,16 +137,11 @@ func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx cont
 }
 
 func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
 	assoc := &scenarioReAssociator{
 		isAnyBundleInstanceAuthExist: s.IsAnyExistForRuntimeAndScenario,
 		relatedObjectScenarioLabels:  s.scenarioSvc.GetApplicationScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(appId string) ([]model.Label, error) {
-			return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, tnt, appId, runtimeId)
+			return s.scenarioSvc.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
 		},
 		labelService: s.labelService,
 	}
@@ -381,7 +366,7 @@ func (s *service) validateInputParamsAgainstSchema(inputParams *string, schema *
 func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context.Context, tnt, bundleInstanceAuthId, bundleID, runtimeId string) error {
 	applicationID, err := s.bundleSvc.GetByApplicationID(ctx, tnt, bundleID)
 	if err != nil {
-		return errors.Wrap(err, "While getting application id")
+		return errors.Wrap(err, "while fetching application id")
 	}
 	scenariosForApp, err := s.scenarioSvc.GetScenarioNamesForApplication(ctx, applicationID)
 	if err != nil {
@@ -390,10 +375,13 @@ func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context
 
 	scenariosForRuntime, err := s.scenarioSvc.GetScenarioNamesForRuntime(ctx, runtimeId)
 	if err != nil {
-		return errors.Wrapf(err, "white fetching scenario names for runtime: %s", runtimeId)
+		return errors.Wrapf(err, "while fetching scenario names for runtime: %s", runtimeId)
 	}
 
 	commonScenarios := str.IntersectSlice(scenariosForApp, scenariosForRuntime)
+	if len(commonScenarios) == 0 {
+		return nil
+	}
 
 	authLabel := &model.LabelInput{
 		Key:        model.ScenariosKey,
@@ -503,7 +491,7 @@ func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios
 				authIds = append(authIds, authLabel.ID)
 			}
 
-			return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to all bundle_instance_auths: %s", scenarios))
+			return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to all bundle_instance_auths: %s", scenarios, authIds))
 		}
 	}
 

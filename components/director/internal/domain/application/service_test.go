@@ -138,17 +138,17 @@ func TestService_Create(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name               string
-		AppNameNormalizer  normalizer.Normalizator
-		AppRepoFn          func() *automock.ApplicationRepository
-		WebhookRepoFn      func() *automock.WebhookRepository
-		IntSysRepoFn       func() *automock.IntegrationSystemRepository
-		ScenariosServiceFn func() *automock.ScenariosService
-		LabelServiceFn     func() *automock.LabelUpsertService
-		BundleServiceFn    func() *automock.BundleService
-		UIDServiceFn       func() *automock.UIDService
-		Input              model.ApplicationRegisterInput
-		ExpectedErr        error
+		Name                  string
+		AppNameNormalizer     normalizer.Normalizator
+		AppRepoFn             func() *automock.ApplicationRepository
+		WebhookRepoFn         func() *automock.WebhookRepository
+		IntSysRepoFn          func() *automock.IntegrationSystemRepository
+		ScenariosDefServiceFn func() *automock.ScenariosService
+		LabelServiceFn        func() *automock.LabelUpsertService
+		BundleServiceFn       func() *automock.BundleService
+		UIDServiceFn          func() *automock.UIDService
+		Input                 model.ApplicationRegisterInput
+		ExpectedErr           error
 	}{
 		{
 			Name:              "Success",
@@ -169,7 +169,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
@@ -219,7 +219,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
@@ -269,7 +269,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
@@ -316,7 +316,7 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
@@ -354,7 +354,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
@@ -401,7 +401,7 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
@@ -438,7 +438,7 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
@@ -480,7 +480,7 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Run(func(args mock.Arguments) {
@@ -528,7 +528,7 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &defaultLabelsWithoutIntSys).Once()
@@ -573,7 +573,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
 				return repo
@@ -613,7 +613,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
@@ -650,7 +650,7 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
@@ -686,7 +686,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
@@ -722,7 +722,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
@@ -760,7 +760,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
+			ScenariosDefServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
@@ -798,12 +798,12 @@ func TestService_Create(t *testing.T) {
 			appNameNormalizer := testCase.AppNameNormalizer
 			appRepo := testCase.AppRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			scenariosSvc := testCase.ScenariosServiceFn()
+			scenarioDefSvc := testCase.ScenariosDefServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenarioDefSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -821,7 +821,7 @@ func TestService_Create(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			intSysRepo.AssertExpectations(t)
 			webhookRepo.AssertExpectations(t)
-			scenariosSvc.AssertExpectations(t)
+			scenarioDefSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 			bndlSvc.AssertExpectations(t)
 		})

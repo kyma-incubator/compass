@@ -37,6 +37,27 @@ func (_m *BundleService) Get(ctx context.Context, id string) (*model.Bundle, err
 	return r0, r1
 }
 
+// GetByApplicationID provides a mock function with given fields: ctx, tenant, bundleID
+func (_m *BundleService) GetByApplicationID(ctx context.Context, tenant string, bundleID string) (string, error) {
+	ret := _m.Called(ctx, tenant, bundleID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+		r0 = rf(ctx, tenant, bundleID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, bundleID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByInstanceAuthID provides a mock function with given fields: ctx, instanceAuthID
 func (_m *BundleService) GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error) {
 	ret := _m.Called(ctx, instanceAuthID)

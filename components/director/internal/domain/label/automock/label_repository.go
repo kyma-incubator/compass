@@ -15,6 +15,43 @@ type LabelRepository struct {
 	mock.Mock
 }
 
+// Delete provides a mock function with given fields: ctx, tenant, objectType, objectID, key
+func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
+	ret := _m.Called(ctx, tenant, objectType, objectID, key)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
+		r0 = rf(ctx, tenant, objectType, objectID, key)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetBundleInstanceAuthsScenarioLabels provides a mock function with given fields: ctx, tenant, appId, runtimeId
+func (_m *LabelRepository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, tenant string, appId string, runtimeId string) ([]model.Label, error) {
+	ret := _m.Called(ctx, tenant, appId, runtimeId)
+
+	var r0 []model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []model.Label); ok {
+		r0 = rf(ctx, tenant, appId, runtimeId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenant, appId, runtimeId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByKey provides a mock function with given fields: ctx, tenant, objectType, objectID, key
 func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
@@ -31,6 +68,29 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByObjectTypeAndMatchAnyScenario provides a mock function with given fields: ctx, tenantId, objectType, scenarios
+func (_m *LabelRepository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error) {
+	ret := _m.Called(ctx, tenantId, objectType, scenarios)
+
+	var r0 []model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, []string) []model.Label); ok {
+		r0 = rf(ctx, tenantId, objectType, scenarios)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, []string) error); ok {
+		r1 = rf(ctx, tenantId, objectType, scenarios)
 	} else {
 		r1 = ret.Error(1)
 	}

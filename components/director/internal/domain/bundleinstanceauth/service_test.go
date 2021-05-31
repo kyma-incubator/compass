@@ -2,6 +2,8 @@ package bundleinstanceauth_test
 
 import (
 	"context"
+	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"reflect"
 	"testing"
 	"time"
 
@@ -64,7 +66,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.instanceAuthRepoFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Get(ctx, id)
@@ -83,7 +85,7 @@ func TestService_Get(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.Get(context.TODO(), id)
@@ -141,7 +143,7 @@ func TestService_GetForBundle(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.instanceAuthRepoFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.GetForBundle(ctx, id, bundleID)
@@ -160,7 +162,7 @@ func TestService_GetForBundle(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.GetForBundle(context.TODO(), id, bundleID)
@@ -212,7 +214,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.instanceAuthRepoFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, id)
@@ -230,7 +232,7 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.Delete(context.TODO(), id)
@@ -362,7 +364,7 @@ func TestService_SetAuth(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.InstanceAuthRepoFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, nil, nil)
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
@@ -381,7 +383,7 @@ func TestService_SetAuth(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.SetAuth(context.TODO(), testID, model.BundleInstanceAuthSetInput{})
@@ -394,6 +396,7 @@ func TestService_SetAuth(t *testing.T) {
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
+	testErr := errors.New("Test error")
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	consumerEntity := consumer.Consumer{
@@ -408,10 +411,23 @@ func TestService_Create(t *testing.T) {
 
 	modelRequestInput := fixModelRequestInput()
 
+	appRuntimeWithCommmonScenarios := appAndRuntimeScenarios{
+		appScenarios:     []string{"scenario-1", "scenario-2", "scenario-3"},
+		runtimeScenarios: []string{"scenario-2", "scenario-3", "scenario-4"},
+	}
+
+	appRuntimeWithNoCommmonScenarios := appAndRuntimeScenarios{
+		appScenarios:     []string{"scenario-1", "scenario-2"},
+		runtimeScenarios: []string{"scenario-3", "scenario-4"},
+	}
+
 	testCases := []struct {
 		Name               string
 		InstanceAuthRepoFn func() *automock.Repository
 		UIDSvcFn           func() *automock.UIDService
+		BundleSvcFn        func() *automock.BundleService
+		ScenarioSvcFn      func() *automock.ScenarioService
+		LabelSvcFn         func() *automock.LabelService
 		Input              model.BundleInstanceAuthRequestInput
 		InputAuth          *model.Auth
 		InputSchema        *string
@@ -419,7 +435,7 @@ func TestService_Create(t *testing.T) {
 		ExpectedError      error
 	}{
 		{
-			Name: "Success",
+			Name: "Success when there is matching scenarios between application and runtime",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
@@ -430,6 +446,30 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(testID).Once()
 				return &svc
 			},
+			BundleSvcFn:    newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn:  newScenarioSvcFn(&appRuntimeWithCommmonScenarios),
+			LabelSvcFn:     newLabelSvcFnThatSucceeds(&appRuntimeWithCommmonScenarios),
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success - When no matching scenarios between application and runtime Then no bundle instance auth scenario association is performed",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			BundleSvcFn:    newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn:  newScenarioSvcFn(&appRuntimeWithNoCommmonScenarios),
+			LabelSvcFn:     unusedLabelService,
 			Input:          *modelRequestInput,
 			InputAuth:      modelAuth,
 			InputSchema:    nil,
@@ -448,6 +488,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(testID).Once()
 				return &svc
 			},
+			BundleSvcFn:    newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn:  newScenarioSvcFn(&appRuntimeWithCommmonScenarios),
+			LabelSvcFn:     newLabelSvcFnThatSucceeds(&appRuntimeWithCommmonScenarios),
 			Input:          *modelRequestInput,
 			InputAuth:      nil,
 			InputSchema:    nil,
@@ -466,6 +509,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(testID).Once()
 				return &svc
 			},
+			BundleSvcFn:    newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn:  newScenarioSvcFn(&appRuntimeWithCommmonScenarios),
+			LabelSvcFn:     newLabelSvcFnThatSucceeds(&appRuntimeWithCommmonScenarios),
 			Input:          *modelRequestInput,
 			InputAuth:      modelAuth,
 			InputSchema:    str.Ptr("{\"type\": \"object\"}"),
@@ -484,6 +530,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(testID).Once()
 				return &svc
 			},
+			BundleSvcFn:    unusedBundleService,
+			ScenarioSvcFn:  unusedScenarioService,
+			LabelSvcFn:     unusedLabelService,
 			Input:          *modelRequestInput,
 			InputAuth:      modelAuth,
 			InputSchema:    nil,
@@ -500,6 +549,9 @@ func TestService_Create(t *testing.T) {
 				svc := automock.UIDService{}
 				return &svc
 			},
+			BundleSvcFn:    unusedBundleService,
+			ScenarioSvcFn:  unusedScenarioService,
+			LabelSvcFn:     unusedLabelService,
 			Input:          model.BundleInstanceAuthRequestInput{},
 			InputAuth:      modelAuth,
 			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
@@ -516,6 +568,9 @@ func TestService_Create(t *testing.T) {
 				svc := automock.UIDService{}
 				return &svc
 			},
+			BundleSvcFn:    unusedBundleService,
+			ScenarioSvcFn:  unusedScenarioService,
+			LabelSvcFn:     unusedLabelService,
 			Input:          *modelRequestInput,
 			InputAuth:      modelAuth,
 			InputSchema:    str.Ptr("error"),
@@ -532,6 +587,9 @@ func TestService_Create(t *testing.T) {
 				svc := automock.UIDService{}
 				return &svc
 			},
+			BundleSvcFn:   unusedBundleService,
+			ScenarioSvcFn: unusedScenarioService,
+			LabelSvcFn:    unusedLabelService,
 			Input: model.BundleInstanceAuthRequestInput{
 				InputParams: str.Ptr("{"),
 			},
@@ -550,20 +608,124 @@ func TestService_Create(t *testing.T) {
 				svc := automock.UIDService{}
 				return &svc
 			},
+			BundleSvcFn:    unusedBundleService,
+			ScenarioSvcFn:  unusedScenarioService,
+			LabelSvcFn:     unusedLabelService,
 			Input:          *modelRequestInput,
 			InputAuth:      modelAuth,
 			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
 			ExpectedOutput: "",
 			ExpectedError:  errors.New(`while validating value {"bar": "baz"} against JSON Schema: {"type": "string"}: (root): Invalid type. Expected: string, given: object`),
 		},
+		{
+			Name: "Error while fetching application id for bundle",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			BundleSvcFn: func() *automock.BundleService {
+				svc := automock.BundleService{}
+				svc.On("GetByApplicationID", contextThatHasTenant(testTenant), testTenant, testBundleID).Return("", testErr).Once()
+				return &svc
+			},
+			ScenarioSvcFn:  unusedScenarioService,
+			LabelSvcFn:     unusedLabelService,
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("while fetching application id"),
+		},
+		{
+			Name: "Error when fetching scenario names for application",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			BundleSvcFn: newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn: func() *automock.ScenarioService {
+				svc := automock.ScenarioService{}
+				svc.On("GetScenarioNamesForApplication", contextThatHasTenant(testTenant), testApplicationID).Return(nil, testErr)
+				return &svc
+			},
+			LabelSvcFn:     unusedLabelService,
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: "",
+			ExpectedError:  errors.Errorf("while fetching scenario names for application: %s", testApplicationID),
+		},
+		{
+			Name: "Error when fetching scenario names for runtime",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			BundleSvcFn: newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn: func() *automock.ScenarioService {
+				svc := automock.ScenarioService{}
+				svc.On("GetScenarioNamesForApplication", contextThatHasTenant(testTenant), testApplicationID).Return(appRuntimeWithCommmonScenarios.appScenarios, nil)
+				svc.On("GetScenarioNamesForRuntime", contextThatHasTenant(testTenant), testRuntimeID).Return(nil, testErr)
+				return &svc
+			},
+			LabelSvcFn:     unusedLabelService,
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: "",
+			ExpectedError:  errors.Errorf("while fetching scenario names for runtime: %s", testRuntimeID),
+		},
+		{
+			Name: "Error when creating bundle instance auth scenario labels",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			BundleSvcFn:    newBundleSvcThatGetApplicationIdForBundle,
+			ScenarioSvcFn:  newScenarioSvcFn(&appRuntimeWithCommmonScenarios),
+			LabelSvcFn:     newLabelSvcFnThatFail(&appRuntimeWithCommmonScenarios, testErr),
+			Input:          *modelRequestInput,
+			InputAuth:      modelAuth,
+			InputSchema:    nil,
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("while creating bundle instance auth scenario label"),
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.InstanceAuthRepoFn()
+			bundleSvc := testCase.BundleSvcFn()
+			labelSvc := testCase.LabelSvcFn()
+			scenarioSvc := testCase.ScenarioSvcFn()
+
 			uidSvc := testCase.UIDSvcFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, uidSvc)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, uidSvc, bundleSvc, scenarioSvc, labelSvc)
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
@@ -578,24 +740,13 @@ func TestService_Create(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			mock.AssertExpectationsForObjects(t, instanceAuthRepo, uidSvc)
+			mock.AssertExpectationsForObjects(t, instanceAuthRepo, uidSvc, bundleSvc, scenarioSvc, labelSvc)
 		})
 	}
 
-	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
-
-		// WHEN
-		_, err := svc.Create(context.TODO(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot read tenant from context")
-	})
-
 	t.Run("Error when consumer is not in the context", func(t *testing.T) {
 		// GIVEN
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 		ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 		// WHEN
@@ -605,6 +756,46 @@ func TestService_Create(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read consumer from context")
 	})
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
+
+		// WHEN
+		_, err := svc.Create(context.TODO(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+
+	t.Run("Success - when consumer time is not Runtime then no bundle instance auth scenario association is performed", func(t *testing.T) {
+		// GIVEN
+		instanceAuthRepo := &automock.Repository{}
+		instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), mock.Anything).Return(nil).Once()
+
+		uidSvc := &automock.UIDService{}
+		uidSvc.On("Generate").Return(testID).Once()
+
+		bundleSvc := unusedBundleService()
+		scenarioSvc := unusedScenarioService()
+		labelSvc := unusedLabelService()
+
+		svc := bundleinstanceauth.NewService(instanceAuthRepo, uidSvc, bundleSvc, scenarioSvc, labelSvc)
+		ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+
+		consumerEntity := consumer.Consumer{
+			ConsumerID:   "",
+			ConsumerType: consumer.Application,
+		}
+		ctx = consumer.SaveToContext(ctx, consumerEntity)
+
+		// WHEN
+		_, _ = svc.Create(ctx, testBundleID, *modelRequestInput, nil, nil)
+
+		// THEN
+		mock.AssertExpectationsForObjects(t, instanceAuthRepo, uidSvc, bundleSvc, scenarioSvc, labelSvc)
+	})
+
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
@@ -655,7 +846,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := bundleinstanceauth.NewService(repo, nil)
+			svc := bundleinstanceauth.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			pia, err := svc.List(ctx, testBundleID)
@@ -674,7 +865,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.List(context.TODO(), "")
 		// THEN
@@ -731,7 +922,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := bundleinstanceauth.NewService(repo, nil)
+			svc := bundleinstanceauth.NewService(repo, nil, nil, nil, nil)
 
 			// WHEN
 			bundleInstanceAuth, err := svc.ListByRuntimeID(ctx, testRuntimeID)
@@ -750,7 +941,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.ListByRuntimeID(context.TODO(), "")
@@ -802,7 +993,7 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := bundleinstanceauth.NewService(repo, nil)
+			svc := bundleinstanceauth.NewService(repo, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Update(ctx, bundleInstanceAuth)
@@ -891,7 +1082,7 @@ func TestService_RequestDeletion(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.InstanceAuthRepoFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, nil, nil)
 			svc.SetTimestampGen(func() time.Time {
 				return timestampNow
 			})
@@ -917,13 +1108,22 @@ func TestService_RequestDeletion(t *testing.T) {
 		expectedError := errors.New("BundleInstanceAuth is required to request its deletion")
 
 		// WHEN
-		svc := bundleinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 		_, err := svc.RequestDeletion(ctx, nil, nil)
 
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), expectedError.Error())
 	})
+}
+
+type appAndRuntimeScenarios struct {
+	appScenarios     []string
+	runtimeScenarios []string
+}
+
+func (sc *appAndRuntimeScenarios) getCommonScenarios() []string {
+	return str.IntersectSlice(sc.appScenarios, sc.runtimeScenarios)
 }
 
 func contextThatHasTenant(expectedTenant string) interface{} {
@@ -934,4 +1134,54 @@ func contextThatHasTenant(expectedTenant string) interface{} {
 		}
 		return actualTenant == expectedTenant
 	})
+}
+
+func unusedScenarioService() *automock.ScenarioService {
+	return &automock.ScenarioService{}
+}
+
+func unusedBundleService() *automock.BundleService {
+	return &automock.BundleService{}
+}
+
+func unusedLabelService() *automock.LabelService {
+	return &automock.LabelService{}
+}
+
+func newScenarioSvcFn(appRuntScenarios *appAndRuntimeScenarios) func() *automock.ScenarioService {
+	return func() *automock.ScenarioService {
+		svc := automock.ScenarioService{}
+		svc.On("GetScenarioNamesForApplication", contextThatHasTenant(testTenant), testApplicationID).Return(appRuntScenarios.appScenarios, nil)
+		svc.On("GetScenarioNamesForRuntime", contextThatHasTenant(testTenant), testRuntimeID).Return(appRuntScenarios.runtimeScenarios, nil)
+		return &svc
+	}
+}
+
+func newLabelSvcFnThatSucceeds(appRuntScenarios *appAndRuntimeScenarios) func() *automock.LabelService {
+	return func() *automock.LabelService {
+		svc := automock.LabelService{}
+		svc.On("UpsertLabel", contextThatHasTenant(testTenant), testTenant, matchLabelInputScenarios(appRuntScenarios)).Return(nil)
+		return &svc
+	}
+}
+
+func newLabelSvcFnThatFail(appRuntScenarios *appAndRuntimeScenarios, err error) func() *automock.LabelService {
+	return func() *automock.LabelService {
+		svc := automock.LabelService{}
+		svc.On("UpsertLabel", contextThatHasTenant(testTenant), testTenant, matchLabelInputScenarios(appRuntScenarios)).Return(err)
+		return &svc
+	}
+}
+
+func matchLabelInputScenarios(appRuntScenarios *appAndRuntimeScenarios) interface{} {
+	return mock.MatchedBy(func(lbl *model.LabelInput) bool {
+		scenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(lbl.Value)
+		return err == nil && reflect.DeepEqual(scenarios, appRuntScenarios.getCommonScenarios())
+	})
+}
+
+func newBundleSvcThatGetApplicationIdForBundle() *automock.BundleService {
+	svc := automock.BundleService{}
+	svc.On("GetByApplicationID", contextThatHasTenant(testTenant), testTenant, testBundleID).Return(testApplicationID, nil).Once()
+	return &svc
 }

@@ -86,11 +86,13 @@ type ScenariosDefinitionService interface {
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
+//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error
 	IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error)
 }
 
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
 }

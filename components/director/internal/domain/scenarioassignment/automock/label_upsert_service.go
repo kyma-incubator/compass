@@ -14,13 +14,13 @@ type LabelUpsertService struct {
 	mock.Mock
 }
 
-// UpsertLabel provides a mock function with given fields: ctx, tenant, labelInput
-func (_m *LabelUpsertService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
-	ret := _m.Called(ctx, tenant, labelInput)
+// UpsertScenarios provides a mock function with given fields: ctx, tenantID, labels, newScenarios, mergeFn
+func (_m *LabelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func([]string, string) []string) error {
+	ret := _m.Called(ctx, tenantID, labels, newScenarios, mergeFn)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) error); ok {
-		r0 = rf(ctx, tenant, labelInput)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []model.Label, []string, func([]string, string) []string) error); ok {
+		r0 = rf(ctx, tenantID, labels, newScenarios, mergeFn)
 	} else {
 		r0 = ret.Error(0)
 	}

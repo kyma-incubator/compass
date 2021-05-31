@@ -151,7 +151,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepository, labelDefRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo(), apiSvc, eventAPISvc, documentSvc, uidSvc)
-	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepository)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc)
 
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)

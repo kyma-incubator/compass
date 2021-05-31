@@ -441,7 +441,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 
 	bundleSvc := mp_bundle.NewService(bundleRepo(), apiSvc, eventAPISvc, documentSvc, uidSvc)
-	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc)
 
 	scenarioAssignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
@@ -615,7 +615,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	scenariosSvc := label.NewScenarioService(labelRepo)
-	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc, labelRepo)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc)
 
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosDefSvc, scenariosSvc, bundleSvc, uidSvc, bundleInstanceAuthSvc)
 	timeService := directorTime.NewService()

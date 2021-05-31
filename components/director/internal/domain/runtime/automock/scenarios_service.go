@@ -13,21 +13,25 @@ type ScenariosService struct {
 	mock.Mock
 }
 
-// AddDefaultScenarioIfEnabled provides a mock function with given fields: ctx, labels
-func (_m *ScenariosService) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
-	_m.Called(ctx, labels)
-}
+// GetScenarioNamesForRuntime provides a mock function with given fields: ctx, runtimeId
+func (_m *ScenariosService) GetScenarioNamesForRuntime(ctx context.Context, runtimeId string) ([]string, error) {
+	ret := _m.Called(ctx, runtimeId)
 
-// EnsureScenariosLabelDefinitionExists provides a mock function with given fields: ctx, tenant
-func (_m *ScenariosService) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error {
-	ret := _m.Called(ctx, tenant)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, tenant)
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string) []string); ok {
+		r0 = rf(ctx, runtimeId)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, runtimeId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

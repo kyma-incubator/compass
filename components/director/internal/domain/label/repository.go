@@ -29,16 +29,11 @@ type Converter interface {
 	FromEntity(in Entity) (model.Label, error)
 }
 
-type scenariosView struct {
-	repo.Lister
-}
-
 type repository struct {
 	upserter             repo.Upserter
 	lister               repo.Lister
 	deleter              repo.Deleter
 	conv                 Converter
-	scenariosView        *scenariosView
 	scenarioQueryBuilder repo.QueryBuilder
 }
 
@@ -49,9 +44,6 @@ func NewRepository(conv Converter) *repository {
 		deleter:              repo.NewDeleter(resource.Label, tableName, tenantColumn),
 		conv:                 conv,
 		scenarioQueryBuilder: repo.NewQueryBuilder(resource.Label, ScenariosViewName, tenantColumn, []string{"label_id"}),
-		scenariosView: &scenariosView{
-			repo.NewLister(resource.BundleInstanceAuth, ScenariosViewName, tenantColumn, tableColumns),
-		},
 	}
 }
 
@@ -288,7 +280,7 @@ func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, t
 	}
 
 	var labels Collection
-	err = r.scenariosView.List(ctx, tenant, &labels, inOperatorConditions...)
+	err = r.lister.List(ctx, tenant, &labels, inOperatorConditions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching bundle_instance_auth scenario labels")
 	}
