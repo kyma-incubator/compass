@@ -2083,6 +2083,16 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Valid when `entryPoints` field is empty and `PartOfConsumptionBundles` field is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = nil
+				doc.APIResources[0].PartOfConsumptionBundles = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Invalid field `entryPoints` when containing invalid URI for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()

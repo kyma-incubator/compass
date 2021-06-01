@@ -170,7 +170,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
 		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
-		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(isAPIPartOfBundles(api.PartOfConsumptionBundles)))),
+		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
 		validation.Field(&api.ImplementationStandard, validation.In(ApiImplementationStandardDocumentApi, ApiImplementationStandardServiceBroker, ApiImplementationStandardCsnExposure, ApiImplementationStandardCustom)),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
@@ -693,13 +693,12 @@ func isValidDate(date *string) validation.RuleFunc {
 	}
 }
 
-func isAPIPartOfBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc {
+func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc {
 	return func(value interface{}) error {
-		var err error
 		if partOfConsumptionBundles != nil && len(partOfConsumptionBundles) > 0 {
-			err = errors.New("api without entry points can not be part of consumption bundle")
+			return errors.New("api without entry points can not be part of consumption bundle")
 		}
-		return err
+		return nil
 	}
 }
 
