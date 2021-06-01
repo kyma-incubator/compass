@@ -192,20 +192,6 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 	}, nil
 }
 
-func (r *pgRepository) GetApplicationID(ctx context.Context, tenant string, bundleID string) (string, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("id", bundleID),
-		repo.NewEqualCondition("tenant_id", tenant),
-	}
-
-	var ent Entity
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
-		return "", errors.Wrap(err, "while getting application id by bundle id")
-	}
-
-	return ent.ApplicationID, nil
-}
-
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
 	bundleCollection := BundleCollection{}
 	if err := r.lister.List(ctx, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {

@@ -364,10 +364,12 @@ func (s *service) validateInputParamsAgainstSchema(inputParams *string, schema *
 }
 
 func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context.Context, tnt, bundleInstanceAuthId, bundleID, runtimeId string) error {
-	applicationID, err := s.bundleSvc.GetByApplicationID(ctx, tnt, bundleID)
+	bundle, err := s.bundleSvc.Get(ctx, bundleID)
 	if err != nil {
 		return errors.Wrap(err, "while fetching application id")
 	}
+
+	applicationID := bundle.ApplicationID
 	scenariosForApp, err := s.scenarioSvc.GetScenarioNamesForApplication(ctx, applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching scenario names for application: %s", applicationID)

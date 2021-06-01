@@ -229,7 +229,3 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 
 	return nil
 }
-
-func (s *service) GetByApplicationID(ctx context.Context, tenant string, bundleID string) (string, error) {
-	return s.bndlRepo.GetApplicationID(ctx, tenant, bundleID)
-}
