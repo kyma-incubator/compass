@@ -65,7 +65,7 @@ type EventDefinitionInput struct {
 	Countries                json.RawMessage               `json:"countries"`
 	ReleaseStatus            *string                       `json:"releaseStatus"`
 	SunsetDate               *string                       `json:"sunsetDate"`
-	Successors               json.RawMessage               `json:"successors"`
+	Successors               json.RawMessage               `json:"successors,omitempty"`
 	Labels                   json.RawMessage               `json:"labels"`
 	Visibility               *string                       `json:"visibility"`
 	Disabled                 *bool                         `json:"disabled"`

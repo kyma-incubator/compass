@@ -67,7 +67,7 @@ type APIDefinitionInput struct {
 	APIResourceLinks                        json.RawMessage               `json:"apiResourceLinks"`
 	ReleaseStatus                           *string                       `json:"releaseStatus"`
 	SunsetDate                              *string                       `json:"sunsetDate"`
-	Successors                              json.RawMessage               `json:"successors"`
+	Successors                              json.RawMessage               `json:"successors,omitempty"`
 	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
 	Labels                                  json.RawMessage               `json:"labels"`
 	Visibility                              *string                       `json:"visibility"`

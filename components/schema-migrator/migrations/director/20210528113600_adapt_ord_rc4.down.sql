@@ -13,7 +13,7 @@ ALTER TABLE event_api_definitions
 CREATE TABLE convert_json_to_string_temp
 (
     id        UUID,
-    targetURL VARCHAR(256)
+    successor VARCHAR(256)
 );
 
 INSERT INTO convert_json_to_string_temp
