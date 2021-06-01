@@ -174,3 +174,119 @@ func TestTitle(t *testing.T) {
 		})
 	}
 }
+
+func TestSubstractSlice(t *testing.T) {
+	testCases := []struct {
+		Name   string
+		SliceA []string
+		SliceB []string
+		Output []string
+	}{
+		{
+			Name:   "When SliceB is subset of SliceA",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{"b", "c"},
+			Output: []string{"a"},
+		},
+		{
+			Name:   "When SliceA is subset of SliceB",
+			SliceA: []string{"b", "c"},
+			SliceB: []string{"a", "b", "c"},
+			Output: []string{},
+		},
+		{
+			Name:   "When SliceB contains only some matching elements from SliceA",
+			SliceA: []string{"b", "c"},
+			SliceB: []string{"c", "d"},
+			Output: []string{"b"},
+		},
+		{
+			Name:   "When SliceA is empty",
+			SliceA: []string{},
+			SliceB: []string{"a", "b", "c"},
+			Output: []string{},
+		},
+		{
+			Name:   "When SliceB is empty",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{},
+			Output: []string{"a", "b", "c"},
+		},
+		{
+			Name:   "When both SliceA and SliceB",
+			SliceA: []string{},
+			SliceB: []string{},
+			Output: []string{},
+		},
+		{
+			Name:   "When SliceA and SliceB have no matching elements",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{"d", "f", "g"},
+			Output: []string{"a", "b", "c"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			assert.ElementsMatch(t, str.SubstractSlice(testCase.SliceA, testCase.SliceB), testCase.Output)
+		})
+	}
+}
+
+func TestIntersectSlice(t *testing.T) {
+	testCases := []struct {
+		Name   string
+		SliceA []string
+		SliceB []string
+		Output []string
+	}{
+		{
+			Name:   "When SliceB is subset of SliceA",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{"b", "c"},
+			Output: []string{"b", "c"},
+		},
+		{
+			Name:   "When SliceA is subset of SliceB",
+			SliceA: []string{"b", "c"},
+			SliceB: []string{"a", "b", "c"},
+			Output: []string{"b", "c"},
+		},
+		{
+			Name:   "When SliceB contains only some matching elements from SliceA",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{"b", "c", "d"},
+			Output: []string{"b", "c"},
+		},
+		{
+			Name:   "When SliceA is empty",
+			SliceA: []string{},
+			SliceB: []string{"a", "b", "c"},
+			Output: []string{},
+		},
+		{
+			Name:   "When SliceB is empty",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{},
+			Output: []string{},
+		},
+		{
+			Name:   "When both SliceA and SliceB",
+			SliceA: []string{},
+			SliceB: []string{},
+			Output: []string{},
+		},
+		{
+			Name:   "When SliceA and SliceB have no matching elements",
+			SliceA: []string{"a", "b", "c"},
+			SliceB: []string{"d", "f", "g"},
+			Output: []string{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			assert.ElementsMatch(t, str.IntersectSlice(testCase.SliceA, testCase.SliceB), testCase.Output)
+		})
+	}
+}
