@@ -37,6 +37,9 @@ then
       spec:
         maxRetries: 1
         concurrency: 1
+        selectors:
+          matchLabelExpressions:
+            - "!benchmark"
 EOF
 
 else

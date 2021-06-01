@@ -6,7 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 )
 

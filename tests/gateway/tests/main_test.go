@@ -17,9 +17,9 @@ import (
 )
 
 type config struct {
-	DefaultTenant string
-	Domain        string
-	DirectorURL   string
+	DefaultTestTenant string
+	Domain            string
+	DirectorURL       string
 }
 
 var (

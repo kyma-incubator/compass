@@ -1,14 +1,12 @@
 package fixtures
 
 import (
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 )
 
-func FixBasicAuth(t *testing.T) *graphql.AuthInput {
+func FixBasicAuth(t require.TestingT) *graphql.AuthInput {
 	additionalHeaders, err := graphql.NewHttpHeadersSerialized(map[string][]string{
 		"header-A": []string{"ha1", "ha2"},
 		"header-B": []string{"hb1", "hb2"},
@@ -28,7 +26,7 @@ func FixBasicAuth(t *testing.T) *graphql.AuthInput {
 	}
 }
 
-func FixOauthAuth(t *testing.T) *graphql.AuthInput {
+func FixOauthAuth(t require.TestingT) *graphql.AuthInput {
 	additionalHeaders, err := graphql.NewHttpHeadersSerialized(map[string][]string{
 		"header-A": []string{"ha1", "ha2"},
 		"header-B": []string{"hb1", "hb2"},

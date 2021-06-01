@@ -34,7 +34,7 @@ import (
 )
 
 type config struct {
-	DefaultTenant                 string
+	DefaultTestTenant             string
 	DirectorURL                   string
 	ORDServiceURL                 string
 	AggregatorSchedule            string

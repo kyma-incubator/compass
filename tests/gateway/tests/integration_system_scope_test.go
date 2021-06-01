@@ -18,11 +18,11 @@ func TestIntegrationSystemScenario(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Register Integration System with Dex id token")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 	t.Log("Request Client Credentials for Integration System")
-	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 	intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -37,18 +37,18 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			ProviderName:        ptr.String("compass"),
 			IntegrationSystemID: &intSys.ID,
 		}
-		appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
+		appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		require.NoError(t, err)
 		require.NotEmpty(t, appByIntSys.ID)
 
 		t.Log("Get application")
-		app := fixtures.GetApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+		app := fixtures.GetApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appByIntSys.ID)
 
 		require.NotEmpty(t, app.ID)
 		require.Equal(t, appByIntSys.ID, app.ID)
 
 		t.Log("Unregister application")
-		fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+		fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appByIntSys.ID)
 
 	})
 	t.Run("Test application template scopes", func(t *testing.T) {
@@ -63,16 +63,16 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
 		}
-		appTpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTplInput)
+		appTpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTplInput)
 		require.NotEmpty(t, appTpl.ID)
 
 		t.Log("Get application template")
-		gqlAppTpl := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTpl.ID)
+		gqlAppTpl := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTpl.ID)
 		require.NotEmpty(t, gqlAppTpl.ID)
 		require.Equal(t, appTpl.ID, gqlAppTpl.ID)
 
 		t.Log("Delete application template")
-		fixtures.DeleteApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appTpl.ID)
+		fixtures.DeleteApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTpl.ID)
 
 	})
 
@@ -81,17 +81,17 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test",
 		}
-		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
+		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
 		require.NotEmpty(t, runtime.ID)
 
 		t.Log("Get runtime")
-		gqlRuntime := fixtures.GetRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		gqlRuntime := fixtures.GetRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
 
 		require.NotEmpty(t, gqlRuntime.ID)
 		require.Equal(t, runtime.ID, gqlRuntime.ID)
 
 		t.Log("Unregister runtime")
-		fixtures.UnregisterRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		fixtures.UnregisterRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
 
 	})
 }

@@ -72,8 +72,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.testCredentials.secretName }}
                   key: password
-            - name: DEFAULT_TENANT
-              value: "{{.Values.global.defaultTenant}}"
+            - name: DEFAULT_TEST_TENANT
+              value: "{{ (index .Values.global.tenants 9).id }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
             - name: GATEWAY_OAUTH20_SUBDOMAIN

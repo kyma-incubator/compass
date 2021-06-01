@@ -11,7 +11,7 @@ global:
     - name: TestTenantSeparation
       id: f1c4b5be-b0e1-41f9-b0bc-b378200dcca0
     - name: TestDeleteLastScenarioForApplication
-      id: f739b36c-813f-4fc3-996e-dd03c7d13aa0
+      id: 0403be1e-f854-475e-9074-922120277af5
     - name: Test_DeleteAutomaticScenarioAssignmentForSelector
       id: d9553135-6115-4c67-b4d9-962c00f3725f
     - name: Test_AutomaticScenarioAssigmentForRuntime
@@ -23,7 +23,7 @@ global:
     - name: Test Default
       id: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestListLabelDefinitions
-      id: 2bf03de1-23b1-4063-9d3e-67096800accc
+      id: 3f641cf5-2d14-4e0f-a122-16e7569926f1
     - name: Test_AutomaticScenarioAssignmentQueries
       id: 8263cc13-5698-4a2d-9257-e8e76b543e88
     - name: TestGetScenariosLabelDefinitionCreatesOneIfNotExists
@@ -44,34 +44,34 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1828"
+      version: "PR-1868"
     connectivity_adapter:
       dir:
-      version: "PR-1828"
+      version: "PR-1868"
     pairing_adapter:
       dir:
-      version: "PR-1828"
+      version: "PR-1868"
     director:
       dir:
-      version: "PR-1861"
+      version: "PR-1879"
     gateway:
       dir:
-      version: "PR-1850"
+      version: "PR-1868"
     operations_controller:
       dir:
-      version: "PR-1859"
+      version: "PR-1868"
     tenant_fetcher:
       dir:
-      version: "PR-1828"
+      version: "PR-1868"
     ord_service:
       dir:
-      version: "PR-25"
+      version: "PR-28"
     schema_migrator:
       dir:
-      version: "PR-1858"
+      version: "PR-1879"
     system_broker:
       dir:
-      version: "PR-1839"
+      version: "PR-1868"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -79,13 +79,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1858"
+      version: "PR-1868"
     console:
       dir:
-      version: "PR-31"
+      version: "PR-33"
     e2e_tests:
       dir:
-      version: "PR-1845"
+      version: "PR-1868"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -275,35 +275,35 @@ global:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/runtime-mapping
             retry:
-              give_up_after: 3s
+              give_up_after: 6s
               max_delay: 2000ms
       authenticationMappingService:
         config:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping
             retry:
-              give_up_after: 3s
+              give_up_after: 6s
               max_delay: 2000ms
       tenantMappingService:
         config:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
             retry:
-              give_up_after: 3s
+              give_up_after: 6s
               max_delay: 2000ms
       certificateResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
             retry:
-              give_up_after: 3s
+              give_up_after: 6s
               max_delay: 2000ms
       tokenResolverService:
         config:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
-              give_up_after: 3s
+              give_up_after: 6s
               max_delay: 2000ms
 
   tenantFetcher:

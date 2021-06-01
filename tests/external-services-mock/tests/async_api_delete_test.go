@@ -43,13 +43,13 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
 	require.NoError(t, err)
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
-	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
 }
@@ -73,11 +73,11 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	require.NoError(t, err)
 	registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 	appTemplate := graphql.ApplicationTemplate{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerTemplateRequest, &appTemplate)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
 	require.NoError(t, err)
 	require.Len(t, appTemplate.Webhooks, 1)
 
-	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTenant)
+	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
 
 	t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
 	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
@@ -87,12 +87,12 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	require.NoError(t, err)
 	registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerAppRequest, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
 	require.NoError(t, err)
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
-	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, dexGraphQLClient)
 }
@@ -116,11 +116,11 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	require.NoError(t, err)
 	registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 	appTemplate := graphql.ApplicationTemplate{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerTemplateRequest, &appTemplate)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
 	require.NoError(t, err)
 	require.Len(t, appTemplate.Webhooks, 1)
 
-	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTenant)
+	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
 
 	t.Log(fmt.Sprintf("Registering application from template: %s", appName))
 	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
@@ -130,7 +130,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	require.NoError(t, err)
 	registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerAppRequest, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
 	require.NoError(t, err)
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	require.Len(t, app.Webhooks, 1)
@@ -142,10 +142,10 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 
 	registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
 	webhookResult := graphql.Webhook{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerAppWebhookRequest, &webhookResult)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
 	require.NoError(t, err)
 
-	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, dexGraphQLClient)
 }
@@ -158,7 +158,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
 	t.Log("Start async Delete of application")
-	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
+	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, gqlClient, testConfig.DefaultTestTenant, app.ID)
 
 	t.Log("Prepare operation client for compass-system namespace")
 	cfg, err := rest.InClusterConfig()
@@ -185,7 +185,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 		}, time.Minute*3, time.Second*5, "Waiting for state change timed out.")
 
 		t.Log("Verify the application status in director is 'ready:false'")
-		deletedApp := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
+		deletedApp := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTestTenant, app.ID)
 		require.NoError(t, err)
 		require.Equal(t, deletedApp.Status.Condition, graphql.ApplicationStatusConditionDeleting)
 		require.Empty(t, deletedApp.Error, "Application Error is not empty")
@@ -211,7 +211,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	}, time.Minute*3, time.Second*10, "Waiting for operation deletion timed out.")
 
 	t.Log("Verify the deleted application do not exists in director")
-	missingApp := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTenant, app.ID)
+	missingApp := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTestTenant, app.ID)
 	require.Empty(t, missingApp.Name, "Application is not deleted")
 }
 
