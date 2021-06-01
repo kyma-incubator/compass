@@ -104,9 +104,9 @@ spec:
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
             - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.tests.token.server.enabled}}"
+              value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.tests.token.server.port}}"
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine

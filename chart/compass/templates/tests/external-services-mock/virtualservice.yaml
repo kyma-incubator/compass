@@ -21,4 +21,4 @@ spec:
     - destination:
         host: {{ .Chart.Name }}-e2e-external-services-mock-ts.kyma-system.svc.cluster.local
         port:
-          number: {{.Values.tests.token.server.port}}
+          number: {{.Values.global.tests.token.server.port}}

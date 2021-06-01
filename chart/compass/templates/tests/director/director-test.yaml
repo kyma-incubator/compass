@@ -93,14 +93,16 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO_ENABLED
+              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
             - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.tests.token.server.enabled}}"
+              value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.tests.token.server.port}}"
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"

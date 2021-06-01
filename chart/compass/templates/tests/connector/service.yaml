@@ -8,8 +8,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: {{.Values.tests.token.server.port}}
-    targetPort: {{.Values.tests.token.server.port}}
+  - port: {{.Values.global.tests.token.server.port}}
+    targetPort: {{.Values.global.tests.token.server.port}}
     protocol: TCP
     name: http-token-server
   selector:

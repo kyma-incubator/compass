@@ -61,7 +61,7 @@ spec:
                   name: admin-user
                   key: password
             - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.tests.token.server.enabled}}"
+              value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.tests.token.server.port}}"
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never
