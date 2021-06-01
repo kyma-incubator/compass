@@ -1,7 +1,7 @@
 package graphql
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 func (i LabelInput) Validate() error {

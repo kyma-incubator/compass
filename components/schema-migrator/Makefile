@@ -12,13 +12,15 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: validate
 
-validate: clean-dump
+validate:
 	@echo "Will validate UP and DOWN migrations without data"
+	rm -f ./seeds/dump.sql
 	./validate.sh
 	@echo "Will validate UP migrations with data"
 	./validate.sh --dump-db;
+	rm -f ./seeds/dump.sql
 
-verify:: validate clean-dump
+verify:: validate
 
 test-local:
 	@echo ${SKIP_TEST_MESSAGE}
@@ -34,6 +36,3 @@ check-fmt:
 
 deploy-on-minikube:
 	@echo ${SKIP_DEPLOY_MESSAGE}
-
-clean-dump:
-	@rm -f ./seeds/dump.sql

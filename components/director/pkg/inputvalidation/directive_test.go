@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"

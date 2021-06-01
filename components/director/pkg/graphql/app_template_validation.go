@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"
 )

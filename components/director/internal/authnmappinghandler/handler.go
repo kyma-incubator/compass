@@ -33,7 +33,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
-	goidc "github.com/coreos/go-oidc"
+	goidc "github.com/coreos/go-oidc/v3/oidc"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
