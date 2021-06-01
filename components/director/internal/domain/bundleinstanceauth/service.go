@@ -457,6 +457,10 @@ func (sa *scenarioReAssociator) getCommonRelatedObjects(ctx context.Context, sce
 }
 
 func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, inputScenarios []string, objId string) error {
+	if len(existingScenarios) == 0 {
+		return nil
+	}
+
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -474,14 +478,21 @@ func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios
 	}
 
 	scToAdd := str.SubstractSlice(inputScenarios, existingScenarios)
-	scenariosToKeep := str.IntersectSlice(existingScenarios, inputScenarios)
+	if len(scToAdd) == 0 {
+		return nil
+	}
 
-	commonRelatedObjects, err := sa.getCommonRelatedObjects(ctx, scenariosToKeep, scToAdd)
+	scenariosToKeep := str.IntersectSlice(existingScenarios, inputScenarios)
+	if len(scenariosToKeep) == 0 {
+		return nil
+	}
+
+	commonConnectObjectsWithTheNewScenarios, err := sa.getCommonRelatedObjects(ctx, scenariosToKeep, scToAdd)
 	if err != nil {
 		return err
 	}
 
-	for relatedObjId, scenarios := range commonRelatedObjects {
+	for relatedObjId, scenarios := range commonConnectObjectsWithTheNewScenarios {
 		bundleInstanceAuthsLabels, err := sa.getBundleInstanceAuthsScenarioLabels(relatedObjId)
 		if err != nil {
 			return err
