@@ -43,7 +43,10 @@ func New(c *Config) *TokenServer {
 			bytes, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				c.Log("Could not decode request body: %+v", err)
-				rw.Write([]byte("Unexpected body format"))
+				if _, err := rw.Write([]byte("Unexpected body format")); err != nil {
+					rw.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 				rw.WriteHeader(http.StatusBadRequest)
 				return
 			}
