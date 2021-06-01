@@ -115,7 +115,6 @@ const ordDocument = `{
 			"url": "https://TEST:443//odata/$metadata"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successors": null,
 		"sunsetDate": null,
 		"systemInstanceAware": true,
 		"tags": ["apiTestTag"],
@@ -352,7 +351,6 @@ const ordDocument = `{
 			"url": "http://localhost:8080/asyncApi2.json"
 		}],
 		"shortDescription": "lorem ipsum",
-		"successors": null,
 		"sunsetDate": null,
 		"systemInstanceAware": true,
 		"tags": ["eventTestTag"],

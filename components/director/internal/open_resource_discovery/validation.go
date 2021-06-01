@@ -640,10 +640,6 @@ func validateJSONArrayOfStringsMatchPattern(arr interface{}, regexPattern *regex
 	}
 	parsedArr := gjson.ParseBytes(jsonArr)
 
-	if len(parsedArr.String()) == 0 {
-		return nil
-	}
-
 	if !parsedArr.IsArray() {
 		return errors.New("should be json array")
 	}
