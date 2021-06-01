@@ -140,7 +140,7 @@ else
         fi
 
         cat ${ROOT_PATH}/../schema-migrator/seeds/dump.sql | \
-            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+            docker exec -i ${POSTGRES_CONTAINER} psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
 
         REMOTE_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
         LOCAL_MIGRATION_VERSION=$(echo $(ls ${ROOT_PATH}/../schema-migrator/migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')

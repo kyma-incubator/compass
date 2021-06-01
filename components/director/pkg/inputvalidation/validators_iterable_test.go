@@ -3,7 +3,7 @@ package inputvalidation_test
 import (
 	"testing"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
