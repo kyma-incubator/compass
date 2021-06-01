@@ -51,7 +51,7 @@ const (
 	ApiProtocolSoapInbound  string = "soap-inbound"
 	ApiProtocolSoapOutbound string = "soap-outbound"
 	ApiProtocolRest         string = "rest"
-	ApiProtocolSapRrc       string = "sap-rfc"
+	ApiProtocolSapRfc       string = "sap-rfc"
 
 	ApiVisibilityPublic   string = "public"
 	ApiVisibilityPrivate  string = "private"
@@ -206,7 +206,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRrc)),
+		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRfc)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
@@ -321,7 +321,7 @@ func validateProductInput(product *model.ProductInput) error {
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required,
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
-			validation.When(regexp.MustCompile("^(sap)((\\.)([a-zA-Z0-9])+)*$").MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
+			validation.When(regexp.MustCompile("^(sap)((\\.)([a-zA-Z0-9._\\-])+)*$").MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
 		),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
 		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
@@ -547,7 +547,7 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	}
 
 	rfcMetadataTypeExists := resourceDefinitionTypes[model.APISpecTypeRfcMetadata]
-	if isPolicyCoreOrPartner && apiProtocol == ApiProtocolSapRrc && !rfcMetadataTypeExists {
+	if isPolicyCoreOrPartner && apiProtocol == ApiProtocolSapRfc && !rfcMetadataTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='sap-rfc' it is mandatory to provide SAP RFC definitions")
 	}
 

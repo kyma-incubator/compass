@@ -1,12 +1,18 @@
 BEGIN;
 
 ALTER TABLE api_definitions
-    DROP COLUMN successor,
     ADD COLUMN successors JSONB;
 
+UPDATE api_definitions
+SET successors = json_build_array(to_jsonb(successor))
+WHERE successor IS NOT NULL;
+
 ALTER TABLE event_api_definitions
-    DROP COLUMN successor,
     ADD COLUMN successors JSONB;
+
+UPDATE event_api_definitions
+SET successors = json_build_array(to_jsonb(successor))
+WHERE successor IS NOT NULL;
 
 CREATE VIEW api_definition_successors AS
 SELECT id             AS api_definition_id,
@@ -24,15 +30,27 @@ ALTER TYPE policy_level RENAME TO policy_level_old;
 
 CREATE TYPE policy_level AS ENUM ('custom', 'sap:core:v1','sap:partner:v1');
 
-ALTER TABLE packages ALTER COLUMN policy_level TYPE TEXT;
+ALTER TABLE packages
+    ALTER COLUMN policy_level TYPE TEXT;
 
-UPDATE packages SET policy_level = 'sap:core:v1' WHERE policy_level = 'sap';
-UPDATE packages SET policy_level = 'sap:partner:v1' WHERE policy_level = 'sap-partner';
+UPDATE packages
+SET policy_level = 'sap:core:v1'
+WHERE policy_level = 'sap';
+
+UPDATE packages
+SET policy_level = 'sap:partner:v1'
+WHERE policy_level = 'sap-partner';
 
 ALTER TABLE packages
     ALTER COLUMN policy_level TYPE policy_level
-    USING policy_level::text::policy_level;
+        USING policy_level::text::policy_level;
 
 DROP TYPE policy_level_old;
+
+ALTER TABLE api_definitions
+    DROP COLUMN successor;
+
+ALTER TABLE event_api_definitions
+    DROP COLUMN successor;
 
 COMMIT;
