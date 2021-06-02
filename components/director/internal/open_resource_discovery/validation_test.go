@@ -777,7 +777,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1005,6 +1005,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1073,6 +1074,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1706,6 +1708,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1774,6 +1777,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2471,7 +2475,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2554,7 +2558,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2596,7 +2600,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
@@ -2623,7 +2627,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -2654,7 +2658,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -2683,7 +2687,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
@@ -2710,7 +2714,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
@@ -2737,7 +2741,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
@@ -2764,35 +2768,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
-				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
-				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
-				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
-				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
-				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap` and apiProtocol is `rest`",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
-				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
-				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
-				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
-				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
-				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
-				return []*open_resource_discovery.Document{doc}
-			},
-		}, {
-			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `rest`",
-			DocumentProvider: func() []*open_resource_discovery.Document {
-				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
-				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -3432,6 +3409,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3500,6 +3478,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3620,7 +3599,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
-				doc.Packages[0].Vendor = str.Ptr("partner:vendor:SAP:")
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
