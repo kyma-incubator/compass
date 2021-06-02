@@ -2,19 +2,17 @@ package bundleinstanceauth_test
 
 import (
 	"context"
-	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
+	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -790,9 +788,10 @@ func TestService_Create(t *testing.T) {
 		ctx = consumer.SaveToContext(ctx, consumerEntity)
 
 		// WHEN
-		_, _ = svc.Create(ctx, testBundleID, *modelRequestInput, nil, nil)
+		_, err := svc.Create(ctx, testBundleID, *modelRequestInput, nil, nil)
 
 		// THEN
+		require.NoError(t, err)
 		mock.AssertExpectationsForObjects(t, instanceAuthRepo, uidSvc, bundleSvc, scenarioSvc, labelSvc)
 	})
 

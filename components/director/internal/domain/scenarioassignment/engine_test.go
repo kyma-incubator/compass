@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
+	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
