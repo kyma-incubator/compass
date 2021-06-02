@@ -20,6 +20,8 @@ func TestConverter_ToEntity(t *testing.T) {
 	marshalledArrayValue, err := json.Marshal(arrayValue)
 	require.NoError(t, err)
 
+	objectID := sql.NullString{String: "321", Valid: true}
+
 	// given
 	testCases := []struct {
 		Name               string
@@ -29,14 +31,14 @@ func TestConverter_ToEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixLabelModel("1", arrayValue),
-			Expected:           fixLabelEntity("1", marshalledArrayValue),
+			Input:              fixLabelModel("1", arrayValue, model.ApplicationLabelableObject),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, objectID, sql.NullString{}, sql.NullString{}),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              fixLabelModel("1", stringValue),
-			Expected:           fixLabelEntity("1", marshalledStringValue),
+			Input:              fixLabelModel("1", stringValue, model.BundleInstanceAuthObject),
+			Expected:           fixLabelEntity("1", marshalledStringValue, sql.NullString{}, sql.NullString{}, objectID),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -90,6 +92,8 @@ func TestConverter_FromEntity(t *testing.T) {
 	marshalledArrayValue, err := json.Marshal(arrayValue)
 	require.NoError(t, err)
 
+	objectID := sql.NullString{String: "321", Valid: true}
+
 	// given
 	testCases := []struct {
 		Name               string
@@ -99,14 +103,14 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixLabelEntity("1", marshalledArrayValue),
-			Expected:           fixLabelModel("1", arrayValue),
+			Input:              fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, objectID, sql.NullString{}),
+			Expected:           fixLabelModel("1", arrayValue, model.RuntimeLabelableObject),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              fixLabelEntity("1", marshalledStringValue),
-			Expected:           fixLabelModel("1", stringValue),
+			Input:              fixLabelEntity("1", marshalledStringValue, sql.NullString{}, sql.NullString{}, objectID),
+			Expected:           fixLabelModel("1", stringValue, model.BundleInstanceAuthObject),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -125,7 +129,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		},
 		{
 			Name:               "Error",
-			Input:              fixLabelEntity("1", []byte("{json")),
+			Input:              fixLabelEntity("1", []byte("{json"), sql.NullString{}, sql.NullString{}, sql.NullString{}),
 			Expected:           model.Label{},
 			ExpectedErrMessage: "while unmarshalling Value: invalid character 'j' looking for beginning of object key string",
 		},
@@ -149,26 +153,24 @@ func TestConverter_FromEntity(t *testing.T) {
 	}
 }
 
-func fixLabelEntity(id string, value []byte) label.Entity {
+func fixLabelEntity(id string, value []byte, appID sql.NullString, runtimeID sql.NullString, bundleInstanceAuthID sql.NullString) label.Entity {
 	return label.Entity{
-		ID:       id,
-		TenantID: "tenant",
-		AppID:    sql.NullString{},
-		RuntimeID: sql.NullString{
-			String: "321",
-			Valid:  true,
-		},
-		Key:   "test",
-		Value: string(value),
+		ID:                   id,
+		TenantID:             "tenant",
+		AppID:                appID,
+		RuntimeID:            runtimeID,
+		BundleInstanceAuthId: bundleInstanceAuthID,
+		Key:                  "test",
+		Value:                string(value),
 	}
 }
 
-func fixLabelModel(id string, value interface{}) model.Label {
+func fixLabelModel(id string, value interface{}, objectType model.LabelableObject) model.Label {
 	return model.Label{
 		ID:         id,
 		Tenant:     "tenant",
 		Key:        "test",
-		ObjectType: model.RuntimeLabelableObject,
+		ObjectType: objectType,
 		ObjectID:   "321",
 		Value:      value,
 	}

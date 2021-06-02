@@ -224,6 +224,36 @@ func TestRepository_Upsert(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
+
+	t.Run("Error - nil label", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		labelRepo := label.NewRepository(mockConverter)
+		// WHEN
+		err := labelRepo.Upsert(ctx, nil)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: item can not be empty")
+	})
+
+	t.Run("Error - conversion error", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", mock.Anything).Return(label.Entity{}, errors.New("conversion error")).Once()
+		defer mockConverter.AssertExpectations(t)
+		labelRepo := label.NewRepository(mockConverter)
+		labelModel := model.Label{
+			ID: "foo",
+		}
+		// WHEN
+		err := labelRepo.Upsert(ctx, &labelModel)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while creating label entity from model: conversion error")
+	})
 }
 
 func TestRepository_GetByKey(t *testing.T) {
@@ -624,6 +654,37 @@ func TestRepository_ListForObject(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
+
+	t.Run("Error - Label for Runtime", func(t *testing.T) {
+		// GIVEN
+		objType := model.RuntimeLabelableObject
+		objID := "foo"
+		tnt := "tenant"
+		testErr := errors.New("test error")
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", mock.Anything).Return(model.Label{}, testErr).Once()
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, bundle_instance_auth_id, runtime_context_id, key, value FROM public.labels WHERE runtime_id = $1 AND tenant_id = $2`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id", "runtime_context_id"}).
+			AddRow("1", tnt, "foo", "test1", nil, objID, nil).
+			AddRow("2", tnt, "bar", "test2", nil, objID, nil)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: objID}, tnt).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := labelRepo.ListForObject(ctx, tnt, objType, objID)
+		// THEN
+		require.Error(t, err)
+		assert.Nil(t, actual)
+	})
 }
 
 func TestRepository_ListByKey(t *testing.T) {
@@ -727,6 +788,40 @@ func TestRepository_ListByKey(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "unable to fetch database from context")
+	})
+
+	t.Run("Error - conversion to entity", func(t *testing.T) {
+		// GIVEN
+		tnt := "tenant"
+		labelKey := "foo"
+		rtmObjID := "foo"
+		rtmCtxObjID := "foo"
+		appObjID := "bar"
+		testErr := errors.New("test error")
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", mock.Anything).Return(model.Label{}, testErr).Once()
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, bundle_instance_auth_id, runtime_context_id, key, value FROM public.labels WHERE key = $1 AND tenant_id = $2`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id", "runtime_context_id"}).
+			AddRow("1", tnt, labelKey, "test1", nil, rtmObjID, nil).
+			AddRow("2", tnt, labelKey, "test2", appObjID, nil, nil).
+			AddRow("3", tnt, labelKey, "test3", nil, nil, rtmCtxObjID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(labelKey, tnt).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := labelRepo.ListByKey(ctx, tnt, labelKey)
+		// THEN
+		require.Error(t, err)
+		assert.Nil(t, actual)
 	})
 }
 
@@ -1375,6 +1470,44 @@ func TestRepository_ListByObjectTypeAndMatchAnyScenario(t *testing.T) {
 		labelRepo := label.NewRepository(conv)
 		//WHEN
 		_, err := labelRepo.ListByObjectTypeAndMatchAnyScenario(ctx, tenantID, model.ApplicationLabelableObject, scenarios)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		dbMock.AssertExpectations(t)
+	})
+}
+
+func TestRepository_DeleteByKeyNegationPattern(t *testing.T) {
+	appID := "fd1a54dc-828e-4097-a4cb-40e7e46eb28a"
+	testErr := errors.New("test error")
+
+	query := regexp.QuoteMeta(`DELETE FROM public.labels WHERE tenant_id = $1 AND app_id = $2 AND NOT key ~ $3`)
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		dbMock.ExpectExec(query).WithArgs(tenantID, appID, ".*_defaultEventing").WillReturnResult(sqlmock.NewResult(1, 1))
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		err := labelRepo.DeleteByKeyNegationPattern(ctx, tenantID, model.ApplicationLabelableObject, appID, ".*_defaultEventing")
+
+		//THEN
+		require.NoError(t, err)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Database returns error", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		dbMock.ExpectExec(query).WithArgs(tenantID, appID, ".*_defaultEventing").WillReturnError(testErr)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conv := label.NewConverter()
+		labelRepo := label.NewRepository(conv)
+		//WHEN
+		err := labelRepo.DeleteByKeyNegationPattern(ctx, tenantID, model.ApplicationLabelableObject, appID, ".*_defaultEventing")
 
 		//THEN
 		require.Error(t, err)

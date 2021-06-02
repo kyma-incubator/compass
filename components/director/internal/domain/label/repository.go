@@ -171,7 +171,6 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
 		repo.NewEqualCondition(labelObjectField(objectType), objectID),
-		repo.NewEqualCondition(tenantColumn, tenant),
 		repo.NewNotRegexConditionString("key", labelKeyPattern),
 	})
 }

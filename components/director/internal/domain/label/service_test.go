@@ -440,3 +440,140 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 		})
 	}
 }
+
+func TestLabelUpsertService_UpsertScenarios(t *testing.T) {
+	// given
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testErr := errors.New("test error")
+	id := "foo"
+
+	testCases := []struct {
+		Name               string
+		LabelRepoFn        func() *automock.LabelRepository
+		LabelDefRepoFn     func() *automock.LabelDefinitionRepository
+		UIDServiceFn       func() *automock.UIDService
+		Labels             []model.Label
+		NewScenarios       []string
+		MergeFn            func(scenarios []string, diffScenario string) []string
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Upsert", ctx, &model.Label{
+					ID:     id,
+					Tenant: tnt,
+					Key:    model.ScenariosKey,
+					Value:  []string{"scenario1"},
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&model.LabelDefinition{}, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			Labels: []model.Label{{
+				Key:   model.ScenariosKey,
+				Value: []string{},
+			}},
+			NewScenarios:       []string{"scenario1"},
+			MergeFn:            label.UniqueScenarios,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error when cannot parse scenarios",
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				return &automock.LabelDefinitionRepository{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			Labels: []model.Label{{
+				Key:   model.ScenariosKey,
+				Value: []int32{1, 2},
+			}},
+			ExpectedErrMessage: "scenarios value is invalid type",
+		},
+		{
+			Name: "error when cannot get label by key",
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&model.LabelDefinition{}, testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			Labels: []model.Label{{
+				Key:   model.ScenariosKey,
+				Value: []string{},
+			}},
+			NewScenarios:       []string{"scenario1"},
+			MergeFn:            label.UniqueScenarios,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when cannot delete label",
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, id, model.ScenariosKey).Return(testErr).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				return &automock.LabelDefinitionRepository{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			Labels: []model.Label{{
+				Key:      model.ScenariosKey,
+				Value:    []string{},
+				ObjectID: id,
+			}},
+			NewScenarios:       []string{},
+			MergeFn:            label.UniqueScenarios,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+			labelDefRepo := testCase.LabelDefRepoFn()
+			uidService := testCase.UIDServiceFn()
+
+			svc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
+
+			// when
+			err := svc.UpsertScenarios(ctx, tnt, testCase.Labels, testCase.NewScenarios, testCase.MergeFn)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			labelRepo.AssertExpectations(t)
+			labelDefRepo.AssertExpectations(t)
+			uidService.AssertExpectations(t)
+		})
+	}
+}
