@@ -139,13 +139,13 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
           {{end}}
-      {{ if .Values.global.isLocalEnv }}
       volumes:
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-instance-credentials
           secret:
             secretName: cloudsql-instance-credentials
         {{end}}
+      {{ if .Values.global.isLocalEnv }}
         - name: examples
           hostPath:
             path: "/examples"
