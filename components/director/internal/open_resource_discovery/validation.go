@@ -159,6 +159,9 @@ func validatePackageInput(pkg *model.PackageInput) error {
 		})),
 		validation.Field(&pkg.LineOfBusiness,
 			validation.By(func(value interface{}) error {
+				if pkg.PolicyLevel == PolicyLevelCustom {
+					return nil
+				}
 				return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 			}),
 			validation.By(func(value interface{}) error {
@@ -167,6 +170,9 @@ func validatePackageInput(pkg *model.PackageInput) error {
 		),
 		validation.Field(&pkg.Industry,
 			validation.By(func(value interface{}) error {
+				if pkg.PolicyLevel == PolicyLevelCustom {
+					return nil
+				}
 				return validateJSONArrayOfStringsContainsInMap(value, Industries)
 			}),
 			validation.By(func(value interface{}) error {
@@ -219,7 +225,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		})),
 		validation.Field(&api.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
+				return validateValueInMapWhenPolicyLevelIsNotCustom(value, LineOfBusinesses, api.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -227,7 +233,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		),
 		validation.Field(&api.Industry,
 			validation.By(func(value interface{}) error {
-				return validateJSONArrayOfStringsContainsInMap(value, Industries)
+				return validateValueInMapWhenPolicyLevelIsNotCustom(value, Industries, api.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -278,7 +284,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		})),
 		validation.Field(&event.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
+				return validateValueInMapWhenPolicyLevelIsNotCustom(value, LineOfBusinesses, event.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -286,7 +292,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		),
 		validation.Field(&event.Industry,
 			validation.By(func(value interface{}) error {
-				return validateJSONArrayOfStringsContainsInMap(value, Industries)
+				return validateValueInMapWhenPolicyLevelIsNotCustom(value, Industries, event.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -581,6 +587,17 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 
 func noNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
+}
+
+func validateValueInMapWhenPolicyLevelIsNotCustom(value interface{}, validValues map[string]bool, apiOrdID *string, packagePolicyLevels map[string]string, validationFunc func(value interface{}, validValues map[string]bool) error) error {
+	pkgOrdID := str.PtrStrToStr(apiOrdID)
+	policyLevel := packagePolicyLevels[pkgOrdID]
+
+	if policyLevel == PolicyLevelCustom {
+		return nil
+	}
+
+	return validationFunc(value, validValues)
 }
 
 func validateJSONArrayOfStringsContainsInMap(arr interface{}, validValues map[string]bool) error {

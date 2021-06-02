@@ -990,8 +990,35 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid `industry` field element for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1028,6 +1055,34 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap partner`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1637,6 +1692,34 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `custom` for API",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid value for `industry` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1673,6 +1756,34 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(invalidIndustryNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap partner` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3307,6 +3418,34 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid value for `industry` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3343,6 +3482,34 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(invalidIndustryNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap partner` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
 
 				return []*open_resource_discovery.Document{doc}
 			},
