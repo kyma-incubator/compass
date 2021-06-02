@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -40,7 +39,7 @@ func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Requ
 			}`, appID, bndlID, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
-func GetAuditlogMockToken(t *testing.T, client *http.Client, baseURL string) Token {
+func GetAuditlogMockToken(t require.TestingT, client *http.Client, baseURL string) Token {
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", baseURL, auditlogTokenEndpoint), nil)
 	require.NoError(t, err)
 
@@ -58,7 +57,7 @@ func GetAuditlogMockToken(t *testing.T, client *http.Client, baseURL string) Tok
 	return auditlogToken
 }
 
-func SearchForAuditlogByString(t *testing.T, client *http.Client, baseURL string, auditlogToken Token, search string) []model.ConfigurationChange {
+func SearchForAuditlogByString(t require.TestingT, client *http.Client, baseURL string, auditlogToken Token, search string) []model.ConfigurationChange {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", baseURL, auditlogSearchEndpoint), nil)
 	require.NoError(t, err)
 
@@ -78,7 +77,7 @@ func SearchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 	return auditlogs
 }
 
-func DeleteAuditlogByID(t *testing.T, client *http.Client, baseURL string, auditlogToken Token, id string) {
+func DeleteAuditlogByID(t require.TestingT, client *http.Client, baseURL string, auditlogToken Token, id string) {
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", baseURL, fmt.Sprintf(auditlogDeleteEndpointFormat, id)), nil)
 	require.NoError(t, err)
 

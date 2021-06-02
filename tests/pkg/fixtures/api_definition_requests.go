@@ -2,12 +2,12 @@ package fixtures
 
 import (
 	"fmt"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/require"
 )
 
 func FixAPIDefinitionInputWithName(name string) graphql.APIDefinitionInput {
@@ -34,7 +34,7 @@ func FixEventAPIDefinitionInputWithName(name string) graphql.EventDefinitionInpu
 		}}
 }
 
-func FixDocumentInputWithName(t *testing.T, name string) graphql.DocumentInput {
+func FixDocumentInputWithName(t require.TestingT, name string) graphql.DocumentInput {
 	return graphql.DocumentInput{
 		Title:       name,
 		Description: "Detailed description of project",

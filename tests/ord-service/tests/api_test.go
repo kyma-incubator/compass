@@ -33,7 +33,6 @@ import (
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -47,8 +46,8 @@ const (
 
 func TestORDService(t *testing.T) {
 	// Cannot use tenant constants as the names become too long and cannot be inserted
-	appInput := createApp("tenant1")
-	appInput2 := createApp("tenant2")
+	appInput := fixtures.CreateApp("tenant1")
+	appInput2 := fixtures.CreateApp("tenant2")
 
 	apisMap := make(map[string]directorSchema.APIDefinitionInput, 0)
 	for _, apiDefinition := range appInput.Bundles[0].APIDefinitions {
@@ -77,13 +76,13 @@ func TestORDService(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
-	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
+	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, appInput2)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.Tenant, app2.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, app2.ID)
 
 	t.Log("Create integration system")
 	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
@@ -126,7 +125,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
@@ -137,7 +136,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
@@ -148,7 +147,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service api specification have wrong tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
@@ -159,7 +158,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
@@ -170,21 +169,21 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
-		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {testConfig.DefaultTenant}})
+		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {testConfig.DefaultTestTenant}})
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to response type specified by Accept header when it provides a specific type", func(t *testing.T) {
-		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {testConfig.DefaultTenant}})
+		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {testConfig.DefaultTestTenant}})
 	})
 
 	t.Run("Requesting Packages returns empty", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis,events&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis,events&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	})
 
 	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model
 		t.Run(fmt.Sprintf("Requesting %s returns empty", resource), func(t *testing.T) {
-			respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/%s?$format=json", testConfig.ORDServiceURL, resource), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+			respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/%s?$format=json", testConfig.ORDServiceURL, resource), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 		})
 	}
@@ -196,12 +195,12 @@ func TestORDService(t *testing.T) {
 		eventsMap map[string]directorSchema.EventDefinitionInput
 	}{
 		{
-			tenant:    testConfig.DefaultTenant,
+			tenant:    testConfig.DefaultTestTenant,
 			appInput:  appInput,
 			apisMap:   apisMap,
 			eventsMap: eventsMap,
 		}, {
-			tenant:    testConfig.Tenant,
+			tenant:    testConfig.SecondaryTenant,
 			appInput:  appInput2,
 			apisMap:   apisMap2,
 			eventsMap: eventsMap2,
@@ -518,7 +517,7 @@ func TestORDService(t *testing.T) {
 	}
 
 	t.Run("404 when request to ORD Service for api spec have another tenant header value", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
@@ -526,12 +525,12 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
-		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.SecondaryTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
@@ -539,12 +538,12 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
-		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.SecondaryTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
@@ -560,92 +559,4 @@ func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, h
 
 func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
-}
-
-func createApp(suffix string) directorSchema.ApplicationRegisterInput {
-	return generateAppInputForDifferentTenants(directorSchema.ApplicationRegisterInput{
-		Name:        "test-app",
-		Description: ptr.String("my application"),
-		Bundles: []*directorSchema.BundleCreateInput{
-			{
-				Name:        "foo-bndl",
-				Description: ptr.String("foo-descr"),
-				APIDefinitions: []*directorSchema.APIDefinitionInput{
-					{
-						Name:        "comments-v1",
-						Description: ptr.String("api for adding comments"),
-						TargetURL:   "http://mywordpress.com/comments",
-						Group:       ptr.String("comments"),
-						Version:     fixtures.FixDeprecatedVersion(),
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOpenAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"openapi":"3.0.2"}`),
-						},
-					},
-					{
-						Name:        "reviews-v1",
-						Description: ptr.String("api for adding reviews"),
-						TargetURL:   "http://mywordpress.com/reviews",
-						Version:     fixtures.FixActiveVersion(),
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOdata,
-							Format: directorSchema.SpecFormatJSON,
-							Data:   ptr.CLOB(`{"openapi":"3.0.1"}`),
-						},
-					},
-					{
-						Name:        "xml",
-						Description: ptr.String("xml api"),
-						Version:     fixtures.FixDecommissionedVersion(),
-						TargetURL:   "http://mywordpress.com/xml",
-						Spec: &directorSchema.APISpecInput{
-							Type:   directorSchema.APISpecTypeOdata,
-							Format: directorSchema.SpecFormatXML,
-							Data:   ptr.CLOB("odata"),
-						},
-					},
-				},
-				EventDefinitions: []*directorSchema.EventDefinitionInput{
-					{
-						Name:        "comments-v1",
-						Description: ptr.String("comments events"),
-						Version:     fixtures.FixDeprecatedVersion(),
-						Group:       ptr.String("comments"),
-						Spec: &directorSchema.EventSpecInput{
-							Type:   directorSchema.EventSpecTypeAsyncAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"asyncapi":"1.2.0"}`),
-						},
-					},
-					{
-						Name:        "reviews-v1",
-						Description: ptr.String("review events"),
-						Version:     fixtures.FixActiveVersion(),
-						Spec: &directorSchema.EventSpecInput{
-							Type:   directorSchema.EventSpecTypeAsyncAPI,
-							Format: directorSchema.SpecFormatYaml,
-							Data:   ptr.CLOB(`{"asyncapi":"1.1.0"}`),
-						},
-					},
-				},
-			},
-		},
-	}, suffix)
-}
-
-func generateAppInputForDifferentTenants(appInput directorSchema.ApplicationRegisterInput, suffix string) directorSchema.ApplicationRegisterInput {
-	appInput.Name += "-" + suffix
-	for _, bndl := range appInput.Bundles {
-		bndl.Name = bndl.Name + "-" + suffix
-
-		for _, apiDef := range bndl.APIDefinitions {
-			apiDef.Name = apiDef.Name + "-" + suffix
-		}
-
-		for _, eventDef := range bndl.EventDefinitions {
-			eventDef.Name = eventDef.Name + "-" + suffix
-		}
-	}
-	return appInput
 }
