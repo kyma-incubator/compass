@@ -225,7 +225,9 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		})),
 		validation.Field(&api.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateValueInMapWhenPolicyLevelIsNotCustom(value, LineOfBusinesses, api.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
+				return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error {
+					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
+				})
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -233,7 +235,9 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		),
 		validation.Field(&api.Industry,
 			validation.By(func(value interface{}) error {
-				return validateValueInMapWhenPolicyLevelIsNotCustom(value, Industries, api.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
+				return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error {
+					return validateJSONArrayOfStringsContainsInMap(value, Industries)
+				})
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -284,7 +288,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		})),
 		validation.Field(&event.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateValueInMapWhenPolicyLevelIsNotCustom(value, LineOfBusinesses, event.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
+				return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error {
+					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
+				})
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -292,7 +298,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		),
 		validation.Field(&event.Industry,
 			validation.By(func(value interface{}) error {
-				return validateValueInMapWhenPolicyLevelIsNotCustom(value, Industries, event.OrdPackageID, packagePolicyLevels, validateJSONArrayOfStringsContainsInMap)
+				return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error {
+					return validateJSONArrayOfStringsContainsInMap(value, Industries)
+				})
 			}),
 			validation.By(func(value interface{}) error {
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -589,7 +597,7 @@ func noNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
 }
 
-func validateValueInMapWhenPolicyLevelIsNotCustom(value interface{}, validValues map[string]bool, apiOrdID *string, packagePolicyLevels map[string]string, validationFunc func(value interface{}, validValues map[string]bool) error) error {
+func validateWhenPolicyLevelIsNotCustom(apiOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error {
 	pkgOrdID := str.PtrStrToStr(apiOrdID)
 	policyLevel := packagePolicyLevels[pkgOrdID]
 
@@ -597,7 +605,7 @@ func validateValueInMapWhenPolicyLevelIsNotCustom(value interface{}, validValues
 		return nil
 	}
 
-	return validationFunc(value, validValues)
+	return validationFunc()
 }
 
 func validateJSONArrayOfStringsContainsInMap(arr interface{}, validValues map[string]bool) error {
