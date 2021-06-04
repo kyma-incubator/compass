@@ -21,6 +21,7 @@ import "net/http"
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
+	written    bool
 }
 
 func newLoggingResponseWriter(w http.ResponseWriter) *responseWriter {
@@ -31,6 +32,11 @@ func newLoggingResponseWriter(w http.ResponseWriter) *responseWriter {
 }
 
 func (lrw *responseWriter) WriteHeader(code int) {
+	if lrw.written {
+		return
+	}
+
+	lrw.written = true
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
 }
