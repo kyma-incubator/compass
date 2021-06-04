@@ -63,24 +63,6 @@ data:
               limits:
                 cpu: 500m
                 memory: 1024Mi
-        policy:
-          k8s:
-            resources:
-              requests:
-                cpu: 300m
-                memory: 512Mi
-              limits:
-                cpu: 500m
-                memory: 2048Mi
-        telemetry:
-          k8s:
-            resources:
-              requests:
-                cpu: 300m
-                memory: 512Mi
-              limits:
-                cpu: 500m
-                memory: 2048Mi
       values:
         global:
           jwtPolicy: first-party-jwt
@@ -88,13 +70,6 @@ data:
             holdApplicationUntilProxyStarts: true
         pilot:
           autoscaleEnabled: false
-        mixer:
-          telemetry:
-            autoscaleEnabled: false
-            loadshedding:
-              mode: disabled
-          policy:
-            autoscaleEnabled: false
 ---
 apiVersion: v1
 kind: ConfigMap
