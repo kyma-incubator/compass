@@ -128,7 +128,7 @@ func TestORDService(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
-		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
@@ -139,7 +139,7 @@ func TestORDService(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
-		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
@@ -150,7 +150,7 @@ func TestORDService(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
-		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
@@ -161,7 +161,7 @@ func TestORDService(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
-		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
@@ -254,7 +254,7 @@ func TestORDService(t *testing.T) {
 					panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 				}
 
-				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", i)).Array()
+				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
 				require.Equal(t, 1, len(specs))
 
 				specType := specs[0].Get("type").String()
@@ -322,7 +322,7 @@ func TestORDService(t *testing.T) {
 					panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 				}
 
-				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", i)).Array()
+				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
 				require.Equal(t, 1, len(specs))
 
 				specType := specs[0].Get("type").String()
@@ -520,7 +520,7 @@ func TestORDService(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
-		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
@@ -533,7 +533,7 @@ func TestORDService(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
-		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()

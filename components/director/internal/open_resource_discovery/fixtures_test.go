@@ -197,7 +197,7 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
-		OpenResourceDiscovery: "1.0-rc.4",
+		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),

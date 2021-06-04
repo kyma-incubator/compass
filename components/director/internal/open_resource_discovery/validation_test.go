@@ -2240,13 +2240,23 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing field `entryPoints` for API",
+			Name: "Invalid when `entryPoints` field is empty but `PartOfConsumptionBundles` field is not for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = nil
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Valid when `entryPoints` field is empty and `PartOfConsumptionBundles` field is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = nil
+				doc.APIResources[0].PartOfConsumptionBundles = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid field `entryPoints` when containing invalid URI for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -2264,7 +2274,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when it is invalid JSON for Event",
+			Name: "Invalid `entryPoints` field when it is invalid JSON for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage(invalidJson)
@@ -2272,7 +2282,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when it isn't a JSON array for Event",
+			Name: "Invalid `entryPoints` field when it isn't a JSON array for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage("{}")
@@ -2280,7 +2290,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when the JSON array is empty for Event",
+			Name: "Invalid `entryPoints` field when the JSON array is empty for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage("[]")
@@ -2288,7 +2298,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when it contains non string value for Event",
+			Name: "Invalid `entryPoints` field when it contains non string value for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointsNonStringElement)
@@ -2461,6 +2471,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Empty `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles = []*model.ConsumptionBundleReference{}
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
 			Name: "Missing `Extensible` field when `policyLevel` is sap",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3579,6 +3598,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Empty `PartOfConsumptionBundle` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles = []*model.ConsumptionBundleReference{}
 
 				return []*open_resource_discovery.Document{doc}
 			},
