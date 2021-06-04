@@ -150,7 +150,7 @@ func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, i
 		bundleInstanceAuthTable,
 		bundleInstanceAuthBundleRefField)
 
-	err = persist.Get(&bndlEnt, stmt, tenant, instanceAuthID)
+	err = persist.GetContext(ctx, &bndlEnt, stmt, tenant, instanceAuthID)
 	switch {
 	case err != nil:
 		return nil, errors.Wrap(err, "while getting Bundle by Instance Auth ID")

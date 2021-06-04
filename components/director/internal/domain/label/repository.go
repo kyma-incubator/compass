@@ -69,7 +69,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
 
 	var entity Entity
-	err = persist.Get(&entity, stmt, key, objectID, tenant)
+	err = persist.GetContext(ctx, &entity, stmt, key, objectID, tenant)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, apperrors.NewNotFoundError(resource.Label, key)
@@ -95,7 +95,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
 
 	var entities []Entity
-	err = persist.Select(&entities, stmt, objectID, tenant)
+	err = persist.SelectContext(ctx, &entities, stmt, objectID, tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching Labels from DB")
 	}
@@ -124,7 +124,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 		strings.Join(tableColumns, ", "), tableName)
 
 	var entities []Entity
-	err = persist.Select(&entities, stmt, key, tenant)
+	err = persist.SelectContext(ctx, &entities, stmt, key, tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching Labels from DB")
 	}
@@ -150,7 +150,7 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 	}
 
 	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`, tableName, labelableObjectField(objectType))
-	_, err = persist.Exec(stmt, key, objectID, tenant)
+	_, err = persist.ExecContext(ctx, stmt, key, objectID, tenant)
 
 	return errors.Wrap(err, "while deleting the Label entity from database")
 }
@@ -162,7 +162,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 	}
 
 	stmt := fmt.Sprintf(`DELETE FROM %s WHERE %s = $1 AND tenant_id = $2`, tableName, labelableObjectField(objectType))
-	_, err = persist.Exec(stmt, objectID, tenant)
+	_, err = persist.ExecContext(ctx, stmt, objectID, tenant)
 
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
 }
@@ -182,7 +182,7 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	}
 
 	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND tenant_id = $2`, tableName)
-	_, err = persist.Exec(stmt, key, tenant)
+	_, err = persist.ExecContext(ctx, stmt, key, tenant)
 	if err != nil {
 		return errors.Wrapf(err, `while deleting all Label entities from database with key "%s"`, key)
 	}
@@ -198,7 +198,7 @@ func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, 
 	query := `SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL;`
 
 	var matchedRtmsIDs []string
-	err = persist.Select(&matchedRtmsIDs, query, key, value, tenantID)
+	err = persist.SelectContext(ctx, &matchedRtmsIDs, query, key, value, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes id which match selector")
 	}
@@ -245,7 +245,7 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 			);`
 
 	var lables []Entity
-	err = persist.Select(&lables, query, selectorKey, selectorValue, tenantID)
+	err = persist.SelectContext(ctx, &lables, query, selectorKey, selectorValue, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios associated with given selector")
 	}
