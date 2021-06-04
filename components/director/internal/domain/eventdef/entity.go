@@ -23,7 +23,7 @@ type Entity struct {
 	Countries           sql.NullString `db:"countries"`
 	ReleaseStatus       sql.NullString `db:"release_status"`
 	SunsetDate          sql.NullString `db:"sunset_date"`
-	Successor           sql.NullString `db:"successor"`
+	Successors          sql.NullString `db:"successors"`
 	Labels              sql.NullString `db:"labels"`
 	Visibility          sql.NullString `db:"visibility"`
 	Disabled            sql.NullBool   `db:"disabled"`
