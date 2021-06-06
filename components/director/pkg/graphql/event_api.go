@@ -18,7 +18,7 @@ func (e *EventDefinition) GetType() resource.Type {
 }
 
 type EventSpec struct {
-	ID           string        `json:"id""`
+	ID           string        `json:"id"`
 	Data         *CLOB         `json:"data"`
 	Type         EventSpecType `json:"type"`
 	Format       SpecFormat    `json:"format"`

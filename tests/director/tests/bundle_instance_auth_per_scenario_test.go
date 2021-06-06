@@ -2,6 +2,10 @@ package tests
 
 import (
 	"context"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -12,9 +16,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strconv"
-	"testing"
-	"time"
 )
 
 func TestUnassignResourceFromScenarioWhenThereIsExistingBundleInstanceAuth(t *testing.T) {
