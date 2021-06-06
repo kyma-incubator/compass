@@ -5,6 +5,7 @@ package automock
 import (
 	context "context"
 
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -27,20 +28,22 @@ func (_m *BundleInstanceAuthService) AssociateBundleInstanceAuthForNewApplicatio
 	return r0
 }
 
-// IsAnyExistForAppAndScenario provides a mock function with given fields: ctx, scenarios, appId
-func (_m *BundleInstanceAuthService) IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error) {
-	ret := _m.Called(ctx, scenarios, appId)
+// GetForAppAndAnyMatchingScenarios provides a mock function with given fields: ctx, appId, scenarios
+func (_m *BundleInstanceAuthService) GetForAppAndAnyMatchingScenarios(ctx context.Context, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	ret := _m.Called(ctx, appId, scenarios)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, []string, string) bool); ok {
-		r0 = rf(ctx, scenarios, appId)
+	var r0 []*model.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.BundleInstanceAuth); ok {
+		r0 = rf(ctx, appId, scenarios)
 	} else {
-		r0 = ret.Get(0).(bool)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundleInstanceAuth)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []string, string) error); ok {
-		r1 = rf(ctx, scenarios, appId)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, appId, scenarios)
 	} else {
 		r1 = ret.Error(1)
 	}

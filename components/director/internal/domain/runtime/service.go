@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -282,6 +285,12 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 			return err
 		}
 
+		if err = s.validateNoBundleInstanceAuthsExist(ctx, id, existingScenarios, scenariosStrings, func() (*model.Runtime, error) {
+			return rtm, nil
+		}); err != nil {
+			return err
+		}
+
 		if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, existingScenarios, scenariosStrings, id); err != nil {
 			return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 		}
@@ -528,6 +537,12 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		return err
 	}
 
+	if err = s.validateNoBundleInstanceAuthsExist(ctx, runtimeID, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, func() (*model.Runtime, error) {
+		return s.Get(ctx, runtimeID)
+	}); err != nil {
+		return err
+	}
+
 	if err := s.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, oldScenariosLabelStringSlice, finalScenariosAsStringSlice, runtimeID); err != nil {
 		return errors.Wrap(err, "while associating existing bundle instance auths with the new scenarios")
 	}
@@ -565,6 +580,30 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 		currentLabels[v.Key] = v.Value
 	}
 	return currentLabels, nil
+}
+
+func (s *service) validateNoBundleInstanceAuthsExist(ctx context.Context, runtimeId string, existingScenarios, inputScenarios []string, runtimeSuplier func() (*model.Runtime, error)) error {
+	scenariosToRemove := str.SubstractSlice(existingScenarios, inputScenarios)
+
+	bndlAuths, err := s.bundleInstanceAuthService.GetForRuntimeAndAnyMatchingScenarios(ctx, runtimeId, scenariosToRemove)
+	if err != nil {
+		return errors.Wrapf(err, "while getting existing bundle for old scenarios")
+	}
+
+	if len(bndlAuths) == 0 {
+		return nil
+	}
+
+	runtime, err := runtimeSuplier()
+	if err != nil {
+		return errors.Wrapf(err, "while getting runtime")
+	}
+
+	authCtx := make([]*string, 0, len(bndlAuths))
+	for _, auth := range bndlAuths {
+		authCtx = append(authCtx, auth.Context)
+	}
+	return apperrors.NewScenarioUnassignWhenCredentialsExistsError(resource.Runtime, runtime.Name, authCtx)
 }
 
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {

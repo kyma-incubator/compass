@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
@@ -567,5 +569,90 @@ func TestRepository_Delete(t *testing.T) {
 
 		// then
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+}
+
+func TestRepository_GetForAppAndAnyMatchingScenarios(t *testing.T) {
+	testRepository_GetForObjAndAnyMatchingScenarios(t, "app_id", func(ctx context.Context, conv *automock.EntityConverter, objId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+		repo := bundleinstanceauth.NewRepository(conv)
+		return repo.GetForAppAndAnyMatchingScenarios(ctx, testTenant, objId, scenarios)
+	})
+}
+
+func TestRepository_GetForRuntimeAndAnyMatchingScenarios(t *testing.T) {
+	testRepository_GetForObjAndAnyMatchingScenarios(t, "runtime_id", func(ctx context.Context, conv *automock.EntityConverter, objId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+		repo := bundleinstanceauth.NewRepository(conv)
+		return repo.GetForRuntimeAndAnyMatchingScenarios(ctx, testTenant, objId, scenarios)
+	})
+}
+
+func testRepository_GetForObjAndAnyMatchingScenarios(t *testing.T, objIdColumn string, call func(ctx context.Context, conv *automock.EntityConverter, objId string, scenarios []string) ([]*model.BundleInstanceAuth, error)) {
+	// given
+	mdl := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	entity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	objId := "foo"
+	scenarios := []string{"scenario-1", "scenario-2"}
+
+	query := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id IN \(SELECT bundle_instance_auth_id FROM public.bundle_instance_auths_with_labels WHERE tenant_id = \$2 AND key = \$3 AND %s = \$4 AND value ?| array[$5,$6]\)`, objIdColumn)
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*entity)})
+
+		sqlMock.ExpectQuery(query).
+			WithArgs(testTenant, testTenant, model.ScenariosKey, objId, scenarios[0], scenarios[1]).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", *entity).Return(*mdl, nil).Once()
+
+		// WHEN
+		actual, err := call(ctx, convMock, objId, scenarios)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, 1, len(actual))
+		assert.Equal(t, mdl, actual[0])
+		mock.AssertExpectationsForObjects(t, convMock)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		sqlMock.ExpectQuery(query).
+			WithArgs(testTenant, testTenant, model.ScenariosKey, objId, scenarios[0], scenarios[1]).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// WHEN
+		_, err := call(ctx, nil, objId, scenarios)
+
+		//THEN
+		require.EqualError(t, err, "while fetching bundle_instance_auths: Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("returns error when conversion fails", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*entity)})
+
+		sqlMock.ExpectQuery(query).
+			WithArgs(testTenant, testTenant, model.ScenariosKey, objId, scenarios[0], scenarios[1]).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EntityConverter{}
+		convMock.On("FromEntity", *entity).Return(model.BundleInstanceAuth{}, testError).Once()
+
+		// WHEN
+		actual, err := call(ctx, convMock, objId, scenarios)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+		require.Nil(t, actual)
+		mock.AssertExpectationsForObjects(t, convMock)
 	})
 }

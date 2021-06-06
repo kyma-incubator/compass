@@ -76,8 +76,8 @@ type SystemAuthService interface {
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
+	GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, runtimeId string, scenarios []string) ([]*model.BundleInstanceAuth, error)
 	AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error
-	IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error)
 }
 
 type Resolver struct {

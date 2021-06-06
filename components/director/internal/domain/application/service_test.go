@@ -2822,6 +2822,7 @@ func TestService_SetLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{}, nil)
 				svc.On("AssociateBundleInstanceAuthForNewApplicationScenarios", ctx, existingScenarios, inputScenarios, applicationID).Return(nil).Once()
 				return svc
 			},
@@ -2888,6 +2889,81 @@ func TestService_SetLabel(t *testing.T) {
 			ExpectedErrMessage:          testErr.Error(),
 		},
 		{
+			Name: "Returns error when getting bundle instance auths for application and scenario fails",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("GetScenarioNamesForApplication", ctx, applicationID).Return(existingScenarios, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{}, testErr)
+				return svc
+			},
+			InputApplicationID: applicationID,
+			InputLabel:         scenarioLabel,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when there are existing bundle instance auth for application and scenario",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationID).Return(&model.Application{Name: "app-name"}, nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("GetScenarioNamesForApplication", ctx, applicationID).Return(existingScenarios, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{{}}, nil)
+				return svc
+			},
+			InputApplicationID: applicationID,
+			InputLabel:         scenarioLabel,
+			ExpectedErrMessage: "The operation is not allowed",
+		},
+		{
+			Name: "Returns error when there are existing bundle instance auth for application and scenario and get app by id fails",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationID).Return(nil, testErr).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("GetScenarioNamesForApplication", ctx, applicationID).Return(existingScenarios, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{{}}, nil)
+				return svc
+			},
+			InputApplicationID: applicationID,
+			InputLabel:         scenarioLabel,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
 			Name: "Returns error when associating existing bundle instance auths with new scenario",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -2905,6 +2981,7 @@ func TestService_SetLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{}, nil)
 				svc.On("AssociateBundleInstanceAuthForNewApplicationScenarios", ctx, existingScenarios, inputScenarios, applicationID).Return(testErr).Once()
 				return svc
 			},
@@ -3189,6 +3266,7 @@ func TestService_DeleteLabel(t *testing.T) {
 
 	testCases := []struct {
 		Name                        string
+		AppRepoFn                   func() *automock.ApplicationRepository
 		LabelRepositoryFn           func() *automock.LabelRepository
 		ScenariosServiceFn          func() *automock.ScenariosService
 		BundleInstanceAuthServiceFn func() *automock.BundleInstanceAuthService
@@ -3198,6 +3276,9 @@ func TestService_DeleteLabel(t *testing.T) {
 	}{
 		{
 			Name: "Success when deleting non-scenario label",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				return &automock.ApplicationRepository{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, applicationID, labelKey).Return(nil).Once()
@@ -3211,6 +3292,9 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 		{
 			Name: "Success when deleting non-scenario label and no bundle_instance auth exist for scenarios that the application should be unassigned from",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				return &automock.ApplicationRepository{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, applicationID, scenariosKey).Return(nil).Once()
@@ -3223,7 +3307,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
-				svc.On("IsAnyExistForAppAndScenario", ctx, existingScenarios, applicationID).Return(false, nil).Once()
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
 			InputApplicationID: applicationID,
@@ -3232,6 +3316,9 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 		{
 			Name: "Returns error when label delete failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				return &automock.ApplicationRepository{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, applicationID, labelKey).Return(testErr).Once()
@@ -3245,6 +3332,9 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 		{
 			Name: "Returns error when deleting scenarios key and getting scenario names for application failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				return &automock.ApplicationRepository{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				return &automock.LabelRepository{}
 			},
@@ -3260,6 +3350,11 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 		{
 			Name: "Returns error when deleting scenarios key and there are existing bundle instance auths associated with the scenarios",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, applicationID).Return(&model.Application{Name: "app-name"}, nil).Once()
+				return repo
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				return &automock.LabelRepository{}
 			},
@@ -3270,15 +3365,18 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
-				svc.On("IsAnyExistForAppAndScenario", ctx, existingScenarios, applicationID).Return(true, nil).Once()
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{{}}, nil)
 				return svc
 			},
 			InputApplicationID: applicationID,
 			InputKey:           scenariosKey,
-			ExpectedErrMessage: "Bundle Instance Auths should be deleted first",
+			ExpectedErrMessage: "The operation is not allowed",
 		},
 		{
-			Name: "Returns error when deleting scenarios key and checking for existing bundle instance auth association failed",
+			Name: "Returns error when deleting scenarios key and getting bundle instance auths for application and scenarios fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				return &automock.ApplicationRepository{}
+			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				return &automock.LabelRepository{}
 			},
@@ -3289,7 +3387,31 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
-				svc.On("IsAnyExistForAppAndScenario", ctx, existingScenarios, applicationID).Return(false, testErr).Once()
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return(nil, testErr)
+				return svc
+			},
+			InputApplicationID: applicationID,
+			InputKey:           scenariosKey,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when deleting scenarios key and getting application by id fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, applicationID).Return(nil, testErr).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("GetScenarioNamesForApplication", ctx, applicationID).Return(existingScenarios, nil).Once()
+				return svc
+			},
+			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{{}}, nil)
 				return svc
 			},
 			InputApplicationID: applicationID,
@@ -3301,10 +3423,11 @@ func TestService_DeleteLabel(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			var (
+				appRepo               = testCase.AppRepoFn()
 				labelRepo             = testCase.LabelRepositoryFn()
 				scenariosSvc          = testCase.ScenariosServiceFn()
 				bundleInstanceAuthSvc = testCase.BundleInstanceAuthServiceFn()
-				svc                   = application.NewService(nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, scenariosSvc, nil, nil, bundleInstanceAuthSvc)
+				svc                   = application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, scenariosSvc, nil, nil, bundleInstanceAuthSvc)
 			)
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)

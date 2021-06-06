@@ -25,8 +25,8 @@ type Repository interface {
 	ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, item *model.BundleInstanceAuth) error
 	Delete(ctx context.Context, tenantID string, id string) error
-	ExistForAppAndScenario(ctx context.Context, tenant, scenario, appId string) (bool, error)
-	ExistForRuntimeAndScenario(ctx context.Context, tenant, scenario, runtimeId string) (bool, error)
+	GetForAppAndAnyMatchingScenarios(ctx context.Context, tenant, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error)
+	GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, tenant, runtimeId string, scenarios []string) ([]*model.BundleInstanceAuth, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -50,7 +50,6 @@ type LabelService interface {
 }
 
 type scenarioReAssociator struct {
-	isAnyBundleInstanceAuthExist         func(ctx context.Context, scenarios []string, objectId string) (bool, error)
 	relatedObjectScenarioLabels          func(ctx context.Context, scenarios []string) ([]model.Label, error)
 	getBundleInstanceAuthsScenarioLabels func(relatedObjId string) ([]model.Label, error)
 	labelService                         LabelService
@@ -124,29 +123,26 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 
 func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error {
 	assoc := &scenarioReAssociator{
-		isAnyBundleInstanceAuthExist: s.IsAnyExistForAppAndScenario,
-		relatedObjectScenarioLabels:  s.scenarioSvc.GetRuntimeScenarioLabelsForAnyMatchingScenario,
+		relatedObjectScenarioLabels: s.scenarioSvc.GetRuntimeScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(runtimeId string) ([]model.Label, error) {
 			return s.scenarioSvc.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
 		},
 		labelService: s.labelService,
-		//labelRepo:    s.labelRepo,
 	}
 
-	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios, appId)
+	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios)
 }
 
 func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error {
 	assoc := &scenarioReAssociator{
-		isAnyBundleInstanceAuthExist: s.IsAnyExistForRuntimeAndScenario,
-		relatedObjectScenarioLabels:  s.scenarioSvc.GetApplicationScenarioLabelsForAnyMatchingScenario,
+		relatedObjectScenarioLabels: s.scenarioSvc.GetApplicationScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(appId string) ([]model.Label, error) {
 			return s.scenarioSvc.GetBundleInstanceAuthsScenarioLabels(ctx, appId, runtimeId)
 		},
 		labelService: s.labelService,
 	}
 
-	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios, runtimeId)
+	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error) {
@@ -287,16 +283,31 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return errors.Wrapf(err, "while deleting BundleInstanceAuth with id %s", id)
 }
 
-func (s *service) IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error) {
-	return s.isAnyExistForScenario(ctx, scenarios, func(tenant, currScenario string) (bool, error) {
-		return s.repo.ExistForAppAndScenario(ctx, tenant, currScenario, appId)
-	})
+func (s *service) GetForAppAndAnyMatchingScenarios(ctx context.Context, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(scenarios) == 0 {
+		return []*model.BundleInstanceAuth{}, nil
+	}
+
+	return s.repo.GetForAppAndAnyMatchingScenarios(ctx, tnt, appId, scenarios)
 }
 
-func (s *service) IsAnyExistForRuntimeAndScenario(ctx context.Context, scenarios []string, runtimeId string) (bool, error) {
-	return s.isAnyExistForScenario(ctx, scenarios, func(tenant, currScenario string) (bool, error) {
-		return s.repo.ExistForRuntimeAndScenario(ctx, tenant, currScenario, runtimeId)
-	})
+func (s *service) GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, runtimeId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(scenarios) == 0 {
+		return []*model.BundleInstanceAuth{}, nil
+	}
+
+	return s.repo.GetForRuntimeAndAnyMatchingScenarios(ctx, tnt, runtimeId, scenarios)
+
 }
 
 func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *model.BundleInstanceAuth, in model.BundleInstanceAuthSetInput) error {
@@ -456,7 +467,7 @@ func (sa *scenarioReAssociator) getCommonRelatedObjects(ctx context.Context, sce
 	return newScenariosPerRelatedObjId, nil
 }
 
-func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, inputScenarios []string, objId string) error {
+func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, inputScenarios []string) error {
 	if len(existingScenarios) == 0 {
 		return nil
 	}
@@ -464,17 +475,6 @@ func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	scenariosToRemove := str.SubstractSlice(existingScenarios, inputScenarios)
-
-	authExist, err := sa.isAnyBundleInstanceAuthExist(ctx, scenariosToRemove, objId)
-	if err != nil {
-		return err
-	}
-
-	if authExist {
-		return errors.New("Unable to delete label. Bundle Instance Auths should be deleted first")
 	}
 
 	scToAdd := str.SubstractSlice(inputScenarios, existingScenarios)

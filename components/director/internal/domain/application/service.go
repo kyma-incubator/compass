@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -89,7 +91,7 @@ type ScenariosDefinitionService interface {
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error
-	IsAnyExistForAppAndScenario(ctx context.Context, scenarios []string, appId string) (bool, error)
+	GetForAppAndAnyMatchingScenarios(ctx context.Context, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error)
 }
 
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
@@ -376,7 +378,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	}
 
 	if labelInput.Key == model.ScenariosKey {
-		if err = s.associateRelatedBundleInstanceAuthWithNewScenarios(ctx, appTenant, labelInput); err != nil {
+		if err = s.associateRelatedBundleInstanceAuthWithNewScenarios(ctx, labelInput); err != nil {
 			return err
 		}
 	}
@@ -389,7 +391,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	return nil
 }
 
-func (s *service) associateRelatedBundleInstanceAuthWithNewScenarios(ctx context.Context, appTenant string, labelInput *model.LabelInput) error {
+func (s *service) associateRelatedBundleInstanceAuthWithNewScenarios(ctx context.Context, labelInput *model.LabelInput) error {
 	inputScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(labelInput.Value)
 	if err != nil {
 		return errors.Wrap(err, "while parsing label value")
@@ -401,6 +403,11 @@ func (s *service) associateRelatedBundleInstanceAuthWithNewScenarios(ctx context
 
 	existingScenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, labelInput.ObjectID)
 	if err != nil {
+		return err
+	}
+
+	scenariosToRemove := str.SubstractSlice(existingScenarios, inputScenarios)
+	if err = s.validateNoBundleInstanceAuthsExist(ctx, labelInput.ObjectID, scenariosToRemove); err != nil {
 		return err
 	}
 
@@ -467,13 +474,8 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 			return err
 		}
 
-		authExist, err := s.bundleInstanceAuthService.IsAnyExistForAppAndScenario(ctx, scenarios, applicationID)
-		if err != nil {
+		if err = s.validateNoBundleInstanceAuthsExist(ctx, applicationID, scenarios); err != nil {
 			return err
-		}
-
-		if authExist {
-			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
 		}
 	}
 
@@ -497,6 +499,29 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	}
 
 	return nil
+}
+
+func (s *service) validateNoBundleInstanceAuthsExist(ctx context.Context, appId string, scenariosToRemove []string) error {
+	bndlAuths, err := s.bundleInstanceAuthService.GetForAppAndAnyMatchingScenarios(ctx, appId, scenariosToRemove)
+	if err != nil {
+		return errors.Wrapf(err, "while getting existing bundle instance auths for old scenarios")
+	}
+
+	if len(bndlAuths) == 0 {
+		return nil
+	}
+
+	app, err := s.Get(ctx, appId)
+	if err != nil {
+		return errors.Wrapf(err, "while getting application")
+	}
+
+	authCtx := make([]*string, 0, len(bndlAuths))
+	for _, auth := range bndlAuths {
+		authCtx = append(authCtx, auth.Context)
+	}
+
+	return apperrors.NewScenarioUnassignWhenCredentialsExistsError(resource.Application, app.Name, authCtx)
 }
 
 func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegisterInput, repoCreatorFunc repoCreatorFunc) (string, error) {

@@ -63,27 +63,6 @@ func (_m *BundleRepository) Exists(ctx context.Context, tenant string, id string
 	return r0, r1
 }
 
-// GetApplicationID provides a mock function with given fields: ctx, tenant, bundleID
-func (_m *BundleRepository) GetApplicationID(ctx context.Context, tenant string, bundleID string) (string, error) {
-	ret := _m.Called(ctx, tenant, bundleID)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
-		r0 = rf(ctx, tenant, bundleID)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, bundleID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *BundleRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Bundle, error) {
 	ret := _m.Called(ctx, tenant, id)

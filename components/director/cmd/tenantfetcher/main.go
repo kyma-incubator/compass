@@ -153,15 +153,16 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	bundleSvc := mp_bundle.NewService(bundleRepo(), apiSvc, eventAPISvc, documentSvc, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc)
 
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepository := runtime.NewRepository(runtimeConverter)
+
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo, bundleInstanceAuthSvc)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo, bundleInstanceAuthSvc, runtimeRepository)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, scenariosDefService, uidSvc)
 
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepository := runtime.NewRepository(runtimeConverter)
 	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosDefService, scenariosSvc, labelUpsertService, uidSvc, scenarioAssignEngine, bundleInstanceAuthSvc, cfg.Features.ProtectedLabelPattern)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)

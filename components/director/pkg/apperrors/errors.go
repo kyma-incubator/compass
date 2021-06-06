@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
@@ -207,6 +209,37 @@ func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, reso
 		Message:   InvalidOperationMsg,
 		arguments: map[string]string{"reason": reason, "object": string(resourceType)},
 	}
+}
+
+func NewScenarioUnassignWhenCredentialsExistsError(resourceType resource.Type, resourceName string, bndlAuthContexts []*string) error {
+	withInstanceId := make([]string, 0)
+	for _, auth := range bndlAuthContexts {
+		if auth == nil {
+			continue
+		}
+
+		instIdResult := gjson.Get(*auth, "instance_id")
+		if !instIdResult.Exists() {
+			continue
+		}
+
+		withInstanceId = append(withInstanceId, instIdResult.String())
+	}
+
+	errMsg := fmt.Sprintf("%s %s is still used and cannot be removed from formation. Contact you system administrator", strings.Title(string(resourceType)), resourceName)
+	if len(withInstanceId) == 0 {
+		errMsg += "."
+		return NewInvalidOperationError(errMsg)
+	}
+
+	errMsg += fmt.Sprintf(" and delete the credentials issued for the following instance IDs: [%s]", strings.Join(withInstanceId, ","))
+	unknownInstanceIdsCount := len(bndlAuthContexts) - len(withInstanceId)
+
+	if unknownInstanceIdsCount > 0 {
+		errMsg += fmt.Sprintf(" and %d credentials issued for unknown instance ID", unknownInstanceIdsCount)
+	}
+
+	return NewInvalidOperationError(errMsg)
 }
 
 const valueNotFoundInConfigMsg = "value under specified path not found in configuration"

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -22,6 +23,11 @@ type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
+type RuntimeRepository interface {
+	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
+}
+
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
@@ -30,22 +36,24 @@ type LabelUpsertService interface {
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error
-	IsAnyExistForRuntimeAndScenario(ctx context.Context, scenarios []string, runtimeId string) (bool, error)
+	GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, runtimeId string, scenarios []string) ([]*model.BundleInstanceAuth, error)
 }
 
 type engine struct {
 	labelRepo                 LabelRepository
+	runtimeRepo               RuntimeRepository
 	scenarioAssignmentRepo    Repository
 	labelService              LabelUpsertService
 	bundleInstanceAuthService BundleInstanceAuthService
 }
 
-func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, bundleInstanceAuthService BundleInstanceAuthService) *engine {
+func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, bundleInstanceAuthService BundleInstanceAuthService, runtimeRepo RuntimeRepository) *engine {
 	return &engine{
 		labelRepo:                 labelRepo,
 		scenarioAssignmentRepo:    scenarioAssignmentRepo,
 		labelService:              labelService,
 		bundleInstanceAuthService: bundleInstanceAuthService,
+		runtimeRepo:               runtimeRepo,
 	}
 }
 
@@ -97,13 +105,8 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	for _, label := range labels {
 		runtimeID := label.ObjectID
 
-		anyExist, err := e.bundleInstanceAuthService.IsAnyExistForRuntimeAndScenario(ctx, []string{in.ScenarioName}, runtimeID)
-		if err != nil {
+		if err = e.validateNoBundleInstanceAuthsExist(ctx, in.Tenant, runtimeID, in.ScenarioName); err != nil {
 			return err
-		}
-
-		if anyExist {
-			return errors.New("Unable to delete label .....Bundle Instance Auths should be deleted first")
 		}
 	}
 	return e.labelService.UpsertScenarios(ctx, in.Tenant, labels, []string{in.ScenarioName}, e.removeScenario)
@@ -253,4 +256,26 @@ func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[strin
 	}
 
 	return convertedLabels
+}
+
+func (e *engine) validateNoBundleInstanceAuthsExist(ctx context.Context, tenant, runtimeId, scenarioToRemove string) error {
+	bndlAuths, err := e.bundleInstanceAuthService.GetForRuntimeAndAnyMatchingScenarios(ctx, runtimeId, []string{scenarioToRemove})
+	if err != nil {
+		return errors.Wrapf(err, "while getting existing bundle for old scenarios")
+	}
+
+	if len(bndlAuths) == 0 {
+		return nil
+	}
+
+	runtime, err := e.runtimeRepo.GetByID(ctx, tenant, runtimeId)
+	if err != nil {
+		return errors.Wrapf(err, "while getting runtime")
+	}
+
+	authCtx := make([]*string, 0, len(bndlAuths))
+	for _, auth := range bndlAuths {
+		authCtx = append(authCtx, auth.Context)
+	}
+	return apperrors.NewScenarioUnassignWhenCredentialsExistsError(resource.Runtime, runtime.Name, authCtx)
 }

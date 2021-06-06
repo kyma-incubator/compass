@@ -42,48 +42,6 @@ func (_m *Repository) Delete(ctx context.Context, tenantID string, id string) er
 	return r0
 }
 
-// ExistForAppAndScenario provides a mock function with given fields: ctx, tenant, scenario, appId
-func (_m *Repository) ExistForAppAndScenario(ctx context.Context, tenant string, scenario string, appId string) (bool, error) {
-	ret := _m.Called(ctx, tenant, scenario, appId)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) bool); ok {
-		r0 = rf(ctx, tenant, scenario, appId)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, scenario, appId)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ExistForRuntimeAndScenario provides a mock function with given fields: ctx, tenant, scenario, runtimeId
-func (_m *Repository) ExistForRuntimeAndScenario(ctx context.Context, tenant string, scenario string, runtimeId string) (bool, error) {
-	ret := _m.Called(ctx, tenant, scenario, runtimeId)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) bool); ok {
-		r0 = rf(ctx, tenant, scenario, runtimeId)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, scenario, runtimeId)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByID provides a mock function with given fields: ctx, tenantID, id
 func (_m *Repository) GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error) {
 	ret := _m.Called(ctx, tenantID, id)
@@ -107,6 +65,29 @@ func (_m *Repository) GetByID(ctx context.Context, tenantID string, id string) (
 	return r0, r1
 }
 
+// GetForAppAndAnyMatchingScenarios provides a mock function with given fields: ctx, tenant, appId, scenarios
+func (_m *Repository) GetForAppAndAnyMatchingScenarios(ctx context.Context, tenant string, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	ret := _m.Called(ctx, tenant, appId, scenarios)
+
+	var r0 []*model.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.BundleInstanceAuth); ok {
+		r0 = rf(ctx, tenant, appId, scenarios)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundleInstanceAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
+		r1 = rf(ctx, tenant, appId, scenarios)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetForBundle provides a mock function with given fields: ctx, tenant, id, bundleID
 func (_m *Repository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.BundleInstanceAuth, error) {
 	ret := _m.Called(ctx, tenant, id, bundleID)
@@ -123,6 +104,29 @@ func (_m *Repository) GetForBundle(ctx context.Context, tenant string, id string
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetForRuntimeAndAnyMatchingScenarios provides a mock function with given fields: ctx, tenant, runtimeId, scenarios
+func (_m *Repository) GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, tenant string, runtimeId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	ret := _m.Called(ctx, tenant, runtimeId, scenarios)
+
+	var r0 []*model.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.BundleInstanceAuth); ok {
+		r0 = rf(ctx, tenant, runtimeId, scenarios)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundleInstanceAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
+		r1 = rf(ctx, tenant, runtimeId, scenarios)
 	} else {
 		r1 = ret.Error(1)
 	}

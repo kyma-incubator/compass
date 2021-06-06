@@ -2,13 +2,11 @@ package bundleinstanceauth
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
@@ -30,6 +28,7 @@ type EntityConverter interface {
 }
 
 type scenariosView struct {
+	qBuilder repo.QueryBuilder
 	repo.ExistQuerier
 }
 
@@ -44,14 +43,18 @@ type repository struct {
 }
 
 func NewRepository(conv EntityConverter) *repository {
+	scenarioQueryBuilder := repo.NewQueryBuilder(resource.Label, ScenariosViewName, tenantColumn, []string{"bundle_instance_auth_id"})
+
 	return &repository{
-		creator:       repo.NewCreator(resource.BundleInstanceAuth, tableName, tableColumns),
-		singleGetter:  repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
-		lister:        repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
-		deleter:       repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
-		updater:       repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, tenantColumn, idColumns),
-		conv:          conv,
-		scenariosView: &scenariosView{repo.NewExistQuerier(resource.BundleInstanceAuth, ScenariosViewName, tenantColumn)},
+		creator:      repo.NewCreator(resource.BundleInstanceAuth, tableName, tableColumns),
+		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
+		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
+		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
+		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, tenantColumn, idColumns),
+		conv:         conv,
+		scenariosView: &scenariosView{
+			qBuilder:     scenarioQueryBuilder,
+			ExistQuerier: repo.NewExistQuerier(resource.BundleInstanceAuth, ScenariosViewName, tenantColumn)},
 	}
 }
 
@@ -169,25 +172,40 @@ func (r *repository) multipleFromEntities(entities Collection) ([]*model.BundleI
 	return items, nil
 }
 
-func (r *repository) ExistForAppAndScenario(ctx context.Context, tenant, scenario, appId string) (bool, error) {
-	return r.existForObjectAndScenario(ctx, tenant, scenario, repo.NewEqualCondition("app_id", appId))
+func (r *repository) GetForAppAndAnyMatchingScenarios(ctx context.Context, tenant, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	return r.getForObjectAndAnyMatchingScenarios(ctx, tenant, "app_id", appId, scenarios)
 }
 
-func (r *repository) ExistForRuntimeAndScenario(ctx context.Context, tenant, scenario, runtimeId string) (bool, error) {
-	return r.existForObjectAndScenario(ctx, tenant, scenario, repo.NewEqualCondition("runtime_id", runtimeId))
+func (r *repository) GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, tenant, runtimeId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	return r.getForObjectAndAnyMatchingScenarios(ctx, tenant, "runtime_id", runtimeId, scenarios)
 }
 
-func (r *repository) existForObjectAndScenario(ctx context.Context, tenant, scenario string, objCondition repo.Condition) (bool, error) {
-	valueBytes, err := json.Marshal([]string{scenario})
+func (r *repository) getForObjectAndAnyMatchingScenarios(ctx context.Context, tenant, objectColumn, objectId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+	values := make([]interface{}, 0, len(scenarios))
+	for _, scenario := range scenarios {
+		values = append(values, scenario)
+	}
+
+	subqueryConditions := repo.Conditions{
+		repo.NewEqualCondition("key", model.ScenariosKey),
+		repo.NewEqualCondition(objectColumn, objectId),
+		repo.NewJSONArrAnyMatchCondition("value", values),
+	}
+
+	subquery, args, err := r.scenariosView.qBuilder.BuildQuery(tenant, false, subqueryConditions...)
 	if err != nil {
-		return false, errors.Wrap(err, "could not marshal")
+		return nil, err
 	}
 
-	conditions := repo.Conditions{
-		repo.NewJSONCondition("value", string(valueBytes)),
-		objCondition,
-		repo.NewEqualCondition("status_condition", operation.OperationStatusSucceeded),
+	inOperatorConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery("id", subquery, args),
 	}
 
-	return r.scenariosView.Exists(ctx, tenant, conditions)
+	var auths Collection
+	err = r.lister.List(ctx, tenant, &auths, inOperatorConditions...)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching bundle_instance_auths")
+	}
+
+	return r.multipleFromEntities(auths)
 }

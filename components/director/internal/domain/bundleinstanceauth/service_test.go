@@ -1116,6 +1116,22 @@ func TestService_RequestDeletion(t *testing.T) {
 	})
 }
 
+func TestService_GetForAppAndAnyMatchingScenarios(t *testing.T) {
+	methodExecution := func(ctx context.Context, repo *automock.Repository, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+		svc := bundleinstanceauth.NewService(repo, nil, nil, nil, nil)
+		return svc.GetForAppAndAnyMatchingScenarios(ctx, appId, scenarios)
+	}
+	testService_GetForObjectAndAnyMatchingScenarios(t, "GetForAppAndAnyMatchingScenarios", methodExecution)
+}
+
+func TestService_GetForRuntimeAndAnyMatchingScenarios(t *testing.T) {
+	methodExecution := func(ctx context.Context, repo *automock.Repository, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
+		svc := bundleinstanceauth.NewService(repo, nil, nil, nil, nil)
+		return svc.GetForRuntimeAndAnyMatchingScenarios(ctx, appId, scenarios)
+	}
+	testService_GetForObjectAndAnyMatchingScenarios(t, "GetForRuntimeAndAnyMatchingScenarios", methodExecution)
+}
+
 func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testing.T) {
 	// Given
 	//testErr := errors.New("Test error")
@@ -1135,7 +1151,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 
 	testCases := []struct {
 		Name                   string
-		instanceAuthRepoFn     func() *automock.Repository
 		ScenarioSvcFn          func() *automock.ScenarioService
 		LabelSvcFn             func() *automock.LabelService
 		ExistingScenariosParam []string
@@ -1144,9 +1159,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 	}{
 		{
 			Name: "Success when no old scenarios exist",
-			instanceAuthRepoFn: func() *automock.Repository {
-				return &automock.Repository{}
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1159,9 +1171,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		},
 		{
 			Name: "Success when not adding any new scenario",
-			instanceAuthRepoFn: func() *automock.Repository {
-				return &automock.Repository{}
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1173,13 +1182,7 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 			ExpectedError:          nil,
 		},
 		{
-			Name: "Success when both remove some old scenarios and add new ones and no bundle instance auth association to old scenarios exist",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(false, nil).Once()
-				return repo
-			},
+			Name: "Success when both remove some old scenarios and add new ones",
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertScenarios", contextThatHasTenant(testTenant), testTenant, mock.Anything, []string{scenarioToAdd1}, mock.Anything).
@@ -1206,12 +1209,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		},
 		{
 			Name: "Success when there are no scenario to keep",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1224,9 +1221,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		},
 		{
 			Name: "Success when there are NO common runtimes that application is connected between existing scenarios and any of the new ones",
-			instanceAuthRepoFn: func() *automock.Repository {
-				return &automock.Repository{}
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1241,10 +1235,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		},
 		{
 			Name: "Success when there are NO scenarios to remove",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 
@@ -1266,13 +1256,7 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 			ExpectedError:          nil,
 		},
 		{
-			Name: "Success when there are only scenarios to remove and no bundle_instance_auth associated to it",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(false, nil).Once()
-				return repo
-			},
+			Name: "Success when there are only scenarios to remove",
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1285,10 +1269,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		},
 		{
 			Name: "Error when UpsertScenarios fails",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 
@@ -1310,49 +1290,7 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 			ExpectedError:          testError,
 		},
 		{
-			Name: "Error when bundle instance auth check fails for scenarios that should be removed",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(false, testError).Once()
-				return repo
-			},
-			LabelSvcFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			ScenarioSvcFn: func() *automock.ScenarioService {
-				return &automock.ScenarioService{}
-			},
-			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
-			InputScenariosParam:    []string{scenarioToKeep, scenarioToAdd1},
-			ExpectedError:          testError,
-		},
-		{
-			Name: "Error when there are any bundle instance auth check fails for scenarios that should be removed",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(true, nil).Once()
-				return repo
-			},
-			LabelSvcFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			ScenarioSvcFn: func() *automock.ScenarioService {
-				return &automock.ScenarioService{}
-			},
-			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
-			InputScenariosParam:    []string{scenarioToKeep, scenarioToAdd1},
-			ExpectedError:          errors.New("Unable to delete label. Bundle Instance Auths should be deleted first"),
-		},
-		{
 			Name: "Error when getting runtime scenario labels for scenarios that should be kept",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1368,12 +1306,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		},
 		{
 			Name: "Error when getting bundle instance auth scenario labels by appId and runtimeId",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForAppAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, applicationID).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1393,11 +1325,10 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			instanceAuthRepo := testCase.instanceAuthRepoFn()
 			labelSvc := testCase.LabelSvcFn()
 			scenarioSvc := testCase.ScenarioSvcFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, scenarioSvc, labelSvc)
+			svc := bundleinstanceauth.NewService(nil, nil, nil, scenarioSvc, labelSvc)
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
@@ -1411,14 +1342,13 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, instanceAuthRepo, scenarioSvc, labelSvc)
+			mock.AssertExpectationsForObjects(t, scenarioSvc, labelSvc)
 		})
 	}
 }
 
 func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T) {
 	// Given
-	//testErr := errors.New("Test error")
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	runtimeId := "foo"
@@ -1435,7 +1365,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 
 	testCases := []struct {
 		Name                   string
-		instanceAuthRepoFn     func() *automock.Repository
 		ScenarioSvcFn          func() *automock.ScenarioService
 		LabelSvcFn             func() *automock.LabelService
 		ExistingScenariosParam []string
@@ -1444,9 +1373,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 	}{
 		{
 			Name: "Success when no old scenarios exist",
-			instanceAuthRepoFn: func() *automock.Repository {
-				return &automock.Repository{}
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1459,9 +1385,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Success when not adding any new scenario",
-			instanceAuthRepoFn: func() *automock.Repository {
-				return &automock.Repository{}
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1473,13 +1396,7 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 			ExpectedError:          nil,
 		},
 		{
-			Name: "Success when both remove some old scenarios and add new ones and no bundle instance auth association to old scenarios exist",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(false, nil).Once()
-				return repo
-			},
+			Name: "Success when both remove some old scenarios and add new ones",
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertScenarios", contextThatHasTenant(testTenant), testTenant, mock.Anything, []string{scenarioToAdd1}, mock.Anything).
@@ -1506,12 +1423,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Success when there are no scenario to keep",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1524,9 +1435,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Success when there are NO common applications that runtime is connected between existing scenarios and any of the new ones",
-			instanceAuthRepoFn: func() *automock.Repository {
-				return &automock.Repository{}
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1541,10 +1449,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Success when there are NO scenarios to remove",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 
@@ -1567,12 +1471,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Success when there are only scenarios to remove and no bundle_instance_auth associated to it",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1585,10 +1483,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Error when UpsertScenarios fails",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 
@@ -1610,49 +1504,7 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 			ExpectedError:          testError,
 		},
 		{
-			Name: "Error when bundle instance auth check fails for scenarios that should be removed",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(false, testError).Once()
-				return repo
-			},
-			LabelSvcFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			ScenarioSvcFn: func() *automock.ScenarioService {
-				return &automock.ScenarioService{}
-			},
-			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
-			InputScenariosParam:    []string{scenarioToKeep, scenarioToAdd1},
-			ExpectedError:          testError,
-		},
-		{
-			Name: "Error when there are any bundle instance auth check fails for scenarios that should be removed",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(true, nil).Once()
-				return repo
-			},
-			LabelSvcFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			ScenarioSvcFn: func() *automock.ScenarioService {
-				return &automock.ScenarioService{}
-			},
-			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
-			InputScenariosParam:    []string{scenarioToKeep, scenarioToAdd1},
-			ExpectedError:          errors.New("Unable to delete label. Bundle Instance Auths should be deleted first"),
-		},
-		{
 			Name: "Error when getting application scenario labels for scenarios that should be kept",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1668,12 +1520,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		},
 		{
 			Name: "Error when getting bundle instance auth scenario labels by appId and runtimeId",
-			instanceAuthRepoFn: func() *automock.Repository {
-				repo := &automock.Repository{}
-				repo.On("ExistForRuntimeAndScenario", contextThatHasTenant(testTenant), testTenant, scenarioToRemove, runtimeId).
-					Return(false, nil).Once()
-				return repo
-			},
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -1693,11 +1539,10 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			instanceAuthRepo := testCase.instanceAuthRepoFn()
 			labelSvc := testCase.LabelSvcFn()
 			scenarioSvc := testCase.ScenarioSvcFn()
 
-			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil, nil, scenarioSvc, labelSvc)
+			svc := bundleinstanceauth.NewService(nil, nil, nil, scenarioSvc, labelSvc)
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
@@ -1711,20 +1556,47 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, instanceAuthRepo, scenarioSvc, labelSvc)
+			mock.AssertExpectationsForObjects(t, scenarioSvc, labelSvc)
 		})
 	}
 }
 
-//func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testing.T) {
-//	testCases := []struct {
-//		Name               string
-//		instanceAuthRepoFn func() *automock.Repository
-//		ScenarioSvcFn      func() *automock.ScenarioService
-//		LabelSvcFn         func() *automock.LabelService
-//		ExpectedError      error
-//	}
-//}
+func testService_GetForObjectAndAnyMatchingScenarios(t *testing.T, repoMethodName string, call func(ctx context.Context, repo *automock.Repository, appId string, scenarios []string) ([]*model.BundleInstanceAuth, error)) {
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	objId := "foo"
+
+	t.Run("Success", func(t *testing.T) {
+		scenarios := []string{"scenario-1"}
+		authId := "bar"
+		auth := &model.BundleInstanceAuth{ID: authId}
+
+		repo := &automock.Repository{}
+		repo.On(repoMethodName, ctx, testTenant, objId, scenarios).Return([]*model.BundleInstanceAuth{auth}, nil)
+
+		result, err := call(ctx, repo, objId, scenarios)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(result))
+		assert.Equal(t, authId, result[0].ID)
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("Success when empty scenarios slice is provided", func(t *testing.T) {
+		result, err := call(ctx, nil, objId, []string{})
+		require.NoError(t, err)
+		assert.Empty(t, result)
+	})
+
+	t.Run("Success when repository fails", func(t *testing.T) {
+		scenarios := []string{"scenario-1"}
+		repo := &automock.Repository{}
+		repo.On(repoMethodName, ctx, testTenant, objId, scenarios).Return(nil, testError)
+
+		_, err := call(ctx, repo, objId, scenarios)
+		require.Error(t, err)
+		repo.AssertExpectations(t)
+	})
+}
 
 type appAndRuntimeScenarios struct {
 	appScenarios     []string
