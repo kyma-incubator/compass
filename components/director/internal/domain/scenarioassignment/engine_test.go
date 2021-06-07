@@ -24,7 +24,12 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	otherScenario := "OTHER"
 	basicScenario := "SCENARIO"
 	scenarios := []interface{}{otherScenario, basicScenario}
+
 	stringScenarios := []string{otherScenario, basicScenario}
+
+	inputScenarios := make([]string, 0, len(stringScenarios)+1)
+	inputScenarios = append(inputScenarios, in.ScenarioName)
+	inputScenarios = append(inputScenarios, stringScenarios...)
 
 	rtmIDWithScenario := "rtm1_scenario"
 	rtmIDWithoutScenario := "rtm1_no_scenario"
@@ -55,8 +60,12 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		matchExpectedScenariosAddFn := mock.MatchedBy(matchAddNewScenarioFn([][]string{stringScenarios, {}}, in.ScenarioName))
 		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(expectedScenarios)), []string{in.ScenarioName}, matchExpectedScenariosAddFn).Return(nil).Once()
 
+		inputScenarios := make([]string, 0, len(stringScenarios)+1)
+		inputScenarios = append(inputScenarios, in.ScenarioName)
+		inputScenarios = append(inputScenarios, stringScenarios...)
+
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
-		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(nil).Once()
+		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, inputScenarios, scenarioLabel.ObjectID).Return(nil).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc, nil)
 
@@ -81,7 +90,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(expectedScenarios)), []string{in.ScenarioName}, matchExpectedScenariosAddFn).Return(testErr).Once()
 
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
-		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(nil).Once()
+		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, inputScenarios, scenarioLabel.ObjectID).Return(nil).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc, nil)
 
@@ -104,7 +113,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		upsertSvc := &automock.LabelUpsertService{}
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
-		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, []string{in.ScenarioName}, scenarioLabel.ObjectID).Return(testErr).Once()
+		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, inputScenarios, scenarioLabel.ObjectID).Return(testErr).Once()
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, bundleInstanceAuthSvc, nil)
 
