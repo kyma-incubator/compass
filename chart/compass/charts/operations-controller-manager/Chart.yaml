@@ -1,4 +1,4 @@
 apiVersion: v1
 description: A Helm chart for the Compass Operations Controller
-name: operations-controller
+name: operations-controller-manager
 version: 0.1.0
