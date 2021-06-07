@@ -120,6 +120,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
+		defer fixtures.DeleteBundleInstanceAuth(t, ctx, dexGraphQLClient, tenantId, output.ID)
 
 		// THEN
 		require.NoError(t, err)
@@ -235,6 +236,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	require.Nil(t, bndlInstanceAuth.RuntimeContextID)
 	assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, bndlInstanceAuth)
 	assertions.AssertAuth(t, authInput, bndlInstanceAuth.Auth)
+	defer fixtures.DeleteBundleInstanceAuth(t, ctx, dexGraphQLClient, tenantId, bndlInstanceAuth.ID)
 
 	// Fetch Application with bundles
 	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
