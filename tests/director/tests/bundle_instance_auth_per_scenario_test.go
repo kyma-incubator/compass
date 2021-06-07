@@ -78,6 +78,73 @@ func TestUnassignResourceFromScenarioWhenThereIsExistingBundleInstanceAuth(t *te
 	})
 }
 
+func TestUnassignResourceFromScenarioUsingAutomaticScenarioAssignment(t *testing.T) {
+	ctx := context.Background()
+	tenantID := tenant.TestTenants.GetDefaultTenantID()
+	createScenarioLabelDefIfNotExist(t, ctx)
+
+	var cleanups []func()
+	testCleanUp := func() {
+		for _, cleanup := range cleanups {
+			cleanup()
+		}
+	}
+	defer testCleanUp()
+
+	commonScenario := "common-scenario"
+	otherScenario := "other-common-scenario"
+
+	scenarios := []string{conf.DefaultScenario, commonScenario, otherScenario}
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), scenarios)
+	cleanups = append([]func(){func() {
+		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), scenarios[:1])
+	}}, cleanups...)
+
+	// GIVEN
+	data, cleanup, ok := setupAppAndRuntimeWithCommonScenario(t, ctx, commonScenario)
+	cleanups = append([]func(){func() { cleanup() }}, cleanups...)
+	require.True(t, ok)
+
+	// Label selector for automatic scenario assignment
+	labelSelector := graphql.LabelSelectorInput{
+		Key:   "keyA",
+		Value: "valueA",
+	}
+
+	// Update application scenarios
+	setAppLabelRequest := fixtures.FixSetApplicationLabelRequest(data.appId, ScenariosLabel, []interface{}{commonScenario, otherScenario})
+	appLabel := graphql.Label{}
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, setAppLabelRequest, &appLabel)
+	require.NoError(t, err)
+
+	// Set runtime label
+	setRuntimeLabelRequest := fixtures.FixSetRuntimeLabelRequest(data.runtimeId, labelSelector.Key, labelSelector.Value)
+	runtimeLabel := graphql.Label{}
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setRuntimeLabelRequest, &runtimeLabel)
+	require.NoError(t, err)
+
+	// Create automatic scenario assignment
+	asaInput := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: otherScenario,
+		Selector:     &labelSelector,
+	}
+	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantID)
+
+	// Cannot delete automatic scenario assignment when there are existing bundle instance auths
+	assignment := graphql.AutomaticScenarioAssignment{}
+	req := fixtures.FixDeleteAutomaticScenarioAssignmentForScenarioRequest(otherScenario)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, &assignment)
+	assert.Error(t, err)
+
+	// Deleting bundle instance auth
+	fixtures.DeleteBundleInstanceAuth(t, ctx, dexGraphQLClient, tenantID, data.bundleInstanceAuthID)
+
+	// Now automatic scenario assignment deletion should be successful
+	req = fixtures.FixDeleteAutomaticScenarioAssignmentForScenarioRequest(otherScenario)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, &assignment)
+	assert.NoError(t, err)
+}
+
 func createScenarioLabelDefIfNotExist(t *testing.T, ctx context.Context) {
 	defs, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
 	require.NoError(t, err)
@@ -188,16 +255,18 @@ func setupAppAndRuntimeWithCommonScenario(t *testing.T, ctx context.Context, sce
 	}
 
 	return &data{
-		appId:       actualApp.ID,
-		runtimeId:   actualRuntime.ID,
-		scenarios:   []string{scenario},
-		runtimeName: actualRuntime.Name,
+		appId:                actualApp.ID,
+		runtimeId:            actualRuntime.ID,
+		scenarios:            []string{scenario},
+		runtimeName:          actualRuntime.Name,
+		bundleInstanceAuthID: actualBundleInstanceAuth.ID,
 	}, executeCleanUp, true
 }
 
 type data struct {
-	appId       string
-	runtimeId   string
-	runtimeName string
-	scenarios   []string
+	appId                string
+	runtimeId            string
+	runtimeName          string
+	bundleInstanceAuthID string
+	scenarios            []string
 }

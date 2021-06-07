@@ -88,8 +88,9 @@ func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplicatio
 			return errors.Wrap(err, "while parsing runtime label value")
 		}
 
-		err = e.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, runtimeScenarios, []string{scenario}, runtimeLabel.ObjectID)
-		if err != nil {
+		inputScenarios := []string{scenario}
+		inputScenarios = append(inputScenarios, runtimeScenarios...)
+		if err = e.bundleInstanceAuthService.AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx, runtimeScenarios, inputScenarios, runtimeLabel.ObjectID); err != nil {
 			return err
 		}
 	}
