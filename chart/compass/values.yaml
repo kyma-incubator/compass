@@ -44,34 +44,34 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     connectivity_adapter:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     pairing_adapter:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     director:
       dir:
-      version: "PR-1879"
+      version: "PR-1882"
     gateway:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     operations_controller:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     tenant_fetcher:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     ord_service:
       dir:
-      version: "PR-28"
+      version: "PR-29"
     schema_migrator:
       dir:
-      version: "PR-1879"
+      version: "PR-1878"
     system_broker:
       dir:
-      version: "PR-1868"
+      version: "PR-1884"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
