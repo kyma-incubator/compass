@@ -40,4 +40,4 @@ istio:
     enabled: true
     directorInternalApi:
       compassConnector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector
-      compassOperationsController: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-operations-controller
+      compassOperationsController: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-operations-controller-manager

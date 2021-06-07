@@ -9,5 +9,5 @@ dependencies:
   condition: global.metrics.enabled
 - name: system-broker
   condition: global.system_broker.enabled
-- name: operations-controller
+- name: operations-controller-manager
   condition: global.operations_controller.enabled
