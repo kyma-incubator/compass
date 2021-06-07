@@ -136,6 +136,24 @@ func TestUnassignResourceFromScenarioUsingAutomaticScenarioAssignment(t *testing
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, &assignment)
 	assert.Error(t, err)
 
+	// Cannot delete label which corresponds for the automatic scenario assignment
+	request := fixtures.FixDeleteRuntimeLabelRequest(data.runtimeId, labelSelector.Key)
+	label := graphql.Label{}
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &label)
+	assert.Error(t, err)
+
+	// Deleting scenario for which there is automatic scenario assignment is successful
+	updateInput := graphql.RuntimeInput{
+		Name:   data.runtimeName,
+		Labels: graphql.Labels{ScenariosLabel: []string{commonScenario}, labelSelector.Key: labelSelector.Value},
+	}
+	updateInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(updateInput)
+	require.NoError(t, err)
+	request = fixtures.FixUpdateRuntimeRequest(data.runtimeId, updateInputGQL)
+	input := graphql.RuntimeExt{}
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &input)
+	require.NoError(t, err)
+
 	// Deleting bundle instance auth
 	fixtures.DeleteBundleInstanceAuth(t, ctx, dexGraphQLClient, tenantID, data.bundleInstanceAuthID)
 
