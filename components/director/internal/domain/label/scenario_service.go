@@ -2,6 +2,7 @@ package label
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -54,7 +55,12 @@ func (s *scenarioService) getScenarioNamesForObject(ctx context.Context, objectT
 	log.C(ctx).Infof("Getting scenarios for %s with id %s", objectType, objectId)
 
 	objLabel, err := s.labelRepo.GetByKey(ctx, tnt, objectType, objectId, model.ScenariosKey)
+
 	if err != nil {
+		if apperrors.ErrorCode(err) == apperrors.NotFound {
+			log.C(ctx).Infof("No scenarios found for %s", objectType)
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "while getting label for %s", objectType)
 	}
 
