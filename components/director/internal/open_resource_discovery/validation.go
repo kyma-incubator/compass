@@ -25,7 +25,7 @@ const (
 	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+$"
+	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
 	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
@@ -133,7 +133,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.4")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0")))
 }
 
 func validatePackageInput(pkg *model.PackageInput) error {
@@ -255,7 +255,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ApiOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
-		validation.Field(&api.TargetURLs, validation.Required, validation.By(validateEntryPoints)),
+		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
 		validation.Field(&api.ImplementationStandard, validation.In(ApiImplementationStandardDocumentApi, ApiImplementationStandardServiceBroker, ApiImplementationStandardCsnExposure, ApiImplementationStandardCustom)),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
@@ -430,7 +430,7 @@ func validateEntryPoints(val interface{}) error {
 	}
 
 	if len(parsedArr.Array()) == 0 {
-		return errors.New("entryPoints should not be empty")
+		return errors.New("entryPoints should not be empty if present")
 	}
 
 	if areThereEntryPointDuplicates(parsedArr.Array()) {
@@ -785,6 +785,10 @@ func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *rege
 		return errors.New("error while casting to ConsumptionBundleReference")
 	}
 
+	if bundleReferences != nil && len(bundleReferences) == 0 {
+		return errors.New("bundleReference should not be empty if present")
+	}
+
 	bundleIDsPerEvent := make(map[string]bool)
 	for _, br := range bundleReferences {
 		if br.BundleOrdID == "" {
@@ -812,6 +816,10 @@ func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawM
 	bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
 	if !ok {
 		return errors.New("error while casting to ConsumptionBundleReference")
+	}
+
+	if bundleReferences != nil && len(bundleReferences) == 0 {
+		return errors.New("bundleReference should not be empty if present")
 	}
 
 	bundleIDsPerAPI := make(map[string]bool)
@@ -884,6 +892,15 @@ func isValidDate(date *string) validation.RuleFunc {
 			return nil
 		}
 		return errors.New("invalid date")
+	}
+}
+
+func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc {
+	return func(value interface{}) error {
+		if partOfConsumptionBundles != nil && len(partOfConsumptionBundles) > 0 {
+			return errors.New("api without entry points can not be part of consumption bundle")
+		}
+		return nil
 	}
 }
 

@@ -196,12 +196,6 @@ func (docs Documents) Validate(webhookURL string) error {
 				}
 			}
 		}
-		for _, tombstone := range doc.Tombstones {
-			if !packageIDs[tombstone.OrdID] && !bundleIDs[tombstone.OrdID] && !productIDs[tombstone.OrdID] &&
-				!apiIDs[tombstone.OrdID] && !eventIDs[tombstone.OrdID] && !vendorIDs[tombstone.OrdID] {
-				return errors.Errorf("tombstone with id %q for an unknown entity", tombstone.OrdID)
-			}
-		}
 	}
 
 	// TODO: Validate that every change to a resource leads to version increment. If a resource in the document is different from the one in the DB and both have the same versions, then this is a validation error.

@@ -65,7 +65,7 @@ global:
       version: "PR-1868"
     ord_service:
       dir:
-      version: "PR-26"
+      version: "PR-29"
     schema_migrator:
       dir:
       version: "PR-1862"
@@ -79,7 +79,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1869"
+      version: "PR-1878"
     console:
       dir:
       version: "PR-33"
