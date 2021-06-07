@@ -17,6 +17,7 @@ spec:
     - match:
       - uri:
           prefix: {{ .Values.global.connector.prefix }}
+      timeout: {{ .Values.global.oathkeeper.timeout }}
       route:
       - destination:
           host: {{ .Values.global.oathkeeper.host }}
@@ -49,6 +50,7 @@ spec:
           prefix: {{ .Values.global.ordService.prefix }}
       - uri:
           prefix: {{ .Values.global.ordService.staticPrefix }}
+      timeout: {{ .Values.global.oathkeeper.timeout }}
       route:
         - destination:
             host: {{ .Values.global.oathkeeper.host }}
@@ -78,6 +80,7 @@ spec:
     - match:
       - uri:
           regex: /.*
+      timeout: {{ .Values.global.oathkeeper.timeout }}
       route:
         - destination:
             host: {{ .Values.global.oathkeeper.host }}
