@@ -322,6 +322,9 @@ var (
 	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
 	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty = `{"supported":"automatic"}`
 	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty    = `{"supported":"manual"}`
+
+	invalidSuccessorsDueToInvalidApiRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
+	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 )
 
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
@@ -614,6 +617,16 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `CustomPolicyLevel` field value for Package when `PolicyLevel` is set to `custom`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].CustomPolicyLevel = str.Ptr("invalid-value")
+				doc.Packages[0].PolicyLevel = "custom"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
 			Name: "Missing `type` from `PackageLinks` for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -747,6 +760,24 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Vendor = str.Ptr(invalidVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `vendor` field for Package when `policyLevel` is sap-partner",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.SapVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `vendor` field for Package when `policyLevel` is sap",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -959,8 +990,36 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid `industry` field element for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -997,6 +1056,35 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap partner`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1606,6 +1694,35 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `custom` for API",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid value for `industry` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1646,6 +1763,35 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap partner` for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Missing `resourceDefinitions` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -1653,6 +1799,17 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Valid missing `resourceDefinitions` field for API when `policyLevel` is sap and `visibility` is private",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions = nil
+				doc.APIResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
+				doc.Packages[0].PolicyLevel = policyLevel
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -1974,12 +2131,12 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
-				doc.APIResources[0].Successor = str.Ptr(api2ORDID)
+				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`[%s]`, api2ORDID))
 
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `successor` field when `releaseStatus` field has value `deprecated` for API",
+			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
@@ -1987,10 +2144,18 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `successor` field for API",
+			Name: "Invalid `successors` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Successor = str.Ptr("invalidValue")
+				doc.APIResources[0].Successors = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` when values do not match the regex for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidApiRegex)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2075,13 +2240,23 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing field `entryPoints` for API",
+			Name: "Invalid when `entryPoints` field is empty but `PartOfConsumptionBundles` field is not for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = nil
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Valid when `entryPoints` field is empty and `PartOfConsumptionBundles` field is empty for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].TargetURLs = nil
+				doc.APIResources[0].PartOfConsumptionBundles = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid field `entryPoints` when containing invalid URI for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -2099,7 +2274,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when it is invalid JSON for Event",
+			Name: "Invalid `entryPoints` field when it is invalid JSON for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage(invalidJson)
@@ -2107,7 +2282,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when it isn't a JSON array for Event",
+			Name: "Invalid `entryPoints` field when it isn't a JSON array for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage("{}")
@@ -2115,7 +2290,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when the JSON array is empty for Event",
+			Name: "Invalid `entryPoints` field when the JSON array is empty for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage("[]")
@@ -2123,7 +2298,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `entryPoints` field when it contains non string value for Event",
+			Name: "Invalid `entryPoints` field when it contains non string value for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].TargetURLs = json.RawMessage(invalidEntryPointsNonStringElement)
@@ -2295,8 +2470,35 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Empty `PartOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].PartOfConsumptionBundles = []*model.ConsumptionBundleReference{}
+
+				return []*open_resource_discovery.Document{doc}
+			},
 		},
 		{
+			Name: "Missing `Extensible` field when `policyLevel` is sap",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `Extensible` field when `policyLevel` is sap partner",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid `Extensible` field due to empty json object",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2304,8 +2506,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Invalid `Extensible` field due to invalid json",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2313,8 +2514,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `supported` field in the `extensible` object for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2322,9 +2522,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-
-		{
+		}, {
 			Name: "Invalid `supported` field type in the `extensible` object for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2332,8 +2530,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Invalid `supported` field value in the `extensible` object for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2341,8 +2538,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `description` field when `supported` has an `automatic` value",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2350,8 +2546,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `description` field when `supported` has a `manual` value",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2359,8 +2554,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2376,14 +2570,14 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
-		},
-		{
+		}, {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2393,8 +2587,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
-		},
-		{
+		}, {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2410,8 +2603,30 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
-		},
-		{
+		}, {
+			Name: "Valid `SAP RFC Metadata` definitions when APIResources has policyLevel `sap` and apiProtocol is `sap-rfc`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `SAP RFC Metadata` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2426,12 +2641,12 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -2442,8 +2657,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2458,12 +2672,12 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				*doc.APIResources[1].ApiProtocol = open_resource_discovery.ApiProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -2474,8 +2688,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v2`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2488,12 +2701,12 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v2`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
@@ -2502,8 +2715,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v4`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -2516,15 +2728,69 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
 				return []*open_resource_discovery.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v4`",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap` and apiProtocol is `rest`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `rest`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolRest
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `SAP RFC` definitions when APIResources has policyLevel `sap` and apiProtocol is `sap-rfc-metadata-v1`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `SAP RFC` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc-metadata-v1`",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
@@ -2862,6 +3128,17 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Valid missing `resourceDefinitions` field for Event when `policyLevel` is sap and `visibility` is private",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions = nil
+				doc.EventResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
+				doc.Packages[0].PolicyLevel = policyLevel
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Missing `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3137,6 +3414,35 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid value for `industry` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3177,6 +3483,35 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap partner` for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelCustom
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Missing `releaseStatus` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3206,12 +3541,12 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.EventResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
-				doc.EventResources[0].Successor = str.Ptr(event2ORDID)
+				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`[%s]`, event2ORDID))
 
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Missing `successor` field when `releaseStatus` field has value `deprecated` for Event",
+			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
@@ -3219,10 +3554,18 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
-			Name: "Invalid `successor` field for Event",
+			Name: "Invalid json field `successors` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Successor = str.Ptr("invalidValue")
+				doc.EventResources[0].Successors = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` when values do not match the regex for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidEventRegex)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3255,6 +3598,35 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = "https://exmaple.com/test/v3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Empty `PartOfConsumptionBundle` field for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].PartOfConsumptionBundles = []*model.ConsumptionBundleReference{}
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `Extensible` field when `policyLevel` is sap",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSap
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `Extensible` field when `policyLevel` is sap partner",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = nil
+				doc.Packages[0].PolicyLevel = open_resource_discovery.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(open_resource_discovery.PartnerVendor)
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3374,6 +3746,23 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 		ExpectedToBeValid bool
 	}{
 		{
+			Name:              "Valid `id` field for Product",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products = append(doc.Products, &model.ProductInput{
+					OrdID:            "sap.product-valid_value:product:id:",
+					Title:            "title",
+					ShortDescription: "Description",
+					Vendor:           open_resource_discovery.SapVendor,
+					Parent:           nil,
+					CorrelationIds:   nil,
+					Labels:           nil,
+				})
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Missing `id` field for Product",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
@@ -3434,6 +3823,24 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Products[0].Vendor = invalidOrdID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `vendor` field when namespace in the `id` is `sap` for Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].OrdID = "sap:product:S4HANA_OD:"
+				doc.Products[0].Vendor = vendor2ORDID
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `vendor` field when namespace in the `id` is not `sap` for Product",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Products[0].OrdID = "strange:product:S4HANA_OD:"
+				doc.Products[0].Vendor = vendorORDID
 
 				return []*open_resource_discovery.Document{doc}
 			},
