@@ -586,11 +586,11 @@ func TestDeleteApplication(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
+		require.NoError(t, err)
 		defer func() {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID)
+			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
 			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
 		}()
-		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
 		//WHEN
@@ -845,22 +845,26 @@ func TestQuerySpecificApplication(t *testing.T) {
 	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
-	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-
+	scenarios := []string{"test-scenario", "test-scenario-2"}
+	defaultScenarios := []string{conf.DefaultScenario}
 	// update label definitions
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), append([]string{conf.DefaultScenario}, scenarios...))
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), defaultScenarios)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
 		// set application scenarios label
 		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, appID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, appID, ScenariosLabel, scenarios[:1])
+		defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, appID, "scenarios")
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+		defer func() {
+			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, deleteLabelRequest, nil)
+			require.NoError(t, err)
+		}()
 
 		actualApp := graphql.Application{}
 
@@ -876,10 +880,15 @@ func TestQuerySpecificApplication(t *testing.T) {
 	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
 		// set application scenarios label
 		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, appID, ScenariosLabel, scenarios[:1])
+		defer fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, appID, "scenarios")
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+		defer func() {
+			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, deleteLabelRequest, nil)
+			require.NoError(t, err)
+		}()
 
 		actualApp := graphql.Application{}
 
@@ -925,8 +934,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	otherTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 	tenantUnnormalizedApplications := []*graphql.Application{}
 	tenantNormalizedApplications := []*graphql.Application{}
-	defaultValue := "DEFAULT"
-	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
+	scenarios := []string{conf.DefaultScenario, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
 
 	jsonSchema := map[string]interface{}{
 		"type":        "array",
@@ -950,15 +958,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}{
 		{
 			Tenant:          tenantID,
-			ApplicationName: "first",
-			WithinTenant:    true,
-			Scenarios:       []string{defaultValue},
-		},
-		{
-			Tenant:          tenantID,
 			ApplicationName: "second",
 			WithinTenant:    true,
-			Scenarios:       []string{defaultValue, "black-friday-campaign"},
+			Scenarios:       []string{"black-friday-campaign"},
 		},
 		{
 			Tenant:          tenantID,
@@ -970,14 +972,28 @@ func TestApplicationsForRuntime(t *testing.T) {
 			Tenant:          tenantID,
 			ApplicationName: "allscenarios",
 			WithinTenant:    true,
-			Scenarios:       []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"},
+			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
 		},
 		{
 			Tenant:          otherTenant,
 			ApplicationName: "test",
 			WithinTenant:    false,
-			Scenarios:       []string{defaultValue, "black-friday-campaign"},
+			Scenarios:       []string{"black-friday-campaign"},
 		},
+	}
+
+	if conf.DefaultScenarioEnabled {
+		applications = append(applications, struct {
+			ApplicationName string
+			Tenant          string
+			WithinTenant    bool
+			Scenarios       []string
+		}{
+			Tenant:          tenantID,
+			ApplicationName: "first",
+			WithinTenant:    true,
+			Scenarios:       []string{conf.DefaultScenario},
+		})
 	}
 
 	for _, testApp := range applications {
@@ -991,7 +1007,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testApp.Tenant, createApplicationReq, &application)
 		defer func(applicationID, tenant string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenant, applicationID)
+			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenant, applicationID, conf.DefaultScenarioEnabled)
 			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, applicationID)
 		}(application.ID, testApp.Tenant)
 
@@ -1127,7 +1143,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	expectedApplications := []*graphql.Application{}
 	expectedNormalizedApplications := []*graphql.Application{}
 
-	defaultValue := "DEFAULT"
+	defaultValue := conf.DefaultScenario
 	scenarios := []string{defaultValue, "test-scenario"}
 
 	jsonSchema := map[string]interface{}{
@@ -1149,11 +1165,6 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		Hidden          bool
 	}{
 		{
-			ApplicationName: "first",
-			Scenarios:       []string{defaultValue},
-			Hidden:          false,
-		},
-		{
 			ApplicationName: "second",
 			Scenarios:       []string{"test-scenario"},
 			Hidden:          false,
@@ -1163,6 +1174,18 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 			Scenarios:       []string{"test-scenario"},
 			Hidden:          true,
 		},
+	}
+
+	if conf.DefaultScenarioEnabled {
+		applications = append(applications, struct {
+			ApplicationName string
+			Scenarios       []string
+			Hidden          bool
+		}{
+			ApplicationName: "first",
+			Scenarios:       []string{defaultValue},
+			Hidden:          false,
+		})
 	}
 
 	applicationHideSelectorKey := "applicationHideSelectorKey"
@@ -1182,7 +1205,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
 		defer func(applicationID string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, applicationID)
+			fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, applicationID, conf.DefaultScenarioEnabled)
 			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, applicationID)
 		}(application.ID)
 
@@ -1311,15 +1334,15 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
+	scenarios := []string{conf.DefaultScenario, "test"}
+
 	validSchema := map[string]interface{}{
 		"type":        "array",
 		"minItems":    1,
 		"uniqueItems": true,
 		"items": map[string]interface{}{
 			"type": "string",
-			"enum": []interface{}{
-				"DEFAULT", "test",
-			},
+			"enum": scenarios,
 		},
 	}
 	labelDefinitionInput := graphql.LabelDefinitionInput{
@@ -1341,7 +1364,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"scenarios": []interface{}{"DEFAULT", "test"},
+			"scenarios": scenarios,
 		},
 	}
 
@@ -1356,7 +1379,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	inRuntime := graphql.RuntimeInput{
 		Name: "test-runtime",
 		Labels: graphql.Labels{
-			"scenarios": []interface{}{"DEFAULT", "test"},
+			"scenarios": scenarios,
 		},
 	}
 	runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(inRuntime)

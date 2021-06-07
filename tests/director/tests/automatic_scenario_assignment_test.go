@@ -119,9 +119,16 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
 		//GIVEN
 		expectedScenarios := map[string][]interface{}{
-			rtms[0].ID: {defaultScenario, prodScenario},
-			rtms[1].ID: {defaultScenario, prodScenario},
-			rtms[2].ID: {defaultScenario},
+			rtms[0].ID: {prodScenario},
+			rtms[1].ID: {prodScenario},
+			rtms[2].ID: {},
+		}
+		if conf.DefaultScenarioEnabled {
+			expectedScenarios = map[string][]interface{}{
+				rtms[0].ID: {defaultScenario, prodScenario},
+				rtms[1].ID: {defaultScenario, prodScenario},
+				rtms[2].ID: {defaultScenario},
+			}
 		}
 
 		//WHEN
@@ -138,9 +145,16 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	t.Run("Delete Automatic Scenario Assigment for scenario", func(t *testing.T) {
 		//GIVEN
 		scenarios := map[string][]interface{}{
-			rtms[0].ID: {defaultScenario, prodScenario},
-			rtms[1].ID: {defaultScenario, prodScenario},
-			rtms[2].ID: {defaultScenario},
+			rtms[0].ID: {prodScenario},
+			rtms[1].ID: {prodScenario},
+			rtms[2].ID: {},
+		}
+		if conf.DefaultScenarioEnabled {
+			scenarios = map[string][]interface{}{
+				rtms[0].ID: {defaultScenario, prodScenario},
+				rtms[1].ID: {defaultScenario, prodScenario},
+				rtms[2].ID: {defaultScenario},
+			}
 		}
 
 		//WHEN
@@ -150,9 +164,16 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		assertions.AssertRuntimeScenarios(t, runtimes, scenarios)
 
 		expectedScenarios := map[string][]interface{}{
-			rtms[0].ID: {defaultScenario},
-			rtms[1].ID: {defaultScenario},
-			rtms[2].ID: {defaultScenario},
+			rtms[0].ID: {},
+			rtms[1].ID: {},
+			rtms[2].ID: {},
+		}
+		if conf.DefaultScenarioEnabled {
+			expectedScenarios = map[string][]interface{}{
+				rtms[0].ID: {defaultScenario},
+				rtms[1].ID: {defaultScenario},
+				rtms[2].ID: {defaultScenario},
+			}
 		}
 
 		//WHEN
@@ -167,9 +188,16 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	t.Run("Delete Automatic Scenario Assigment by selector, check also if manually added scenarios survived", func(t *testing.T) {
 		//GIVEN
 		scenarios := map[string][]interface{}{
-			rtms[0].ID: {defaultScenario, prodScenario, devScenario},
-			rtms[1].ID: {defaultScenario, prodScenario, devScenario},
-			rtms[2].ID: {defaultScenario},
+			rtms[0].ID: {prodScenario, devScenario},
+			rtms[1].ID: {prodScenario, devScenario},
+			rtms[2].ID: {},
+		}
+		if conf.DefaultScenarioEnabled {
+			scenarios = map[string][]interface{}{
+				rtms[0].ID: {conf.DefaultScenario, prodScenario, devScenario},
+				rtms[1].ID: {conf.DefaultScenario, prodScenario, devScenario},
+				rtms[2].ID: {conf.DefaultScenario},
+			}
 		}
 
 		//WHEN
@@ -183,7 +211,14 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		expectedScenarios := map[string][]interface{}{
 			rtms[0].ID: {manualScenario},
 			rtms[1].ID: {manualScenario},
-			rtms[2].ID: {defaultScenario},
+			rtms[2].ID: {},
+		}
+		if conf.DefaultScenarioEnabled {
+			expectedScenarios = map[string][]interface{}{
+				rtms[0].ID: {manualScenario},
+				rtms[1].ID: {manualScenario},
+				rtms[2].ID: {defaultScenario},
+			}
 		}
 
 		//WHEN
