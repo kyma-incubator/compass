@@ -475,7 +475,10 @@ func AssertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expec
 
 func AssertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
 	val := actual["scenarios"]
-	scenarios, _ := val.([]interface{})
+	scenarios, ok := val.([]interface{})
+	if !ok {
+		scenarios = []interface{}{}
+	}
 	assert.ElementsMatch(t, scenarios, expected)
 }
 
