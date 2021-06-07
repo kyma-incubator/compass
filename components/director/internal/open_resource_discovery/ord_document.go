@@ -39,9 +39,7 @@ type Document struct {
 
 	// TODO: In the current state of ORD and it's implementation we are missing system landscape discovery and an id correlation in the system instances. Because of that in the first phase we will rely on:
 	//  - DescribedSystemInstance is the application in our DB and it's baseURL should match with the one in the webhook.
-	//  - ProviderSystemInstance is not supported since we do not support information of a system instance to be provided by a different system instance due to missing correlation.
 	DescribedSystemInstance *model.Application `json:"describedSystemInstance"`
-	ProviderSystemInstance  *model.Application `json:"providerSystemInstance"`
 
 	Packages           []*model.PackageInput         `json:"packages"`
 	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
@@ -56,13 +54,9 @@ type Documents []*Document
 
 // Validate validates all the documents for a system instance
 func (docs Documents) Validate(webhookURL string) error {
-	// TODO: Revisit after DescribedSystemInstance vs. ProviderSystemInstance is aligned. Currently we rely on that described system instance is identical with the provider system instance. See TODO above.
 	for _, doc := range docs {
-		if doc.ProviderSystemInstance != nil {
-			return errors.New("providerSystemInstance not supported")
-		}
 		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != webhookURL {
-			return errors.New("describedSystemInstance should be the same as the one providing the documents or providerSystemInstance should be defined")
+			return errors.New("describedSystemInstance should be the same as the one providing the documents")
 		}
 	}
 
@@ -122,7 +116,7 @@ func (docs Documents) Validate(webhookURL string) error {
 			apiIDs[*api.OrdID] = true
 		}
 		for _, event := range doc.EventResources {
-			if err := validateEventInput(event); err != nil {
+			if err := validateEventInput(event, packagePolicyLevels); err != nil {
 				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
 			}
 			if _, ok := eventIDs[*event.OrdID]; ok {
@@ -200,12 +194,6 @@ func (docs Documents) Validate(webhookURL string) error {
 				if !productIDs[productID.String()] {
 					return errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String())
 				}
-			}
-		}
-		for _, tombstone := range doc.Tombstones {
-			if !packageIDs[tombstone.OrdID] && !bundleIDs[tombstone.OrdID] && !productIDs[tombstone.OrdID] &&
-				!apiIDs[tombstone.OrdID] && !eventIDs[tombstone.OrdID] && !vendorIDs[tombstone.OrdID] {
-				return errors.Errorf("tombstone with id %q for an unknown entity", tombstone.OrdID)
 			}
 		}
 	}
