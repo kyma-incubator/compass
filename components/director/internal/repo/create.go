@@ -68,7 +68,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", stmt)
-	_, err = persist.NamedExec(stmt, dbEntity)
+	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
 }

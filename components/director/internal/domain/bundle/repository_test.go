@@ -458,7 +458,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		// then
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelBndl)
-		require.EqualError(t, err, fmt.Sprintf("while fetching list of objects from DB: %s", testError.Error()))
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error when conversion from entity to model failed", func(t *testing.T) {

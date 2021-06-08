@@ -260,8 +260,7 @@ func TestRepository_ListForBundle(t *testing.T) {
 		// WHEN
 		_, err := pgRepository.ListForBundle(ctx, tenantID, bndlID(), 3, "")
 		//THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {

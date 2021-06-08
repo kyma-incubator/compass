@@ -86,7 +86,7 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 
 	query := getQueryFromBuilder(stmtBuilder)
 	log.C(ctx).Debugf("Executing DB query: %s", query)
-	res, err := persist.Exec(query, allArgs...)
+	res, err := persist.ExecContext(ctx, query, allArgs...)
 	if err = persistence.MapSQLError(ctx, err, g.resourceType, resource.Delete, "while deleting object from '%s' table", g.tableName); err != nil {
 		return err
 	}

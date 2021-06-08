@@ -73,7 +73,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 	}
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
-	err = persist.Get(dest, query, args...)
+	err = persist.GetContext(ctx, dest, query, args...)
 
 	return persistence.MapSQLError(ctx, err, g.resourceType, resource.Get, "while getting object from '%s' table", g.tableName)
 }
