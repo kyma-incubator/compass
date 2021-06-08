@@ -348,6 +348,14 @@ func TestWebhookInput_Validate_URLTemplate(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
+			Name: "MethodNotAllowed",
+			Value: stringPtr(`{
+		"method": "HEAD",
+	   	"path": "https://my-int-system/api/v1/{{.Application.ID}}/pairing"
+ }`),
+			ExpectedValid: false,
+		},
+		{
 			Name:          "Empty",
 			Value:         stringPtr(""),
 			ExpectedValid: false, // it should not be valid due to the fact that we also discard the legacy URL from the webhook in the test below
