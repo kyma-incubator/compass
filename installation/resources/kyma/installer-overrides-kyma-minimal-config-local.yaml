@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: istio
+    kyma-project.io/installation: ""
+data:
+  kyma_istio_operator: |-
+    apiVersion: install.istio.io/v1alpha1
+    kind: IstioOperator
+    metadata:
+      name: istio-system
+    spec:
+      values:
+        global:
+          jwtPolicy: first-party-jwt
+          proxy:
+            holdApplicationUntilProxyStarts: true
+            resources:
+              requests:
+                cpu: 20m
+                memory: 32Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: core-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: core
+    kyma-project.io/installation: ""
+data:
+  test.external_solution.event_mesh.enabled: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ory-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: ory
+    kyma-project.io/installation: ""
+data:
+  global.ory.hydra.persistence.enabled: "false"
+  global.ory.hydra.persistence.postgresql.enabled: "false"
+  hydra.hydra.autoMigrate: "false"
+  hydra.deployment.resources.requests.cpu: "50m"
+  hydra.deployment.resources.limits.cpu: "150m"
+  oathkeeper.oathkeeper.config.serve.api.timeout.read: "120s"
+  oathkeeper.oathkeeper.config.serve.api.timeout.write: "120s"
+  oathkeeper.oathkeeper.config.serve.api.timeout.idle: "120s"
+  oathkeeper.oathkeeper.config.mutators.id_token.config.ttl: "1h"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tracing-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: tracing
+    kyma-project.io/installation: ""
+data:
+  global.tracing.enabled: "true"
+  kcproxy.resources.limits.memory: 40Mi
+  kcproxy.resources.requests.memory: 10Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kiali-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: kiali
+    kyma-project.io/installation: ""
+data:
+  kcproxy.resources.limits.memory: 40Mi
+  kcproxy.resources.requests.memory: 10Mi

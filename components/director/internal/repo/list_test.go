@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -85,6 +86,17 @@ func TestList(t *testing.T) {
 		err := sut.List(ctx, givenTenant, &dest)
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+		var dest UserCollection
+		err := sut.List(ctx, givenTenant, &dest)
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
+	})
 }
 
 func TestListGlobal(t *testing.T) {
@@ -153,5 +165,16 @@ func TestListGlobal(t *testing.T) {
 
 		err := sut.ListGlobal(ctx, &dest)
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+		var dest UserCollection
+		err := sut.ListGlobal(ctx, &dest)
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 }

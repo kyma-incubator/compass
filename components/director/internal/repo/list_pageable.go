@@ -88,12 +88,12 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int,
 	// TODO: Refactor query builder
 	stmtWithPagination := fmt.Sprintf("%s %s", query, paginationSQL)
 
-	err = persist.Select(dest, stmtWithPagination, args...)
+	err = persist.SelectContext(ctx, dest, stmtWithPagination, args...)
 	if err != nil {
-		return nil, -1, errors.Wrap(err, "while fetching list of objects from DB")
+		return nil, -1, persistence.MapSQLError(ctx, err, g.resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
 	}
 
-	totalCount, err := g.getTotalCount(persist, query, args)
+	totalCount, err := g.getTotalCount(ctx, persist, query, args)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -111,10 +111,10 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int,
 	}, totalCount, nil
 }
 
-func (g *universalPageableQuerier) getTotalCount(persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {
+func (g *universalPageableQuerier) getTotalCount(ctx context.Context, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {
 	stmt := strings.Replace(query, g.selectedColumns, "COUNT(*)", 1)
 	var totalCount int
-	err := persist.Get(&totalCount, stmt, args...)
+	err := persist.GetContext(ctx, &totalCount, stmt, args...)
 	if err != nil {
 		return -1, errors.Wrap(err, "while counting objects")
 	}

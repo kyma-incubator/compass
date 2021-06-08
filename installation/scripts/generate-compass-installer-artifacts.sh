@@ -44,7 +44,7 @@ else
 fi
 
     sed -i '/action: install/d' kyma-installer.yaml
-    cat ${RESOURCES_DIR}/kyma/installer-cr-kyma-dependencies.yaml >> kyma-installer.yaml
+    cat ${RESOURCES_DIR}/kyma/installer-cr-kyma-minimal.yaml >> kyma-installer.yaml
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
 }
 
