@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -84,6 +85,18 @@ func TestExist(t *testing.T) {
 
 	})
 
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+
+		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
+
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
+	})
+
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
@@ -162,6 +175,18 @@ func TestExistGlobal(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
+
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {

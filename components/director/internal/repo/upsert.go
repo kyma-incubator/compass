@@ -58,6 +58,6 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(u.conflictingColumns, ", "), strings.Join(update, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", stmtWithUpsert)
-	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
+	_, err = persist.NamedExecContext(ctx, stmtWithUpsert, dbEntity)
 	return persistence.MapSQLError(ctx, err, u.resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
 }
