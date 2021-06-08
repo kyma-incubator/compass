@@ -20,23 +20,25 @@ import (
 )
 
 const (
-	testTenant         = "tnt"
-	testExternalTenant = "external-tnt"
-	testID             = "foo"
-	testWebhookID      = "webhook-id-1"
-	testName           = "bar"
-	testPageSize       = 3
-	testCursor         = ""
-	appInputJSONString = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-	appInputGQLString  = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
+	testTenant                        = "tnt"
+	testExternalTenant                = "external-tnt"
+	testID                            = "foo"
+	testWebhookID                     = "webhook-id-1"
+	testName                          = "bar"
+	testPageSize                      = 3
+	testCursor                        = ""
+	appInputJSONString                = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputJSONStringWithPlaceholder = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputGQLString                 = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 )
 
 var (
-	testDescription  = "Lorem ipsum"
-	testProviderName = "provider-display-name"
-	testURL          = "http://valid.url"
-	testError        = errors.New("test error")
-	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
+	testDescription                = "Lorem ipsum"
+	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
+	testProviderName               = "provider-display-name"
+	testURL                        = "http://valid.url"
+	testError                      = errors.New("test error")
+	testTableColumns               = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -138,6 +140,42 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	}
 }
 
+func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateInputInvalidAppInput(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type:        "ASYNC",
+					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
+				},
+			},
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
 func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdateInput {
 	desc := testDescription
 
@@ -147,6 +185,42 @@ func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdat
 		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:        "foo",
 			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.ApplicationTemplateUpdateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateUpdateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.ApplicationTemplateUpdateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateUpdateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type:        "ASYNC",
+					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
+				},
+			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,

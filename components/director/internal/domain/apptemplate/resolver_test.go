@@ -3,6 +3,7 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -477,9 +478,9 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
-	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONStringWithPlaceholder)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
-	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
+	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
 
 	testCases := []struct {
 		Name              string
@@ -671,6 +672,21 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			appTemplateConv.AssertExpectations(t)
 		})
 	}
+	t.Run("Returns error when application template input is invalid", func(t *testing.T) {
+		gqlAppTemplateInputInvalid := fixGQLAppTemplateInputInvalidAppInput(testName)
+		expectedError := errors.New("Invalid data")
+		_, transact := txGen.ThatSucceeds()
+
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		result, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInputInvalid)
+		fmt.Println(result)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), expectedError.Error())
+	})
+
 }
 
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
@@ -1040,9 +1056,9 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
-	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONString)
+	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONStringWithPlaceholder)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
-	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInput(testName)
+	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
 
 	testCases := []struct {
 		Name              string
@@ -1234,6 +1250,21 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			appTemplateConv.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when application template input is invalid", func(t *testing.T) {
+		gqlAppTemplateUpdateInputInvalid := fixGQLAppTemplateUpdateInputInvalidAppInput(testName)
+		expectedError := errors.New("Invalid data")
+		_, transact := txGen.ThatSucceeds()
+
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInputInvalid)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), expectedError.Error())
+	})
 }
 
 func TestResolver_DeleteApplicationTemplate(t *testing.T) {
