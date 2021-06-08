@@ -166,6 +166,11 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	err = in.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, err
@@ -270,6 +275,11 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = in.Validate()
+	if err != nil {
+		return nil, err
+	}
 
 	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
