@@ -21,7 +21,6 @@ spec:
     - match:
       - uri:
           regex: /.*
-      timeout: {{ $.Values.global.oathkeeper.timeout }}
       route:
         - destination:
             host: {{ $.Values.global.oathkeeper.host }}

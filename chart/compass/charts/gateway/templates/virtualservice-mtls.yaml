@@ -65,7 +65,6 @@ spec:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
             {{- end }}
-      timeout: {{ .Values.global.oathkeeper.timeout }}
       route:
         - destination:
             host: {{ .Values.global.oathkeeper.host }}
