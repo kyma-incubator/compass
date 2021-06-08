@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: {{ .Chart.Name }}-oathkeeper-header-rewrite
+  name: {{ .Chart.Name }}-oathkeeper-timeout
   namespace: {{ .Values.global.oathkeeperFilters.namespace }}
 spec:
   workloadSelector:
@@ -25,8 +25,5 @@ spec:
             "@type": "type.googleapis.com/envoy.config.filter.http.lua.v2.Lua"
             inlineCode: |
               function envoy_on_request(request_handle)
-                local headers = request_handle:headers()
-                local xForwardedClientCert = headers:get("X-Forwarded-Client-Cert")
-
-                headers:add("{{ .Values.global.oathkeeperFilters.certificateDataHeader }}",xForwardedClientCert)
+                request_handle:headers():add("x-envoy-upstream-rq-timeout-ms", "{{ .Values.global.oathkeeper.timeout_ms }}")
               end

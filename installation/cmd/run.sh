@@ -126,7 +126,7 @@ fi
 
 echo "Label Minikube node for benchmark execution..."
 NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)
-kubectl label node "$NODE" benchmark=true
+kubectl label node "$NODE" benchmark=true || true
 
 if [[ ${DUMP_DB} ]]; then
     export DOCKER_TAG=$DUMP_IMAGE_TAG
