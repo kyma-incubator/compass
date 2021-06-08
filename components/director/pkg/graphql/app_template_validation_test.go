@@ -126,7 +126,7 @@ func TestApplicationTemplateInput_Validate_Description(t *testing.T) {
 		Valid bool
 	}{
 		{
-			Name:  "Valid",
+			Name: "Valid",
 			Value: str.Ptr("valid	valid"),
 			Valid: true,
 		},
@@ -424,7 +424,7 @@ func TestApplicationTemplateUpdateInput_Validate_Description(t *testing.T) {
 		Valid bool
 	}{
 		{
-			Name:  "Valid",
+			Name: "Valid",
 			Value: str.Ptr("valid	valid"),
 			Valid: true,
 		},
@@ -657,7 +657,7 @@ func TestPlaceholderDefinitionInput_Validate_Description(t *testing.T) {
 		Valid bool
 	}{
 		{
-			Name:  "Valid",
+			Name: "Valid",
 			Value: str.Ptr("valid	valid"),
 			Valid: true,
 		},
