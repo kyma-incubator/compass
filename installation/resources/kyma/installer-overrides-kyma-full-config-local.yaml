@@ -53,23 +53,18 @@ data:
     metadata:
       name: istio-system
     spec:
-      components:
-        pilot:
-          k8s:
-            resources:
-              requests:
-                cpu: 250m
-                memory: 512Mi
-              limits:
-                cpu: 500m
-                memory: 1024Mi
       values:
         global:
           jwtPolicy: first-party-jwt
           proxy:
             holdApplicationUntilProxyStarts: true
-        pilot:
-          autoscaleEnabled: false
+            resources:
+              requests:
+                cpu: 20m
+                memory: 32Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -149,6 +144,10 @@ data:
   hydra.hydra.autoMigrate: "false"
   hydra.deployment.resources.requests.cpu: "50m"
   hydra.deployment.resources.limits.cpu: "150m"
+  oathkeeper.oathkeeper.config.serve.api.timeout.read: "120s"
+  oathkeeper.oathkeeper.config.serve.api.timeout.write: "120s"
+  oathkeeper.oathkeeper.config.serve.api.timeout.idle: "120s"
+  oathkeeper.oathkeeper.config.mutators.id_token.config.ttl: "1h"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -205,3 +204,14 @@ data:
   containers.manager.envs.buildLimitsMemory.value: "400Mi"
   # TODO: Solve a problem with DNS
   tests.enabled: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disable-legacy-connectivity-override
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    kyma-project.io/installation: ""
+data:
+  global.disableLegacyConnectivity: "true"

@@ -6,7 +6,7 @@ The following table lists all the Installation custom resource files for Compass
 
 | File                                	| Description                                                	|
 |-------------------------------------	|------------------------------------------------------------	|
-| `installer-cr-kyma-dependencies.yaml` 	| Kyma components that are required for Compass installation. 	|
+| `installer-cr-kyma-minimal.yaml` 	| Kyma components that are required for Compass installation. 	|
 | `installer-cr.yaml.tpl`               	| Components installed by the Compass Installer.               	|
 
 ## KYMA_VERSION file
