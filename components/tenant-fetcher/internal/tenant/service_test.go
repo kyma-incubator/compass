@@ -34,6 +34,8 @@ func TestService_Create(t *testing.T) {
 		ID:             testID,
 		TenantId:       testID,
 		Status:         tenantEntity.Active,
+		CustomerId:     customerID,
+		Subdomain:      subdomain,
 		TenantProvider: testProviderName,
 	}
 	requestBody, err := json.Marshal(tenantModel)
@@ -67,8 +69,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -91,8 +95,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, errReader(0)),
@@ -115,8 +121,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(invalidRequestBody)),
@@ -139,8 +147,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -163,8 +173,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -187,8 +199,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -210,8 +224,10 @@ func TestService_Create(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -269,6 +285,8 @@ func TestService_Delete(t *testing.T) {
 		ID:             testID,
 		TenantId:       testID,
 		Status:         tenantEntity.Active,
+		CustomerId:     customerID,
+		Subdomain:      subdomain,
 		TenantProvider: testProviderName,
 	}
 	requestBody, err := json.Marshal(tenantModel)
@@ -301,8 +319,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -324,8 +344,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, errReader(0)),
@@ -347,8 +369,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(invalidRequestBody)),
@@ -370,8 +394,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -393,8 +419,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -416,8 +444,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),
@@ -438,8 +468,10 @@ func TestService_Delete(t *testing.T) {
 			},
 			ConfigFn: func() tenant.Config {
 				return tenant.Config{
-					TenantProvider:                 testProviderName,
-					TenantProviderTenantIdProperty: tenantProviderTenantIdProperty,
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBody)),

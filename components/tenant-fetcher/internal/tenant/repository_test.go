@@ -21,6 +21,8 @@ func TestRepository_Create(t *testing.T) {
 		TenantId:       testID,
 		ID:             testID,
 		Status:         tenantEntity.Active,
+		Subdomain:      subdomain,
+		CustomerId:     customerID,
 		TenantProvider: testProviderName,
 	}
 
@@ -28,6 +30,8 @@ func TestRepository_Create(t *testing.T) {
 		Name:           testID,
 		ExternalTenant: testID,
 		ID:             testID,
+		CustomerId:     customerID,
+		Subdomain:      subdomain,
 		ProviderName:   testProviderName,
 		Status:         tenantEntity.Active,
 	}
