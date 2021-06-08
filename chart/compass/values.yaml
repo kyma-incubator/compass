@@ -62,7 +62,7 @@ global:
       version: "PR-1884"
     tenant_fetcher:
       dir:
-      version: "PR-1884"
+      version: "PR-1888"
     ord_service:
       dir:
       version: "PR-29"
