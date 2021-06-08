@@ -62,10 +62,14 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
 		return
 	}
+	customerId := gjson.GetBytes(body, s.config.TenantProviderCustomerIdProperty)
+	subdomain := gjson.GetBytes(body, s.config.TenantProviderSubdomainProperty)
 
 	tenant := model.TenantModel{
 		ID:             s.uidService.Generate(),
 		TenantId:       tenantId.String(),
+		CustomerId:     customerId.String(),
+		Subdomain:      subdomain.String(),
 		TenantProvider: s.config.TenantProvider,
 		Status:         tenantEntity.Active,
 	}

@@ -16,6 +16,8 @@ func (c *converter) ToEntity(in model.TenantModel) tenant.Entity {
 		ID:             in.ID,
 		Name:           in.TenantId,
 		ExternalTenant: in.TenantId,
+		CustomerId:     in.CustomerId,
+		Subdomain:      in.Subdomain,
 		ProviderName:   in.TenantProvider,
 		Status:         in.Status,
 	}
@@ -28,6 +30,8 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.TenantModel {
 	return &model.TenantModel{
 		ID:             in.ID,
 		TenantId:       in.ExternalTenant,
+		CustomerId:     in.CustomerId,
+		Subdomain:      in.Subdomain,
 		TenantProvider: in.ProviderName,
 		Status:         in.Status,
 	}

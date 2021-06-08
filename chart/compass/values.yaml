@@ -316,6 +316,8 @@ global:
       identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"
+      customerIdProperty: "customerId"
+      subdomainProperty: "subdomain"
       name: "provider"
 
   ordService:
