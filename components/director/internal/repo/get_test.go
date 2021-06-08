@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -170,6 +171,19 @@ func TestGetSingle(t *testing.T) {
 		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+		dest := User{}
+
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
+
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 
 	t.Run("returns ErrorNotFound if object not found", func(t *testing.T) {

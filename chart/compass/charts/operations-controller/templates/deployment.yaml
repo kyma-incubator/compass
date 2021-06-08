@@ -5,7 +5,7 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
     control-plane: controller-manager
-  name: {{ template "fullname" . }}-manager
+  name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.manager.replicaCount }}
@@ -41,7 +41,7 @@ spec:
           - name: DIRECTOR_OPERATION_ENDPOINT
             value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.operations.port }}{{ .Values.global.director.operations.path }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
-        name: manager
+        name: {{ .Chart.Name }}
         ports:
           - name: metrics
             containerPort: {{ .Values.metrics.port }}

@@ -112,7 +112,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 			WHERE t.%s = $1
 			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
 
-	err = persist.Select(&entityCollection, query, tenant.Active)
+	err = persist.SelectContext(ctx, &entityCollection, query, tenant.Active)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}

@@ -591,7 +591,7 @@ func TestPgRepository_List(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "while fetching list of objects from DB: some error")
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -668,7 +668,7 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "while fetching list of objects from DB: some error")
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -734,8 +734,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 		_, err := pgRepository.ListAll(ctx, givenTenant())
 
 		//then
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 

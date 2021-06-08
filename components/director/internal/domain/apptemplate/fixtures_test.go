@@ -339,22 +339,3 @@ func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
 	}
 	return
 }
-
-func fixModelWebhook(appID, id string) *model.Webhook {
-	return &model.Webhook{
-		ApplicationID: &appID,
-		ID:            id,
-		Type:          model.WebhookTypeConfigurationChanged,
-		URL:           str.Ptr("foourl"),
-		Auth:          &model.Auth{},
-	}
-}
-
-func fixGQLWebhook(id string) *graphql.Webhook {
-	return &graphql.Webhook{
-		ID:   id,
-		Type: graphql.WebhookTypeConfigurationChanged,
-		URL:  str.Ptr("foourl"),
-		Auth: &graphql.Auth{},
-	}
-}

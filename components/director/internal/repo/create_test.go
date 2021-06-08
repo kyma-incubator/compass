@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -54,6 +55,17 @@ func TestCreate(t *testing.T) {
 		err := sut.Create(ctx, givenUser)
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+		givenUser := User{}
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+		err := sut.Create(ctx, givenUser)
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
