@@ -8,10 +8,12 @@ import (
 )
 
 var (
-	DNSName = &dnsNameRule{}
+	DNSName     = &dnsNameRule{}
+	RuntimeName = &runtimeNameRule{}
 )
 
 type dnsNameRule struct{}
+type runtimeNameRule struct{}
 
 func (v *dnsNameRule) Validate(value interface{}) error {
 	s, isNil, err := ensureIsString(value)
@@ -30,6 +32,20 @@ func (v *dnsNameRule) Validate(value interface{}) error {
 	}
 	if errorMsg := k8svalidation.NameIsDNSSubdomain(s, false); errorMsg != nil {
 		return errors.Errorf("%v", errorMsg)
+	}
+	return nil
+}
+
+func (v *runtimeNameRule) Validate(value interface{}) error {
+	s, isNil, err := ensureIsString(value)
+	if err != nil {
+		return err
+	}
+	if isNil {
+		return nil
+	}
+	if len(s) > 36 {
+		return errors.New("must be no more than 36 characters")
 	}
 	return nil
 }
