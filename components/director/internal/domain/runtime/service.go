@@ -275,7 +275,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 
-		scenariosStrings, err := convertInterfaceArrayToStringArray(scenarios)
+		scenariosStrings, err := str.InterfaceSliceToStringSlice(scenarios)
 		if err != nil {
 			return err
 		}
@@ -296,6 +296,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		}
 	}
 
+	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
 	err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
@@ -307,18 +308,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 
 	return nil
-}
-
-func convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
-	var scenariosString []string
-	for _, scenario := range scenarios {
-		item, ok := scenario.(string)
-		if !ok {
-			return nil, apperrors.NewInternalError("scenario value is not a string")
-		}
-		scenariosString = append(scenariosString, item)
-	}
-	return scenariosString, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -501,7 +490,7 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		return err
 	}
 
-	oldScenariosLabelStringSlice, err := convertInterfaceArrayToStringArray(oldScenariosLabel)
+	oldScenariosLabelStringSlice, err := str.InterfaceSliceToStringSlice(oldScenariosLabel)
 	if err != nil {
 		return err
 	}
@@ -532,7 +521,7 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		finalScenarios = s.scenarioAssignmentEngine.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
 	}
 
-	finalScenariosAsStringSlice, err := convertInterfaceArrayToStringArray(finalScenarios)
+	finalScenariosAsStringSlice, err := str.InterfaceSliceToStringSlice(finalScenarios)
 	if err != nil {
 		return err
 	}

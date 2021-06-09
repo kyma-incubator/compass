@@ -121,7 +121,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	return id, nil
 }
 
-func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, inputScenarios []string, appId string) error {
+func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx context.Context, existingScenarios, newScenarios []string, appId string) error {
 	assoc := &scenarioReAssociator{
 		relatedObjectScenarioLabels: s.scenarioSvc.GetRuntimeScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(runtimeId string) ([]model.Label, error) {
@@ -130,10 +130,10 @@ func (s *service) AssociateBundleInstanceAuthForNewApplicationScenarios(ctx cont
 		labelService: s.labelService,
 	}
 
-	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios)
+	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, newScenarios)
 }
 
-func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, inputScenarios []string, runtimeId string) error {
+func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.Context, existingScenarios, newScenarios []string, runtimeId string) error {
 	assoc := &scenarioReAssociator{
 		relatedObjectScenarioLabels: s.scenarioSvc.GetApplicationScenarioLabelsForAnyMatchingScenario,
 		getBundleInstanceAuthsScenarioLabels: func(appId string) ([]model.Label, error) {
@@ -142,7 +142,7 @@ func (s *service) AssociateBundleInstanceAuthForNewRuntimeScenarios(ctx context.
 		labelService: s.labelService,
 	}
 
-	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, inputScenarios)
+	return assoc.associateBundleInstanceAuthForNewObjectScenarios(ctx, existingScenarios, newScenarios)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error) {
@@ -408,26 +408,6 @@ func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context
 	}
 
 	return nil
-}
-
-func (s service) isAnyExistForScenario(ctx context.Context, scenarios []string, existFn func(tenant, scenario string) (bool, error)) (bool, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	for _, scenario := range scenarios {
-		exist, err := existFn(tnt, scenario)
-
-		if err != nil {
-			return false, err
-		}
-
-		if exist {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, newScenarios []string) error {

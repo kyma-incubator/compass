@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -153,21 +154,6 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 		return nil, err
 	}
 
-	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
+	commonScenarios := str.IntersectSlice(appScenarios, runtimeScenarios)
 	return commonScenarios, nil
-}
-
-// stringsIntersection returns the common elements in two string slices.
-func stringsIntersection(str1, str2 []string) []string {
-	var intersection []string
-	strings := make(map[string]bool)
-	for _, v := range str1 {
-		strings[v] = true
-	}
-	for _, v := range str2 {
-		if strings[v] {
-			intersection = append(intersection, v)
-		}
-	}
-	return intersection
 }
