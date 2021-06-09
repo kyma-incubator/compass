@@ -457,7 +457,7 @@ func TestLabelUpsertService_UpsertScenarios(t *testing.T) {
 		UIDServiceFn       func() *automock.UIDService
 		Labels             []model.Label
 		NewScenarios       []string
-		MergeFn            func(scenarios []string, diffScenario string) []string
+		MergeFn            func(scenarios, diffScenario []string) []string
 		ExpectedErrMessage string
 	}{
 		{
@@ -484,6 +484,19 @@ func TestLabelUpsertService_UpsertScenarios(t *testing.T) {
 			},
 			Labels: []model.Label{{
 				Key:   model.ScenariosKey,
+				Value: []string{},
+			}},
+			NewScenarios:       []string{"scenario1"},
+			MergeFn:            label.UniqueScenarios,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:           "Skip non-scenario label",
+			LabelRepoFn:    func() *automock.LabelRepository { return &automock.LabelRepository{} },
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository { return &automock.LabelDefinitionRepository{} },
+			UIDServiceFn:   func() *automock.UIDService { return &automock.UIDService{} },
+			Labels: []model.Label{{
+				Key:   "something",
 				Value: []string{},
 			}},
 			NewScenarios:       []string{"scenario1"},

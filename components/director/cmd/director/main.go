@@ -191,7 +191,7 @@ func main() {
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
-			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
+			HasScenario: scenario.NewDirective(transact, label.NewScenarioService(label.NewRepository(label.NewConverter())), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
 			Sanitize:    scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,

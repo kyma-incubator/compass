@@ -12,7 +12,7 @@ import (
 )
 
 const tableName string = `public.bundle_instance_auths`
-const ScenariosViewName = `public.bundle_instance_auths_with_labels`
+const ScenariosViewName = `public.bundle_instance_auths_scenarios_labels`
 
 var (
 	tenantColumn     = "tenant_id"
@@ -187,7 +187,6 @@ func (r *repository) getForObjectAndAnyMatchingScenarios(ctx context.Context, te
 	}
 
 	subqueryConditions := repo.Conditions{
-		repo.NewEqualCondition("key", model.ScenariosKey),
 		repo.NewEqualCondition(objectColumn, objectId),
 		repo.NewJSONArrAnyMatchCondition("value", values),
 	}

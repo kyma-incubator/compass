@@ -30,15 +30,39 @@ func TestConverter_ToEntity(t *testing.T) {
 		ExpectedErrMessage string
 	}{
 		{
-			Name:               "All properties given",
+			Name:               "All properties given for Application",
 			Input:              fixLabelModel("1", arrayValue, model.ApplicationLabelableObject),
-			Expected:           fixLabelEntity("1", marshalledArrayValue, objectID, sql.NullString{}, sql.NullString{}),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, objectID, sql.NullString{}, sql.NullString{}, sql.NullString{}),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "All properties given for Runtime",
+			Input:              fixLabelModel("1", arrayValue, model.RuntimeLabelableObject),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, objectID, sql.NullString{}, sql.NullString{}),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "All properties given for Runtime Context",
+			Input:              fixLabelModel("1", arrayValue, model.RuntimeContextLabelableObject),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, sql.NullString{}, objectID, sql.NullString{}),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "All properties given for BundleInstanceAuth",
+			Input:              fixLabelModel("1", arrayValue, model.BundleInstanceAuthLabelableObject),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, sql.NullString{}, sql.NullString{}, objectID),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "All properties given for unknown labelable object",
+			Input:              fixLabelModel("1", arrayValue, "unknown"),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              fixLabelModel("1", stringValue, model.BundleInstanceAuthObject),
-			Expected:           fixLabelEntity("1", marshalledStringValue, sql.NullString{}, sql.NullString{}, objectID),
+			Input:              fixLabelModel("1", stringValue, model.BundleInstanceAuthLabelableObject),
+			Expected:           fixLabelEntity("1", marshalledStringValue, sql.NullString{}, sql.NullString{}, sql.NullString{}, objectID),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -102,15 +126,43 @@ func TestConverter_FromEntity(t *testing.T) {
 		ExpectedErrMessage string
 	}{
 		{
-			Name:               "All properties given",
-			Input:              fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, objectID, sql.NullString{}),
+			Name:               "All properties given for Application",
+			Input:              fixLabelEntity("1", marshalledArrayValue, objectID, sql.NullString{}, sql.NullString{}, sql.NullString{}),
+			Expected:           fixLabelModel("1", arrayValue, model.ApplicationLabelableObject),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "All properties given for Runtime",
+			Input:              fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, objectID, sql.NullString{}, sql.NullString{}),
 			Expected:           fixLabelModel("1", arrayValue, model.RuntimeLabelableObject),
 			ExpectedErrMessage: "",
 		},
 		{
+			Name:               "All properties given for Runtime Context",
+			Input:              fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, sql.NullString{}, objectID, sql.NullString{}),
+			Expected:           fixLabelModel("1", arrayValue, model.RuntimeContextLabelableObject),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "All properties given for BundleInstanceAuth",
+			Input:              fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, sql.NullString{}, sql.NullString{}, objectID),
+			Expected:           fixLabelModel("1", arrayValue, model.BundleInstanceAuthLabelableObject),
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:  "All properties given for unknown labelable object",
+			Input: fixLabelEntity("1", marshalledArrayValue, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}),
+			Expected: func() model.Label {
+				labelModel := fixLabelModel("1", arrayValue, "")
+				labelModel.ObjectID = ""
+				return labelModel
+			}(),
+			ExpectedErrMessage: "",
+		},
+		{
 			Name:               "String value",
-			Input:              fixLabelEntity("1", marshalledStringValue, sql.NullString{}, sql.NullString{}, objectID),
-			Expected:           fixLabelModel("1", stringValue, model.BundleInstanceAuthObject),
+			Input:              fixLabelEntity("1", marshalledStringValue, sql.NullString{}, sql.NullString{}, sql.NullString{}, objectID),
+			Expected:           fixLabelModel("1", stringValue, model.BundleInstanceAuthLabelableObject),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -129,7 +181,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		},
 		{
 			Name:               "Error",
-			Input:              fixLabelEntity("1", []byte("{json"), sql.NullString{}, sql.NullString{}, sql.NullString{}),
+			Input:              fixLabelEntity("1", []byte("{json"), sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}),
 			Expected:           model.Label{},
 			ExpectedErrMessage: "while unmarshalling Value: invalid character 'j' looking for beginning of object key string",
 		},
@@ -153,12 +205,37 @@ func TestConverter_FromEntity(t *testing.T) {
 	}
 }
 
-func fixLabelEntity(id string, value []byte, appID sql.NullString, runtimeID sql.NullString, bundleInstanceAuthID sql.NullString) label.Entity {
+func TestConverter_MultipleFromEntity(t *testing.T) {
+	arrayValue := []interface{}{"foo", "bar"}
+	marshalledArrayValue, marshalErr := json.Marshal(arrayValue)
+	require.NoError(t, marshalErr)
+	objectID := sql.NullString{String: "321", Valid: true}
+
+	valid1 := fixLabelEntity("1", marshalledArrayValue, objectID, sql.NullString{}, sql.NullString{}, sql.NullString{})
+	valid2 := fixLabelEntity("1", marshalledArrayValue, objectID, sql.NullString{}, sql.NullString{}, sql.NullString{})
+
+	conv := label.NewConverter()
+
+	t.Run("Success", func(t *testing.T) {
+		_, err := conv.MultipleFromEntities([]label.Entity{valid1, valid2})
+		require.NoError(t, err)
+	})
+
+	t.Run("Fail on second", func(t *testing.T) {
+		invalid := fixLabelEntity("1", []byte("{json"), sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{})
+		_, err := conv.MultipleFromEntities([]label.Entity{valid1, invalid})
+		require.Error(t, err)
+	})
+
+}
+
+func fixLabelEntity(id string, value []byte, appID, runtimeID, runtimeContextId, bundleInstanceAuthID sql.NullString) label.Entity {
 	return label.Entity{
 		ID:                   id,
 		TenantID:             "tenant",
 		AppID:                appID,
 		RuntimeID:            runtimeID,
+		RuntimeContextID:     runtimeContextId,
 		BundleInstanceAuthId: bundleInstanceAuthID,
 		Key:                  "test",
 		Value:                string(value),

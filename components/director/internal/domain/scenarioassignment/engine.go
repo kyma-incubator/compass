@@ -30,7 +30,7 @@ type RuntimeRepository interface {
 
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
-	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
+	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) error
 }
 
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
@@ -236,12 +236,18 @@ func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) mode
 	}
 }
 
-func (e *engine) removeScenario(scenarios []string, toRemove string) []string {
+func (e *engine) removeScenario(scenarios, toRemove []string) []string {
+	toRemoveSet := make(map[string]bool, 0)
+	for _, elem := range toRemove {
+		toRemoveSet[elem] = true
+	}
+
 	var newScenarios []string
 	for _, scenario := range scenarios {
-		if scenario != toRemove {
-			newScenarios = append(newScenarios, scenario)
+		if toRemoveSet[scenario] {
+			continue
 		}
+		newScenarios = append(newScenarios, scenario)
 	}
 	return newScenarios
 }

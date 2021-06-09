@@ -63,15 +63,16 @@ func PtrStrToStr(s *string) string {
 }
 
 func InterfaceSliceToStringSlice(value []interface{}) ([]string, error) {
-	var scenariosString []string
-	for _, scenario := range value {
-		item, ok := scenario.(string)
+	var result []string
+	for _, elem := range value {
+		item, ok := elem.(string)
 		if !ok {
 			return nil, apperrors.NewInternalError("value is not a string")
 		}
-		scenariosString = append(scenariosString, item)
+
+		result = append(result, item)
 	}
-	return scenariosString, nil
+	return result, nil
 }
 
 func Matches(actual []string, required []string) bool {
@@ -91,29 +92,29 @@ func Matches(actual []string, required []string) bool {
 
 func SubstractSlice(s1, s2 []string) []string {
 	s2Set := make(map[string]bool, 0)
-	for _, scenario := range s2 {
-		s2Set[scenario] = true
+	for _, elem := range s2 {
+		s2Set[elem] = true
 	}
 
 	result := make([]string, 0)
-	for _, scenario := range s1 {
-		if _, ok := s2Set[scenario]; !ok {
-			result = append(result, scenario)
+	for _, elem := range s1 {
+		if !s2Set[elem] {
+			result = append(result, elem)
 		}
 	}
 	return result
 }
 
 func IntersectSlice(s1, s2 []string) []string {
-	existingScenarioMap := make(map[string]bool, 0)
-	for _, scenario := range s1 {
-		existingScenarioMap[scenario] = true
+	s1Set := make(map[string]bool, 0)
+	for _, elem := range s1 {
+		s1Set[elem] = true
 	}
 
 	result := make([]string, 0)
-	for _, scenario := range s2 {
-		if _, ok := existingScenarioMap[scenario]; ok {
-			result = append(result, scenario)
+	for _, elem := range s2 {
+		if s1Set[elem] {
+			result = append(result, elem)
 		}
 	}
 	return result

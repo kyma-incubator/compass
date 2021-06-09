@@ -46,7 +46,7 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 			Valid:  true,
 			String: in.ObjectID,
 		}
-	case model.BundleInstanceAuthObject:
+	case model.BundleInstanceAuthLabelableObject:
 		bundleInstanceAuthId = sql.NullString{
 			Valid:  true,
 			String: in.ObjectID,
@@ -88,7 +88,7 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 		objectType = model.RuntimeContextLabelableObject
 	} else if in.BundleInstanceAuthId.Valid {
 		objectID = in.BundleInstanceAuthId.String
-		objectType = model.BundleInstanceAuthObject
+		objectType = model.BundleInstanceAuthLabelableObject
 	}
 
 	return model.Label{
@@ -99,4 +99,30 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 		Key:        in.Key,
 		Value:      valueUnmarshalled,
 	}, nil
+}
+
+func (c *converter) MultipleFromEntities(entities Collection) ([]model.Label, error) {
+	var labelModels []model.Label
+	for _, label := range entities {
+		labelModel, err := c.FromEntity(label)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting label entity to model")
+		}
+		labelModels = append(labelModels, labelModel)
+	}
+	return labelModels, nil
+}
+
+func (c *converter) MultipleRefsFromEntities(entities Collection) ([]*model.Label, error) {
+	labels, err := c.MultipleFromEntities(entities)
+	if err != nil {
+		return nil, err
+	}
+
+	labelRefs := make([]*model.Label, 0, len(labels))
+	for _, label := range labels {
+		labelRefs = append(labelRefs, &label)
+	}
+
+	return labelRefs, nil
 }

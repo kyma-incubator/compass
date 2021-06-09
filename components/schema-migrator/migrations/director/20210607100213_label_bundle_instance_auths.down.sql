@@ -10,7 +10,7 @@ ALTER TABLE labels
     ADD CONSTRAINT valid_refs
         CHECK (app_id IS NOT NULL OR runtime_id IS NOT NULL);
 
-DROP VIEW bundle_instance_auths_with_labels;
+DROP VIEW bundle_instance_auths_scenarios_labels;
 
 ALTER TABLE labels DROP COLUMN bundle_instance_auth_id;
 

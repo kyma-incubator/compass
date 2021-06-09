@@ -593,14 +593,14 @@ func testRepository_GetForObjAndAnyMatchingScenarios(t *testing.T, objIdColumn s
 	objId := "foo"
 	scenarios := []string{"scenario-1", "scenario-2"}
 
-	query := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id IN \(SELECT bundle_instance_auth_id FROM public.bundle_instance_auths_with_labels WHERE tenant_id = \$2 AND key = \$3 AND %s = \$4 AND value ?| array[$5,$6]\)`, objIdColumn)
+	query := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id IN \(SELECT bundle_instance_auth_id FROM public.bundle_instance_auths_scenarios_labels WHERE tenant_id = \$2 AND %s = \$3 AND value ?| array[$4,$5]\)`, objIdColumn)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*entity)})
 
 		sqlMock.ExpectQuery(query).
-			WithArgs(testTenant, testTenant, model.ScenariosKey, objId, scenarios[0], scenarios[1]).
+			WithArgs(testTenant, testTenant, objId, scenarios[0], scenarios[1]).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -622,7 +622,7 @@ func testRepository_GetForObjAndAnyMatchingScenarios(t *testing.T, objIdColumn s
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 
 		sqlMock.ExpectQuery(query).
-			WithArgs(testTenant, testTenant, model.ScenariosKey, objId, scenarios[0], scenarios[1]).
+			WithArgs(testTenant, testTenant, objId, scenarios[0], scenarios[1]).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -639,7 +639,7 @@ func testRepository_GetForObjAndAnyMatchingScenarios(t *testing.T, objIdColumn s
 		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*entity)})
 
 		sqlMock.ExpectQuery(query).
-			WithArgs(testTenant, testTenant, model.ScenariosKey, objId, scenarios[0], scenarios[1]).
+			WithArgs(testTenant, testTenant, objId, scenarios[0], scenarios[1]).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

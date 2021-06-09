@@ -46,7 +46,7 @@ type ScenarioService interface {
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
 type LabelService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
-	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error
+	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) error
 }
 
 type scenarioReAssociator struct {
@@ -377,7 +377,7 @@ func (s *service) validateInputParamsAgainstSchema(inputParams *string, schema *
 func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context.Context, tnt, bundleInstanceAuthId, bundleID, runtimeId string) error {
 	bundle, err := s.bundleSvc.Get(ctx, bundleID)
 	if err != nil {
-		return errors.Wrap(err, "while fetching application id")
+		return errors.Wrapf(err, "while fetching bundle with id: %s", bundleID)
 	}
 
 	applicationID := bundle.ApplicationID
@@ -400,7 +400,7 @@ func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context
 		Key:        model.ScenariosKey,
 		Value:      commonScenarios,
 		ObjectID:   bundleInstanceAuthId,
-		ObjectType: model.BundleInstanceAuthObject,
+		ObjectType: model.BundleInstanceAuthLabelableObject,
 	}
 
 	if err = s.labelService.UpsertLabel(ctx, tnt, authLabel); err != nil {
@@ -430,81 +430,51 @@ func (s service) isAnyExistForScenario(ctx context.Context, scenarios []string, 
 	return false, nil
 }
 
-func (sa *scenarioReAssociator) getCommonRelatedObjects(ctx context.Context, scenariosToKeep, scenariosToAdd []string) (map[string][]string, error) {
-	relatedObjScenarioLabels, err := sa.relatedObjectScenarioLabels(ctx, scenariosToKeep)
-	if err != nil {
-		return nil, err
-	}
-
-	relatedObjIdsPerScenario := make(map[string]map[string]bool, 0)
-
-	for _, lbl := range relatedObjScenarioLabels {
-		scenariosSlice, err := label.GetScenariosAsStringSlice(lbl)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, scenario := range scenariosSlice {
-			if _, ok := relatedObjIdsPerScenario[scenario]; !ok {
-				relatedObjIdsPerScenario[scenario] = make(map[string]bool, 0)
-			}
-
-			relatedObjIdsPerScenario[scenario][lbl.ObjectID] = true
-		}
-	}
-
-	newScenariosPerRelatedObjId := make(map[string][]string, 0)
-	for _, scenario := range scenariosToAdd {
-		if _, ok := relatedObjIdsPerScenario[scenario]; !ok {
-			continue
-		}
-
-		for id := range relatedObjIdsPerScenario[scenario] {
-			newScenariosPerRelatedObjId[id] = append(newScenariosPerRelatedObjId[id], scenario)
-		}
-	}
-
-	return newScenariosPerRelatedObjId, nil
-}
-
-func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, inputScenarios []string) error {
-	if len(existingScenarios) == 0 {
-		return nil
-	}
-
+func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios(ctx context.Context, existingScenarios, newScenarios []string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scToAdd := str.SubstractSlice(inputScenarios, existingScenarios)
+	scToAdd := str.SubstractSlice(newScenarios, existingScenarios)
 	if len(scToAdd) == 0 {
 		return nil
 	}
 
-	scenariosToKeep := str.IntersectSlice(existingScenarios, inputScenarios)
-	if len(scenariosToKeep) == 0 {
+	// No bundle instance auths exist for totally new scenarios
+	scToKeep := str.IntersectSlice(existingScenarios, newScenarios)
+	if len(scToKeep) == 0 {
 		return nil
 	}
 
-	commonConnectObjectsWithTheNewScenarios, err := sa.getCommonRelatedObjects(ctx, scenariosToKeep, scToAdd)
+	relatedObjScenarioLabels, err := sa.relatedObjectScenarioLabels(ctx, scToKeep)
 	if err != nil {
 		return err
 	}
 
-	for relatedObjId, scenarios := range commonConnectObjectsWithTheNewScenarios {
-		bundleInstanceAuthsLabels, err := sa.getBundleInstanceAuthsScenarioLabels(relatedObjId)
+	for _, scLabel := range relatedObjScenarioLabels {
+		scenariosSlice, err := label.GetScenariosAsStringSlice(scLabel)
 		if err != nil {
 			return err
 		}
 
-		if err := sa.labelService.UpsertScenarios(ctx, tnt, bundleInstanceAuthsLabels, scenarios, label.UniqueScenarios); err != nil {
+		newBndlAuthScenarios := str.IntersectSlice(scenariosSlice, scToAdd)
+		if len(newBndlAuthScenarios) == 0 {
+			continue
+		}
+
+		bundleInstanceAuthsLabels, err := sa.getBundleInstanceAuthsScenarioLabels(scLabel.ObjectID)
+		if err != nil {
+			return err
+		}
+
+		if err := sa.labelService.UpsertScenarios(ctx, tnt, bundleInstanceAuthsLabels, newBndlAuthScenarios, label.UniqueScenarios); err != nil {
 			authIds := make([]string, 0, len(bundleInstanceAuthsLabels))
 			for _, authLabel := range bundleInstanceAuthsLabels {
 				authIds = append(authIds, authLabel.ID)
 			}
 
-			return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to all bundle_instance_auths: %s", scenarios, authIds))
+			return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to all bundle_instance_auths: %s", newBndlAuthScenarios, authIds))
 		}
 	}
 

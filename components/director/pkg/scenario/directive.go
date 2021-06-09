@@ -14,9 +14,6 @@ import (
 
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 
@@ -33,15 +30,21 @@ const (
 
 var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
 
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
+type ScenariosService interface {
+	GetScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error)
+	GetScenarioNamesForRuntime(ctx context.Context, runtimeId string) ([]string, error)
+}
+
 type directive struct {
-	labelRepo label.LabelRepository
-	transact  persistence.Transactioner
+	scenariosService ScenariosService
+	transact         persistence.Transactioner
 
 	applicationProviders map[string]func(context.Context, string, string) (string, error)
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, bundleRepo mp_bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
+func NewDirective(transact persistence.Transactioner, scenariosService ScenariosService, bundleRepo mp_bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
 	getApplicationIDByBundleFunc := func(ctx context.Context, tenantID, bundleID string) (string, error) {
 		bndl, err := bundleRepo.GetByID(ctx, tenantID, bundleID)
 		if err != nil {
@@ -51,8 +54,8 @@ func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepos
 	}
 
 	return &directive{
-		transact:  transact,
-		labelRepo: labelRepo,
+		transact:         transact,
+		scenariosService: scenariosService,
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
 				return appID, nil
@@ -133,13 +136,13 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 	}
 	log.C(ctx).Infof("Found owning Application ID based on the request parameter %s: %s", idField, appID)
 
-	appScenarios, err := d.getObjectScenarios(ctx, tenantID, model.ApplicationLabelableObject, appID)
+	appScenarios, err := d.scenariosService.GetScenarioNamesForApplication(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for application")
 	}
 	log.C(ctx).Debugf("Found the following application scenarios: %s", appScenarios)
 
-	runtimeScenarios, err := d.getObjectScenarios(ctx, tenantID, model.RuntimeLabelableObject, runtimeID)
+	runtimeScenarios, err := d.scenariosService.GetScenarioNamesForRuntime(ctx, runtimeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for runtime")
 	}
@@ -152,17 +155,6 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
 	return commonScenarios, nil
-}
-
-func (d *directive) getObjectScenarios(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) ([]string, error) {
-	scenariosLabel, err := d.labelRepo.GetByKey(ctx, tenantID, objectType, objectID, model.ScenariosKey)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return make([]string, 0), nil
-		}
-		return nil, errors.Wrapf(err, "while fetching scenarios for object with id: %s and type: %s", objectID, objectType)
-	}
-	return label.ValueToStringsSlice(scenariosLabel.Value)
 }
 
 // stringsIntersection returns the common elements in two string slices.

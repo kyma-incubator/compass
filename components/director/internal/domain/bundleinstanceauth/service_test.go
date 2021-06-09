@@ -1196,7 +1196,7 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingRuntimeScenarioLabels, nil).Once()
 
-				rmt1Labels := []model.Label{{ObjectID: "runtime-2", Value: []string{scenarioToKeep, scenarioToAdd2}}}
+				rmt1Labels := []model.Label{{ObjectID: "runtime-1", Value: []string{scenarioToKeep, scenarioToAdd1}}}
 				rmt2Labels := []model.Label{{ObjectID: "runtime-2", Value: []string{scenarioToKeep, scenarioToAdd2}}}
 
 				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rmt1Labels, nil).Once()

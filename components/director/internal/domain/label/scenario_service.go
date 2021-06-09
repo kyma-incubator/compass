@@ -60,9 +60,9 @@ func (s *scenarioService) getScenarioNamesForObject(ctx context.Context, objectT
 	if err != nil {
 		if apperrors.ErrorCode(err) == apperrors.NotFound {
 			log.C(ctx).Infof("No scenarios found for %s", objectType)
-			return nil, nil
+			return make([]string, 0), nil
 		}
-		return nil, errors.Wrapf(err, "while getting label for %s", objectType)
+		return nil, errors.Wrapf(err, "while fetching scenarios for object with id: %s and type: %s", objectId, objectType)
 	}
 
 	scenarios, err := ValueToStringsSlice(objLabel.Value)

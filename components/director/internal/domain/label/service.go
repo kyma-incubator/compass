@@ -100,17 +100,18 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios []string, diffScenario string) []string) error {
+func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) error {
 	for _, label := range labels {
+		if model.ScenariosKey != label.Key {
+			continue
+		}
+
 		scenariosString, err := GetScenariosAsStringSlice(label)
 		if err != nil {
 			return err
 		}
 
-		scenariosToUpsert := append([]string(nil), scenariosString...)
-		for _, scenario := range newScenarios {
-			scenariosToUpsert = mergeFn(scenariosToUpsert, scenario)
-		}
+		scenariosToUpsert := mergeFn(scenariosString, newScenarios)
 
 		err = s.updateScenario(ctx, tenantID, label, scenariosToUpsert)
 		if err != nil {
@@ -129,17 +130,13 @@ func GetScenariosFromValueAsStringSlice(labelValue interface{}) ([]string, error
 
 	switch value := labelValue.(type) {
 	case []string:
-		{
-			result = value
-		}
+		result = value
 	case []interface{}:
-		{
-			convertedScenarios, err := str.InterfaceSliceToStringSlice(value)
-			if err != nil {
-				return nil, errors.Wrap(err, "while converting array of interfaces to array of strings")
-			}
-			result = convertedScenarios
+		convertedScenarios, err := str.InterfaceSliceToStringSlice(value)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting array of interfaces to array of strings")
 		}
+		result = convertedScenarios
 	default:
 		return nil, errors.Errorf("scenarios value is invalid type: %t", labelValue)
 	}
@@ -147,14 +144,14 @@ func GetScenariosFromValueAsStringSlice(labelValue interface{}) ([]string, error
 	return result, nil
 }
 
-func UniqueScenarios(scenarios []string, newScenario string) []string {
-	scenarios = append(scenarios, newScenario)
+func UniqueScenarios(scenarios, newScenarios []string) []string {
+	scenarios = append(scenarios, newScenarios...)
 	return str.Unique(scenarios)
 }
 
 func (s *labelUpsertService) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
 	if len(scenarios) == 0 {
-		return s.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
+		return s.labelRepo.Delete(ctx, tenantID, label.ObjectType, label.ObjectID, model.ScenariosKey)
 	} else {
 		labelInput := model.LabelInput{
 			Key:        label.Key,

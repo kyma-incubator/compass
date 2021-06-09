@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ScenariosViewName        = `public.bundle_instance_auths_with_labels`
+	ScenariosViewName        = `public.bundle_instance_auths_scenarios_labels`
 	tableName         string = "public.labels"
 	tenantColumn      string = "tenant_id"
 	idColumn          string = "id"
@@ -27,6 +27,8 @@ var tableColumns = []string{idColumn, tenantColumn, "app_id", "runtime_id", "bun
 type Converter interface {
 	ToEntity(in model.Label) (Entity, error)
 	FromEntity(in Entity) (model.Label, error)
+	MultipleFromEntities(entities Collection) ([]model.Label, error)
+	MultipleRefsFromEntities(entities Collection) ([]*model.Label, error)
 }
 
 type repository struct {
@@ -130,18 +132,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 		return nil, errors.Wrap(err, "while fetching Labels from DB")
 	}
 
-	var labels []*model.Label
-
-	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-
-		labels = append(labels, &m)
-	}
-
-	return labels, nil
+	return r.conv.MultipleRefsFromEntities(entities)
 }
 
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
@@ -221,16 +212,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
-	var labelModels []model.Label
-	for _, label := range labels {
-
-		labelModel, err := r.conv.FromEntity(label)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting label entity to model")
-		}
-		labelModels = append(labelModels, labelModel)
-	}
-	return labelModels, nil
+	return r.conv.MultipleFromEntities(labels)
 }
 
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
@@ -244,29 +226,19 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 				SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL
 			);`
 
-	var lables []Entity
-	err = persist.Select(&lables, query, selectorKey, selectorValue, tenantID)
+	var labels []Entity
+	err = persist.Select(&labels, query, selectorKey, selectorValue, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios associated with given selector")
 	}
 
-	var labelModels []model.Label
-	for _, label := range lables {
-
-		labelModel, err := r.conv.FromEntity(label)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting label entity to model")
-		}
-		labelModels = append(labelModels, labelModel)
-	}
-	return labelModels, nil
+	return r.conv.MultipleFromEntities(labels)
 }
 
 func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, tenant, appId, runtimeId string) ([]model.Label, error) {
 	subqueryConditions := repo.Conditions{
 		repo.NewEqualCondition("app_id", appId),
 		repo.NewEqualCondition("runtime_id", runtimeId),
-		repo.NewEqualCondition("key", model.ScenariosKey),
 	}
 
 	subquery, args, err := r.scenarioQueryBuilder.BuildQuery(tenant, false, subqueryConditions...)
@@ -284,7 +256,7 @@ func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, t
 		return nil, errors.Wrap(err, "while fetching bundle_instance_auth scenario labels")
 	}
 
-	return r.multipleFromEntities(labels)
+	return r.conv.MultipleFromEntities(labels)
 }
 
 func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error) {
@@ -305,20 +277,7 @@ func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, te
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
-	return r.multipleFromEntities(labels)
-}
-
-func (r *repository) multipleFromEntities(entities Collection) ([]model.Label, error) {
-	var labelModels []model.Label
-	for _, label := range entities {
-
-		labelModel, err := r.conv.FromEntity(label)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting label entity to model")
-		}
-		labelModels = append(labelModels, labelModel)
-	}
-	return labelModels, nil
+	return r.conv.MultipleFromEntities(labels)
 }
 
 func labelObjectField(objectType model.LabelableObject) string {
@@ -329,7 +288,7 @@ func labelObjectField(objectType model.LabelableObject) string {
 		return "runtime_id"
 	case model.RuntimeContextLabelableObject:
 		return "runtime_context_id"
-	case model.BundleInstanceAuthObject:
+	case model.BundleInstanceAuthLabelableObject:
 		return "bundle_instance_auth_id"
 	}
 

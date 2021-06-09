@@ -32,10 +32,10 @@ func (i *LabelInput) ToLabel(id, tenant string) *Label {
 type LabelableObject string
 
 const (
-	RuntimeLabelableObject        LabelableObject = "Runtime"
-	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
-	ApplicationLabelableObject    LabelableObject = "Application"
-	BundleInstanceAuthObject      LabelableObject = "BundleInstanceAuth"
+	RuntimeLabelableObject            LabelableObject = "Runtime"
+	RuntimeContextLabelableObject     LabelableObject = "Runtime Context"
+	ApplicationLabelableObject        LabelableObject = "Application"
+	BundleInstanceAuthLabelableObject LabelableObject = "BundleInstanceAuth"
 )
 
 func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
