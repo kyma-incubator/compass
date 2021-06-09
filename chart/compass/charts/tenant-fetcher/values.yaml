@@ -25,3 +25,6 @@ database:
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
   tenantPathParam: "tenantId"
+  customerPathParam: "customerId"
+  subdomainPathParam: "subdomain"
+

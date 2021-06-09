@@ -112,6 +112,10 @@ spec:
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
                 value: {{ $config.fieldMapping.nameField }}
+              - name: APP_MAPPING_FIELD_CUSTOMER_ID
+                value: {{ $config.fieldMapping.customerIdField }}
+              - name: APP_MAPPING_FIELD_SUBDOMAIN
+                value: {{ $config.fieldMapping.subdomainField }}
               - name: APP_MAPPING_FIELD_DISCRIMINATOR
                 value: {{ $config.fieldMapping.discriminatorField }}
               - name: APP_MAPPING_VALUE_DISCRIMINATOR
