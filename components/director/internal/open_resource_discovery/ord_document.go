@@ -53,7 +53,7 @@ type Document struct {
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(webhookURL string) error {
+func (docs Documents) Validate(webhookURL string, apisFromDB []*model.APIDefinition, specs map[string][]*model.Spec) error {
 	for _, doc := range docs {
 		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != webhookURL {
 			return errors.New("describedSystemInstance should be the same as the one providing the documents")
@@ -107,7 +107,7 @@ func (docs Documents) Validate(webhookURL string) error {
 			productIDs[product.OrdID] = true
 		}
 		for _, api := range doc.APIResources {
-			if err := validateAPIInput(api, packagePolicyLevels); err != nil {
+			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, specs); err != nil {
 				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
 			}
 			if _, ok := apiIDs[*api.OrdID]; ok {

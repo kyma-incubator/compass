@@ -133,7 +133,18 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 }
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents) error {
-	if err := documents.Validate(baseURL); err != nil {
+	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
+	specs := make(map[string][]*model.Spec, 0)
+
+	for _, api := range apisFromDB {
+		spec, err := s.specSvc.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		if err != nil {
+			return errors.Wrap(err, "could not list specification")
+		}
+		specs[api.ID] = spec
+	}
+
+	if err := documents.Validate(baseURL, apisFromDB, specs); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
 
@@ -178,7 +189,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	apisFromDB, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput)
+	apisFromDB, err = s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput)
 	if err != nil {
 		return err
 	}
