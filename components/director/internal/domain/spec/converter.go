@@ -199,6 +199,7 @@ func (c *converter) FromEntity(in Entity) (model.Spec, error) {
 		APIType:    apiSpecType,
 		EventType:  eventSpecType,
 		CustomType: repo.StringPtrFromNullableString(in.CustomType),
+		URL:        repo.StringPtrFromNullableString(in.URL),
 	}, nil
 }
 

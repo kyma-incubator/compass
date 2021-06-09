@@ -18,4 +18,6 @@ type Entity struct {
 	EventSpecType   sql.NullString `db:"event_spec_type"`
 
 	CustomType sql.NullString `db:"custom_type"`
+
+	URL sql.NullString `db:"url"`
 }
