@@ -5,16 +5,17 @@ import (
 )
 
 type Spec struct {
-	ID         string
-	Tenant     string
-	ObjectType SpecReferenceObjectType
-	ObjectID   string
+	ID         string                  `hash:"ignore"`
+	Tenant     string                  `hash:"ignore"`
+	ObjectType SpecReferenceObjectType `hash:"ignore"`
+	ObjectID   string                  `hash:"ignore"`
 
-	Data       *string
+	Data       *string `hash:"ignore"`
 	Format     SpecFormat
 	APIType    *APISpecType
 	EventType  *EventSpecType
 	CustomType *string
+	URL        *string
 }
 
 type SpecReferenceObjectType string
@@ -100,5 +101,6 @@ func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType
 		APIType:    s.APIType,
 		EventType:  s.EventType,
 		CustomType: s.CustomType,
+		URL:        &s.FetchRequest.URL,
 	}, nil
 }
