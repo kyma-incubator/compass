@@ -57,12 +57,12 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	tenantId := gjson.GetBytes(body, s.config.TenantProviderTenantIdProperty)
-	if !tenantId.Exists() || tenantId.Type != gjson.String || len(tenantId.String()) == 0 {
-		logger.Errorf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty)
-		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
+	customerId := gjson.GetBytes(body, s.config.TenantProviderCustomerIdProperty)
+	if (!tenantId.Exists() && !customerId.Exists()) || (!nonEmptyGJsonString(tenantId) && !nonEmptyGJsonString(customerId)) {
+		logger.Errorf("Both %q and %q not found in body or both are not valid strings", s.config.TenantProviderTenantIdProperty, s.config.TenantProviderCustomerIdProperty)
+		http.Error(writer, fmt.Sprintf("Both %q and %q not found in body or both are not valid strings", s.config.TenantProviderTenantIdProperty, s.config.TenantProviderCustomerIdProperty), http.StatusInternalServerError)
 		return
 	}
-	customerId := gjson.GetBytes(body, s.config.TenantProviderCustomerIdProperty)
 	subdomain := gjson.GetBytes(body, s.config.TenantProviderSubdomainProperty)
 
 	tenant := model.TenantModel{
@@ -178,4 +178,8 @@ func extractBody(r *http.Request, w http.ResponseWriter) ([]byte, error) {
 	}()
 
 	return buf, nil
+}
+
+func nonEmptyGJsonString(s gjson.Result) bool {
+	return s.Type == gjson.String && len(s.String()) > 0
 }
