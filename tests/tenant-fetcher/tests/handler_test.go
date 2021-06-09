@@ -200,7 +200,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
 		providedTenant := &Tenant{
-			TenantId:   config.Tenant,
+			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 			CustomerId: "160269",
 			Subdomain:  "subdomain",
 		}
@@ -213,21 +213,25 @@ func TestOnboardingHandler(t *testing.T) {
 
 		byteTenant, err := json.Marshal(providedTenant)
 		require.NoError(t, err)
-		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
+		var response *http.Response
+		for i := 0; i < 2; i++ {
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+			require.NoError(t, err)
+			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 
-		response, err := httpClient.Do(request)
-		require.NoError(t, err)
+			httpClient := http.DefaultClient
+			httpClient.Timeout = 15 * time.Second
+
+			response, err = httpClient.Do(request)
+			require.NoError(t, err)
+		}
 
 		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(tenants), len(oldTenantState))
+		assert.Equal(t, len(tenants), len(oldTenantState)+1)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 	})
 
