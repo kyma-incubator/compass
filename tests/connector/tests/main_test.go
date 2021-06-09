@@ -11,10 +11,8 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
-	"github.com/vrischmann/envconfig"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -48,25 +46,7 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(&cfg)
 	ctx = context.Background()
 
-	var dexToken string
-
-	tokenConfig := server.Config{}
-	err := envconfig.InitWithPrefix(&tokenConfig, "APP")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Info("Get Dex id_token")
-	if tokenConfig.IsWithToken {
-		tokenConfig.Log = log.Infof
-		ts := server.New(&tokenConfig)
-		dexToken = server.WaitForToken(ts)
-	} else {
-		dexToken, err = idtokenprovider.GetDexToken()
-		if err != nil {
-			log.Fatal(errors.Wrap(err, "while getting dex token"))
-		}
-	}
+	dexToken := server.Token()
 
 	key, err := certs.GenerateKey()
 	if err != nil {

@@ -5,11 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pkg/errors"
-
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
@@ -37,25 +34,7 @@ func TestMain(m *testing.M) {
 
 	config.ReadConfig(conf)
 
-	var dexToken string
-
-	tokenConfig := server.Config{}
-	err = envconfig.InitWithPrefix(&tokenConfig, "APP")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Info("Get Dex id_token")
-	if tokenConfig.IsWithToken {
-		tokenConfig.Log = log.Infof
-		ts := server.New(&tokenConfig)
-		dexToken = server.WaitForToken(ts)
-	} else {
-		dexToken, err = idtokenprovider.GetDexToken()
-		if err != nil {
-			log.Fatal(errors.Wrap(err, "while getting dex token"))
-		}
-	}
+	dexToken := server.Token()
 
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 	directorHTTPClient = gql.NewAuthorizedHTTPClient(dexToken)

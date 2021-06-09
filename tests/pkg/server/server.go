@@ -24,7 +24,7 @@ type Config struct {
 	Log         LogFunc `envconfig:"-"`
 }
 
-func New(c *Config) *TokenServer {
+func newTokenServer(c *Config) *TokenServer {
 	ts := &TokenServer{
 		tokenMutex: sync.Mutex{},
 		Log:        c.Log,
@@ -69,7 +69,7 @@ func (s *TokenServer) IsTokenSet() (string, bool) {
 	return s.token, len(s.token) > 0
 }
 
-func WaitForToken(ts *TokenServer) string {
+func waitForToken(ts *TokenServer) string {
 	go func() {
 		if err := ts.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			ts.Log("Unexpected server listen err: %+v", err)

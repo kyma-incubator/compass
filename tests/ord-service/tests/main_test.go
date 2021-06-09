@@ -23,7 +23,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -52,25 +51,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 
-	var dexToken string
-
-	tokenConfig := server.Config{}
-	err = envconfig.InitWithPrefix(&tokenConfig, "APP")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Info("Get Dex id_token")
-	if tokenConfig.IsWithToken {
-		tokenConfig.Log = log.Infof
-		ts := server.New(&tokenConfig)
-		dexToken = server.WaitForToken(ts)
-	} else {
-		dexToken, err = idtokenprovider.GetDexToken()
-		if err != nil {
-			log.Fatal(errors.Wrap(err, "while getting dex token"))
-		}
-	}
+	dexToken := server.Token()
 
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
