@@ -75,6 +75,10 @@ type config struct {
 	TenantProvider            string
 }
 
+const (
+	tenantPathParamValue = "tenant"
+)
+
 type Tenant struct {
 	TenantId   string `json:"tenantId"`
 	CustomerId string `json:"customerId"`
@@ -99,7 +103,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -135,7 +139,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -171,7 +175,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -204,7 +208,7 @@ func TestOnboardingHandler(t *testing.T) {
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -235,7 +239,7 @@ func TestOnboardingHandler(t *testing.T) {
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -271,8 +275,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		}
 		cleanUp(t, providedTenant, config)
 		// WHEN
-		tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		// Add test tenant
@@ -316,7 +319,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		}
 		cleanUp(t, providedTenant, config)
 
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
@@ -386,8 +389,7 @@ func loadConfig(t *testing.T) config {
 }
 
 func cleanUp(t *testing.T, tenant *Tenant, config config) {
-	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	byteTenant, err := json.Marshal(tenant)
