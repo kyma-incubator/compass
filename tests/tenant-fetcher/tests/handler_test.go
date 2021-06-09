@@ -76,7 +76,9 @@ type config struct {
 }
 
 type Tenant struct {
-	TenantId string `json:"tenantId"`
+	TenantId   string `json:"tenantId"`
+	CustomerId string `json:"customerId"`
+	Subdomain  string `json:"subdomain"`
 }
 
 func TestOnboardingHandler(t *testing.T) {
@@ -86,7 +88,9 @@ func TestOnboardingHandler(t *testing.T) {
 		// GIVEN
 
 		providedTenant := &Tenant{
-			TenantId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			CustomerId: "160269",
+			Subdomain:  "subdomain",
 		}
 
 		cleanUp(t, providedTenant, config)
@@ -120,7 +124,9 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
 		providedTenant := &Tenant{
-			TenantId: config.Tenant,
+			TenantId:   config.Tenant,
+			CustomerId: "160269",
+			Subdomain:  "subdomain",
 		}
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
@@ -156,7 +162,9 @@ func TestDecommissioningHandler(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		providedTenant := &Tenant{
-			TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+			TenantId:   "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+			CustomerId: "160269",
+			Subdomain:  "subdomain",
 		}
 		cleanUp(t, providedTenant, config)
 		// WHEN
@@ -199,7 +207,9 @@ func TestDecommissioningHandler(t *testing.T) {
 
 	t.Run("Should not fail when tenant does not exists", func(t *testing.T) {
 		providedTenant := &Tenant{
-			TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+			TenantId:   "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+			CustomerId: "160269",
+			Subdomain:  "subdomain",
 		}
 		cleanUp(t, providedTenant, config)
 
