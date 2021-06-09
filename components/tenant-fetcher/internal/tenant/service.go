@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -64,6 +66,10 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	subdomain := gjson.GetBytes(body, s.config.TenantProviderSubdomainProperty)
+
+	warnOnEmptyGJsonProperty(logger, tenantId, s.config.TenantProviderTenantIdProperty)
+	warnOnEmptyGJsonProperty(logger, customerId, s.config.TenantProviderCustomerIdProperty)
+	warnOnEmptyGJsonProperty(logger, subdomain, s.config.TenantProviderSubdomainProperty)
 
 	tenant := model.TenantModel{
 		ID:             s.uidService.Generate(),
@@ -182,4 +188,10 @@ func extractBody(r *http.Request, w http.ResponseWriter) ([]byte, error) {
 
 func nonEmptyGJsonString(s gjson.Result) bool {
 	return s.Type == gjson.String && len(s.String()) > 0
+}
+
+func warnOnEmptyGJsonProperty(logger *logrus.Entry, prop gjson.Result, propName string) {
+	if len(prop.String()) <= 0 {
+		logger.Warnf("Property %q is missing", propName)
+	}
 }
