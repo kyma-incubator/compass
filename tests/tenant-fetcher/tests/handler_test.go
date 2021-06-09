@@ -133,6 +133,40 @@ func TestOnboardingHandler(t *testing.T) {
 			Subdomain:  "subdomain",
 		}
 
+		cleanUp(t, providedTenant, config)
+
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+		url := config.TenantFetcherURL + config.RootAPI + endpoint
+
+		byteTenant, err := json.Marshal(providedTenant)
+		require.NoError(t, err)
+
+		var response *http.Response
+		for i := 0; i < 10; i++ {
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+			require.NoError(t, err)
+			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+
+			httpClient := http.DefaultClient
+			httpClient.Timeout = 15 * time.Second
+
+			response, err = httpClient.Do(request)
+			require.NoError(t, err)
+		}
+
+		// THEN
+		require.Equal(t, http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Should not add already existing tenants", func(t *testing.T) {
+		providedTenant := &Tenant{
+			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			CustomerId: "160269",
+			Subdomain:  "subdomain",
+		}
+
+		cleanUp(t, providedTenant, config)
+
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
@@ -143,7 +177,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		var response *http.Response
-		for i := 0; i < 2; i++ {
+		for i := 0; i < 10; i++ {
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 			require.NoError(t, err)
 			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
@@ -161,37 +195,6 @@ func TestOnboardingHandler(t *testing.T) {
 		// THEN
 		assert.Equal(t, len(tenants), len(oldTenantState)+1)
 		require.Equal(t, http.StatusOK, response.StatusCode)
-	})
-
-	t.Run("Should fail when both tenant id and customer id are missing", func(t *testing.T) {
-		providedTenant := &Tenant{
-			Subdomain: "subdomain",
-		}
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
-
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
-
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
-
-		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Equal(t, len(tenants), len(oldTenantState))
-		require.Equal(t, http.StatusInternalServerError, response.StatusCode)
 	})
 }
 
