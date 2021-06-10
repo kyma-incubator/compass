@@ -26,9 +26,9 @@ func TestRuntimeInput_Validate_Name(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name:          "Invalid - Invalid Name",
+			Name:          "Expected valid with digit",
 			Value:         inputvalidationtest.InvalidName,
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 	}
 
