@@ -2,6 +2,7 @@ package open_resource_discovery
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/tidwall/gjson"
@@ -134,19 +135,27 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 }
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents) error {
-	specs := make(map[string][]*model.Spec, 0)
+	allSpecs := make(map[string][]*model.Spec, 0)
 
-	apiIDsFromDB, err := s.fetchAPIDataAndSpecFromDB(ctx, appID, specs)
+	apiIDsFromDB, apiSpecs, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	eventIDsFromDB, err := s.fetchEventDataAndSpecFromDB(ctx, appID, specs)
+	eventIDsFromDB, eventSpecs, err := s.fetchEventDataAndSpecFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	if err := documents.Validate(baseURL, apiIDsFromDB, eventIDsFromDB, specs); err != nil {
+	for k, v := range apiSpecs {
+		allSpecs[k] = v
+	}
+
+	for k, v := range eventSpecs {
+		allSpecs[k] = v
+	}
+
+	if err := documents.Validate(baseURL, apiIDsFromDB, eventIDsFromDB, allSpecs); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
 
@@ -545,46 +554,48 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	return err
 }
 
-func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string, specs map[string][]*model.Spec) (map[string]model.APIDefinitionIDVersion, error) {
+func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (map[string]model.APIDefinitionIDVersion, map[string][]*model.Spec, error) {
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
+		return nil, nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
 	}
 
 	apiIDsFromDB := make(map[string]model.APIDefinitionIDVersion, 0)
+	specs := make(map[string][]*model.Spec, 0)
 
 	for _, api := range apisFromDB {
 		apiOrdID := str.PtrStrToStr(api.OrdID)
 		apiIDsFromDB[apiOrdID] = model.APIDefinitionIDVersion{ID: api.ID, Version: api.Version.Value}
 		spec, err := s.specSvc.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not list specification")
+			return nil, nil, errors.Wrap(err, "could not list specification")
 		}
 		specs[api.ID] = spec
 	}
 
-	return apiIDsFromDB, nil
+	return apiIDsFromDB, specs, nil
 }
 
-func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string, specs map[string][]*model.Spec) (map[string]model.EventDefinitionIDVersion, error) {
+func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string) (map[string]model.EventDefinitionIDVersion, map[string][]*model.Spec, error) {
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
+		return nil, nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
 	}
 
 	eventIDsFromDB := make(map[string]model.EventDefinitionIDVersion, 0)
+	specs := make(map[string][]*model.Spec, 0)
 
 	for _, event := range eventsFromDB {
 		eventOrdID := str.PtrStrToStr(event.OrdID)
 		eventIDsFromDB[eventOrdID] = model.EventDefinitionIDVersion{ID: event.ID, Version: event.Version.Value}
 		spec, err := s.specSvc.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not list specification")
+			return nil, nil, errors.Wrap(err, "could not list specification")
 		}
 		specs[event.ID] = spec
 	}
 
-	return eventIDsFromDB, nil
+	return eventIDsFromDB, specs, nil
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {
