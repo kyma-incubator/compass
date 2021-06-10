@@ -465,7 +465,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1114,7 +1114,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1389,7 +1389,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1485,6 +1485,50 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's URL has changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's MediaType has changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's Type has changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's CustomType has changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Valid incremented `version` field when resource definition has changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing `partOfPackage` field for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -1805,6 +1849,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions = nil
 				doc.APIResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
 				doc.Packages[0].PolicyLevel = policyLevel
 
 				return []*open_resource_discovery.Document{doc}
@@ -2567,6 +2612,10 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
+				doc.APIResources[1].VersionInput.Value = "2.1.3"
+
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2584,6 +2633,10 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
+				doc.APIResources[1].VersionInput.Value = "2.1.3"
+
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2600,6 +2653,10 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
+				doc.APIResources[1].VersionInput.Value = "2.1.3"
+
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2611,6 +2668,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
+
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2623,6 +2683,9 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
+
+				doc.APIResources[0].VersionInput.Value = "2.1.3"
+
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2831,7 +2894,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -2919,6 +2982,42 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's URL has changed for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's MediaType has changed for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's Type has changed for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].Type = model.EventSpecTypeCustom
+				doc.EventResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Valid incremented `version` field when resource definition has changed for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].Type = model.EventSpecTypeCustom
+				doc.EventResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+				doc.EventResources[0].VersionInput.Value = "2.1.3"
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `version` field for Event",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -3132,6 +3231,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions = nil
+				doc.EventResources[0].VersionInput.Value = "2.1.3"
 				doc.EventResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
 				doc.Packages[0].PolicyLevel = policyLevel
 
@@ -3729,7 +3829,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -3950,7 +4050,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4076,7 +4176,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4130,7 +4230,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

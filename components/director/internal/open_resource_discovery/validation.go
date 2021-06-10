@@ -625,12 +625,12 @@ func validateEventDefinitionVersionInput(value interface{}, event model.EventDef
 		specsFromDocument = append(specsFromDocument, spec)
 	}
 
-	err, specFromDBHashed := hashSliceElements(specsFromDB)
+	err, specFromDBHashed := hashSpecReferenceObjectElements(specsFromDB)
 	if err != nil {
 		return err
 	}
 
-	err, specFromDocumentHashed := hashSliceElements(specsFromDocument)
+	err, specFromDocumentHashed := hashSpecReferenceObjectElements(specsFromDocument)
 	if err != nil {
 		return err
 	}
@@ -660,12 +660,12 @@ func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitio
 		specsFromDocument = append(specsFromDocument, spec)
 	}
 
-	err, specFromDBHashed := hashSliceElements(specsFromDB)
+	err, specFromDBHashed := hashSpecReferenceObjectElements(specsFromDB)
 	if err != nil {
 		return err
 	}
 
-	err, specFromDocumentHashed := hashSliceElements(specsFromDocument)
+	err, specFromDocumentHashed := hashSpecReferenceObjectElements(specsFromDocument)
 	if err != nil {
 		return err
 	}
@@ -1029,6 +1029,20 @@ func hashSliceElements(slice interface{}) (error, []uint64) {
 			}
 			hashedSlice = append(hashedSlice, hash)
 		}
+	}
+
+	return nil, hashedSlice
+}
+
+func hashSpecReferenceObjectElements(slice []*model.Spec) (error, []uint64) {
+	hashedSlice := make([]uint64, 0, 0)
+
+	for _, spec := range slice {
+		hash, err := hashstructure.Hash(spec, hashstructure.FormatV2, nil)
+		if err != nil {
+			return errors.New("failed to hash slice element"), nil
+		}
+		hashedSlice = append(hashedSlice, hash)
 	}
 
 	return nil, hashedSlice

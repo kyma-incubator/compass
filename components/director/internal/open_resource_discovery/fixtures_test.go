@@ -131,6 +131,35 @@ var (
       ]`)
 
 	boolPtr = true
+
+	apisFromDB = map[string]model.APIDefinitionIDVersion{
+		api1ORDID: {
+			ID:      api1ID,
+			Version: "2.1.2",
+		},
+		api2ORDID: {
+			ID:      api2ID,
+			Version: "2.1.2",
+		},
+	}
+
+	eventsFromDB = map[string]model.EventDefinitionIDVersion{
+		event1ORDID: {
+			ID:      event1ID,
+			Version: "2.1.2",
+		},
+		event2ORDID: {
+			ID:      event2ID,
+			Version: "2.1.2",
+		},
+	}
+
+	specsFromDB = map[string][]*model.Spec{
+		api1ID:   convertSpecInputsToSpecs(fixApi1SpecInputs(), model.APISpecReference, api1ID),
+		api2ID:   convertSpecInputsToSpecs(fixApi2SpecInputs(), model.APISpecReference, api2ID),
+		event1ID: convertSpecInputsToSpecs(fixEvent1SpecInputs(), model.EventSpecReference, event1ID),
+		event2ID: convertSpecInputsToSpecs(fixEvent2SpecInputs(), model.EventSpecReference, event2ID),
+	}
 )
 
 func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
@@ -881,4 +910,15 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 
 func removeWhitespace(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, " ", ""), "\n", ""), "\t", "")
+}
+
+func convertSpecInputsToSpecs(in []*model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) []*model.Spec {
+	specs := make([]*model.Spec, 0, 0)
+
+	for _, specInput := range in {
+		spec, _ := specInput.ToSpec("", "", objectType, objectID)
+		specs = append(specs, spec)
+	}
+
+	return specs
 }
