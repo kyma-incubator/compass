@@ -58,7 +58,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be no more than 36 characters]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=the length must be between 1 and 36]")
 }
 
 func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
@@ -109,7 +109,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be no more than 36 characters]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=the length must be between 1 and 36]")
 }
 
 // Label Definition Validation
