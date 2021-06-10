@@ -13,6 +13,8 @@ var (
 const (
 	EmptyString = ""
 	ValidName   = "thi5-1npu7.15-valid"
+	ValidRuntimeNameWithDigit   = "0thi5-1npu7.15-valid"
+	InValidRuntimeName          = "123aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaааа"
 	InvalidName = "0iNvALiD"
 	ValidURL    = "https://kyma-project.io"
 	InvalidURL  = "http:/kyma-projectio/path/"
