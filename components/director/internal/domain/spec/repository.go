@@ -3,9 +3,10 @@ package spec
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 

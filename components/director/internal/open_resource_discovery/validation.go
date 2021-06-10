@@ -3,13 +3,14 @@ package open_resource_discovery
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/mitchellh/hashstructure/v2"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/mitchellh/hashstructure/v2"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -1017,6 +1018,7 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 
 func hashSliceElements(slice interface{}) (error, []uint64) {
 	hashedSlice := make([]uint64, 0, 0)
+
 	switch reflect.TypeOf(slice).Kind() {
 	case reflect.Slice:
 		s := reflect.ValueOf(slice)
@@ -1028,13 +1030,6 @@ func hashSliceElements(slice interface{}) (error, []uint64) {
 			hashedSlice = append(hashedSlice, hash)
 		}
 	}
-	//for _, el := range slice {
-	//	hash, err := hashstructure.Hash(el, hashstructure.FormatV2, nil)
-	//	if err != nil {
-	//		errors.New("failed hashing element")
-	//	}
-	//	hashedSlice = append(hashedSlice, hash)
-	//}
 
 	return nil, hashedSlice
 }
