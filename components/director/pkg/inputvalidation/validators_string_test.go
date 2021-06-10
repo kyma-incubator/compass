@@ -86,3 +86,58 @@ func TestDNSNameValidator_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestRuntimeNameValidator_Validate(t *testing.T) {
+	rule := inputvalidation.RuntimeName
+
+	testCases := []struct {
+		Name          string
+		Input         interface{}
+		ExpectedError error
+	}{
+		{
+			Name:          "Valid input",
+			Input:         inputvalidationtest.ValidName,
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Valid pointer input",
+			Input:         str.Ptr(inputvalidationtest.ValidName),
+			ExpectedError: nil,
+		},
+		{
+			Name:          "No error when nil string",
+			Input:         (*string)(nil),
+			ExpectedError: nil,
+		},
+		{
+			Name:          "No error when starts with digit",
+			Input:         "0-valid-name",
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Error when too long input",
+			Input:         inputvalidationtest.String37Long,
+			ExpectedError: errors.New("must be no more than 36 characters"),
+		},
+		{
+			Name:          "Error when invalid type",
+			Input:         10,
+			ExpectedError: errors.New("type has to be a string"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			err := rule.Validate(testCase.Input)
+			// THEN
+			if testCase.ExpectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			}
+		})
+	}
+}
