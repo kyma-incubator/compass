@@ -97,7 +97,7 @@ func TestRuntimeNameValidator_Validate(t *testing.T) {
 	}{
 		{
 			Name:          "Valid input",
-			Input:         inputvalidationtest.ValidName,
+			Input:         inputvalidationtest.ValidRuntimeNameWithDigit,
 			ExpectedError: nil,
 		},
 		{
@@ -114,6 +114,16 @@ func TestRuntimeNameValidator_Validate(t *testing.T) {
 			Name:          "No error when starts with digit",
 			Input:         "0-valid-name",
 			ExpectedError: nil,
+		},
+		{
+			Name:          "Error when contains invalid characters - ин",
+			Input:         "0-инvalid-name",
+			ExpectedError: errors.New("must contain only alpha-numeric characters, \".\", \"_\" or \"-\""),
+		},
+		{
+			Name:          "Error when contains space",
+			Input:         "0-my runtime-name",
+			ExpectedError: errors.New("must contain only alpha-numeric characters, \".\", \"_\" or \"-\""),
 		},
 		{
 			Name:          "Error when too long input",
