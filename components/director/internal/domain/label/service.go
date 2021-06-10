@@ -100,27 +100,6 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) error {
-	for _, label := range labels {
-		if model.ScenariosKey != label.Key {
-			continue
-		}
-
-		scenariosString, err := GetScenariosAsStringSlice(label)
-		if err != nil {
-			return err
-		}
-
-		scenariosToUpsert := mergeFn(scenariosString, newScenarios)
-
-		err = s.updateScenario(ctx, tenantID, label, scenariosToUpsert)
-		if err != nil {
-			return errors.Wrap(err, "while updating scenarios label")
-		}
-	}
-	return nil
-}
-
 func GetScenariosAsStringSlice(label model.Label) ([]string, error) {
 	return GetScenariosFromValueAsStringSlice(label.Value)
 }
@@ -147,20 +126,6 @@ func GetScenariosFromValueAsStringSlice(labelValue interface{}) ([]string, error
 func UniqueScenarios(scenarios, newScenarios []string) []string {
 	scenarios = append(scenarios, newScenarios...)
 	return str.Unique(scenarios)
-}
-
-func (s *labelUpsertService) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
-	if len(scenarios) == 0 {
-		return s.labelRepo.Delete(ctx, tenantID, label.ObjectType, label.ObjectID, model.ScenariosKey)
-	} else {
-		labelInput := model.LabelInput{
-			Key:        label.Key,
-			Value:      scenarios,
-			ObjectID:   label.ObjectID,
-			ObjectType: label.ObjectType,
-		}
-		return s.UpsertLabel(ctx, tenantID, &labelInput)
-	}
 }
 
 func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant string, labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {

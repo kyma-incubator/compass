@@ -30,7 +30,7 @@ type RuntimeRepository interface {
 
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
-	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) error
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
@@ -78,7 +78,22 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	}
 
 	runtimeLabels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, runtimeLabels)
-	return e.labelService.UpsertScenarios(ctx, in.Tenant, runtimeLabels, []string{in.ScenarioName}, labelpkg.UniqueScenarios)
+	for _, label := range runtimeLabels {
+		rmtLabelInput, err := labelpkg.MergeScenarios(label, []string{in.ScenarioName}, labelpkg.UniqueScenarios)
+		if err != nil {
+			return err
+		}
+
+		if rmtLabelInput == nil {
+			return errors.New("unable to update scenarios for runtime label")
+		}
+
+		err = e.labelService.UpsertLabel(ctx, in.Tenant, rmtLabelInput)
+		if err != nil {
+			return errors.Wrapf(err, "while upserting scenarios label for runtime with id: %s", label.ObjectID)
+		}
+	}
+	return nil
 }
 
 func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx context.Context, runtimeLabels []model.Label, scenario string) error {
@@ -110,7 +125,27 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 			return err
 		}
 	}
-	return e.labelService.UpsertScenarios(ctx, in.Tenant, labels, []string{in.ScenarioName}, e.removeScenario)
+
+	for _, label := range labels {
+		rmtLabelInput, err := labelpkg.MergeScenarios(label, []string{in.ScenarioName}, e.removeScenario)
+		if err != nil {
+			return err
+		}
+
+		if rmtLabelInput == nil {
+			err := e.labelRepo.Delete(ctx, in.Tenant, label.ObjectType, label.ObjectID, model.ScenariosKey)
+			if err != nil {
+				return errors.Wrapf(err, "while deleting scenarios for runtime with id: %s", label.ObjectID)
+			}
+			continue
+		}
+
+		err = e.labelService.UpsertLabel(ctx, in.Tenant, rmtLabelInput)
+		if err != nil {
+			return errors.Wrapf(err, "while upserting scenarios label for runtime with id: %s", label.ObjectID)
+		}
+	}
+	return nil
 }
 
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {

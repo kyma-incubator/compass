@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	labelpkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
@@ -31,13 +33,18 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	inputScenarios = append(inputScenarios, in.ScenarioName)
 	inputScenarios = append(inputScenarios, stringScenarios...)
 
+	inputScenariosInterfaceSlice := make([]interface{}, 0, len(inputScenarios))
+	for _, scenario := range inputScenarios {
+		inputScenariosInterfaceSlice = append(inputScenariosInterfaceSlice, scenario)
+	}
+
 	rtmIDWithScenario := "rtm1_scenario"
 	rtmIDWithoutScenario := "rtm1_no_scenario"
 
-	expectedScenarios := map[string][]string{
-		rtmIDWithScenario:    stringScenarios,
-		rtmIDWithoutScenario: {},
-	}
+	//expectedScenarios := map[string][]string{
+	//	rtmIDWithScenario:    stringScenarios,
+	//	rtmIDWithoutScenario: {},
+	//}
 	runtimesIDs := []string{rtmIDWithoutScenario, rtmIDWithScenario}
 	scenarioLabel := model.Label{
 		Key:        model.ScenariosKey,
@@ -57,12 +64,8 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		upsertSvc := &automock.LabelUpsertService{}
 
-		matchExpectedScenariosAddFn := mock.MatchedBy(matchAddNewScenarioFn([][]string{stringScenarios, {}}, in.ScenarioName))
-		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(expectedScenarios)), []string{in.ScenarioName}, matchExpectedScenariosAddFn).Return(nil).Once()
-
-		inputScenarios := make([]string, 0, len(stringScenarios)+1)
-		inputScenarios = append(inputScenarios, in.ScenarioName)
-		inputScenarios = append(inputScenarios, stringScenarios...)
+		upsertSvc.On("UpsertLabel", ctx, tenantID, matchScenarios(inputScenarios)).Return(nil)
+		upsertSvc.On("UpsertLabel", ctx, tenantID, matchScenarios([]string{in.ScenarioName})).Return(nil)
 
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
 		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, inputScenarios, scenarioLabel.ObjectID).Return(nil).Once()
@@ -86,8 +89,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 			Return([]model.Label{scenarioLabel}, nil)
 
 		upsertSvc := &automock.LabelUpsertService{}
-		matchExpectedScenariosAddFn := mock.MatchedBy(matchAddNewScenarioFn([][]string{stringScenarios, {}}, in.ScenarioName))
-		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(expectedScenarios)), []string{in.ScenarioName}, matchExpectedScenariosAddFn).Return(testErr).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, matchScenarios(inputScenarios)).Return(testErr)
 
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
 		bundleInstanceAuthSvc.On("AssociateBundleInstanceAuthForNewRuntimeScenarios", ctx, stringScenarios, inputScenarios, scenarioLabel.ObjectID).Return(nil).Once()
@@ -189,16 +191,12 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 	testErr := errors.New("test err")
 
 	t.Run("Success", func(t *testing.T) {
-		scenarios := []interface{}{"OTHER", "SCENARIO"}
+		expectedScenarios := []interface{}{"OTHER", "SCENARIO"}
+		expectedScenariosStringSlice := []string{"OTHER", "SCENARIO"}
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
-			Value:    append(scenarios, selectorScenario),
+			Value:    append(expectedScenarios, selectorScenario),
 			ObjectID: rtmID,
-		}
-
-		existingScenariosSlice := []string{"OTHER", "SCENARIO", selectorScenario}
-		existingScenarios := map[string][]string{
-			rtmID: existingScenariosSlice,
 		}
 
 		ctx := context.TODO()
@@ -209,8 +207,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(existingScenarios)), []string{in.ScenarioName}, mock.MatchedBy(matchRemoveScenarioFn([][]string{existingScenariosSlice}, in.ScenarioName))).
-			Return(nil).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, matchScenarios(expectedScenariosStringSlice)).Return(nil)
 
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
 		bundleInstanceAuthSvc.On("GetForRuntimeAndAnyMatchingScenarios", ctx, scenarioLabel.ObjectID, []string{in.ScenarioName}).
@@ -226,17 +223,74 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, bundleInstanceAuthSvc)
 	})
 
-	t.Run("Failed when upsert scenario label returns error ", func(t *testing.T) {
-		scenarios := []interface{}{"OTHER", "SCENARIO"}
+	t.Run("Success when removing the last scenario", func(t *testing.T) {
 		scenarioLabel := model.Label{
 			Key:      model.ScenariosKey,
-			Value:    append(scenarios, selectorScenario),
+			Value:    []interface{}{selectorScenario},
 			ObjectID: rtmID,
 		}
 
-		existingScenariosSlice := []string{"OTHER", "SCENARIO", selectorScenario}
-		existingScenarios := map[string][]string{
-			rtmID: existingScenariosSlice,
+		ctx := context.TODO()
+
+		labels := []model.Label{scenarioLabel}
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+
+		labelRepo.On("Delete", ctx, tenantID, scenarioLabel.ObjectType, scenarioLabel.ObjectID, model.ScenariosKey).Return(nil)
+
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("GetForRuntimeAndAnyMatchingScenarios", ctx, scenarioLabel.ObjectID, []string{in.ScenarioName}).
+			Return([]*model.BundleInstanceAuth{}, nil).Once()
+
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, bundleInstanceAuthSvc, nil)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.NoError(t, err)
+		mock.AssertExpectationsForObjects(t, labelRepo, bundleInstanceAuthSvc)
+	})
+
+	t.Run("Fails when removing the last scenario returns error", func(t *testing.T) {
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    []interface{}{selectorScenario},
+			ObjectID: rtmID,
+		}
+
+		ctx := context.TODO()
+
+		labels := []model.Label{scenarioLabel}
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
+			Return(labels, nil).Once()
+
+		labelRepo.On("Delete", ctx, tenantID, scenarioLabel.ObjectType, scenarioLabel.ObjectID, model.ScenariosKey).Return(testErr)
+
+		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
+		bundleInstanceAuthSvc.On("GetForRuntimeAndAnyMatchingScenarios", ctx, scenarioLabel.ObjectID, []string{in.ScenarioName}).
+			Return([]*model.BundleInstanceAuth{}, nil).Once()
+
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, bundleInstanceAuthSvc, nil)
+
+		//WHEN
+		err := eng.RemoveAssignedScenario(ctx, in)
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, labelRepo, bundleInstanceAuthSvc)
+	})
+
+	t.Run("Failed when upsert scenario label returns error ", func(t *testing.T) {
+		expectedScenarios := []interface{}{"OTHER", "SCENARIO"}
+		expectedScenariosStringSlice := []string{"OTHER", "SCENARIO"}
+		scenarioLabel := model.Label{
+			Key:      model.ScenariosKey,
+			Value:    append(expectedScenarios, selectorScenario),
+			ObjectID: rtmID,
 		}
 
 		ctx := context.TODO()
@@ -247,8 +301,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(existingScenarios)), []string{in.ScenarioName}, mock.MatchedBy(matchRemoveScenarioFn([][]string{existingScenariosSlice}, in.ScenarioName))).
-			Return(testErr).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, matchScenarios(expectedScenariosStringSlice)).Return(testErr)
 
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
 		bundleInstanceAuthSvc.On("GetForRuntimeAndAnyMatchingScenarios", ctx, scenarioLabel.ObjectID, []string{in.ScenarioName}).
@@ -408,19 +461,13 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
-		existingScenariosSlice := []string{"SCENARIO2", selectorScenario}
-		existingScenarios := map[string][]string{
-			rtmID: existingScenariosSlice,
-		}
-
 		ctx := context.TODO()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetRuntimeScenariosWhereLabelsMatchSelector", ctx, tenantID, selectorKey, selectorValue).
 			Return(labels, nil).Once()
 
 		upsertSvc := &automock.LabelUpsertService{}
-		upsertSvc.On("UpsertScenarios", ctx, tenantID, mock.MatchedBy(matchExpectedScenarios(existingScenarios)), []string{selectorScenario}, mock.MatchedBy(matchRemoveScenarioFn([][]string{existingScenariosSlice}, selectorScenario))).
-			Return(nil).Once()
+		upsertSvc.On("UpsertLabel", ctx, tenantID, matchScenarios([]string{"SCENARIO2"})).Return(nil)
 
 		bundleInstanceAuthSvc := &automock.BundleInstanceAuthService{}
 		bundleInstanceAuthSvc.On("IsAnyExistForRuntimeAndScenario", ctx, []string{selectorScenario}, rtmID).
@@ -455,81 +502,6 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 		assert.Contains(t, err.Error(), testErr.Error())
 		labelRepo.AssertExpectations(t)
 	})
-}
-
-func matchRemoveScenarioFn(scenariosPerRuntime [][]string, toRemove string) func(removeFn func(scenarios []string, toRemove string) []string) bool {
-	return func(removeFn func(scenarios []string, toRemove string) []string) bool {
-		for _, scenarios := range scenariosPerRuntime {
-			result := removeFn(scenarios, toRemove)
-			existForCurrentRuntimeScenarios := false
-
-			for _, scenario := range result {
-				if scenario == toRemove {
-					existForCurrentRuntimeScenarios = true
-					break
-				}
-			}
-
-			if existForCurrentRuntimeScenarios {
-				return false
-			}
-		}
-
-		return true
-	}
-}
-
-func matchAddNewScenarioFn(scenariosPerRuntime [][]string, toAdd string) func(addFn func(scenarios []string, toAdd string) []string) bool {
-	return func(addFn func(scenarios []string, toRemove string) []string) bool {
-		for _, scenarios := range scenariosPerRuntime {
-			result := addFn(scenarios, toAdd)
-			existForCurrentRuntimeScenarios := false
-
-			for _, scenario := range result {
-				if scenario == toAdd {
-					existForCurrentRuntimeScenarios = true
-					break
-				}
-			}
-
-			if !existForCurrentRuntimeScenarios {
-				return false
-			}
-		}
-
-		return true
-	}
-}
-
-func matchExpectedScenarios(expectedByRuntimeId map[string][]string) func(labels []model.Label) bool {
-	return func(actual []model.Label) bool {
-		labelsByRuntimeID := make(map[string]model.Label, 0)
-		for _, label := range actual {
-			labelsByRuntimeID[label.ObjectID] = label
-		}
-
-		if len(expectedByRuntimeId) != len(labelsByRuntimeID) {
-			return false
-		}
-
-		for runtimeId, expectedScenarios := range expectedByRuntimeId {
-			actualLabel, ok := labelsByRuntimeID[runtimeId]
-			if !ok {
-				return false
-			}
-
-			actualScenarios, err := labelpkg.GetScenariosAsStringSlice(actualLabel)
-			if err != nil {
-				return false
-			}
-
-			if !assert.ElementsMatch(dummyTest{}, expectedScenarios, actualScenarios) {
-				return false
-			}
-		}
-
-		return true
-	}
 }
 
 func fixAutomaticScenarioAssigment(selectorScenario, selectorKey, selectorValue string) model.AutomaticScenarioAssignment {
@@ -792,6 +764,17 @@ func TestEngine_MergeScenarios_Success(t *testing.T) {
 	assert.Equal(t, expectedScenarios, actualScenarios)
 }
 
-type dummyTest struct{}
+func matchScenarios(expectedScenarios []string) interface{} {
+	return mock.MatchedBy(func(lbl *model.LabelInput) bool {
+		actualScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(lbl.Value)
+		if err != nil {
+			return false
+		}
 
-func (t dummyTest) Errorf(string, ...interface{}) {}
+		if len(expectedScenarios) != len(actualScenarios) {
+			return false
+		}
+
+		return len(expectedScenarios) == len(actualScenarios) && len(str.IntersectSlice(expectedScenarios, actualScenarios)) == len(expectedScenarios)
+	})
+}

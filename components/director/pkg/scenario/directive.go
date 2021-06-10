@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

@@ -81,3 +81,28 @@ func (s *scenarioService) GetBundleInstanceAuthsScenarioLabels(ctx context.Conte
 
 	return s.labelRepo.GetBundleInstanceAuthsScenarioLabels(ctx, tnt, appId, runtimeId)
 }
+
+// MergeScenarios apply merge function on scenarios' value and create model.LabelInput. If no scenarios are left as a result of the merge function
+// then model.LabelInput is nil
+func MergeScenarios(label model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) (*model.LabelInput, error) {
+	if model.ScenariosKey != label.Key {
+		return nil, errors.New("provided label is not scenario")
+	}
+
+	scenariosString, err := GetScenariosAsStringSlice(label)
+	if err != nil {
+		return nil, err
+	}
+
+	scenariosToUpsert := mergeFn(scenariosString, newScenarios)
+	if len(scenariosToUpsert) == 0 {
+		return nil, nil
+	}
+
+	return &model.LabelInput{
+		Key:        label.Key,
+		Value:      scenariosToUpsert,
+		ObjectID:   label.ObjectID,
+		ObjectType: label.ObjectType,
+	}, nil
+}

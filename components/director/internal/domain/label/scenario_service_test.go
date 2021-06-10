@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
@@ -261,5 +263,48 @@ func TestScenarioService_GetBundleInstanceAuthsScenarioLabels(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, actual)
 		labelRepo.AssertExpectations(t)
+	})
+}
+
+func TestMergeScenarios(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		scenarios := []interface{}{"scenario-1"}
+		newScenario := "scenario-2"
+
+		lbl := model.Label{
+			Key:   model.ScenariosKey,
+			Value: scenarios,
+		}
+
+		actual, err := label.MergeScenarios(lbl, []string{newScenario}, label.UniqueScenarios)
+		require.NoError(t, err)
+		assert.ElementsMatch(t, []interface{}{"scenario-1", "scenario-2"}, actual.Value)
+	})
+
+	t.Run("Fails when non-scenario label is provided", func(t *testing.T) {
+		_, err := label.MergeScenarios(model.Label{Key: "something"}, []string{"scenario-1"}, label.UniqueScenarios)
+		require.Error(t, err)
+	})
+
+	t.Run("Fails when getting scenarios fails", func(t *testing.T) {
+		_, err := label.MergeScenarios(model.Label{Key: model.ScenariosKey, Value: 42}, []string{"scenario-1"}, label.UniqueScenarios)
+		require.Error(t, err)
+	})
+
+	t.Run("Returns nil when no scenarios are left after applying merge function", func(t *testing.T) {
+		scenarios := []interface{}{"scenario-1"}
+		newScenario := "scenario-2"
+
+		lbl := model.Label{
+			Key:   model.ScenariosKey,
+			Value: scenarios,
+		}
+
+		actual, err := label.MergeScenarios(lbl, []string{newScenario}, func(scenarios, diffScenario []string) []string {
+			return make([]string, 0)
+		})
+
+		require.NoError(t, err)
+		assert.Nil(t, actual)
 	})
 }

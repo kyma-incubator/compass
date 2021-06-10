@@ -46,7 +46,6 @@ type ScenarioService interface {
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
 type LabelService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
-	UpsertScenarios(ctx context.Context, tenantID string, labels []model.Label, newScenarios []string, mergeFn func(scenarios, diffScenario []string) []string) error
 }
 
 type scenarioReAssociator struct {
@@ -448,13 +447,20 @@ func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios
 			return err
 		}
 
-		if err := sa.labelService.UpsertScenarios(ctx, tnt, bundleInstanceAuthsLabels, newBndlAuthScenarios, label.UniqueScenarios); err != nil {
-			authIds := make([]string, 0, len(bundleInstanceAuthsLabels))
-			for _, authLabel := range bundleInstanceAuthsLabels {
-				authIds = append(authIds, authLabel.ID)
+		for _, authsLabel := range bundleInstanceAuthsLabels {
+			bndlAuthLabelInput, err := label.MergeScenarios(authsLabel, newBndlAuthScenarios, label.UniqueScenarios)
+			if err != nil {
+				return err
 			}
 
-			return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to all bundle_instance_auths: %s", newBndlAuthScenarios, authIds))
+			if bndlAuthLabelInput == nil {
+				return errors.New("unable to update scenarios for BundleInstanceAuth label")
+			}
+
+			err = sa.labelService.UpsertLabel(ctx, tnt, bndlAuthLabelInput)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to bundle_instance_auth: %s", newBndlAuthScenarios, bndlAuthLabelInput.ObjectID))
+			}
 		}
 	}
 

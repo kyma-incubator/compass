@@ -2,8 +2,9 @@ package scenario_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/scenario/automock"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scenario/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
