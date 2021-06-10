@@ -245,7 +245,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	// add
 	url := "http://new-webhook.url"
 	urlUpdated := "http://updated-webhook.url"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"
 
 	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 		URL:            &url,

@@ -237,7 +237,7 @@ func gqlClient(t *testing.T, creds *graphql.OAuthCredentialData, scopes string) 
 
 func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 	webhookURL := "http://test-url.com"
-	webhookOutputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	webhookOutputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"
 	auth := &graphql.AuthInput{
 		Credential: &graphql.CredentialDataInput{
 			Basic: &graphql.BasicCredentialDataInput{
