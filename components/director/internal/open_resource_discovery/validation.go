@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/mitchellh/hashstructure/v2"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -209,64 +209,14 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	)
 }
 
-func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB []*model.APIDefinition, specs map[string][]*model.Spec) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]model.APIDefinitionIDVersion, specs map[string][]*model.Spec) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
-				return str.PtrStrToStr(apisFromDB[i].OrdID) == str.PtrStrToStr(api.OrdID)
-			}); found {
-				specFromDB := specs[apisFromDB[i].ID]
-
-				specFromDocument := make([]*model.Spec, 0, 0)
-				for _, el := range api.ResourceDefinitions {
-					toSpec, err := el.ToSpec().ToSpec("", "", model.APISpecReference, apisFromDB[i].ID)
-					log.D().Infoln(err)
-
-					specFromDocument = append(specFromDocument, toSpec)
-				}
-
-				//specFromDocumentBytes, _ := json.Marshal(specFromDocument)
-				//specFromDBBytes, _ := json.Marshal(specFromDB)
-				//
-				//var specFromDBModel []model.Spec
-				//var specFromDocumentModel []model.Spec
-				//
-				//err := json.Unmarshal(specFromDBBytes, &specFromDBModel)
-				//log.D().Infoln(err)
-				//
-				//err = json.Unmarshal(specFromDocumentBytes, &specFromDocumentModel)
-				//log.D().Infoln(specFromDBModel, specFromDocumentModel, err)
-
-				hashes1 := make([]uint64, 0, 0)
-				hashes2 := make([]uint64, 0, 0)
-
-				for _, el := range specFromDB {
-					hash, err := hashstructure.Hash(el, hashstructure.FormatV2, nil)
-					if err != nil {
-						panic(err)
-					}
-					hashes1 = append(hashes1, hash)
-				}
-
-				for _, el := range specFromDocument {
-					hash, err := hashstructure.Hash(el, hashstructure.FormatV2, nil)
-					if err != nil {
-						panic(err)
-					}
-					hashes2 = append(hashes2, hash)
-				}
-
-				less := func(a, b uint64) bool { return a < b }
-				equalIgnoreOrder := cmp.Equal(hashes1, hashes2, cmpopts.SortSlices(less))
-				log.D().Infoln(equalIgnoreOrder)
-
-			}
-
-			return nil
+			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, specs)
 		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRfc)),
@@ -325,13 +275,15 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 	)
 }
 
-func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string) error {
+func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]model.EventDefinitionIDVersion, specs map[string][]*model.Spec) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.Name, validation.Required),
 		validation.Field(&event.ShortDescription, shortDescriptionRules...),
 		validation.Field(&event.Description, validation.Required),
-		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
+			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, specs)
+		})),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
@@ -648,6 +600,76 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 	}
 
 	return nil
+}
+
+func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]model.EventDefinitionIDVersion, specs map[string][]*model.Spec) error {
+	if value == nil {
+		return nil
+	}
+
+	eventFromDB, ok := eventsFromDB[str.PtrStrToStr(event.OrdID)]
+	if !ok {
+		return errors.New("event ID not found")
+	}
+
+	specsFromDB := specs[eventFromDB.ID]
+	specsFromDocument := make([]*model.Spec, 0, 0)
+
+	for _, rd := range event.ResourceDefinitions {
+		spec, err := rd.ToSpec().ToSpec("", "", model.EventSpecReference, eventFromDB.ID)
+		if err != nil {
+			return err
+		}
+
+		specsFromDocument = append(specsFromDocument, spec)
+	}
+
+	err, specFromDBHashed := hashSliceElements(specsFromDB)
+	if err != nil {
+		return err
+	}
+
+	err, specFromDocumentHashed := hashSliceElements(specsFromDocument)
+	if err != nil {
+		return err
+	}
+
+	return checkHashedSpecsEquality(eventFromDB.Version, event.VersionInput.Value, specFromDBHashed, specFromDocumentHashed)
+}
+
+func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]model.APIDefinitionIDVersion, specs map[string][]*model.Spec) error {
+	if value == nil {
+		return nil
+	}
+
+	apiFromDB, ok := apisFromDB[str.PtrStrToStr(api.OrdID)]
+	if !ok {
+		return errors.New("api ID not found")
+	}
+
+	specsFromDB := specs[apiFromDB.ID]
+	specsFromDocument := make([]*model.Spec, 0, 0)
+
+	for _, rd := range api.ResourceDefinitions {
+		spec, err := rd.ToSpec().ToSpec("", "", model.APISpecReference, apiFromDB.ID)
+		if err != nil {
+			return err
+		}
+
+		specsFromDocument = append(specsFromDocument, spec)
+	}
+
+	err, specFromDBHashed := hashSliceElements(specsFromDB)
+	if err != nil {
+		return err
+	}
+
+	err, specFromDocumentHashed := hashSliceElements(specsFromDocument)
+	if err != nil {
+		return err
+	}
+
+	return checkHashedSpecsEquality(apiFromDB.Version, api.VersionInput.Value, specFromDBHashed, specFromDocumentHashed)
 }
 
 func noNewLines(s string) bool {
@@ -990,5 +1012,39 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (descriptionValue == "" || !ok) {
 		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
 	}
+	return nil
+}
+
+func hashSliceElements(slice interface{}) (error, []uint64) {
+	hashedSlice := make([]uint64, 0, 0)
+	switch reflect.TypeOf(slice).Kind() {
+	case reflect.Slice:
+		s := reflect.ValueOf(slice)
+		for i := 0; i < s.Len(); i++ {
+			hash, err := hashstructure.Hash(s.Index(i), hashstructure.FormatV2, nil)
+			if err != nil {
+				return errors.New("failed to hash slice element"), nil
+			}
+			hashedSlice = append(hashedSlice, hash)
+		}
+	}
+	//for _, el := range slice {
+	//	hash, err := hashstructure.Hash(el, hashstructure.FormatV2, nil)
+	//	if err != nil {
+	//		errors.New("failed hashing element")
+	//	}
+	//	hashedSlice = append(hashedSlice, hash)
+	//}
+
+	return nil, hashedSlice
+}
+
+func checkHashedSpecsEquality(rdFromDBVersion, rdFromDocVersion string, specFromDBHashed, specFromDocumentHashed []uint64) error {
+	lessSort := func(a, b uint64) bool { return a < b }
+	areEventVersionsEqual := rdFromDBVersion == rdFromDocVersion
+	if areSpecsEqual := cmp.Equal(specFromDBHashed, specFromDocumentHashed, cmpopts.SortSlices(lessSort)); !areSpecsEqual && areEventVersionsEqual {
+		return errors.New("there is a change in the resource definitions; version value should be incremented ")
+	}
+
 	return nil
 }

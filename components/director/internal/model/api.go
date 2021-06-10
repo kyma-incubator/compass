@@ -193,3 +193,8 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		},
 	}
 }
+
+type APIDefinitionIDVersion struct {
+	ID      string
+	Version string
+}
