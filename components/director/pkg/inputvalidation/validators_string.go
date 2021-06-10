@@ -1,7 +1,9 @@
 package inputvalidation
 
 import (
+	"fmt"
 	"reflect"
+	"regexp"
 
 	"github.com/pkg/errors"
 	k8svalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -10,6 +12,8 @@ import (
 var (
 	DNSName     = &dnsNameRule{}
 	RuntimeName = &runtimeNameRule{}
+
+	runtimeNameRgx = regexp.MustCompile(`^[a-zA-Z0-9-._]+$`).MatchString
 )
 
 type dnsNameRule struct{}
@@ -47,6 +51,11 @@ func (v *runtimeNameRule) Validate(value interface{}) error {
 	if len(s) > 36 {
 		return errors.New("must be no more than 36 characters")
 	}
+
+	if !runtimeNameRgx(fmt.Sprintf("%v", value)) {
+		return errors.New("must contain only alpha-numeric characters, \".\", \"_\" or \"-\"")
+	}
+
 	return nil
 }
 
