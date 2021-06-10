@@ -32,7 +32,12 @@ func TestRuntimeInput_Validate_Name(t *testing.T) {
 		},
 		{
 			Name:          "Invalid - Too long",
-			Value:         inputvalidationtest.InValidRuntimeName,
+			Value:         inputvalidationtest.InValidRuntimeNameTooLong,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Invalid - invalid characters",
+			Value:         inputvalidationtest.InValidRuntimeNameInvalidCharacters,
 			ExpectedValid: false,
 		},
 	}
