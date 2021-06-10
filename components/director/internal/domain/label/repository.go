@@ -69,7 +69,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	}
 
 	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`,
-		strings.Join(tableColumns, ", "), tableName, labelObjectField(objectType))
+		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
 
 	var entity Entity
 	err = persist.GetContext(ctx, &entity, stmt, key, objectID, tenant)
@@ -95,7 +95,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	}
 
 	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE  %s = $1 AND tenant_id = $2`,
-		strings.Join(tableColumns, ", "), tableName, labelObjectField(objectType))
+		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
 
 	var entities []Entity
 	err = persist.SelectContext(ctx, &entities, stmt, objectID, tenant)
@@ -141,7 +141,7 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`, tableName, labelObjectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`, tableName, labelableObjectField(objectType))
 	_, err = persist.ExecContext(ctx, stmt, key, objectID, tenant)
 
 	return errors.Wrap(err, "while deleting the Label entity from database")
@@ -153,7 +153,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE %s = $1 AND tenant_id = $2`, tableName, labelObjectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE %s = $1 AND tenant_id = $2`, tableName, labelableObjectField(objectType))
 	_, err = persist.ExecContext(ctx, stmt, objectID, tenant)
 
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
@@ -161,7 +161,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
-		repo.NewEqualCondition(labelObjectField(objectType), objectID),
+		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
 		repo.NewNotRegexConditionString("key", labelKeyPattern),
 	})
 }
@@ -226,8 +226,8 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 				SELECT LA.runtime_id FROM LABELS AS LA WHERE LA."key"=$1 AND value ?| array[$2] AND LA.tenant_id=$3 AND LA.runtime_ID IS NOT NULL
 			);`
 
-	var lables []Entity
-	err = persist.SelectContext(ctx, &lables, query, selectorKey, selectorValue, tenantID)
+	var labels []Entity
+	err = persist.SelectContext(ctx, &labels, query, selectorKey, selectorValue, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios associated with given selector")
 	}
@@ -267,7 +267,7 @@ func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, te
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("key", model.ScenariosKey),
-		repo.NewNotNullCondition(labelObjectField(objectType)),
+		repo.NewNotNullCondition(labelableObjectField(objectType)),
 		repo.NewJSONArrAnyMatchCondition("value", values),
 	}
 
@@ -280,7 +280,7 @@ func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, te
 	return r.conv.MultipleFromEntities(labels)
 }
 
-func labelObjectField(objectType model.LabelableObject) string {
+func labelableObjectField(objectType model.LabelableObject) string {
 	switch objectType {
 	case model.ApplicationLabelableObject:
 		return "app_id"

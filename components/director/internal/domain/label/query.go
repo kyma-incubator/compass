@@ -48,7 +48,7 @@ func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombina
 		return "", nil, nil
 	}
 
-	objectField := labelObjectField(queryFor)
+	objectField := labelableObjectField(queryFor)
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixGlobalFormat, objectField, tableName, objectField)
 
@@ -60,7 +60,7 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 		return "", nil, nil
 	}
 
-	objectField := labelObjectField(queryFor)
+	objectField := labelableObjectField(queryFor)
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
 	var stmtPrefixArgs []interface{}
