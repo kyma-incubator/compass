@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	DNSName     = &dnsNameRule{}
+	DNSName = &dnsNameRule{}
 )
 
 type dnsNameRule struct{}
