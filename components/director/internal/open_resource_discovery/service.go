@@ -595,26 +595,19 @@ func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTarg
 }
 
 func assignSAPVendor(documents Documents) {
-	isSAPVendorFound := false
 	for _, doc := range documents {
 		for _, vendor := range doc.Vendors {
 			if vendor.OrdID == SapVendor {
-				isSAPVendorFound = true
-				break
+				return
 			}
-		}
-		if isSAPVendorFound {
-			break
 		}
 	}
 
-	if !isSAPVendorFound {
-		sapVendor := model.VendorInput{
-			OrdID: SapVendor,
-			Title: SapTitle,
-		}
-		documents[0].Vendors = append(documents[0].Vendors, &sapVendor)
+	sapVendor := model.VendorInput{
+		OrdID: SapVendor,
+		Title: SapTitle,
 	}
+	documents[0].Vendors = append(documents[0].Vendors, &sapVendor)
 }
 
 func equalStrings(first, second *string) bool {

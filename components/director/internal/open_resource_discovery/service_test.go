@@ -22,7 +22,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	sanitizedDoc := fixSanitizedORDDocument()
 	var nilSpecInput *model.SpecInput
 	var nilBundleID *string
-	sapVendorTitle := "SAP SE"
 
 	secondTransactionNotCommited := func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 		persistTx := &persistenceautomock.PersistenceTx{}
@@ -96,16 +95,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulSAPVendorUpdate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		sapVendor := model.VendorInput{
-			OrdID: vendorORDID,
-			Title: sapVendorTitle,
+			OrdID: open_resource_discovery.SapVendor,
+			Title: open_resource_discovery.SapTitle,
 		}
 
 		modelVendor := []*model.Vendor{
 			{
-				OrdID:         vendorORDID,
+				OrdID:         open_resource_discovery.SapVendor,
 				TenantID:      tenantID,
 				ApplicationID: appID,
-				Title:         sapVendorTitle,
+				Title:         open_resource_discovery.SapTitle,
 			}}
 
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
@@ -126,16 +125,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulSAPVendorCreate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		sapVendor := model.VendorInput{
-			OrdID: vendorORDID,
-			Title: sapVendorTitle,
+			OrdID: open_resource_discovery.SapVendor,
+			Title: open_resource_discovery.SapTitle,
 		}
 
 		modelVendor := []*model.Vendor{
 			{
-				OrdID:         vendorORDID,
+				OrdID:         open_resource_discovery.SapVendor,
 				TenantID:      tenantID,
 				ApplicationID: appID,
-				Title:         sapVendorTitle,
+				Title:         open_resource_discovery.SapTitle,
 			}}
 
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1103,7 +1102,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		// TODO: Delete the two tests below after the concept of central registry for Vendors fetching is productive
 		{
-			Name: "Success when resources are not in db and no Vendor is declared in Documents should Create them",
+			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
@@ -1139,7 +1138,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name: "Success when resources are already in db and no Vendor is declared in Documents should Update them",
+			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
