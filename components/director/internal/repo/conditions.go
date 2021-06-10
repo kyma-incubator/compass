@@ -165,6 +165,15 @@ func NewJSONArrAnyMatchCondition(field string, val []interface{}) Condition {
 	}
 }
 
+func NewJSONArrMatchAnyStringCondition(field string, values []string) Condition {
+	valuesInterfaceSlice := make([]interface{}, 0, len(values))
+	for _, v := range values {
+		valuesInterfaceSlice = append(valuesInterfaceSlice, v)
+	}
+
+	return NewJSONArrAnyMatchCondition(field, valuesInterfaceSlice)
+}
+
 func (c *jsonArrAnyMatchCondition) GetQueryPart() string {
 	valHolders := make([]string, 0, len(c.val))
 	for range c.val {

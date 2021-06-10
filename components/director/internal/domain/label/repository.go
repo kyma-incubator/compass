@@ -260,15 +260,10 @@ func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, t
 }
 
 func (r *repository) ListByObjectTypeAndMatchAnyScenario(ctx context.Context, tenantId string, objectType model.LabelableObject, scenarios []string) ([]model.Label, error) {
-	values := make([]interface{}, 0, len(scenarios))
-	for _, scenario := range scenarios {
-		values = append(values, scenario)
-	}
-
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("key", model.ScenariosKey),
 		repo.NewNotNullCondition(labelableObjectField(objectType)),
-		repo.NewJSONArrAnyMatchCondition("value", values),
+		repo.NewJSONArrMatchAnyStringCondition("value", scenarios),
 	}
 
 	var labels Collection
