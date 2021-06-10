@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -16,6 +17,11 @@ import (
 func MapSQLError(ctx context.Context, err error, resourceType resource.Type, sqlOperation resource.SQLOperation, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		log.C(ctx).WithError(err).Errorf("Timeout error on SQL query: %v", err)
+		return apperrors.NewInternalError("Maximum processing timeout reached")
 	}
 
 	if err == sql.ErrNoRows {

@@ -250,7 +250,7 @@ func TestRepository_List(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 
 		assert.Nil(t, modelAssignment)
-		require.EqualError(t, err, fmt.Sprintf("while fetching list of objects from DB: %s", testError.Error()))
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 

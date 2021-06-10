@@ -381,8 +381,7 @@ func TestRepository_List(t *testing.T) {
 		_, err := appTemplateRepo.List(ctx, testPageSize, testCursor)
 
 		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 

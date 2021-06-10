@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -196,7 +197,8 @@ func TestListPageable(t *testing.T) {
 		var dest UserCollection
 
 		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest)
-		require.EqualError(t, err, "while fetching list of objects from DB: some error")
+
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error on calculating total count", func(t *testing.T) {
@@ -391,7 +393,21 @@ func TestListPageableGlobal(t *testing.T) {
 		var dest UserCollection
 
 		_, _, err := sut.ListGlobal(ctx, 2, "", "id_col", &dest)
-		require.EqualError(t, err, "while fetching list of objects from DB: some error")
+
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+		var dest UserCollection
+
+		_, _, err := sut.ListGlobal(ctx, 2, "", "id_col", &dest)
+
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 
 	t.Run("returns error on calculating total count", func(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -67,6 +68,18 @@ func TestUpdateSingle(t *testing.T) {
 		err := sut.UpdateSingle(ctx, givenUser)
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx = persistence.SaveToContext(ctx, db)
+
+		err := sut.UpdateSingle(ctx, givenUser)
+
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
