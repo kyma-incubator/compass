@@ -608,6 +608,10 @@ func validateEventDefinitionVersionInput(value interface{}, event model.EventDef
 		return nil
 	}
 
+	if len(eventsFromDB) == 0 {
+		return nil
+	}
+
 	eventFromDB, ok := eventsFromDB[str.PtrStrToStr(event.OrdID)]
 	if !ok {
 		return errors.New("event ID not found")
@@ -640,6 +644,10 @@ func validateEventDefinitionVersionInput(value interface{}, event model.EventDef
 
 func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]model.APIDefinitionIDVersion, specs map[string][]*model.Spec) error {
 	if value == nil {
+		return nil
+	}
+
+	if len(apisFromDB) == 0 {
 		return nil
 	}
 

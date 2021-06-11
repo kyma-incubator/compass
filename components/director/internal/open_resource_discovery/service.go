@@ -566,11 +566,11 @@ func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (
 	for _, api := range apisFromDB {
 		apiOrdID := str.PtrStrToStr(api.OrdID)
 		apiIDsFromDB[apiOrdID] = model.APIDefinitionIDVersion{ID: api.ID, Version: api.Version.Value}
-		spec, err := s.specSvc.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "could not list specification")
 		}
-		specs[api.ID] = spec
+		specs[api.ID] = specsFromDB
 	}
 
 	return apiIDsFromDB, specs, nil
@@ -588,11 +588,11 @@ func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string)
 	for _, event := range eventsFromDB {
 		eventOrdID := str.PtrStrToStr(event.OrdID)
 		eventIDsFromDB[eventOrdID] = model.EventDefinitionIDVersion{ID: event.ID, Version: event.Version.Value}
-		spec, err := s.specSvc.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+		specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "could not list specification")
 		}
-		specs[event.ID] = spec
+		specs[event.ID] = specsFromDB
 	}
 
 	return eventIDsFromDB, specs, nil

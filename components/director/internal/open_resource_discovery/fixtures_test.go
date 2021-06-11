@@ -883,6 +883,54 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 	}
 }
 
+func fixApi1Specs() []*model.Spec {
+	specInputs := fixApi1SpecInputs()
+	specs := make([]*model.Spec, 0, len(specInputs))
+
+	for _, specInput := range specInputs {
+		spec, _ := specInput.ToSpec("", tenantID, model.APISpecReference, api1ID)
+		specs = append(specs, spec)
+	}
+
+	return specs
+}
+
+func fixApi2Specs() []*model.Spec {
+	specInputs := fixApi2SpecInputs()
+	specs := make([]*model.Spec, 0, len(specInputs))
+
+	for _, specInput := range specInputs {
+		spec, _ := specInput.ToSpec("", tenantID, model.APISpecReference, api2ID)
+		specs = append(specs, spec)
+	}
+
+	return specs
+}
+
+func fixEvent1Specs() []*model.Spec {
+	specInputs := fixEvent1SpecInputs()
+	specs := make([]*model.Spec, 0, len(specInputs))
+
+	for _, specInput := range specInputs {
+		spec, _ := specInput.ToSpec("", tenantID, model.EventSpecReference, event1ID)
+		specs = append(specs, spec)
+	}
+
+	return specs
+}
+
+func fixEvent2Specs() []*model.Spec {
+	specInputs := fixEvent2SpecInputs()
+	specs := make([]*model.Spec, 0, len(specInputs))
+
+	for _, specInput := range specInputs {
+		spec, _ := specInput.ToSpec("", tenantID, model.EventSpecReference, event2ID)
+		specs = append(specs, spec)
+	}
+
+	return specs
+}
+
 func fixTombstones() []*model.Tombstone {
 	return []*model.Tombstone{
 		{
