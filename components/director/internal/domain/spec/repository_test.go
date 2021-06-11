@@ -130,19 +130,20 @@ func TestRepository_Create(t *testing.T) {
 
 func TestRepository_ListByReferenceObjectID(t *testing.T) {
 	// GIVEN
-
 	t.Run("Success for API", func(t *testing.T) {
 		firstSpecID := "111111111-1111-1111-1111-111111111111"
 		firstSpecEntity := fixAPISpecEntityWithID(firstSpecID)
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
 		secondApiDefEntity := fixAPISpecEntityWithID(secondSpecID)
 
-		selectQuery := `^SELECT (.+) FROM public.specifications 
-		WHERE tenant_id = \$1 AND api_def_id = \$2
-		ORDER BY created_at`
+		selectQuery := `^SELECT spec.id, spec.tenant_id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, fr.url
+						FROM public.specifications AS spec
+						JOIN public.fetch_requests AS fr ON spec.id=fr.spec_id
+						WHERE spec.tenant_id=\$1 AND spec.api_def_id=\$2
+						ORDER BY spec.created_at ASC`
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
+		rows := sqlmock.NewRows(fixSpecWithFetchRequestJoinColumns()).
 			AddRow(fixAPISpecRowWithID(firstSpecID)...).
 			AddRow(fixAPISpecRowWithID(secondSpecID)...)
 
@@ -172,12 +173,14 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
 		secondApiDefEntity := fixEventSpecEntityWithID(secondSpecID)
 
-		selectQuery := `^SELECT (.+) FROM public.specifications 
-		WHERE tenant_id = \$1 AND event_def_id = \$2
-		ORDER BY created_at`
+		selectQuery := `^SELECT spec.id, spec.tenant_id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, fr.url
+						FROM public.specifications AS spec
+						JOIN public.fetch_requests AS fr ON spec.id=fr.spec_id
+						WHERE spec.tenant_id=\$1 AND spec.event_def_id=\$2
+						ORDER BY spec.created_at ASC`
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
+		rows := sqlmock.NewRows(fixSpecWithFetchRequestJoinColumns()).
 			AddRow(fixEventSpecRowWithID(firstSpecID)...).
 			AddRow(fixEventSpecRowWithID(secondSpecID)...)
 

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -147,6 +149,7 @@ func (c *converter) ToEntity(in model.Spec) Entity {
 		EventSpecFormat: eventSpecFormat,
 		EventSpecType:   eventSpecType,
 		CustomType:      repo.NewNullableString(in.CustomType),
+		URL:             repo.NewValidNullableString(str.PtrStrToStr(in.URL)),
 	}
 }
 
