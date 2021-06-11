@@ -21,13 +21,23 @@ func TestRuntimeInput_Validate_Name(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
+			Name:          "Expected valid with digit",
+			Value:         inputvalidationtest.ValidRuntimeNameWithDigit,
+			ExpectedValid: true,
+		},
+		{
 			Name:          "Invalid - Empty",
 			Value:         inputvalidationtest.EmptyString,
 			ExpectedValid: false,
 		},
 		{
-			Name:          "Invalid - Invalid Name",
-			Value:         inputvalidationtest.InvalidName,
+			Name:          "Invalid - Too long",
+			Value:         inputvalidationtest.InValidRuntimeNameTooLong,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Invalid - invalid characters",
+			Value:         inputvalidationtest.InValidRuntimeNameInvalidCharacters,
 			ExpectedValid: false,
 		},
 	}
