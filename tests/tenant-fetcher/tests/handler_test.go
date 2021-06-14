@@ -173,11 +173,11 @@ func TestOnboardingHandler(t *testing.T) {
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-
 		var response *http.Response
 		for i := 0; i < 10; i++ {
+			byteTenant, err := json.Marshal(providedTenant)
+			require.NoError(t, err)
+
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 			require.NoError(t, err)
 			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
