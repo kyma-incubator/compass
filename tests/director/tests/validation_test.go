@@ -18,27 +18,50 @@ import (
 
 // Runtime Validation
 
-func TestCreateRuntime_Validation(t *testing.T) {
+func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	invalidInput := graphql.RuntimeInput{
-		Name: "0invalid",
+	runtimeIn := graphql.RuntimeInput{
+		Name: "012345Myaccount_Runtime",
 	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.Runtime
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
-
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, result.ID)
+
+	// THEN
+	require.NoError(t, err)
+}
+
+func TestCreateRuntime_ValidationFailure(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	runtimeIn := graphql.RuntimeInput{
+		Name: "012345Myaccount_Runtime_aaaaaaaaaaaaаа",
+	}
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	require.NoError(t, err)
+	var result graphql.Runtime
+	request := fixtures.FixRegisterRuntimeRequest(inputString)
+	// WHEN
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+	if err == nil {
+		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, result.ID)
+	}
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=cannot start with digit]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=the length must be between 1 and 36]")
 }
 
-func TestUpdateRuntime_Validation(t *testing.T) {
+func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -48,10 +71,35 @@ func TestUpdateRuntime_Validation(t *testing.T) {
 	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 
-	invalidInput := graphql.RuntimeInput{
-		Name: "0invalid",
+	runtimeIn := graphql.RuntimeInput{
+		Name: "012345Myaccount_Runtime",
 	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(invalidInput)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	require.NoError(t, err)
+	var result graphql.Runtime
+	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
+
+	// WHEN
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
+
+	// THEN
+	require.NoError(t, err)
+}
+
+func TestUpdateRuntime_ValidationFailure(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+
+	runtimeIn := graphql.RuntimeInput{
+		Name: "012345Myaccount_Runtime_aaaaaaaaaaaaаа",
+	}
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.Runtime
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -61,7 +109,7 @@ func TestUpdateRuntime_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=cannot start with digit]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=the length must be between 1 and 36]")
 }
 
 // Label Definition Validation
