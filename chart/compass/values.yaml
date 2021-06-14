@@ -53,7 +53,7 @@ global:
       version: "PR-1884"
     director:
       dir:
-      version: "PR-1894"
+      version: "PR-1891"
     gateway:
       dir:
       version: "PR-1884"
@@ -85,7 +85,7 @@ global:
       version: "PR-34"
     e2e_tests:
       dir:
-      version: "PR-1893"
+      version: "PR-1891"
   isLocalEnv: false
   oauth2:
     host: oauth2

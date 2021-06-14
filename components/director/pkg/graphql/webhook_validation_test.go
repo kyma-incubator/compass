@@ -684,6 +684,51 @@ func TestWebhookInput_Validate_AsyncWebhook_MissingLocationInOutputTemplate_Shou
 	require.Error(t, err)
 }
 
+func TestWebhookInput_Validate_MissingOutputTemplateForCertainTypes(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Type          graphql.WebhookType
+		ExpectedValid bool
+	}{
+		{
+			Name:          "Success when missing for type: OPEN_RESOURCE_DISCOVERY",
+			ExpectedValid: true,
+			Type:          graphql.WebhookTypeOpenResourceDiscovery,
+		},
+		{
+			Name:          "Success when missing for type: CONFIGURATION_CHANGED",
+			ExpectedValid: true,
+			Type:          graphql.WebhookTypeConfigurationChanged,
+		},
+		{
+			Name:          "Fails when missing for type: UNREGISTER_APPLICATION",
+			ExpectedValid: false,
+			Type:          graphql.WebhookTypeUnregisterApplication,
+		},
+		{
+			Name:          "Fails when missing for type: REGISTER_APPLICATION",
+			ExpectedValid: false,
+			Type:          graphql.WebhookTypeRegisterApplication,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			input := fixValidWebhookInput(inputvalidationtest.ValidURL)
+			input.OutputTemplate = nil
+			input.Type = testCase.Type
+
+			err := input.Validate()
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+
+}
+
 func fixValidWebhookInput(url string) graphql.WebhookInput {
 	template := `{}`
 	outputTemplate := `{
