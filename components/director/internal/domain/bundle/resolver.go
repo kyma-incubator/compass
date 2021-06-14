@@ -2,7 +2,8 @@ package mp_bundle
 
 import (
 	"context"
-
+	"fmt"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -45,6 +46,7 @@ type BundleInstanceAuthConverter interface {
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
@@ -60,6 +62,7 @@ type APIConverter interface {
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
@@ -370,9 +373,27 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 }
 
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	param := dataloader.ParamApiDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.ApiDefFor(ctx).ApiDefById.Load(param)
+}
+
+func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Bundles found")}
+	}
+
+	ctx := keys[0].Ctx
+	first := keys[0].First
+	after := keys[0].After
+
+	bundleIDs := make([]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		bundleIDs[i] = keys[i].ID
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
@@ -384,50 +405,54 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, grou
 	}
 
 	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
-	apisPage, err := r.apiSvc.ListForBundle(ctx, obj.ID, *first, cursor)
+	apiDefPages, err := r.apiSvc.ListAllByBundleIDs(ctx, bundleIDs, *first, cursor)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
-	apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
-	for _, api := range apisPage.Data {
-		spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	fmt.Println(">>>>>>>>>>>> new stuff")
+
+	var gqlApiDefs []*graphql.APIDefinitionPage
+	for _, apisPage := range apiDefPages {
+		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
+		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
+		for _, api := range apisPage.Data {
+			spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+			if err != nil {
+				return nil, []error{errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)}
+			}
+
+			bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
+			if err != nil {
+				return nil, []error{errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)}
+			}
+
+			apiSpecs = append(apiSpecs, spec)
+			apiBundleRefs = append(apiBundleRefs, bndlRef)
 		}
 
-		bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, &obj.ID)
+		gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
+			return nil, []error{errors.Wrapf(err, "while converting apis")}
 		}
 
-		apiSpecs = append(apiSpecs, spec)
-		apiBundleRefs = append(apiBundleRefs, bndlRef)
-	}
-
-	gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting apis")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphql.APIDefinitionPage{
-		Data:       gqlApis,
-		TotalCount: apisPage.TotalCount,
-		PageInfo: &graphql.PageInfo{
+		gqlApiDefs = append(gqlApiDefs, &graphql.APIDefinitionPage{Data: gqlApis, TotalCount: apisPage.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
 			HasNextPage: apisPage.PageInfo.HasNextPage,
-		},
-	}, nil
+		}})
+	}
+
+	fmt.Println(">>>>>>>>>>>> new stuff")
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlApiDefs, nil
 }
 
 func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.EventDefinition, error) {
@@ -471,9 +496,30 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 }
 
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+		param := dataloader.ParamEventDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
+		return dataloader.EventDefFor(ctx).EventDefById.Load(param)
+}
+
+func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Packages found")}
+	}
+
+	var ctx context.Context
+	var first *int
+	var after *graphql.PageCursor
+	ctx = keys[0].Ctx
+	first = keys[0].First
+	after = keys[0].After
+
+	packageIDs := make([]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		packageIDs[i] = keys[i].ID
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
@@ -484,50 +530,52 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, gr
 	}
 
 	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
-	eventAPIPage, err := r.eventSvc.ListForBundle(ctx, obj.ID, *first, cursor)
+	eventAPIPages, err := r.eventSvc.ListAllByBundleIDs(ctx, packageIDs, *first, cursor)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	eventSpecs := make([]*model.Spec, 0, len(eventAPIPage.Data))
-	eventBundleRefs := make([]*model.BundleReference, 0, len(eventAPIPage.Data))
-	for _, event := range eventAPIPage.Data {
-		spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+
+	var gqlEventDefs []*graphql.EventDefinitionPage
+	for _, eventPage := range eventAPIPages {
+		eventSpecs := make([]*model.Spec, 0, len(eventPage.Data))
+		eventBundleRefs := make([]*model.BundleReference, 0, len(eventPage.Data))
+		for _, event := range eventPage.Data {
+			spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+			if err != nil {
+				return nil, []error{errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)}
+			}
+
+			bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleEventReference, &event.ID, nil)
+			if err != nil {
+				return nil, []error{errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", event.ID)}
+			}
+
+			eventSpecs = append(eventSpecs, spec)
+			eventBundleRefs = append(eventBundleRefs, bndlRef)
 		}
 
-		bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleEventReference, &event.ID, nil)
+		gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventPage.Data, eventSpecs, eventBundleRefs)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", event.ID)
+			return nil, []error{errors.Wrapf(err, "while converting events")}
 		}
 
-		eventSpecs = append(eventSpecs, spec)
-		eventBundleRefs = append(eventBundleRefs, bndlRef)
-	}
-
-	gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventAPIPage.Data, eventSpecs, eventBundleRefs)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting events")
+		gqlEventDefs = append(gqlEventDefs, &graphql.EventDefinitionPage{Data: gqlEvents, TotalCount: eventPage.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(eventPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(eventPage.PageInfo.EndCursor),
+			HasNextPage: eventPage.PageInfo.HasNextPage,
+		}})
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	return &graphql.EventDefinitionPage{
-		Data:       gqlEvents,
-		TotalCount: eventAPIPage.TotalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(eventAPIPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(eventAPIPage.PageInfo.EndCursor),
-			HasNextPage: eventAPIPage.PageInfo.HasNextPage,
-		},
-	}, nil
+	return gqlEventDefs, nil
 }
 
 func (r *Resolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {

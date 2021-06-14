@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -94,6 +95,7 @@ type RuntimeService interface {
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
+	ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
@@ -539,14 +541,35 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 }
 
 func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
-	if obj == nil {
-		return nil, apperrors.NewInternalError("Application cannot be empty")
+	param := dataloader.Param{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.For(ctx).BundleById.Load(param)
+}
+
+func (r *Resolver) BundlesDataLoader(keys []dataloader.Param) ([]*graphql.BundlePage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Apps found")}
+	}
+
+	var ctx context.Context
+	var first *int
+	var after *graphql.PageCursor
+
+	applicationIDs := make([]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		if i == 0 {
+			ctx = keys[i].Ctx
+			first = keys[i].First
+			after = keys[i].After
+			applicationIDs[i] = keys[i].ID
+		}
+		applicationIDs[i] = keys[i].ID
 	}
 
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
+
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
@@ -557,33 +580,34 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first 
 	}
 
 	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
-	bndlsPage, err := r.bndlSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
+	bndlPages, err := r.bndlSvc.ListAllByApplicationIDs(ctx, applicationIDs, *first, cursor)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	gqlBndls, err := r.bndlConv.MultipleToGraphQL(bndlsPage.Data)
-	if err != nil {
-		return nil, err
+	var gqlBndls []*graphql.BundlePage
+	for _, curBundle := range bndlPages {
+		pkgs, err := r.bndlConv.MultipleToGraphQL(curBundle.Data)
+		if err != nil {
+			return nil, []error{err}
+		}
+
+		gqlBndls = append(gqlBndls, &graphql.BundlePage{Data: pkgs, TotalCount: curBundle.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(curBundle.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(curBundle.PageInfo.EndCursor),
+			HasNextPage: curBundle.PageInfo.HasNextPage,
+		}})
 	}
 
-	return &graphql.BundlePage{
-		Data:       gqlBndls,
-		TotalCount: bndlsPage.TotalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(bndlsPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(bndlsPage.PageInfo.EndCursor),
-			HasNextPage: bndlsPage.PageInfo.HasNextPage,
-		},
-	}, nil
+	return gqlBndls, nil
 }
 
 func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {

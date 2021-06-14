@@ -36,10 +36,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
-	golang.org/x/tools v0.1.0 // indirect
 	k8s.io/api v0.17.2 // DO NOT BUMP
 	k8s.io/apimachinery v0.17.2 // DO NOT BUMP
 	k8s.io/client-go v0.17.2 // DO NOT BUMP

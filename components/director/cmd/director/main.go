@@ -175,20 +175,22 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
+	rootResolver :=  domain.NewRootResolver(
+		&normalizer.DefaultNormalizator{},
+		transact,
+		cfgProvider,
+		cfg.OneTimeToken,
+		cfg.OAuth20,
+		pairingAdapters,
+		cfg.Features,
+		metricsCollector,
+		httpClient,
+		cfg.OneTimeToken.Length,
+		adminURL,
+	)
+
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(
-			&normalizer.DefaultNormalizator{},
-			transact,
-			cfgProvider,
-			cfg.OneTimeToken,
-			cfg.OAuth20,
-			pairingAdapters,
-			cfg.Features,
-			metricsCollector,
-			httpClient,
-			cfg.OneTimeToken.Length,
-			adminURL,
-		),
+		Resolvers: rootResolver,
 		Directives: graphql.DirectiveRoot{
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
@@ -230,6 +232,9 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
+	//gqlAPIRouter.Use(dataloader.Handler(rootResolver.BundlesDataloader))
+	//gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader))
+	//gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader))
 
 	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(operationMiddleware)

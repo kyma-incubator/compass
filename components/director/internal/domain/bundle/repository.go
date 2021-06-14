@@ -3,6 +3,7 @@ package mp_bundle
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -190,6 +191,88 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var bundleCollection BundleCollection
+	var query string
+	var sb strings.Builder
+	unionQuery := fmt.Sprint("(SELECT name, id, app_id from bundles WHERE app_id='%s' and tenant_id='%s' order by id limit %v offset %d)")
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	for i := 0; i < len(applicationIDs); i++ {
+		if i == len(applicationIDs)-1 {
+			sb.WriteString(fmt.Sprintf(unionQuery, applicationIDs[i], tenantID, pageSize, offset))
+			query = sb.String()
+		}
+		sb.WriteString(fmt.Sprintf(unionQuery, applicationIDs[i], tenantID, pageSize, offset) + "union")
+	}
+
+	fmt.Println("[===Executing single union query ===] ", query)
+	err = persist.SelectContext(ctx, &bundleCollection, query)
+	if err != nil {
+		return nil, err
+	}
+
+	//count logic
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues("app_id", applicationIDs),
+	}
+	var bundleCollectionCount BundleCollection
+	err = r.lister.List(ctx, tenantID, &bundleCollectionCount, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	bundlesCountByID := map[string][]*model.Bundle{}
+	for _, bundleEnt := range bundleCollectionCount {
+		m, err := r.conv.FromEntity(&bundleEnt)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating Bundle model from entity")
+		}
+		bundlesCountByID[bundleEnt.ApplicationID] = append(bundlesCountByID[bundleEnt.ApplicationID], m)
+	}
+	//end
+
+	bundleByID := map[string][]*model.Bundle{}
+	for _, bundleEnt := range bundleCollection {
+		m, err := r.conv.FromEntity(&bundleEnt)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating Bundle model from entity")
+		}
+		bundleByID[bundleEnt.ApplicationID] = append(bundleByID[bundleEnt.ApplicationID], m)
+	}
+
+	// map the PackagePage to the current app_id
+	bundlePages := make([]*model.BundlePage, len(applicationIDs))
+	for i, appID := range applicationIDs {
+		totalCount := len(bundlesCountByID[appID])
+		hasNextPage := false
+		endCursor := ""
+		if totalCount > offset+len(bundleByID[appID]) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		bundlePages[i] = &model.BundlePage{Data: bundleByID[appID], TotalCount: totalCount, PageInfo: page}
+	}
+
+	return bundlePages, nil
 }
 
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
