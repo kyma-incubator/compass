@@ -91,7 +91,7 @@ func TestOnboardingHandler(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 			CustomerId: "160269",
 			Subdomain:  "subdomain",
@@ -127,7 +127,7 @@ func TestOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 			CustomerId: "160269",
 			Subdomain:  "subdomain",
@@ -159,7 +159,7 @@ func TestOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 			CustomerId: "160269",
 			Subdomain:  "subdomain",
@@ -193,7 +193,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(tenants), len(oldTenantState)+1)
+		assert.Equal(t, len(oldTenantState)+1, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
 	})
 }
@@ -203,7 +203,7 @@ func TestDecommissioningHandler(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId:   "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 			CustomerId: "160269",
 			Subdomain:  "subdomain",
@@ -247,7 +247,7 @@ func TestDecommissioningHandler(t *testing.T) {
 	})
 
 	t.Run("Should not fail when tenant does not exists", func(t *testing.T) {
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId:   "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 			CustomerId: "160269",
 			Subdomain:  "subdomain",
@@ -323,7 +323,7 @@ func loadConfig(t *testing.T) config {
 	return config
 }
 
-func cleanUp(t *testing.T, tenant *Tenant, config config) {
+func cleanUp(t *testing.T, tenant Tenant, config config) {
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
