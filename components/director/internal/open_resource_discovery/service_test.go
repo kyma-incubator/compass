@@ -332,6 +332,74 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
+			Name:            "Does not resync resources when event list fails",
+			TransactionerFn: secondTransactionNotCommited,
+			webhookSvcFn:    successfulWebhookList,
+			clientFn:        successfulClientFetch,
+			appSvcFn:        successfulAppList,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				return eventSvc
+			},
+		},
+		{
+			Name:            "Does not resync resources when event spec list fails",
+			TransactionerFn: secondTransactionNotCommited,
+			webhookSvcFn:    successfulWebhookList,
+			clientFn:        successfulClientFetch,
+			appSvcFn:        successfulAppList,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
+				return eventSvc
+			},
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil, testErr).Once()
+				return specSvc
+			},
+		},
+		{
+			Name:            "Does not resync resources when api list fails",
+			TransactionerFn: secondTransactionNotCommited,
+			webhookSvcFn:    successfulWebhookList,
+			clientFn:        successfulClientFetch,
+			appSvcFn:        successfulAppList,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				return apiSvc
+			},
+		},
+		{
+			Name:            "Does not resync resources when api spec list fails",
+			TransactionerFn: secondTransactionNotCommited,
+			webhookSvcFn:    successfulWebhookList,
+			clientFn:        successfulClientFetch,
+			appSvcFn:        successfulAppList,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				return apiSvc
+			},
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil, testErr).Once()
+				return specSvc
+			},
+		},
+		{
 			Name: "Returns error when webhook list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
