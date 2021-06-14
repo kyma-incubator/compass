@@ -141,8 +141,6 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
 	assignSAPVendor(documents)
 
-	allSpecs := make(map[string][]*model.Spec, 0)
-
 	apiIDsFromDB, apiSpecs, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
 	if err != nil {
 		return err
@@ -153,13 +151,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	for k, v := range apiSpecs {
-		allSpecs[k] = v
-	}
-
-	for k, v := range eventSpecs {
-		allSpecs[k] = v
-	}
+	allSpecs := mergeSpecs(apiSpecs, eventSpecs)
 
 	if err := documents.Validate(baseURL, apiIDsFromDB, eventIDsFromDB, allSpecs); err != nil {
 		return errors.Wrap(err, "invalid documents")
@@ -602,6 +594,21 @@ func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string)
 	}
 
 	return eventIDsFromDB, specs, nil
+}
+
+func mergeSpecs(spec1, spec2 map[string][]*model.Spec) map[string][]*model.Spec {
+	allSpecsLen := len(spec1) + len(spec2)
+	allSpecs := make(map[string][]*model.Spec, allSpecsLen)
+
+	for k, v := range spec1 {
+		allSpecs[k] = v
+	}
+
+	for k, v := range spec2 {
+		allSpecs[k] = v
+	}
+
+	return allSpecs
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {
