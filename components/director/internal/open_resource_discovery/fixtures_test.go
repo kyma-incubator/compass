@@ -888,7 +888,10 @@ func fixApi1Specs() []*model.Spec {
 	specs := make([]*model.Spec, 0, len(specInputs))
 
 	for _, specInput := range specInputs {
-		spec, _ := specInput.ToSpec("", tenantID, model.APISpecReference, api1ID)
+		spec, err := specInput.ToSpec("", tenantID, model.APISpecReference, api1ID)
+		if err != nil {
+			return nil
+		}
 		specs = append(specs, spec)
 	}
 
@@ -900,7 +903,10 @@ func fixApi2Specs() []*model.Spec {
 	specs := make([]*model.Spec, 0, len(specInputs))
 
 	for _, specInput := range specInputs {
-		spec, _ := specInput.ToSpec("", tenantID, model.APISpecReference, api2ID)
+		spec, err := specInput.ToSpec("", tenantID, model.APISpecReference, api2ID)
+		if err != nil {
+			return nil
+		}
 		specs = append(specs, spec)
 	}
 
@@ -912,7 +918,10 @@ func fixEvent1Specs() []*model.Spec {
 	specs := make([]*model.Spec, 0, len(specInputs))
 
 	for _, specInput := range specInputs {
-		spec, _ := specInput.ToSpec("", tenantID, model.EventSpecReference, event1ID)
+		spec, err := specInput.ToSpec("", tenantID, model.EventSpecReference, event1ID)
+		if err != nil {
+			return nil
+		}
 		specs = append(specs, spec)
 	}
 
@@ -924,7 +933,10 @@ func fixEvent2Specs() []*model.Spec {
 	specs := make([]*model.Spec, 0, len(specInputs))
 
 	for _, specInput := range specInputs {
-		spec, _ := specInput.ToSpec("", tenantID, model.EventSpecReference, event2ID)
+		spec, err := specInput.ToSpec("", tenantID, model.EventSpecReference, event2ID)
+		if err != nil {
+			return nil
+		}
 		specs = append(specs, spec)
 	}
 
@@ -964,7 +976,10 @@ func convertSpecInputsToSpecs(in []*model.SpecInput, objectType model.SpecRefere
 	specs := make([]*model.Spec, 0, 0)
 
 	for _, specInput := range in {
-		spec, _ := specInput.ToSpec("", "", objectType, objectID)
+		spec, err := specInput.ToSpec("", "", objectType, objectID)
+		if err != nil {
+			return nil
+		}
 		specs = append(specs, spec)
 	}
 
