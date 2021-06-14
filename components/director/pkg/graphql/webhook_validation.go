@@ -84,11 +84,11 @@ func (i WebhookInput) Validate() error {
 }
 
 func isOutTemplateMandatory(webhookType WebhookType) bool {
-	outTmplMandatoryTypes := map[WebhookType]struct{}{
-		WebhookTypeRegisterApplication:   {},
-		WebhookTypeUnregisterApplication: {},
+	switch webhookType {
+	case WebhookTypeRegisterApplication,
+		WebhookTypeUnregisterApplication:
+		return true
+	default:
+		return false
 	}
-
-	_, ok := outTmplMandatoryTypes[webhookType]
-	return ok
 }
