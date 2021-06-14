@@ -3,7 +3,6 @@ package open_resource_discovery
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -1022,24 +1021,6 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
 	}
 	return nil
-}
-
-func hashSliceElements(slice interface{}) (error, []uint64) {
-	hashedSlice := make([]uint64, 0, 0)
-
-	switch reflect.TypeOf(slice).Kind() {
-	case reflect.Slice:
-		s := reflect.ValueOf(slice)
-		for i := 0; i < s.Len(); i++ {
-			hash, err := hashstructure.Hash(s.Index(i), hashstructure.FormatV2, nil)
-			if err != nil {
-				return errors.New("failed to hash slice element"), nil
-			}
-			hashedSlice = append(hashedSlice, hash)
-		}
-	}
-
-	return nil, hashedSlice
 }
 
 func hashSpecReferenceObjectElements(slice []*model.Spec) (error, []uint64) {
