@@ -260,8 +260,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
-	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
-
 	if in.Labels == nil {
 		return nil
 	}
