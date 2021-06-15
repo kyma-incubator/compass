@@ -138,7 +138,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 
 		selectQuery := `^SELECT spec.id, spec.tenant_id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, fr.url
 						FROM public.specifications AS spec
-						JOIN public.fetch_requests AS fr ON spec.id=fr.spec_id
+						LEFT JOIN public.fetch_requests AS fr ON spec.id=fr.spec_id
 						WHERE spec.tenant_id=\$1 AND spec.api_def_id=\$2
 						ORDER BY spec.created_at ASC`
 
@@ -175,7 +175,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 
 		selectQuery := `^SELECT spec.id, spec.tenant_id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, fr.url
 						FROM public.specifications AS spec
-						JOIN public.fetch_requests AS fr ON spec.id=fr.spec_id
+						LEFT JOIN public.fetch_requests AS fr ON spec.id=fr.spec_id
 						WHERE spec.tenant_id=\$1 AND spec.event_def_id=\$2
 						ORDER BY spec.created_at ASC`
 
