@@ -41,7 +41,6 @@ type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
-	Upsert(ctx context.Context, label *model.Label) error
 }
 
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
