@@ -520,7 +520,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 
 	scenarios, err := labelpkg.ValueToStringsSlice(scenariosLbl.Value)
 	if err != nil {
-		return err
+		return apperrors.InternalErrorFrom(err, "while casting label value")
 	}
 
 	for _, scenario := range scenarios {

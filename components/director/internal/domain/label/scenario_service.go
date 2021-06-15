@@ -89,7 +89,7 @@ func MergeScenarios(label model.Label, newScenarios []string, mergeFn func(scena
 		return nil, errors.New("provided label is not scenario")
 	}
 
-	scenariosString, err := GetScenariosAsStringSlice(label)
+	scenariosString, err := ValueToStringsSlice(label.Value)
 	if err != nil {
 		return nil, err
 	}

@@ -58,29 +58,6 @@ func (_m *Converter) MultipleFromEntities(entities label.Collection) ([]model.La
 	return r0, r1
 }
 
-// MultipleRefsFromEntities provides a mock function with given fields: entities
-func (_m *Converter) MultipleRefsFromEntities(entities label.Collection) ([]*model.Label, error) {
-	ret := _m.Called(entities)
-
-	var r0 []*model.Label
-	if rf, ok := ret.Get(0).(func(label.Collection) []*model.Label); ok {
-		r0 = rf(entities)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Label)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(label.Collection) error); ok {
-		r1 = rf(entities)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ToEntity provides a mock function with given fields: in
 func (_m *Converter) ToEntity(in model.Label) (label.Entity, error) {
 	ret := _m.Called(in)

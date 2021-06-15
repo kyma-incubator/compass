@@ -742,7 +742,7 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 
-	t.Run("Error when consumer is not in the context", func(t *testing.T) {
+	t.Run("Error when consumer type is not in the context", func(t *testing.T) {
 		// GIVEN
 		svc := bundleinstanceauth.NewService(nil, nil, nil, nil, nil)
 		ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
@@ -766,7 +766,7 @@ func TestService_Create(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 
-	t.Run("Success - when consumer time is not Runtime then no bundle instance auth scenario association is performed", func(t *testing.T) {
+	t.Run("Success - when consumer type is not Runtime then no bundle instance auth scenario association is performed", func(t *testing.T) {
 		// GIVEN
 		instanceAuthRepo := &automock.Repository{}
 		instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), mock.Anything).Return(nil).Once()
@@ -1134,7 +1134,6 @@ func TestService_GetForRuntimeAndAnyMatchingScenarios(t *testing.T) {
 
 func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testing.T) {
 	// Given
-	//testErr := errors.New("Test error")
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	applicationID := "foo"
@@ -1157,18 +1156,6 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 		InputScenariosParam    []string
 		ExpectedError          error
 	}{
-		{
-			Name: "Success when no old scenarios exist",
-			LabelSvcFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			ScenarioSvcFn: func() *automock.ScenarioService {
-				return &automock.ScenarioService{}
-			},
-			ExistingScenariosParam: []string{scenarioToKeep},
-			InputScenariosParam:    []string{scenarioToKeep},
-			ExpectedError:          nil,
-		},
 		{
 			Name: "Success when not adding any new scenario",
 			LabelSvcFn: func() *automock.LabelService {
@@ -1196,11 +1183,11 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingRuntimeScenarioLabels, nil).Once()
 
-				rmt1Labels := []model.Label{{ObjectID: "runtime-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd1}}}
-				rmt2Labels := []model.Label{{ObjectID: "runtime-2", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd2}}}
+				rtm1AuthLabels := []model.Label{{ObjectID: "auth-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
+				rtm2AuthLabels := []model.Label{{ObjectID: "auth-2", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
 
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rmt1Labels, nil).Once()
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-2").Return(rmt2Labels, nil).Once()
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rtm1AuthLabels, nil).Once()
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-2").Return(rtm2AuthLabels, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
@@ -1226,7 +1213,7 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 			},
 			ScenarioSvcFn: func() *automock.ScenarioService {
 				svc := &automock.ScenarioService{}
-				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).Return([]model.Label{}, nil).Once()
+				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).Return(nil, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToKeep},
@@ -1262,8 +1249,8 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingRuntimeScenarioLabels, nil).Once()
 
-				rmt1Labels := []model.Label{{ObjectID: "runtime-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd1}}}
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rmt1Labels, nil).Once()
+				rtm1AuthLabels := []model.Label{{ObjectID: "auth-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rtm1AuthLabels, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToKeep},
@@ -1283,6 +1270,24 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 			ExpectedError:          nil,
 		},
 		{
+			Name: "Success when there are no BundleInstanceAuths for this application and matched runtimes",
+			LabelSvcFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			ScenarioSvcFn: func() *automock.ScenarioService {
+				svc := &automock.ScenarioService{}
+				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
+					Return(existingRuntimeScenarioLabels, nil).Once()
+
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(nil, nil).Once()
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-2").Return(nil, nil).Once()
+				return svc
+			},
+			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
+			InputScenariosParam:    []string{scenarioToKeep, scenarioToAdd1, scenarioToAdd2},
+			ExpectedError:          nil,
+		},
+		{
 			Name: "Error when UpsertLabel fails",
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -1295,8 +1300,8 @@ func TestService_AssociateBundleInstanceAuthForNewApplicationScenarios(t *testin
 				svc.On("GetRuntimeScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingRuntimeScenarioLabels, nil).Once()
 
-				rmt1Labels := []model.Label{{ObjectID: "runtime-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd1}}}
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rmt1Labels, nil).Once()
+				rtm1Labels := []model.Label{{ObjectID: "auth-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), applicationID, "runtime-1").Return(rtm1Labels, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToKeep},
@@ -1386,18 +1391,6 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 		ExpectedError          error
 	}{
 		{
-			Name: "Success when no old scenarios exist",
-			LabelSvcFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			ScenarioSvcFn: func() *automock.ScenarioService {
-				return &automock.ScenarioService{}
-			},
-			ExistingScenariosParam: []string{scenarioToKeep},
-			InputScenariosParam:    []string{scenarioToKeep},
-			ExpectedError:          nil,
-		},
-		{
 			Name: "Success when not adding any new scenario",
 			LabelSvcFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -1424,11 +1417,11 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 				svc.On("GetApplicationScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingApplicationScenarioLabels, nil).Once()
 
-				app1Labels := []model.Label{{ObjectID: "app-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd1}}}
-				app2Labels := []model.Label{{ObjectID: "app-2", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd2}}}
+				app1AuthLabels := []model.Label{{ObjectID: "auth-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
+				app2AuthLabels := []model.Label{{ObjectID: "auth-2", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
 
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(app1Labels, nil).Once()
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-2", runtimeId).Return(app2Labels, nil).Once()
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(app1AuthLabels, nil).Once()
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-2", runtimeId).Return(app2AuthLabels, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
@@ -1454,7 +1447,7 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 			},
 			ScenarioSvcFn: func() *automock.ScenarioService {
 				svc := &automock.ScenarioService{}
-				svc.On("GetApplicationScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).Return([]model.Label{}, nil).Once()
+				svc.On("GetApplicationScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).Return(nil, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToKeep},
@@ -1489,8 +1482,8 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 				svc.On("GetApplicationScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingApplicationScenarioLabels, nil).Once()
 
-				app1Labels := []model.Label{{ObjectID: "app-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd1}}}
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(app1Labels, nil).Once()
+				app1AuthLabels := []model.Label{{ObjectID: "auth-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(app1AuthLabels, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToKeep},
@@ -1510,6 +1503,24 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 			ExpectedError:          nil,
 		},
 		{
+			Name: "Success when there are no BundleInstanceAuths for this runtime and matched applications",
+			LabelSvcFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			ScenarioSvcFn: func() *automock.ScenarioService {
+				svc := &automock.ScenarioService{}
+				svc.On("GetApplicationScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
+					Return(existingApplicationScenarioLabels, nil).Once()
+
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(nil, nil).Once()
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-2", runtimeId).Return(nil, nil).Once()
+				return svc
+			},
+			ExistingScenariosParam: []string{scenarioToRemove, scenarioToKeep},
+			InputScenariosParam:    []string{scenarioToKeep, scenarioToAdd1, scenarioToAdd2},
+			ExpectedError:          nil,
+		},
+		{
 			Name: "Error when UpsertLabel fails",
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -1522,8 +1533,8 @@ func TestService_AssociateBundleInstanceAuthForNewRuntimeScenarios(t *testing.T)
 				svc.On("GetApplicationScenarioLabelsForAnyMatchingScenario", contextThatHasTenant(testTenant), []string{scenarioToKeep}).
 					Return(existingApplicationScenarioLabels, nil).Once()
 
-				app1Labels := []model.Label{{ObjectID: "app-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep, scenarioToAdd1}}}
-				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(app1Labels, nil).Once()
+				app1AuthLabels := []model.Label{{ObjectID: "auth-1", Key: model.ScenariosKey, Value: []string{scenarioToKeep}}}
+				svc.On("GetBundleInstanceAuthsScenarioLabels", contextThatHasTenant(testTenant), "app-1", runtimeId).Return(app1AuthLabels, nil).Once()
 				return svc
 			},
 			ExistingScenariosParam: []string{scenarioToKeep},
@@ -1614,7 +1625,7 @@ func testService_GetForObjectAndAnyMatchingScenarios(t *testing.T, repoMethodNam
 		assert.Empty(t, result)
 	})
 
-	t.Run("Success when repository fails", func(t *testing.T) {
+	t.Run("Error when repository fails", func(t *testing.T) {
 		scenarios := []string{"scenario-1"}
 		repo := &automock.Repository{}
 		repo.On(repoMethodName, ctx, testTenant, objId, scenarios).Return(nil, testError)
@@ -1683,7 +1694,7 @@ func newLabelSvcFnThatFail(appRuntScenarios *appAndRuntimeScenarios, err error) 
 
 func matchLabelInputScenarios(appRuntScenarios *appAndRuntimeScenarios) interface{} {
 	return mock.MatchedBy(func(lbl *model.LabelInput) bool {
-		scenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(lbl.Value)
+		scenarios, err := labelpkg.ValueToStringsSlice(lbl.Value)
 		return err == nil && reflect.DeepEqual(scenarios, appRuntScenarios.getCommonScenarios())
 	})
 }
@@ -1697,7 +1708,7 @@ func newBundleSvcThatGetBundleById() *automock.BundleService {
 
 func matchScenarios(expectedScenarios []string) interface{} {
 	return mock.MatchedBy(func(lbl *model.LabelInput) bool {
-		actualScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(lbl.Value)
+		actualScenarios, err := labelpkg.ValueToStringsSlice(lbl.Value)
 		if err != nil {
 			return false
 		}

@@ -3,6 +3,7 @@ package bundleinstanceauth
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -406,6 +407,7 @@ func (s *service) createInitialBundleInstanceAuthScenarioAssociation(ctx context
 		return errors.Wrap(err, "while creating bundle instance auth scenario label")
 	}
 
+	log.C(ctx).Infof("Successfully assigned initial scenarios [ %s ] for bundleInstanceAuth with ID %s for Bundle with ID %s requested by runtime with ID %s.", strings.Join(commonScenarios, ","), bundleInstanceAuthId, bundleID, runtimeId)
 	return nil
 }
 
@@ -432,7 +434,7 @@ func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios
 	}
 
 	for _, scLabel := range relatedObjScenarioLabels {
-		scenariosSlice, err := label.GetScenariosAsStringSlice(scLabel)
+		scenariosSlice, err := label.ValueToStringsSlice(scLabel.Value)
 		if err != nil {
 			return err
 		}
@@ -457,6 +459,7 @@ func (sa *scenarioReAssociator) associateBundleInstanceAuthForNewObjectScenarios
 				return errors.New("unable to update scenarios for BundleInstanceAuth label")
 			}
 
+			log.C(ctx).Infof("Reassociating scenarios for bundleInstanceAuth with ID %s. New scenarios are [ %s ]", bndlAuthLabelInput.ObjectID, strings.Join(newBndlAuthScenarios, ","))
 			err = sa.labelService.UpsertLabel(ctx, tnt, bndlAuthLabelInput)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("while associating scenarios: '%s' to bundle_instance_auth: %s", newBndlAuthScenarios, bndlAuthLabelInput.ObjectID))

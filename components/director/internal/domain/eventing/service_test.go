@@ -938,7 +938,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when getting the oldest runtime for application eventing returns error on converting scenarios label to slice of strings", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting application scenarios: while converting label [key=%s] value to a slice of strings: Internal Server Error: cannot convert label value to slice of strings`, model.ScenariosKey)
+		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting application scenarios: while converting label [key=%s] value to a slice of strings: value is invalid type: string`, model.ScenariosKey)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),

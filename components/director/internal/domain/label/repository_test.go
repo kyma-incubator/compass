@@ -702,7 +702,7 @@ func TestRepository_ListByKey(t *testing.T) {
 			{ID: "2", TenantID: tnt, Key: labelKey, Value: "test2", AppID: sql.NullString{Valid: true, String: appObjID}},
 			{ID: "3", TenantID: tnt, Key: labelKey, Value: "test3", RuntimeContextID: sql.NullString{Valid: true, String: rtmCtxObjID}},
 		}
-		expected := []*model.Label{
+		expected := []model.Label{
 			{ID: "1", Tenant: tnt, Key: labelKey, Value: "test1", ObjectType: objType, ObjectID: rtmObjID},
 			{ID: "2", Tenant: tnt, Key: labelKey, Value: "test2", ObjectType: model.ApplicationLabelableObject, ObjectID: appObjID},
 			{ID: "3", Tenant: tnt, Key: labelKey, Value: "test3", ObjectType: model.RuntimeContextLabelableObject, ObjectID: rtmCtxObjID},
@@ -710,7 +710,7 @@ func TestRepository_ListByKey(t *testing.T) {
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("MultipleRefsFromEntities", matchInputEntities(inputItems)).Return(expected, nil).Once()
+		mockConverter.On("MultipleFromEntities", matchInputEntities(inputItems)).Return(expected, nil).Once()
 
 		labelRepo := label.NewRepository(mockConverter)
 
@@ -740,7 +740,7 @@ func TestRepository_ListByKey(t *testing.T) {
 		mockConverter := &automock.Converter{}
 
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("MultipleRefsFromEntities", matchInputEntities([]label.Entity{})).Return([]*model.Label{}, nil)
+		mockConverter.On("MultipleFromEntities", matchInputEntities([]label.Entity{})).Return([]model.Label{}, nil)
 		labelRepo := label.NewRepository(mockConverter)
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -801,7 +801,7 @@ func TestRepository_ListByKey(t *testing.T) {
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("MultipleRefsFromEntities", mock.Anything).Return(nil, testErr).Once()
+		mockConverter.On("MultipleFromEntities", mock.Anything).Return(nil, testErr).Once()
 
 		labelRepo := label.NewRepository(mockConverter)
 

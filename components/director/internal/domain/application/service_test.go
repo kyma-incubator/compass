@@ -1971,7 +1971,6 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -1992,7 +1991,6 @@ func TestService_Delete(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -2013,7 +2011,6 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(testErr).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -2033,7 +2030,6 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
@@ -2055,7 +2051,6 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -2092,7 +2087,6 @@ func TestService_Delete(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, appRepo, runtimeRepo, scenarioSvc)
-			appRepo.AssertExpectations(t)
 		})
 	}
 }
@@ -2822,7 +2816,7 @@ func TestService_SetLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
-				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{}, nil)
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return(nil, nil)
 				svc.On("AssociateBundleInstanceAuthForNewApplicationScenarios", ctx, existingScenarios, inputScenarios, applicationID).Return(nil).Once()
 				return svc
 			},
@@ -3291,7 +3285,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			ExpectedErrMessage:          "",
 		},
 		{
-			Name: "Success when deleting non-scenario label and no bundle_instance auth exist for scenarios that the application should be unassigned from",
+			Name: "Success when deleting scenario label and no bundle_instance auth exist for scenarios that the application should be unassigned from",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				return &automock.ApplicationRepository{}
 			},
@@ -3307,7 +3301,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			BundleInstanceAuthServiceFn: func() *automock.BundleInstanceAuthService {
 				svc := &automock.BundleInstanceAuthService{}
-				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return([]*model.BundleInstanceAuth{}, nil)
+				svc.On("GetForAppAndAnyMatchingScenarios", ctx, applicationID, existingScenarios).Return(nil, nil)
 				return svc
 			},
 			InputApplicationID: applicationID,

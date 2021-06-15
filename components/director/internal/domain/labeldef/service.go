@@ -34,7 +34,7 @@ type ScenarioAssignmentLister interface {
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
-	ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error)
+	ListByKey(ctx context.Context, tenant, key string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 	DeleteByKey(ctx context.Context, tenant string, key string) error

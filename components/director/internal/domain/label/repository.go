@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	ScenariosViewName        = `public.bundle_instance_auths_scenarios_labels`
-	tableName         string = "public.labels"
-	tenantColumn      string = "tenant_id"
-	idColumn          string = "id"
+	BundleInstanceAuthScenariosViewName        = `public.bundle_instance_auths_scenarios_labels`
+	tableName                           string = "public.labels"
+	tenantColumn                        string = "tenant_id"
+	idColumn                            string = "id"
 )
 
 var tableColumns = []string{idColumn, tenantColumn, "app_id", "runtime_id", "bundle_instance_auth_id", "runtime_context_id", "key", "value"}
@@ -28,24 +28,23 @@ type Converter interface {
 	ToEntity(in model.Label) (Entity, error)
 	FromEntity(in Entity) (model.Label, error)
 	MultipleFromEntities(entities Collection) ([]model.Label, error)
-	MultipleRefsFromEntities(entities Collection) ([]*model.Label, error)
 }
 
 type repository struct {
-	upserter             repo.Upserter
-	lister               repo.Lister
-	deleter              repo.Deleter
-	conv                 Converter
-	scenarioQueryBuilder repo.QueryBuilder
+	upserter                               repo.Upserter
+	lister                                 repo.Lister
+	deleter                                repo.Deleter
+	conv                                   Converter
+	bundleInstanceAuthScenarioQueryBuilder repo.QueryBuilder
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter:             repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(bundle_instance_auth_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
-		lister:               repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
-		deleter:              repo.NewDeleter(resource.Label, tableName, tenantColumn),
-		conv:                 conv,
-		scenarioQueryBuilder: repo.NewQueryBuilder(resource.Label, ScenariosViewName, tenantColumn, []string{"label_id"}),
+		upserter:                               repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(bundle_instance_auth_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		lister:                                 repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		deleter:                                repo.NewDeleter(resource.Label, tableName, tenantColumn),
+		conv:                                   conv,
+		bundleInstanceAuthScenarioQueryBuilder: repo.NewQueryBuilder(resource.Label, BundleInstanceAuthScenariosViewName, tenantColumn, []string{"label_id"}),
 	}
 }
 
@@ -117,7 +116,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	return labelsMap, nil
 }
 
-func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
+func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]model.Label, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching DB from context")
@@ -132,7 +131,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 		return nil, errors.Wrap(err, "while fetching Labels from DB")
 	}
 
-	return r.conv.MultipleRefsFromEntities(entities)
+	return r.conv.MultipleFromEntities(entities)
 }
 
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
@@ -241,7 +240,7 @@ func (r *repository) GetBundleInstanceAuthsScenarioLabels(ctx context.Context, t
 		repo.NewEqualCondition("runtime_id", runtimeId),
 	}
 
-	subquery, args, err := r.scenarioQueryBuilder.BuildQuery(tenant, false, subqueryConditions...)
+	subquery, args, err := r.bundleInstanceAuthScenarioQueryBuilder.BuildQuery(tenant, false, subqueryConditions...)
 	if err != nil {
 		return nil, err
 	}

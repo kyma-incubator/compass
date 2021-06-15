@@ -27,11 +27,11 @@ func Test_ValueToStringsSlice(t *testing.T) {
 		}, {
 			Name:  "Error when unable to convert to slice of interfaces",
 			Input: "some text",
-			Error: errors.New("Internal Server Error: cannot convert label value to slice of strings"),
+			Error: errors.New("value is invalid type: string"),
 		}, {
 			Name:  "Error when unable to convert element to string",
 			Input: []interface{}{byte(1)},
-			Error: errors.New("Internal Server Error: cannot cast label value as a string"),
+			Error: errors.New("while casting label value (slice of interfaces to array of slice): Internal Server Error: value is not a string"),
 		},
 	}
 

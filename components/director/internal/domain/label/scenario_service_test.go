@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/pkg/errors"
@@ -22,32 +25,48 @@ const (
 )
 
 func TestScenarioService_GetScenarioNamesForApplication(t *testing.T) {
+	appID := "appID"
+	testError := errors.New("error")
+	ctxWithTenant := context.TODO()
+	ctxWithTenant = tenant.SaveToContext(ctxWithTenant, tenantID, externalTenantID)
+
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
-		appID := "appID"
 		scenarios := []interface{}{"scenario1", "scenario2"}
-
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 		labelRepo := &automock.LabelRepository{}
 		objLabel := &model.Label{
 			Value: interface{}(scenarios),
 		}
-		labelRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).Return(objLabel, nil).Once()
+		labelRepo.On("GetByKey", ctxWithTenant, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).Return(objLabel, nil).Once()
 		scenarioService := label.NewScenarioService(labelRepo)
 
 		//WHEN
-		actual, err := scenarioService.GetScenarioNamesForApplication(ctx, appID)
+		actual, err := scenarioService.GetScenarioNamesForApplication(ctxWithTenant, appID)
 		//THEN
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"scenario1", "scenario2"}, actual)
 		labelRepo.AssertExpectations(t)
 	})
 
+	t.Run("success when scenario label was not found", func(t *testing.T) {
+		// GIVEN
+		labelRepo := &automock.LabelRepository{}
+
+		labelRepo.On("GetByKey", ctxWithTenant, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).
+			Return(nil, apperrors.NewNotFoundError(resource.Label, "label-id")).Once()
+		scenarioService := label.NewScenarioService(labelRepo)
+
+		//WHEN
+		actual, err := scenarioService.GetScenarioNamesForApplication(ctxWithTenant, appID)
+		//THEN
+		assert.NoError(t, err)
+		assert.Empty(t, actual)
+		labelRepo.AssertExpectations(t)
+	})
+
 	t.Run("error when cannot load tenant", func(t *testing.T) {
 		// GIVEN
-		appID := "appID"
 		ctx := context.TODO()
 
 		labelRepo := &automock.LabelRepository{}
@@ -63,17 +82,12 @@ func TestScenarioService_GetScenarioNamesForApplication(t *testing.T) {
 
 	t.Run("error when cannot get label by key", func(t *testing.T) {
 		// GIVEN
-		appID := "appID"
-		testError := errors.New("error")
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
-
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).Return(&model.Label{}, testError).Once()
+		labelRepo.On("GetByKey", ctxWithTenant, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).Return(&model.Label{}, testError).Once()
 		scenarioService := label.NewScenarioService(labelRepo)
 
 		//WHEN
-		actual, err := scenarioService.GetScenarioNamesForApplication(ctx, appID)
+		actual, err := scenarioService.GetScenarioNamesForApplication(ctxWithTenant, appID)
 		//THEN
 		assert.Error(t, err)
 		assert.Nil(t, actual)
@@ -82,19 +96,15 @@ func TestScenarioService_GetScenarioNamesForApplication(t *testing.T) {
 
 	t.Run("error when cannot convert value to string slice", func(t *testing.T) {
 		// GIVEN
-		appID := "appID"
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
-
 		labelRepo := &automock.LabelRepository{}
 		objLabel := &model.Label{
 			Value: []interface{}{1, 2},
 		}
-		labelRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).Return(objLabel, nil).Once()
+		labelRepo.On("GetByKey", ctxWithTenant, tenantID, model.ApplicationLabelableObject, appID, model.ScenariosKey).Return(objLabel, nil).Once()
 		scenarioService := label.NewScenarioService(labelRepo)
 
 		//WHEN
-		actual, err := scenarioService.GetScenarioNamesForApplication(ctx, appID)
+		actual, err := scenarioService.GetScenarioNamesForApplication(ctxWithTenant, appID)
 		//THEN
 		assert.Error(t, err)
 		assert.Nil(t, actual)

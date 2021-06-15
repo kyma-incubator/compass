@@ -112,17 +112,3 @@ func (c *converter) MultipleFromEntities(entities Collection) ([]model.Label, er
 	}
 	return labelModels, nil
 }
-
-func (c *converter) MultipleRefsFromEntities(entities Collection) ([]*model.Label, error) {
-	labels, err := c.MultipleFromEntities(entities)
-	if err != nil {
-		return nil, err
-	}
-
-	labelRefs := make([]*model.Label, 0, len(labels))
-	for _, label := range labels {
-		labelRefs = append(labelRefs, &label)
-	}
-
-	return labelRefs, nil
-}

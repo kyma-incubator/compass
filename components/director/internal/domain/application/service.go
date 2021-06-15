@@ -324,14 +324,6 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	appExists, err := s.appRepo.Exists(ctx, appTenant, id)
-	if err != nil {
-		return errors.Wrap(err, "while checking Application existence")
-	}
-	if !appExists {
-		return fmt.Errorf("application with ID %s doesn't exist", id)
-	}
-
 	scenarios, err := s.scenariosService.GetScenarioNamesForApplication(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while fetching scenario names for application")
@@ -392,7 +384,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 }
 
 func (s *service) associateRelatedBundleInstanceAuthWithNewScenarios(ctx context.Context, labelInput *model.LabelInput) error {
-	inputScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(labelInput.Value)
+	inputScenarios, err := labelpkg.ValueToStringsSlice(labelInput.Value)
 	if err != nil {
 		return errors.Wrap(err, "while parsing label value")
 	}

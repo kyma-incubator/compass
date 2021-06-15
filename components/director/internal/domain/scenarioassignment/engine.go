@@ -98,7 +98,7 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 
 func (e *engine) addNewScenarioToExistingBundleInstanceAuthFromMatchedApplication(ctx context.Context, runtimeLabels []model.Label, scenario string) error {
 	for _, runtimeLabel := range runtimeLabels {
-		runtimeScenarios, err := labelpkg.GetScenariosAsStringSlice(runtimeLabel)
+		runtimeScenarios, err := labelpkg.ValueToStringsSlice(runtimeLabel.Value)
 		if err != nil {
 			return errors.Wrap(err, "while parsing runtime label value")
 		}
@@ -127,20 +127,19 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	}
 
 	for _, label := range labels {
-		rmtLabelInput, err := labelpkg.MergeScenarios(label, []string{in.ScenarioName}, e.removeScenario)
+		rtmLabelInput, err := labelpkg.MergeScenarios(label, []string{in.ScenarioName}, e.removeScenario)
 		if err != nil {
 			return err
 		}
 
-		if rmtLabelInput == nil {
-			err := e.labelRepo.Delete(ctx, in.Tenant, label.ObjectType, label.ObjectID, model.ScenariosKey)
-			if err != nil {
+		if rtmLabelInput == nil {
+			if err := e.labelRepo.Delete(ctx, in.Tenant, label.ObjectType, label.ObjectID, model.ScenariosKey); err != nil {
 				return errors.Wrapf(err, "while deleting scenarios for runtime with id: %s", label.ObjectID)
 			}
 			continue
 		}
 
-		err = e.labelService.UpsertLabel(ctx, in.Tenant, rmtLabelInput)
+		err = e.labelService.UpsertLabel(ctx, in.Tenant, rtmLabelInput)
 		if err != nil {
 			return errors.Wrapf(err, "while upserting scenarios label for runtime with id: %s", label.ObjectID)
 		}

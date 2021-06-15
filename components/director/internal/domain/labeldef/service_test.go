@@ -220,7 +220,7 @@ func TestServiceUpdate(t *testing.T) {
 			Schema: newSchema,
 		}
 
-		existingLabels := []*model.Label{
+		existingLabels := []model.Label{
 			{
 				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
 				Tenant: tenant,
@@ -287,7 +287,7 @@ func TestServiceUpdate(t *testing.T) {
 			Schema: fixSchema(t, nonExistingProperty, "integer", "desc", "nonExistingProp"),
 		}
 
-		existingLabels := []*model.Label{
+		existingLabels := []model.Label{
 			{
 				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
 				Tenant: tenant,
@@ -367,7 +367,7 @@ func TestServiceUpdate(t *testing.T) {
 			Schema: fixBasicSchema(t),
 		}
 
-		existingLabels := []*model.Label{
+		existingLabels := []model.Label{
 			{
 				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
 				Tenant: tenant,
@@ -552,7 +552,7 @@ func TestServiceDelete(t *testing.T) {
 		deleteRelatedResources := false
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
 		mockRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
-		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, nil)
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]model.Label{}, nil)
 
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil, nil)
 		// WHEN
@@ -580,7 +580,7 @@ func TestServiceDelete(t *testing.T) {
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
 		mockRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
 		mockLabelRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
-		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, nil).Once()
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]model.Label{}, nil).Once()
 
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil, nil)
 		// WHEN
@@ -622,10 +622,10 @@ func TestServiceDelete(t *testing.T) {
 			Key:    "key",
 			Tenant: "tenant",
 		}
-		existingLabels := []*model.Label{
-			fixLabel("test", tnt, given.Key, nil, "object1", model.ApplicationLabelableObject),
-			fixLabel("test2", tnt, given.Key, nil, "object2", model.RuntimeLabelableObject),
-			fixLabel("test3", tnt, given.Key, nil, "object3", model.ApplicationLabelableObject),
+		existingLabels := []model.Label{
+			*fixLabel("test", tnt, given.Key, nil, "object1", model.ApplicationLabelableObject),
+			*fixLabel("test2", tnt, given.Key, nil, "object2", model.RuntimeLabelableObject),
+			*fixLabel("test3", tnt, given.Key, nil, "object3", model.ApplicationLabelableObject),
 		}
 		deleteRelatedResources := false
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
@@ -653,7 +653,7 @@ func TestServiceDelete(t *testing.T) {
 		}
 		deleteRelatedResources := false
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
-		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, errors.New("test"))
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]model.Label{}, errors.New("test"))
 
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil, nil, nil)
 		// WHEN

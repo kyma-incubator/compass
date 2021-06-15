@@ -28,10 +28,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	scenarios := []interface{}{otherScenario, basicScenario}
 
 	stringScenarios := []string{otherScenario, basicScenario}
-
-	inputScenarios := make([]string, 0, len(stringScenarios)+1)
-	inputScenarios = append(inputScenarios, in.ScenarioName)
-	inputScenarios = append(inputScenarios, stringScenarios...)
+	inputScenarios := append([]string{in.ScenarioName}, stringScenarios...)
 
 	inputScenariosInterfaceSlice := make([]interface{}, 0, len(inputScenarios))
 	for _, scenario := range inputScenarios {
@@ -41,10 +38,6 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	rtmIDWithScenario := "rtm1_scenario"
 	rtmIDWithoutScenario := "rtm1_no_scenario"
 
-	//expectedScenarios := map[string][]string{
-	//	rtmIDWithScenario:    stringScenarios,
-	//	rtmIDWithoutScenario: {},
-	//}
 	runtimesIDs := []string{rtmIDWithoutScenario, rtmIDWithScenario}
 	scenarioLabel := model.Label{
 		Key:        model.ScenariosKey,
@@ -766,7 +759,7 @@ func TestEngine_MergeScenarios_Success(t *testing.T) {
 
 func matchScenarios(expectedScenarios []string) interface{} {
 	return mock.MatchedBy(func(lbl *model.LabelInput) bool {
-		actualScenarios, err := labelpkg.GetScenariosFromValueAsStringSlice(lbl.Value)
+		actualScenarios, err := labelpkg.ValueToStringsSlice(lbl.Value)
 		if err != nil {
 			return false
 		}
