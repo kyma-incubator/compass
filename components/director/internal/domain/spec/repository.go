@@ -100,9 +100,8 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 		return nil, err
 	}
 
-	columns := append(specificationsColumns)
-	prefixedFieldNames := append(str.PrefixStrings(columns, "spec."), str.PrefixStrings([]string{"url"}, "fr.")...)
-	stmt := fmt.Sprintf(`SELECT %s FROM %s AS spec JOIN %s AS fr ON spec.id=fr.%s WHERE spec.%s=$1 AND spec.%s=$2 ORDER BY spec.created_at ASC`,
+	prefixedFieldNames := append(str.PrefixStrings(specificationsColumns, "spec."), str.PrefixStrings([]string{"url"}, "fr.")...)
+	stmt := fmt.Sprintf(`SELECT %s FROM %s AS spec LEFT JOIN %s AS fr ON fr.%s=spec.id WHERE spec.%s=$1 AND spec.%s=$2 ORDER BY spec.created_at ASC`,
 		strings.Join(prefixedFieldNames, ", "),
 		specificationsTable,
 		fetchRequestsTable,
