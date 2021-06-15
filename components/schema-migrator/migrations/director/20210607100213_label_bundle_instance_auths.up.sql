@@ -17,6 +17,6 @@ SELECT labels.key, labels.value, labels.tenant_id, labels.id as label_id, bundle
 FROM labels
          INNER JOIN bundle_instance_auths ON labels.bundle_instance_auth_id = bundle_instance_auths.id
          INNER JOIN bundles ON bundles.id = bundle_instance_auths.bundle_id
-WHERE labels.key='scenarios';
+WHERE labels.key='scenarios' AND bundle_instance_auths.status_condition <> 'UNUSED';
 
 COMMIT;
