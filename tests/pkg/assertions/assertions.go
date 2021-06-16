@@ -231,27 +231,29 @@ func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	}
 }
 
-func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
+func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled bool) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled)
 }
 
-func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
+func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled bool) {
 	const (
 		scenariosKey    = "scenarios"
 		isNormalizedKey = "isNormalized"
 	)
 
 	if inLabels == nil {
-		AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+		if defaultScenarioEnabled {
+			AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
+		}
 		AssertLabel(t, actualLabels, isNormalizedKey, "true")
 		assert.Equal(t, 2, len(actualLabels))
 		return
 	}
 
 	_, inHasScenarios := (*inLabels)[scenariosKey]
-	if !inHasScenarios {
+	if !inHasScenarios && defaultScenarioEnabled {
 		AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
 	}
 
@@ -472,10 +474,11 @@ func AssertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expec
 }
 
 func AssertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
-	val, ok := actual["scenarios"]
-	require.True(t, ok)
+	val := actual["scenarios"]
 	scenarios, ok := val.([]interface{})
-	require.True(t, ok)
+	if !ok {
+		scenarios = []interface{}{}
+	}
 	assert.ElementsMatch(t, scenarios, expected)
 }
 
