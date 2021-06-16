@@ -1250,9 +1250,9 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		})
 	}
 
-	t.Run("Returns error when application template input is invalid", func(t *testing.T) {
+	t.Run("Returns error when application template inputs url template has invalid method", func(t *testing.T) {
 		gqlAppTemplateUpdateInputInvalid := fixGQLAppTemplateUpdateInputInvalidAppInput(testName)
-		expectedError := errors.New("Invalid data")
+		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
 		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
