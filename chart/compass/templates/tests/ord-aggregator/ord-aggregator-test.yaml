@@ -64,4 +64,8 @@ spec:
               value: "{{ (index .Values.global.tenants 9).id }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never

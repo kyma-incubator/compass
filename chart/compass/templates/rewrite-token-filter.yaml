@@ -16,7 +16,7 @@ spec:
             filter:
               name: envoy.filters.network.http_connection_manager
               subFilter:
-                name: "envoy.router"
+                name: "envoy.filters.http.router"
       patch:
         operation: INSERT_BEFORE
         value:
