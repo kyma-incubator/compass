@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Values.global.tests.namespace }}
   labels:
     app: {{ .Chart.Name }}-ord-aggregator-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-ord-aggregator-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}

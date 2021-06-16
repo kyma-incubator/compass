@@ -5,6 +5,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-external-services-mock
   labels:
     app: {{ .Chart.Name }}-external-services-mock-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-external-services-mock-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}

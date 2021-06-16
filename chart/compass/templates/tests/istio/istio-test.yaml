@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-istio
   labels:
     app: {{ .Chart.Name }}-istio-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-istio-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}

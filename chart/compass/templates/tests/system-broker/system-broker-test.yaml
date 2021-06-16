@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-system-broker
   labels:
     app: {{ .Chart.Name }}-system-broker-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-system-broker-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
