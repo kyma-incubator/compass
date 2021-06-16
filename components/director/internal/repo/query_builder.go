@@ -43,6 +43,33 @@ func (b *universalQueryBuilder) BuildQuery(tenantID string, isRebindingNeeded bo
 	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
+// TODO: Refactor builder
+func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	var stmtBuilder strings.Builder
+
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
+	if len(conditions) > 0 {
+		stmtBuilder.WriteString(" WHERE")
+	}
+
+	err := writeEnumeratedConditions(&stmtBuilder, conditions)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
+	}
+
+	err = writeOrderByPart(&stmtBuilder, orderByParams)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing order by part")
+	}
+
+	allArgs := getAllArgs(conditions)
+
+	if isRebindingNeeded {
+		return getQueryFromBuilder(stmtBuilder), allArgs, nil
+	}
+	return stmtBuilder.String(), allArgs, nil
+}
+
 func (b *universalQueryBuilder) BuildUnionQuery(queries []string, args [][]interface{}) (string, []interface{}, error) {
 	return buildUnionQuery(queries, args)
 }
@@ -89,33 +116,6 @@ func buildCountQuery(tableName string, conditions Conditions, groupByParams Grou
 	err = writeGroupByPart(&stmtBuilder, groupByParams)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "while writing order by part")
-	}
-
-	err = writeOrderByPart(&stmtBuilder, orderByParams)
-	if err != nil {
-		return "", nil, errors.Wrap(err, "while writing order by part")
-	}
-
-	allArgs := getAllArgs(conditions)
-
-	if isRebindingNeeded {
-		return getQueryFromBuilder(stmtBuilder), allArgs, nil
-	}
-	return stmtBuilder.String(), allArgs, nil
-}
-
-// TODO: Refactor builder
-func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	var stmtBuilder strings.Builder
-
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
-	if len(conditions) > 0 {
-		stmtBuilder.WriteString(" WHERE")
-	}
-
-	err := writeEnumeratedConditions(&stmtBuilder, conditions)
-	if err != nil {
-		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
 	}
 
 	err = writeOrderByPart(&stmtBuilder, orderByParams)
