@@ -2,7 +2,7 @@
 
 ### Installation of external services mock
 
-* To install external services mock - compass installer can be used with some overrides like:
+1. To install external services mock, you can use the Compass installer with some overrides like the following:
 
 ```yaml
 apiVersion: v1
@@ -19,19 +19,15 @@ data:
   global.externalServicesMock.enabled: "true"
   global.externalServicesMock.auditlog: "false"
 ```
+Since we want to disable the auditlog configurations around the external services mock, as it will not be tested in real environment, it is requred to set  `global.externalServicesMock.auditlog: "false"`.  
+When, you start the Compass installer again on an already existing Compass installation, it only installs the external services mock as an addition to the existing installation.
 
-* Then starting only the installation will install external services mock
-* After tests are executed the configmap with overrides can be deleted
-* Run installer again which will remove the external services mock
-* `global.externalServicesMock.auditlog: "false"` this is needed because we want to disable the auditlog configurations around the external services mock as it will not be tested in real environment
-* some resources like secrets from external services mock chart should be guarded and not created in case the auditlog is disabled when installing external services mock
+2. After the tests are carried out, you must delete the `ConfigMap` resource with the overrides.
+3. To remove the external services mock, run the Compass installer again. 
 
 
-### Admin test user
-
-* When e2e tests are started they should create the test tenants as they are not created by default in real environments. Perhaps use the tenants that are in the values.yaml. Possibly new ones can be created on the fly, but tests should be adapted to use the newly created tenants
-* Dex static users can be added and used for test purposes. These users (one user?) can be associated with only test tenants, so it doesn't have any permissions on other tenants. However the addition of static users will slightly change the login UI and present the user the option to choose between login with static user or with the currently configured dex connector.
+Note that some resources, such as, secrets from external services mock chart, must be guarded and not created in case the auditlog is disabled when installing external services mock.
 
 ### Test tenants
-* Test tenants can be loaded by using the tenant loader.
-* The same tenants should be configured in director with the corresponding test admin user.
+1. You can load test tenants by using the tenant loader.
+2. The same tenants must be configured in director with the corresponding test admin user.
