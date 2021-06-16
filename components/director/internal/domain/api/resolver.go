@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -179,6 +178,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	log.C(ctx).Infof("APIDefinition with id %s successfully updated.", id)
 	return gqlAPI, nil
 }
+
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
