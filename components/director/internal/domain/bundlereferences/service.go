@@ -2,9 +2,9 @@ package bundlereferences
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
 
@@ -15,6 +15,7 @@ type BundleReferenceRepository interface {
 	DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error
 	GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, objectID, bundleID *string) (*model.BundleReference, error)
 	GetBundleIDsForObject(ctx context.Context, tenantID string, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error)
+	ListAllForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 type service struct {
@@ -105,4 +106,17 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType mode
 	}
 
 	return s.repo.DeleteByReferenceObjectID(ctx, tnt, *bundleID, objectType, *objectID)
+}
+
+func (s *service) ListAllByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	}
+
+	return s.repo.ListAllForBundle(ctx, objectType, tnt, bundleIDs, pageSize, cursor)
 }
