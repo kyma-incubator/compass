@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Chart.Name }}-e2e-gateway-ts
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ .Chart.Name }}-gateway-tests-app
+spec:
+  gateways:
+  - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
+  hosts:
+  - 'compass-gateway-ts.{{ .Values.global.ingress.domainName }}'
+  http:
+  - corsPolicy:
+      allowOrigins:
+      - regex: .*
+    match:
+    - uri:
+        regex: /.*
+    route:
+    - destination:
+        host: {{ .Chart.Name }}-e2e-gateway-ts.kyma-system.svc.cluster.local
+        port:
+          number: {{.Values.global.tests.token.server.port}}

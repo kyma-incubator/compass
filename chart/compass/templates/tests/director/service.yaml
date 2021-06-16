@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-e2e-director-ts
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ .Chart.Name }}-director-tests-app
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{.Values.global.tests.token.server.port}}
+    targetPort: {{.Values.global.tests.token.server.port}}
+    protocol: TCP
+    name: http-token-server
+  selector:
+    app: {{ .Chart.Name }}-director-tests-app
