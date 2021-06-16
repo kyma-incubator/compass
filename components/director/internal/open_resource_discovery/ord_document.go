@@ -55,6 +55,10 @@ type Documents []*Document
 // Validate validates all the documents for a system instance
 func (docs Documents) Validate(webhookURL string) error {
 	for _, doc := range docs {
+		if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
+			return errors.Wrap(err, "error validating system instance")
+		}
+
 		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != webhookURL {
 			return errors.New("describedSystemInstance should be the same as the one providing the documents")
 		}

@@ -12,20 +12,20 @@ import (
 )
 
 const (
-	ordDocURI             = "/open-resource-discovery/v1/documents/example1"
-	baseURL               = "http://localhost:8080"
-	systemInstanceBaseURL = "http://test.com"
-	packageORDID          = "ns:package:PACKAGE_ID:v1"
-	productORDID          = "sap:product:id:"
-	product2ORDID         = "ns:product:id2:"
-	bundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID     = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID           = "sap:vendor:SAP:"
-	vendor2ORDID          = "partner:vendor:SAP:"
-	api1ORDID             = "ns:apiResource:API_ID:v2"
-	api2ORDID             = "ns:apiResource:API_ID2:v1"
-	event1ORDID           = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID           = "ns2:eventResource:EVENT_ID:v1"
+	ordDocURI         = "/open-resource-discovery/v1/documents/example1"
+	baseURL           = "http://test.com:8080"
+	baseURL2          = "http://second.com"
+	packageORDID      = "ns:package:PACKAGE_ID:v1"
+	productORDID      = "sap:product:id:"
+	product2ORDID     = "ns:product:id2:"
+	bundleORDID       = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID       = "sap:vendor:SAP:"
+	vendor2ORDID      = "partner:vendor:SAP:"
+	api1ORDID         = "ns:apiResource:API_ID:v2"
+	api2ORDID         = "ns:apiResource:API_ID2:v1"
+	event1ORDID       = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID       = "ns2:eventResource:EVENT_ID:v1"
 
 	appID     = "testApp"
 	whID      = "testWh"
@@ -149,14 +149,6 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 				},
 			},
 		},
-	}
-}
-
-func fixSystemInstance() *model.Application {
-	return &model.Application{
-		CorrelationIds: json.RawMessage(correlationIds),
-		BaseURL:        str.Ptr(systemInstanceBaseURL),
-		Labels:         json.RawMessage(labels),
 	}
 }
 
