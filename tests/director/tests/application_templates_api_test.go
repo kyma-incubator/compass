@@ -245,9 +245,12 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	// add
 	url := "http://new-webhook.url"
 	urlUpdated := "http://updated-webhook.url"
+	outputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"
+
 	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-		URL:  &url,
-		Type: graphql.WebhookTypeUnregisterApplication,
+		URL:            &url,
+		Type:           graphql.WebhookTypeUnregisterApplication,
+		OutputTemplate: &outputTemplate,
 	})
 
 	require.NoError(t, err)
@@ -278,7 +281,9 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	assert.Len(t, updatedAppTemplate.Webhooks, 1)
 
 	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-		URL: &urlUpdated, Type: graphql.WebhookTypeUnregisterApplication,
+		URL:            &urlUpdated,
+		Type:           graphql.WebhookTypeUnregisterApplication,
+		OutputTemplate: &outputTemplate,
 	})
 	require.NoError(t, err)
 
