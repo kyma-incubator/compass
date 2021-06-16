@@ -92,19 +92,18 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
 }
 
-func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition{
+func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {
 	var result []*model.EventDefinition
 	for _, id := range ids {
-		result = append(result,defs[id])
+		result = append(result, defs[id])
 	}
 	return result
 }
 
-
-func getEventDefIDsForBundle(refs []*model.BundleReference) []string{
+func getEventDefIDsForBundle(refs []*model.BundleReference) []string {
 	var result []string
 	for _, ref := range refs {
-		result = append(result,*ref.ObjectID)
+		result = append(result, *ref.ObjectID)
 	}
 	return result
 }
@@ -160,7 +159,7 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 		}
 
 		eventDefPages[index] = &model.EventDefinitionPage{Data: eventDefs, TotalCount: count, PageInfo: page}
-		index ++
+		index++
 	}
 
 	return eventDefPages, nil

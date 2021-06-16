@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -167,7 +166,6 @@ func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID stri
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>: ", subquery)
 	inOperatorConditions := repo.Conditions{
 		repo.NewInConditionForSubQuery(idColumn, subquery, args),
 	}

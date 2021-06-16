@@ -2,7 +2,6 @@ package mp_bundle
 
 import (
 	"context"
-	"fmt"
 	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -413,19 +412,17 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{err}
 	}
 
-	fmt.Println(">>>>>>>>>>>> new stuff")
-
 	var gqlApiDefs []*graphql.APIDefinitionPage
 	for _, apisPage := range apiDefPages {
 		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
-		for _, api := range apisPage.Data {
+		for i, api := range apisPage.Data {
 			spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 			if err != nil {
 				return nil, []error{errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)}
 			}
 
-			bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
+			bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, &bundleIDs[i])
 			if err != nil {
 				return nil, []error{errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)}
 			}
@@ -446,7 +443,6 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		}})
 	}
 
-	fmt.Println(">>>>>>>>>>>> new stuff")
 	err = tx.Commit()
 	if err != nil {
 		return nil, []error{err}
@@ -538,7 +534,6 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		return nil, []error{err}
 	}
 
-
 	var gqlEventDefs []*graphql.EventDefinitionPage
 	for _, eventPage := range eventAPIPages {
 		eventSpecs := make([]*model.Spec, 0, len(eventPage.Data))
@@ -574,7 +569,6 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	if err != nil {
 		return nil, []error{err}
 	}
-
 	return gqlEventDefs, nil
 }
 

@@ -93,12 +93,14 @@ func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pa
 	if err != nil {
 		return nil, err
 	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
 	bundleRefs, counts, err := s.bundleReferenceService.ListAllByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, pageSize, cursor)
 	if err != nil {
 		return nil, err
-	}
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.repo.ListAllForBundle(ctx, tnt, bundleRefs, counts, pageSize, cursor)

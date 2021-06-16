@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"net/http"
 	"net/url"
 	"os"
@@ -232,9 +233,9 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	//gqlAPIRouter.Use(dataloader.Handler(rootResolver.BundlesDataloader))
-	//gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader))
-	//gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader))
+	gqlAPIRouter.Use(dataloader.Handler(rootResolver.BundlesDataloader))
+	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader))
+	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader))
 
 	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(operationMiddleware)

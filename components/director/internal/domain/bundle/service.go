@@ -2,8 +2,6 @@ package mp_bundle
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -237,11 +235,8 @@ func (s *service) ListAllByApplicationIDs(ctx context.Context, applicationIDs []
 		return nil, err
 	}
 
-	fmt.Println(">>>>>>>>>>>>>>>>>>> PAGE SIZE ",pageSize )
-	pageSize = 2
-
 	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)

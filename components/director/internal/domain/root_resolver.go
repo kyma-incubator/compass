@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"net/http"
 	"net/url"
 
@@ -199,17 +200,17 @@ func NewRootResolver(
 	}
 }
 
-//func (r *RootResolver) BundlesDataloader(ids []dataloader.Param) ([]*graphql.BundlePage, []error) {
-//	return r.app.BundlesDataLoader(ids)
-//}
-//
-//func (r *RootResolver) ApiDefinitionsDataloader(ids []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
-//	return r.mpBundle.ApiDefinitionsDataLoader(ids)
-//}
-//
-//func (r *RootResolver) EventDefinitionsDataloader(ids []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
-//	return r.mpBundle.EventDefinitionsDataLoader(ids)
-//}
+func (r *RootResolver) BundlesDataloader(ids []dataloader.Param) ([]*graphql.BundlePage, []error) {
+	return r.app.BundlesDataLoader(ids)
+}
+
+func (r *RootResolver) ApiDefinitionsDataloader(ids []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
+	return r.mpBundle.ApiDefinitionsDataLoader(ids)
+}
+
+func (r *RootResolver) EventDefinitionsDataloader(ids []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
+	return r.mpBundle.EventDefinitionsDataLoader(ids)
+}
 
 func (r *RootResolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
@@ -266,7 +267,6 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	fmt.Println(">>>>>>>>>>>>>>>>> : APPLICATIONS_RESOLVER")
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -566,7 +566,6 @@ func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *gr
 	return r.app.EventingConfiguration(ctx, obj)
 }
 func (r *applicationResolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
-	fmt.Println(">>>>>>>>>>>>>>>>> : BUNDLES_RESOLVER")
 	return r.app.Bundles(ctx, obj, first, after)
 }
 func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
@@ -667,11 +666,9 @@ func (r *BundleResolver) Documents(ctx context.Context, obj *graphql.Bundle, fir
 	return r.mpBundle.Documents(ctx, obj, first, after)
 }
 func (r *BundleResolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.APIDefinition, error) {
-	fmt.Println(">>>>>>>>>>>>>>>>> : BUNDLES_RESOLVER ------ API DEFINITIONS")
 	return r.mpBundle.APIDefinition(ctx, obj, id)
 }
 func (r *BundleResolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.EventDefinition, error) {
-	fmt.Println(">>>>>>>>>>>>>>>>> : BUNDLES_RESOLVER ------ EVENT DEFINITIONS")
 	return r.mpBundle.EventDefinition(ctx, obj, id)
 }
 func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
