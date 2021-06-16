@@ -139,7 +139,7 @@ func TestUnassignResourceFromScenarioUsingAutomaticScenarioAssignment(t *testing
 	request := fixtures.FixDeleteRuntimeLabelRequest(data.runtimeId, labelSelector.Key)
 	requireExistingBundleInstanceAuthsError(t, data.runtimeName, resource.Runtime, testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &graphql.Label{}))
 
-	// Deleting scenario for which there is automatic scenario assignment is successful
+	// Successfully dismiss scenario for which there is automatic scenario assignment
 	updateInput := graphql.RuntimeInput{
 		Name: data.runtimeName,
 		Labels: graphql.Labels{
@@ -150,9 +150,19 @@ func TestUnassignResourceFromScenarioUsingAutomaticScenarioAssignment(t *testing
 	updateInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(updateInput)
 	require.NoError(t, err)
 	request = fixtures.FixUpdateRuntimeRequest(data.runtimeId, updateInputGQL)
-	input := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &input)
+	require.NoError(t, testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &graphql.RuntimeExt{}))
+
+	// Successfully remove ASA Label from runtime while explicitly assigning the scenario
+	updateInput = graphql.RuntimeInput{
+		Name: data.runtimeName,
+		Labels: graphql.Labels{
+			ScenariosLabel: []string{commonScenario, otherScenario},
+		},
+	}
+	updateInputGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(updateInput)
 	require.NoError(t, err)
+	request = fixtures.FixUpdateRuntimeRequest(data.runtimeId, updateInputGQL)
+	require.NoError(t, testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &graphql.RuntimeExt{}))
 
 	// Deleting bundle instance auth
 	fixtures.DeleteBundleInstanceAuth(t, ctx, dexGraphQLClient, tenantID, data.bundleInstanceAuthID)
