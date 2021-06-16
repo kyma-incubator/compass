@@ -1,3 +1,4 @@
+{{- if eq .Values.global.externalServicesMock.auditlog true }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,3 +11,4 @@ data:
   auditlog-url: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}"
   auditlog-config-path: "audit-log/v2/configuration-changes"
   auditlog-security-path: "audit-log/v2/security-events"
+{{end}}

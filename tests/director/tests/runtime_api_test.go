@@ -48,7 +48,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, actualRuntime)
+	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled)
 
 	// add Label
 	actualLabel := graphql.Label{}
@@ -67,7 +67,11 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	assert.Len(t, actualRuntime.Labels, 4)
+	if conf.DefaultScenarioEnabled {
+		assert.Len(t, actualRuntime.Labels, 4)
+	} else {
+		assert.Len(t, actualRuntime.Labels, 3)
+	}
 
 	// add agent auth
 	// GIVEN
@@ -147,7 +151,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, actualRuntime)
+	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled)
 
 	// update label definition
 	const defaultValue = "DEFAULT"
@@ -211,7 +215,11 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	require.NoError(t, err)
 	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
 	assert.True(t, hasScenarios)
-	assert.Len(t, scenarios, 2)
+	if conf.DefaultScenarioEnabled {
+		assert.Len(t, scenarios, 2)
+	} else {
+		assert.Len(t, scenarios, 1)
+	}
 	assert.Contains(t, scenarios, testScenario)
 
 	// delete runtime
@@ -254,7 +262,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, firstRuntime)
+	assertions.AssertRuntime(t, givenInput, firstRuntime, conf.DefaultScenarioEnabled)
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID)
 
 	// try to create second runtime with first runtime name
@@ -294,7 +302,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, secondRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, secondRuntime)
+	assertions.AssertRuntime(t, givenInput, secondRuntime, conf.DefaultScenarioEnabled)
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, secondRuntime.ID)
 
 	//Update first runtime with second runtime name, failed
@@ -493,7 +501,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime)
+	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled)
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
@@ -511,7 +519,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertRuntime(t, secondInput, secondRuntime)
+	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled)
 }
 
 func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
@@ -534,7 +542,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime)
+	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled)
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
@@ -552,5 +560,5 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertRuntime(t, secondInput, secondRuntime)
+	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled)
 }
