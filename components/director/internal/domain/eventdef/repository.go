@@ -2,12 +2,8 @@ package eventdef
 
 import (
 	"context"
-	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -96,65 +92,63 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
 }
 
-func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
-	persist, err := persistence.FromCtx(ctx)
+func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition{
+	var result []*model.EventDefinition
+	for _, id := range ids {
+		result = append(result,defs[id])
+	}
+	return result
+}
+
+
+func getEventDefIDsForBundle(refs []*model.BundleReference) []string{
+	var result []string
+	for _, ref := range refs {
+		result = append(result,*ref.ObjectID)
+	}
+	return result
+}
+
+func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+	var eventDefIds []string
+	for _, ref := range bundleRefs {
+		eventDefIds = append(eventDefIds, *ref.ObjectID)
+	}
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues("id", eventDefIds),
+	}
+
+	var apiDefCollection EventAPIDefCollection
+	err := r.lister.List(ctx, tenantID, &apiDefCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
 
-	var eventDefCollection EventAPIDefCollection
-	var query string
-	var sb strings.Builder
-	unionQuery := fmt.Sprint("(SELECT name, id, package_id from event_api_definitions WHERE package_id='%s' and tenant_id='%s' order by id limit %v offset %d)")
+	refsByBundleId := map[string][]*model.BundleReference{}
+	for _, ref := range bundleRefs {
+		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+	}
+
+	eventDefsByEventDefId := map[string]*model.EventDefinition{}
+	for _, apiDefEnt := range apiDefCollection {
+		m := r.conv.FromEntity(apiDefEnt)
+		eventDefsByEventDefId[apiDefEnt.ID] = &m
+	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	//todo check if there are bundle ids
-	sb.WriteString(fmt.Sprintf(unionQuery, bundleIDs[0], tenantID, pageSize, offset))
-	for i := 0; i < len(bundleIDs); i++ {
-		sb.WriteString(fmt.Sprintf(unionQuery, bundleIDs[i], tenantID, pageSize, offset) + "union")
-	}
-	query = sb.String()
-
-	fmt.Println("[===Executing single union query ===] ", query)
-	err = persist.SelectContext(ctx, &eventDefCollection, query)
-	if err != nil {
-		return nil, err
-	}
-
-	// count logic
-	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues("package_id", bundleIDs),
-	}
-	var eventDefCollectionCount EventAPIDefCollection
-	err = r.lister.List(ctx, tenantID, &eventDefCollectionCount, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	eventDefsCountByID := map[string][]*model.EventDefinition{}
-	for _, eventDefEnt := range eventDefCollectionCount {
-		m := r.conv.FromEntity(eventDefEnt)
-		eventDefsCountByID[eventDefEnt.PackageID.String] = append(eventDefsCountByID[eventDefEnt.PackageID.String], &m)
-	}
-	// end
-
-	eventDefsById := map[string][]*model.EventDefinition{}
-	for _, eventDefEnt := range eventDefCollection {
-		m := r.conv.FromEntity(eventDefEnt)
-		eventDefsById[eventDefEnt.PackageID.String] = append(eventDefsById[eventDefEnt.PackageID.String], &m)
-	}
-
-	// map the ApiDefPage to the current package_id
-	eventDefPages := make([]*model.EventDefinitionPage, len(bundleIDs))
-	for i, pkgID := range bundleIDs {
-		totalCount := len(eventDefsCountByID[pkgID])
+	eventDefPages := make([]*model.EventDefinitionPage, len(totalCounts))
+	index := 0
+	for id, count := range totalCounts {
+		ids := getEventDefIDsForBundle(refsByBundleId[id])
+		eventDefs := getEventDefsForBundle(ids, eventDefsByEventDefId)
 		hasNextPage := false
 		endCursor := ""
-		if totalCount > offset+len(eventDefsById[pkgID]) {
+		if count > offset+len(eventDefs) {
 			hasNextPage = true
 			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
 		}
@@ -165,7 +159,8 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 			HasNextPage: hasNextPage,
 		}
 
-		eventDefPages[i] = &model.EventDefinitionPage{Data: eventDefsById[pkgID], TotalCount: totalCount, PageInfo: page}
+		eventDefPages[index] = &model.EventDefinitionPage{Data: eventDefs, TotalCount: count, PageInfo: page}
+		index ++
 	}
 
 	return eventDefPages, nil

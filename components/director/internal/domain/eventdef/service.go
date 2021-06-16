@@ -19,7 +19,7 @@ type EventAPIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
-	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
+	ListAllForBundle(ctx context.Context, tenantID string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
@@ -48,6 +48,7 @@ type BundleReferenceService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	ListAllByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 type service struct {
@@ -91,7 +92,12 @@ func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pa
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
-	return s.eventAPIRepo.ListAllForBundle(ctx, tnt, bundleIDs, pageSize, cursor)
+	bundleRefs, counts, err := s.bundleReferenceService.ListAllByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.eventAPIRepo.ListAllForBundle(ctx, tnt, bundleRefs, counts, pageSize, cursor)
 }
 
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
