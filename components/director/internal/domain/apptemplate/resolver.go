@@ -166,8 +166,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = in.Validate()
-	if err != nil {
+	if err := in.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -276,8 +275,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = in.Validate()
-	if err != nil {
+	if err := in.Validate(); err != nil {
 		return nil, err
 	}
 

@@ -3,7 +3,6 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -478,7 +477,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
-	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONStringWithPlaceholder)
+	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
 
@@ -672,16 +671,16 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			appTemplateConv.AssertExpectations(t)
 		})
 	}
-	t.Run("Returns error when application template input is invalid", func(t *testing.T) {
-		gqlAppTemplateInputInvalid := fixGQLAppTemplateInputInvalidAppInput(testName)
-		expectedError := errors.New("Invalid data")
+	t.Run("Returns error when application template inputs url template has invalid method", func(t *testing.T) {
+		gqlAppTemplateInputInvalid := fixGQLAppTemplateInputInvalidAppInputUrlTemplateMethod(testName)
+		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
 		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
-		result, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInputInvalid)
-		fmt.Println(result)
+		_, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInputInvalid)
+
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), expectedError.Error())
@@ -1056,7 +1055,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
-	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONStringWithPlaceholder)
+	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
 

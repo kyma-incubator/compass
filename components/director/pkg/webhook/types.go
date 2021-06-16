@@ -187,7 +187,6 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 }
 
 func isAllowedHTTPMethod(method string) bool {
-
 	for _, m := range allowedMethods {
 		if m == method {
 			return true

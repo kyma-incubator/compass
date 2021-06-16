@@ -20,16 +20,15 @@ import (
 )
 
 const (
-	testTenant                        = "tnt"
-	testExternalTenant                = "external-tnt"
-	testID                            = "foo"
-	testWebhookID                     = "webhook-id-1"
-	testName                          = "bar"
-	testPageSize                      = 3
-	testCursor                        = ""
-	appInputJSONString                = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-	appInputJSONStringWithPlaceholder = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-	appInputGQLString                 = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
+	testTenant         = "tnt"
+	testExternalTenant = "external-tnt"
+	testID             = "foo"
+	testWebhookID      = "webhook-id-1"
+	testName           = "bar"
+	testPageSize       = 3
+	testCursor         = ""
+	appInputJSONString = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputGQLString  = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 )
 
 var (
@@ -155,7 +154,7 @@ func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemp
 	}
 }
 
-func fixGQLAppTemplateInputInvalidAppInput(name string) *graphql.ApplicationTemplateInput {
+func fixGQLAppTemplateInputInvalidAppInputUrlTemplateMethod(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescriptionWithPlaceholder
 
 	return &graphql.ApplicationTemplateInput{
