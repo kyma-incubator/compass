@@ -12,6 +12,7 @@ ALTER TABLE labels
 
 DROP VIEW bundle_instance_auths_scenarios_labels;
 
+DELETE FROM labels WHERE bundle_instance_auth_id IS NOT NULL;
 ALTER TABLE labels DROP COLUMN bundle_instance_auth_id;
 
 COMMIT;
