@@ -1,9 +1,10 @@
 BEGIN;
 
-ALTER TABLE business_tenant_mappings DROP CONSTRAINT business_tenant_mappings_external_tenant_customer_id_unique;
-ALTER TABLE business_tenant_mappings ADD CONSTRAINT business_tenant_mappings_external_tenant_unique UNIQUE (external_tenant);
+ALTER TABLE business_tenant_mappings DROP CONSTRAINT business_tenant_mappings_parent_fk;
 
-ALTER TABLE business_tenant_mappings DROP COLUMN customer_id;
-ALTER TABLE business_tenant_mappings DROP COLUMN subdomain;
+ALTER TABLE business_tenant_mappings DROP COLUMN parent;
+ALTER TABLE business_tenant_mappings DROP COLUMN type;
+
+DROP TYPE tenant_type;
 
 COMMIT;

@@ -4,9 +4,11 @@ import "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 type TenantModel struct {
 	ID             string
+	Name           string
 	TenantId       string
-	CustomerId     string
-	Subdomain      string
-	TenantProvider string
-	Status         tenant.TenantStatus
+	ParentInternal string
+	ParentExternal string
+	Type           tenant.Type
+	Provider       string
+	Status         tenant.Status
 }

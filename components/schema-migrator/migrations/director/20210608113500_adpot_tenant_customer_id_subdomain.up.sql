@@ -1,9 +1,13 @@
 BEGIN;
 
-ALTER TABLE business_tenant_mappings ADD COLUMN customer_id VARCHAR(256);
-ALTER TABLE business_tenant_mappings ADD COLUMN subdomain VARCHAR(256);
+CREATE TYPE tenant_type AS ENUM ('account', 'customer');
 
-ALTER TABLE business_tenant_mappings DROP CONSTRAINT business_tenant_mappings_external_tenant_unique;
-ALTER TABLE business_tenant_mappings ADD CONSTRAINT business_tenant_mappings_external_tenant_customer_id_unique UNIQUE (external_tenant, customer_id);
+ALTER TABLE business_tenant_mappings ADD COLUMN parent uuid;
+ALTER TABLE business_tenant_mappings ADD COLUMN type tenant_type;
+
+ALTER TABLE business_tenant_mappings
+    ADD CONSTRAINT business_tenant_mappings_parent_fk
+        FOREIGN KEY (parent)
+            REFERENCES business_tenant_mappings(id);
 
 COMMIT;

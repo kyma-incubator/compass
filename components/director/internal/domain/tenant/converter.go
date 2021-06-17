@@ -22,7 +22,7 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
 		ProviderName:   in.Provider,
-		Status:         tenant.TenantStatus(in.Status),
+		Status:         tenant.Status(in.Status),
 	}
 }
 

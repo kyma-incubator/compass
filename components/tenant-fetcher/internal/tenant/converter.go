@@ -14,25 +14,23 @@ func NewConverter() *converter {
 func (c *converter) ToEntity(in model.TenantModel) tenant.Entity {
 	return tenant.Entity{
 		ID:             in.ID,
-		Name:           in.TenantId,
+		Name:           in.Name,
 		ExternalTenant: in.TenantId,
-		CustomerId:     in.CustomerId,
-		Subdomain:      in.Subdomain,
-		ProviderName:   in.TenantProvider,
+		Parent:         in.ParentInternal,
+		Type:           in.Type,
+		ProviderName:   in.Provider,
 		Status:         in.Status,
 	}
 }
 
-func (c *converter) FromEntity(in *tenant.Entity) *model.TenantModel {
-	if in == nil {
-		return nil
-	}
-	return &model.TenantModel{
+func (c *converter) FromEntity(in tenant.Entity) model.TenantModel {
+	return model.TenantModel{
 		ID:             in.ID,
+		Name:           in.Name,
 		TenantId:       in.ExternalTenant,
-		CustomerId:     in.CustomerId,
-		Subdomain:      in.Subdomain,
-		TenantProvider: in.ProviderName,
+		ParentInternal: in.Parent,
+		Type:           in.Type,
+		Provider:       in.ProviderName,
 		Status:         in.Status,
 	}
 }
