@@ -245,9 +245,7 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.Fe
 }
 
 func (s *service)ListFetchRequestsByReferenceObjectID(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error){
-	specs, err := s.fetchRequestRepo.ListByReferenceObjectID(ctx, tenant,model.SpecFetchRequestReference, objectIDs)
-
-	return specs, err
+	return s.fetchRequestRepo.ListByReferenceObjectID(ctx, tenant,model.SpecFetchRequestReference, objectIDs)
 }
 
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {

@@ -261,7 +261,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
-	params := dataloader.ParamFetchRequestEventDef{ID: obj.DefinitionID, Ctx: ctx}
+	params := dataloader.ParamFetchRequestEventDef{ID: obj.ID, Ctx: ctx}
 	return dataloader.ForFetchRequestEventDef(ctx).FetchRequestEventDefById.Load(params)
 }
 
@@ -272,12 +272,12 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 
 	ctx:= keys[0].Ctx
 
-	eventDefIds := make([]string, len(keys))
+	specIDs := make([]string, len(keys))
 	for i := 0; i < len(keys); i++ {
 		if keys[i].ID == "" {
 			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition ID is empty")}
 		}
-		eventDefIds[i] = keys[i].ID
+		specIDs[i] = keys[i].ID
 	}
 
 	tx, err := r.transact.Begin()
@@ -288,7 +288,7 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fetchRequests, err := r.svc.ListFetchRequests(ctx, eventDefIds)
+	fetchRequests, err := r.svc.ListFetchRequests(ctx, specIDs)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -311,6 +311,6 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 		gqlFetchRequests = append(gqlFetchRequests, fetchRequest)
 	}
 
-	log.C(ctx).Infof("Successfully fetched requests for EventDefinitions %v", eventDefIds)
+	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
 	return gqlFetchRequests, nil
 }

@@ -20,7 +20,7 @@ type APIService interface {
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
-	ListFetchRequests(ctx context.Context, apiDefIDs []string) ([]*model.FetchRequest, error)
+	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
@@ -266,7 +266,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	params := dataloader.ParamFetchRequestApiDef{ID: obj.DefinitionID, Ctx: ctx}
+	params := dataloader.ParamFetchRequestApiDef{ID: obj.ID, Ctx: ctx}
 	return dataloader.ForFetchRequestApiDef(ctx).FetchRequestApiDefById.Load(params)
 }
 
@@ -277,12 +277,12 @@ func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequ
 
 	ctx := keys[0].Ctx
 
-	apiDefIds := make([]string, len(keys))
+	specIDs := make([]string, len(keys))
 	for i := 0; i < len(keys); i++ {
 		if keys[i].ID == "" {
 			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition ID is empty")}
 		}
-		apiDefIds[i] = keys[i].ID
+		specIDs[i] = keys[i].ID
 	}
 
 	tx, err := r.transact.Begin()
@@ -293,7 +293,7 @@ func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequ
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fetchRequests, err := r.svc.ListFetchRequests(ctx, apiDefIds)
+	fetchRequests, err := r.svc.ListFetchRequests(ctx, specIDs)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -315,6 +315,6 @@ func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequ
 		gqlFetchRequests = append(gqlFetchRequests, fetchRequest)
 	}
 
-	log.C(ctx).Infof("Successfully fetched requests for APIDefinitions %v", apiDefIds)
+	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
 	return gqlFetchRequests, nil
 }
