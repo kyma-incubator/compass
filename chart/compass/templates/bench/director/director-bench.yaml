@@ -5,6 +5,7 @@ metadata:
   labels:
     benchmark: "true" # This is needed to differentiate benchmarks of regular tests
     app: {{ .Chart.Name }}-director-bench-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-director-bench
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
