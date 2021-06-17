@@ -2,6 +2,7 @@ package fetchrequest
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -31,6 +32,7 @@ type Converter interface {
 type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
+	lister       repo.Lister
 	deleter      repo.Deleter
 	updater      repo.Updater
 	conv         Converter
@@ -100,6 +102,43 @@ func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIds []string) ([]*model.FetchRequest, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	var fetchRequestCollection FetchRequestsCollection
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues(fieldName, objectIds),
+	}
+	if err := r.lister.List(ctx, tenant, &fetchRequestCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	fetchRequestsByID := map[sql.NullString]*model.FetchRequest{}
+	for _, fetchRequestEnt := range fetchRequestCollection {
+		m, err := r.conv.FromEntity(fetchRequestEnt)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating FetchRequest model from entity")
+		}
+
+		if fieldName == specIDColumn {
+			fetchRequestsByID[fetchRequestEnt.SpecID] = &m
+		} else if fieldName == documentIDColumn {
+			fetchRequestsByID[fetchRequestEnt.DocumentID] = &m
+		}
+	}
+
+	fetchRequests := make([]*model.FetchRequest, len(objectIds))
+	for i, objectID := range objectIds {
+		fetchRequests[i] = fetchRequestsByID[sql.NullString{String: objectID, Valid: true}]
+	}
+
+	return fetchRequests, nil
+}
+
 func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {
 	switch objectType {
 	case model.DocumentFetchRequestReference:
@@ -109,4 +148,10 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 	}
 
 	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
+}
+
+type FetchRequestsCollection []Entity
+
+func (r FetchRequestsCollection) Len() int {
+	return len(r)
 }

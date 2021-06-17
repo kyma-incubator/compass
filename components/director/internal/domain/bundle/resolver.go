@@ -93,7 +93,7 @@ type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
-	GetByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
+	ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
@@ -421,7 +421,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		}
 	}
 
-	specs, err := r.specService.GetByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
+	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -466,6 +466,8 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 			HasNextPage: apisPage.PageInfo.HasNextPage,
 		}})
 	}
+
+	log.C(ctx).Infof("Successfully fetched api definitions for bundles %v", bundleIDs)
 	return gqlApiDefs, nil
 }
 
@@ -557,7 +559,7 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		}
 	}
 
-	specs, err := r.specService.GetByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
+	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -603,6 +605,8 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 			HasNextPage: eventPage.PageInfo.HasNextPage,
 		}})
 	}
+
+	log.C(ctx).Infof("Successfully fetched event definitions for bundles %v", bundleIDs)
 	return gqlEventDefs, nil
 }
 

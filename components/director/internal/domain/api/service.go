@@ -34,11 +34,6 @@ type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore
-type FetchRequestService interface {
-	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
-}
-
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -46,6 +41,7 @@ type SpecService interface {
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
+	ListFetchRequestsByReferenceObjectID(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
@@ -317,6 +313,23 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 	}
 
 	return fetchRequest, nil
+}
+
+func (s *service) ListFetchRequests(ctx context.Context, apiDefIDs []string) ([]*model.FetchRequest, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectID(ctx, tnt, apiDefIDs)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return fetchRequests, nil
 }
 
 func (s *service) updateBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForUpdate map[string]string) error {

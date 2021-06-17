@@ -236,6 +236,8 @@ func main() {
 	gqlAPIRouter.Use(dataloader.Handler(rootResolver.BundlesDataloader))
 	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestApiDef(rootResolver.FetchRequestApiDefDataloader))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader))
 
 	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(operationMiddleware)
