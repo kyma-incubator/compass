@@ -124,7 +124,7 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   fi
 fi
 
-minikube update-context
+useMinikube
 
 echo "Label Minikube node for benchmark execution..."
 NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)

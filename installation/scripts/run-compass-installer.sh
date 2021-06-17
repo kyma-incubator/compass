@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -o errexit
-minikube update-context
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
@@ -13,6 +12,7 @@ if [ `uname -s` = "Darwin" ]; then
 fi
 
 source $CURRENT_DIR/utils.sh
+useMinikube
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
