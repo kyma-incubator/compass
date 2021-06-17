@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"fmt"
 	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"net/http"
 	"net/url"
