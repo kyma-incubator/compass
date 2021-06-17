@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-ord-service
   labels:
     app: {{ .Chart.Name }}-ord-service-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-ord-service-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}

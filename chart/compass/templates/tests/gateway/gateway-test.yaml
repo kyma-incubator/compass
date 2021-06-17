@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-gateway
   labels:
     app: {{ .Chart.Name }}-gateway-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-gateway-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}

@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-director
   labels:
     app: {{ .Chart.Name }}-director-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
