@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -o errexit
+minikube update-context
 
 echo "Installing Kyma..."
 
