@@ -19,6 +19,7 @@ package webhook
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"text/template"
@@ -27,6 +28,8 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+var allowedMethods = []string{"GET", "POST", "PUT", "DELETE"}
 
 type Mode string
 
@@ -74,6 +77,10 @@ type ResponseStatus struct {
 func (u *URL) Validate() error {
 	if u.Method == nil {
 		return errors.New("missing URL Template method field")
+	}
+
+	if !isAllowedHTTPMethod(*u.Method) {
+		return errors.New(fmt.Sprint("http method not allowed, allowed methods: ", allowedMethods))
 	}
 
 	if u.Path == nil {
@@ -177,4 +184,13 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	}
 
 	return nil
+}
+
+func isAllowedHTTPMethod(method string) bool {
+	for _, m := range allowedMethods {
+		if m == method {
+			return true
+		}
+	}
+	return false
 }
