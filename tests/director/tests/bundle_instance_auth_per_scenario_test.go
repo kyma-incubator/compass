@@ -151,7 +151,11 @@ func TestUnassignResourceFromScenarioUsingAutomaticScenarioAssignment(t *testing
 	updateInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(updateInput)
 	require.NoError(t, err)
 	request = fixtures.FixUpdateRuntimeRequest(data.runtimeId, updateInputGQL)
-	require.NoError(t, testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &graphql.RuntimeExt{}))
+	runtimeOutput := &graphql.RuntimeExt{}
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, runtimeOutput)
+	require.NoError(t, err)
+	require.Contains(t, runtimeOutput.Labels, ScenariosLabel)
+	require.ElementsMatch(t, runtimeOutput.Labels[ScenariosLabel], []interface{}{commonScenario, otherScenario})
 
 	// Successfully remove ASA Label from runtime while explicitly assigning the scenario
 	updateInput = graphql.RuntimeInput{
