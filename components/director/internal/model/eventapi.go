@@ -11,9 +11,9 @@ import (
 )
 
 type EventDefinition struct {
-	Tenant              string
-	ApplicationID       string
-	PackageID           *string
+	Tenant              string  `hash:"ignore"`
+	ApplicationID       string  `hash:"ignore"`
+	PackageID           *string `hash:"ignore"`
 	Name                string
 	Description         *string
 	Group               *string
@@ -35,8 +35,8 @@ type EventDefinition struct {
 	Industry            json.RawMessage
 	Extensible          json.RawMessage
 
-	Version *Version
-	*BaseEntity
+	Version     *Version
+	*BaseEntity `hash:"ignore"`
 }
 
 func (_ *EventDefinition) GetType() resource.Type {

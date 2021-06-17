@@ -5,9 +5,9 @@ import (
 )
 
 type Package struct {
-	ID                string
-	TenantID          string
-	ApplicationID     string
+	ID                string `hash:"ignore"`
+	TenantID          string `hash:"ignore"`
+	ApplicationID     string `hash:"ignore"`
 	OrdID             string
 	Vendor            *string
 	Title             string

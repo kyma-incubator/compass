@@ -13,9 +13,9 @@ import (
 )
 
 type APIDefinition struct {
-	ApplicationID                           string
-	PackageID                               *string
-	Tenant                                  string
+	ApplicationID                           string  `hash:"ignore"`
+	PackageID                               *string `hash:"ignore"`
+	Tenant                                  string  `hash:"ignore"`
 	Name                                    string
 	Description                             *string
 	TargetURLs                              json.RawMessage
@@ -43,7 +43,7 @@ type APIDefinition struct {
 	CustomImplementationStandardDescription *string
 	Version                                 *Version
 	Extensible                              json.RawMessage
-	*BaseEntity
+	*BaseEntity                             `hash:"ignore"`
 }
 
 func (_ *APIDefinition) GetType() resource.Type {
