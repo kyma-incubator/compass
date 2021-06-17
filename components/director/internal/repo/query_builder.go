@@ -83,12 +83,16 @@ func buildUnionQuery(queries []string, args [][]interface{}) (string, []interfac
 		queries[i] = "(" + queries[i] + ")"
 	}
 
-	var arguments []interface{}
+	var allArgs []interface{}
 	for _, a := range args {
-		arguments = append(arguments, a)
+		allArgs = append(allArgs, a...)
 	}
 
-	return strings.Join(queries, " UNION "), arguments, nil
+	unionQuery := strings.Join(queries, " UNION ")
+	var stmtBuilder strings.Builder
+	stmtBuilder.WriteString(unionQuery)
+
+	return getQueryFromBuilder(stmtBuilder), allArgs, nil
 }
 
 func (b *universalQueryBuilder) BuildCountQuery(tenantID string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error) {
@@ -103,7 +107,7 @@ func (b *universalQueryBuilder) BuildCountQuery(tenantID string, isRebindingNeed
 func buildCountQuery(tableName string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT count(*) FROM %s", tableName))
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName))
 	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}
@@ -251,7 +255,7 @@ func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) err
 		if idx > 0 {
 			builder.WriteString(",")
 		}
-		builder.WriteString(orderBy)
+		builder.WriteString(fmt.Sprintf(" %s", orderBy))
 	}
 
 	return nil
@@ -262,7 +266,7 @@ func writeLimitPart(builder *strings.Builder) error {
 		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
-	builder.WriteString(" LIMIT %d")
+	builder.WriteString(" LIMIT ?")
 	return nil
 }
 
@@ -271,6 +275,6 @@ func writeOffsetPart(builder *strings.Builder) error {
 		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
-	builder.WriteString(" OFFSET %d")
+	builder.WriteString(" OFFSET ?")
 	return nil
 }

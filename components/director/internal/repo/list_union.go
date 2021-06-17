@@ -61,7 +61,7 @@ type queryStruct struct {
 	statement string
 }
 
-func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor string, orderBy []string, ids []string, idscolumn string, dest Collection, conditions ...Condition) ([]int, error) {
+func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor string, orderBy []string, ids []string, idsColumn string, dest Collection, conditions ...Condition) ([]int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	queries, err := l.buildQueries(ids, idscolumn, conditions, orderBy, pageSize, offset)
+	queries, err := l.buildQueries(ids, idsColumn, conditions, orderBy, pageSize, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -97,32 +97,19 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		return nil, persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while fetching list page of objects from '%s' table", l.tableName)
 	}
 
-	totalCount, err := l.getTotalCount(ctx, persist, []string{idscolumn}, OrderByParams{NewAscOrderBy(idscolumn)}, conditions)
+	totalCount, err := l.getTotalCount(ctx, persist, []string{idsColumn}, OrderByParams{NewAscOrderBy(idsColumn)}, conditions)
 	if err != nil {
 		return nil, err
 	}
 
 	return totalCount, nil
-	//for i := 0; i < dest.Len(); i++ {
-	//	hasNextPage := false
-	//	endCursor := ""
-	//	if totalCount[i] > offset+dest.Len() {
-	//		hasNextPage = true
-	//		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
-	//	}
-	//	&pagination.Page{
-	//		StartCursor: cursor,
-	//		EndCursor:   endCursor,
-	//		HasNextPage: hasNextPage,
-	//	}, totalCount, nil
-	//}
 }
 
 func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []Condition, orderBy []string, limit int, offset int) ([]queryStruct, error) {
 	var queries []queryStruct
 	for _, id := range ids {
 		c := append(conditions, NewEqualCondition(idsColumn, id))
-		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, c, parseOrderByParams(orderBy),limit,offset, true)
+		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, c, parseOrderByParams(orderBy),limit,offset, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "while building list query")
 		}
@@ -147,13 +134,13 @@ func parseOrderByParams(orderBy []string) OrderByParams{
 }
 
 func (l *unionLister) getTotalCount(ctx context.Context, persist persistence.PersistenceOp, groupBy GroupByParams, orderBy OrderByParams, conditions Conditions) ([]int, error) {
-	query, args, err := buildCountQuery(l.tableName, conditions, groupBy, orderBy, false)
+	query, args, err := buildCountQuery(l.tableName, conditions, groupBy, orderBy, true)
 	if err != nil {
 		return nil, err
 	}
 
 	var totalCount []int
-	err = persist.GetContext(ctx, &totalCount, query, args...)
+	err = persist.SelectContext(ctx, &totalCount, query, args...)
 	if err != nil {
 		return nil, persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while counting objects from '%s' table", l.tableName)
 	}
