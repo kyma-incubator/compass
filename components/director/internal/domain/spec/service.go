@@ -17,6 +17,7 @@ type SpecRepository interface {
 	Create(ctx context.Context, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
 	Update(ctx context.Context, item *model.Spec) error
@@ -84,6 +85,17 @@ func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.S
 	}
 
 	return nil, nil
+}
+
+func (s *service)GetByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error){
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	specs, err := s.repo.ListByReferenceObjectIDs(ctx, tnt, objectType, objectIDs)
+
+	return specs, err
 }
 
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
