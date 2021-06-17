@@ -37,6 +37,8 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
 
+	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, defaultScenarios)
+
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
 	runtime1 := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
@@ -100,6 +102,8 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	appName := "app-test-eventing"
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+
+	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, defaultScenarios)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
@@ -175,6 +179,8 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	appName := "app-test-eventing"
 	application := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+
+	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, defaultScenarios)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 

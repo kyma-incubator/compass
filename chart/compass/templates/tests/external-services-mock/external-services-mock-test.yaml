@@ -1,4 +1,4 @@
-{{if and (eq .Values.global.externalServicesMock.enabled true) (eq .Values.gateway.gateway.auditlog.enabled true)}}
+{{if and (eq .Values.global.externalServicesMock.enabled true) (eq .Values.gateway.gateway.auditlog.enabled true) (eq .Values.global.externalServicesMock.auditlog true) }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -84,6 +84,10 @@ spec:
               value: "{{ .Values.global.gateway.mtls.host }}"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---
