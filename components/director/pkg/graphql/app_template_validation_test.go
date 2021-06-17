@@ -264,9 +264,10 @@ func TestApplicationTemplateInput_Validate_AccessLevel(t *testing.T) {
 
 func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 	webhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
-	invalidWebhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
-	invalidWebhookInput.URL = nil
-
+	webhookInputWithInvalidOutputTemplate := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	webhookInputWithInvalidOutputTemplate.OutputTemplate = stringPtr(`{ "gone_status_code": 404, "success_status_code": 200}`)
+	webhookInputwithInvalidURL := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	webhookInputwithInvalidURL.URL = nil
 	testCases := []struct {
 		Name  string
 		Value []*graphql.WebhookInput
@@ -288,8 +289,13 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 			Valid: true,
 		},
 		{
-			Name:  "Invalid - some of the webhooks are in invalid state",
-			Value: []*graphql.WebhookInput{&invalidWebhookInput},
+			Name:  "Invalid - some of the webhooks are in invalid state - invalid output template",
+			Value: []*graphql.WebhookInput{&webhookInputWithInvalidOutputTemplate},
+			Valid: false,
+		},
+		{
+			Name:  "Invalid - some of the webhooks are in invalid state - invalid URL",
+			Value: []*graphql.WebhookInput{&webhookInputwithInvalidURL},
 			Valid: false,
 		},
 	}
@@ -549,6 +555,61 @@ func TestApplicationTemplateUpdateInput_Validate_AccessLevel(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.AccessLevel = testCase.Value
+			//WHEN
+			err := sut.Validate()
+			//THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestApplicationTemplateUpdateInput_Validate_Webhooks(t *testing.T) {
+	webhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	webhookInputWithInvalidOutputTemplate := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	webhookInputWithInvalidOutputTemplate.OutputTemplate = stringPtr(`{ "gone_status_code": 404, "success_status_code": 200}`)
+	webhookInputWithInvalidURL := fixValidWebhookInput(inputvalidationtest.ValidURL)
+	webhookInputWithInvalidURL.URL = nil
+	testCases := []struct {
+		Name  string
+		Value []*graphql.WebhookInput
+		Valid bool
+	}{
+		{
+			Name:  "Valid",
+			Value: []*graphql.WebhookInput{&webhookInput},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Empty",
+			Value: []*graphql.WebhookInput{},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - nil",
+			Value: nil,
+			Valid: true,
+		},
+		{
+			Name:  "Invalid - some of the webhooks are in invalid state - invalid output template",
+			Value: []*graphql.WebhookInput{&webhookInputWithInvalidOutputTemplate},
+			Valid: false,
+		},
+		{
+			Name:  "Invalid - some of the webhooks are in invalid state - invalid URL",
+			Value: []*graphql.WebhookInput{&webhookInputWithInvalidURL},
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateUpdateInput()
+			sut.ApplicationInput.Webhooks = testCase.Value
 			//WHEN
 			err := sut.Validate()
 			//THEN
