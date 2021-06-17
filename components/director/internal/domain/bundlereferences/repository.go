@@ -76,7 +76,6 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 			repo.NewEqualCondition(bundleIDColumn, bundleID),
 		}
 	}
-
 	err = r.getter.Get(ctx, tenantID, conditions, repo.NoOrderBy, &bundleReferenceEntity)
 	if err != nil {
 		return nil, err
@@ -164,6 +163,53 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bund
 	return r.deleter.DeleteOne(ctx, tenant, conditions)
 }
 
+func (r *repository) ListAllForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+	columns, err := getSelectedColumnsByObjectType(objectType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unionLister := r.unionLister.Clone()
+	unionLister.SetSelectedColumns(columns)
+
+	objectFieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewNotNullCondition(objectFieldName),
+	}
+
+	orderByColumns, err := getOrderByColumnsByObjectType(objectType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var objectBundleIDs BundleReferencesCollection
+	counts, err := unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &objectBundleIDs, conditions...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var bundleReferences []*model.BundleReference
+	for _, d := range objectBundleIDs {
+		entity, err := r.conv.FromEntity(d)
+		if err != nil {
+			return nil, nil, err
+		}
+		bundleReferences = append(bundleReferences, &entity)
+	}
+
+	idToCount := make(map[string]int)
+	sort.Strings(bundleIDs)
+	for i, count := range counts {
+		idToCount[bundleIDs[i]] = count
+	}
+
+	return bundleReferences, idToCount, nil
+}
+
 func (r *repository) referenceObjectFieldName(objectType model.BundleReferenceObjectType) (string, error) {
 	switch objectType {
 	case model.BundleAPIReference:
@@ -192,53 +238,6 @@ func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) (
 		return []string{EventDefIDColumn, bundleIDColumn}, nil
 	}
 	return nil, apperrors.NewInternalError("Invalid type of the BundleReference object")
-}
-
-func (r *repository) ListAllForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
-	columns, err := getSelectedColumnsByObjectType(objectType)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	querier := r.unionLister.Clone()
-	querier.SetSelectedColumns(columns)
-
-	objectFieldName, err := r.referenceObjectFieldName(objectType)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	conditions := repo.Conditions{
-		repo.NewNotNullCondition(objectFieldName),
-	}
-
-	orderByColumns, err := getOrderByColumnsByObjectType(objectType)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var objectBundleIDs BundleReferencesCollection
-	counts, err := querier.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, objectBundleIDs, conditions...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var bundleReferences []*model.BundleReference
-	for _, d := range objectBundleIDs {
-		entity, err := r.conv.FromEntity(d)
-		if err != nil {
-			return nil, nil, err
-		}
-		bundleReferences = append(bundleReferences, &entity)
-	}
-
-	idToCount := make(map[string]int)
-	sort.Strings(bundleIDs)
-	for i, count := range counts {
-		idToCount[bundleIDs[i]] = count
-	}
-
-	return bundleReferences, idToCount, nil
 }
 
 type IDs []string
