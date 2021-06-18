@@ -599,7 +599,18 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 
 				return []*open_resource_discovery.Document{doc}
 			},
-		}, {
+		},
+		// TODO: Uncomment this test
+		//{
+		//	Name: "Not incremented `version` field when Package",
+		//	DocumentProvider: func() []*open_resource_discovery.Document {
+		//		doc := fixORDDocument()
+		//		doc.Packages[0].Industry = json.RawMessage(`["Mining"]`)
+		//
+		//		return []*open_resource_discovery.Document{doc}
+		//	},
+		//},
+		{
 			Name: "Missing `policyLevel` field for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
