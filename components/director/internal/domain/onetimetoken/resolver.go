@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
@@ -84,14 +84,12 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 		return nil, apperrors.NewInternalError("Token was nil")
 	}
 
-	rawJSON, err := json.Marshal(obj)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling object to JSON")
+	if _, err := base64.StdEncoding.DecodeString(obj.Token); err == nil {
+		log.C(ctx).Infof("Token is already raw encoded, returining it")
+		return &obj.Token, nil
 	}
 
-	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJSON)
-
-	return &rawBaseEncoded, nil
+	return rawEncoded(obj)
 }
 
 func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
@@ -99,12 +97,11 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string,
 		return nil, apperrors.NewInternalError("Token was nil")
 	}
 
-	rawJSON, err := json.Marshal(obj)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling object to JSON")
+	var js json.RawMessage
+	if json.Unmarshal([]byte(obj.Token), &js) == nil {
+		log.C(ctx).Infof("Token is already in raw json format, returining it")
+		return &obj.Token, nil
 	}
 
-	rawJSONStr := string(rawJSON)
-
-	return &rawJSONStr, nil
+	return raw(obj)
 }
