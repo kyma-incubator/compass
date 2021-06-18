@@ -18,20 +18,22 @@ import (
 
 func TestRepository_Create(t *testing.T) {
 	tenantModel := model.TenantModel{
-		TenantId:       testID,
 		ID:             testID,
+		Name:           testID,
+		TenantId:       testID,
+		ParentExternal: testID,
+		ParentInternal: testID,
+		Type:           tenantEntity.Account,
+		Provider:       testProviderName,
 		Status:         tenantEntity.Active,
-		Subdomain:      subdomain,
-		CustomerId:     customerID,
-		TenantProvider: testProviderName,
 	}
 
 	entity := tenantEntity.Entity{
+		ID:             testID,
 		Name:           testID,
 		ExternalTenant: testID,
-		ID:             testID,
-		CustomerId:     customerID,
-		Subdomain:      subdomain,
+		Parent:         testID,
+		Type:           tenantEntity.Account,
 		ProviderName:   testProviderName,
 		Status:         tenantEntity.Active,
 	}
