@@ -2,6 +2,8 @@ package document
 
 import (
 	"context"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -19,6 +21,7 @@ type DocumentService interface {
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error)
+	ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore
@@ -137,31 +140,54 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
-	if obj == nil {
-		return nil, apperrors.NewInternalError("Document cannot be empty")
+	params := dataloader.ParamFetchRequestDocument{ID: obj.ID, Ctx: ctx}
+	return dataloader.ForFetchRequestDocument(ctx).FetchRequestDocumentById.Load(params)
+}
+
+func (r *Resolver) FetchRequestDocumentDataLoader(keys []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No ApiDefs found")}
+	}
+
+	ctx := keys[0].Ctx
+	documentIDs := make([]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		if keys[i].ID == "" {
+			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. Document ID is empty")}
+		}
+		documentIDs[i] = keys[i].ID
 	}
 
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fr, err := r.svc.GetFetchRequest(ctx, obj.ID)
+	fetchRequests, err := r.svc.ListFetchRequests(ctx, documentIDs)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	if fr == nil {
-		return nil, tx.Commit()
+	if fetchRequests == nil {
+		return nil, nil
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
 	}
 
-	return r.frConverter.ToGraphQL(fr)
+	var gqlFetchRequests []*graphql.FetchRequest
+	for _, fr := range fetchRequests {
+		fetchRequest, err := r.frConverter.ToGraphQL(fr)
+		if err != nil {
+			return nil, []error{err}
+		}
+		gqlFetchRequests = append(gqlFetchRequests, fetchRequest)
+	}
+
+	log.C(ctx).Infof("Successfully fetched requests for Documents %v", documentIDs)
+	return gqlFetchRequests, nil
 }

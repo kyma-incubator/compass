@@ -223,6 +223,10 @@ func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetc
 	return r.eventAPI.FetchRequestEventDefDataLoader(ids)
 }
 
+func (r *RootResolver) FetchRequestDocumentDataloader(ids []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
+	return r.doc.FetchRequestDocumentDataLoader(ids)
+}
+
 func (r *RootResolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
 }

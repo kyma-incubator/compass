@@ -29,6 +29,7 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	Delete(ctx context.Context, tenant, id string) error
+	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -155,7 +156,7 @@ func (s *service) GetFetchRequest(ctx context.Context, documentID string) (*mode
 	return fetchRequest, nil
 }
 
-func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error){
+func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -166,4 +167,13 @@ func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pa
 	}
 
 	return s.repo.ListAllForBundle(ctx, tnt, bundleIDs, pageSize, cursor)
+}
+
+func (s *service) ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error) {
+	tenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.fetchRequestRepo.ListByReferenceObjectID(ctx, tenant, model.DocumentFetchRequestReference, documentIDs)
 }
