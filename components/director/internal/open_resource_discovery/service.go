@@ -99,10 +99,6 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 
 	ctx = tenant.SaveToContext(ctx, app.Tenant, "")
 
-	if err := ValidateSystemInstanceInput(app); err != nil {
-		log.C(ctx).WithError(err).Errorf("error validating app %q", app.ID)
-	}
-
 	webhooks, err := s.webhookSvc.ListForApplication(ctx, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
@@ -133,6 +129,12 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 }
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents) error {
+	// TODO: Currently it isn't mandatory Vendor resources to be declared in the Documents because there is a concept of a central registry from where Vendors will be fetched once.
+	// However, until this registry concept is production ready, we should make sure that if no SAP Vendor resource is explicitly declared across all Documents of a System Instance to
+	// assign it once for it so that all resources referencing that SAP Vendor will not fail.
+	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
+	assignSAPVendor(documents)
+
 	if err := documents.Validate(baseURL); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
@@ -586,6 +588,22 @@ func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTarg
 	}
 
 	return bundleIDsToBeDeleted, nil
+}
+
+func assignSAPVendor(documents Documents) {
+	for _, doc := range documents {
+		for _, vendor := range doc.Vendors {
+			if vendor.OrdID == SapVendor {
+				return
+			}
+		}
+	}
+
+	sapVendor := model.VendorInput{
+		OrdID: SapVendor,
+		Title: SapTitle,
+	}
+	documents[0].Vendors = append(documents[0].Vendors, &sapVendor)
 }
 
 func equalStrings(first, second *string) bool {

@@ -17,13 +17,21 @@
 package tests
 
 import (
-	"log"
 	"os"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
+
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/server"
+	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 
 	"github.com/vrischmann/envconfig"
+)
+
+var (
+	dexGraphQLClient *graphql.Client
 )
 
 type config struct {
@@ -42,6 +50,11 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
+
+	dexToken := server.Token()
+
+	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+
 	exitVal := m.Run()
 	os.Exit(exitVal)
 

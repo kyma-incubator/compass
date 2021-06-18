@@ -87,8 +87,9 @@ func TestAppRegistry(t *testing.T) {
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 		require.NotEmpty(t, infoResponse.Certificate)
 
-		certificates := certs.DecodeAndParseCerts(t, crtResponse)
-		adapterClient := clients.NewSecuredClient(cfg.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, cfg.Tenant)
+		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
+		adapterClient, err := clients.NewSecuredClient(cfg.SkipSslVerify, clientKey, crtChainBytes, cfg.Tenant)
+		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := adapterClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)

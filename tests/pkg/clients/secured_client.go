@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"testing"
@@ -33,19 +35,23 @@ type securedConnectorClient struct {
 	tenant     string
 }
 
-func NewSecuredClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) SecuredClient {
-	client := newTLSClientWithCert(skipVerify, key, certs)
+func NewSecuredClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) (SecuredClient, error) {
+	client, err := newTLSClientWithCert(skipVerify, key, certs)
+	if err != nil {
+		return nil, err
+	}
 
 	return &securedConnectorClient{
 		httpClient: client,
 		tenant:     tenant,
-	}
+	}, err
 }
 
-func newTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certificate ...[]byte) *http.Client {
-	tlsCert := tls.Certificate{
-		Certificate: certificate,
-		PrivateKey:  key,
+func newTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certs []byte) (*http.Client, error) {
+	pemEncodedKey := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	tlsCert, err := tls.X509KeyPair(certs, pemEncodedKey)
+	if err != nil {
+		return nil, err
 	}
 
 	tlsConfig := &tls.Config{
@@ -60,7 +66,7 @@ func newTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certificate ...[
 
 	return &http.Client{
 		Transport: transport,
-	}
+	}, nil
 }
 
 func (cc *securedConnectorClient) GetMgmInfo(t *testing.T, url string) (*model2.ManagementInfoResponse, *model2.Error) {

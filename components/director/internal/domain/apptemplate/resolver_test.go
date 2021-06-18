@@ -479,7 +479,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
-	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
+	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
 
 	testCases := []struct {
 		Name              string
@@ -671,6 +671,21 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			appTemplateConv.AssertExpectations(t)
 		})
 	}
+	t.Run("Returns error when application template inputs url template has invalid method", func(t *testing.T) {
+		gqlAppTemplateInputInvalid := fixGQLAppTemplateInputInvalidAppInputUrlTemplateMethod(testName)
+		expectedError := errors.New("failed to parse webhook url template")
+		_, transact := txGen.ThatSucceeds()
+
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		_, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInputInvalid)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), expectedError.Error())
+	})
+
 }
 
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
@@ -1042,7 +1057,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
-	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInput(testName)
+	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
 
 	testCases := []struct {
 		Name              string
@@ -1234,6 +1249,21 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			appTemplateConv.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when application template inputs url template has invalid method", func(t *testing.T) {
+		gqlAppTemplateUpdateInputInvalid := fixGQLAppTemplateUpdateInputInvalidAppInput(testName)
+		expectedError := errors.New("failed to parse webhook url template")
+		_, transact := txGen.ThatSucceeds()
+
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInputInvalid)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), expectedError.Error())
+	})
 }
 
 func TestResolver_DeleteApplicationTemplate(t *testing.T) {

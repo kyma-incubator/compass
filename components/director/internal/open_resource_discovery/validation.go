@@ -62,6 +62,7 @@ const (
 	ApiImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
 	ApiImplementationStandardCustom        string = "custom"
 
+	SapTitle      = "SAP SE"
 	SapVendor     = "sap:vendor:SAP:"
 	PartnerVendor = "partner:vendor:SAP:"
 )

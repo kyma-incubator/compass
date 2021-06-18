@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-system-broker
   labels:
     app: {{ .Chart.Name }}-system-broker-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-system-broker-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -60,4 +61,8 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never

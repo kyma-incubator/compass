@@ -39,6 +39,7 @@ data:
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
   global.externalServicesMock.enabled: "true"
+  global.externalServicesMock.auditlog: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   director.deployment.allowJWTSigningNone: "true"
