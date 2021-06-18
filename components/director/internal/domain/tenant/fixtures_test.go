@@ -64,7 +64,7 @@ type sqlRow struct {
 	name           string
 	externalTenant string
 	provider       string
-	status         tenant.TenantStatus
+	status         tenant.Status
 }
 
 type sqlRowWithComputedValues struct {
