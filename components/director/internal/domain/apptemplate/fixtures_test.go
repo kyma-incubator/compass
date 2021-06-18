@@ -32,11 +32,12 @@ const (
 )
 
 var (
-	testDescription  = "Lorem ipsum"
-	testProviderName = "provider-display-name"
-	testURL          = "http://valid.url"
-	testError        = errors.New("test error")
-	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
+	testDescription                = "Lorem ipsum"
+	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
+	testProviderName               = "provider-display-name"
+	testURL                        = "http://valid.url"
+	testError                      = errors.New("test error")
+	testTableColumns               = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -138,6 +139,42 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	}
 }
 
+func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateInputInvalidAppInputUrlTemplateMethod(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type:        "ASYNC",
+					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
+				},
+			},
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
 func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdateInput {
 	desc := testDescription
 
@@ -147,6 +184,42 @@ func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdat
 		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:        "foo",
 			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.ApplicationTemplateUpdateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateUpdateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.ApplicationTemplateUpdateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateUpdateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:        "foo",
+			Description: &desc,
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type:        "ASYNC",
+					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
+				},
+			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
