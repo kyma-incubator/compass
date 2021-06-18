@@ -161,6 +161,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulPackageUpdate := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
+		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackagesWithLowerVersion(), nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 		packagesSvc.On("Update", txtest.CtxWithDBMatcher(), packageID, *sanitizedDoc.Packages[0]).Return(nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
@@ -169,6 +170,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulPackageCreate := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
+		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		packagesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Packages[0]).Return("", nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
@@ -187,6 +189,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 
 		return eventSvc
+	}
+
+	successfulEmptyPackageList := func() *automock.PackageService {
+		pkgService := &automock.PackageService{}
+		pkgService.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+
+		return pkgService
 	}
 
 	successfulSpecUpdate := func() *automock.SpecService {
@@ -223,10 +232,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
 
-		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil, nil).Once()
-		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil, nil).Once()
-		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil, nil).Once()
-		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(nil, nil).Once()
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixApi1Specs(), nil).Once()
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(fixApi2Specs(), nil).Once()
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
 		return specSvc
 	}
 
@@ -483,8 +492,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
 				return client
 			},
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if vendor list fails",
@@ -496,9 +506,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return vendorSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:     successfulClientFetch,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if vendor update fails",
@@ -511,9 +522,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorORDID, *sanitizedDoc.Vendors[0]).Return(testErr).Once()
 				return vendorSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:     successfulClientFetch,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if vendor create fails",
@@ -526,9 +538,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[0]).Return("", testErr).Once()
 				return vendorSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:     successfulClientFetch,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if product list fails",
@@ -541,9 +554,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return productSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:     successfulClientFetch,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if product update fails",
@@ -557,9 +571,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("Update", txtest.CtxWithDBMatcher(), productORDID, *sanitizedDoc.Products[0]).Return(testErr).Once()
 				return productSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:     successfulClientFetch,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if product create fails",
@@ -573,9 +588,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Products[0]).Return("", testErr).Once()
 				return productSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:     successfulClientFetch,
+			apiSvcFn:     successfulEmptyAPIList,
+			eventSvcFn:   successfulEmptyEventList,
+			packageSvcFn: successfulEmptyPackageList,
 		},
 		{
 			Name:            "Does not resync resources if package list fails",
@@ -586,6 +602,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			vendorSvcFn:     successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
+				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return packagesSvc
 			},
@@ -603,6 +620,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
+				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 				packagesSvc.On("Update", txtest.CtxWithDBMatcher(), packageID, *sanitizedDoc.Packages[0]).Return(testErr).Once()
 				return packagesSvc
 			},
@@ -619,6 +637,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			vendorSvcFn:     successfulVendorCreate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
+				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				packagesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Packages[0]).Return("", testErr).Once()
 				return packagesSvc
@@ -1097,6 +1116,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:      successfulEventCreate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
+				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				packagesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Packages[0]).Return("", nil).Once()
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()

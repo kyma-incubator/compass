@@ -435,7 +435,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -473,7 +473,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1122,7 +1122,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1397,7 +1397,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1498,6 +1498,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
+				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1506,6 +1507,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1514,6 +1516,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
+				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -1523,6 +1526,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
 				doc.APIResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2902,7 +2906,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -2995,6 +2999,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
+				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3003,6 +3008,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3012,6 +3018,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].Type = model.EventSpecTypeCustom
 				doc.EventResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3837,7 +3844,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4058,7 +4065,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4184,7 +4191,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4238,7 +4245,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

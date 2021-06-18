@@ -132,26 +132,14 @@ var (
 
 	boolPtr = true
 
-	apisFromDB = map[string]model.APIDefinitionIDVersion{
-		api1ORDID: {
-			ID:      api1ID,
-			Version: "2.1.2",
-		},
-		api2ORDID: {
-			ID:      api2ID,
-			Version: "2.1.2",
-		},
+	apisFromDB = map[string]*model.APIDefinition{
+		api1ORDID: fixAPIsWithLowerVersion()[0],
+		api2ORDID: fixAPIsWithLowerVersion()[1],
 	}
 
-	eventsFromDB = map[string]model.EventDefinitionIDVersion{
-		event1ORDID: {
-			ID:      event1ID,
-			Version: "2.1.2",
-		},
-		event2ORDID: {
-			ID:      event2ID,
-			Version: "2.1.2",
-		},
+	eventsFromDB = map[string]*model.EventDefinition{
+		event1ORDID: fixEventsWithLowerVersion()[0],
+		event2ORDID: fixEventsWithLowerVersion()[1],
 	}
 
 	specsFromDB = map[string][]*model.Spec{
@@ -159,6 +147,10 @@ var (
 		api2ID:   convertSpecInputsToSpecs(fixApi2SpecInputs(), model.APISpecReference, api2ID),
 		event1ID: convertSpecInputsToSpecs(fixEvent1SpecInputs(), model.EventSpecReference, event1ID),
 		event2ID: convertSpecInputsToSpecs(fixEvent2SpecInputs(), model.EventSpecReference, event2ID),
+	}
+
+	pkgsFromDB = map[string]*model.Package{
+		packageID: fixPackagesWithLowerVersion()[0],
 	}
 )
 
@@ -635,6 +627,36 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 			Labels:           json.RawMessage(labels),
 		},
 	}
+}
+
+func fixAPIsWithLowerVersion() []*model.APIDefinition {
+	apis := fixAPIs()
+
+	for _, api := range apis {
+		api.Version.Value = "1.1.0"
+	}
+
+	return apis
+}
+
+func fixEventsWithLowerVersion() []*model.EventDefinition {
+	events := fixEvents()
+
+	for _, event := range events {
+		event.Version.Value = "1.1.0"
+	}
+
+	return events
+}
+
+func fixPackagesWithLowerVersion() []*model.Package {
+	pkgs := fixPackages()
+
+	for _, pkg := range pkgs {
+		pkg.Version = "1.1.0"
+	}
+
+	return pkgs
 }
 
 func fixAPIs() []*model.APIDefinition {

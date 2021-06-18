@@ -137,19 +137,24 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
 	assignSAPVendor(documents)
 
-	apiIDsFromDB, apiSpecs, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
+	apiDataFromDB, apiSpecs, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	eventIDsFromDB, eventSpecs, err := s.fetchEventDataAndSpecFromDB(ctx, appID)
+	eventDataFromDB, eventSpecs, err := s.fetchEventDataAndSpecFromDB(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	packageDataFromDB, err := s.fetchPackageDataFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
 	allSpecs := mergeSpecs(apiSpecs, eventSpecs)
 
-	if err := documents.Validate(baseURL, apiIDsFromDB, eventIDsFromDB, allSpecs); err != nil {
+	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, allSpecs, packageDataFromDB); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
 
@@ -548,18 +553,18 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	return err
 }
 
-func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (map[string]model.APIDefinitionIDVersion, map[string][]*model.Spec, error) {
+func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string][]*model.Spec, error) {
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
 	}
 
-	apiIDsFromDB := make(map[string]model.APIDefinitionIDVersion, 0)
+	apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
 	specs := make(map[string][]*model.Spec, 0)
 
 	for _, api := range apisFromDB {
 		apiOrdID := str.PtrStrToStr(api.OrdID)
-		apiIDsFromDB[apiOrdID] = model.APIDefinitionIDVersion{ID: api.ID, Version: api.Version.Value}
+		apiDataFromDB[apiOrdID] = api
 		specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "could not list specification")
@@ -567,21 +572,36 @@ func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (
 		specs[api.ID] = specsFromDB
 	}
 
-	return apiIDsFromDB, specs, nil
+	return apiDataFromDB, specs, nil
 }
 
-func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string) (map[string]model.EventDefinitionIDVersion, map[string][]*model.Spec, error) {
+func (s *Service) fetchPackageDataFromDB(ctx context.Context, appID string) (map[string]*model.Package, error) {
+	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing packages for app with id %s", appID)
+	}
+
+	packageDataFromDB := make(map[string]*model.Package, 0)
+
+	for _, pkg := range packagesFromDB {
+		packageDataFromDB[pkg.OrdID] = pkg
+	}
+
+	return packageDataFromDB, nil
+}
+
+func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, map[string][]*model.Spec, error) {
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
 	}
 
-	eventIDsFromDB := make(map[string]model.EventDefinitionIDVersion, 0)
+	eventDataFromDB := make(map[string]*model.EventDefinition, 0)
 	specs := make(map[string][]*model.Spec, 0)
 
 	for _, event := range eventsFromDB {
 		eventOrdID := str.PtrStrToStr(event.OrdID)
-		eventIDsFromDB[eventOrdID] = model.EventDefinitionIDVersion{ID: event.ID, Version: event.Version.Value}
+		eventDataFromDB[eventOrdID] = event
 		specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "could not list specification")
@@ -589,7 +609,7 @@ func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string)
 		specs[event.ID] = specsFromDB
 	}
 
-	return eventIDsFromDB, specs, nil
+	return eventDataFromDB, specs, nil
 }
 
 func mergeSpecs(spec1, spec2 map[string][]*model.Spec) map[string][]*model.Spec {

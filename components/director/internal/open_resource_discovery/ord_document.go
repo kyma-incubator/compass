@@ -53,7 +53,7 @@ type Document struct {
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(webhookURL string, apisFromDB map[string]model.APIDefinitionIDVersion, eventsFromDB map[string]model.EventDefinitionIDVersion, specs map[string][]*model.Spec) error {
+func (docs Documents) Validate(webhookURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, specs map[string][]*model.Spec, packagesFromDB map[string]*model.Package) error {
 	for _, doc := range docs {
 		if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
 			return errors.Wrap(err, "error validating system instance")
@@ -88,7 +88,7 @@ func (docs Documents) Validate(webhookURL string, apisFromDB map[string]model.AP
 		}
 
 		for _, pkg := range doc.Packages {
-			if err := validatePackageInput(pkg); err != nil {
+			if err := validatePackageInput(pkg, packagesFromDB); err != nil {
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
 			}
 		}
