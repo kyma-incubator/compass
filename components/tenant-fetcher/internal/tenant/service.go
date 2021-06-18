@@ -77,16 +77,18 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 
 	var tenantsToCreate []model.TenantModel
 
-	customerTenant := model.TenantModel{
-		ID:             s.uidService.Generate(),
-		Name:           customerId.String(),
-		TenantId:       customerId.String(),
-		ParentExternal: "",
-		Type:           tenantEntity.Customer,
-		Provider:       s.config.TenantProvider,
-		Status:         tenantEntity.Active,
+	if len(customerId.String()) > 0 {
+		customerTenant := model.TenantModel{
+			ID:             s.uidService.Generate(),
+			Name:           customerId.String(),
+			TenantId:       customerId.String(),
+			ParentExternal: "",
+			Type:           tenantEntity.Customer,
+			Provider:       s.config.TenantProvider,
+			Status:         tenantEntity.Active,
+		}
+		tenantsToCreate = append(tenantsToCreate, customerTenant)
 	}
-	tenantsToCreate = append(tenantsToCreate, customerTenant)
 
 	accountTenant := model.TenantModel{
 		ID:             s.uidService.Generate(),
