@@ -15,7 +15,7 @@ import (
 
 type QueryBuilder interface {
 	BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
-	BuildCountQuery(tenantID string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error)
+	BuildCountQuery(tenantID string, idColumn string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error)
 }
 
 type universalQueryBuilder struct {
@@ -95,19 +95,30 @@ func buildUnionQuery(queries []string, args [][]interface{}) (string, []interfac
 	return getQueryFromBuilder(stmtBuilder), allArgs, nil
 }
 
-func (b *universalQueryBuilder) BuildCountQuery(tenantID string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error) {
+
+
+func (b *universalQueryBuilder) BuildCountQuery(tenantID string, idColumn string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error) {
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
 	}
 	conditions = append(Conditions{NewEqualCondition(*b.tenantColumn, tenantID)}, conditions...)
 
-	return buildCountQuery(b.tableName, conditions, groupByParams, OrderByParams{}, isRebindingNeeded)
+	return buildCountQuery(b.tableName,idColumn, conditions, groupByParams, OrderByParams{}, isRebindingNeeded)
 }
 
-func buildCountQuery(tableName string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	var stmtBuilder strings.Builder
+func buildCountQuery(tableName string,idColumn string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	isGroupByParam := false
+	for _,s:=range groupByParams{
+		if idColumn == s{
+			isGroupByParam = true
+		}
+	}
+	if isGroupByParam == false{
+		return "", nil, errors.New("id column is not in group by params")
+	}
 
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName))
+	var stmtBuilder strings.Builder
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s AS id, COUNT(*) AS total_count FROM %s", idColumn, tableName))
 	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}
@@ -250,13 +261,8 @@ func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) err
 		return nil
 	}
 
-	builder.WriteString(" GROUP BY")
-	for idx, orderBy := range groupByParams {
-		if idx > 0 {
-			builder.WriteString(",")
-		}
-		builder.WriteString(fmt.Sprintf(" %s", orderBy))
-	}
+	builder.WriteString(" GROUP BY ")
+	builder.WriteString(strings.Join(groupByParams, " ,"))
 
 	return nil
 }

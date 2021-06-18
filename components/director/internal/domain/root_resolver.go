@@ -211,6 +211,10 @@ func (r *RootResolver) EventDefinitionsDataloader(ids []dataloader.ParamEventDef
 	return r.mpBundle.EventDefinitionsDataLoader(ids)
 }
 
+func (r *RootResolver) DocumentsDataloader(ids []dataloader.ParamDocument) ([]*graphql.DocumentPage, []error) {
+	return r.mpBundle.DocumentsDataLoader(ids)
+}
+
 func (r *RootResolver) FetchRequestApiDefDataloader(ids []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
 	return r.api.FetchRequestApiDefDataLoader(ids)
 }

@@ -12,7 +12,7 @@ import (
 
 type UnionLister interface {
 	//List stores the result into dest and returns the total count of tuples for each id from ids
-	List(ctx context.Context, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy []string, dest Collection, additionalConditions ...Condition) ([]int, error)
+	List(ctx context.Context, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy []string, dest Collection, additionalConditions ...Condition) (map[string]int, error)
 	SetSelectedColumns(selectedColumns []string)
 	Clone() UnionLister
 }
@@ -48,9 +48,9 @@ func (l *unionLister) Clone() UnionLister {
 	return &clonedLister
 }
 
-func (l *unionLister) List(ctx context.Context, tenant string, ids []string, idscolumn string, pageSize int, cursor string, orderBy []string, dest Collection, additionalConditions ...Condition) ([]int, error) {
+func (l *unionLister) List(ctx context.Context, tenant string, ids []string, idscolumn string, pageSize int, cursor string, orderBy []string, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
 	if tenant == "" {
-		return []int{0}, apperrors.NewTenantRequiredError()
+		return nil, apperrors.NewTenantRequiredError()
 	}
 	additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
@@ -61,7 +61,7 @@ type queryStruct struct {
 	statement string
 }
 
-func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor string, orderBy []string, ids []string, idsColumn string, dest Collection, conditions ...Condition) ([]int, error) {
+func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor string, orderBy []string, ids []string, idsColumn string, dest Collection, conditions ...Condition) (map[string]int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		return nil, persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while fetching list page of objects from '%s' table", l.tableName)
 	}
 
-	totalCount, err := l.getTotalCount(ctx, persist, []string{idsColumn}, OrderByParams{NewAscOrderBy(idsColumn)}, conditions)
+	totalCount, err := l.getTotalCount(ctx, persist, idsColumn, []string{idsColumn}, OrderByParams{NewAscOrderBy(idsColumn)}, conditions)
 	if err != nil {
 		return nil, err
 	}
@@ -133,16 +133,27 @@ func parseOrderByParams(orderBy []string) OrderByParams{
 	return o
 }
 
-func (l *unionLister) getTotalCount(ctx context.Context, persist persistence.PersistenceOp, groupBy GroupByParams, orderBy OrderByParams, conditions Conditions) ([]int, error) {
-	query, args, err := buildCountQuery(l.tableName, conditions, groupBy, orderBy, true)
+type idToCount struct {
+	Id string `db:"id"`
+	Count int `db:"total_count"`
+}
+
+func (l *unionLister) getTotalCount(ctx context.Context, persist persistence.PersistenceOp, idsColumn string, groupBy GroupByParams, orderBy OrderByParams, conditions Conditions) (map[string]int, error) {
+	query, args, err := buildCountQuery(l.tableName, idsColumn, conditions, groupBy, orderBy, true)
 	if err != nil {
 		return nil, err
 	}
 
-	var totalCount []int
-	err = persist.SelectContext(ctx, &totalCount, query, args...)
+	var counts []idToCount
+	err = persist.SelectContext(ctx, &counts, query, args...)
 	if err != nil {
 		return nil, persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while counting objects from '%s' table", l.tableName)
 	}
+
+	totalCount := make(map[string]int)
+	for _, c := range counts {
+		totalCount[c.Id]=c.Count
+	}
+
 	return totalCount, nil
 }

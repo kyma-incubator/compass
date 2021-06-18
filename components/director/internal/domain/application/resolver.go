@@ -594,16 +594,16 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.Param) ([]*graphql.Bundle
 	}
 
 	var gqlBndls []*graphql.BundlePage
-	for _, curBundle := range bndlPages {
-		pkgs, err := r.bndlConv.MultipleToGraphQL(curBundle.Data)
+	for _, page := range bndlPages {
+		pkgs, err := r.bndlConv.MultipleToGraphQL(page.Data)
 		if err != nil {
 			return nil, []error{err}
 		}
 
-		gqlBndls = append(gqlBndls, &graphql.BundlePage{Data: pkgs, TotalCount: curBundle.TotalCount, PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(curBundle.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(curBundle.PageInfo.EndCursor),
-			HasNextPage: curBundle.PageInfo.HasNextPage,
+		gqlBndls = append(gqlBndls, &graphql.BundlePage{Data: pkgs, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
 		}})
 	}
 

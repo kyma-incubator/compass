@@ -19,6 +19,7 @@ type DocumentRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
 	ListForBundle(ctx context.Context, tenant string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
+	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 	Create(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
@@ -152,4 +153,17 @@ func (s *service) GetFetchRequest(ctx context.Context, documentID string) (*mode
 	}
 
 	return fetchRequest, nil
+}
+
+func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error){
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListAllForBundle(ctx, tnt, bundleIDs, pageSize, cursor)
 }

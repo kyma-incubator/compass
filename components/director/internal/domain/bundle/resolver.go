@@ -79,6 +79,7 @@ type DocumentService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
 	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
+	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 }
 
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore
@@ -636,13 +637,23 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Bundle, id string)
 }
 
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Bundle, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	param := dataloader.ParamDocument{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.DocumentFor(ctx).DocumentById.Load(param)
+}
 
-	ctx = persistence.SaveToContext(ctx, tx)
+func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*graphql.DocumentPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Bundles found")}
+	}
+
+	ctx := keys[0].Ctx
+	first := keys[0].First
+	after := keys[0].After
+
+	bundleIDs := make([]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		bundleIDs[i] = keys[i].ID
+	}
 
 	var cursor string
 	if after != nil {
@@ -650,28 +661,41 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Bundle, first *in
 	}
 
 	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
-	documentsPage, err := r.documentSvc.ListForBundle(ctx, obj.ID, *first, cursor)
+	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	documentPages, err := r.documentSvc.ListAllByBundleIDs(ctx, bundleIDs, *first, cursor)
+	if err != nil {
+		return nil, []error{err}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	gqlDocuments := r.documentConverter.MultipleToGraphQL(documentsPage.Data)
+	var gqlDocumentPages []*graphql.DocumentPage
+	for _, page := range documentPages {
+		gqlDocuments := r.documentConverter.MultipleToGraphQL(page.Data)
 
-	return &graphql.DocumentPage{
-		Data:       gqlDocuments,
-		TotalCount: documentsPage.TotalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(documentsPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(documentsPage.PageInfo.EndCursor),
-			HasNextPage: documentsPage.PageInfo.HasNextPage,
-		},
-	}, nil
+		gqlDocumentPages = append(gqlDocumentPages, &graphql.DocumentPage{
+			Data:       gqlDocuments,
+			TotalCount: page.TotalCount,
+			PageInfo: &graphql.PageInfo{
+				StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+				EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+				HasNextPage: page.PageInfo.HasNextPage,
+			},
+		})
+	}
+
+	return gqlDocumentPages, nil
 }

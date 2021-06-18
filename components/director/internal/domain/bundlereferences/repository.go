@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"sort"
 )
 
 const (
@@ -201,13 +200,7 @@ func (r *repository) ListAllForBundle(ctx context.Context, objectType model.Bund
 		bundleReferences = append(bundleReferences, &entity)
 	}
 
-	idToCount := make(map[string]int)
-	sort.Strings(bundleIDs)
-	for i, count := range counts {
-		idToCount[bundleIDs[i]] = count
-	}
-
-	return bundleReferences, idToCount, nil
+	return bundleReferences, counts, nil
 }
 
 func (r *repository) referenceObjectFieldName(objectType model.BundleReferenceObjectType) (string, error) {

@@ -43,6 +43,7 @@ type pgRepository struct {
 	deleter         repo.Deleter
 	pageableQuerier repo.PageableQuerier
 	lister          repo.Lister
+	unionLister     repo.UnionLister
 	creator         repo.Creator
 	updater         repo.Updater
 	conv            EntityConverter
@@ -55,6 +56,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		lister:          repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		unionLister:     repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
 		updater:         repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
 		conv:            conv,
@@ -194,54 +196,11 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 }
 
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var bundleCollection BundleCollection
-	var query string
-	var sb strings.Builder
-	unionQuery := fmt.Sprint("(SELECT name, id, app_id from bundles WHERE app_id='%s' and tenant_id='%s' order by id limit %v offset %d)")
-
-	offset, err := pagination.DecodeOffsetCursor(cursor)
-	if err != nil {
-		return nil, errors.Wrap(err, "while decoding page cursor")
-	}
-
-	for i := 0; i < len(applicationIDs); i++ {
-		if i == len(applicationIDs)-1 {
-			sb.WriteString(fmt.Sprintf(unionQuery, applicationIDs[i], tenantID, pageSize, offset))
-			query = sb.String()
-		}
-		sb.WriteString(fmt.Sprintf(unionQuery, applicationIDs[i], tenantID, pageSize, offset) + "union")
-	}
-
-	fmt.Println("[===Executing single union query ===] ", query)
-	err = persist.SelectContext(ctx, &bundleCollection, query)
+	counts, err := r.unionLister.List(ctx, tenantID, applicationIDs, "app_id", pageSize, cursor, []string{"app_id", "id"}, &bundleCollection)
 	if err != nil {
 		return nil, err
 	}
-
-	//count logic
-	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues("app_id", applicationIDs),
-	}
-	var bundleCollectionCount BundleCollection
-	err = r.lister.List(ctx, tenantID, &bundleCollectionCount, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	bundlesCountByID := map[string][]*model.Bundle{}
-	for _, bundleEnt := range bundleCollectionCount {
-		m, err := r.conv.FromEntity(&bundleEnt)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating Bundle model from entity")
-		}
-		bundlesCountByID[bundleEnt.ApplicationID] = append(bundlesCountByID[bundleEnt.ApplicationID], m)
-	}
-	//end
 
 	bundleByID := map[string][]*model.Bundle{}
 	for _, bundleEnt := range bundleCollection {
@@ -252,10 +211,16 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 		bundleByID[bundleEnt.ApplicationID] = append(bundleByID[bundleEnt.ApplicationID], m)
 	}
 
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+
 	// map the PackagePage to the current app_id
 	bundlePages := make([]*model.BundlePage, len(applicationIDs))
 	for i, appID := range applicationIDs {
-		totalCount := len(bundlesCountByID[appID])
+		totalCount := counts[appID]
 		hasNextPage := false
 		endCursor := ""
 		if totalCount > offset+len(bundleByID[appID]) {
