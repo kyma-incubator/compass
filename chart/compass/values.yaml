@@ -79,10 +79,10 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1878"
+      version: "PR-1881"
     console:
       dir:
-      version: "PR-33"
+      version: "PR-34"
     e2e_tests:
       dir:
       version: "PR-1888"
@@ -390,6 +390,7 @@ global:
 
   externalServicesMock:
     enabled: false
+    auditlog: false
 
   tests:
     namespace: kyma-system
@@ -404,5 +405,14 @@ global:
       maxOpenConnections: 3
       maxIdleConnections: 1
     skipTLSVerify: true
+
+    token:
+      server:
+        enabled: false
+        port: 5000
+    securityContext: # Set on container level
+      runAsUser: 2000
+      allowPrivilegeEscalation: false
+
 pairing-adapter:
   enabled: false

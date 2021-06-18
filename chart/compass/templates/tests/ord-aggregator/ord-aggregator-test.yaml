@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Values.global.tests.namespace }}
   labels:
     app: {{ .Chart.Name }}-ord-aggregator-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-ord-aggregator-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -63,4 +64,8 @@ spec:
               value: "{{ (index .Values.global.tenants 9).id }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never

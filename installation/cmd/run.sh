@@ -124,6 +124,8 @@ if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   fi
 fi
 
+useMinikube
+
 echo "Label Minikube node for benchmark execution..."
 NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)
 kubectl label node "$NODE" benchmark=true || true

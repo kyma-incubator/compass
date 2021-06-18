@@ -31,8 +31,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -70,11 +68,6 @@ func TestORDService(t *testing.T) {
 	}
 
 	ctx := context.Background()
-
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
 	require.NoError(t, err)

@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-tenant-fetcher
   labels:
     app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-tenant-fetcher-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}

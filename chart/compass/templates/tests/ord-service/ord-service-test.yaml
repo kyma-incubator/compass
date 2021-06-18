@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-e2e-ord-service
   labels:
     app: {{ .Chart.Name }}-ord-service-tests-app
+    release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-ord-service-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -62,4 +63,8 @@ spec:
               value: "{{ (index .Values.global.tenants 3).id }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never
