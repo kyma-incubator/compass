@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	gcli "github.com/machinebox/graphql"
 )
 
@@ -18,11 +17,7 @@ type StaticUserClient struct {
 	DexGraphqlClient *gcli.Client
 }
 
-func NewStaticUserClient(ctx context.Context, url string, tenant string) (*StaticUserClient, error) {
-	token, err := idtokenprovider.GetDexToken()
-	if err != nil {
-		return nil, err
-	}
+func NewStaticUserClient(ctx context.Context, url, tenant, token string) (*StaticUserClient, error) {
 	return &StaticUserClient{
 		ctx:              ctx,
 		tenant:           tenant,

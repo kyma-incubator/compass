@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -149,16 +150,23 @@ func GenerateOneTimeTokenForApplication(t require.TestingT, ctx context.Context,
 	return oneTimeToken
 }
 
-func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
+func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, defaultScenarioEnabled bool) {
 	labelKey := "scenarios"
-	defaultValue := "DEFAULT"
+	if defaultScenarioEnabled {
+		defaultValue := "DEFAULT"
 
-	scenarios := []string{defaultValue}
-	var labelValue interface{} = scenarios
+		scenarios := []string{defaultValue}
+		var labelValue interface{} = scenarios
 
-	setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
-
-	label := graphql.Label{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
-	require.NoError(t, err)
+		setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
+		label := graphql.Label{}
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
+		require.NoError(t, err)
+	} else {
+		deleteLabelRequest := FixDeleteApplicationLabelRequest(applicationID, labelKey)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteLabelRequest, nil)
+		if err != nil && !strings.Contains(err.Error(), "Object not found") {
+			require.NoError(t, err)
+		}
+	}
 }

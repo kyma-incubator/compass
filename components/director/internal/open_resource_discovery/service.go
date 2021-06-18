@@ -101,10 +101,6 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 
 	ctx = tenant.SaveToContext(ctx, app.Tenant, "")
 
-	if err := ValidateSystemInstanceInput(app); err != nil {
-		log.C(ctx).WithError(err).Errorf("error validating app %q", app.ID)
-	}
-
 	webhooks, err := s.webhookSvc.ListForApplication(ctx, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)

@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -44,9 +45,7 @@ func TestCallingCompassGateways(t *testing.T) {
 		tenant = tenant.TestTenants.GetDefaultTenantID()
 	)
 
-	t.Log("Getting Dex id_token")
-	dexToken, err = idtokenprovider.GetDexToken()
-	require.NoError(t, err)
+	dexToken := server.Token()
 
 	authorizedClient := gql.NewAuthorizedHTTPClient(dexToken)
 

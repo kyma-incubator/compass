@@ -12,9 +12,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+	"github.com/kyma-incubator/compass/tests/pkg/server"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -40,20 +41,22 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	logrus.Info("Starting Connector Test")
+	log.Info("Starting Connector Test")
 	cfg = config.ConnectorTestConfig{}
 	config.ReadConfig(&cfg)
 	ctx = context.Background()
 
+	dexToken := server.Token()
+
 	key, err := certs.GenerateKey()
 	if err != nil {
-		logrus.Errorf("Failed to generate private key: %s", err.Error())
+		log.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
 	clientKey = key
-	directorClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.Tenant)
+	directorClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.Tenant, dexToken)
 	if err != nil {
-		logrus.Errorf("Failed to create director client: %s", err.Error())
+		log.Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
 	connectorHydratorClient = clients.NewHydratorClient(cfg.ConnectorHydratorURL)
@@ -62,14 +65,14 @@ func TestMain(m *testing.M) {
 
 	configmapInterface, err := newConfigMapInterface()
 	if err != nil {
-		logrus.Errorf("Failed to create config map interface: %s", err.Error())
+		log.Errorf("Failed to create config map interface: %s", err.Error())
 		os.Exit(1)
 	}
 	configmapCleaner = k8s.NewConfigMapCleaner(configmapInterface, cfg.RevocationConfigMapName)
 
 	exitCode := m.Run()
 
-	logrus.Info("Tests finished. Exit code: ", exitCode)
+	log.Info("Tests finished. Exit code: ", exitCode)
 
 	os.Exit(exitCode)
 }
@@ -77,8 +80,8 @@ func TestMain(m *testing.M) {
 func newConfigMapInterface() (v1.ConfigMapInterface, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
-		logrus.Info("Trying to initialize with local config")
+		log.Warnf("Failed to read in cluster config: %s", err.Error())
+		log.Info("Trying to initialize with local config")
 		home := homedir.HomeDir()
 		k8sConfPath := filepath.Join(home, ".kube", "config")
 		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)

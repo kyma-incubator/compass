@@ -329,105 +329,113 @@ var (
 
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
 	var tests = []struct {
-		Name                   string
-		SystemInstanceProvider func() *model.Application
-		ExpectedToBeValid      bool
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
 	}{
 		{
 			Name: "Invalid value for `correlationIds` field for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.CorrelationIds = json.RawMessage(invalidCorrelationIdsElement)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.CorrelationIds = json.RawMessage(invalidCorrelationIdsElement)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid `correlationIds` field when it is invalid JSON for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.CorrelationIds = json.RawMessage(invalidJson)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.CorrelationIds = json.RawMessage(invalidJson)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid `correlationIds` field when it isn't a JSON array for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.CorrelationIds = json.RawMessage("{}")
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.CorrelationIds = json.RawMessage("{}")
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid `correlationIds` field when the JSON array is empty for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.CorrelationIds = json.RawMessage("[]")
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.CorrelationIds = json.RawMessage("[]")
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid `correlationIds` field when it contains non string value for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.CorrelationIds = json.RawMessage(invalidCorrelationIdsNonStringElement)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.CorrelationIds = json.RawMessage(invalidCorrelationIdsNonStringElement)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid `baseUrl` for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.BaseURL = str.Ptr("http://test.com/test/v1")
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1")
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`baseUrl` of `DescribedSystemInstance` does not match the webhook Url",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.BaseURL = str.Ptr(baseURL2)
+
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid JSON `Labels` field for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.Labels = json.RawMessage(invalidJson)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidJson)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid JSON object `Labels` field for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.Labels = json.RawMessage(`[]`)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Labels = json.RawMessage(`[]`)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "`Labels` values are not array for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "`Labels` values are not array of strings for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
 			Name: "Invalid key for JSON `Labels` field for SystemInstance",
-			SystemInstanceProvider: func() *model.Application {
-				sysInst := fixSystemInstance()
-				sysInst.Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
 
-				return sysInst
+				return []*open_resource_discovery.Document{doc}
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			systemInstance := test.SystemInstanceProvider
-			err := open_resource_discovery.ValidateSystemInstanceInput(systemInstance())
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
