@@ -38,7 +38,7 @@ import (
 type config struct {
 	APIConfig                      systemfetcher.APIConfig
 	OAuth2Config                   systemfetcher.OAuth2Config
-	SystemFetcherParallellism int `envconfig:"APP_SYSTEM_INFORMATION_PARALLELLISM,default=30"`
+	SystemFetcherParallellism      int `envconfig:"APP_SYSTEM_INFORMATION_PARALLELLISM,default=30"`
 	Database                       persistence.DatabaseConfig
 	SystemToTemplateMappings       []systemfetcher.TempMapping `envconfig:"-"`
 	SystemToTemplateMappingsString string                      `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
