@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"log"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vrischmann/envconfig"
@@ -76,16 +75,16 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 		},
 		ListLabelDefinitionsTenantName: {
-			ID:             "2bf03de1-23b1-4063-9d3e-67096800accc",
+			ID:             "3f641cf5-2d14-4e0f-a122-16e7569926f1",
 			Name:           ListLabelDefinitionsTenantName,
-			ExternalTenant: "2bf03de1-23b1-4063-9d3e-67096800accc",
+			ExternalTenant: "3f641cf5-2d14-4e0f-a122-16e7569926f1",
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
 		DeleteLastScenarioForApplicationTenantName: {
-			ID:             "f739b36c-813f-4fc3-996e-dd03c7d13aa0",
+			ID:             "0403be1e-f854-475e-9074-922120277af5",
 			Name:           DeleteLastScenarioForApplicationTenantName,
-			ExternalTenant: "f739b36c-813f-4fc3-996e-dd03c7d13aa0",
+			ExternalTenant: "0403be1e-f854-475e-9074-922120277af5",
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
@@ -186,7 +185,7 @@ func (mgr TestTenantsManager) Cleanup() {
 	}
 }
 
-func (mgr TestTenantsManager) GetIDByName(t *testing.T, name string) string {
+func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) string {
 	val, ok := mgr.tenantsByName[name]
 	require.True(t, ok)
 	return val.ID

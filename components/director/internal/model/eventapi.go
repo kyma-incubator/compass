@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"regexp"
 
-	"github.com/go-ozzo/ozzo-validation/is"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -26,13 +26,14 @@ type EventDefinition struct {
 	Countries           json.RawMessage
 	ReleaseStatus       *string
 	SunsetDate          *string
-	Successor           *string
+	Successors          json.RawMessage
 	Labels              json.RawMessage
 	Visibility          *string
 	Disabled            *bool
 	PartOfProducts      json.RawMessage
 	LineOfBusiness      json.RawMessage
 	Industry            json.RawMessage
+	Extensible          json.RawMessage
 
 	Version *Version
 	*BaseEntity
@@ -51,27 +52,27 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	OrdPackageID        *string         `json:"partOfPackage"`
-	Name                string          `json:"title"`
-	Description         *string         `json:"description"`
-	Group               *string         `json:",omitempty"`
-	OrdID               *string         `json:"ordId"`
-	ShortDescription    *string         `json:"shortDescription"`
-	SystemInstanceAware *bool           `json:"systemInstanceAware"`
-	ChangeLogEntries    json.RawMessage `json:"changelogEntries"`
-	Links               json.RawMessage `json:"links"`
-	Tags                json.RawMessage `json:"tags"`
-	Countries           json.RawMessage `json:"countries"`
-	ReleaseStatus       *string         `json:"releaseStatus"`
-	SunsetDate          *string         `json:"sunsetDate"`
-	Successor           *string         `json:"successor"`
-	Labels              json.RawMessage `json:"labels"`
-	Visibility          *string         `json:"visibility"`
-	Disabled            *bool           `json:"disabled"`
-	PartOfProducts      json.RawMessage `json:"partOfProducts"`
-	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
-	Industry            json.RawMessage `json:"industry"`
-
+	OrdPackageID             *string                       `json:"partOfPackage"`
+	Name                     string                        `json:"title"`
+	Description              *string                       `json:"description"`
+	Group                    *string                       `json:",omitempty"`
+	OrdID                    *string                       `json:"ordId"`
+	ShortDescription         *string                       `json:"shortDescription"`
+	SystemInstanceAware      *bool                         `json:"systemInstanceAware"`
+	ChangeLogEntries         json.RawMessage               `json:"changelogEntries"`
+	Links                    json.RawMessage               `json:"links"`
+	Tags                     json.RawMessage               `json:"tags"`
+	Countries                json.RawMessage               `json:"countries"`
+	ReleaseStatus            *string                       `json:"releaseStatus"`
+	SunsetDate               *string                       `json:"sunsetDate"`
+	Successors               json.RawMessage               `json:"successors,omitempty"`
+	Labels                   json.RawMessage               `json:"labels"`
+	Visibility               *string                       `json:"visibility"`
+	Disabled                 *bool                         `json:"disabled"`
+	PartOfProducts           json.RawMessage               `json:"partOfProducts"`
+	LineOfBusiness           json.RawMessage               `json:"lineOfBusiness"`
+	Industry                 json.RawMessage               `json:"industry"`
+	Extensible               json.RawMessage               `json:"extensible"`
 	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
@@ -134,7 +135,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Links:               e.Links,
 		ReleaseStatus:       e.ReleaseStatus,
 		SunsetDate:          e.SunsetDate,
-		Successor:           e.Successor,
+		Successors:          e.Successors,
 		ChangeLogEntries:    e.ChangeLogEntries,
 		Labels:              e.Labels,
 		Visibility:          e.Visibility,
@@ -143,6 +144,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		LineOfBusiness:      e.LineOfBusiness,
 		Industry:            e.Industry,
 		Version:             e.VersionInput.ToVersion(),
+		Extensible:          e.Extensible,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

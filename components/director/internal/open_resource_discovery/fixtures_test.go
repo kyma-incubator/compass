@@ -12,19 +12,20 @@ import (
 )
 
 const (
-	ordDocURI             = "/open-resource-discovery/v1/documents/example1"
-	baseURL               = "http://localhost:8080"
-	systemInstanceBaseURL = "http://test.com"
-	packageORDID          = "ns:package:PACKAGE_ID:v1"
-	productORDID          = "ns:product:id:"
-	product2ORDID         = "ns:product:id2:"
-	bundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID     = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID           = "ns:vendor:id:"
-	api1ORDID             = "ns:apiResource:API_ID:v2"
-	api2ORDID             = "ns:apiResource:API_ID2:v1"
-	event1ORDID           = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID           = "ns2:eventResource:EVENT_ID:v1"
+	ordDocURI         = "/open-resource-discovery/v1/documents/example1"
+	baseURL           = "http://test.com:8080"
+	baseURL2          = "http://second.com"
+	packageORDID      = "ns:package:PACKAGE_ID:v1"
+	productORDID      = "sap:product:id:"
+	product2ORDID     = "ns:product:id2:"
+	bundleORDID       = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID       = "sap:vendor:SAP:"
+	vendor2ORDID      = "partner:vendor:SAP:"
+	api1ORDID         = "ns:apiResource:API_ID:v2"
+	api2ORDID         = "ns:apiResource:API_ID2:v1"
+	event1ORDID       = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID       = "ns2:eventResource:EVENT_ID:v1"
 
 	appID     = "testApp"
 	whID      = "testWh"
@@ -37,9 +38,10 @@ const (
 	event2ID  = "testEvent2"
 
 	cursor                    = "cursor"
-	policyLevel               = "sap"
+	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
+	partners                  = `["microsoft:vendor:Microsoft:"]`
 )
 
 var (
@@ -150,14 +152,6 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	}
 }
 
-func fixSystemInstance() *model.Application {
-	return &model.Application{
-		CorrelationIds: json.RawMessage(correlationIds),
-		BaseURL:        str.Ptr(systemInstanceBaseURL),
-		Labels:         json.RawMessage(labels),
-	}
-}
-
 func fixORDDocument() *open_resource_discovery.Document {
 	return fixORDDocumentWithBaseURL("")
 }
@@ -167,26 +161,26 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 
 	sanitizedDoc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
 	sanitizedDoc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`)
-	sanitizedDoc.APIResources[0].Industry = json.RawMessage(`["automotive","finance","test"]`)
+	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	sanitizedDoc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.APIResources[0].Labels = json.RawMessage(mergedLabels)
 
 	sanitizedDoc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
 	sanitizedDoc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`)
-	sanitizedDoc.APIResources[1].Industry = json.RawMessage(`["automotive","finance","test"]`)
+	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	sanitizedDoc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.APIResources[1].Labels = json.RawMessage(mergedLabels)
 
 	sanitizedDoc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	sanitizedDoc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`)
-	sanitizedDoc.EventResources[0].Industry = json.RawMessage(`["automotive","finance","test"]`)
+	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	sanitizedDoc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.EventResources[0].Labels = json.RawMessage(mergedLabels)
 
 	sanitizedDoc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
 	sanitizedDoc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`)
-	sanitizedDoc.EventResources[1].Industry = json.RawMessage(`["automotive","finance","test"]`)
+	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	sanitizedDoc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.EventResources[1].Labels = json.RawMessage(mergedLabels)
 
 	return sanitizedDoc
@@ -195,13 +189,12 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
-		OpenResourceDiscovery: "1.0-rc.2",
+		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),
 			Labels:  json.RawMessage(labels),
 		},
-		ProviderSystemInstance: nil,
 		Packages: []*model.PackageInput{
 			{
 				OrdID:            packageORDID,
@@ -218,8 +211,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Labels:           json.RawMessage(packageLabels),
 				PolicyLevel:      policyLevel,
 				PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:   json.RawMessage(`["lineOfBusiness"]`),
-				Industry:         json.RawMessage(`["automotive","finance"]`),
+				LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
+				Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			},
 		},
 		ConsumptionBundles: []*model.BundleCreateInput{
@@ -260,17 +253,18 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
 				ReleaseStatus:                           str.Ptr("active"),
 				SunsetDate:                              nil,
-				Successor:                               nil,
+				Successors:                              nil,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                &boolPtr,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:                          json.RawMessage(`["lineOfBusiness2"]`),
-				Industry:                                json.RawMessage(`["automotive","test"]`),
+				LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+				Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
+				Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "openapi-v3",
@@ -292,6 +286,16 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 							},
 						},
 					},
+					{
+						Type:      "edmx",
+						MediaType: "application/xml",
+						URL:       "https://TEST:443//odata/$metadata",
+						AccessStrategy: []model.AccessStrategy{
+							{
+								Type: "open",
+							},
+						},
+					},
 				},
 				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
 					{
@@ -304,6 +308,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				},
 			},
 			{
+				Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				OrdID:                                   str.Ptr(api2ORDID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "Gateway Sample Service",
@@ -318,14 +323,14 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
 				ReleaseStatus:                           str.Ptr("deprecated"),
 				SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
-				Successor:                               str.Ptr(api1ORDID),
+				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                nil,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:                          json.RawMessage(`["lineOfBusiness2"]`),
-				Industry:                                json.RawMessage(`["automotive","test"]`),
+				LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+				Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
@@ -334,6 +339,16 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 						Type:      "edmx",
 						MediaType: "application/xml",
 						URL:       "https://TEST:443//odata/$metadata",
+						AccessStrategy: []model.AccessStrategy{
+							{
+								Type: "open",
+							},
+						},
+					},
+					{
+						Type:      "openapi-v3",
+						MediaType: "application/json",
+						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseURL),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -365,13 +380,14 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Countries:           json.RawMessage(`["BG","US"]`),
 				ReleaseStatus:       str.Ptr("active"),
 				SunsetDate:          nil,
-				Successor:           nil,
+				Successors:          nil,
 				Labels:              json.RawMessage(labels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            &boolPtr,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
-				Industry:            json.RawMessage(`["automotive","test"]`),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -406,13 +422,14 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Countries:           json.RawMessage(`["BR"]`),
 				ReleaseStatus:       str.Ptr("deprecated"),
 				SunsetDate:          str.Ptr("2020-12-08T15:47:04+0000"),
-				Successor:           str.Ptr(event2ORDID),
+				Successors:          json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID)),
 				Labels:              json.RawMessage(labels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            nil,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["lineOfBusiness2"]`),
-				Industry:            json.RawMessage(`["automotive","test"]`),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -443,10 +460,16 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 		},
 		Vendors: []*model.VendorInput{
 			{
-				OrdID:      vendorORDID,
-				Title:      "SAP",
-				SapPartner: &boolPtr,
-				Labels:     json.RawMessage(labels),
+				OrdID:    vendorORDID,
+				Title:    "SAP",
+				Partners: json.RawMessage(partners),
+				Labels:   json.RawMessage(labels),
+			},
+			{
+				OrdID:    vendor2ORDID,
+				Title:    "SAP",
+				Partners: json.RawMessage(partners),
+				Labels:   json.RawMessage(labels),
 			},
 		},
 	}
@@ -492,8 +515,14 @@ func fixVendors() []*model.Vendor {
 			TenantID:      tenantID,
 			ApplicationID: appID,
 			Title:         "SAP",
-			SapPartner:    &boolPtr,
+			Partners:      json.RawMessage(partners),
 			Labels:        json.RawMessage(labels),
+		},
+		{
+			OrdID:    vendor2ORDID,
+			Title:    "SAP",
+			Partners: json.RawMessage(partners),
+			Labels:   json.RawMessage(labels),
 		},
 	}
 }
@@ -534,8 +563,8 @@ func fixPackages() []*model.Package {
 			Labels:           json.RawMessage(packageLabels),
 			PolicyLevel:      policyLevel,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["lineOfBusiness"]`),
-			Industry:         json.RawMessage(`["automotive","finance"]`),
+			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
+			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 		},
 	}
 }
@@ -601,8 +630,8 @@ func fixAPIs() []*model.APIDefinition {
 			Visibility:                              str.Ptr("public"),
 			Disabled:                                &boolPtr,
 			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:                          json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
-			Industry:                                json.RawMessage(`["automotive","finance","test"]`),
+			LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+			Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 			CustomImplementationStandard:            nil,
 			CustomImplementationStandardDescription: nil,
@@ -630,13 +659,13 @@ func fixAPIs() []*model.APIDefinition {
 			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
 			ReleaseStatus:                           str.Ptr("deprecated"),
 			SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
-			Successor:                               str.Ptr(api1ORDID),
+			Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
 			ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 			Labels:                                  json.RawMessage(mergedLabels),
 			Visibility:                              str.Ptr("public"),
 			PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:                          json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
-			Industry:                                json.RawMessage(`["automotive","finance","test"]`),
+			LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+			Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 			CustomImplementationStandard:            nil,
 			CustomImplementationStandardDescription: nil,
@@ -694,8 +723,8 @@ func fixEvents() []*model.EventDefinition {
 			Visibility:       str.Ptr("public"),
 			Disabled:         &boolPtr,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
-			Industry:         json.RawMessage(`["automotive","finance","test"]`),
+			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
+			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
@@ -718,12 +747,12 @@ func fixEvents() []*model.EventDefinition {
 			Countries:        json.RawMessage(`["BG","EN","BR"]`),
 			ReleaseStatus:    str.Ptr("deprecated"),
 			SunsetDate:       str.Ptr("2020-12-08T15:47:04+0000"),
-			Successor:        str.Ptr(event2ORDID),
+			Successors:       json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID)),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       str.Ptr("public"),
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["lineOfBusiness","lineOfBusiness2"]`),
-			Industry:         json.RawMessage(`["automotive","finance","test"]`),
+			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
+			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			Version: &model.Version{
 				Value: "1.1.1",
 			},
@@ -736,11 +765,12 @@ func fixEvents() []*model.EventDefinition {
 }
 
 func fixApi1SpecInputs() []*model.SpecInput {
-	apiType := model.APISpecTypeOpenAPIV3
+	openApiType := model.APISpecTypeOpenAPIV3
+	edmxAPIType := model.APISpecTypeEDMX
 	return []*model.SpecInput{
 		{
 			Format:     "application/json",
-			APIType:    &apiType,
+			APIType:    &openApiType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
@@ -748,24 +778,41 @@ func fixApi1SpecInputs() []*model.SpecInput {
 		},
 		{
 			Format:     "text/yaml",
-			APIType:    &apiType,
+			APIType:    &openApiType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: "https://test.com/odata/1.0/catalog",
+			},
+		},
+		{
+			Format:     "application/xml",
+			APIType:    &edmxAPIType,
+			CustomType: str.Ptr(""),
+			FetchRequest: &model.FetchRequestInput{
+				URL: "https://TEST:443//odata/$metadata",
 			},
 		},
 	}
 }
 
 func fixApi2SpecInputs() []*model.SpecInput {
-	apiType := model.APISpecTypeEDMX
+	edmxAPIType := model.APISpecTypeEDMX
+	openApiType := model.APISpecTypeOpenAPIV3
 	return []*model.SpecInput{
 		{
 			Format:     "application/xml",
-			APIType:    &apiType,
+			APIType:    &edmxAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: "https://TEST:443//odata/$metadata",
+			},
+		},
+		{
+			Format:     "application/json",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			FetchRequest: &model.FetchRequestInput{
+				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
 			},
 		},
 	}

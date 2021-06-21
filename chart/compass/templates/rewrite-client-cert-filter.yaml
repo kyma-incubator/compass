@@ -2,11 +2,11 @@ apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: {{ .Chart.Name }}-oathkeeper-header-rewrite
-  namespace: {{ .Values.global.rewriteFilters.namespace }}
+  namespace: {{ .Values.global.oathkeeperFilters.namespace }}
 spec:
   workloadSelector:
     labels:
-      app.kubernetes.io/name: {{ .Values.global.rewriteFilters.workloadLabel }}
+      app.kubernetes.io/name: {{ .Values.global.oathkeeperFilters.workloadLabel }}
   configPatches:
     - applyTo: HTTP_FILTER
       match:
@@ -14,19 +14,19 @@ spec:
         listener:
           filterChain:
             filter:
-              name: "envoy.http_connection_manager"
+              name: envoy.filters.network.http_connection_manager
               subFilter:
-                name: "envoy.router"
+                name: "envoy.filters.http.router"
       patch:
         operation: INSERT_BEFORE
         value:
           name: envoy.lua
           typed_config:
-            "@type": "type.googleapis.com/envoy.config.filter.http.lua.v2.Lua"
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
             inlineCode: |
               function envoy_on_request(request_handle)
                 local headers = request_handle:headers()
                 local xForwardedClientCert = headers:get("X-Forwarded-Client-Cert")
 
-                headers:add("{{ .Values.global.rewriteFilters.certificateDataHeader }}",xForwardedClientCert)
+                headers:add("{{ .Values.global.oathkeeperFilters.certificateDataHeader }}",xForwardedClientCert)
               end

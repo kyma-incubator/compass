@@ -419,6 +419,7 @@ func TestService_Create(t *testing.T) {
 		APIDefaultTargetURL: &targetUrl2,
 	}
 
+	singleDefaultTargetURLPerBundle := map[string]string{bundleID: targetUrl}
 	defaultTargetURLPerBundle := map[string]string{bundleID: targetUrl, bundleID2: targetUrl2}
 
 	ctx := context.TODO()
@@ -582,13 +583,12 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("CreateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), str.Ptr(bundleID)).Return(nil).Once()
-				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), str.Ptr(bundleID2)).Return(testErr).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), str.Ptr(bundleID)).Return(testErr).Once()
 				return svc
 			},
 			Input:                     modelInput,
 			SpecsInput:                modelSpecsInput,
-			DefaultTargetURLPerBundle: defaultTargetURLPerBundle,
+			DefaultTargetURLPerBundle: singleDefaultTargetURLPerBundle,
 			ExpectedErr:               testErr,
 		},
 	}

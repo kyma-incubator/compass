@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"
 )
@@ -15,6 +15,7 @@ import (
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": validPlaceholders(i.Placeholders, i.ApplicationInput),
+		"appInput":               validation.Validate(i.ApplicationInput),
 		"name":                   validation.Validate(i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
@@ -26,6 +27,7 @@ func (i ApplicationTemplateInput) Validate() error {
 func (i ApplicationTemplateUpdateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": validPlaceholders(i.Placeholders, i.ApplicationInput),
+		"appInput":               validation.Validate(i.ApplicationInput),
 		"name":                   validation.Validate(i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),

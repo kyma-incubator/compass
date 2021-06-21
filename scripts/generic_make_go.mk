@@ -12,7 +12,11 @@ else
 CLEANUP_IMG_NAME := $(APP_CLEANUP_NAME)
 endif
 
+ifneq ($(strip $(DOCKER_TAG)),)
 TAG := $(DOCKER_TAG)
+else
+TAG := "latest"
+endif
 # BASE_PKG is a root packge of the component
 BASE_PKG := github.com/kyma-incubator/compass
 # IMG_GOPATH is a path to go path in the container
@@ -108,7 +112,7 @@ $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
 build-to-minikube: pull-licenses
-	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME) .
+	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME):$(TAG) .
 
 build-local:
 	env CGO_ENABLED=0 go build -o $(APP_NAME) ./$(ENTRYPOINT)

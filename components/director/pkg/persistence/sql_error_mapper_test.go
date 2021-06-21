@@ -33,6 +33,11 @@ func TestMapSQLError(t *testing.T) {
 			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
 		},
 		{
+			Name:       "Timeout error",
+			Error:      context.DeadlineExceeded,
+			AssertFunc: isInternalServerErr(t, "Internal Server Error: Maximum processing timeout reached"),
+		},
+		{
 			Name:       "Not null violation",
 			Error:      &pq.Error{Code: persistence.NotNullViolation},
 			AssertFunc: apperrors.IsNewNotNullViolationError,

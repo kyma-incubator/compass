@@ -150,7 +150,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		APIResourceLinks:                        repo.JSONRawMessageFromNullableString(entity.APIResourceLinks),
 		ReleaseStatus:                           repo.StringPtrFromNullableString(entity.ReleaseStatus),
 		SunsetDate:                              repo.StringPtrFromNullableString(entity.SunsetDate),
-		Successor:                               repo.StringPtrFromNullableString(entity.Successor),
+		Successors:                              repo.JSONRawMessageFromNullableString(entity.Successors),
 		ChangeLogEntries:                        repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
 		Labels:                                  repo.JSONRawMessageFromNullableString(entity.Labels),
 		Visibility:                              repo.StringPtrFromNullableString(entity.Visibility),
@@ -162,6 +162,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		CustomImplementationStandard:            repo.StringPtrFromNullableString(entity.CustomImplementationStandard),
 		CustomImplementationStandardDescription: repo.StringPtrFromNullableString(entity.CustomImplementationStandardDescription),
 		Version:                                 c.version.FromEntity(entity.Version),
+		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -192,7 +193,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		APIResourceLinks:                        repo.NewNullableStringFromJSONRawMessage(apiModel.APIResourceLinks),
 		ReleaseStatus:                           repo.NewNullableString(apiModel.ReleaseStatus),
 		SunsetDate:                              repo.NewNullableString(apiModel.SunsetDate),
-		Successor:                               repo.NewNullableString(apiModel.Successor),
+		Successors:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Successors),
 		ChangeLogEntries:                        repo.NewNullableStringFromJSONRawMessage(apiModel.ChangeLogEntries),
 		Labels:                                  repo.NewNullableStringFromJSONRawMessage(apiModel.Labels),
 		Visibility:                              repo.NewNullableString(apiModel.Visibility),
@@ -204,6 +205,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		CustomImplementationStandard:            repo.NewNullableString(apiModel.CustomImplementationStandard),
 		CustomImplementationStandardDescription: repo.NewNullableString(apiModel.CustomImplementationStandardDescription),
 		Version:                                 c.convertVersionToEntity(apiModel.Version),
+		Extensible:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Extensible),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

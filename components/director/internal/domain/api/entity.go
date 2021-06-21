@@ -25,7 +25,7 @@ type Entity struct {
 	APIResourceLinks                        sql.NullString `db:"api_resource_links"`
 	ReleaseStatus                           sql.NullString `db:"release_status"`
 	SunsetDate                              sql.NullString `db:"sunset_date"`
-	Successor                               sql.NullString `db:"successor"`
+	Successors                              sql.NullString `db:"successors"`
 	ChangeLogEntries                        sql.NullString `db:"changelog_entries"`
 	Labels                                  sql.NullString `db:"labels"`
 	Visibility                              sql.NullString `db:"visibility"`
@@ -36,6 +36,8 @@ type Entity struct {
 	ImplementationStandard                  sql.NullString `db:"implementation_standard"`
 	CustomImplementationStandard            sql.NullString `db:"custom_implementation_standard"`
 	CustomImplementationStandardDescription sql.NullString `db:"custom_implementation_standard_description"`
+	Extensible                              sql.NullString `db:"extensible"`
+
 	*repo.BaseEntity
 	version.Version
 }

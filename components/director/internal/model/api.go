@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"regexp"
 
-	"github.com/go-ozzo/ozzo-validation/is"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -30,7 +30,7 @@ type APIDefinition struct {
 	APIResourceLinks                        json.RawMessage
 	ReleaseStatus                           *string
 	SunsetDate                              *string
-	Successor                               *string
+	Successors                              json.RawMessage
 	ChangeLogEntries                        json.RawMessage
 	Labels                                  json.RawMessage
 	Visibility                              *string
@@ -42,6 +42,7 @@ type APIDefinition struct {
 	CustomImplementationStandard            *string
 	CustomImplementationStandardDescription *string
 	Version                                 *Version
+	Extensible                              json.RawMessage
 	*BaseEntity
 }
 
@@ -50,36 +51,36 @@ func (_ *APIDefinition) GetType() resource.Type {
 }
 
 type APIDefinitionInput struct {
-	OrdPackageID                            *string         `json:"partOfPackage"`
-	Tenant                                  string          `json:",omitempty"`
-	Name                                    string          `json:"title"`
-	Description                             *string         `json:"description"`
-	TargetURLs                              json.RawMessage `json:"entryPoints"`
-	Group                                   *string         `json:",omitempty"` //  group allows you to find the same API but in different version
-	OrdID                                   *string         `json:"ordId"`
-	ShortDescription                        *string         `json:"shortDescription"`
-	SystemInstanceAware                     *bool           `json:"systemInstanceAware"`
-	ApiProtocol                             *string         `json:"apiProtocol"`
-	Tags                                    json.RawMessage `json:"tags"`
-	Countries                               json.RawMessage `json:"countries"`
-	Links                                   json.RawMessage `json:"links"`
-	APIResourceLinks                        json.RawMessage `json:"apiResourceLinks"`
-	ReleaseStatus                           *string         `json:"releaseStatus"`
-	SunsetDate                              *string         `json:"sunsetDate"`
-	Successor                               *string         `json:"successor"`
-	ChangeLogEntries                        json.RawMessage `json:"changelogEntries"`
-	Labels                                  json.RawMessage `json:"labels"`
-	Visibility                              *string         `json:"visibility"`
-	Disabled                                *bool           `json:"disabled"`
-	PartOfProducts                          json.RawMessage `json:"partOfProducts"`
-	LineOfBusiness                          json.RawMessage `json:"lineOfBusiness"`
-	Industry                                json.RawMessage `json:"industry"`
-	ImplementationStandard                  *string         `json:"implementationStandard"`
-	CustomImplementationStandard            *string         `json:"customImplementationStandard"`
-	CustomImplementationStandardDescription *string         `json:"customImplementationStandardDescription"`
-
-	ResourceDefinitions      []*APIResourceDefinition      `json:"resourceDefinitions"`
-	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
+	OrdPackageID                            *string                       `json:"partOfPackage"`
+	Tenant                                  string                        `json:",omitempty"`
+	Name                                    string                        `json:"title"`
+	Description                             *string                       `json:"description"`
+	TargetURLs                              json.RawMessage               `json:"entryPoints"`
+	Group                                   *string                       `json:",omitempty"` //  group allows you to find the same API but in different version
+	OrdID                                   *string                       `json:"ordId"`
+	ShortDescription                        *string                       `json:"shortDescription"`
+	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
+	ApiProtocol                             *string                       `json:"apiProtocol"`
+	Tags                                    json.RawMessage               `json:"tags"`
+	Countries                               json.RawMessage               `json:"countries"`
+	Links                                   json.RawMessage               `json:"links"`
+	APIResourceLinks                        json.RawMessage               `json:"apiResourceLinks"`
+	ReleaseStatus                           *string                       `json:"releaseStatus"`
+	SunsetDate                              *string                       `json:"sunsetDate"`
+	Successors                              json.RawMessage               `json:"successors,omitempty"`
+	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
+	Labels                                  json.RawMessage               `json:"labels"`
+	Visibility                              *string                       `json:"visibility"`
+	Disabled                                *bool                         `json:"disabled"`
+	PartOfProducts                          json.RawMessage               `json:"partOfProducts"`
+	LineOfBusiness                          json.RawMessage               `json:"lineOfBusiness"`
+	Industry                                json.RawMessage               `json:"industry"`
+	ImplementationStandard                  *string                       `json:"implementationStandard"`
+	CustomImplementationStandard            *string                       `json:"customImplementationStandard"`
+	CustomImplementationStandardDescription *string                       `json:"customImplementationStandardDescription"`
+	Extensible                              json.RawMessage               `json:"extensible"`
+	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
+	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
 	*VersionInput
 }
@@ -176,7 +177,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		APIResourceLinks:    a.APIResourceLinks,
 		ReleaseStatus:       a.ReleaseStatus,
 		SunsetDate:          a.SunsetDate,
-		Successor:           a.Successor,
+		Successors:          a.Successors,
 		ChangeLogEntries:    a.ChangeLogEntries,
 		Labels:              a.Labels,
 		Visibility:          a.Visibility,
@@ -184,6 +185,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		PartOfProducts:      a.PartOfProducts,
 		LineOfBusiness:      a.LineOfBusiness,
 		Industry:            a.Industry,
+		Extensible:          a.Extensible,
 		Version:             a.VersionInput.ToVersion(),
 		BaseEntity: &BaseEntity{
 			ID:    id,

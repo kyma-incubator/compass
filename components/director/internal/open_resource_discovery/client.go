@@ -65,6 +65,8 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 	}
 
 	defer closeBody(ctx, resp.Body)
+
+	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading document body")

@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"context"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/json"
@@ -11,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
+func CreateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
 		Schema: json.MarshalJSONSchema(t, schema),
@@ -31,7 +30,7 @@ func CreateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlCli
 	return &output
 }
 
-func CreateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {
+func CreateScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
 			"enum": scenarios,
@@ -45,7 +44,7 @@ func CreateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Contex
 	return CreateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
 }
 
-func UpdateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
+func UpdateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
 		Schema: json.MarshalJSONSchema(t, schema),
@@ -65,7 +64,7 @@ func UpdateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlCli
 	return &output
 }
 
-func UpdateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {
+func UpdateScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
 			"enum": scenarios,
@@ -79,13 +78,13 @@ func UpdateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Contex
 	return UpdateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
 }
 
-func DeleteLabelDefinition(t *testing.T, ctx context.Context, gqlClient *gcli.Client, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
+func DeleteLabelDefinition(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
 	deleteRequest := FixDeleteLabelDefinitionRequest(labelDefinitionKey, deleteRelatedResources)
 
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, nil))
 }
 
-func ListLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string) ([]*graphql.LabelDefinition, error) {
+func ListLabelDefinitionsWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string) ([]*graphql.LabelDefinition, error) {
 	labelDefinitionsRequest := FixLabelDefinitionsRequest()
 
 	var labelDefinitions []*graphql.LabelDefinition

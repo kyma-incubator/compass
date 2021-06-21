@@ -2,7 +2,7 @@ package fixtures
 
 import (
 	"context"
-	"testing"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func GetApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
+func GetApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
 	appRequest := FixGetApplicationRequest(id)
 	app := graphql.ApplicationExt{}
 
@@ -19,7 +19,7 @@ func GetApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, t
 	return app
 }
 
-func UpdateApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.ApplicationUpdateInput) (graphql.ApplicationExt, error) {
+func UpdateApplicationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.ApplicationUpdateInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(in)
 	require.NoError(t, err)
 
@@ -29,14 +29,14 @@ func UpdateApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient 
 	return app, err
 }
 
-func RegisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, name, tenant string) graphql.ApplicationExt {
+func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) graphql.ApplicationExt {
 	in := FixSampleApplicationRegisterInputWithName("first", name)
 	app, err := RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
 	return app
 }
 
-func RegisterApplicationFromInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
+func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
@@ -48,7 +48,7 @@ func RegisterApplicationFromInput(t *testing.T, ctx context.Context, gqlClient *
 	return app, err
 }
 
-func RequestClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.AppSystemAuth {
+func RequestClientCredentialsForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.AppSystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
 	systemAuth := graphql.AppSystemAuth{}
 
@@ -57,7 +57,7 @@ func RequestClientCredentialsForApplication(t *testing.T, ctx context.Context, g
 	return systemAuth
 }
 
-func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
+func UnregisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
 	if id == "" {
 		return graphql.ApplicationExt{}
 	}
@@ -69,18 +69,18 @@ func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Cl
 	return app
 }
 
-func UnregisterAsyncApplicationInTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	req := FixAsyncUnregisterApplicationRequest(id)
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
-func DeleteApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {
+func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {
 	deleteRequest := FixDeleteApplicationLabelRequest(id, labelKey)
 
 	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, nil))
 }
 
-func SetApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, labelKey string, labelValue interface{}) graphql.Label {
+func SetApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string, labelKey string, labelValue interface{}) graphql.Label {
 	setLabelRequest := FixSetApplicationLabelRequest(id, labelKey, labelValue)
 	label := graphql.Label{}
 	err := testctx.Tc.RunOperation(ctx, gqlClient, setLabelRequest, &label)
@@ -89,7 +89,7 @@ func SetApplicationLabel(t *testing.T, ctx context.Context, gqlClient *gcli.Clie
 	return label
 }
 
-func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) graphql.AppSystemAuth {
+func GenerateClientCredentialsForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) graphql.AppSystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
 
 	out := graphql.AppSystemAuth{}
@@ -99,19 +99,19 @@ func GenerateClientCredentialsForApplication(t *testing.T, ctx context.Context, 
 	return out
 }
 
-func DeleteSystemAuthForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
+func DeleteSystemAuthForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) {
 	req := FixDeleteSystemAuthForApplicationRequest(id)
 	err := testctx.Tc.RunOperation(ctx, gqlClient, req, nil)
 	require.NoError(t, err)
 }
 
-func SetDefaultEventingForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID string, runtimeID string) {
+func SetDefaultEventingForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, appID string, runtimeID string) {
 	req := FixSetDefaultEventingForApplication(appID, runtimeID)
 	err := testctx.Tc.RunOperation(ctx, gqlClient, req, nil)
 	require.NoError(t, err)
 }
 
-func RegisterSimpleApp(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string) func() {
+func RegisterSimpleApp(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string) func() {
 	placeholder := "foo"
 	in := FixSampleApplicationRegisterInputWithWebhooks(placeholder)
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -127,7 +127,7 @@ func RegisterSimpleApp(t *testing.T, ctx context.Context, gqlClient *gcli.Client
 	}
 }
 
-func RequestOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) graphql.OneTimeTokenForApplicationExt {
+func RequestOneTimeTokenForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) graphql.OneTimeTokenForApplicationExt {
 	tokenRequest := FixRequestOneTimeTokenForApplication(id)
 	token := graphql.OneTimeTokenForApplicationExt{}
 	err := testctx.Tc.RunOperation(ctx, gqlClient, tokenRequest, &token)
@@ -135,7 +135,7 @@ func RequestOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCli
 	return token
 }
 
-func GenerateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.OneTimeTokenForApplicationExt {
+func GenerateOneTimeTokenForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.OneTimeTokenForApplicationExt {
 	req := FixRequestOneTimeTokenForApplication(id)
 	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
 
@@ -150,18 +150,23 @@ func GenerateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	return oneTimeToken
 }
 
-func UnassignApplicationFromScenarios(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
+func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, defaultScenarioEnabled bool) {
 	labelKey := "scenarios"
-	defaultValue := "DEFAULT"
+	if defaultScenarioEnabled {
+		defaultValue := "DEFAULT"
 
-	scenarios := []string{defaultValue}
-	var labelValue interface{} = scenarios
+		scenarios := []string{defaultValue}
+		var labelValue interface{} = scenarios
 
-	t.Log("Updating Application scenario to a default state")
-
-	setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
-
-	label := graphql.Label{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
-	require.NoError(t, err)
+		setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
+		label := graphql.Label{}
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
+		require.NoError(t, err)
+	} else {
+		deleteLabelRequest := FixDeleteApplicationLabelRequest(applicationID, labelKey)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteLabelRequest, nil)
+		if err != nil && !strings.Contains(err.Error(), "Object not found") {
+			require.NoError(t, err)
+		}
+	}
 }

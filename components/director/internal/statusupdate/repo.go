@@ -34,7 +34,7 @@ func (r *repository) UpdateStatus(ctx context.Context, id string, object WithSta
 
 	stmt := fmt.Sprintf(updateQuery, object)
 
-	_, err = persist.Exec(stmt, r.timestampGen(), id)
+	_, err = persist.ExecContext(ctx, stmt, r.timestampGen(), id)
 
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("while updating %s status", object))
@@ -53,7 +53,7 @@ func (r *repository) IsConnected(ctx context.Context, id string, object WithStat
 	stmt := fmt.Sprintf(existsQuery, object)
 
 	var count int
-	err = persist.Get(&count, stmt, id)
+	err = persist.GetContext(ctx, &count, stmt, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

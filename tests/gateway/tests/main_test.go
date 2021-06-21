@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
 	log "github.com/sirupsen/logrus"
 
@@ -16,9 +16,9 @@ import (
 )
 
 type config struct {
-	DefaultTenant string
-	Domain        string
-	DirectorURL   string
+	DefaultTestTenant string
+	Domain            string
+	DirectorURL       string
 }
 
 var (
@@ -33,11 +33,7 @@ func TestMain(m *testing.M) {
 	}
 	testConfig.DirectorURL = fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain)
 
-	log.Info("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting dex token"))
-	}
+	dexToken := server.Token()
 
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 

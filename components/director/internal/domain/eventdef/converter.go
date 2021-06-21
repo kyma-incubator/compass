@@ -139,7 +139,7 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 		Links:               repo.JSONRawMessageFromNullableString(entity.Links),
 		ReleaseStatus:       repo.StringPtrFromNullableString(entity.ReleaseStatus),
 		SunsetDate:          repo.StringPtrFromNullableString(entity.SunsetDate),
-		Successor:           repo.StringPtrFromNullableString(entity.Successor),
+		Successors:          repo.JSONRawMessageFromNullableString(entity.Successors),
 		ChangeLogEntries:    repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
 		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
 		Visibility:          repo.StringPtrFromNullableString(entity.Visibility),
@@ -148,6 +148,7 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 		LineOfBusiness:      repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
 		Industry:            repo.JSONRawMessageFromNullableString(entity.Industry),
 		Version:             c.vc.FromEntity(entity.Version),
+		Extensible:          repo.JSONRawMessageFromNullableString(entity.Extensible),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -175,7 +176,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
 		Links:               repo.NewNullableStringFromJSONRawMessage(eventModel.Links),
 		ReleaseStatus:       repo.NewNullableString(eventModel.ReleaseStatus),
 		SunsetDate:          repo.NewNullableString(eventModel.SunsetDate),
-		Successor:           repo.NewNullableString(eventModel.Successor),
+		Successors:          repo.NewNullableStringFromJSONRawMessage(eventModel.Successors),
 		ChangeLogEntries:    repo.NewNullableStringFromJSONRawMessage(eventModel.ChangeLogEntries),
 		Labels:              repo.NewNullableStringFromJSONRawMessage(eventModel.Labels),
 		Visibility:          repo.NewNullableString(eventModel.Visibility),
@@ -184,6 +185,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
 		LineOfBusiness:      repo.NewNullableStringFromJSONRawMessage(eventModel.LineOfBusiness),
 		Industry:            repo.NewNullableStringFromJSONRawMessage(eventModel.Industry),
 		Version:             c.convertVersionToEntity(eventModel.Version),
+		Extensible:          repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,
 			Ready:     eventModel.Ready,

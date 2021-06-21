@@ -72,7 +72,7 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	var count int
-	err = persist.Get(&count, query, allArgs...)
+	err = persist.GetContext(ctx, &count, query, allArgs...)
 	err = persistence.MapSQLError(ctx, err, g.resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
 
 	if err != nil {

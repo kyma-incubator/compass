@@ -11,10 +11,9 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/klauspost/compress v1.11.13 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210416142045-25b90bbc9ee6
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210607082003-d97c798f2482
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
-	github.com/pivotal-cf/brokerapi v6.4.2+incompatible
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
@@ -23,9 +22,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.7.4
+	github.com/tidwall/gjson v1.8.0
 	github.com/valyala/fasthttp v1.23.0 // indirect
-	github.com/vektah/gqlparser v1.3.1
+	github.com/vektah/gqlparser/v2 v2.1.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2

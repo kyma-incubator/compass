@@ -4,6 +4,7 @@
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
 INVERTED='\033[7m'
 NC='\033[0m' # No Color
 
@@ -13,6 +14,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
+DUMP_DB=false
 DISABLE_ASYNC_MODE=true
 
 POSITIONAL=()
@@ -32,6 +34,10 @@ do
         ;;
         --reuse-db)
             REUSE_DB=true
+            shift
+        ;;
+        --dump-db)
+            DUMP_DB=true
             shift
         ;;
         --debug)
@@ -121,11 +127,38 @@ else
 
     echo -e "${GREEN}Populate DB${NC}"
 
-    cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
-        docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
-    cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
-        docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+    if [[ ${DUMP_DB} = false ]]; then
+        cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
+            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+
+        cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
+            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+    else
+        if [[ ! -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
+            echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
+            gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/../schema-migrator/seeds/dump.sql
+        fi
+
+        cat ${ROOT_PATH}/../schema-migrator/seeds/dump.sql | \
+            docker exec -i ${POSTGRES_CONTAINER} psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+
+        REMOTE_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
+        LOCAL_MIGRATION_VERSION=$(echo $(ls ${ROOT_PATH}/../schema-migrator/migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
+
+        if [[ ${REMOTE_MIGRATION_VERSION} = ${LOCAL_MIGRATION_VERSION} ]]; then
+            echo -e "${GREEN}Both remote and local migrations are at the same version.${NC}"
+        else
+            echo -e "${YELLOW}NOTE: Remote and local migrations are at different versions.${NC}"
+            echo -e "${YELLOW}REMOTE:${NC} $REMOTE_MIGRATION_VERSION"
+            echo -e "${YELLOW}LOCAL:${NC} $LOCAL_MIGRATION_VERSION"
+        fi
+
+        CONNECTION_STRING="postgres://$DB_USER:$DB_PWD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+        migrate -path ${ROOT_PATH}/../schema-migrator/migrations/director -database "$CONNECTION_STRING" up
+    fi
 fi
+
+. ${ROOT_PATH}/hack/jwt_generator.sh
 
 if [[  ${SKIP_APP_START} ]]; then
     echo -e "${GREEN}Skipping starting application${NC}"

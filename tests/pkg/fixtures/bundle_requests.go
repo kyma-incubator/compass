@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"fmt"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -10,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/require"
 )
 
 func FixBundleCreateInput(name string) graphql.BundleCreateInput {
@@ -97,7 +97,7 @@ func FixAddEventAPIToBundleRequest(bndlID, eventAPIInputGQL string) *gcli.Reques
 		`, bndlID, eventAPIInputGQL, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
-func FixBundleCreateInputWithRelatedObjects(t *testing.T, name string) graphql.BundleCreateInput {
+func FixBundleCreateInputWithRelatedObjects(t require.TestingT, name string) graphql.BundleCreateInput {
 	desc := "Foo bar"
 	return graphql.BundleCreateInput{
 		Name:        name,
@@ -337,7 +337,7 @@ func FixBundleInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
 			}`, packageInstanceAuthID, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func FixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *graphql.JSON) {
+func FixBundleInstanceAuthContextAndInputParams(t require.TestingT) (*graphql.JSON, *graphql.JSON) {
 	authCtxPayload := map[string]interface{}{
 		"ContextData": "ContextValue",
 	}

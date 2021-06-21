@@ -3,11 +3,10 @@ package graphql
 import (
 	"net/url"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
@@ -50,6 +49,10 @@ func (i WebhookInput) Validate() error {
 		}
 	}
 
+	if i.OutputTemplate == nil && isOutTemplateMandatory(i.Type) {
+		return apperrors.NewInvalidDataError("outputTemplate is required for type: %v", i.Type)
+	}
+
 	var responseObject webhook.ResponseObject
 	if i.OutputTemplate != nil {
 		if _, err := responseObject.ParseOutputTemplate(i.OutputTemplate); err != nil {
@@ -78,4 +81,14 @@ func (i WebhookInput) Validate() error {
 		validation.Field(&i.Timeout, validation.Min(0)),
 		validation.Field(&i.Auth),
 	)
+}
+
+func isOutTemplateMandatory(webhookType WebhookType) bool {
+	switch webhookType {
+	case WebhookTypeRegisterApplication,
+		WebhookTypeUnregisterApplication:
+		return true
+	default:
+		return false
+	}
 }
