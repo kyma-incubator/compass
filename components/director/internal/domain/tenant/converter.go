@@ -1,6 +1,8 @@
 package tenant
 
 import (
+	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -21,10 +23,13 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent:         in.Parent,
-		Type:           tenant.Type(in.Type),
-		ProviderName:   in.Provider,
-		Status:         tenant.Status(in.Status),
+		Parent: sql.NullString{
+			String: in.Parent,
+			Valid:  true,
+		},
+		Type:         tenant.Type(in.Type),
+		ProviderName: in.Provider,
+		Status:       tenant.Status(in.Status),
 	}
 }
 
@@ -36,7 +41,7 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent:         in.Parent,
+		Parent:         in.Parent.String,
 		Type:           string(in.Type),
 		Provider:       in.ProviderName,
 		Status:         model.TenantStatus(in.Status),
