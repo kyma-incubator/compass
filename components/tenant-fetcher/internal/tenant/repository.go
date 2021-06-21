@@ -84,7 +84,7 @@ func (r *repository) GetByExternalID(ctx context.Context, tenantId string) (mode
 		return model.TenantModel{}, err
 	}
 
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE %s=%s", strings.Join(r.columns, ", "), r.tableName, externalTenantColumn, tenantId)
+	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE %s='%s'", strings.Join(r.columns, ", "), r.tableName, externalTenantColumn, tenantId)
 
 	log.C(ctx).Infof("Executing DB query: %s", stmt)
 	var tenantEntity tenant.Entity
@@ -109,7 +109,7 @@ func (r *repository) Update(ctx context.Context, item model.TenantModel) error {
 		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))
 	}
 
-	stmt := fmt.Sprintf("UPDATE %s SET %s WHERE %s=%s", r.tableName, strings.Join(fieldsToSet, ", "), externalTenantColumn, dbEntity.ExternalTenant)
+	stmt := fmt.Sprintf("UPDATE %s SET %s WHERE %s='%s'", r.tableName, strings.Join(fieldsToSet, ", "), externalTenantColumn, dbEntity.ExternalTenant)
 
 	log.C(ctx).Infof("Executing DB query: %s", stmt)
 	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
