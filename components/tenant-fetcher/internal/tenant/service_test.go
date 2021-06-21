@@ -224,6 +224,33 @@ func TestService_Create(t *testing.T) {
 			ExpectedStatusCode:    500,
 		},
 		{
+			Name: "Error when getting tenant from database",
+			TxFn: txGen.ThatSucceeds,
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantMappingRepo := &automock.TenantRepository{}
+				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), customerTenant).Return(nil)
+				tenantMappingRepo.On("GetByExternalID", txtest.CtxWithDBMatcher(), accountTenant.TenantId).Return(model.TenantModel{}, testError)
+				return tenantMappingRepo
+			},
+			UidFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(testID)
+				return uidSvc
+			},
+			ConfigFn: func() tenant.Config {
+				return tenant.Config{
+					TenantProvider:                   testProviderName,
+					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
+					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
+				}
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBodyWithBothIDs)),
+			ExpectedErrorOutput:   testError,
+			ExpectedSuccessOutput: "",
+			ExpectedStatusCode:    500,
+		},
+		{
 			Name: "Object Not Unique error when creating tenant in database should instead update the tenant",
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
