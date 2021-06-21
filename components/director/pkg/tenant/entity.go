@@ -1,14 +1,16 @@
 package tenant
 
+import "database/sql"
+
 type Entity struct {
-	ID             string `db:"id"`
-	Name           string `db:"external_name"`
-	ExternalTenant string `db:"external_tenant"`
-	Parent         string `db:"parent"`
-	Type           Type   `db:"type"`
-	ProviderName   string `db:"provider_name"`
-	Initialized    *bool  `db:"initialized"` // computed value
-	Status         Status `db:"status"`
+	ID             string         `db:"id"`
+	Name           string         `db:"external_name"`
+	ExternalTenant string         `db:"external_tenant"`
+	Parent         sql.NullString `db:"parent"`
+	Type           Type           `db:"type"`
+	ProviderName   string         `db:"provider_name"`
+	Initialized    *bool          `db:"initialized"` // computed value
+	Status         Status         `db:"status"`
 }
 
 type Type string

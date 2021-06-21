@@ -2,6 +2,7 @@ package tenant_test
 
 import (
 	"context"
+	"database/sql"
 	"regexp"
 	"testing"
 
@@ -32,10 +33,13 @@ func TestRepository_Create(t *testing.T) {
 		ID:             testID,
 		Name:           testID,
 		ExternalTenant: testID,
-		Parent:         testID,
-		Type:           tenantEntity.Account,
-		ProviderName:   testProviderName,
-		Status:         tenantEntity.Active,
+		Parent: sql.NullString{
+			String: testID,
+			Valid:  true,
+		},
+		Type:         tenantEntity.Account,
+		ProviderName: testProviderName,
+		Status:       tenantEntity.Active,
 	}
 
 	t.Run("Success", func(t *testing.T) {

@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -28,10 +29,13 @@ var createQueryArgs = fixTenantMappingCreateArgs(tenant.Entity{
 	ID:             testID,
 	Name:           testID,
 	ExternalTenant: testID,
-	Parent:         testID,
-	Type:           tenant.Account,
-	ProviderName:   testProviderName,
-	Status:         tenant.Active,
+	Parent: sql.NullString{
+		String: testID,
+		Valid:  true,
+	},
+	Type:         tenant.Account,
+	ProviderName: testProviderName,
+	Status:       tenant.Active,
 })
 
 type errReader int
