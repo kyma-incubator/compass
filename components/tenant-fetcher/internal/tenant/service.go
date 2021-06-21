@@ -155,7 +155,6 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 
 			continue
 		}
-
 		if err := s.repository.Update(ctx, t); err != nil {
 			logger.WithError(err).Errorf("while updating tenant: %v", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
