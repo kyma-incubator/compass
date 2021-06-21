@@ -114,7 +114,8 @@ func fixHttpClient(t *testing.T) (*mockData, string) {
 			_, err := w.Write(mock.bodyToReturn)
 			require.NoError(t, err)
 		} else {
-			w.Write([]byte{})
+			_, err := w.Write([]byte{})
+			require.NoError(t, err)
 		}
 		mock.callNumber++
 	})
