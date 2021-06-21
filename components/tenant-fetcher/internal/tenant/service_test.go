@@ -146,7 +146,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedStatusCode:    500,
 		},
 		{
-			Name: "Error when request body is invalid",
+			Name: "Error when request body doesn't contain tenantID",
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
