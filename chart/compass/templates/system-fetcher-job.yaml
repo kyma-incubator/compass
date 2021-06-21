@@ -28,6 +28,10 @@ spec:
                 - name: director-config
                   mountPath: /config
               env:
+                - name: APP_SYSTEM_INFORMATION_PARALLELLISM
+                  value: {{ .Values.global.systemFetcher.fetchParallellism }}
+                - name: APP_SYSTEM_INFORMATION_FETCH_TIMEOUT
+                  value: {{ .Values.global.systemFetcher.fetchTimeout }}
                 - name: APP_SYSTEM_INFORMATION_ENDPOINT
                   valueFrom:
                     configMapKeyRef:

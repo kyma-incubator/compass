@@ -18,6 +18,7 @@ type Application struct {
 	HealthCheckURL        *string
 	IntegrationSystemID   *string
 	ApplicationTemplateID *string
+	SystemNumber          *string
 	BaseURL               *string         `json:"baseUrl"`
 	Labels                json.RawMessage `json:"labels"`
 	CorrelationIds        json.RawMessage `json:"correlationIds,omitempty"`
@@ -98,6 +99,7 @@ type ApplicationRegisterInput struct {
 	IntegrationSystemID *string
 	StatusCondition     *ApplicationStatusCondition
 	BaseURL             *string
+	SystemNumber        *string
 	OrdLabels           json.RawMessage
 	CorrelationIds      json.RawMessage
 }
@@ -121,6 +123,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 		BaseURL:        i.BaseURL,
 		Labels:         i.OrdLabels,
 		CorrelationIds: i.CorrelationIds,
+		SystemNumber:   i.SystemNumber,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

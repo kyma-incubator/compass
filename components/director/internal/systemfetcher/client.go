@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	urlpkg "net/url"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -24,36 +26,55 @@ type OAuth2Config struct {
 }
 
 type APIConfig struct {
-	Endpoint                    string `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
-	FilterCriteria              string `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
-	FilterTenantCriteriaPattern string `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
+	Endpoint                    string        `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
+	FilterCriteria              string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
+	FilterTenantCriteriaPattern string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
+	Timeout                     time.Duration `envconfig:"APP_SYSTEM_INFORMATION_FETCH_TIMEOUT"`
 }
 
 type Client struct {
-	apiConfig    APIConfig
-	oAuth2Config OAuth2Config
+	apiConfig         APIConfig
+	oAuth2Config      OAuth2Config
+	clientCreatorFunc ClientCreatorFunc
 }
 
-func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config) *Client {
+type ClientCreatorFunc func(ctx context.Context, oauth2Config OAuth2Config, scopes []string, tenant string) *http.Client
+
+func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config, scopes []string, tenant string) *http.Client {
+	cfg := clientcredentials.Config{
+		ClientID:     oAuth2Config.ClientID,
+		ClientSecret: oAuth2Config.ClientSecret,
+		TokenURL:     oAuth2Config.OAuthTokenEndpointPattern,
+		Scopes:       scopes,
+	}
+
+	httpClient := cfg.Client(ctx)
+	return httpClient
+}
+
+func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreatorFunc ClientCreatorFunc) *Client {
 	return &Client{
-		apiConfig:    apiConfig,
-		oAuth2Config: oAuth2Config,
+		apiConfig:         apiConfig,
+		oAuth2Config:      oAuth2Config,
+		clientCreatorFunc: clientCreatorFunc,
 	}
 }
 
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	//TODO: See if a custom HTTP fetch with client_creds isn't a better option because this now makes new http clients on every call
-	cfg := clientcredentials.Config{
-		ClientID:     c.oAuth2Config.ClientID,
-		ClientSecret: c.oAuth2Config.ClientSecret,
-		TokenURL:     fmt.Sprintf(c.oAuth2Config.OAuthTokenEndpointPattern, tenant),
-		Scopes:       scopes,
+	httpTokenClient := &http.Client{
+		Timeout: c.apiConfig.Timeout,
+		Transport: &HeaderTransport{
+			tenant: tenant,
+			base:   http.DefaultTransport,
+		},
 	}
+	// The client provided here is used only to get token, not for
+	// the actual request to the system service
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpTokenClient)
 
-	// TODO: Check token, err := cfg.Token(ctx) optimization
-	httpClient := cfg.Client(ctx)
+	httpClient := c.clientCreatorFunc(ctx, c.oAuth2Config, scopes, tenant)
+	httpClient.Timeout = c.apiConfig.Timeout
 
-	//TODO: The double fetch is a better approach if it doesn't affect that much the performance, this is an alternative approach to loading custom fields from the env and branching from them to execute one of the fetches only
 	url := c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)
 	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
@@ -86,6 +107,9 @@ func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url str
 			log.C(ctx).Println("Failed to close HTTP response body")
 		}
 	}()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: expected: %d, but got: %d", http.StatusOK, resp.StatusCode)
+	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

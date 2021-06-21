@@ -45,6 +45,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
 		BaseURL:               repo.NewNullableString(in.BaseURL),
+		SystemNumber:          repo.NewNullableString(in.SystemNumber),
 		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		CorrelationIds:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIds),
 		BaseEntity: &repo.BaseEntity{
@@ -113,16 +114,16 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Application {
-	var runtimes []*graphql.Application
+	var applications []*graphql.Application
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 
-		runtimes = append(runtimes, c.ToGraphQL(r))
+		applications = append(applications, c.ToGraphQL(r))
 	}
 
-	return runtimes
+	return applications
 }
 
 func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {

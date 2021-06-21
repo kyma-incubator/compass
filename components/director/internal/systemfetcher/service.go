@@ -3,9 +3,11 @@ package systemfetcher
 import (
 	"context"
 	"fmt"
+	"sync"
 
-	tenantutil "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -19,7 +21,12 @@ type TenantService interface {
 
 //go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
 type SystemsService interface {
-	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemToTemplateMapping map[string]string) error
+	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemToTemplateMapping []string) error
+}
+
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
+type ApplicationTemplateService interface {
+	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
 }
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
@@ -28,47 +35,81 @@ type SystemsAPIClient interface {
 }
 
 type SystemFetcher struct {
-	transaction              persistence.Transactioner
-	tenantService            TenantService
-	systemsService           SystemsService
-	systemsAPIClient         SystemsAPIClient
-	systemToTemplateMappings map[string]string
+	transaction        persistence.Transactioner
+	tenantService      TenantService
+	systemsService     SystemsService
+	systemsAPIClient   SystemsAPIClient
+	appTemplateService ApplicationTemplateService
+
+	workers chan struct{}
 }
 
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, systemToTemplateMappings map[string]string) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, appTemplateService ApplicationTemplateService, fetcherParallellism int) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:              tx,
-		tenantService:            ts,
-		systemsService:           ss,
-		systemsAPIClient:         sac,
-		systemToTemplateMappings: systemToTemplateMappings,
+		transaction:        tx,
+		tenantService:      ts,
+		systemsService:     ss,
+		systemsAPIClient:   sac,
+		appTemplateService: appTemplateService,
+		workers:            make(chan struct{}, fetcherParallellism),
 	}
 }
 
+type TenantSystems struct {
+	tenant  *model.BusinessTenantMapping
+	systems []System
+}
+
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	//TODO: Open transact here instead? So that all DB calls are in one transaction - avoid phantom DB stuff, but there's a problem that we have HTTP calls inside of the DB call
 	tenants, err := s.listTenants(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
 	}
 
-	//TODO: See if running the fetch and save of systems can be ran concurrently for each tenant. Are the DB transaction a bottleneck? It's still worth it if HTTP calls are a lot slower than DB calls.
-	//IDEA: Two types of workers -> ones for fetching systems and others for making DB calls
-	for _, t := range tenants {
-		systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
-		if err != nil {
-			log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
-			continue
-		}
+	systemsQueue := make(chan TenantSystems, 100)
+	wgDB := sync.WaitGroup{}
+	wgDB.Add(1)
+	go func() {
+		defer func() {
+			wgDB.Done()
+		}()
+		for tenantSystems := range systemsQueue {
+			err = s.saveSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems)
+			if err != nil {
+				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
+				continue
+			}
 
-		err = s.saveSystemsForTenant(ctx, t, systems)
-		if err != nil {
-			log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", t.ExternalTenant)))
-			continue
+			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantSystems.tenant.ExternalTenant))
 		}
+	}()
 
-		log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", t.ExternalTenant))
+	wg := sync.WaitGroup{}
+	for number, t := range tenants {
+		wg.Add(1)
+		s.workers <- struct{}{}
+		go func(t *model.BusinessTenantMapping, number int) {
+			defer func() {
+				wg.Done()
+				<-s.workers
+			}()
+			systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
+			if err != nil {
+				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
+				return
+			}
+			if len(systems) > 0 {
+				systemsQueue <- TenantSystems{
+					tenant:  t,
+					systems: systems,
+				}
+			}
+		}(t, number)
 	}
+
+	wg.Wait()
+	close(systemsQueue)
+	wgDB.Wait()
 
 	return nil
 }
@@ -95,14 +136,9 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 	return tenants, nil
 }
 
-func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systems []System) error {
+func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
 	var appInputs []model.ApplicationRegisterInput
-	for _, sys := range systems {
-		system := sys
-
-		appInput := s.convertSystemToAppRegisterInput(system)
-		appInputs = append(appInputs, appInput)
-	}
+	var templateTypes []string
 
 	tx, err := s.transaction.Begin()
 	if err != nil {
@@ -110,22 +146,33 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenant *model.
 	}
 	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
 
-	ctx = tenantutil.SaveToContext(ctx, tenant.ID, tenant.ExternalTenant)
+	ctx = tenant.SaveToContext(ctx, tenantMapping.ID, tenantMapping.ExternalTenant)
 	ctx = persistence.SaveToContext(ctx, tx)
-	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs, s.systemToTemplateMappings)
+
+	for _, system := range systems {
+		appInput, templateType := s.convertSystemToAppRegisterInput(system)
+		template, err := s.appTemplateService.GetByName(ctx, templateType)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		templateTypes = append(templateTypes, template.ID)
+		appInputs = append(appInputs, appInput)
+	}
+
+	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs, templateTypes)
 	if err != nil {
 		return errors.Wrap(err, "failed to create applications")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenant.ExternalTenant))
+		return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenantMapping.ExternalTenant))
 	}
 
 	return nil
 }
 
-func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) model.ApplicationRegisterInput {
+func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) (model.ApplicationRegisterInput, string) {
 	initStatusCond := model.ApplicationStatusConditionManaged
 	baseURL := sc.BaseURL
 
@@ -135,6 +182,7 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) model.Applica
 		BaseURL:             &baseURL,
 		ProviderName:        &sc.InfrastructureProvider,
 		StatusCondition:     &initStatusCond,
+		SystemNumber:        &sc.SystemNumber,
 		Labels:              nil,
 		HealthCheckURL:      nil,
 		IntegrationSystemID: nil,
@@ -143,5 +191,5 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) model.Applica
 		Webhooks:            nil,
 	}
 
-	return appRegisterInput
+	return appRegisterInput, sc.TemplateType
 }

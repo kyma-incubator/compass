@@ -1645,6 +1645,320 @@ func TestService_CreateFromTemplate(t *testing.T) {
 	})
 }
 
+func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
+	timestamp := time.Now()
+
+	modelInput := model.ApplicationRegisterInput{
+		Name: "foo.bar-not",
+		Webhooks: []*model.WebhookInput{
+			{URL: stringPtr("test.foo.com")},
+			{URL: stringPtr("test.bar.com")},
+		},
+
+		Labels: map[string]interface{}{
+			"label": "value",
+		},
+		IntegrationSystemID: &intSysID,
+	}
+
+	normalizedModelInput := model.ApplicationRegisterInput{
+		Name: "mp-foo-bar-not",
+		Webhooks: []*model.WebhookInput{
+			{URL: stringPtr("test.foo.com")},
+			{URL: stringPtr("test.bar.com")},
+		},
+
+		Labels: map[string]interface{}{
+			"label": "value",
+		},
+		IntegrationSystemID: &intSysID,
+	}
+
+	systemNumber1 := "s1"
+	systemNumber2 := "s2"
+
+	id := "foo"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		AppNameNormalizer  normalizer.Normalizator
+		AppRepoFn          func() *automock.ApplicationRepository
+		WebhookRepoFn      func() *automock.WebhookRepository
+		IntSysRepoFn       func() *automock.IntegrationSystemRepository
+		ScenariosServiceFn func() *automock.ScenariosService
+		LabelServiceFn     func() *automock.LabelUpsertService
+		BundleServiceFn    func() *automock.BundleService
+		UIDServiceFn       func() *automock.UIDService
+		Inputs             []model.ApplicationRegisterInput
+		templateTypes      []string
+		ExpectedErr        error
+	}{
+		{
+			Name:              "Success for inputs with no template types",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepoMock := &automock.ApplicationRepository{}
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
+
+				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+					app, ok := obj.(*model.Application)
+					if !ok {
+						return false
+					}
+					return app.ApplicationTemplateID == nil || *app.ApplicationTemplateID == ""
+				})).Return(nil).Twice()
+				return appRepoMock
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				return webhookRepo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				intSysRepo := &automock.IntegrationSystemRepository{}
+				intSysRepo.On("Exists", ctx, mock.Anything).Return(true, nil)
+				return intSysRepo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				scenarioSvc := &automock.ScenariosService{}
+				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioSvc
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertMultipleLabels", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return labelSvc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				return &automock.BundleService{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Inputs: []model.ApplicationRegisterInput{
+				modelInput,
+				normalizedModelInput,
+			},
+			templateTypes: []string{"", ""},
+			ExpectedErr:   nil,
+		},
+		{
+			Name:              "Success for inputs with template types",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepoMock := &automock.ApplicationRepository{}
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
+
+				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+					app, ok := obj.(*model.Application)
+					if !ok {
+						return false
+					}
+					return *app.ApplicationTemplateID == "temp1" || *app.ApplicationTemplateID == "temp2"
+				})).Return(nil).Twice()
+				return appRepoMock
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				return webhookRepo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				intSysRepo := &automock.IntegrationSystemRepository{}
+				intSysRepo.On("Exists", ctx, mock.Anything).Return(true, nil)
+				return intSysRepo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				scenarioSvc := &automock.ScenariosService{}
+				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioSvc
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertMultipleLabels", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return labelSvc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				return &automock.BundleService{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Inputs: []model.ApplicationRegisterInput{
+				modelInput,
+				normalizedModelInput,
+			},
+			templateTypes: []string{"temp1", "temp2"},
+			ExpectedErr:   nil,
+		},
+		{
+			Name:              "Success for inputs with not unique systems",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepoMock := &automock.ApplicationRepository{}
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return([]*model.Application{
+					{
+						Name: normalizedModelInput.Name,
+					},
+				}, nil).Once()
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
+
+				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+					app, ok := obj.(*model.Application)
+					if !ok {
+						return false
+					}
+					return app.ApplicationTemplateID == nil || *app.ApplicationTemplateID == ""
+				})).Return(nil).Times(3)
+				return appRepoMock
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				return webhookRepo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				intSysRepo := &automock.IntegrationSystemRepository{}
+				intSysRepo.On("Exists", ctx, mock.Anything).Return(true, nil)
+				return intSysRepo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				scenarioSvc := &automock.ScenariosService{}
+				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioSvc
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertMultipleLabels", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return labelSvc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				return &automock.BundleService{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Inputs: []model.ApplicationRegisterInput{
+				modelInput,
+				normalizedModelInput,
+				{
+					Name: modelInput.Name,
+				},
+				{
+					Name:         modelInput.Name,
+					SystemNumber: &systemNumber1,
+				},
+				{
+					Name:         modelInput.Name,
+					SystemNumber: &systemNumber1,
+				},
+				{
+					Name:         modelInput.Name,
+					SystemNumber: &systemNumber2,
+				},
+			},
+			templateTypes: []string{"", "", "", "", "", ""},
+			ExpectedErr:   nil,
+		},
+		{
+			Name:              "Fails for all systems if even one system failed to create",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepoMock := &automock.ApplicationRepository{}
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
+
+				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+					app, ok := obj.(*model.Application)
+					if !ok {
+						return false
+					}
+					return app.ApplicationTemplateID == nil || *app.ApplicationTemplateID == ""
+				})).Return(errors.New("expected")).Once()
+				return appRepoMock
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				return webhookRepo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				intSysRepo := &automock.IntegrationSystemRepository{}
+				intSysRepo.On("Exists", ctx, mock.Anything).Return(true, nil)
+				return intSysRepo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				scenarioSvc := &automock.ScenariosService{}
+				return scenarioSvc
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				return labelSvc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				return &automock.BundleService{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Inputs: []model.ApplicationRegisterInput{
+				modelInput,
+				normalizedModelInput,
+			},
+			templateTypes: []string{"", ""},
+			ExpectedErr:   errors.New("expected"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appNameNormalizer := testCase.AppNameNormalizer
+			appRepo := testCase.AppRepoFn()
+			webhookRepo := testCase.WebhookRepoFn()
+			scenariosSvc := testCase.ScenariosServiceFn()
+			labelSvc := testCase.LabelServiceFn()
+			uidSvc := testCase.UIDServiceFn()
+			intSysRepo := testCase.IntSysRepoFn()
+			bndlSvc := testCase.BundleServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			svc.SetTimestampGen(func() time.Time { return timestamp })
+
+			// when
+			err := svc.CreateManyIfNotExistsWithEventualTemplate(ctx, testCase.Inputs, testCase.templateTypes)
+
+			// then
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			labelSvc.AssertExpectations(t)
+			appRepo.AssertExpectations(t)
+			intSysRepo.AssertExpectations(t)
+			webhookRepo.AssertExpectations(t)
+			scenariosSvc.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+			bndlSvc.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")

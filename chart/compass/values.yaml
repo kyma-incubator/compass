@@ -339,15 +339,15 @@ global:
     name: "system-fetcher"
     schedule: "0 0 * * *"
     manageSecrets: true
+    fetchParallellism: 30
+    fetchTimeout: "5s"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
     systemsAPIEndpoint: ""
     systemsAPIFilterCriteria: ""
     systemsAPIFilterTenantCriteriaPattern: ""
-    systemToTemplateMappings:
-      systemTemplate1: ""
-      systemTemplate2: ""
+    systemToTemplateMappings: '{}'
     oauth:
       client: ""
       secret: ""

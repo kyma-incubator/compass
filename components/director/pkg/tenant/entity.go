@@ -4,8 +4,6 @@ type Entity struct {
 	ID             string       `db:"id"`
 	Name           string       `db:"external_name"`
 	ExternalTenant string       `db:"external_tenant"`
-	CustomerId     string       `db:"customer_id"`
-	Subdomain      string       `db:"subdomain"`
 	ProviderName   string       `db:"provider_name"`
 	Initialized    *bool        `db:"initialized"` // computed value
 	Status         TenantStatus `db:"status"`

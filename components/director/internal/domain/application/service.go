@@ -247,22 +247,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
-func (s *service) CreateManyIfNotExists(ctx context.Context, applicationInputs []model.ApplicationRegisterInput) error {
-	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
-	if err != nil {
-		return errors.Wrap(err, "while filtering unique and non-existing applications")
-	}
-
-	for _, a := range appsToAdd {
-		_, err := s.Create(ctx, a)
-		if err != nil {
-			return errors.Wrap(err, "while creating application")
-		}
-	}
-
-	return nil
-}
-
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateId *string) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateId
@@ -276,14 +260,14 @@ func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRe
 	return s.genericCreate(ctx, in, creator)
 }
 
-func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemNameToTemplateMappings map[string]string) error {
+func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, templateTypes []string) error {
 	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
 	if err != nil {
 		return errors.Wrap(err, "while filtering unique and non-existing applications")
 	}
 
-	for _, a := range appsToAdd {
-		template := systemNameToTemplateMappings[*a.Description]
+	for index, a := range appsToAdd {
+		template := templateTypes[index]
 		if template == "" {
 			_, err = s.Create(ctx, a)
 			if err != nil {
@@ -570,14 +554,14 @@ func (s *service) filterUniqueNonExistingApplications(ctx context.Context, appli
 		alreadyExits := false
 
 		for _, a := range allApps {
-			if ai.Name == a.Name {
+			if ai.Name == a.Name && ((ai.SystemNumber == nil && a.SystemNumber == nil) || (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))) {
 				alreadyExits = true
 				break
 			}
 		}
 
 		for _, a := range uniqueNonExistingApps {
-			if ai.Name == a.Name {
+			if ai.Name == a.Name && ((ai.SystemNumber == nil && a.SystemNumber == nil) || (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))) {
 				alreadyExits = true
 				break
 			}
