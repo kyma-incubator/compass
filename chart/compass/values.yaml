@@ -269,7 +269,8 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}"}'
+      # nonce in claims is used to mitigate oathkeeper's token cache which will result in usage of invalid tokens on JWKS rotation (done by kyma on post-upgrade).
+      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "nonce": "{{ print .Extra.nonce }}"}'
     mutators:
       runtimeMappingService:
         config:

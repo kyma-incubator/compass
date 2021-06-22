@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
@@ -126,6 +127,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData,
 	reqData.Body.Extra["scope"] = objCtx.Scopes
 	reqData.Body.Extra["consumerID"] = objCtx.ConsumerID
 	reqData.Body.Extra["consumerType"] = objCtx.ConsumerType
+	reqData.Body.Extra["nonce"] = time.Now().Unix() // nonce in claims is used to mitigate oathkeeper's token cache which will result in usage of invalid tokens on JWKS rotation (done by kyma on post-upgrade).
 
 	return reqData.Body
 }

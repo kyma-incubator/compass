@@ -205,13 +205,12 @@ func main() {
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+		executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
 			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
 				logger.WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
 			}
-		})
-		go periodicExecutor.Run(ctx)
+		}).Run(ctx)
 	}
 
 	packageToBundlesMiddleware := packagetobundles.NewHandler(transact)
