@@ -155,7 +155,6 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 			if a.cachedJWKS == nil {
 				log.C(ctx).Debugf("Empty JWKS cache... Signing key %s is not found", keyID)
 				return nil, apperrors.NewKeyDoesNotExistError(keyID)
-
 			}
 
 			keyIterator := &authenticator.JWTKeyIterator{
