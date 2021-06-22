@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"net/http"
 	"net/url"
 	"os"
@@ -221,7 +222,7 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	mainRouter.Use(panic_recovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
