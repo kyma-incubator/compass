@@ -528,7 +528,7 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
 		return tombstonesFromDB[i].OrdID == tombstone.OrdID
 	}); found {
-		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].OrdID, tombstone)
+		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].ID, tombstone)
 	}
 	_, err := s.tombstoneSvc.Create(ctx, appID, tombstone)
 	return err

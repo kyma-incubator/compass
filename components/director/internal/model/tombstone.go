@@ -1,6 +1,7 @@
 package model
 
 type Tombstone struct {
+	ID            string
 	OrdID         string
 	TenantID      string
 	ApplicationID string
@@ -12,12 +13,13 @@ type TombstoneInput struct {
 	RemovalDate string `json:"removalDate"`
 }
 
-func (i *TombstoneInput) ToTombstone(tenantID, appID string) *Tombstone {
+func (i *TombstoneInput) ToTombstone(id, tenantID, appID string) *Tombstone {
 	if i == nil {
 		return nil
 	}
 
 	return &Tombstone{
+		ID:            id,
 		OrdID:         i.OrdID,
 		TenantID:      tenantID,
 		ApplicationID: appID,

@@ -19,13 +19,20 @@ type TombstoneRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error)
 }
 
-type service struct {
-	tombstoneRepo TombstoneRepository
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(tombstoneRepo TombstoneRepository) *service {
+type service struct {
+	tombstoneRepo TombstoneRepository
+	uidService    UIDService
+}
+
+func NewService(tombstoneRepo TombstoneRepository, uidService UIDService) *service {
 	return &service{
 		tombstoneRepo: tombstoneRepo,
+		uidService:    uidService,
 	}
 }
 
@@ -35,13 +42,14 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Tom
 		return "", err
 	}
 
-	tombstone := in.ToTombstone(tnt, applicationID)
+	id := s.uidService.Generate()
+	tombstone := in.ToTombstone(id, tnt, applicationID)
 
 	err = s.tombstoneRepo.Create(ctx, tombstone)
 	if err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for Application with id %s", tombstone.OrdID, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for Application with id %s", id, applicationID)
 	}
-	log.C(ctx).Debugf("Successfully created a Tombstone with id %s for Application with id %s", tombstone.OrdID, applicationID)
+	log.C(ctx).Debugf("Successfully created a Tombstone with id %s for Application with id %s", id, applicationID)
 
 	return tombstone.OrdID, nil
 }

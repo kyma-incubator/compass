@@ -27,18 +27,19 @@ const (
 	event1ORDID       = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID       = "ns2:eventResource:EVENT_ID:v1"
 
-	appID     = "testApp"
-	whID      = "testWh"
-	tenantID  = "testTenant"
-	packageID = "testPkg"
-	vendorID  = "testVendor"
-	productID = "testProduct"
-	vendorID2 = "testVendor2"
-	bundleID  = "testBndl"
-	api1ID    = "testApi1"
-	api2ID    = "testApi2"
-	event1ID  = "testEvent1"
-	event2ID  = "testEvent2"
+	appID       = "testApp"
+	whID        = "testWh"
+	tenantID    = "testTenant"
+	packageID   = "testPkg"
+	vendorID    = "testVendor"
+	vendorID2   = "testVendor2"
+	productID   = "testProduct"
+	bundleID    = "testBndl"
+	api1ID      = "testApi1"
+	api2ID      = "testApi2"
+	event1ID    = "testEvent1"
+	event2ID    = "testEvent2"
+	tombstoneID = "testTs"
 
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
@@ -855,6 +856,7 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 func fixTombstones() []*model.Tombstone {
 	return []*model.Tombstone{
 		{
+			ID:            tombstoneID,
 			OrdID:         api2ORDID,
 			TenantID:      tenantID,
 			ApplicationID: appID,

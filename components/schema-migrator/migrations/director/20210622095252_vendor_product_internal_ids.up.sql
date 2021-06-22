@@ -22,4 +22,15 @@ SET id = uuid_generate_v4();
 ALTER TABLE products DROP CONSTRAINT products_pkey;
 ALTER TABLE products ADD CONSTRAINT products_pkey PRIMARY KEY (id);
 
+--- tombstones ---
+
+ALTER TABLE tombstones
+    ADD COLUMN id UUID CHECK (id <> '00000000-0000-0000-0000-000000000000');
+
+UPDATE tombstones
+SET id = uuid_generate_v4();
+
+ALTER TABLE tombstones DROP CONSTRAINT tombstones_pkey;
+ALTER TABLE tombstones ADD CONSTRAINT tombstones_pkey PRIMARY KEY (id);
+
 COMMIT;
