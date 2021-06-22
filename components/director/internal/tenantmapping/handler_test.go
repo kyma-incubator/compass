@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -80,6 +82,9 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
 		require.NoError(t, err)
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
@@ -154,6 +159,9 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
 		require.NoError(t, err)
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
@@ -232,6 +240,9 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
+		require.NoError(t, err)
+
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
@@ -297,6 +308,9 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
+		require.NoError(t, err)
+
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
@@ -343,6 +357,9 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
 		require.NoError(t, err)
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
@@ -394,6 +411,9 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
+		require.NoError(t, err)
+
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
@@ -441,6 +461,9 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		body, err = sjson.DeleteBytes(body, "extra.nonce")
 		require.NoError(t, err)
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
