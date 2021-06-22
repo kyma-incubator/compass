@@ -2,11 +2,6 @@ package spec
 
 import (
 	"context"
-	"fmt"
-	"strings"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -18,9 +13,7 @@ import (
 )
 
 const specificationsTable string = `public.specifications`
-const fetchRequestsTable string = `public.fetch_requests`
 
-const fetchRequestSpecRef = "spec_id"
 const apiDefIDColumn = "api_def_id"
 const eventAPIDefIDColumn = "event_def_id"
 
@@ -92,26 +85,14 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 	if err != nil {
 		return nil, err
 	}
-
-	var specCollection specCollection
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(fieldName, objectID),
 	}
 
-	prefixedFieldNames := append(str.PrefixStrings(specificationsColumns, "spec."), str.PrefixStrings([]string{"url"}, "fr.")...)
-	stmt := fmt.Sprintf(`SELECT %s FROM %s AS spec LEFT JOIN %s AS fr ON fr.%s=spec.id WHERE spec.%s=$1 AND spec.%s=$2 ORDER BY spec.created_at ASC`,
-		strings.Join(prefixedFieldNames, ", "),
-		specificationsTable,
-		fetchRequestsTable,
-		fetchRequestSpecRef,
-		tenantColumn,
-		fieldName)
-
-	err = persist.SelectContext(ctx, &specCollection, stmt, tenant, objectID)
+	var specCollection specCollection
+	err = r.lister.List(ctx, tenant, &specCollection, conditions...)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting Specs by Reference Object ID")
+		return nil, err
 	}
 
 	var items []*model.Spec
