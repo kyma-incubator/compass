@@ -3,6 +3,9 @@ package model
 import (
 	"encoding/json"
 	"regexp"
+	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -34,9 +37,9 @@ type EventDefinition struct {
 	LineOfBusiness      json.RawMessage
 	Industry            json.RawMessage
 	Extensible          json.RawMessage
-
-	Version     *Version
-	*BaseEntity `hash:"ignore"`
+	ResourceHash        *string `hash:"ignore"`
+	Version             *Version
+	*BaseEntity         `hash:"ignore"`
 }
 
 func (_ *EventDefinition) GetType() resource.Type {
@@ -111,13 +114,18 @@ func (a *EventResourceDefinition) ToSpec() *SpecInput {
 	}
 }
 
-func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string) *EventDefinition {
-	return e.ToEventDefinition(id, appID, nil, tenant)
+func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string, eventHash uint64) *EventDefinition {
+	return e.ToEventDefinition(id, appID, nil, tenant, eventHash)
 }
 
-func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, tenant string) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, tenant string, eventHash uint64) *EventDefinition {
 	if e == nil {
 		return nil
+	}
+
+	var hash *string
+	if eventHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(eventHash, 10))
 	}
 
 	return &EventDefinition{
@@ -145,6 +153,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Industry:            e.Industry,
 		Version:             e.VersionInput.ToVersion(),
 		Extensible:          e.Extensible,
+		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

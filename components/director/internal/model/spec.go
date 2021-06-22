@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )
 
@@ -16,7 +15,6 @@ type Spec struct {
 	APIType    *APISpecType
 	EventType  *EventSpecType
 	CustomType *string
-	URL        *string
 }
 
 type SpecReferenceObjectType string
@@ -92,11 +90,6 @@ func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType
 		return nil, errors.New("event spec type cannot be empty")
 	}
 
-	var url *string
-	if s.FetchRequest != nil {
-		url = str.Ptr(s.FetchRequest.URL)
-	}
-
 	return &Spec{
 		ID:         id,
 		Tenant:     tenant,
@@ -107,6 +100,5 @@ func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType
 		APIType:    s.APIType,
 		EventType:  s.EventType,
 		CustomType: s.CustomType,
-		URL:        url,
 	}, nil
 }
