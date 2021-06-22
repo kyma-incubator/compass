@@ -227,7 +227,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 			return vendorsFromDB[i].OrdID == ts.OrdID
 		}); found {
-			if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].OrdID); err != nil {
+			if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].ID); err != nil {
 				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -385,7 +385,7 @@ func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB 
 	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 		return vendorsFromDB[i].OrdID == vendor.OrdID
 	}); found {
-		return s.vendorSvc.Update(ctx, vendorsFromDB[i].OrdID, vendor)
+		return s.vendorSvc.Update(ctx, vendorsFromDB[i].ID, vendor)
 	}
 	_, err := s.vendorSvc.Create(ctx, appID, vendor)
 	return err

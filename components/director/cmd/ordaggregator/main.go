@@ -129,7 +129,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	packageSvc := mp_package.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo)
-	vendorSvc := ordvendor.NewService(vendorRepo)
+	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo)
 
 	ordClient := open_resource_discovery.NewClient(httpClient)

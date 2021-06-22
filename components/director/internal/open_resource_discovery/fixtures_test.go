@@ -31,6 +31,8 @@ const (
 	whID      = "testWh"
 	tenantID  = "testTenant"
 	packageID = "testPkg"
+	vendorID  = "testVendor"
+	vendorID2 = "testVendor2"
 	bundleID  = "testBndl"
 	api1ID    = "testApi1"
 	api2ID    = "testApi2"
@@ -511,6 +513,7 @@ func fixWebhooks() []*model.Webhook {
 func fixVendors() []*model.Vendor {
 	return []*model.Vendor{
 		{
+			ID:            vendorID,
 			OrdID:         vendorORDID,
 			TenantID:      tenantID,
 			ApplicationID: appID,
@@ -519,6 +522,7 @@ func fixVendors() []*model.Vendor {
 			Labels:        json.RawMessage(labels),
 		},
 		{
+			ID:       vendorID2,
 			OrdID:    vendor2ORDID,
 			Title:    "SAP",
 			Partners: json.RawMessage(partners),

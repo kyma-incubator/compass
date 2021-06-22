@@ -86,8 +86,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulVendorUpdate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorORDID, *sanitizedDoc.Vendors[0]).Return(nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendor2ORDID, *sanitizedDoc.Vendors[1]).Return(nil).Once()
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID, *sanitizedDoc.Vendors[0]).Return(nil).Once()
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID2, *sanitizedDoc.Vendors[1]).Return(nil).Once()
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
 		return vendorSvc
 	}
@@ -101,6 +101,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 		modelVendor := []*model.Vendor{
 			{
+				ID:            vendorID,
 				OrdID:         open_resource_discovery.SapVendor,
 				TenantID:      tenantID,
 				ApplicationID: appID,
@@ -108,7 +109,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			}}
 
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorORDID, sapVendor).Return(nil).Once()
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID, sapVendor).Return(nil).Once()
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
 		return vendorSvc
 	}
@@ -404,7 +405,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorORDID, *sanitizedDoc.Vendors[0]).Return(testErr).Once()
+				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID, *sanitizedDoc.Vendors[0]).Return(testErr).Once()
 				return vendorSvc
 			},
 			clientFn: successfulClientFetch,
@@ -1004,7 +1005,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[0]).Return("", nil).Once()
 				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[1]).Return("", nil).Once()
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-				vendorSvc.On("Delete", txtest.CtxWithDBMatcher(), vendorORDID).Return(testErr).Once()
+				vendorSvc.On("Delete", txtest.CtxWithDBMatcher(), vendorID).Return(testErr).Once()
 				return vendorSvc
 			},
 			tombstoneSvcFn: func() *automock.TombstoneService {
