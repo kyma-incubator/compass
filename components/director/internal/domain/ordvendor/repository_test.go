@@ -146,11 +146,11 @@ func TestPgRepository_GetByID(t *testing.T) {
 		convMock.On("FromEntity", vendorEntity).Return(&model.Vendor{ID: vendorID, TenantID: tenantID}, nil).Once()
 		pgRepository := ordvendor.NewRepository(convMock)
 		// WHEN
-		modelBndl, err := pgRepository.GetByID(ctx, tenantID, vendorID)
+		modelVendor, err := pgRepository.GetByID(ctx, tenantID, vendorID)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, vendorID, modelBndl.ID)
-		assert.Equal(t, tenantID, modelBndl.TenantID)
+		assert.Equal(t, vendorID, modelVendor.ID)
+		assert.Equal(t, tenantID, modelVendor.TenantID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
@@ -168,11 +168,11 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelBndl, err := repo.GetByID(ctx, tenantID, vendorID)
+		modelVendor, err := repo.GetByID(ctx, tenantID, vendorID)
 		// then
 
 		sqlMock.AssertExpectations(t)
-		assert.Nil(t, modelBndl)
+		assert.Nil(t, modelVendor)
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 

@@ -147,7 +147,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulProductUpdate := func() *automock.ProductService {
 		productSvc := &automock.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-		productSvc.On("Update", txtest.CtxWithDBMatcher(), productORDID, *sanitizedDoc.Products[0]).Return(nil).Once()
+		productSvc.On("Update", txtest.CtxWithDBMatcher(), productID, *sanitizedDoc.Products[0]).Return(nil).Once()
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
@@ -445,7 +445,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-				productSvc.On("Update", txtest.CtxWithDBMatcher(), productORDID, *sanitizedDoc.Products[0]).Return(testErr).Once()
+				productSvc.On("Update", txtest.CtxWithDBMatcher(), productID, *sanitizedDoc.Products[0]).Return(testErr).Once()
 				return productSvc
 			},
 			clientFn: successfulClientFetch,
@@ -1041,7 +1041,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				productSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Products[0]).Return("", nil).Once()
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-				productSvc.On("Delete", txtest.CtxWithDBMatcher(), productORDID).Return(testErr).Once()
+				productSvc.On("Delete", txtest.CtxWithDBMatcher(), productID).Return(testErr).Once()
 				return productSvc
 			},
 			vendorSvcFn: successfulVendorCreate,

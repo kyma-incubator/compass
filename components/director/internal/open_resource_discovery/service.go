@@ -234,7 +234,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 			return productsFromDB[i].OrdID == ts.OrdID
 		}); found {
-			if err := s.productSvc.Delete(ctx, productsFromDB[i].OrdID); err != nil {
+			if err := s.productSvc.Delete(ctx, productsFromDB[i].ID); err != nil {
 				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -374,7 +374,7 @@ func (s *Service) resyncProduct(ctx context.Context, appID string, productsFromD
 	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 		return productsFromDB[i].OrdID == product.OrdID
 	}); found {
-		return s.productSvc.Update(ctx, productsFromDB[i].OrdID, product)
+		return s.productSvc.Update(ctx, productsFromDB[i].ID, product)
 	}
 	_, err := s.productSvc.Create(ctx, appID, product)
 	return err

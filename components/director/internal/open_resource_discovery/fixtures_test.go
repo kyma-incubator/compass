@@ -32,6 +32,7 @@ const (
 	tenantID  = "testTenant"
 	packageID = "testPkg"
 	vendorID  = "testVendor"
+	productID = "testProduct"
 	vendorID2 = "testVendor2"
 	bundleID  = "testBndl"
 	api1ID    = "testApi1"
@@ -534,6 +535,7 @@ func fixVendors() []*model.Vendor {
 func fixProducts() []*model.Product {
 	return []*model.Product{
 		{
+			ID:               productID,
 			OrdID:            productORDID,
 			TenantID:         tenantID,
 			ApplicationID:    appID,
