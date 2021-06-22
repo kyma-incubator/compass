@@ -15,20 +15,20 @@ type EventDefService struct {
 	mock.Mock
 }
 
-// CreateInBundle provides a mock function with given fields: ctx, appID, bundleID, in, spec
-func (_m *EventDefService) CreateInBundle(ctx context.Context, appID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
-	ret := _m.Called(ctx, appID, bundleID, in, spec)
+// CreateInBundle provides a mock function with given fields: ctx, appID, bundleID, in, spec, eventHash
+func (_m *EventDefService) CreateInBundle(ctx context.Context, appID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput, eventHash uint64) (string, error) {
+	ret := _m.Called(ctx, appID, bundleID, in, spec, eventHash)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.EventDefinitionInput, *model.SpecInput) string); ok {
-		r0 = rf(ctx, appID, bundleID, in, spec)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.EventDefinitionInput, *model.SpecInput, uint64) string); ok {
+		r0 = rf(ctx, appID, bundleID, in, spec, eventHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
-		r1 = rf(ctx, appID, bundleID, in, spec)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.EventDefinitionInput, *model.SpecInput, uint64) error); ok {
+		r1 = rf(ctx, appID, bundleID, in, spec, eventHash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -96,13 +96,13 @@ func (_m *EventDefService) GetFetchRequest(ctx context.Context, eventAPIDefID st
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in, spec
-func (_m *EventDefService) Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error {
-	ret := _m.Called(ctx, id, in, spec)
+// Update provides a mock function with given fields: ctx, id, in, spec, eventHash
+func (_m *EventDefService) Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput, eventHash uint64) error {
+	ret := _m.Called(ctx, id, in, spec, eventHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
-		r0 = rf(ctx, id, in, spec)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput, uint64) error); ok {
+		r0 = rf(ctx, id, in, spec, eventHash)
 	} else {
 		r0 = ret.Error(0)
 	}

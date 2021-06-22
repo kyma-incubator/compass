@@ -14,20 +14,20 @@ type PackageService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, applicationID, in
-func (_m *PackageService) Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error) {
-	ret := _m.Called(ctx, applicationID, in)
+// Create provides a mock function with given fields: ctx, applicationID, in, pkgHash
+func (_m *PackageService) Create(ctx context.Context, applicationID string, in model.PackageInput, pkgHash uint64) (string, error) {
+	ret := _m.Called(ctx, applicationID, in, pkgHash)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput) string); ok {
-		r0 = rf(ctx, applicationID, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput, uint64) string); ok {
+		r0 = rf(ctx, applicationID, in, pkgHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.PackageInput) error); ok {
-		r1 = rf(ctx, applicationID, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.PackageInput, uint64) error); ok {
+		r1 = rf(ctx, applicationID, in, pkgHash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -72,13 +72,13 @@ func (_m *PackageService) ListByApplicationID(ctx context.Context, appID string)
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *PackageService) Update(ctx context.Context, id string, in model.PackageInput) error {
-	ret := _m.Called(ctx, id, in)
+// Update provides a mock function with given fields: ctx, id, in, pkgHash
+func (_m *PackageService) Update(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error {
+	ret := _m.Called(ctx, id, in, pkgHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput) error); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput, uint64) error); ok {
+		r0 = rf(ctx, id, in, pkgHash)
 	} else {
 		r0 = ret.Error(0)
 	}

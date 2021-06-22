@@ -124,17 +124,17 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 func (s *service) CreateInBundle(ctx context.Context, appId, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appId, &bundleID, nil, in, []*model.SpecInput{spec}, nil)
+	return s.Create(ctx, appId, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
 }
 
-func (s *service) Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string) (string, error) {
+func (s *service) Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinition(id, appId, packageID, tnt)
+	api := in.ToAPIDefinition(id, appId, packageID, tnt, apiHash)
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
@@ -174,11 +174,11 @@ func (s *service) Create(ctx context.Context, appId string, bundleID, packageID 
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil)
+func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, apiHash uint64) error {
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, apiHash)
 }
 
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -189,7 +189,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return err
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, tnt)
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, tnt, apiHash)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {

@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/hashstructure/v2"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -31,7 +31,7 @@ const (
 	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
+	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+[^:\\/\\s\\.]+(:\\d+)?$"
 	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
@@ -143,14 +143,14 @@ func validateDocumentInput(doc *Document) error {
 	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0")))
 }
 
-func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package) error {
+func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&pkg.Title, validation.Required),
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validatePackageVersionInput(value, *pkg, packagesFromDB)
+			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
 		})),
 		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
@@ -214,14 +214,14 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	)
 }
 
-func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, specs map[string][]*model.Spec) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
 		validation.Field(&api.Description, validation.Required),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, specs)
+			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRfc)),
@@ -280,14 +280,14 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 	)
 }
 
-func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, specs map[string][]*model.Spec) error {
+func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.Name, validation.Required),
 		validation.Field(&event.ShortDescription, shortDescriptionRules...),
 		validation.Field(&event.Description, validation.Required),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, specs)
+			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
 		})),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
@@ -607,7 +607,7 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 	return nil
 }
 
-func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgsFromDB map[string]*model.Package) error {
+func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgsFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	if value == nil {
 		return nil
 	}
@@ -617,29 +617,17 @@ func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgs
 	}
 
 	pkgFromDB, ok := pkgsFromDB[pkg.OrdID]
-	if !ok {
+	if !ok || str.PtrStrToStr(pkgFromDB.ResourceHash) == "" {
 		return nil
 	}
 
-	docPkgDefinition := pkg.ToPackage(pkgFromDB.ID, pkgFromDB.TenantID, pkgFromDB.ApplicationID)
+	hashDB := str.PtrStrToStr(pkgFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(resourceHashes[pkg.OrdID], 10)
 
-	normalizedPkgFromDoc, err := normalizePackage(docPkgDefinition)
-	if err != nil {
-		return err
-	}
-	normalizedPkgFromDB, err := normalizePackage(pkgFromDB)
-	if err != nil {
-		return err
-	}
-
-	_, err = hashstructure.Hash(normalizedPkgFromDB, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
-	_, err = hashstructure.Hash(normalizedPkgFromDoc, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
-
-	// TODO: invoke checkHashEquality instead of returning nil
-	return nil
+	return checkHashEquality(pkgFromDB.Version, pkg.Version, hashDB, hashDoc)
 }
 
-func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, specs map[string][]*model.Spec) error {
+func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
 	if value == nil {
 		return nil
 	}
@@ -649,58 +637,17 @@ func validateEventDefinitionVersionInput(value interface{}, event model.EventDef
 	}
 
 	eventFromDB, ok := eventsFromDB[str.PtrStrToStr(event.OrdID)]
-	if !ok {
+	if !ok || str.PtrStrToStr(eventFromDB.ResourceHash) == "" {
 		return nil
 	}
 
-	specsFromDB := specs[eventFromDB.ID]
-	specsFromDocument := make([]*model.Spec, 0, 0)
+	hashDB := str.PtrStrToStr(eventFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(eventHashes[str.PtrStrToStr(event.OrdID)], 10)
 
-	for _, rd := range event.ResourceDefinitions {
-		spec, err := rd.ToSpec().ToSpec("", eventFromDB.Tenant, model.EventSpecReference, eventFromDB.ID)
-		if err != nil {
-			return err
-		}
-
-		specsFromDocument = append(specsFromDocument, spec)
-	}
-
-	docEventDefinition := event.ToEventDefinition(eventFromDB.ID, eventFromDB.ApplicationID, eventFromDB.PackageID, eventFromDB.Tenant)
-
-	normalizedEventFromDoc, err := normalizeEventDefinition(docEventDefinition)
-	if err != nil {
-		return err
-	}
-	normalizedEventFromDB, err := normalizeEventDefinition(eventFromDB)
-	if err != nil {
-		return err
-	}
-
-	_, err = hashObject(normalizedEventFromDB)
-	if err != nil {
-		return err
-	}
-
-	_, err = hashObject(normalizedEventFromDoc)
-	if err != nil {
-		return err
-	}
-
-	specFromDBHashed, err := hashObject(specsFromDB)
-	if err != nil {
-		return err
-	}
-
-	specFromDocumentHashed, err := hashObject(specsFromDocument)
-	if err != nil {
-		return err
-	}
-
-	// TODO: invoke checkHashEquality for normalizedEvents as well
-	return checkHashEquality(eventFromDB.Version.Value, event.VersionInput.Value, specFromDBHashed, specFromDocumentHashed)
+	return checkHashEquality(eventFromDB.Version.Value, event.VersionInput.Value, hashDB, hashDoc)
 }
 
-func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]*model.APIDefinition, specs map[string][]*model.Spec) error {
+func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	if value == nil {
 		return nil
 	}
@@ -710,94 +657,53 @@ func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitio
 	}
 
 	apiFromDB, ok := apisFromDB[str.PtrStrToStr(api.OrdID)]
-	if !ok {
+	if !ok || str.PtrStrToStr(apiFromDB.ResourceHash) == "" {
 		return nil
 	}
 
-	specsFromDB := specs[apiFromDB.ID]
-	specsFromDocument := make([]*model.Spec, 0, 0)
+	hashDB := str.PtrStrToStr(apiFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(apiHashes[str.PtrStrToStr(api.OrdID)], 10)
 
-	for _, rd := range api.ResourceDefinitions {
-		spec, err := rd.ToSpec().ToSpec("", "", model.APISpecReference, apiFromDB.ID)
-		if err != nil {
-			return err
-		}
-
-		specsFromDocument = append(specsFromDocument, spec)
-	}
-
-	docAPIDefinition := api.ToAPIDefinition(apiFromDB.ID, apiFromDB.ApplicationID, apiFromDB.PackageID, apiFromDB.Tenant)
-
-	normalizedDAPIFromDoc, err := normalizeAPIDefinition(docAPIDefinition)
-	if err != nil {
-		return err
-	}
-	normalizedAPIFromDB, err := normalizeAPIDefinition(apiFromDB)
-	if err != nil {
-		return err
-	}
-
-	_, err = hashObject(normalizedAPIFromDB)
-	if err != nil {
-		return err
-	}
-
-	_, err = hashObject(normalizedDAPIFromDoc)
-	if err != nil {
-		return err
-	}
-
-	specFromDBHashed, err := hashObject(specsFromDB)
-	if err != nil {
-		return err
-	}
-
-	specFromDocumentHashed, err := hashObject(specsFromDocument)
-	if err != nil {
-		return err
-	}
-
-	// TODO: invoke checkHashEquality for normalizedAPIs as well
-	return checkHashEquality(apiFromDB.Version.Value, api.VersionInput.Value, specFromDBHashed, specFromDocumentHashed)
+	return checkHashEquality(apiFromDB.Version.Value, api.VersionInput.Value, hashDB, hashDoc)
 }
 
-func normalizeAPIDefinition(api *model.APIDefinition) (model.APIDefinition, error) {
+func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
 	bytes, err := json.Marshal(api)
 	if err != nil {
-		return model.APIDefinition{}, errors.Wrapf(err, "error while marshalling api definition with ID %s", api.ID)
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while marshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
 	}
 
-	var normalizedAPIDefinition model.APIDefinition
+	var normalizedAPIDefinition model.APIDefinitionInput
 	if err := json.Unmarshal(bytes, &normalizedAPIDefinition); err != nil {
-		return model.APIDefinition{}, errors.Wrapf(err, "error while unmarshalling api definition with ID %s", api.ID)
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
 	}
 
 	return normalizedAPIDefinition, nil
 }
 
-func normalizeEventDefinition(event *model.EventDefinition) (model.EventDefinition, error) {
+func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDefinitionInput, error) {
 	bytes, err := json.Marshal(event)
 	if err != nil {
-		return model.EventDefinition{}, errors.Wrapf(err, "error while marshalling event definition with ID %s", event.ID)
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while marshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
 	}
 
-	var normalizedEventDefinition model.EventDefinition
+	var normalizedEventDefinition model.EventDefinitionInput
 	if err := json.Unmarshal(bytes, &normalizedEventDefinition); err != nil {
-		return model.EventDefinition{}, errors.Wrapf(err, "error while unmarshalling event definition with ID %s", event.ID)
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
 	}
 
 	return normalizedEventDefinition, nil
 }
 
-func normalizePackage(pkg *model.Package) (model.Package, error) {
+func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 	bytes, err := json.Marshal(pkg)
 	if err != nil {
-		return model.Package{}, errors.Wrapf(err, "error while marshalling package definition with ID %s", pkg.ID)
+		return model.PackageInput{}, errors.Wrapf(err, "error while marshalling package definition with ID %s", pkg.OrdID)
 	}
 
-	var normalizedPkgDefinition model.Package
+	var normalizedPkgDefinition model.PackageInput
 	if err := json.Unmarshal(bytes, &normalizedPkgDefinition); err != nil {
-		return model.Package{}, errors.Wrapf(err, "error while unmarshalling package definition with ID %s", pkg.ID)
+		return model.PackageInput{}, errors.Wrapf(err, "error while unmarshalling package definition with ID %s", pkg.OrdID)
 	}
 
 	return normalizedPkgDefinition, nil
@@ -1155,14 +1061,12 @@ func hashObject(obj interface{}) (uint64, error) {
 	return hash, nil
 }
 
-func checkHashEquality(rdFromDBVersion, rdFromDocVersion string, hashFromDB, hashFromDoc uint64) error {
-	lessSort := func(a, b uint64) bool { return a < b }
-
+func checkHashEquality(rdFromDBVersion, rdFromDocVersion, hashFromDB, hashFromDoc string) error {
 	rdFromDBVersion = fmt.Sprintf("v%s", rdFromDBVersion)
 	rdFromDocVersion = fmt.Sprintf("v%s", rdFromDocVersion)
 
 	areEventVersionsEqual := semver.Compare(rdFromDocVersion, rdFromDBVersion)
-	if areSpecsEqual := cmp.Equal(hashFromDB, hashFromDoc, cmpopts.SortSlices(lessSort)); !areSpecsEqual && areEventVersionsEqual <= 0 {
+	if areHashesEqual := cmp.Equal(hashFromDB, hashFromDoc); !areHashesEqual && areEventVersionsEqual <= 0 {
 		return errors.New("there is a change in the resource definitions; version value should be incremented")
 	}
 

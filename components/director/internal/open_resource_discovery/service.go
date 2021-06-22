@@ -137,12 +137,12 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
 	assignSAPVendor(documents)
 
-	apiDataFromDB, apiSpecs, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
+	apiDataFromDB, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	eventDataFromDB, eventSpecs, err := s.fetchEventDataAndSpecFromDB(ctx, appID)
+	eventDataFromDB, err := s.fetchEventDataAndSpecFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
@@ -152,9 +152,53 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	allSpecs := mergeSpecs(apiSpecs, eventSpecs)
+	resourceHashes := make(map[string]uint64)
 
-	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, allSpecs, packageDataFromDB); err != nil {
+	for _, doc := range documents {
+		for _, apiInput := range doc.APIResources {
+			normalizedAPIDef, err := normalizeAPIDefinition(apiInput)
+			if err != nil {
+				return nil
+			}
+
+			hash, err := hashObject(normalizedAPIDef)
+			if err != nil {
+				return nil
+			}
+
+			resourceHashes[str.PtrStrToStr(apiInput.OrdID)] = hash
+		}
+
+		for _, eventInput := range doc.EventResources {
+			normalizedAPIDef, err := normalizeEventDefinition(eventInput)
+			if err != nil {
+				return nil
+			}
+
+			hash, err := hashObject(normalizedAPIDef)
+			if err != nil {
+				return nil
+			}
+
+			resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash
+		}
+
+		for _, packageInput := range doc.Packages {
+			normalizedAPIDef, err := normalizePackage(packageInput)
+			if err != nil {
+				return nil
+			}
+
+			hash, err := hashObject(normalizedAPIDef)
+			if err != nil {
+				return nil
+			}
+
+			resourceHashes[packageInput.OrdID] = hash
+		}
+	}
+
+	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
 
@@ -189,7 +233,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	packagesFromDB, err := s.processPackages(ctx, appID, packagesInput)
+	packagesFromDB, err := s.processPackages(ctx, appID, packagesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
@@ -199,12 +243,12 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	apisFromDB, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput)
+	apisFromDB, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	eventsFromDB, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput)
+	eventsFromDB, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
 	if err != nil {
 		return err
 	}
@@ -291,14 +335,15 @@ func (s *Service) processProducts(ctx context.Context, appID string, products []
 	return s.productSvc.ListByApplicationID(ctx, appID)
 }
 
-func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput) ([]*model.Package, error) {
+func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error) {
 	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing packages for app with id %q", appID)
 	}
 
 	for _, pkg := range packages {
-		if err := s.resyncPackage(ctx, appID, packagesFromDB, *pkg); err != nil {
+		pkgHash := resourceHashes[pkg.OrdID]
+		if err := s.resyncPackage(ctx, appID, packagesFromDB, *pkg, pkgHash); err != nil {
 			return nil, errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
 		}
 	}
@@ -321,14 +366,15 @@ func (s *Service) processBundles(ctx context.Context, appID string, bundles []*m
 	return s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
 }
 
-func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput) ([]*model.APIDefinition, error) {
+func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, error) {
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing apis for app with id %q", appID)
 	}
 
 	for _, api := range apis {
-		if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api); err != nil {
+		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
+		if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api, apiHash); err != nil {
 			return nil, errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
 		}
 	}
@@ -336,14 +382,15 @@ func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB [
 	return s.apiSvc.ListByApplicationID(ctx, appID)
 }
 
-func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput) ([]*model.EventDefinition, error) {
+func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, error) {
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing events for app with id %q", appID)
 	}
 
 	for _, event := range events {
-		if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event); err != nil {
+		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
+		if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event, eventHash); err != nil {
 			return nil, errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
 		}
 	}
@@ -366,14 +413,14 @@ func (s *Service) processTombstones(ctx context.Context, appID string, tombstone
 	return s.tombstoneSvc.ListByApplicationID(ctx, appID)
 }
 
-func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput) error {
+func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
 	ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return packagesFromDB[i].OrdID == pkg.OrdID
 	}); found {
-		return s.packageSvc.Update(ctx, packagesFromDB[i].ID, pkg)
+		return s.packageSvc.Update(ctx, packagesFromDB[i].ID, pkg, pkgHash)
 	}
-	_, err := s.packageSvc.Create(ctx, appID, pkg)
+	_, err := s.packageSvc.Create(ctx, appID, pkg, pkgHash)
 	return err
 }
 
@@ -410,7 +457,7 @@ func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB 
 	return err
 }
 
-func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput) error {
+func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput, apiHash uint64) error {
 	ctx = addFieldToLogger(ctx, "api_ord_id", *api.OrdID)
 	i, isAPIFound := searchInSlice(len(apisFromDB), func(i int) bool {
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
@@ -431,7 +478,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	}
 
 	if !isAPIFound {
-		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle)
+		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash)
 		return err
 	}
 
@@ -449,7 +496,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion); err != nil {
+	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash); err != nil {
 		return err
 	}
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
@@ -460,7 +507,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	return nil
 }
 
-func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput) error {
+func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput, eventHash uint64) error {
 	ctx = addFieldToLogger(ctx, "event_ord_id", *event.OrdID)
 	i, isEventFound := searchInSlice(len(eventsFromDB), func(i int) bool {
 		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
@@ -488,7 +535,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	}
 
 	if !isEventFound {
-		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference)
+		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash)
 		return err
 	}
 
@@ -517,7 +564,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 		}
 	}
 
-	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsForCreation, bundleIDsForDeletion); err != nil {
+	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsForCreation, bundleIDsForDeletion, eventHash); err != nil {
 		return err
 	}
 	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
@@ -553,26 +600,20 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	return err
 }
 
-func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string][]*model.Spec, error) {
+func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, error) {
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
+		return nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
 	}
 
 	apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
-	specs := make(map[string][]*model.Spec, 0)
 
 	for _, api := range apisFromDB {
 		apiOrdID := str.PtrStrToStr(api.OrdID)
 		apiDataFromDB[apiOrdID] = api
-		specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "could not list specification")
-		}
-		specs[api.ID] = specsFromDB
 	}
 
-	return apiDataFromDB, specs, nil
+	return apiDataFromDB, nil
 }
 
 func (s *Service) fetchPackageDataFromDB(ctx context.Context, appID string) (map[string]*model.Package, error) {
@@ -590,41 +631,20 @@ func (s *Service) fetchPackageDataFromDB(ctx context.Context, appID string) (map
 	return packageDataFromDB, nil
 }
 
-func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, map[string][]*model.Spec, error) {
+func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, error) {
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
+		return nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
 	}
 
 	eventDataFromDB := make(map[string]*model.EventDefinition, 0)
-	specs := make(map[string][]*model.Spec, 0)
 
 	for _, event := range eventsFromDB {
-		eventOrdID := str.PtrStrToStr(event.OrdID)
-		eventDataFromDB[eventOrdID] = event
-		specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "could not list specification")
-		}
-		specs[event.ID] = specsFromDB
+		apiOrdID := str.PtrStrToStr(event.OrdID)
+		eventDataFromDB[apiOrdID] = event
 	}
 
-	return eventDataFromDB, specs, nil
-}
-
-func mergeSpecs(spec1, spec2 map[string][]*model.Spec) map[string][]*model.Spec {
-	allSpecsLen := len(spec1) + len(spec2)
-	allSpecs := make(map[string][]*model.Spec, allSpecsLen)
-
-	for k, v := range spec1 {
-		allSpecs[k] = v
-	}
-
-	for k, v := range spec2 {
-		allSpecs[k] = v
-	}
-
-	return allSpecs
+	return eventDataFromDB, nil
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {

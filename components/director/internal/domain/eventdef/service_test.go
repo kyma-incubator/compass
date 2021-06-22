@@ -591,7 +591,7 @@ func TestService_Create(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.BundleIDs)
+			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.BundleIDs, 0)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -610,7 +610,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", nil, nil, model.EventDefinitionInput{}, []*model.SpecInput{}, []string{})
+		_, err := svc.Create(context.TODO(), "", nil, nil, model.EventDefinitionInput{}, []*model.SpecInput{}, []string{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -789,7 +789,7 @@ func TestService_Update(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput)
+			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, 0)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -806,7 +806,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{})
+		err := svc.Update(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -965,7 +965,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.BundleIDsForCreation, testCase.BundleIDsForDeletion)
+			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.BundleIDsForCreation, testCase.BundleIDsForDeletion, 0)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -983,7 +983,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.UpdateInManyBundles(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{}, []string{}, []string{})
+		err := svc.UpdateInManyBundles(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{}, []string{}, []string{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

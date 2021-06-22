@@ -16,7 +16,7 @@ import (
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
+	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput, apiHash uint64) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
@@ -146,7 +146,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, errors.Wrapf(err, "while converting GraphQL input to APIDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
+	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec, 0)
 	if err != nil {
 		return nil, err
 	}

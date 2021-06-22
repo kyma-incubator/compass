@@ -37,14 +37,14 @@ func NewService(pkgRepo PackageRepository, uidService UIDService) *service {
 	}
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.PackageInput, pkgHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	pkg := in.ToPackage(id, tnt, applicationID)
+	pkg := in.ToPackage(id, tnt, applicationID, pkgHash)
 
 	err = s.pkgRepo.Create(ctx, pkg)
 	if err != nil {
@@ -55,7 +55,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.PackageInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput) 
 		return errors.Wrapf(err, "while getting Package with id %s", id)
 	}
 
-	pkg.SetFromUpdateInput(in)
+	pkg.SetFromUpdateInput(in, pkgHash)
 
 	err = s.pkgRepo.Update(ctx, pkg)
 	if err != nil {
