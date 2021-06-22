@@ -1,12 +1,13 @@
 package panic_recovery_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPanicRecoveryMiddleware(t *testing.T) {
@@ -23,4 +24,3 @@ func TestPanicRecoveryMiddleware(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Contains(t, recorder.Body.String(), "Unrecovered panic")
 }
-

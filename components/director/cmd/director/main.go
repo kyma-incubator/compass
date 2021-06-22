@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 

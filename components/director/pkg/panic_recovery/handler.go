@@ -2,10 +2,11 @@ package panic_recovery
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"runtime/debug"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // NewPanicRecoveryMiddleware returns a standard mux middleware that provides panic recovery
@@ -32,4 +33,3 @@ func NewPanicRecoveryMiddleware() func(http.Handler) http.Handler {
 		})
 	}
 }
-
