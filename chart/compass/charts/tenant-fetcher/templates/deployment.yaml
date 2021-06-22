@@ -54,8 +54,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
-            - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT

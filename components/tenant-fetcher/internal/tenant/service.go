@@ -70,11 +70,9 @@ func (s *service) Create(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, fmt.Sprintf("Property %q not found in body or it is not of String type", s.config.TenantProviderTenantIdProperty), http.StatusInternalServerError)
 		return
 	}
-	subdomain := gjson.GetBytes(body, s.config.TenantProviderSubdomainProperty) //TODO: Check how to add this as a label
 
 	warnOnEmptyGJsonProperty(logger, customerId, s.config.TenantProviderCustomerIdProperty)
 	warnOnEmptyGJsonProperty(logger, tenantId, s.config.TenantProviderTenantIdProperty)
-	warnOnEmptyGJsonProperty(logger, subdomain, s.config.TenantProviderSubdomainProperty)
 
 	var tenantsToCreate []model.TenantModel
 

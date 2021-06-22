@@ -23,7 +23,6 @@ type Config struct {
 
 	TenantProviderTenantIdProperty   string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
 	TenantProviderCustomerIdProperty string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
-	TenantProviderSubdomainProperty  string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	TenantProvider                   string `envconfig:"APP_TENANT_PROVIDER"`
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
