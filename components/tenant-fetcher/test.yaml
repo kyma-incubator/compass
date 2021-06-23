@@ -1,0 +1,13 @@
+apiVersion: testing.kyma-project.io/v1alpha1
+kind: ClusterTestSuite
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: tf-1
+spec:
+  maxRetries: 0
+  concurrency: 1
+  selectors:
+    matchNames:
+      - name: tenant-fetcher
+        namespace: compass-system

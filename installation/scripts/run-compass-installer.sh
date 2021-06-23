@@ -4,14 +4,15 @@ set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+source $CURRENT_DIR/utils.sh
+useMinikube
+
 DOMAIN="kyma.local"
 
 VM_DRIVER="virtualbox"
 if [ `uname -s` = "Darwin" ]; then
     VM_DRIVER="hyperkit"
 fi
-
-source $CURRENT_DIR/utils.sh
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
