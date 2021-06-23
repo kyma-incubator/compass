@@ -7,7 +7,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
-	github.com/jmoiron/sqlx v1.3.3
+	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210607082003-d97c798f2482
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.0
