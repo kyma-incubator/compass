@@ -50,7 +50,7 @@ global:
       version: "PR-1910"
     pairing_adapter:
       dir:
-      version: "PR-1884"
+      version: "PR-1910"
     director:
       dir:
       version: "PR-1910"
