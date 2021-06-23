@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
-	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210623072749-c159dfdd6510

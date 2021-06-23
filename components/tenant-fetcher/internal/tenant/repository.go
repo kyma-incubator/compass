@@ -69,7 +69,7 @@ func (r *repository) Create(ctx context.Context, item model.TenantModel) error {
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", r.tableName, strings.Join(r.columns, ", "), strings.Join(values, ", "))
 
 	log.C(ctx).Infof("Executing DB query: %s", stmt)
-	_, err = persist.NamedExec(stmt, dbEntity)
+	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, resource.Tenant, resource.Create, "while inserting row to '%s' table", r.tableName)
 }
@@ -83,7 +83,7 @@ func (r *repository) DeleteByExternalID(ctx context.Context, tenantId string) er
 	stmt := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", r.tableName, externalTenantColumn)
 
 	log.C(ctx).Infof("Executing DB query: %s", stmt)
-	_, err = persist.Exec(stmt, tenantId)
+	_, err = persist.ExecContext(ctx, stmt, tenantId)
 
 	return persistence.MapSQLError(ctx, err, resource.Tenant, resource.Delete, "while deleting row to '%s' table", r.tableName)
 }
