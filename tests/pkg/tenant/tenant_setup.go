@@ -174,7 +174,7 @@ func (mgr TestTenantsManager) Cleanup() {
 		log.Fatal(err)
 	}
 
-	_, err = tx.Exec(deleteLabelDefinitions)
+	_, err = tx.ExecContext(context.TODO(), deleteLabelDefinitions)
 	if err != nil {
 		log.Fatal(err)
 	}
