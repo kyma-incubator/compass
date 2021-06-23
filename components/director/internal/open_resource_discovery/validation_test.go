@@ -435,7 +435,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -473,7 +473,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -488,6 +488,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 		Name              string
 		DocumentProvider  func() []*open_resource_discovery.Document
 		ExpectedToBeValid bool
+		AfterTest         func()
 	}{
 		{
 			Name: "Valid document",
@@ -600,16 +601,24 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		},
-		// TODO: Uncomment this test
-		//{
-		//	Name: "Not incremented `version` field when Package",
-		//	DocumentProvider: func() []*open_resource_discovery.Document {
-		//		doc := fixORDDocument()
-		//		doc.Packages[0].Industry = json.RawMessage(`["Mining"]`)
-		//
-		//		return []*open_resource_discovery.Document{doc}
-		//	},
-		//},
+		{
+			Name: "Not incremented `version` field when Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["Mining"]`)
+				doc.Packages[0].Version = fixPackagesWithLowerVersion()[0].Version
+
+				newHash, err := open_resource_discovery.HashObject(doc.Packages[0])
+				require.NoError(t, err)
+
+				resourceHashes[packageORDID] = newHash
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		},
 		{
 			Name: "Missing `policyLevel` field for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
@@ -1133,7 +1142,12 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+
+			if test.AfterTest != nil {
+				test.AfterTest()
+			}
+
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1408,7 +1422,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1423,6 +1437,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 		Name              string
 		DocumentProvider  func() []*open_resource_discovery.Document
 		ExpectedToBeValid bool
+		AfterTest         func()
 	}{
 		{
 			Name: "Missing `ordID` field for API",
@@ -1511,7 +1526,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
 				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Not incremented `version` field when resource definition's MediaType has changed for API",
@@ -1520,7 +1543,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Not incremented `version` field when resource definition's Type has changed for API",
@@ -1529,7 +1560,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Not incremented `version` field when resource definition's CustomType has changed for API",
@@ -1539,7 +1578,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
 				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Valid incremented `version` field when resource definition has changed for API",
@@ -2917,7 +2964,12 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+
+			if test.AfterTest != nil {
+				test.AfterTest()
+			}
+
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -2932,6 +2984,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 		Name              string
 		DocumentProvider  func() []*open_resource_discovery.Document
 		ExpectedToBeValid bool
+		AfterTest         func()
 	}{
 		{
 			Name: "Missing `ordID` field for Event",
@@ -3012,7 +3065,15 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc.EventResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
 				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[event1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Not incremented `version` field when resource definition's MediaType has changed for Event",
@@ -3021,7 +3082,15 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc.EventResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[event1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Not incremented `version` field when resource definition's Type has changed for Event",
@@ -3031,7 +3100,15 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc.EventResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
 				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
+				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[event1ORDID] = newHash
+
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 		}, {
 			Name: "Valid incremented `version` field when resource definition has changed for Event",
@@ -3855,7 +3932,12 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+
+			if test.AfterTest != nil {
+				test.AfterTest()
+			}
+
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4076,7 +4158,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4202,7 +4284,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4256,7 +4338,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, specsFromDB, pkgsFromDB)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

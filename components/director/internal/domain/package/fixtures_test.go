@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
@@ -17,6 +19,7 @@ const (
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
+	resourceHash     = "123456"
 )
 
 func fixEntityPackage() *mp_package.Entity {
@@ -41,6 +44,7 @@ func fixEntityPackage() *mp_package.Entity {
 		PartOfProducts:    repo.NewValidNullableString("[\"test\"]"),
 		LineOfBusiness:    repo.NewValidNullableString("[]"),
 		Industry:          repo.NewValidNullableString("[]"),
+		ResourceHash:      repo.NewValidNullableString(resourceHash),
 	}
 }
 
@@ -68,6 +72,7 @@ func fixPackageModel() *model.Package {
 		PartOfProducts:    json.RawMessage("[\"test\"]"),
 		LineOfBusiness:    json.RawMessage("[]"),
 		Industry:          json.RawMessage("[]"),
+		ResourceHash:      str.Ptr(resourceHash),
 	}
 }
 
@@ -98,16 +103,16 @@ func fixPackageModelInput() *model.PackageInput {
 func fixPackageColumns() []string {
 	return []string{"id", "tenant_id", "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
-		"custom_policy_level", "part_of_products", "line_of_business", "industry"}
+		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
 }
 
 func fixPackageRow() []driver.Value {
 	return []driver.Value{packageID, tenantID, appID, ordID, "vendorID", "title", "short desc", "desc", "v1.0.5",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
-		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash)}
 }
 
 func fixPackageUpdateArgs() []driver.Value {
 	return []driver.Value{"vendorID", "title", "short desc", "desc", "v1.0.5", repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"),
-		"test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"), "test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		"test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"), "test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash)}
 }

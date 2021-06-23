@@ -161,7 +161,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 				return nil
 			}
 
-			hash, err := hashObject(normalizedAPIDef)
+			hash, err := HashObject(normalizedAPIDef)
 			if err != nil {
 				return nil
 			}
@@ -175,7 +175,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 				return nil
 			}
 
-			hash, err := hashObject(normalizedAPIDef)
+			hash, err := HashObject(normalizedAPIDef)
 			if err != nil {
 				return nil
 			}
@@ -189,7 +189,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 				return nil
 			}
 
-			hash, err := hashObject(normalizedAPIDef)
+			hash, err := HashObject(normalizedAPIDef)
 			if err != nil {
 				return nil
 			}

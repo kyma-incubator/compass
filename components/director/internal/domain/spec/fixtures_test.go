@@ -1,10 +1,7 @@
 package spec_test
 
 import (
-	"database/sql"
 	"database/sql/driver"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -20,8 +17,6 @@ const (
 	externalTenant = "externalTenant"
 )
 
-var fetchRequestUrl = str.Ptr("http://test.com/")
-
 func fixModelAPISpec() *model.Spec {
 	var specData = "specData"
 	var apiType = model.APISpecTypeOdata
@@ -36,21 +31,6 @@ func fixModelAPISpec() *model.Spec {
 	}
 }
 
-func fixModelAPISpecWithFetchRequestURL() *model.Spec {
-	var specData = "specData"
-	var apiType = model.APISpecTypeOdata
-	return &model.Spec{
-		ID:         specID,
-		Tenant:     tenant,
-		ObjectType: model.APISpecReference,
-		ObjectID:   apiID,
-		APIType:    &apiType,
-		Format:     model.SpecFormatXML,
-		Data:       &specData,
-		URL:        fetchRequestUrl,
-	}
-}
-
 func fixModelAPISpecWithID(id string) *model.Spec {
 	var specData = "specData"
 	var apiType = model.APISpecTypeOdata
@@ -62,7 +42,6 @@ func fixModelAPISpecWithID(id string) *model.Spec {
 		APIType:    &apiType,
 		Format:     model.SpecFormatXML,
 		Data:       &specData,
-		URL:        fetchRequestUrl,
 	}
 }
 
@@ -144,7 +123,7 @@ func fixModelAPISpecInputWithFetchRequest() *model.SpecInput {
 	return &model.SpecInput{
 		Data: &specData,
 		FetchRequest: &model.FetchRequestInput{
-			URL: *fetchRequestUrl,
+			URL: "foo.bar",
 		},
 		APIType: &apiType,
 		Format:  model.SpecFormatXML,
@@ -157,7 +136,7 @@ func fixModelEventSpecInputWithFetchRequest() *model.SpecInput {
 	return &model.SpecInput{
 		Data: &specData,
 		FetchRequest: &model.FetchRequestInput{
-			URL: *fetchRequestUrl,
+			URL: "foo.bar",
 		},
 		EventType: &eventType,
 		Format:    model.SpecFormatJSON,
@@ -180,7 +159,7 @@ func fixGQLAPISpecInputWithFetchRequest() *graphql.APISpecInput {
 	return &graphql.APISpecInput{
 		Data: &clob,
 		FetchRequest: &graphql.FetchRequestInput{
-			URL: *fetchRequestUrl,
+			URL: "foo.bar",
 		},
 		Type:   graphql.APISpecTypeOdata,
 		Format: graphql.SpecFormatXML,
@@ -203,7 +182,7 @@ func fixGQLEventSpecInputWithFetchRequest() *graphql.EventSpecInput {
 	return &graphql.EventSpecInput{
 		Data: &clob,
 		FetchRequest: &graphql.FetchRequestInput{
-			URL: *fetchRequestUrl,
+			URL: "foo.bar",
 		},
 		Type:   graphql.EventSpecTypeAsyncAPI,
 		Format: graphql.SpecFormatJSON,
@@ -214,16 +193,12 @@ func fixSpecColumns() []string {
 	return []string{"id", "tenant_id", "api_def_id", "event_def_id", "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
 }
 
-func fixSpecWithFetchRequestJoinColumns() []string {
-	return []string{"id", "tenant_id", "api_def_id", "event_def_id", "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type", "url"}
-}
-
 func fixAPISpecRow() []driver.Value {
 	return []driver.Value{specID, tenant, apiID, nil, "specData", "XML", "ODATA", nil, nil, nil}
 }
 
 func fixAPISpecRowWithID(id string) []driver.Value {
-	return []driver.Value{id, tenant, apiID, nil, "specData", "XML", "ODATA", nil, nil, nil, *fetchRequestUrl}
+	return []driver.Value{id, tenant, apiID, nil, "specData", "XML", "ODATA", nil, nil, nil}
 }
 
 func fixEventSpecRow() []driver.Value {
@@ -231,7 +206,7 @@ func fixEventSpecRow() []driver.Value {
 }
 
 func fixEventSpecRowWithID(id string) []driver.Value {
-	return []driver.Value{id, tenant, nil, eventID, "specData", nil, nil, "JSON", "ASYNC_API", nil, *fetchRequestUrl}
+	return []driver.Value{id, tenant, nil, eventID, "specData", nil, nil, "JSON", "ASYNC_API", nil}
 }
 
 func fixAPISpecCreateArgs(spec *model.Spec) []driver.Value {
@@ -261,10 +236,6 @@ func fixAPISpecEntityWithID(id string) spec.Entity {
 		SpecData:      repo.NewValidNullableString("specData"),
 		APISpecFormat: repo.NewValidNullableString("XML"),
 		APISpecType:   repo.NewValidNullableString(string(model.APISpecTypeOdata)),
-		URL: sql.NullString{
-			String: *fetchRequestUrl,
-			Valid:  true,
-		},
 	}
 }
 
@@ -287,9 +258,5 @@ func fixEventSpecEntityWithID(id string) spec.Entity {
 		SpecData:        repo.NewValidNullableString("specData"),
 		EventSpecType:   repo.NewValidNullableString(string(model.EventSpecTypeAsyncAPI)),
 		EventSpecFormat: repo.NewValidNullableString("JSON"),
-		URL: sql.NullString{
-			String: *fetchRequestUrl,
-			Valid:  true,
-		},
 	}
 }

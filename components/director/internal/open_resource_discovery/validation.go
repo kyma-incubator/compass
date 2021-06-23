@@ -1052,10 +1052,10 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	return nil
 }
 
-func hashObject(obj interface{}) (uint64, error) {
+func HashObject(obj interface{}) (uint64, error) {
 	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
 	if err != nil {
-		return 0, errors.New("failed to hash slice element")
+		return 0, errors.New("failed to hash the given object")
 	}
 
 	return hash, nil

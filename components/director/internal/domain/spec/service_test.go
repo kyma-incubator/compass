@@ -253,7 +253,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	specInputWithFR := fixModelAPISpecInputWithFetchRequest()
 	specInputWithFR.Data = nil
 
-	specModel := fixModelAPISpecWithFetchRequestURL()
+	specModel := fixModelAPISpec()
 	specModel.Data = nil
 
 	timestamp := time.Now()
@@ -261,7 +261,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	fr := &model.FetchRequest{
 		ID:     specID,
 		Tenant: tenant,
-		URL:    *fetchRequestUrl,
+		URL:    "foo.bar",
 		Mode:   model.FetchModeSingle,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,
@@ -312,7 +312,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 			RepositoryFn: func() *automock.SpecRepository {
 				repo := &automock.SpecRepository{}
 				repo.On("Create", ctx, specModel).Return(nil).Once()
-				repo.On("Update", ctx, fixModelAPISpecWithFetchRequestURL()).Return(nil).Once()
+				repo.On("Update", ctx, fixModelAPISpec()).Return(nil).Once()
 
 				return repo
 			},
@@ -459,7 +459,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	specInputWithFR := fixModelAPISpecInputWithFetchRequest()
 	specInputWithFR.Data = nil
 
-	specModel := fixModelAPISpecWithFetchRequestURL()
+	specModel := fixModelAPISpec()
 	specModel.Data = nil
 
 	timestamp := time.Now()
@@ -467,7 +467,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	fr := &model.FetchRequest{
 		ID:     specID,
 		Tenant: tenant,
-		URL:    *fetchRequestUrl,
+		URL:    "foo.bar",
 		Mode:   model.FetchModeSingle,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,
@@ -492,7 +492,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 			RepositoryFn: func() *automock.SpecRepository {
 				repo := &automock.SpecRepository{}
 				repo.On("GetByID", ctx, tenant, specID).Return(specModel, nil).Once()
-				repo.On("Update", ctx, fixModelAPISpecWithFetchRequestURL()).Return(nil).Once()
+				repo.On("Update", ctx, fixModelAPISpec()).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -890,9 +890,11 @@ func TestService_GetFetchRequest(t *testing.T) {
 
 	testErr := errors.New("Test error")
 
+	frURL := "foo.bar"
+
 	timestamp := time.Now()
 	fr := &model.FetchRequest{
-		URL: *fetchRequestUrl,
+		URL: frURL,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,

@@ -3,6 +3,7 @@ package open_resource_discovery_test
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -142,17 +143,28 @@ var (
 		event2ORDID: fixEventsWithLowerVersion()[1],
 	}
 
-	specsFromDB = map[string][]*model.Spec{
-		api1ID:   convertSpecInputsToSpecs(fixApi1SpecInputs(), model.APISpecReference, api1ID),
-		api2ID:   convertSpecInputsToSpecs(fixApi2SpecInputs(), model.APISpecReference, api2ID),
-		event1ID: convertSpecInputsToSpecs(fixEvent1SpecInputs(), model.EventSpecReference, event1ID),
-		event2ID: convertSpecInputsToSpecs(fixEvent2SpecInputs(), model.EventSpecReference, event2ID),
+	pkgsFromDB = map[string]*model.Package{
+		packageORDID: fixPackagesWithLowerVersion()[0],
 	}
 
-	pkgsFromDB = map[string]*model.Package{
-		packageID: fixPackagesWithLowerVersion()[0],
-	}
+	hashApi1, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
+	hashApi2, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[1])
+	hashPackage, _ = open_resource_discovery.HashObject(fixORDDocument().Packages[0])
+
+	resourceHashes = fixResourceHashes()
 )
+
+func fixResourceHashes() map[string]uint64 {
+	return map[string]uint64{
+		api1ORDID:    hashApi1,
+		api2ORDID:    hashApi2,
+		event1ORDID:  hashEvent1,
+		event2ORDID:  hashEvent2,
+		packageORDID: hashPackage,
+	}
+}
 
 func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	return &open_resource_discovery.WellKnownConfig{
@@ -634,6 +646,9 @@ func fixAPIsWithLowerVersion() []*model.APIDefinition {
 
 	for _, api := range apis {
 		api.Version.Value = "1.1.0"
+		ordID := str.PtrStrToStr(api.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		api.ResourceHash = hash
 	}
 
 	return apis
@@ -644,6 +659,9 @@ func fixEventsWithLowerVersion() []*model.EventDefinition {
 
 	for _, event := range events {
 		event.Version.Value = "1.1.0"
+		ordID := str.PtrStrToStr(event.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		event.ResourceHash = hash
 	}
 
 	return events
@@ -654,6 +672,8 @@ func fixPackagesWithLowerVersion() []*model.Package {
 
 	for _, pkg := range pkgs {
 		pkg.Version = "1.1.0"
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[pkg.OrdID], 10))
+		pkg.ResourceHash = hash
 	}
 
 	return pkgs
@@ -897,66 +917,6 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixApi1Specs() []*model.Spec {
-	specInputs := fixApi1SpecInputs()
-	specs := make([]*model.Spec, 0, len(specInputs))
-
-	for _, specInput := range specInputs {
-		spec, err := specInput.ToSpec("", tenantID, model.APISpecReference, api1ID)
-		if err != nil {
-			return nil
-		}
-		specs = append(specs, spec)
-	}
-
-	return specs
-}
-
-func fixApi2Specs() []*model.Spec {
-	specInputs := fixApi2SpecInputs()
-	specs := make([]*model.Spec, 0, len(specInputs))
-
-	for _, specInput := range specInputs {
-		spec, err := specInput.ToSpec("", tenantID, model.APISpecReference, api2ID)
-		if err != nil {
-			return nil
-		}
-		specs = append(specs, spec)
-	}
-
-	return specs
-}
-
-func fixEvent1Specs() []*model.Spec {
-	specInputs := fixEvent1SpecInputs()
-	specs := make([]*model.Spec, 0, len(specInputs))
-
-	for _, specInput := range specInputs {
-		spec, err := specInput.ToSpec("", tenantID, model.EventSpecReference, event1ID)
-		if err != nil {
-			return nil
-		}
-		specs = append(specs, spec)
-	}
-
-	return specs
-}
-
-func fixEvent2Specs() []*model.Spec {
-	specInputs := fixEvent2SpecInputs()
-	specs := make([]*model.Spec, 0, len(specInputs))
-
-	for _, specInput := range specInputs {
-		spec, err := specInput.ToSpec("", tenantID, model.EventSpecReference, event2ID)
-		if err != nil {
-			return nil
-		}
-		specs = append(specs, spec)
-	}
-
-	return specs
-}
-
 func fixTombstones() []*model.Tombstone {
 	return []*model.Tombstone{
 		{
@@ -984,18 +944,4 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 
 func removeWhitespace(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, " ", ""), "\n", ""), "\t", "")
-}
-
-func convertSpecInputsToSpecs(in []*model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) []*model.Spec {
-	specs := make([]*model.Spec, 0, 0)
-
-	for _, specInput := range in {
-		spec, err := specInput.ToSpec("", "", objectType, objectID)
-		if err != nil {
-			return nil
-		}
-		specs = append(specs, spec)
-	}
-
-	return specs
 }

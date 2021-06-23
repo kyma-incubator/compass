@@ -75,7 +75,7 @@ func TestService_Create(t *testing.T) {
 			svc := mp_package.NewService(repo, upackageIDService)
 
 			// when
-			result, err := svc.Create(ctx, appID, testCase.Input, 0)
+			result, err := svc.Create(ctx, appID, testCase.Input, uint64(123456))
 
 			// then
 			if testCase.ExpectedErr != nil {
