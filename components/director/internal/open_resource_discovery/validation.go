@@ -31,7 +31,7 @@ const (
 	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+[^:\\/\\s\\.]+(:\\d+)?$"
+	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
 	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
@@ -617,7 +617,7 @@ func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgs
 	}
 
 	pkgFromDB, ok := pkgsFromDB[pkg.OrdID]
-	if !ok || str.PtrStrToStr(pkgFromDB.ResourceHash) == "" {
+	if !ok || isResourceHashMissing(pkgFromDB.ResourceHash) {
 		return nil
 	}
 
@@ -637,7 +637,7 @@ func validateEventDefinitionVersionInput(value interface{}, event model.EventDef
 	}
 
 	eventFromDB, ok := eventsFromDB[str.PtrStrToStr(event.OrdID)]
-	if !ok || str.PtrStrToStr(eventFromDB.ResourceHash) == "" {
+	if !ok || isResourceHashMissing(eventFromDB.ResourceHash) {
 		return nil
 	}
 
@@ -657,7 +657,7 @@ func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitio
 	}
 
 	apiFromDB, ok := apisFromDB[str.PtrStrToStr(api.OrdID)]
-	if !ok || str.PtrStrToStr(apiFromDB.ResourceHash) == "" {
+	if !ok || isResourceHashMissing(apiFromDB.ResourceHash) {
 		return nil
 	}
 
@@ -707,6 +707,15 @@ func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 	}
 
 	return normalizedPkgDefinition, nil
+}
+
+func isResourceHashMissing(hash *string) bool {
+	hashStr := str.PtrStrToStr(hash)
+	if hashStr == "" {
+		return true
+	}
+
+	return false
 }
 
 func noNewLines(s string) bool {

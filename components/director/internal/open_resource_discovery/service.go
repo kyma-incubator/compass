@@ -137,17 +137,17 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
 	assignSAPVendor(documents)
 
-	apiDataFromDB, err := s.fetchAPIDataAndSpecFromDB(ctx, appID)
+	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	eventDataFromDB, err := s.fetchEventDataAndSpecFromDB(ctx, appID)
+	eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	packageDataFromDB, err := s.fetchPackageDataFromDB(ctx, appID)
+	packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
 	if err != nil {
 		return err
 	}
@@ -170,12 +170,12 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		}
 
 		for _, eventInput := range doc.EventResources {
-			normalizedAPIDef, err := normalizeEventDefinition(eventInput)
+			normalizedEventDef, err := normalizeEventDefinition(eventInput)
 			if err != nil {
 				return nil
 			}
 
-			hash, err := HashObject(normalizedAPIDef)
+			hash, err := HashObject(normalizedEventDef)
 			if err != nil {
 				return nil
 			}
@@ -184,12 +184,12 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		}
 
 		for _, packageInput := range doc.Packages {
-			normalizedAPIDef, err := normalizePackage(packageInput)
+			normalizedPkg, err := normalizePackage(packageInput)
 			if err != nil {
 				return nil
 			}
 
-			hash, err := HashObject(normalizedAPIDef)
+			hash, err := HashObject(normalizedPkg)
 			if err != nil {
 				return nil
 			}
@@ -600,7 +600,7 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	return err
 }
 
-func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, error) {
+func (s *Service) fetchAPIDefFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, error) {
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
@@ -616,7 +616,7 @@ func (s *Service) fetchAPIDataAndSpecFromDB(ctx context.Context, appID string) (
 	return apiDataFromDB, nil
 }
 
-func (s *Service) fetchPackageDataFromDB(ctx context.Context, appID string) (map[string]*model.Package, error) {
+func (s *Service) fetchPackagesFromDB(ctx context.Context, appID string) (map[string]*model.Package, error) {
 	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing packages for app with id %s", appID)
@@ -631,7 +631,7 @@ func (s *Service) fetchPackageDataFromDB(ctx context.Context, appID string) (map
 	return packageDataFromDB, nil
 }
 
-func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, error) {
+func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, error) {
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
@@ -640,8 +640,8 @@ func (s *Service) fetchEventDataAndSpecFromDB(ctx context.Context, appID string)
 	eventDataFromDB := make(map[string]*model.EventDefinition, 0)
 
 	for _, event := range eventsFromDB {
-		apiOrdID := str.PtrStrToStr(event.OrdID)
-		eventDataFromDB[apiOrdID] = event
+		eventOrdID := str.PtrStrToStr(event.OrdID)
+		eventDataFromDB[eventOrdID] = event
 	}
 
 	return eventDataFromDB, nil
