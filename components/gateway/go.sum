@@ -462,6 +462,7 @@ github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfC
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/jmoiron/sqlx v1.3.1/go.mod h1:2BljVx/86SuTyjE+aPYlHCTNvZrnJXghYGpNiXLBMCQ=
 github.com/jmoiron/sqlx v1.3.3/go.mod h1:2BljVx/86SuTyjE+aPYlHCTNvZrnJXghYGpNiXLBMCQ=
+github.com/jmoiron/sqlx v1.3.4/go.mod h1:2BljVx/86SuTyjE+aPYlHCTNvZrnJXghYGpNiXLBMCQ=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
@@ -516,6 +517,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210526113340-87c6
 github.com/kyma-incubator/compass/components/director v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:EeBxzlia6/86tRGJ3kIEaDCQVdAcFTNhJuN4QrHficU=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210607082003-d97c798f2482 h1:lc0tVwUlK1pdO7oIQqQwgh1tNk7V2CVB7UsySmoaFzQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210607082003-d97c798f2482/go.mod h1:afa5DiQhxKsCLpw7XjLPXaTSHxDoqqCiThGD1v6Bjbg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210623063857-34a4786de6b9 h1:JpMoaZI2oTSx6JkNgpnzXj8KLGsCIt//Ff5Dtc+p3vU=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210623063857-34a4786de6b9/go.mod h1:ZwopgcxvLMvBGMypsvdSAhv+9YmiJJ/U/2jhc4eUXGE=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210416142045-25b90bbc9ee6/go.mod h1:M+3sUGzazWTEx4bRTDuAY5OC0V2O19Atkys0lvpXgzA=

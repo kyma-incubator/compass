@@ -56,7 +56,7 @@ global:
       version: "PR-1910"
     gateway:
       dir:
-      version: "PR-1884"
+      version: "PR-1910"
     operations_controller:
       dir:
       version: "PR-1910"
