@@ -6,8 +6,8 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210623063857-34a4786de6b9
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210623065504-84041e076857
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210623072749-c159dfdd6510
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210623072749-c159dfdd6510
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/onsi/ginkgo v1.16.1 // indirect
 	github.com/pkg/errors v0.9.1
