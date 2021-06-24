@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-project/kyma/components/application-operator/pkg/normalization"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -89,23 +90,30 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	converted, err := h.converter.DetailsToGraphQLCreateInput(serviceDetails)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while converting service input")
-		logger.Error(wrappedErr)
-		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
-		return
-	}
-
 	reqContext, err := h.loadRequestContext(request)
 	if err != nil {
 		h.writeErrorInternal(writer, err)
 		return
 	}
 
+	if err := h.checkServiceCanBeAdded(serviceDetails, reqContext.AppBundles); err != nil {
+		wrappedError := err.Append("while checking if service can be added")
+		logger.Error(wrappedError)
+		res.WriteAppError(writer, wrappedError)
+		return
+	}
+
 	if err := h.ensureUniqueIdentifier(serviceDetails.Identifier, reqContext); err != nil {
 		logger.Error(errors.Wrap(err, "while ensuring legacy service identifier is unique"))
 		res.WriteAppError(writer, err)
+		return
+	}
+
+	converted, err := h.converter.DetailsToGraphQLCreateInput(serviceDetails)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "while converting service input")
+		logger.Error(wrappedErr)
+		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
 	}
 
@@ -528,6 +536,17 @@ func (h *Handler) ensureUniqueIdentifier(identifier string, reqContext RequestCo
 		}
 	}
 
+	return nil
+}
+
+func (h *Handler) checkServiceCanBeAdded(serviceDetails model.ServiceDetails, bundles []*graphql.BundleExt) apperrors.AppError {
+	normalizedServiceDetailsName := normalization.NormalizeName(serviceDetails.Name)
+
+	for _, bundle := range bundles {
+		if bundle != nil && normalization.NormalizeName(bundle.Name) == normalizedServiceDetailsName {
+			return apperrors.AlreadyExists("service with name %s already exists", serviceDetails.Name)
+		}
+	}
 	return nil
 }
 

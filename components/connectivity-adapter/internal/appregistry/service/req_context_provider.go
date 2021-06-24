@@ -16,6 +16,7 @@ import (
 type RequestContext struct {
 	AppID          string
 	AppLabels      graphql.Labels
+	AppBundles     []*graphql.BundleExt
 	DirectorClient DirectorClient
 }
 
@@ -47,6 +48,7 @@ func (s *requestContextProvider) ForRequest(r *http.Request) (RequestContext, er
 	return RequestContext{
 		AppID:          appDetails.ID,
 		AppLabels:      appDetails.Labels,
+		AppBundles:     appDetails.Bundles.Data,
 		DirectorClient: directorClient,
 	}, nil
 }
