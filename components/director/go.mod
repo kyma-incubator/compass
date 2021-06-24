@@ -17,9 +17,9 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jmoiron/sqlx v1.3.3
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210526113340-87c6e3c6f049
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049
+	github.com/jmoiron/sqlx v1.3.4
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210623072749-c159dfdd6510
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210623072749-c159dfdd6510
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/lib/pq v1.10.2
@@ -36,10 +36,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
-	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
-	golang.org/x/tools v0.1.0 // indirect
 	k8s.io/api v0.17.2 // DO NOT BUMP
 	k8s.io/apimachinery v0.17.2 // DO NOT BUMP
 	k8s.io/client-go v0.17.2 // DO NOT BUMP
