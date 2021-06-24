@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 func fixAPIOpenAPIYAML() model.API {
@@ -344,6 +345,12 @@ func fixEventsAsyncAPIJSON() model.Events {
 	return model.Events{
 		Spec: ptrSpecResponse(model.SpecResponse(spec)),
 	}
+}
+
+func fixAppBundles() []*graphql.BundleExt {
+	return []*graphql.BundleExt{{
+		Bundle: graphql.Bundle{Name: "Test"},
+	}}
 }
 
 func fixServiceDetails() model.ServiceDetails {

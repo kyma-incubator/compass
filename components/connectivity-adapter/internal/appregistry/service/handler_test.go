@@ -79,7 +79,10 @@ func TestHandler_Create(t *testing.T) {
 		mockConverter := automock.Converter{}
 		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, testErr)
 
-		handler := service.NewHandler(&mockConverter, &mockValidator, nil, nil)
+		mockContextProvider := automock.RequestContextProvider{}
+		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValidator, &mockContextProvider, nil)
 		handler.Create(w, req)
 
 		resp := w.Result()
@@ -101,7 +104,6 @@ func TestHandler_Create(t *testing.T) {
 		mockValidator.On("Validate", mock.Anything).Return(nil)
 
 		mockConverter := automock.Converter{}
-		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, nil)
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppID: "test"}, testErr)
@@ -171,7 +173,6 @@ func TestHandler_Create(t *testing.T) {
 		mockValidator.On("Validate", mock.Anything).Return(nil)
 
 		mockConverter := automock.Converter{}
-		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, nil)
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
@@ -213,7 +214,6 @@ func TestHandler_Create(t *testing.T) {
 		mockValidator.On("Validate", mock.Anything).Return(nil)
 
 		mockConverter := automock.Converter{}
-		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, nil)
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
@@ -816,7 +816,10 @@ func TestHandler_Update(t *testing.T) {
 		mockConverter := automock.Converter{}
 		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, testErr)
 
-		handler := service.NewHandler(&mockConverter, &mockValidator, nil, nil)
+		mockContextProvider := automock.RequestContextProvider{}
+		mockContextProvider.On("ForRequest", mock.Anything).Return(service.RequestContext{AppBundles: fixAppBundles()}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValidator, &mockContextProvider, nil)
 		handler.Update(w, req)
 
 		resp := w.Result()
@@ -1042,7 +1045,7 @@ func TestHandler_Update(t *testing.T) {
 		mockClient.On("GetBundle", mock.Anything, mock.Anything, mock.Anything).Return(graphql.BundleExt{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "id"}}}, nil)
 		mockClient.On("UpdateBundle", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
-			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+			Return(service.RequestContext{AppID: "test", AppBundles: fixAppBundles(), DirectorClient: &mockClient}, nil)
 
 		mockLabeler := automock.AppLabeler{}
 		mockLabeler.On("ReadServiceReference", mock.Anything, mock.Anything).Return(service.LegacyServiceReference{}, nil)
@@ -1080,7 +1083,7 @@ func TestHandler_Update(t *testing.T) {
 		mockClient.On("GetBundle", mock.Anything, mock.Anything, mock.Anything).Return(graphql.BundleExt{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "id"}}}, nil)
 		mockClient.On("UpdateBundle", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
-			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+			Return(service.RequestContext{AppID: "test", AppBundles: fixAppBundles(), DirectorClient: &mockClient}, nil)
 
 		mockLabeler := automock.AppLabeler{}
 		mockLabeler.On("ReadServiceReference", mock.Anything, mock.Anything).Return(service.LegacyServiceReference{}, nil)

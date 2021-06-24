@@ -92,11 +92,12 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 	reqContext, err := h.loadRequestContext(request)
 	if err != nil {
+		logger.Error(err)
 		h.writeErrorInternal(writer, err)
 		return
 	}
 
-	if err := h.checkServiceCanBeAdded(serviceDetails, reqContext.AppBundles); err != nil {
+	if err := h.checkServiceExistsWithNormalizedName(serviceDetails, reqContext.AppBundles); err != nil {
 		wrappedError := err.Append("while checking if service can be added")
 		logger.Error(wrappedError)
 		res.WriteAppError(writer, wrappedError)
@@ -246,6 +247,21 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	reqContext, err := h.loadRequestContext(request)
+	if err != nil {
+		logger.Error(err)
+		h.writeErrorInternal(writer, err)
+		return
+	}
+
+	// TODO: Why shouldn't we allow for such name change? It's done in the App Registry
+	if err := h.checkServiceExistsWithNormalizedName(serviceDetails, reqContext.AppBundles); err == nil {
+		appErr := apperrors.WrongInput("cannot change service name to %s for service with ID %s", serviceDetails.Name, id)
+		logger.Error(appErr)
+		res.WriteAppError(writer, appErr)
+		return
+	}
+
 	createInput, err := h.converter.DetailsToGraphQLCreateInput(serviceDetails)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while converting service input")
@@ -254,12 +270,6 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	reqContext, err := h.loadRequestContext(request)
-	if err != nil {
-		logger.Error(err)
-		h.writeErrorInternal(writer, err)
-		return
-	}
 	dirCli := reqContext.DirectorClient
 
 	previousBundle, err := dirCli.GetBundle(request.Context(), reqContext.AppID, id)
@@ -539,7 +549,7 @@ func (h *Handler) ensureUniqueIdentifier(identifier string, reqContext RequestCo
 	return nil
 }
 
-func (h *Handler) checkServiceCanBeAdded(serviceDetails model.ServiceDetails, bundles []*graphql.BundleExt) apperrors.AppError {
+func (h *Handler) checkServiceExistsWithNormalizedName(serviceDetails model.ServiceDetails, bundles []*graphql.BundleExt) apperrors.AppError {
 	normalizedServiceDetailsName := normalization.NormalizeName(serviceDetails.Name)
 
 	for _, bundle := range bundles {
