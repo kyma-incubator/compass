@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -21,12 +20,7 @@ type TenantService interface {
 
 //go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
 type SystemsService interface {
-	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemToTemplateMapping []string) error
-}
-
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
-type ApplicationTemplateService interface {
-	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
+	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
 }
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
@@ -34,28 +28,33 @@ type SystemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
-type SystemFetcher struct {
-	transaction        persistence.Transactioner
-	tenantService      TenantService
-	systemsService     SystemsService
-	systemsAPIClient   SystemsAPIClient
-	appTemplateService ApplicationTemplateService
+type Config struct {
+	SystemsQueueSize    int `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
+	FetcherParallellism int `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
+}
 
+type SystemFetcher struct {
+	transaction      persistence.Transactioner
+	tenantService    TenantService
+	systemsService   SystemsService
+	systemsAPIClient SystemsAPIClient
+
+	config  Config
 	workers chan struct{}
 }
 
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, appTemplateService ApplicationTemplateService, fetcherParallellism int) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:        tx,
-		tenantService:      ts,
-		systemsService:     ss,
-		systemsAPIClient:   sac,
-		appTemplateService: appTemplateService,
-		workers:            make(chan struct{}, fetcherParallellism),
+		transaction:      tx,
+		tenantService:    ts,
+		systemsService:   ss,
+		systemsAPIClient: sac,
+		workers:          make(chan struct{}, config.FetcherParallellism),
+		config:           config,
 	}
 }
 
-type TenantSystems struct {
+type tenantSystems struct {
 	tenant  *model.BusinessTenantMapping
 	systems []System
 }
@@ -66,7 +65,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		return errors.Wrap(err, "failed to list tenants")
 	}
 
-	systemsQueue := make(chan TenantSystems, 100)
+	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
 	wgDB := sync.WaitGroup{}
 	wgDB.Add(1)
 	go func() {
@@ -85,10 +84,10 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	}()
 
 	wg := sync.WaitGroup{}
-	for number, t := range tenants {
+	for _, t := range tenants {
 		wg.Add(1)
 		s.workers <- struct{}{}
-		go func(t *model.BusinessTenantMapping, number int) {
+		go func(t *model.BusinessTenantMapping) {
 			defer func() {
 				wg.Done()
 				<-s.workers
@@ -99,12 +98,12 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 				return
 			}
 			if len(systems) > 0 {
-				systemsQueue <- TenantSystems{
+				systemsQueue <- tenantSystems{
 					tenant:  t,
 					systems: systems,
 				}
 			}
-		}(t, number)
+		}(t)
 	}
 
 	wg.Wait()
@@ -137,8 +136,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 }
 
 func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
-	var appInputs []model.ApplicationRegisterInput
-	var templateTypes []string
+	var appInputs []model.ApplicationRegisterInputWithTemplate
 
 	tx, err := s.transaction.Begin()
 	if err != nil {
@@ -150,16 +148,14 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, system := range systems {
-		appInput, templateType := s.convertSystemToAppRegisterInput(system)
-		template, err := s.appTemplateService.GetByName(ctx, templateType)
-		if err != nil && !apperrors.IsNotFoundError(err) {
-			return err
-		}
-		templateTypes = append(templateTypes, template.ID)
-		appInputs = append(appInputs, appInput)
+		appInput, templateID := s.convertSystemToAppRegisterInput(system)
+		appInputs = append(appInputs, model.ApplicationRegisterInputWithTemplate{
+			ApplicationRegisterInput: appInput,
+			TemplateID:               templateID,
+		})
 	}
 
-	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs, templateTypes)
+	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs)
 	if err != nil {
 		return errors.Wrap(err, "failed to create applications")
 	}
@@ -173,22 +169,19 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 }
 
 func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) (model.ApplicationRegisterInput, string) {
-	initStatusCond := model.ApplicationStatusConditionManaged
+	initStatusCond := model.ApplicationStatusConditionInitial
 	baseURL := sc.BaseURL
 
 	appRegisterInput := model.ApplicationRegisterInput{
-		Name:                sc.DisplayName,
-		Description:         &sc.ProductDescription,
-		BaseURL:             &baseURL,
-		ProviderName:        &sc.InfrastructureProvider,
-		StatusCondition:     &initStatusCond,
-		SystemNumber:        &sc.SystemNumber,
-		Labels:              nil,
-		HealthCheckURL:      nil,
-		IntegrationSystemID: nil,
-		OrdLabels:           nil,
-		Bundles:             nil,
-		Webhooks:            nil,
+		Name:            sc.DisplayName,
+		Description:     &sc.ProductDescription,
+		BaseURL:         &baseURL,
+		ProviderName:    &sc.InfrastructureProvider,
+		StatusCondition: &initStatusCond,
+		SystemNumber:    &sc.SystemNumber,
+		Labels: map[string]interface{}{
+			"isManaged": true,
+		},
 	}
 
 	return appRegisterInput, sc.TemplateType

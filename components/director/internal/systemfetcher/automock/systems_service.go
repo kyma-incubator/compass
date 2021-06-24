@@ -14,13 +14,13 @@ type SystemsService struct {
 	mock.Mock
 }
 
-// CreateManyIfNotExistsWithEventualTemplate provides a mock function with given fields: ctx, applicationInputs, systemToTemplateMapping
-func (_m *SystemsService) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, systemToTemplateMapping []string) error {
-	ret := _m.Called(ctx, applicationInputs, systemToTemplateMapping)
+// CreateManyIfNotExistsWithEventualTemplate provides a mock function with given fields: ctx, applicationInputs
+func (_m *SystemsService) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error {
+	ret := _m.Called(ctx, applicationInputs)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.ApplicationRegisterInput, []string) error); ok {
-		r0 = rf(ctx, applicationInputs, systemToTemplateMapping)
+	if rf, ok := ret.Get(0).(func(context.Context, []model.ApplicationRegisterInputWithTemplate) error); ok {
+		r0 = rf(ctx, applicationInputs)
 	} else {
 		r0 = ret.Error(0)
 	}

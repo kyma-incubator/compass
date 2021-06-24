@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1694,8 +1695,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 		LabelServiceFn     func() *automock.LabelUpsertService
 		BundleServiceFn    func() *automock.BundleService
 		UIDServiceFn       func() *automock.UIDService
-		Inputs             []model.ApplicationRegisterInput
-		templateTypes      []string
+		Inputs             []model.ApplicationRegisterInputWithTemplate
 		ExpectedErr        error
 	}{
 		{
@@ -1743,12 +1743,17 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Inputs: []model.ApplicationRegisterInput{
-				modelInput,
-				normalizedModelInput,
+			Inputs: []model.ApplicationRegisterInputWithTemplate{
+				{
+					ApplicationRegisterInput: modelInput,
+					TemplateID:               "",
+				},
+				{
+					ApplicationRegisterInput: normalizedModelInput,
+					TemplateID:               "",
+				},
 			},
-			templateTypes: []string{"", ""},
-			ExpectedErr:   nil,
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Success for inputs with template types",
@@ -1795,12 +1800,17 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Inputs: []model.ApplicationRegisterInput{
-				modelInput,
-				normalizedModelInput,
+			Inputs: []model.ApplicationRegisterInputWithTemplate{
+				{
+					ApplicationRegisterInput: modelInput,
+					TemplateID:               "temp1",
+				},
+				{
+					ApplicationRegisterInput: normalizedModelInput,
+					TemplateID:               "temp2",
+				},
 			},
-			templateTypes: []string{"temp1", "temp2"},
-			ExpectedErr:   nil,
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Success for inputs with not unique systems",
@@ -1852,27 +1862,127 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Inputs: []model.ApplicationRegisterInput{
-				modelInput,
-				normalizedModelInput,
+			Inputs: []model.ApplicationRegisterInputWithTemplate{
 				{
-					Name: modelInput.Name,
+					ApplicationRegisterInput: modelInput,
+					TemplateID:               "",
 				},
 				{
-					Name:         modelInput.Name,
-					SystemNumber: &systemNumber1,
+					ApplicationRegisterInput: normalizedModelInput,
+					TemplateID:               "",
 				},
 				{
-					Name:         modelInput.Name,
-					SystemNumber: &systemNumber1,
+					ApplicationRegisterInput: model.ApplicationRegisterInput{
+						Name:         modelInput.Name,
+						SystemNumber: &systemNumber1,
+					},
+					TemplateID: "",
 				},
 				{
-					Name:         modelInput.Name,
-					SystemNumber: &systemNumber2,
+					ApplicationRegisterInput: model.ApplicationRegisterInput{
+						Name:         modelInput.Name,
+						SystemNumber: &systemNumber1,
+					},
+					TemplateID: "",
+				},
+				{
+					ApplicationRegisterInput: model.ApplicationRegisterInput{
+						Name:         modelInput.Name,
+						SystemNumber: &systemNumber2,
+					},
+					TemplateID: "",
 				},
 			},
-			templateTypes: []string{"", "", "", "", "", ""},
-			ExpectedErr:   nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name:              "Success for inputs with not unique systems and templates",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepoMock := &automock.ApplicationRepository{}
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return([]*model.Application{
+					{
+						Name: normalizedModelInput.Name,
+					},
+				}, nil).Once()
+				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
+				expectedTemplates := []string{"t1", "t3", "t5"}
+				callTimes := 0
+				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+					if callTimes > 2 {
+						return false
+					}
+					app, ok := obj.(*model.Application)
+					if !ok {
+						return false
+					}
+					expectedTemplate := expectedTemplates[callTimes]
+					callTimes++
+					return *app.ApplicationTemplateID == expectedTemplate
+				})).Return(nil).Times(3)
+				return appRepoMock
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				return webhookRepo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				intSysRepo := &automock.IntegrationSystemRepository{}
+				intSysRepo.On("Exists", ctx, mock.Anything).Return(true, nil)
+				return intSysRepo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				scenarioSvc := &automock.ScenariosService{}
+				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioSvc
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertMultipleLabels", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return labelSvc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				return &automock.BundleService{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Inputs: []model.ApplicationRegisterInputWithTemplate{
+				{
+					ApplicationRegisterInput: modelInput,
+					TemplateID:               "t1",
+				},
+				{
+					ApplicationRegisterInput: normalizedModelInput,
+					TemplateID:               "t2",
+				},
+				{
+					ApplicationRegisterInput: model.ApplicationRegisterInput{
+						Name:         modelInput.Name,
+						SystemNumber: &systemNumber1,
+					},
+					TemplateID: "t3",
+				},
+				{
+					ApplicationRegisterInput: model.ApplicationRegisterInput{
+						Name:         modelInput.Name,
+						SystemNumber: &systemNumber1,
+					},
+					TemplateID: "t4",
+				},
+				{
+					ApplicationRegisterInput: model.ApplicationRegisterInput{
+						Name:         modelInput.Name,
+						SystemNumber: &systemNumber2,
+					},
+					TemplateID: "t5",
+				},
+			},
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Fails for all systems if even one system failed to create",
@@ -1915,12 +2025,17 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Inputs: []model.ApplicationRegisterInput{
-				modelInput,
-				normalizedModelInput,
+			Inputs: []model.ApplicationRegisterInputWithTemplate{
+				{
+					ApplicationRegisterInput: modelInput,
+					TemplateID:               "",
+				},
+				{
+					ApplicationRegisterInput: normalizedModelInput,
+					TemplateID:               "",
+				},
 			},
-			templateTypes: []string{"", ""},
-			ExpectedErr:   errors.New("expected"),
+			ExpectedErr: errors.New("expected"),
 		},
 	}
 
@@ -1938,7 +2053,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.CreateManyIfNotExistsWithEventualTemplate(ctx, testCase.Inputs, testCase.templateTypes)
+			err := svc.CreateManyIfNotExistsWithEventualTemplate(ctx, testCase.Inputs)
 
 			// then
 			if testCase.ExpectedErr != nil {

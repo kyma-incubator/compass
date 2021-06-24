@@ -260,22 +260,21 @@ func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRe
 	return s.genericCreate(ctx, in, creator)
 }
 
-func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInput, templateTypes []string) error {
+func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error {
 	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
 	if err != nil {
 		return errors.Wrap(err, "while filtering unique and non-existing applications")
 	}
 
-	for index, a := range appsToAdd {
-		template := templateTypes[index]
-		if template == "" {
-			_, err = s.Create(ctx, a)
+	for _, a := range appsToAdd {
+		if a.TemplateID == "" {
+			_, err = s.Create(ctx, a.ApplicationRegisterInput)
 			if err != nil {
 				return errors.Wrap(err, "while creating application")
 			}
 			continue
 		}
-		_, err = s.CreateFromTemplate(ctx, a, &template)
+		_, err = s.CreateFromTemplate(ctx, a.ApplicationRegisterInput, &a.TemplateID)
 		if err != nil {
 			return errors.Wrap(err, "while creating application")
 		}
@@ -538,7 +537,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	return id, nil
 }
 
-func (s *service) filterUniqueNonExistingApplications(ctx context.Context, applicationInputs []model.ApplicationRegisterInput) ([]model.ApplicationRegisterInput, error) {
+func (s *service) filterUniqueNonExistingApplications(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) ([]model.ApplicationRegisterInputWithTemplate, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while loading tenant from context")
@@ -549,30 +548,50 @@ func (s *service) filterUniqueNonExistingApplications(ctx context.Context, appli
 		return nil, errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
 	}
 
-	var uniqueNonExistingApps []model.ApplicationRegisterInput
-	for _, ai := range applicationInputs {
-		alreadyExits := false
+	type key struct {
+		name         string
+		systemNumber string
+	}
 
-		for _, a := range allApps {
-			if ai.Name == a.Name && ((ai.SystemNumber == nil && a.SystemNumber == nil) || (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))) {
-				alreadyExits = true
-				break
-			}
+	uniqueNonExistingApps := make(map[key]int)
+	keys := make([]key, 0)
+	for index, ai := range applicationInputs {
+		alreadyExits := false
+		systemNumber := ""
+		if ai.SystemNumber != nil {
+			systemNumber = *ai.SystemNumber
+		}
+		aiKey := key{
+			name:         ai.Name,
+			systemNumber: systemNumber,
 		}
 
-		for _, a := range uniqueNonExistingApps {
-			if ai.Name == a.Name && ((ai.SystemNumber == nil && a.SystemNumber == nil) || (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))) {
+		if _, found := uniqueNonExistingApps[aiKey]; found {
+			continue
+		}
+
+		for _, a := range allApps {
+			bothSystemsAreWithoutSystemNumber := (ai.SystemNumber == nil && a.SystemNumber == nil)
+			bothSystemsHaveSystemNumber := (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))
+			if ai.Name == a.Name && (bothSystemsAreWithoutSystemNumber || bothSystemsHaveSystemNumber) {
 				alreadyExits = true
 				break
 			}
 		}
 
 		if !alreadyExits {
-			uniqueNonExistingApps = append(uniqueNonExistingApps, ai)
+			uniqueNonExistingApps[aiKey] = index
+			keys = append(keys, aiKey)
 		}
 	}
 
-	return uniqueNonExistingApps, nil
+	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(uniqueNonExistingApps))
+	for _, key := range keys {
+		appInputIndex := uniqueNonExistingApps[key]
+		result = append(result, applicationInputs[appInputIndex])
+	}
+
+	return result, nil
 }
 
 func createLabel(key string, value string, objectID string) *model.LabelInput {

@@ -8,11 +8,14 @@ import (
 
 var (
 	// Mappings global static configuration which is set after reading the configuration during startup, should only be used for the unmarshaling of system data
-	Mappings []TempMapping
+	// Template mappings describe what properties and their values should be in order to map to a certain application template ID
+	// If there are multiple keys and values, all of them should match in order for the mapping to be succesful
+	Mappings []TemplateMapping
 )
 
-type TempMapping struct {
+type TemplateMapping struct {
 	Name        string
+	ID          string
 	SourceKey   []string
 	SourceValue []string
 }
@@ -20,6 +23,7 @@ type TempMapping struct {
 type AdditionalUrls map[string]string
 
 type AdditionalAttributes map[string]string
+
 type SystemBase struct {
 	SystemNumber           string               `json:"systemNumber"`
 	DisplayName            string               `json:"displayName"`
@@ -50,7 +54,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 			}
 		}
 		if mapped {
-			s.TemplateType = tm.Name
+			s.TemplateType = tm.ID
 		}
 	}
 

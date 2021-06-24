@@ -1,6 +1,6 @@
 {{if .Values.global.systemFetcher.enabled }}
 {{ $configmapName := printf "%s-%s-config" $.Chart.Name .Values.global.systemFetcher.name }}
-{{ $secretName := printf "%s-%s-secrets" $.Chart.Name .Values.global.systemFetcher.name }}
+{{ $secretName := printf "%s-%s-secret" $.Chart.Name .Values.global.systemFetcher.name }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -30,28 +30,22 @@ spec:
               env:
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
                   value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
+                - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
+                  value: "{{ .Values.global.systemFetcher.queueSize }}"
                 - name: APP_SYSTEM_INFORMATION_FETCH_TIMEOUT
                   value: {{ .Values.global.systemFetcher.fetchTimeout }}
                 - name: APP_SYSTEM_INFORMATION_ENDPOINT
-                  valueFrom:
-                    configMapKeyRef:
-                      name: "{{ $configmapName }}"
-                      key: system-information-api-endpoint
+                  value: "{{ .Values.global.systemFetcher.systemsAPIEndpoint }}"
                 - name: APP_SYSTEM_INFORMATION_FILTER_CRITERIA
-                  valueFrom:
-                    configMapKeyRef:
-                      name: "{{ $configmapName }}"
-                      key: system-information-api-filter-criteria
+                  value: "{{ .Values.global.systemFetcher.systemsAPIFilterCriteria }}"
                 - name: APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN
-                  valueFrom:
-                    configMapKeyRef:
-                      name: "{{ $configmapName }}"
-                      key: system-information-api-filter-tenant-criteria-pattern
+                  value: "{{ .Values.global.systemFetcher.systemsAPIFilterTenantCriteriaPattern }}"
                 - name: APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS
-                  valueFrom:
-                    configMapKeyRef:
-                      name: "{{ $configmapName }}"
-                      key: system-information-system-to-template-mappings
+                  value: "{{ .Values.global.systemFetcher.systemToTemplateMappings }}"
+                - name: "APP_OAUTH_TENANT_HEADER_NAME"
+                  value: "{{ .Values.global.systemfetcher.oauth.tenantHeaderName }}"
+                - name: "APP_OAUTH_SCOPES_CLAIM"
+                  value: "{{ .Values.global.systemFetcher.oauth.scopesClaim }}"
                 - name: APP_OAUTH_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
@@ -132,24 +126,6 @@ spec:
             - name: director-config
               configMap:
                 name: compass-director-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $configmapName }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-data:
-  system-information-api-endpoint: "{{ .Values.global.systemFetcher.systemsAPIEndpoint }}"
-  system-information-api-filter-criteria: "{{ .Values.global.systemFetcher.systemsAPIFilterCriteria }}"
-  system-information-api-filter-tenant-criteria-pattern: "{{ .Values.global.systemFetcher.systemsAPIFilterTenantCriteriaPattern }}"
-  system-information-system-to-template-mappings: "{{ .Values.global.systemFetcher.systemToTemplateMappings }}"
 {{- if and (eq .Values.global.systemFetcher.enabled true) (eq .Values.global.systemFetcher.manageSecrets true) }}
 ---
 apiVersion: v1

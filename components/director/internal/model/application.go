@@ -104,6 +104,11 @@ type ApplicationRegisterInput struct {
 	CorrelationIds      json.RawMessage
 }
 
+type ApplicationRegisterInputWithTemplate struct {
+	ApplicationRegisterInput
+	TemplateID string
+}
+
 func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant string) *Application {
 	if i == nil {
 		return nil

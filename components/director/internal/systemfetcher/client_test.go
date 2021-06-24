@@ -35,9 +35,9 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
-		systemfetcher.Mappings = []systemfetcher.TempMapping{
+		systemfetcher.Mappings = []systemfetcher.TemplateMapping{
 			{
-				Name:        "type1",
+				ID:        "type1",
 				SourceKey:   []string{"templateProp"},
 				SourceValue: []string{"type1"},
 			},
@@ -126,8 +126,8 @@ func fixHttpClient(t *testing.T) (*mockData, string) {
 	return &mock, ts.URL
 }
 
-func mockClientCreator(client *http.Client) func(ctx context.Context, oauth2Config systemfetcher.OAuth2Config, scopes []string, tenant string) *http.Client {
-	return func(ctx context.Context, oauth2Config systemfetcher.OAuth2Config, scopes []string, tenant string) *http.Client {
+func mockClientCreator(client *http.Client) func(ctx context.Context, oauth2Config systemfetcher.OAuth2Config) *http.Client {
+	return func(ctx context.Context, oauth2Config systemfetcher.OAuth2Config) *http.Client {
 		return client
 	}
 }

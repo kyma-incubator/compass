@@ -15,14 +15,12 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-var (
-	scopes = []string{"uaa.resource"}
-)
-
 type OAuth2Config struct {
-	ClientID                  string `envconfig:"APP_OAUTH_CLIENT_ID"`
-	ClientSecret              string `envconfig:"APP_OAUTH_CLIENT_SECRET"`
-	OAuthTokenEndpointPattern string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PATTERN"`
+	ClientID             string   `envconfig:"APP_OAUTH_CLIENT_ID"`
+	ClientSecret         string   `envconfig:"APP_OAUTH_CLIENT_SECRET"`
+	TokenEndpointPattern string   `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PATTERN"`
+	TenantHeaderName     string   `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
+	ScopesClaim          []string `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
 }
 
 type APIConfig struct {
@@ -33,53 +31,43 @@ type APIConfig struct {
 }
 
 type Client struct {
-	apiConfig         APIConfig
-	oAuth2Config      OAuth2Config
-	clientCreatorFunc ClientCreatorFunc
+	apiConfig     APIConfig
+	oAuth2Config  OAuth2Config
+	clientCreator clientCreatorFunc
 }
 
-type ClientCreatorFunc func(ctx context.Context, oauth2Config OAuth2Config, scopes []string, tenant string) *http.Client
+type clientCreatorFunc func(ctx context.Context, oauth2Config OAuth2Config) *http.Client
 
-func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config, scopes []string, tenant string) *http.Client {
+func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config) *http.Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
-		TokenURL:     oAuth2Config.OAuthTokenEndpointPattern,
-		Scopes:       scopes,
+		TokenURL:     oAuth2Config.TokenEndpointPattern,
+		Scopes:       oAuth2Config.ScopesClaim,
 	}
 
 	httpClient := cfg.Client(ctx)
 	return httpClient
 }
 
-func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreatorFunc ClientCreatorFunc) *Client {
+func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreator clientCreatorFunc) *Client {
 	return &Client{
-		apiConfig:         apiConfig,
-		oAuth2Config:      oAuth2Config,
-		clientCreatorFunc: clientCreatorFunc,
+		apiConfig:     apiConfig,
+		oAuth2Config:  oAuth2Config,
+		clientCreator: clientCreator,
 	}
 }
 
+// FetchSystemsForTenant fetches systems from the service by making 2 HTTP calls with different filter criteria
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	httpTokenClient := &http.Client{
-		Timeout: c.apiConfig.Timeout,
-		Transport: &HeaderTransport{
-			tenant: tenant,
-			base:   http.DefaultTransport,
-		},
-	}
-	// The client provided here is used only to get token, not for
-	// the actual request to the system service
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpTokenClient)
-
-	httpClient := c.clientCreatorFunc(ctx, c.oAuth2Config, scopes, tenant)
-	httpClient.Timeout = c.apiConfig.Timeout
+	ctx, httpClient := c.clientForTenant(ctx, tenant)
 
 	url := c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)
 	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
 	}
+	log.C(ctx).Infof("Fetched systems for URL %s", url)
 
 	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
 	url = c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(tenantFilter)
@@ -87,8 +75,28 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
 	}
+	log.C(ctx).Infof("Fetched systems for tenant filter with URL %s", url)
 
 	return append(systems, systemsByTenantFilter...), nil
+}
+
+func (c *Client) clientForTenant(ctx context.Context, tenant string) (context.Context, *http.Client) {
+	httpTokenClient := &http.Client{
+		Timeout: c.apiConfig.Timeout,
+		Transport: &HeaderTransport{
+			tenantHeaderName: c.oAuth2Config.TenantHeaderName,
+			tenant:           tenant,
+			base:             http.DefaultTransport,
+		},
+	}
+	// The client provided here is used only to get token, not for
+	// the actual request to the system service
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpTokenClient)
+
+	httpClient := c.clientCreator(ctx, c.oAuth2Config)
+	httpClient.Timeout = c.apiConfig.Timeout
+
+	return ctx, httpClient
 }
 
 func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url string) ([]System, error) {
