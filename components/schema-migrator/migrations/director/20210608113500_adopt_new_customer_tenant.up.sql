@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TYPE tenant_type AS ENUM ('account', 'customer');
+CREATE TYPE tenant_type AS ENUM ('unknown', 'account', 'customer');
 
 ALTER TABLE business_tenant_mappings ADD COLUMN parent uuid;
 ALTER TABLE business_tenant_mappings ADD COLUMN type tenant_type;

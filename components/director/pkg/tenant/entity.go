@@ -16,6 +16,7 @@ type Entity struct {
 type Type string
 
 const (
+	Unknown  Type = "unknown"
 	Account  Type = "account"
 	Customer Type = "customer"
 )
