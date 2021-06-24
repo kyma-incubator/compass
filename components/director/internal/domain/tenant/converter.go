@@ -23,13 +23,10 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent: sql.NullString{
-			String: in.Parent,
-			Valid:  true,
-		},
-		Type:         tenant.Type(in.Type),
-		ProviderName: in.Provider,
-		Status:       tenant.Status(in.Status),
+		Parent:         newNullString(in.Parent),
+		Type:           tenant.Type(in.Type),
+		ProviderName:   in.Provider,
+		Status:         tenant.Status(in.Status),
 	}
 }
 
@@ -74,4 +71,17 @@ func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*grap
 	}
 
 	return tenants
+}
+
+func newNullString(s string) sql.NullString {
+	if len(s) == 0 {
+		return sql.NullString{
+			String: "",
+			Valid:  false,
+		}
+	}
+	return sql.NullString{
+		String: s,
+		Valid:  true,
+	}
 }

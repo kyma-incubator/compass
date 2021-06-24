@@ -20,14 +20,14 @@ import (
 
 func TestRepository_Create(t *testing.T) {
 	tenantModel := model.TenantModel{
-		ID:             testID,
-		Name:           testID,
-		TenantId:       testID,
-		ParentExternal: testID,
-		ParentInternal: testID,
-		Type:           tenantEntity.Account,
-		Provider:       testProviderName,
-		Status:         tenantEntity.Active,
+		ID:               testID,
+		Name:             testID,
+		TenantId:         testID,
+		ParentExternalId: testID,
+		ParentInternalId: testID,
+		Type:             tenantEntity.Account,
+		Provider:         testProviderName,
+		Status:           tenantEntity.Active,
 	}
 
 	entity := tenantEntity.Entity{
@@ -87,14 +87,14 @@ func TestRepository_Create(t *testing.T) {
 
 func TestRepository_GetByExternalID(t *testing.T) {
 	tenantModel := model.TenantModel{
-		ID:             testID,
-		Name:           testID,
-		TenantId:       testID,
-		ParentExternal: testID,
-		ParentInternal: testID,
-		Type:           tenantEntity.Account,
-		Provider:       testProviderName,
-		Status:         tenantEntity.Active,
+		ID:               testID,
+		Name:             testID,
+		TenantId:         testID,
+		ParentExternalId: testID,
+		ParentInternalId: testID,
+		Type:             tenantEntity.Account,
+		Provider:         testProviderName,
+		Status:           tenantEntity.Active,
 	}
 
 	entity := tenantEntity.Entity{
@@ -131,7 +131,7 @@ func TestRepository_GetByExternalID(t *testing.T) {
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		tnt, err := repo.GetByExternalID(ctx, tenantModel.ParentExternal)
+		tnt, err := repo.GetByExternalID(ctx, tenantModel.ParentExternalId)
 
 		// THEN
 		require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestRepository_GetByExternalID(t *testing.T) {
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		_, err := repo.GetByExternalID(ctx, tenantModel.ParentExternal)
+		_, err := repo.GetByExternalID(ctx, tenantModel.ParentExternalId)
 
 		// THEN
 		require.Error(t, err)
@@ -158,14 +158,14 @@ func TestRepository_GetByExternalID(t *testing.T) {
 
 func TestRepository_Update(t *testing.T) {
 	tenantModel := model.TenantModel{
-		ID:             testID,
-		Name:           testID,
-		TenantId:       testID,
-		ParentExternal: testID,
-		ParentInternal: testID,
-		Type:           tenantEntity.Account,
-		Provider:       testProviderName,
-		Status:         tenantEntity.Active,
+		ID:               testID,
+		Name:             testID,
+		TenantId:         testID,
+		ParentExternalId: testID,
+		ParentInternalId: testID,
+		Type:             tenantEntity.Account,
+		Provider:         testProviderName,
+		Status:           tenantEntity.Active,
 	}
 
 	entity := tenantEntity.Entity{
