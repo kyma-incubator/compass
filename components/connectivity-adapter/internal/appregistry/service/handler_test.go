@@ -119,6 +119,34 @@ func TestHandler_Create(t *testing.T) {
 		mockContextProvider.AssertExpectations(t)
 	})
 
+	t.Run("Error when service with such a name already exists", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+		expectedError := "service with name Test already exists"
+
+		req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValidator := automock.Validator{}
+		mockValidator.On("Validate", mock.Anything).Return(nil)
+
+		mockConverter := automock.Converter{}
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{AppID: "test", AppBundles: fixAppBundles()}, nil)
+
+		handler := service.NewHandler(&mockConverter, &mockValidator, &mockContextProvider, nil)
+		handler.Create(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusConflict)
+
+		mockValidator.AssertExpectations(t)
+		mockConverter.AssertExpectations(t)
+		mockContextProvider.AssertExpectations(t)
+	})
+
 	t.Run("Error when creating service", func(t *testing.T) {
 		body, err := json.Marshal(testServiceDetails)
 		require.NoError(t, err)
@@ -337,12 +365,17 @@ func TestHandler_Create(t *testing.T) {
 		mockConverter := automock.Converter{}
 		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, nil)
 
-		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
 		mockClient.On("CreateBundle", mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 		mockClient.On("SetApplicationLabel", mock.Anything, "test", graphql.LabelInput{}).Return(nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).
-			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
+			Return(service.RequestContext{
+					AppID: "test",
+					AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}},
+					DirectorClient: &mockClient},
+				nil)
 
 		mockLabeler := automock.AppLabeler{}
 		mockLabeler.On("WriteServiceReference", graphql.Labels(nil), service.LegacyServiceReference{
@@ -384,12 +417,17 @@ func TestHandler_Create(t *testing.T) {
 		mockConverter := automock.Converter{}
 		mockConverter.On("DetailsToGraphQLCreateInput", mock.Anything).Return(graphql.BundleCreateInput{}, nil)
 
-		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
 		mockClient.On("CreateBundle", mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 		mockClient.On("SetApplicationLabel", mock.Anything, "test", mock.Anything).Return(nil)
+		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).
-			Return(service.RequestContext{AppID: "test", AppLabels: labels, DirectorClient: &mockClient}, nil)
+			Return(service.RequestContext{
+					AppID: "test",
+					AppLabels: labels,
+					AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}},
+					DirectorClient: &mockClient},
+				nil)
 
 		mockLabeler := automock.AppLabeler{}
 		mockLabeler.On("WriteServiceReference", labels, service.LegacyServiceReference{
@@ -488,6 +526,7 @@ func TestHandler_Get(t *testing.T) {
 		mockContextProvider.AssertExpectations(t)
 		mockContextProvider.AssertExpectations(t)
 	})
+
 	t.Run("Error when converting service", func(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
@@ -579,7 +618,6 @@ func TestHandler_Get(t *testing.T) {
 		mockConverter.AssertExpectations(t)
 		mockLabeler.AssertExpectations(t)
 	})
-
 }
 
 func TestHandler_List(t *testing.T) {
@@ -795,6 +833,32 @@ func TestHandler_Update(t *testing.T) {
 		mockValidator.On("Validate", mock.Anything).Return(apperrors.WrongInput("test"))
 
 		handler := service.NewHandler(nil, &mockValidator, nil, nil)
+		handler.Update(w, req)
+
+		resp := w.Result()
+		assertErrorResponse(t, resp, expectedError, http.StatusBadRequest)
+		mockValidator.AssertExpectations(t)
+	})
+
+	t.Run("Error when trying to change name of the service", func(t *testing.T) {
+		body, err := json.Marshal(testServiceDetails)
+		require.NoError(t, err)
+		expectedError := "cannot change service name to Test for service with ID "
+
+		req := httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+
+		mockValidator := automock.Validator{}
+		mockValidator.On("Validate", mock.Anything).Return(nil)
+
+		mockContextProvider := automock.RequestContextProvider{}
+		mockContextProvider.On("ForRequest", mock.Anything).
+			Return(service.RequestContext{
+					AppID: "test",
+					AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}}},
+				nil)
+
+		handler := service.NewHandler(nil, &mockValidator, &mockContextProvider, nil)
 		handler.Update(w, req)
 
 		resp := w.Result()

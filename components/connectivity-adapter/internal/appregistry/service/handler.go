@@ -97,10 +97,10 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if err := h.checkServiceExistsWithNormalizedName(serviceDetails, reqContext.AppBundles); err != nil {
-		wrappedError := err.Append("while checking if service can be added")
-		logger.Error(wrappedError)
-		res.WriteAppError(writer, wrappedError)
+	if ok := h.serviceWithNormalizedNameAlreadyExists(serviceDetails.Name, reqContext.AppBundles); ok {
+		err := apperrors.AlreadyExists("service with name %s already exists", serviceDetails.Name)
+		logger.Error(err)
+		res.WriteAppError(writer, err)
 		return
 	}
 
@@ -255,10 +255,10 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// TODO: Why shouldn't we allow for such name change? It's done in the App Registry
-	if err := h.checkServiceExistsWithNormalizedName(serviceDetails, reqContext.AppBundles); err == nil {
-		appErr := apperrors.WrongInput("cannot change service name to %s for service with ID %s", serviceDetails.Name, id)
-		logger.Error(appErr)
-		res.WriteAppError(writer, appErr)
+	if ok := h.serviceWithNormalizedNameAlreadyExists(serviceDetails.Name, reqContext.AppBundles); !ok {
+		err := apperrors.WrongInput("cannot change service name to %s for service with ID %s", serviceDetails.Name, id)
+		logger.Error(err)
+		res.WriteAppError(writer, err)
 		return
 	}
 
@@ -549,15 +549,15 @@ func (h *Handler) ensureUniqueIdentifier(identifier string, reqContext RequestCo
 	return nil
 }
 
-func (h *Handler) checkServiceExistsWithNormalizedName(serviceDetails model.ServiceDetails, bundles []*graphql.BundleExt) apperrors.AppError {
-	normalizedServiceDetailsName := normalization.NormalizeName(serviceDetails.Name)
+func (h *Handler) serviceWithNormalizedNameAlreadyExists(serviceName string, bundles []*graphql.BundleExt) bool {
+	normalizedServiceDetailsName := normalization.NormalizeName(serviceName)
 
 	for _, bundle := range bundles {
 		if bundle != nil && normalization.NormalizeName(bundle.Name) == normalizedServiceDetailsName {
-			return apperrors.AlreadyExists("service with name %s already exists", serviceDetails.Name)
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
 func (h *Handler) setAppLabelWithServiceRef(ctx context.Context, serviceRef LegacyServiceReference, reqContext RequestContext) error {
