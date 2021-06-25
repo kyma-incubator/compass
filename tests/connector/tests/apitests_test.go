@@ -134,7 +134,7 @@ func TestTokenSuggestion(t *testing.T) {
 			{
 				description: "token should stay the same when app is managed by integration system",
 				appInput: graphql.ApplicationRegisterInput{
-					Name: "test-suggested-tokens-int-sys",
+					Name:                "test-suggested-tokens-int-sys",
 					IntegrationSystemID: &intSystem.ID,
 				},
 				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
