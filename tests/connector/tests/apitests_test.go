@@ -101,6 +101,9 @@ func TestTokens(t *testing.T) {
 }
 
 func TestTokenSuggestion(t *testing.T) {
+	intSystem := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem.ID)
+
 	t.Run("should return suggested token on configuration query for Application token", func(t *testing.T) {
 		testCases := []struct {
 			description    string
@@ -131,7 +134,8 @@ func TestTokenSuggestion(t *testing.T) {
 			{
 				description: "token should stay the same when app is managed by integration system",
 				appInput: graphql.ApplicationRegisterInput{
-					Name: "test-suggested-tokens-legacy-app",
+					Name: "test-suggested-tokens-int-sys",
+					IntegrationSystemID: &intSystem.ID,
 				},
 				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
 					actualTokenFromRaw := gjson.Get(ott.Raw, "token").String()

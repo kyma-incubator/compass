@@ -1,8 +1,6 @@
 package onetimetoken
 
 import (
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -25,13 +23,9 @@ func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTime
 }
 
 func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error) {
-	urlWithToken := model.Token
-	if !strings.Contains(model.Token, c.legacyConnectorURL) {
-		var err error
-		urlWithToken, err = legacyConnectorUrlWithToken(c.legacyConnectorURL, model.Token)
-		if err != nil {
-			return graphql.OneTimeTokenForApplication{}, err
-		}
+	urlWithToken, err := legacyConnectorUrlWithToken(c.legacyConnectorURL, model.Token)
+	if err != nil {
+		return graphql.OneTimeTokenForApplication{}, err
 	}
 
 	return graphql.OneTimeTokenForApplication{
