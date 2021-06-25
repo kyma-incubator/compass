@@ -372,9 +372,9 @@ func TestHandler_Create(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{
-					AppID: "test",
-					AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}},
-					DirectorClient: &mockClient},
+				AppID:          "test",
+				AppBundles:     []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}},
+				DirectorClient: &mockClient},
 				nil)
 
 		mockLabeler := automock.AppLabeler{}
@@ -423,10 +423,10 @@ func TestHandler_Create(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{
-					AppID: "test",
-					AppLabels: labels,
-					AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}},
-					DirectorClient: &mockClient},
+				AppID:          "test",
+				AppLabels:      labels,
+				AppBundles:     []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}},
+				DirectorClient: &mockClient},
 				nil)
 
 		mockLabeler := automock.AppLabeler{}
@@ -854,8 +854,8 @@ func TestHandler_Update(t *testing.T) {
 		mockContextProvider := automock.RequestContextProvider{}
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{
-					AppID: "test",
-					AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}}},
+				AppID:      "test",
+				AppBundles: []*graphql.BundleExt{{Bundle: graphql.Bundle{Name: "notTest"}}}},
 				nil)
 
 		handler := service.NewHandler(nil, &mockValidator, &mockContextProvider, nil)
