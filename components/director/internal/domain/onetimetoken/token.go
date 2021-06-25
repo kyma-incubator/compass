@@ -1,12 +1,16 @@
 package onetimetoken
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -43,4 +47,22 @@ func legacyConnectorUrlWithToken(legacyConnectorURL, token string) (string, erro
 	}
 	url.RawQuery += fmt.Sprintf("token=%s", token)
 	return url.String(), nil
+}
+
+func tokenSuggestionEnabled(ctx context.Context, suggestTokenHeaderKey string) bool {
+	reqHeaders, ok := ctx.Value(header.ContextKey).(http.Header)
+	if !ok || reqHeaders.Get(suggestTokenHeaderKey) != "true" {
+		return false
+	}
+
+	log.C(ctx).Infof("Token suggestion is required by client")
+	return true
+}
+
+func extractTokenFromURL(legacyURLStr string) string {
+	legacyURL, err := url.Parse(legacyURLStr)
+	if err != nil {
+		return ""
+	}
+	return legacyURL.Query().Get("token")
 }

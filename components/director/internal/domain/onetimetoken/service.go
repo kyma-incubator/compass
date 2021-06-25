@@ -51,6 +51,7 @@ type HTTPDoer interface {
 type service struct {
 	connectorURL              string
 	legacyConnectorURL        string
+	suggestTokenHeaderKey     string
 	sysAuthSvc                SystemAuthService
 	intSystemToAdapterMapping map[string]string
 	appSvc                    ApplicationService
@@ -61,10 +62,11 @@ type service struct {
 	timeService               directorTime.Service
 }
 
-func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, connectorURL string, legacyConnectorURL string, intSystemToAdapterMapping map[string]string, timeService directorTime.Service) *service {
+func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, config Config, intSystemToAdapterMapping map[string]string, timeService directorTime.Service) *service {
 	return &service{
-		connectorURL:              connectorURL,
-		legacyConnectorURL:        legacyConnectorURL,
+		connectorURL:              config.ConnectorURL,
+		legacyConnectorURL:        config.LegacyConnectorURL,
+		suggestTokenHeaderKey:     config.SuggestTokenHeaderKey,
 		sysAuthSvc:                sysAuthSvc,
 		intSystemToAdapterMapping: intSystemToAdapterMapping,
 		appSvc:                    appSvc,
@@ -244,6 +246,10 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 }
 
 func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Application, oneTimeToken *model.OneTimeToken) string {
+	if !tokenSuggestionEnabled(ctx, s.suggestTokenHeaderKey) {
+		return oneTimeToken.Token
+	}
+
 	if app.IntegrationSystemID != nil {
 		log.C(ctx).Infof("Application belongs to an integration system, will use the actual token")
 		return oneTimeToken.Token

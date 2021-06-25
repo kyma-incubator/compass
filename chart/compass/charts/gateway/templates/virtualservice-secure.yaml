@@ -32,6 +32,7 @@ spec:
         - "authorization"
         - "content-type"
         - "tenant"
+        - {{ .Values.global.director.suggestTokenHeaderKey }}
       allowMethods:
         - "GET"
   - match:
@@ -49,6 +50,7 @@ spec:
       - "authorization"
       - "content-type"
       - "tenant"
+      - {{ .Values.global.director.suggestTokenHeaderKey }}
       - {{ .Values.global.director.clientIDHeaderKey }}
       allowMethods:
       - "GET"

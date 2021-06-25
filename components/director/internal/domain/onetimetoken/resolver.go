@@ -3,12 +3,10 @@ package onetimetoken
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
@@ -25,13 +23,14 @@ type TokenConverter interface {
 }
 
 type Resolver struct {
-	transact persistence.Transactioner
-	svc      TokenService
-	conv     TokenConverter
+	transact              persistence.Transactioner
+	svc                   TokenService
+	conv                  TokenConverter
+	suggestTokenHeaderKey string
 }
 
-func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv TokenConverter) *Resolver {
-	return &Resolver{transact: transact, svc: svc, conv: conv}
+func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv TokenConverter, suggestTokenHeaderKey string) *Resolver {
+	return &Resolver{transact: transact, svc: svc, conv: conv, suggestTokenHeaderKey: suggestTokenHeaderKey}
 }
 
 func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
@@ -46,9 +45,8 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "while commiting transaction")
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
 	gqlToken := r.conv.ToGraphQLForRuntime(*token)
@@ -68,9 +66,8 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "while commiting transaction")
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	gqlToken, err := r.conv.ToGraphQLForApplication(*token)
 	if err != nil {
@@ -84,9 +81,21 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 		return nil, apperrors.NewInternalError("Token was nil")
 	}
 
+	if !tokenSuggestionEnabled(ctx, r.suggestTokenHeaderKey) {
+		return rawEncoded(obj)
+	}
+
+	// already encoded
 	if _, err := base64.StdEncoding.DecodeString(obj.Token); err == nil {
-		log.C(ctx).Infof("Token is already raw encoded, returining it")
 		return &obj.Token, nil
+	}
+
+	// is in form of a legacy connector url
+	if token := extractTokenFromURL(obj.Token); token != "" {
+		return rawEncoded(&graphql.TokenWithURL{
+			Token:        token,
+			ConnectorURL: obj.ConnectorURL,
+		})
 	}
 
 	return rawEncoded(obj)
@@ -97,10 +106,20 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string,
 		return nil, apperrors.NewInternalError("Token was nil")
 	}
 
-	var js json.RawMessage
-	if json.Unmarshal([]byte(obj.Token), &js) == nil {
-		log.C(ctx).Infof("Token is already in raw json format, returining it")
-		return &obj.Token, nil
+	if !tokenSuggestionEnabled(ctx, r.suggestTokenHeaderKey) {
+		return raw(obj)
+	}
+
+	if decodedToken, err := base64.StdEncoding.DecodeString(obj.Token); err == nil {
+		t := string(decodedToken)
+		return &t, nil
+	}
+
+	if token := extractTokenFromURL(obj.Token); token != "" {
+		return raw(&graphql.TokenWithURL{
+			Token:        token,
+			ConnectorURL: obj.ConnectorURL,
+		})
 	}
 
 	return raw(obj)

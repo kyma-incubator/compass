@@ -30,6 +30,8 @@ func (c *StaticUserClient) GenerateApplicationToken(t *testing.T, appID string) 
 	return externalschema.Token{Token: tokenExt.Token}, nil
 }
 
+
+
 func (c *StaticUserClient) GenerateRuntimeToken(t *testing.T, runtimeID string) (externalschema.Token, error) {
 	tokenExt := fixtures.RequestOneTimeTokenForRuntime(t, c.ctx, c.DexGraphqlClient, c.tenant, runtimeID)
 	return externalschema.Token{Token: tokenExt.Token}, nil
