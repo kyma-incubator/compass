@@ -17,6 +17,7 @@
 package tests
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
@@ -134,6 +135,10 @@ func TestAppRegistry(t *testing.T) {
 		require.Nil(t, errorResponse)
 		require.NotNil(t, createServiceResponse.ID)
 
+		_, errorResponse = adapterClient.CreateService(t, metadataURL, service)
+		require.NotNil(t, errorResponse, "failed to create service with the same name")
+		require.Equal(t, http.StatusConflict, errorResponse.StatusCode)
+
 		expectedService := service
 		expectedService.Provider = ""
 
@@ -146,6 +151,12 @@ func TestAppRegistry(t *testing.T) {
 		updateServiceResponse, errorResponse := adapterClient.UpdateService(t, metadataURL, createServiceResponse.ID, service)
 		require.Nil(t, errorResponse)
 		require.Equal(t, &expectedService, updateServiceResponse)
+
+		serviceWithDifferentName := service
+		serviceWithDifferentName.Name = "some-other-name"
+		_, errorResponse = adapterClient.UpdateService(t, metadataURL, createServiceResponse.ID, serviceWithDifferentName)
+		require.NotNil(t, errorResponse, "failed to update service name")
+		require.Equal(t, http.StatusBadRequest, errorResponse.StatusCode)
 
 		services, errorResponse = adapterClient.ListServices(t, metadataURL)
 		require.Nil(t, errorResponse)
