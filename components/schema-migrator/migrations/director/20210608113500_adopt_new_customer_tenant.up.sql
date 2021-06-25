@@ -10,4 +10,7 @@ ALTER TABLE business_tenant_mappings
         FOREIGN KEY (parent)
             REFERENCES business_tenant_mappings(id);
 
+UPDATE business_tenant_mappings SET type = 'account' WHERE type IS NULL;
+ALTER TABLE business_tenant_mappings ALTER COLUMN type SET NOT NULL;
+
 COMMIT;
