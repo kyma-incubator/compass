@@ -106,7 +106,6 @@ func TestTokenSuggestion(t *testing.T) {
 	tokenFromRaw := func(token graphql.OneTimeTokenForApplicationExt) string {
 		actualTokenFromRaw := gjson.Get(token.Raw, "token").String()
 		require.NotEmpty(t, actualTokenFromRaw)
-		require.NotEqual(t, actualTokenFromRaw, token.Token)
 		return actualTokenFromRaw
 	}
 	tokenFromLegacyURL := func(token graphql.OneTimeTokenForApplicationExt) string {
