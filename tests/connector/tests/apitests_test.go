@@ -114,6 +114,7 @@ func TestTokenSuggestion(t *testing.T) {
 		require.NoError(t, err)
 		tokenFromURL := legacyURL.Query().Get("token")
 		require.NotEmpty(t, tokenFromURL)
+		return tokenFromURL
 	}
 
 	t.Run("should return suggested token on configuration query for Application token", func(t *testing.T) {
