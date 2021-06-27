@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/base64"
 	"net/url"
 	"testing"
 
@@ -104,6 +103,19 @@ func TestTokenSuggestion(t *testing.T) {
 	intSystem := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
 	defer fixtures.UnregisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem.ID)
 
+	tokenFromRaw := func(token graphql.OneTimeTokenForApplicationExt) string {
+		actualTokenFromRaw := gjson.Get(token.Raw, "token").String()
+		require.NotEmpty(t, actualTokenFromRaw)
+		require.NotEqual(t, actualTokenFromRaw, token.Token)
+		return actualTokenFromRaw
+	}
+	tokenFromLegacyURL := func(token graphql.OneTimeTokenForApplicationExt) string {
+		legacyURL, err := url.Parse(token.LegacyConnectorURL)
+		require.NoError(t, err)
+		tokenFromURL := legacyURL.Query().Get("token")
+		require.NotEmpty(t, tokenFromURL)
+	}
+
 	t.Run("should return suggested token on configuration query for Application token", func(t *testing.T) {
 		testCases := []struct {
 			description    string
@@ -116,8 +128,10 @@ func TestTokenSuggestion(t *testing.T) {
 					Name: "test-suggested-tokens-app",
 				},
 				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
-					require.Equal(t, ott.Token, ott.RawEncoded)
-					require.NotEqual(t, ott.Token, ott.LegacyConnectorURL)
+					require.Equal(t, ott.RawEncoded, ott.Token)
+					require.NotEqual(t, ott.LegacyConnectorURL, ott.Token)
+					require.NotEqual(t, tokenFromRaw(ott), ott.Token)
+					require.NotEqual(t, tokenFromLegacyURL(ott), ott.Token)
 				},
 			},
 			{
@@ -129,6 +143,8 @@ func TestTokenSuggestion(t *testing.T) {
 				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
 					require.Equal(t, ott.Token, ott.LegacyConnectorURL)
 					require.NotEqual(t, ott.Token, ott.RawEncoded)
+					require.NotEqual(t, tokenFromRaw(ott), ott.Token)
+					require.NotEqual(t, tokenFromLegacyURL(ott), ott.Token)
 				},
 			},
 			{
@@ -138,8 +154,8 @@ func TestTokenSuggestion(t *testing.T) {
 					IntegrationSystemID: &intSystem.ID,
 				},
 				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
-					actualTokenFromRaw := gjson.Get(ott.Raw, "token").String()
-					require.Equal(t, ott.Token, actualTokenFromRaw)
+					require.Equal(t, tokenFromRaw(ott), ott.Token)
+					require.Equal(t, tokenFromLegacyURL(ott), ott.Token)
 					require.NotEqual(t, ott.Token, ott.RawEncoded)
 					require.NotEqual(t, ott.Token, ott.LegacyConnectorURL)
 				},
@@ -155,20 +171,7 @@ func TestTokenSuggestion(t *testing.T) {
 				//when
 				token := fixtures.GenerateOneTimeTokenForApplicationWithSuggestedToken(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 				test.validationFunc(t, token)
-
-				actualTokenFromRaw := gjson.Get(token.Raw, "token").String()
-				require.NotEmpty(t, actualTokenFromRaw)
-				require.NotEqual(t, actualTokenFromRaw, token.Token)
-
-				rawDecoded, err := base64.StdEncoding.DecodeString(token.RawEncoded)
-				require.NoError(t, err)
-				require.Equal(t, string(rawDecoded), actualTokenFromRaw)
-
-				legacyURL, err := url.Parse(token.LegacyConnectorURL)
-				require.NoError(t, err)
-				tokenFromURL := legacyURL.Query().Get("token")
-				require.NotEmpty(t, tokenFromURL)
-				require.Equal(t, tokenFromURL, actualTokenFromRaw)
+				require.Equal(t, tokenFromLegacyURL(token), tokenFromRaw(token))
 			})
 		}
 	})
