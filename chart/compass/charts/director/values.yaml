@@ -43,4 +43,4 @@ istio:
       compassOperationsController: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-operations-controller
 
 health:
-  indicators: "{database,5s,1s,1s,3}"
+  indicators: {database,5s,1s,1s,3}

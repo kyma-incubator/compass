@@ -154,7 +154,7 @@ spec:
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
-              value: {{ .Values.health.indicators }}
+              value: {{ .Values.health.indicators | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
