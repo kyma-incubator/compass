@@ -28,6 +28,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.ProductRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.ProductInput
 		ExpectedErr  error
 	}{
@@ -37,6 +38,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.ProductRepository{}
 				repo.On("Create", ctx, modelProduct).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(productID)
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -48,6 +54,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, modelProduct).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(productID)
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -57,8 +68,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
+			uidSvc := testCase.UIDServiceFn()
 
-			svc := product.NewService(repo)
+			svc := product.NewService(repo, uidSvc)
 
 			// when
 			result, err := svc.Create(ctx, appID, testCase.Input)
@@ -75,7 +87,7 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := product.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", model.ProductInput{})
 		// THEN
@@ -91,8 +103,8 @@ func TestService_Update(t *testing.T) {
 	modelProduct := fixProductModel()
 	modelInput := *fixProductModelInput()
 
-	inputProductModel := mock.MatchedBy(func(pkg *model.Product) bool {
-		return pkg.Title == modelInput.Title
+	inputProductModel := mock.MatchedBy(func(prod *model.Product) bool {
+		return prod.Title == modelInput.Title
 	})
 
 	ctx := context.TODO()
@@ -109,11 +121,11 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(modelProduct, nil).Once()
+				repo.On("GetByID", ctx, tenantID, productID).Return(modelProduct, nil).Once()
 				repo.On("Update", ctx, inputProductModel).Return(nil).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     productID,
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -121,11 +133,11 @@ func TestService_Update(t *testing.T) {
 			Name: "Update Error",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(modelProduct, nil).Once()
+				repo.On("GetByID", ctx, tenantID, productID).Return(modelProduct, nil).Once()
 				repo.On("Update", ctx, inputProductModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     productID,
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -133,10 +145,10 @@ func TestService_Update(t *testing.T) {
 			Name: "Get Error",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, tenantID, productID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     productID,
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -147,7 +159,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := product.NewService(repo)
+			svc := product.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -164,7 +176,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := product.NewService(nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.ProductInput{})
 		// THEN
@@ -191,20 +203,20 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("Delete", ctx, tenantID, ordID).Return(nil).Once()
+				repo.On("Delete", ctx, tenantID, productID).Return(nil).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     productID,
 			ExpectedErr: nil,
 		},
 		{
 			Name: "Delete Error",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("Delete", ctx, tenantID, ordID).Return(testErr).Once()
+				repo.On("Delete", ctx, tenantID, productID).Return(testErr).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     productID,
 			ExpectedErr: testErr,
 		},
 	}
@@ -214,7 +226,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := product.NewService(repo)
+			svc := product.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -231,7 +243,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := product.NewService(nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -254,18 +266,18 @@ func TestService_Exist(t *testing.T) {
 		{
 			Name: "Success",
 			RepoFn: func() *automock.ProductRepository {
-				pkgRepo := &automock.ProductRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, ordID).Return(true, nil).Once()
-				return pkgRepo
+				productRepo := &automock.ProductRepository{}
+				productRepo.On("Exists", ctx, tenantID, productID).Return(true, nil).Once()
+				return productRepo
 			},
 			ExpectedOutput: true,
 		},
 		{
 			Name: "Error when getting Product",
 			RepoFn: func() *automock.ProductRepository {
-				pkgRepo := &automock.ProductRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, ordID).Return(false, testErr).Once()
-				return pkgRepo
+				productRepo := &automock.ProductRepository{}
+				productRepo.On("Exists", ctx, tenantID, productID).Return(false, testErr).Once()
+				return productRepo
 			},
 			ExpectedError:  testErr,
 			ExpectedOutput: false,
@@ -274,11 +286,11 @@ func TestService_Exist(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			pkgRepo := testCase.RepoFn()
-			svc := product.NewService(pkgRepo)
+			productRepo := testCase.RepoFn()
+			svc := product.NewService(productRepo, nil)
 
 			// WHEN
-			result, err := svc.Exist(ctx, ordID)
+			result, err := svc.Exist(ctx, productID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -289,12 +301,12 @@ func TestService_Exist(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			pkgRepo.AssertExpectations(t)
+			productRepo.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := product.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -307,7 +319,7 @@ func TestService_Get(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	pkg := fixProductModel()
+	productModel := fixProductModel()
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -324,22 +336,22 @@ func TestService_Get(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(pkg, nil).Once()
+				repo.On("GetByID", ctx, tenantID, productID).Return(productModel, nil).Once()
 				return repo
 			},
-			InputID:            ordID,
-			ExpectedProduct:    pkg,
+			InputID:            productID,
+			ExpectedProduct:    productModel,
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Returns error when Product retrieval failed",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, tenantID, productID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:            ordID,
-			ExpectedProduct:    pkg,
+			InputID:            productID,
+			ExpectedProduct:    productModel,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -347,15 +359,15 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := product.NewService(repo)
+			svc := product.NewService(repo, nil)
 
 			// when
-			pkg, err := svc.Get(ctx, testCase.InputID)
+			prod, err := svc.Get(ctx, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedProduct, pkg)
+				assert.Equal(t, testCase.ExpectedProduct, prod)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -365,7 +377,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := product.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -422,7 +434,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := product.NewService(repo)
+			svc := product.NewService(repo, nil)
 
 			// when
 			docs, err := svc.ListByApplicationID(ctx, appID)
@@ -440,7 +452,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := product.NewService(nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN
