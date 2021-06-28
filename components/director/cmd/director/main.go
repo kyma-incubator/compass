@@ -128,6 +128,8 @@ type config struct {
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
+
+	HealthConfig healthz.Config `envconfig:"APP_HEALTH"`
 }
 
 func main() {
@@ -290,7 +292,14 @@ func main() {
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact))
+	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler())
+
+	logger.Infof("Registering health endpoint...")
+	health, err := healthz.New(ctx, cfg.HealthConfig).
+		RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).
+		Start()
+	exitOnError(err, "Could not initialize health")
+	mainRouter.HandleFunc("/health", healthz.NewHealthHandler(health))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))

@@ -153,10 +153,12 @@ spec:
               value: {{ $config.attributes | quote }}
             {{- end }}
             {{- end }}
+            - name: APP_HEALTH_CONFIG_INDICATORS
+              value: {{ .Values.health.indicators }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
-              path: "/readyz"
+              path: "/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
