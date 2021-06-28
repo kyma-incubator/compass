@@ -8,7 +8,6 @@ type Config struct {
 	Indicators []IndicatorConfig
 }
 
-// IndicatorConfig implements IndicatorConfig interface
 type IndicatorConfig struct {
 	Name         string        `envconfig:"default=default"`
 	Interval     time.Duration `envconfig:"default=5s"`
