@@ -88,7 +88,6 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Success with tenant and customerID", func(t *testing.T) {
 		// GIVEN
-
 		providedTenant := Tenant{
 			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 			CustomerId: "160269",
@@ -129,7 +128,6 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Success with only tenant", func(t *testing.T) {
 		// GIVEN
-
 		providedTenant := Tenant{
 			TenantId:  "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 			Subdomain: "subdomain",
