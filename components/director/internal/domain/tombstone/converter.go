@@ -19,6 +19,7 @@ func (c *converter) ToEntity(in *model.Tombstone) *Entity {
 	}
 
 	output := &Entity{
+		ID:            in.ID,
 		OrdID:         in.OrdID,
 		TenantID:      in.TenantID,
 		ApplicationID: in.ApplicationID,
@@ -34,6 +35,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Tombstone, error) {
 	}
 
 	output := &model.Tombstone{
+		ID:            entity.ID,
 		OrdID:         entity.OrdID,
 		TenantID:      entity.TenantID,
 		ApplicationID: entity.ApplicationID,

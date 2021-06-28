@@ -19,13 +19,20 @@ type VendorRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error)
 }
 
-type service struct {
-	vendorRepo VendorRepository
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(vendorRepo VendorRepository) *service {
+type service struct {
+	vendorRepo VendorRepository
+	uidService UIDService
+}
+
+func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 	return &service{
 		vendorRepo: vendorRepo,
+		uidService: uidService,
 	}
 }
 
@@ -35,13 +42,14 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Ven
 		return "", err
 	}
 
-	vendor := in.ToVendor(tnt, applicationID)
+	id := s.uidService.Generate()
+	vendor := in.ToVendor(id, tnt, applicationID)
 
 	err = s.vendorRepo.Create(ctx, vendor)
 	if err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s for Application with id %s", vendor.OrdID, vendor.Title, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
 	}
-	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s for Application with id %s", vendor.OrdID, vendor.Title, applicationID)
+	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
 
 	return vendor.OrdID, nil
 }
