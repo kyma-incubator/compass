@@ -88,8 +88,7 @@ func (r *repository) GetByExternalID(ctx context.Context, tenantId string) (mode
 
 	log.C(ctx).Infof("Executing DB query: %s", stmt)
 	var tenantEntity tenant.Entity
-	err = persist.GetContext(ctx, &tenantEntity, stmt)
-	if err != nil {
+	if err := persist.GetContext(ctx, &tenantEntity, stmt); err != nil {
 		return model.TenantModel{}, err
 	}
 
