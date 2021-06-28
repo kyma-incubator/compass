@@ -1074,9 +1074,9 @@ func checkHashEquality(rdFromDBVersion, rdFromDocVersion, hashFromDB, hashFromDo
 	rdFromDBVersion = fmt.Sprintf("v%s", rdFromDBVersion)
 	rdFromDocVersion = fmt.Sprintf("v%s", rdFromDocVersion)
 
-	areEventVersionsEqual := semver.Compare(rdFromDocVersion, rdFromDBVersion)
-	if areHashesEqual := cmp.Equal(hashFromDB, hashFromDoc); !areHashesEqual && areEventVersionsEqual <= 0 {
-		return errors.New("there is a change in the resource definitions; version value should be incremented")
+	areVersionsEqual := semver.Compare(rdFromDocVersion, rdFromDBVersion)
+	if areHashesEqual := cmp.Equal(hashFromDB, hashFromDoc); !areHashesEqual && areVersionsEqual <= 0 {
+		return errors.New("there is a change in the resource; version value should be incremented")
 	}
 
 	return nil

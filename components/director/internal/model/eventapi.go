@@ -160,8 +160,3 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		},
 	}
 }
-
-type EventDefinitionIDVersion struct {
-	ID      string
-	Version string
-}

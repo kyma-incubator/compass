@@ -213,7 +213,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	}
 
 	for i := range in.EventDefinitions {
-		_, err := s.eventSvc.CreateInBundle(ctx, appID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i], 0)
+		_, err := s.eventSvc.CreateInBundle(ctx, appID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i])
 		if err != nil {
 			return errors.Wrapf(err, "while creating Event for bundle with id %q", bundleID)
 		}

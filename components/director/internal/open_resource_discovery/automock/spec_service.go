@@ -48,26 +48,3 @@ func (_m *SpecService) DeleteByReferenceObjectID(ctx context.Context, objectType
 
 	return r0
 }
-
-// ListByReferenceObjectID provides a mock function with given fields: ctx, objectType, objectID
-func (_m *SpecService) ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
-	ret := _m.Called(ctx, objectType, objectID)
-
-	var r0 []*model.Spec
-	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) []*model.Spec); ok {
-		r0 = rf(ctx, objectType, objectID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Spec)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.SpecReferenceObjectType, string) error); ok {
-		r1 = rf(ctx, objectType, objectID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}

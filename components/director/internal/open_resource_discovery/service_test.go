@@ -161,7 +161,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulPackageUpdate := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackagesWithLowerVersion(), nil).Once()
+		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackagesWithHash(), nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 		packagesSvc.On("Update", txtest.CtxWithDBMatcher(), packageID, *sanitizedDoc.Packages[0], uint64(3059097458680167795)).Return(nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
@@ -214,11 +214,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(nil).Once()
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent2SpecInputs()[0], model.EventSpecReference, event2ID).Return("", nil).Once()
 
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixApi1Specs(), nil).Once()
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(fixApi2Specs(), nil).Once()
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
-
 		return specSvc
 	}
 
@@ -232,10 +227,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
 		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
 
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixApi1Specs(), nil).Once()
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(fixApi2Specs(), nil).Once()
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
-		//specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
 		return specSvc
 	}
 

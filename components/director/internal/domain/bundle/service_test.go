@@ -109,8 +109,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0], uint64(0)).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1], uint64(0)).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
@@ -194,7 +194,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0], uint64(0)).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", testErr).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
@@ -224,8 +224,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0], uint64(0)).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1], uint64(0)).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {

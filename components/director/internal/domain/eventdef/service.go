@@ -117,8 +117,8 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return eventAPI, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput, eventHash uint64) (string, error) {
-	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, eventHash)
+func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
 }
 
 func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64) (string, error) {
@@ -162,8 +162,8 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, eventHash uint64) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, eventHash)
+func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, 0)
 }
 
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error {

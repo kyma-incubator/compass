@@ -602,11 +602,10 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			},
 		},
 		{
-			Name: "Not incremented `version` field when Package",
+			Name: "Not incremented `version` field when Package has been changed",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["Mining"]`)
-				doc.Packages[0].Version = fixPackagesWithLowerVersion()[0].Version
 
 				newHash, err := open_resource_discovery.HashObject(doc.Packages[0])
 				require.NoError(t, err)
@@ -618,6 +617,25 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			AfterTest: func() {
 				resourceHashes = fixResourceHashes()
 			},
+		},
+		{
+			Name: "Valid incremented `version` field when package has changed",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["Utilities"]`)
+				doc.Packages[0].Version = "2.1.4"
+
+				hash, err := open_resource_discovery.HashObject(doc.Packages[0])
+				require.NoError(t, err)
+
+				resourceHashes[packageORDID] = hash
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "Missing `policyLevel` field for Package",
@@ -1524,7 +1542,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
-				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
 				require.NoError(t, err)
@@ -1541,7 +1558,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
-				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
 				require.NoError(t, err)
@@ -1558,7 +1574,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
-				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
 
 				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
 				require.NoError(t, err)
@@ -1576,7 +1591,22 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
 				doc.APIResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
-				doc.APIResources[0].VersionInput.Value = fixAPIsWithLowerVersion()[0].Version.Value
+
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		}, {
+			Name: "Not incremented `version` field when resource has changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["Utilities"]`)
 
 				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
 				require.NoError(t, err)
@@ -1594,9 +1624,17 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
 				doc.APIResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
+				doc.APIResources[0].VersionInput.Value = "2.1.4"
+
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
 
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 			ExpectedToBeValid: true,
 		}, {
@@ -1919,7 +1957,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions = nil
 				doc.APIResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
 				doc.Packages[0].PolicyLevel = policyLevel
 
 				return []*open_resource_discovery.Document{doc}
@@ -2683,9 +2720,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
-				doc.APIResources[1].VersionInput.Value = "2.1.3"
-
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2704,9 +2738,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
-				doc.APIResources[1].VersionInput.Value = "2.1.3"
-
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2724,9 +2755,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[1].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV2
 				doc.APIResources[1].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
-				doc.APIResources[1].VersionInput.Value = "2.1.3"
-
 				return []*open_resource_discovery.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -2738,8 +2766,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
-
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -2753,8 +2779,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				*doc.APIResources[0].ApiProtocol = open_resource_discovery.ApiProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
-
-				doc.APIResources[0].VersionInput.Value = "2.1.3"
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -3063,7 +3087,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].URL = "http://newurl.com/odata/$metadata"
-				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
 				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
 				require.NoError(t, err)
@@ -3080,7 +3103,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
-				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
 
 				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
 				require.NoError(t, err)
@@ -3098,7 +3120,22 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].Type = model.EventSpecTypeCustom
 				doc.EventResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
-				doc.EventResources[0].VersionInput.Value = fixEventsWithLowerVersion()[0].Version.Value
+
+				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[event1ORDID] = newHash
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		}, {
+			Name: "Not incremented `version` field when resource has changed for Event",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["Utilities"]`)
 
 				newHash, err := open_resource_discovery.HashObject(doc.EventResources[0])
 				require.NoError(t, err)
@@ -3116,9 +3153,17 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].Type = model.EventSpecTypeCustom
 				doc.EventResources[0].ResourceDefinitions[0].CustomType = "sap:custom-definition-format:v1"
-				doc.EventResources[0].VersionInput.Value = "2.1.3"
+				doc.EventResources[0].VersionInput.Value = "2.1.4"
+
+				hash, err := open_resource_discovery.HashObject(doc.EventResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[event1ORDID] = hash
 
 				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
 			},
 			ExpectedToBeValid: true,
 		}, {
@@ -3334,7 +3379,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions = nil
-				doc.EventResources[0].VersionInput.Value = "2.1.3"
 				doc.EventResources[0].Visibility = str.Ptr(open_resource_discovery.ApiVisibilityPrivate)
 				doc.Packages[0].PolicyLevel = policyLevel
 

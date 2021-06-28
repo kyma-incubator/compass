@@ -789,7 +789,7 @@ func TestService_Update(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, 0)
+			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -806,7 +806,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{}, 0)
+		err := svc.Update(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

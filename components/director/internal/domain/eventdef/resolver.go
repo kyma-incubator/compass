@@ -17,8 +17,8 @@ import (
 
 //go:generate mockery --name=EventDefService --output=automock --outpkg=automock --case=underscore
 type EventDefService interface {
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput, eventHash uint64) (string, error)
-	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput, eventHash uint64) error
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
@@ -90,7 +90,7 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, errors.Wrapf(err, "while checking existence of Bundle with id %s when adding EventDefinition", bundleID)
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec, 0)
+	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating EventDefinition in Bundle with id %s", bundleID)
 	}
@@ -140,7 +140,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec, 0)
+	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, err
 	}

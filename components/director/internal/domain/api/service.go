@@ -174,8 +174,8 @@ func (s *service) Create(ctx context.Context, appId string, bundleID, packageID 
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, apiHash uint64) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, apiHash)
+func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0)
 }
 
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64) error {

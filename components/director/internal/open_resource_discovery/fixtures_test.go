@@ -134,17 +134,17 @@ var (
 	boolPtr = true
 
 	apisFromDB = map[string]*model.APIDefinition{
-		api1ORDID: fixAPIsWithLowerVersion()[0],
-		api2ORDID: fixAPIsWithLowerVersion()[1],
+		api1ORDID: fixAPIsWithHash()[0],
+		api2ORDID: fixAPIsWithHash()[1],
 	}
 
 	eventsFromDB = map[string]*model.EventDefinition{
-		event1ORDID: fixEventsWithLowerVersion()[0],
-		event2ORDID: fixEventsWithLowerVersion()[1],
+		event1ORDID: fixEventsWithHash()[0],
+		event2ORDID: fixEventsWithHash()[1],
 	}
 
 	pkgsFromDB = map[string]*model.Package{
-		packageORDID: fixPackagesWithLowerVersion()[0],
+		packageORDID: fixPackagesWithHash()[0],
 	}
 
 	hashApi1, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
@@ -641,11 +641,10 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 	}
 }
 
-func fixAPIsWithLowerVersion() []*model.APIDefinition {
+func fixAPIsWithHash() []*model.APIDefinition {
 	apis := fixAPIs()
 
 	for _, api := range apis {
-		api.Version.Value = "1.1.0"
 		ordID := str.PtrStrToStr(api.OrdID)
 		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
 		api.ResourceHash = hash
@@ -654,11 +653,10 @@ func fixAPIsWithLowerVersion() []*model.APIDefinition {
 	return apis
 }
 
-func fixEventsWithLowerVersion() []*model.EventDefinition {
+func fixEventsWithHash() []*model.EventDefinition {
 	events := fixEvents()
 
 	for _, event := range events {
-		event.Version.Value = "1.1.0"
 		ordID := str.PtrStrToStr(event.OrdID)
 		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
 		event.ResourceHash = hash
@@ -667,11 +665,10 @@ func fixEventsWithLowerVersion() []*model.EventDefinition {
 	return events
 }
 
-func fixPackagesWithLowerVersion() []*model.Package {
+func fixPackagesWithHash() []*model.Package {
 	pkgs := fixPackages()
 
 	for _, pkg := range pkgs {
-		pkg.Version = "1.1.0"
 		hash := str.Ptr(strconv.FormatUint(resourceHashes[pkg.OrdID], 10))
 		pkg.ResourceHash = hash
 	}

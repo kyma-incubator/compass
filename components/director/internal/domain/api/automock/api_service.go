@@ -95,13 +95,13 @@ func (_m *APIService) GetFetchRequest(ctx context.Context, apiDefID string) (*mo
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in, spec, apiHash
-func (_m *APIService) Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput, apiHash uint64) error {
-	ret := _m.Called(ctx, id, in, spec, apiHash)
+// Update provides a mock function with given fields: ctx, id, in, spec
+func (_m *APIService) Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error {
+	ret := _m.Called(ctx, id, in, spec)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput, uint64) error); ok {
-		r0 = rf(ctx, id, in, spec, apiHash)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
+		r0 = rf(ctx, id, in, spec)
 	} else {
 		r0 = ret.Error(0)
 	}

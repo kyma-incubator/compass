@@ -152,50 +152,9 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	resourceHashes := make(map[string]uint64)
-
-	for _, doc := range documents {
-		for _, apiInput := range doc.APIResources {
-			normalizedAPIDef, err := normalizeAPIDefinition(apiInput)
-			if err != nil {
-				return nil
-			}
-
-			hash, err := HashObject(normalizedAPIDef)
-			if err != nil {
-				return nil
-			}
-
-			resourceHashes[str.PtrStrToStr(apiInput.OrdID)] = hash
-		}
-
-		for _, eventInput := range doc.EventResources {
-			normalizedEventDef, err := normalizeEventDefinition(eventInput)
-			if err != nil {
-				return nil
-			}
-
-			hash, err := HashObject(normalizedEventDef)
-			if err != nil {
-				return nil
-			}
-
-			resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash
-		}
-
-		for _, packageInput := range doc.Packages {
-			normalizedPkg, err := normalizePackage(packageInput)
-			if err != nil {
-				return nil
-			}
-
-			hash, err := HashObject(normalizedPkg)
-			if err != nil {
-				return nil
-			}
-
-			resourceHashes[packageInput.OrdID] = hash
-		}
+	resourceHashes, err := hashResources(documents)
+	if err != nil {
+		return err
 	}
 
 	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes); err != nil {
@@ -645,6 +604,56 @@ func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[st
 	}
 
 	return eventDataFromDB, nil
+}
+
+func hashResources(docs Documents) (map[string]uint64, error) {
+	resourceHashes := make(map[string]uint64)
+
+	for _, doc := range docs {
+		for _, apiInput := range doc.APIResources {
+			normalizedAPIDef, err := normalizeAPIDefinition(apiInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedAPIDef)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing api definition with ORD ID: %s", str.PtrStrToStr(normalizedAPIDef.OrdID))
+			}
+
+			resourceHashes[str.PtrStrToStr(apiInput.OrdID)] = hash
+		}
+
+		for _, eventInput := range doc.EventResources {
+			normalizedEventDef, err := normalizeEventDefinition(eventInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedEventDef)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing event definition with ORD ID: %s", str.PtrStrToStr(normalizedEventDef.OrdID))
+			}
+
+			resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash
+		}
+
+		for _, packageInput := range doc.Packages {
+			normalizedPkg, err := normalizePackage(packageInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedPkg)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing package with ORD ID: %s", normalizedPkg.OrdID)
+			}
+
+			resourceHashes[packageInput.OrdID] = hash
+		}
+	}
+
+	return resourceHashes, nil
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {

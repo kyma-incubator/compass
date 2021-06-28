@@ -61,7 +61,7 @@ type APIConverter interface {
 type EventService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput, eventHash uint64) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
