@@ -299,7 +299,7 @@ func main() {
 		RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).
 		Start()
 	exitOnError(err, "Could not initialize health")
-	mainRouter.HandleFunc("/health", healthz.NewHealthHandler(health))
+	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))

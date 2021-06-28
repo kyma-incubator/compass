@@ -13,7 +13,7 @@ import (
 func TestNewLivenessHandler(t *testing.T) {
 	t.Run("should return 200 with ok inside response body", func(t *testing.T) {
 		// GIVEN
-		req, err := http.NewRequest("GET", "/healthz", nil)
+		req, err := http.NewRequest("GET", "/livez", nil)
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(healthz.NewLivenessHandler())
