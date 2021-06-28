@@ -20,8 +20,8 @@ type IndicatorConfig struct {
 func NewDefaultConfig() IndicatorConfig {
 	return IndicatorConfig{
 		Name:         DefaultName,
-		Interval:     3 * time.Second,
-		Timeout:      1 * time.Second,
+		Interval:     5 * time.Second,
+		Timeout:      time.Second,
 		InitialDelay: time.Second,
 		Threshold:    3,
 	}

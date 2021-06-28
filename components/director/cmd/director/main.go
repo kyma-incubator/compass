@@ -292,7 +292,7 @@ func main() {
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler())
+	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
 
 	logger.Infof("Registering health endpoint...")
 	health, err := healthz.New(ctx, cfg.HealthConfig).
