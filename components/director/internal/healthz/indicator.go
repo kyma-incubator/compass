@@ -57,7 +57,7 @@ type indicator struct {
 	failureCount  int
 }
 
-// NewIndicator returns new indicator from provided IndicatorConfig and IndicatorFunc
+// NewIndicator returns new indicator from the provided IndicatorConfig and IndicatorFunc
 func NewIndicator(name string, indicatorFunc IndicatorFunc) Indicator {
 	return &indicator{
 		name:          name,
@@ -81,7 +81,7 @@ func (i *indicator) Configure(cfg IndicatorConfig) {
 	i.threshold = cfg.Threshold
 }
 
-// Run starts the periodic work
+// Run starts the periodic indicator checks
 func (i *indicator) Run(ctx context.Context) error {
 	if i.interval <= 0 {
 		return errors.New("indicator interval could not be <= 0")
@@ -138,6 +138,7 @@ func (i *indicator) Run(ctx context.Context) error {
 	return nil
 }
 
+// Status reports the last calculated status of the indicator
 func (i *indicator) Status() Status {
 	i.statusLock.Lock()
 	defer i.statusLock.Unlock()

@@ -11,9 +11,9 @@ type Config struct {
 // IndicatorConfig implements IndicatorConfig interface
 type IndicatorConfig struct {
 	Name         string        `envconfig:"default=default"`
-	Interval     time.Duration `envconfig:"default=3s"`
+	Interval     time.Duration `envconfig:"default=5s"`
 	Timeout      time.Duration `envconfig:"default=1s"`
-	InitialDelay time.Duration `envconfig:"default=0s"`
+	InitialDelay time.Duration `envconfig:"default=1s"`
 	Threshold    int           `envconfig:"default=3"`
 }
 
