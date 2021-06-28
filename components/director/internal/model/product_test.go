@@ -11,7 +11,8 @@ import (
 
 func TestProductInput_ToProduct(t *testing.T) {
 	// given
-	id := "foo"
+	id := "test"
+	ordID := "foo"
 	appID := "bar"
 	vendor := "Sample"
 	name := "sample"
@@ -26,13 +27,14 @@ func TestProductInput_ToProduct(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.ProductInput{
-				OrdID:  id,
+				OrdID:  ordID,
 				Title:  name,
 				Vendor: vendor,
 				Labels: labels,
 			},
 			Expected: &model.Product{
-				OrdID:         id,
+				ID:            id,
+				OrdID:         ordID,
 				TenantID:      tenant,
 				ApplicationID: appID,
 				Title:         name,
@@ -51,7 +53,7 @@ func TestProductInput_ToProduct(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToProduct(tenant, appID)
+			result := testCase.Input.ToProduct(id, tenant, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

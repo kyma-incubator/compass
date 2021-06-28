@@ -28,15 +28,19 @@ const (
 	event1ORDID       = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID       = "ns2:eventResource:EVENT_ID:v1"
 
-	appID     = "testApp"
-	whID      = "testWh"
-	tenantID  = "testTenant"
-	packageID = "testPkg"
-	bundleID  = "testBndl"
-	api1ID    = "testApi1"
-	api2ID    = "testApi2"
-	event1ID  = "testEvent1"
-	event2ID  = "testEvent2"
+	appID       = "testApp"
+	whID        = "testWh"
+	tenantID    = "testTenant"
+	packageID   = "testPkg"
+	vendorID    = "testVendor"
+	vendorID2   = "testVendor2"
+	productID   = "testProduct"
+	bundleID    = "testBndl"
+	api1ID      = "testApi1"
+	api2ID      = "testApi2"
+	event1ID    = "testEvent1"
+	event2ID    = "testEvent2"
+	tombstoneID = "testTs"
 
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
@@ -544,6 +548,7 @@ func fixWebhooks() []*model.Webhook {
 func fixVendors() []*model.Vendor {
 	return []*model.Vendor{
 		{
+			ID:            vendorID,
 			OrdID:         vendorORDID,
 			TenantID:      tenantID,
 			ApplicationID: appID,
@@ -552,6 +557,7 @@ func fixVendors() []*model.Vendor {
 			Labels:        json.RawMessage(labels),
 		},
 		{
+			ID:       vendorID2,
 			OrdID:    vendor2ORDID,
 			Title:    "SAP",
 			Partners: json.RawMessage(partners),
@@ -563,6 +569,7 @@ func fixVendors() []*model.Vendor {
 func fixProducts() []*model.Product {
 	return []*model.Product{
 		{
+			ID:               productID,
 			OrdID:            productORDID,
 			TenantID:         tenantID,
 			ApplicationID:    appID,
@@ -917,6 +924,7 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 func fixTombstones() []*model.Tombstone {
 	return []*model.Tombstone{
 		{
+			ID:            tombstoneID,
 			OrdID:         api2ORDID,
 			TenantID:      tenantID,
 			ApplicationID: appID,
