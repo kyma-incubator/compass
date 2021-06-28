@@ -74,17 +74,13 @@ func extractToken(currentToken string) string {
 	}
 
 	// is in form of a legacy connector url
-	if token := extractTokenFromURL(currentToken); token != "" {
+	legacyURL, err := url.Parse(currentToken)
+	if err != nil {
+		return currentToken
+	}
+	if token := legacyURL.Query().Get("token"); token != "" {
 		return token
 	}
 
 	return currentToken
-}
-
-func extractTokenFromURL(legacyURLStr string) string {
-	legacyURL, err := url.Parse(legacyURLStr)
-	if err != nil {
-		return ""
-	}
-	return legacyURL.Query().Get("token")
 }

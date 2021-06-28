@@ -2,7 +2,6 @@ package onetimetoken
 
 import (
 	"context"
-	"encoding/base64"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -85,20 +84,10 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 		return rawEncoded(obj)
 	}
 
-	// already encoded
-	if _, err := base64.StdEncoding.DecodeString(obj.Token); err == nil {
-		return &obj.Token, nil
-	}
-
-	// is in form of a legacy connector url
-	if token := extractTokenFromURL(obj.Token); token != "" {
-		return rawEncoded(&graphql.TokenWithURL{
-			Token:        token,
-			ConnectorURL: obj.ConnectorURL,
-		})
-	}
-
-	return rawEncoded(obj)
+	return rawEncoded(&graphql.TokenWithURL{
+		Token:        extractToken(obj.Token),
+		ConnectorURL: obj.ConnectorURL,
+	})
 }
 
 func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
@@ -110,17 +99,8 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string,
 		return raw(obj)
 	}
 
-	if decodedToken, err := base64.StdEncoding.DecodeString(obj.Token); err == nil {
-		t := string(decodedToken)
-		return &t, nil
-	}
-
-	if token := extractTokenFromURL(obj.Token); token != "" {
-		return raw(&graphql.TokenWithURL{
-			Token:        token,
-			ConnectorURL: obj.ConnectorURL,
-		})
-	}
-
-	return raw(obj)
+	return raw(&graphql.TokenWithURL{
+		Token:        extractToken(obj.Token),
+		ConnectorURL: obj.ConnectorURL,
+	})
 }
