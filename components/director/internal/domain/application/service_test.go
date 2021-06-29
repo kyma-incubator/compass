@@ -3,7 +3,6 @@ package application_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
