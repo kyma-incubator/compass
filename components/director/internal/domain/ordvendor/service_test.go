@@ -28,6 +28,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.VendorRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.VendorInput
 		ExpectedErr  error
 	}{
@@ -37,6 +38,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.VendorRepository{}
 				repo.On("Create", ctx, modelVendor).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(vendorID)
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -48,6 +54,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, modelVendor).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(vendorID)
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -57,8 +68,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
+			uidSvc := testCase.UIDServiceFn()
 
-			svc := ordvendor.NewService(repo)
+			svc := ordvendor.NewService(repo, uidSvc)
 
 			// when
 			result, err := svc.Create(ctx, appID, testCase.Input)
@@ -75,7 +87,7 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil)
+		svc := ordvendor.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", model.VendorInput{})
 		// THEN
@@ -91,8 +103,8 @@ func TestService_Update(t *testing.T) {
 	modelVendor := fixVendorModel()
 	modelInput := *fixVendorModelInput()
 
-	inputVendorModel := mock.MatchedBy(func(pkg *model.Vendor) bool {
-		return pkg.Title == modelInput.Title
+	inputVendorModel := mock.MatchedBy(func(vendor *model.Vendor) bool {
+		return vendor.Title == modelInput.Title
 	})
 
 	ctx := context.TODO()
@@ -109,11 +121,11 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(modelVendor, nil).Once()
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendor, nil).Once()
 				repo.On("Update", ctx, inputVendorModel).Return(nil).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     vendorID,
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -121,11 +133,11 @@ func TestService_Update(t *testing.T) {
 			Name: "Update Error",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(modelVendor, nil).Once()
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendor, nil).Once()
 				repo.On("Update", ctx, inputVendorModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     vendorID,
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -133,10 +145,10 @@ func TestService_Update(t *testing.T) {
 			Name: "Get Error",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     vendorID,
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -147,7 +159,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := ordvendor.NewService(repo)
+			svc := ordvendor.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -164,7 +176,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil)
+		svc := ordvendor.NewService(nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.VendorInput{})
 		// THEN
@@ -191,20 +203,20 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("Delete", ctx, tenantID, ordID).Return(nil).Once()
+				repo.On("Delete", ctx, tenantID, vendorID).Return(nil).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     vendorID,
 			ExpectedErr: nil,
 		},
 		{
 			Name: "Delete Error",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("Delete", ctx, tenantID, ordID).Return(testErr).Once()
+				repo.On("Delete", ctx, tenantID, vendorID).Return(testErr).Once()
 				return repo
 			},
-			InputID:     ordID,
+			InputID:     vendorID,
 			ExpectedErr: testErr,
 		},
 	}
@@ -214,7 +226,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := ordvendor.NewService(repo)
+			svc := ordvendor.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -231,7 +243,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil)
+		svc := ordvendor.NewService(nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -254,18 +266,18 @@ func TestService_Exist(t *testing.T) {
 		{
 			Name: "Success",
 			RepoFn: func() *automock.VendorRepository {
-				pkgRepo := &automock.VendorRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, ordID).Return(true, nil).Once()
-				return pkgRepo
+				repo := &automock.VendorRepository{}
+				repo.On("Exists", ctx, tenantID, vendorID).Return(true, nil).Once()
+				return repo
 			},
 			ExpectedOutput: true,
 		},
 		{
 			Name: "Error when getting Vendor",
 			RepoFn: func() *automock.VendorRepository {
-				pkgRepo := &automock.VendorRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, ordID).Return(false, testErr).Once()
-				return pkgRepo
+				repo := &automock.VendorRepository{}
+				repo.On("Exists", ctx, tenantID, vendorID).Return(false, testErr).Once()
+				return repo
 			},
 			ExpectedError:  testErr,
 			ExpectedOutput: false,
@@ -274,11 +286,11 @@ func TestService_Exist(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			pkgRepo := testCase.RepoFn()
-			svc := ordvendor.NewService(pkgRepo)
+			repo := testCase.RepoFn()
+			svc := ordvendor.NewService(repo, nil)
 
 			// WHEN
-			result, err := svc.Exist(ctx, ordID)
+			result, err := svc.Exist(ctx, vendorID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -289,12 +301,12 @@ func TestService_Exist(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			pkgRepo.AssertExpectations(t)
+			repo.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil)
+		svc := ordvendor.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -307,7 +319,7 @@ func TestService_Get(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	pkg := fixVendorModel()
+	vendor := fixVendorModel()
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -324,22 +336,22 @@ func TestService_Get(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(pkg, nil).Once()
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(vendor, nil).Once()
 				return repo
 			},
-			InputID:            ordID,
-			ExpectedVendor:     pkg,
+			InputID:            vendorID,
+			ExpectedVendor:     vendor,
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Returns error when Vendor retrieval failed",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, ordID).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:            ordID,
-			ExpectedVendor:     pkg,
+			InputID:            vendorID,
+			ExpectedVendor:     vendor,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -347,15 +359,15 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := ordvendor.NewService(repo)
+			svc := ordvendor.NewService(repo, nil)
 
 			// when
-			pkg, err := svc.Get(ctx, testCase.InputID)
+			vendor, err := svc.Get(ctx, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedVendor, pkg)
+				assert.Equal(t, testCase.ExpectedVendor, vendor)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -365,7 +377,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil)
+		svc := ordvendor.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -422,7 +434,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := ordvendor.NewService(repo)
+			svc := ordvendor.NewService(repo, nil)
 
 			// when
 			docs, err := svc.ListByApplicationID(ctx, appID)
@@ -440,7 +452,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil)
+		svc := ordvendor.NewService(nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN

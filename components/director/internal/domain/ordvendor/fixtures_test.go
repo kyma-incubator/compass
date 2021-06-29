@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	vendorID         = "vendorID"
 	tenantID         = "tenantID"
 	appID            = "appID"
 	ordID            = "com.compass.v1"
@@ -20,6 +21,7 @@ const (
 
 func fixEntityVendor() *ordvendor.Entity {
 	return &ordvendor.Entity{
+		ID:            vendorID,
 		OrdID:         ordID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
@@ -31,6 +33,7 @@ func fixEntityVendor() *ordvendor.Entity {
 
 func fixVendorModel() *model.Vendor {
 	return &model.Vendor{
+		ID:            vendorID,
 		OrdID:         ordID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
@@ -50,11 +53,11 @@ func fixVendorModelInput() *model.VendorInput {
 }
 
 func fixVendorColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "title", "labels", "partners"}
+	return []string{"ord_id", "tenant_id", "app_id", "title", "labels", "partners", "id"}
 }
 
 func fixVendorRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners)}
+	return []driver.Value{ordID, tenantID, appID, "title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID}
 }
 
 /**/

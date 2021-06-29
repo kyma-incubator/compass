@@ -22,38 +22,40 @@ import (
 const (
 	tenantHeader = "Tenant"
 
-	descriptionField      = "value.0.description"
-	shortDescriptionField = "value.0.shortDescription"
+	descriptionField      = "description"
+	shortDescriptionField = "shortDescription"
 	apisField             = "apis"
 	eventsField           = "events"
 
-	expectedSystemInstanceName        = "test-app"
-	expectedSystemInstanceDescription = "test-app-description"
-	expectedBundleTitle               = "BUNDLE TITLE"
-	secondExpectedBundleTitle         = "BUNDLE TITLE 2"
-	expectedBundleDescription         = "lorem ipsum dolor nsq sme"
-	secondExpectedBundleDescription   = "foo bar"
-	expectedPackageTitle              = "PACKAGE 1 TITLE"
-	expectedPackageDescription        = "lorem ipsum dolor set"
-	expectedProductTitle              = "PRODUCT TITLE"
-	expectedProductShortDescription   = "lorem ipsum"
-	firstAPIExpectedTitle             = "API TITLE"
-	firstAPIExpectedDescription       = "lorem ipsum dolor sit amet"
-	firstEventTitle                   = "EVENT TITLE"
-	firstEventDescription             = "lorem ipsum dolor sit amet"
-	secondEventTitle                  = "EVENT TITLE 2"
-	secondEventDescription            = "lorem ipsum dolor sit amet"
-	expectedTombstoneOrdID            = "ns:apiResource:API_ID2:v1"
-	expectedVendorTitle               = "SAP"
+	expectedSystemInstanceName              = "test-app"
+	expectedSecondSystemInstanceName        = "second-test-app"
+	expectedSystemInstanceDescription       = "test-app-description"
+	expectedSecondSystemInstanceDescription = "test-app-description"
+	expectedBundleTitle                     = "BUNDLE TITLE"
+	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
+	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
+	secondExpectedBundleDescription         = "foo bar"
+	expectedPackageTitle                    = "PACKAGE 1 TITLE"
+	expectedPackageDescription              = "lorem ipsum dolor set"
+	expectedProductTitle                    = "PRODUCT TITLE"
+	expectedProductShortDescription         = "lorem ipsum"
+	firstAPIExpectedTitle                   = "API TITLE"
+	firstAPIExpectedDescription             = "lorem ipsum dolor sit amet"
+	firstEventTitle                         = "EVENT TITLE"
+	firstEventDescription                   = "lorem ipsum dolor sit amet"
+	secondEventTitle                        = "EVENT TITLE 2"
+	secondEventDescription                  = "lorem ipsum dolor sit amet"
+	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
+	expectedVendorTitle                     = "SAP"
 
-	expectedNumberOfSystemInstances = 1
-	expectedNumberOfPackages        = 1
-	expectedNumberOfBundles         = 2
-	expectedNumberOfProducts        = 1
-	expectedNumberOfAPIs            = 1
-	expectedNumberOfEvents          = 2
-	expectedNumberOfTombstones      = 1
-	expectedNumberOfVendors         = 1
+	expectedNumberOfSystemInstances = 2
+	expectedNumberOfPackages        = 2
+	expectedNumberOfBundles         = 4
+	expectedNumberOfProducts        = 2
+	expectedNumberOfAPIs            = 2
+	expectedNumberOfEvents          = 4
+	expectedNumberOfTombstones      = 2
+	expectedNumberOfVendors         = 2
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -65,8 +67,13 @@ const (
 
 func TestORDAggregator(t *testing.T) {
 	appInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
+	secondAppInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
 
-	eventsMap := make(map[string]string, 0)
+	systemInstancesMap := make(map[string]string)
+	systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
+	systemInstancesMap[expectedSecondSystemInstanceName] = expectedSecondSystemInstanceDescription
+
+	eventsMap := make(map[string]string)
 	eventsMap[firstEventTitle] = firstEventDescription
 	eventsMap[secondEventTitle] = secondEventDescription
 
@@ -94,8 +101,11 @@ func TestORDAggregator(t *testing.T) {
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
 	require.NoError(t, err)
+	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+	require.NoError(t, err)
 
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondApp.ID)
 
 	t.Log("Create integration system")
 	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
@@ -141,7 +151,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing System Instances...will try again")
 				return false
 			}
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfSystemInstances, expectedSystemInstanceName, expectedSystemInstanceDescription, descriptionField)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, expectedNumberOfSystemInstances)
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})

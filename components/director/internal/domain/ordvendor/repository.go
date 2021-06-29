@@ -15,7 +15,7 @@ const vendorTable string = `public.vendors`
 
 var (
 	tenantColumn     = "tenant_id"
-	vendorColumns    = []string{"ord_id", tenantColumn, "app_id", "title", "labels", "partners"}
+	vendorColumns    = []string{"ord_id", tenantColumn, "app_id", "title", "labels", "partners", "id"}
 	updatableColumns = []string{"title", "labels", "partners"}
 )
 
@@ -43,7 +43,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		lister:       repo.NewLister(resource.Vendor, vendorTable, tenantColumn, vendorColumns),
 		deleter:      repo.NewDeleter(resource.Vendor, vendorTable, tenantColumn),
 		creator:      repo.NewCreator(resource.Vendor, vendorTable, vendorColumns),
-		updater:      repo.NewUpdater(resource.Vendor, vendorTable, updatableColumns, tenantColumn, []string{"ord_id"}),
+		updater:      repo.NewUpdater(resource.Vendor, vendorTable, updatableColumns, tenantColumn, []string{"id"}),
 	}
 }
 
@@ -52,7 +52,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Vendor) error {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	log.C(ctx).Debugf("Persisting Vendor entity with id %q", model.OrdID)
+	log.C(ctx).Debugf("Persisting Vendor entity with id %q", model.ID)
 	return r.creator.Create(ctx, r.conv.ToEntity(model))
 }
 
@@ -60,23 +60,23 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Vendor) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
-	log.C(ctx).Debugf("Updating Vendor entity with id %q", model.OrdID)
+	log.C(ctx).Debugf("Updating Vendor entity with id %q", model.ID)
 	return r.updater.UpdateSingle(ctx, r.conv.ToEntity(model))
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Vendor entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("ord_id", id)})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("ord_id", id)})
+	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error) {
 	log.C(ctx).Debugf("Getting Vendor entity with id %q", id)
 	var productEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("ord_id", id)}, repo.NoOrderBy, &productEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &productEnt); err != nil {
 		return nil, err
 	}
 

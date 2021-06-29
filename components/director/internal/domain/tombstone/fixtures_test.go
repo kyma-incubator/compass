@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	tombstoneID      = "tombstoneID"
 	tenantID         = "tenantID"
 	appID            = "appID"
 	ordID            = "com.compass.v1"
@@ -16,6 +17,7 @@ const (
 
 func fixEntityTombstone() *tombstone.Entity {
 	return &tombstone.Entity{
+		ID:            tombstoneID,
 		OrdID:         ordID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
@@ -25,6 +27,7 @@ func fixEntityTombstone() *tombstone.Entity {
 
 func fixTombstoneModel() *model.Tombstone {
 	return &model.Tombstone{
+		ID:            tombstoneID,
 		OrdID:         ordID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
@@ -40,11 +43,11 @@ func fixTombstoneModelInput() *model.TombstoneInput {
 }
 
 func fixTombstoneColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "removal_date"}
+	return []string{"ord_id", "tenant_id", "app_id", "removal_date", "id"}
 }
 
 func fixTombstoneRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "removalDate"}
+	return []driver.Value{ordID, tenantID, appID, "removalDate", tombstoneID}
 }
 
 func fixTombstoneUpdateArgs() []driver.Value {
