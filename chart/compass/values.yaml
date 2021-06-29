@@ -65,7 +65,7 @@ global:
       version: "PR-1910"
     ord_service:
       dir:
-      version: "PR-30"
+      version: "PR-31"
     schema_migrator:
       dir:
       version: "PR-1905"
@@ -82,10 +82,10 @@ global:
       version: "PR-1910"
     console:
       dir:
-      version: "PR-34"
+      version: "PR-35"
     e2e_tests:
       dir:
-      version: "PR-1910"
+      version: "PR-1912"
   isLocalEnv: false
   oauth2:
     host: oauth2

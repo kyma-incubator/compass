@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	productID        = "productID"
 	tenantID         = "tenantID"
 	appID            = "appID"
 	ordID            = "com.compass.v1"
@@ -21,6 +22,7 @@ const (
 
 func fixEntityProduct() *product.Entity {
 	return &product.Entity{
+		ID:               productID,
 		OrdID:            ordID,
 		TenantID:         tenantID,
 		ApplicationID:    appID,
@@ -42,6 +44,7 @@ func fixEntityProduct() *product.Entity {
 func fixProductModel() *model.Product {
 	parent := "parent"
 	return &model.Product{
+		ID:               productID,
 		OrdID:            ordID,
 		TenantID:         tenantID,
 		ApplicationID:    appID,
@@ -68,12 +71,12 @@ func fixProductModelInput() *model.ProductInput {
 }
 
 func fixProductColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
+	return []string{"ord_id", "tenant_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
 }
 
 func fixProductRow() []driver.Value {
 	return []driver.Value{ordID, tenantID, appID, "title", "short desc", "vendorID", "parent",
-		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIds)}
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIds), productID}
 }
 
 func fixProductUpdateArgs() []driver.Value {
