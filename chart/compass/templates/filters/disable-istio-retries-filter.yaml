@@ -1,8 +1,8 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: disable-retries-filter
-  namespace: istio-system
+  name: {{ .Chart.Name }}-disable-retries-filter
+  namespace: {{ .Values.global.istio.namespace }}
 spec:
   configPatches:
     - applyTo: HTTP_FILTER
