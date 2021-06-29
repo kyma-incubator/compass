@@ -16,9 +16,9 @@ import (
 )
 
 type APIDefinition struct {
-	ApplicationID                           string  `hash:"ignore"`
-	PackageID                               *string `hash:"ignore"`
-	Tenant                                  string  `hash:"ignore"`
+	ApplicationID                           string
+	PackageID                               *string
+	Tenant                                  string
 	Name                                    string
 	Description                             *string
 	TargetURLs                              json.RawMessage
@@ -46,8 +46,8 @@ type APIDefinition struct {
 	CustomImplementationStandardDescription *string
 	Version                                 *Version
 	Extensible                              json.RawMessage
-	ResourceHash                            *string `hash:"ignore"`
-	*BaseEntity                             `hash:"ignore"`
+	ResourceHash                            *string
+	*BaseEntity
 }
 
 func (_ *APIDefinition) GetType() resource.Type {
@@ -86,7 +86,7 @@ type APIDefinitionInput struct {
 	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
-	*VersionInput
+	*VersionInput `hash:"ignore"`
 }
 
 type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched

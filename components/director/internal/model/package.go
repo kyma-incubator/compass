@@ -8,9 +8,9 @@ import (
 )
 
 type Package struct {
-	ID                string `hash:"ignore"`
-	TenantID          string `hash:"ignore"`
-	ApplicationID     string `hash:"ignore"`
+	ID                string
+	TenantID          string
+	ApplicationID     string
 	OrdID             string
 	Vendor            *string
 	Title             string
@@ -28,7 +28,7 @@ type Package struct {
 	PartOfProducts    json.RawMessage
 	LineOfBusiness    json.RawMessage
 	Industry          json.RawMessage
-	ResourceHash      *string `hash:"ignore"`
+	ResourceHash      *string
 }
 
 type PackageInput struct {
@@ -37,7 +37,7 @@ type PackageInput struct {
 	Title             string          `json:"title"`
 	ShortDescription  string          `json:"shortDescription"`
 	Description       string          `json:"description"`
-	Version           string          `json:"version"`
+	Version           string          `json:"version" hash:"ignore"`
 	PackageLinks      json.RawMessage `json:"packageLinks"`
 	Links             json.RawMessage `json:"links"`
 	LicenseType       *string         `json:"licenseType"`

@@ -14,9 +14,9 @@ import (
 )
 
 type EventDefinition struct {
-	Tenant              string  `hash:"ignore"`
-	ApplicationID       string  `hash:"ignore"`
-	PackageID           *string `hash:"ignore"`
+	Tenant              string
+	ApplicationID       string
+	PackageID           *string
 	Name                string
 	Description         *string
 	Group               *string
@@ -37,9 +37,9 @@ type EventDefinition struct {
 	LineOfBusiness      json.RawMessage
 	Industry            json.RawMessage
 	Extensible          json.RawMessage
-	ResourceHash        *string `hash:"ignore"`
+	ResourceHash        *string
 	Version             *Version
-	*BaseEntity         `hash:"ignore"`
+	*BaseEntity
 }
 
 func (_ *EventDefinition) GetType() resource.Type {
@@ -79,7 +79,7 @@ type EventDefinitionInput struct {
 	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
-	*VersionInput
+	*VersionInput `hash:"ignore"`
 }
 
 type EventResourceDefinition struct { // This is the place from where the specification for this API is fetched

@@ -5,12 +5,12 @@ import (
 )
 
 type Spec struct {
-	ID         string                  `hash:"ignore"`
-	Tenant     string                  `hash:"ignore"`
-	ObjectType SpecReferenceObjectType `hash:"ignore"`
-	ObjectID   string                  `hash:"ignore"`
+	ID         string
+	Tenant     string
+	ObjectType SpecReferenceObjectType
+	ObjectID   string
 
-	Data       *string `hash:"ignore"`
+	Data       *string
 	Format     SpecFormat
 	APIType    *APISpecType
 	EventType  *EventSpecType
