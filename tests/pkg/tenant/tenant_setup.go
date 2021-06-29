@@ -2,12 +2,10 @@ package tenant
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"strings"
-
+	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vrischmann/envconfig"
+	"log"
 
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +13,7 @@ import (
 const (
 	testProvider           = "Compass Tests"
 	testDefaultTenant      = "Test Default"
-	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (%s);`
+	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (?);`
 
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
@@ -185,18 +183,21 @@ func (mgr TestTenantsManager) Cleanup() {
 
 	tenants := mgr.List()
 	args := make([]interface{}, 0, len(tenants))
-	var query string
-	for i, tnt := range tenants {
+	for _, tnt := range tenants {
 		args = append(args, tnt.ID)
-		query += fmt.Sprintf("$%d, ", i+1)
 	}
-	query = strings.TrimSuffix(query, ", ")
+
+	query, args, err := sqlx.In(deleteLabelDefinitions, args)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query = sqlx.Rebind(sqlx.BindType("postgres"), query)
 
 	// A tenant is considered initialized if there is any labelDefinitions associated with it.
 	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
 	// Therefore once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
 	// There is a test relying on this (testing tenants graphql query).
-	_, err = tx.ExecContext(context.TODO(), fmt.Sprintf(deleteLabelDefinitions, query), args...)
+	_, err = tx.ExecContext(context.TODO(), query, args...)
 	if err != nil {
 		log.Fatal(err)
 	}
