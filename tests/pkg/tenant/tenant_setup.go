@@ -3,10 +3,11 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/vrischmann/envconfig"
 	"log"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/vrischmann/envconfig"
 
 	"github.com/stretchr/testify/require"
 )
