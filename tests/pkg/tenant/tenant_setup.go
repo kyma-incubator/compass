@@ -183,10 +183,10 @@ func (mgr TestTenantsManager) Cleanup() {
 	}
 
 	tenants := mgr.List()
-	ids := make([]string, 0, len(tenants))
+	args := make([]interface{}, 0, len(tenants))
 	var query string
 	for i, tnt := range tenants {
-		ids = append(ids, tnt.ID)
+		args = append(args, tnt.ID)
 		query += fmt.Sprintf("$%d, ", i+1)
 	}
 	query = strings.TrimSuffix(query, ", ")
@@ -195,7 +195,7 @@ func (mgr TestTenantsManager) Cleanup() {
 	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
 	// Therefore once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
 	// There is a test relying on this (testing tenants graphql query).
-	_, err = tx.ExecContext(context.TODO(), fmt.Sprintf(deleteLabelDefinitions, query), ids)
+	_, err = tx.ExecContext(context.TODO(), fmt.Sprintf(deleteLabelDefinitions, query), args...)
 	if err != nil {
 		log.Fatal(err)
 	}
