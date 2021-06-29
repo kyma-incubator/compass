@@ -2,7 +2,9 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vrischmann/envconfig"
@@ -13,7 +15,7 @@ import (
 const (
 	testProvider           = "Compass Tests"
 	testDefaultTenant      = "Test Default"
-	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings);`
+	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (%s);`
 
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
@@ -53,9 +55,9 @@ type TestTenantsManager struct {
 func (mgr *TestTenantsManager) Init() {
 	mgr.Cleanup()
 	mgr.tenantsByName = map[string]Tenant{
-		"Test Default": {
+		testDefaultTenant: {
 			ID:             "5577cf46-4f78-45fa-b55f-a42a3bdba868",
-			Name:           "Test Default",
+			Name:           testDefaultTenant,
 			ExternalTenant: "5577cf46-4f78-45fa-b55f-a42a3bdba868",
 			ProviderName:   testProvider,
 			Status:         Active,
@@ -144,6 +146,13 @@ func (mgr *TestTenantsManager) Init() {
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		TenantsQueryNotInitializedTenantName: {
+			ID:             "72329135-27fd-4284-9bcb-37ea8d6307d0",
+			Name:           TenantsQueryNotInitializedTenantName,
+			ExternalTenant: "72329135-27fd-4284-9bcb-37ea8d6307d0",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 		TestDeleteApplicationIfInScenario: {
 			ID:             "0d597250-6b2d-4d89-9c54-e23cb497cd01",
 			Name:           TestDeleteApplicationIfInScenario,
@@ -174,7 +183,17 @@ func (mgr TestTenantsManager) Cleanup() {
 		log.Fatal(err)
 	}
 
-	_, err = tx.ExecContext(context.TODO(), deleteLabelDefinitions)
+	tenants := mgr.List()
+	ids := make([]string, 0, len(tenants))
+	for _, tnt := range tenants {
+		ids = append(ids, tnt.ID)
+	}
+
+	// A tenant is considered initialized if there is any labelDefinitions associated with it.
+	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
+	// Therefore once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
+	// There is a test relying on this (testing tenants graphql query).
+	_, err = tx.ExecContext(context.TODO(), fmt.Sprintf(deleteLabelDefinitions, strings.Join(ids, ",")))
 	if err != nil {
 		log.Fatal(err)
 	}
