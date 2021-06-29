@@ -186,7 +186,7 @@ func (mgr TestTenantsManager) Cleanup() {
 	tenants := mgr.List()
 	ids := make([]string, 0, len(tenants))
 	for _, tnt := range tenants {
-		ids = append(ids, tnt.ID)
+		ids = append(ids, fmt.Sprintf("'%s'", tnt.ID))
 	}
 
 	// A tenant is considered initialized if there is any labelDefinitions associated with it.
