@@ -37,6 +37,7 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 
 	// setup available scenarios
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"DEFAULT", testScenarioA, testScenarioB, testScenarioC})
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	// create automatic scenario assignments
 	inputAssignment1 := graphql.AutomaticScenarioAssignmentSetInput{
@@ -99,7 +100,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	devScenario := "DEVELOPMENT"
 	manualScenario := "MANUAL"
 	defaultScenario := "DEFAULT"
+
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{prodScenario, manualScenario, devScenario, defaultScenario})
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	rtms := make([]*graphql.RuntimeExt, 3)
 	for i := 0; i < 3; i++ {
@@ -248,7 +251,9 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 	scenarios := []string{defaultValue, scenario1, scenario2}
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteAutomaticScenarioAssignmentForScenarioTenantName)
+
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenarios)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: scenario1,
@@ -300,7 +305,9 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	scenarios := []string{defaultValue, scenario1, scenario2, scenario3}
 
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteAutomaticScenarioAssignmentForSelectorTenantName)
+
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenarios)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	selector := graphql.LabelSelectorInput{Key: "test-key", Value: "test-value"}
 	selector2 := graphql.LabelSelectorInput{
@@ -351,7 +358,9 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	scenariosOnlyDefault := []interface{}{defaultValue}
 	scenarios := []interface{}{scenario, defaultValue}
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.AutomaticScenarioAssignmentsWholeScenarioTenantName)
+
 	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	selector := graphql.LabelSelectorInput{Key: "testkey", Value: "testvalue"}
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario, Selector: &selector}

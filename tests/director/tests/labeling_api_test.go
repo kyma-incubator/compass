@@ -834,6 +834,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	var schema interface{} = scenarioSchema
 
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
