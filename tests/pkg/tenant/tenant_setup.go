@@ -14,7 +14,7 @@ import (
 const (
 	testProvider           = "Compass Tests"
 	testDefaultTenant      = "Test Default"
-	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (?);`
+	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE external_tenant IN (?));`
 
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
@@ -185,7 +185,7 @@ func (mgr TestTenantsManager) Cleanup() {
 	tenants := mgr.List()
 	ids := make([]string, 0, len(tenants))
 	for _, tnt := range tenants {
-		ids = append(ids, tnt.ID)
+		ids = append(ids, tnt.ExternalTenant)
 	}
 
 	query, args, err := sqlx.In(deleteLabelDefinitions, ids)
