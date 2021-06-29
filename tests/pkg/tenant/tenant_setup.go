@@ -52,7 +52,6 @@ type TestTenantsManager struct {
 }
 
 func (mgr *TestTenantsManager) Init() {
-	mgr.Cleanup()
 	mgr.tenantsByName = map[string]Tenant{
 		testDefaultTenant: {
 			ID:             "5577cf46-4f78-45fa-b55f-a42a3bdba868",
@@ -160,6 +159,7 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 		},
 	}
+	mgr.Cleanup()
 }
 
 func (mgr TestTenantsManager) Cleanup() {
