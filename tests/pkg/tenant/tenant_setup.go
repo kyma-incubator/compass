@@ -3,11 +3,10 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"log"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vrischmann/envconfig"
+	"log"
+	"strings"
 
 	"github.com/stretchr/testify/require"
 )
@@ -185,15 +184,18 @@ func (mgr TestTenantsManager) Cleanup() {
 
 	tenants := mgr.List()
 	ids := make([]string, 0, len(tenants))
-	for _, tnt := range tenants {
-		ids = append(ids, fmt.Sprintf("'%s'", tnt.ID))
+	var query string
+	for i, tnt := range tenants {
+		ids = append(ids, tnt.ID)
+		query += fmt.Sprintf("$%d, ", i+1)
 	}
+	query = strings.TrimSuffix(query, ", ")
 
 	// A tenant is considered initialized if there is any labelDefinitions associated with it.
 	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
 	// Therefore once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
 	// There is a test relying on this (testing tenants graphql query).
-	_, err = tx.ExecContext(context.TODO(), fmt.Sprintf(deleteLabelDefinitions, strings.Join(ids, ",")))
+	_, err = tx.ExecContext(context.TODO(), fmt.Sprintf(deleteLabelDefinitions, query), ids)
 	if err != nil {
 		log.Fatal(err)
 	}
