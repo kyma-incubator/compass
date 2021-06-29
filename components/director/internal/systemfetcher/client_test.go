@@ -37,7 +37,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("Success with template mappings", func(t *testing.T) {
 		systemfetcher.Mappings = []systemfetcher.TemplateMapping{
 			{
-				ID:        "type1",
+				ID:          "type1",
 				SourceKey:   []string{"templateProp"},
 				SourceValue: []string{"type1"},
 			},
