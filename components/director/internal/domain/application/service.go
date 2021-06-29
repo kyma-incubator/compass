@@ -265,7 +265,7 @@ func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "while filtering unique and non-existing applications")
 	}
-
+	log.C(ctx).Infof("Will create %d systems", len(appsToAdd))
 	for _, a := range appsToAdd {
 		if a.TemplateID == "" {
 			_, err = s.Create(ctx, a.ApplicationRegisterInput)
@@ -547,6 +547,7 @@ func (s *service) filterUniqueNonExistingApplications(ctx context.Context, appli
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
 	}
+	log.C(ctx).Debugf("Found %d existing systems", len(allApps))
 
 	type key struct {
 		name         string

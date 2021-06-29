@@ -136,6 +136,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 }
 
 func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
+	log.C(ctx).Infof("Saving %d systems for tenant %s", len(systems), tenantMapping.Name)
 	var appInputs []model.ApplicationRegisterInputWithTemplate
 
 	tx, err := s.transaction.Begin()

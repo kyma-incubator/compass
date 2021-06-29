@@ -120,12 +120,12 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	for _, tm := range systemToTemplateMappings {
+	for index, tm := range systemToTemplateMappings {
 		appTemplate, err := appTemplateSvc.GetByName(ctx, tm.Name)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		tm.ID = appTemplate.ID
+		systemToTemplateMappings[index].ID = appTemplate.ID
 	}
 	err = tx.Commit()
 	if err != nil {
