@@ -534,7 +534,6 @@ func TestDeleteApplication(t *testing.T) {
 		var schema interface{} = jsonSchema
 
 		fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
-		defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios}
@@ -950,9 +949,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	var schema interface{} = jsonSchema
 
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, otherTenant)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, otherTenant)
 
 	applications := []struct {
 		ApplicationName string
@@ -1162,7 +1159,6 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	var schema interface{} = jsonSchema
 
 	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ScenariosLabel, true, tenantID)
 
 	applications := []struct {
 		ApplicationName string

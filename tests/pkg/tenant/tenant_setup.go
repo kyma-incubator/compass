@@ -183,12 +183,12 @@ func (mgr TestTenantsManager) Cleanup() {
 	}
 
 	tenants := mgr.List()
-	args := make([]interface{}, 0, len(tenants))
+	ids := make([]string, 0, len(tenants))
 	for _, tnt := range tenants {
-		args = append(args, tnt.ID)
+		ids = append(ids, tnt.ID)
 	}
 
-	query, args, err := sqlx.In(deleteLabelDefinitions, args)
+	query, args, err := sqlx.In(deleteLabelDefinitions, ids)
 	if err != nil {
 		log.Fatal(err)
 	}
