@@ -7,7 +7,7 @@ spec:
   configPatches:
     - applyTo: HTTP_FILTER
       match:
-        context: SIDECAR_OUTBOUND
+        context: ANY
         listener:
           filterChain:
             filter:
