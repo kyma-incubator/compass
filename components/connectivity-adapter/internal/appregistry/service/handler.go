@@ -254,7 +254,6 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// TODO: Why shouldn't we allow for such name change? It's done in the App Registry
 	if ok := h.serviceWithNormalizedNameAlreadyExists(serviceDetails.Name, reqContext.AppBundles); !ok {
 		err := apperrors.WrongInput("cannot change service name to %s for service with ID %s", serviceDetails.Name, id)
 		logger.Error(err)
