@@ -68,6 +68,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		ProviderName: repo.StringPtrFromNullableString(entity.ProviderName),
 		Tenant:       entity.TenantID,
 		Name:         entity.Name,
+		SystemNumber: repo.StringPtrFromNullableString(entity.SystemNumber),
 		Description:  repo.StringPtrFromNullableString(entity.Description),
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusCondition(entity.StatusCondition),
@@ -96,12 +97,13 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		Status:              c.statusModelToGraphQL(in.Status),
-		Name:                in.Name,
-		Description:         in.Description,
-		HealthCheckURL:      in.HealthCheckURL,
-		IntegrationSystemID: in.IntegrationSystemID,
-		ProviderName:        in.ProviderName,
+		Status:                c.statusModelToGraphQL(in.Status),
+		Name:                  in.Name,
+		Description:           in.Description,
+		HealthCheckURL:        in.HealthCheckURL,
+		IntegrationSystemID:   in.IntegrationSystemID,
+		ApplicationTemplateID: in.ApplicationTemplateID,
+		ProviderName:          in.ProviderName,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
