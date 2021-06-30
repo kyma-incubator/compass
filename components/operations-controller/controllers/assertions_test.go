@@ -196,7 +196,7 @@ func assertStatusEquals(expectedStatus, actualStatus *v1alpha1.OperationStatus) 
 	actualConditions := conditionSliceToMap(actualStatus.Conditions)
 	for _, expectedCondition := range expectedStatus.Conditions {
 		actualCondition, exists := actualConditions[expectedCondition.Type]
-		if !exists || (actualCondition != expectedCondition) {
+		if !exists || (actualCondition.Status != expectedCondition.Status) || (actualCondition.Type != expectedCondition.Type) || !strings.Contains(actualCondition.Message, expectedCondition.Message) {
 			return false
 		}
 	}
