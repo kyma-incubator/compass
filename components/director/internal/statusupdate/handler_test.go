@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	logrustest "github.com/sirupsen/logrus/hooks/test"
 
@@ -53,7 +55,7 @@ func TestUpdate_Handler(t *testing.T) {
 			RepoFn: func() *automock.StatusUpdateRepository {
 				return nil
 			},
-			Request:          createRequestWithClaims(testID, consumer.IntegrationSystem),
+			Request:          createRequestWithClaims(testID, consumer.IntegrationSystem, oathkeeper.OAuth2Flow),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
 			MockNextHandler:  fixNextHandler(t),
@@ -64,13 +66,13 @@ func TestUpdate_Handler(t *testing.T) {
 			RepoFn: func() *automock.StatusUpdateRepository {
 				return nil
 			},
-			Request:          createRequestWithClaims(testID, consumer.User),
+			Request:          createRequestWithClaims(testID, consumer.User, oathkeeper.JWTAuthFlow),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
 			MockNextHandler:  fixNextHandler(t),
 		},
 		{
-			Name: "In case of Application update status and execute next handler",
+			Name: "In case of Application and Certificate flow update status and execute next handler",
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
@@ -78,13 +80,24 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(testID, consumer.Application),
+			Request:          createRequestWithClaims(testID, consumer.Application, oathkeeper.CertificateFlow),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
 			MockNextHandler:  fixNextHandler(t),
 		},
 		{
-			Name: "In case of Runtime update status and execute next handler",
+			Name: "In case of Application and OneTimeToken flow do nothing and execute next handler",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			RepoFn: func() *automock.StatusUpdateRepository {
+				return nil
+			},
+			Request:          createRequestWithClaims(testID, consumer.Application, oathkeeper.OneTimeTokenFlow),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedResponse: "OK",
+			MockNextHandler:  fixNextHandler(t),
+		},
+		{
+			Name: "In case of Runtime and Certificate flow update status and execute next handler",
 			TxFn: txGen.ThatSucceeds,
 			RepoFn: func() *automock.StatusUpdateRepository {
 				repo := automock.StatusUpdateRepository{}
@@ -92,7 +105,18 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(testID, consumer.Runtime),
+			Request:          createRequestWithClaims(testID, consumer.Runtime, oathkeeper.CertificateFlow),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedResponse: "OK",
+			MockNextHandler:  fixNextHandler(t),
+		},
+		{
+			Name: "In case of Runtime and OneTimeToken flow do nothing and execute next handler",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			RepoFn: func() *automock.StatusUpdateRepository {
+				return nil
+			},
+			Request:          createRequestWithClaims(testID, consumer.Runtime, oathkeeper.OneTimeTokenFlow),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
 			MockNextHandler:  fixNextHandler(t),
@@ -105,7 +129,7 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", mock.Anything, testID, statusupdate.Applications).Return(true, nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(testID, consumer.Application),
+			Request:          createRequestWithClaims(testID, consumer.Application, oathkeeper.CertificateFlow),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
 			MockNextHandler:  fixNextHandler(t),
@@ -118,7 +142,7 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(true, nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(testID, consumer.Runtime),
+			Request:          createRequestWithClaims(testID, consumer.Runtime, oathkeeper.CertificateFlow),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
 			MockNextHandler:  fixNextHandler(t),
@@ -143,7 +167,7 @@ func TestUpdate_Handler(t *testing.T) {
 				repo := automock.StatusUpdateRepository{}
 				return &repo
 			},
-			Request:              createRequestWithClaims(testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application, oathkeeper.CertificateFlow),
 			ExpectedStatus:       http.StatusOK,
 			ExpectedErrorMessage: str.Ptr("An error has occurred while opening transaction:"),
 			ExpectedError:        str.Ptr("test"),
@@ -157,7 +181,7 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(false, testErr)
 				return &repo
 			},
-			Request:              createRequestWithClaims(testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application, oathkeeper.CertificateFlow),
 			ExpectedStatus:       http.StatusOK,
 			ExpectedErrorMessage: str.Ptr("An error has occurred while checking repository status:"),
 			ExpectedError:        str.Ptr("test"),
@@ -171,7 +195,7 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(true, nil)
 				return &repo
 			},
-			Request:              createRequestWithClaims(testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application, oathkeeper.CertificateFlow),
 			ExpectedStatus:       http.StatusOK,
 			ExpectedErrorMessage: str.Ptr("An error has occurred while committing transaction:"),
 			ExpectedError:        str.Ptr("test"),
@@ -186,7 +210,7 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(testErr)
 				return &repo
 			},
-			Request:              createRequestWithClaims(testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application, oathkeeper.CertificateFlow),
 			ExpectedStatus:       http.StatusOK,
 			ExpectedErrorMessage: str.Ptr("An error has occurred while updating repository status:"),
 			ExpectedError:        str.Ptr("test"),
@@ -230,9 +254,9 @@ func TestUpdate_Handler(t *testing.T) {
 
 }
 
-func createRequestWithClaims(id string, consumerType consumer.ConsumerType) *http.Request {
+func createRequestWithClaims(id string, consumerType consumer.ConsumerType, flow oathkeeper.AuthFlow) *http.Request {
 	req := http.Request{}
-	apiConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumerType}
+	apiConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumerType, Flow: flow}
 	ctxWithConsumerInfo := consumer.SaveToContext(context.TODO(), apiConsumer)
 	return req.WithContext(ctxWithConsumerInfo)
 }
