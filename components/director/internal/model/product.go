@@ -5,6 +5,7 @@ import (
 )
 
 type Product struct {
+	ID               string
 	OrdID            string
 	TenantID         string
 	ApplicationID    string
@@ -26,12 +27,13 @@ type ProductInput struct {
 	Labels           json.RawMessage `json:"labels"`
 }
 
-func (i *ProductInput) ToProduct(tenantID, appID string) *Product {
+func (i *ProductInput) ToProduct(id, tenantID, appID string) *Product {
 	if i == nil {
 		return nil
 	}
 
 	return &Product{
+		ID:               id,
 		OrdID:            i.OrdID,
 		TenantID:         tenantID,
 		ApplicationID:    appID,

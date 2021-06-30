@@ -5,6 +5,7 @@ import (
 )
 
 type Vendor struct {
+	ID            string
 	OrdID         string
 	TenantID      string
 	ApplicationID string
@@ -20,12 +21,13 @@ type VendorInput struct {
 	Labels   json.RawMessage `json:"labels"`
 }
 
-func (i *VendorInput) ToVendor(tenantID, appID string) *Vendor {
+func (i *VendorInput) ToVendor(id, tenantID, appID string) *Vendor {
 	if i == nil {
 		return nil
 	}
 
 	return &Vendor{
+		ID:            id,
 		OrdID:         i.OrdID,
 		TenantID:      tenantID,
 		ApplicationID: appID,

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
-
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -455,7 +453,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := mp_package.NewService(nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN

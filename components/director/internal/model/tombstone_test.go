@@ -10,7 +10,8 @@ import (
 
 func TestTombstoneInput_ToTombstone(t *testing.T) {
 	// given
-	id := "foo"
+	id := "test"
+	ordID := "foo"
 	appID := "bar"
 	removalDate := "Sample"
 	tenant := "tenant"
@@ -23,11 +24,12 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.TombstoneInput{
-				OrdID:       id,
+				OrdID:       ordID,
 				RemovalDate: removalDate,
 			},
 			Expected: &model.Tombstone{
-				OrdID:         id,
+				ID:            id,
+				OrdID:         ordID,
 				TenantID:      tenant,
 				ApplicationID: appID,
 				RemovalDate:   removalDate,
@@ -44,7 +46,7 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToTombstone(tenant, appID)
+			result := testCase.Input.ToTombstone(id, tenant, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
