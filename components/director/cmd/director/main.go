@@ -129,7 +129,7 @@ type config struct {
 
 	DisableAsyncMode bool `envconfig:"default=false"`
 
-	HealthConfig healthz.Config `envconfig:"APP_HEALTH"`
+	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
 }
 
 func main() {
@@ -295,10 +295,9 @@ func main() {
 	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
 
 	logger.Infof("Registering health endpoint...")
-	health, err := healthz.New(ctx, cfg.HealthConfig).
-		RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).
-		Start()
+	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
+	health.RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).Start()
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))

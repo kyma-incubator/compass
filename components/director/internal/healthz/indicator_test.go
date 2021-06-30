@@ -33,88 +33,6 @@ func TestNewIndicator(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	t.Run("should return error if interval is <= 0", func(t *testing.T) {
-		// GIVEN
-		ctx, cancel := context.WithCancel(context.TODO())
-		defer cancel()
-		indicatorFunc := dummyIndicatorFunc(nil)
-		invalidInterval := healthz.IndicatorConfig{
-			Interval: 0,
-		}
-
-		// WHEN
-		indicator := healthz.NewIndicator("test", indicatorFunc)
-		indicator.Configure(invalidInterval)
-		err := indicator.Run(ctx)
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "interval")
-		require.NotNil(t, indicator)
-	})
-	t.Run("should return error if timeout is <= 0", func(t *testing.T) {
-		// GIVEN
-		ctx, cancel := context.WithCancel(context.TODO())
-		defer cancel()
-		indicatorFunc := dummyIndicatorFunc(nil)
-		invalidTimeout := healthz.IndicatorConfig{
-			Interval: time.Second,
-			Timeout:  0,
-		}
-
-		// WHEN
-		indicator := healthz.NewIndicator("test", indicatorFunc)
-		indicator.Configure(invalidTimeout)
-		err := indicator.Run(ctx)
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "timeout")
-		require.NotNil(t, indicator)
-	})
-	t.Run("should return error if initialDelay is < 0", func(t *testing.T) {
-		// GIVEN
-		ctx, cancel := context.WithCancel(context.TODO())
-		defer cancel()
-		indicatorFunc := dummyIndicatorFunc(nil)
-		invalidDelay := healthz.IndicatorConfig{
-			Interval:     time.Second,
-			Timeout:      time.Second,
-			InitialDelay: -1,
-		}
-
-		// WHEN
-		indicator := healthz.NewIndicator("test", indicatorFunc)
-		indicator.Configure(invalidDelay)
-		err := indicator.Run(ctx)
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "initial delay")
-		require.NotNil(t, indicator)
-	})
-	t.Run("should return error if threshold is < 0", func(t *testing.T) {
-		// GIVEN
-		ctx, cancel := context.WithCancel(context.TODO())
-		defer cancel()
-		indicatorFunc := dummyIndicatorFunc(nil)
-		invalidThreshold := healthz.IndicatorConfig{
-			Interval:     time.Second,
-			Timeout:      time.Second,
-			InitialDelay: time.Second,
-			Threshold:    -1,
-		}
-
-		// WHEN
-		indicator := healthz.NewIndicator("test", indicatorFunc)
-		indicator.Configure(invalidThreshold)
-		err := indicator.Run(ctx)
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "threshold")
-		require.NotNil(t, indicator)
-	})
 	t.Run("should return context timeout when timeout is reached", func(t *testing.T) {
 		// GIVEN
 		ctx, cancel := context.WithCancel(context.TODO())
@@ -132,13 +50,12 @@ func TestRun(t *testing.T) {
 		// WHEN
 		indicator := healthz.NewIndicator("test", indicatorFunc)
 		indicator.Configure(cfg)
-		err := indicator.Run(ctx)
+		indicator.Run(ctx)
 
 		// THEN
 		require.Eventually(t, func() bool {
 			return indicator.Status().Error() != nil
 		}, time.Second, time.Second/2)
-		require.NoError(t, err)
 		require.NotNil(t, indicator)
 		require.NotNil(t, indicator.Status())
 		require.Error(t, indicator.Status().Error())
@@ -169,14 +86,13 @@ func TestRun(t *testing.T) {
 
 		})
 		indicator.Configure(cfg)
-		err := indicator.Run(ctx)
+		indicator.Run(ctx)
 
 		// THEN
 		require.Eventually(t, func() bool {
 			fmt.Println(atomic.LoadUint64(&counter))
 			return atomic.LoadUint64(&counter) >= 4
 		}, 5*time.Millisecond, time.Millisecond)
-		require.NoError(t, err)
 		require.NotNil(t, indicator)
 	})
 	t.Run("should respect the threshold", func(t *testing.T) {
@@ -199,10 +115,9 @@ func TestRun(t *testing.T) {
 			return status
 		})
 		indicator.Configure(cfg)
-		err := indicator.Run(ctx)
+		indicator.Run(ctx)
 
 		// THEN
-		require.NoError(t, err)
 		require.NotNil(t, indicator)
 
 		require.NoError(t, indicator.Status().Error())

@@ -2,7 +2,6 @@ package healthz
 
 import (
 	"context"
-	"errors"
 	"math"
 	"sync"
 	"time"
@@ -14,7 +13,7 @@ import (
 type Indicator interface {
 	Name() string
 	Configure(IndicatorConfig)
-	Run(ctx context.Context) error
+	Run(ctx context.Context)
 	Status() Status
 }
 
@@ -57,7 +56,7 @@ type indicator struct {
 	failureCount  int
 }
 
-// NewIndicator returns new indicator from the provided IndicatorConfig and IndicatorFunc
+// NewIndicator returns new indicator with the provided name and IndicatorFunc
 func NewIndicator(name string, indicatorFunc IndicatorFunc) Indicator {
 	return &indicator{
 		name:          name,
@@ -82,19 +81,7 @@ func (i *indicator) Configure(cfg IndicatorConfig) {
 }
 
 // Run starts the periodic indicator checks
-func (i *indicator) Run(ctx context.Context) error {
-	if i.interval <= 0 {
-		return errors.New("indicator interval could not be <= 0")
-	}
-	if i.timeout <= 0 {
-		return errors.New("indicator timeout could not be <= 0")
-	}
-	if i.initialDelay < 0 {
-		return errors.New("indicator initial delay could not be < 0")
-	}
-	if i.threshold < 0 {
-		return errors.New("indicator threshold could not be < 0")
-	}
+func (i *indicator) Run(ctx context.Context) {
 
 	go func() {
 		<-time.After(i.initialDelay)
@@ -135,7 +122,6 @@ func (i *indicator) Run(ctx context.Context) error {
 			}
 		}
 	}()
-	return nil
 }
 
 // Status reports the last calculated status of the indicator

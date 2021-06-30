@@ -36,9 +36,64 @@ func TestNew(t *testing.T) {
 		// GIVEN
 		ctx := context.TODO()
 		// WHEN
-		health := healthz.New(ctx, healthz.Config{})
+		health, err := healthz.New(ctx, healthz.Config{})
 		// THEN
 		require.NotNil(t, health)
+		require.NoError(t, err)
+	})
+	t.Run("should return error on invalid interval", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		// WHEN
+		health, err := healthz.New(ctx, healthz.Config{Indicators: []healthz.IndicatorConfig{{
+			Interval: 0,
+		}}})
+		// THEN
+		require.Nil(t, health)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "interval")
+	})
+	t.Run("should return error on invalid timeout", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		// WHEN
+		health, err := healthz.New(ctx, healthz.Config{Indicators: []healthz.IndicatorConfig{{
+			Interval: time.Second,
+			Timeout:  0,
+		}}})
+		// THEN
+		require.Nil(t, health)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "timeout")
+	})
+	t.Run("should return error on invalid initial delay", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		// WHEN
+		health, err := healthz.New(ctx, healthz.Config{Indicators: []healthz.IndicatorConfig{{
+			Interval:     time.Second,
+			Timeout:      time.Second,
+			InitialDelay: -1,
+		}}})
+		// THEN
+		require.Nil(t, health)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "initial delay ")
+	})
+	t.Run("should return error on invalid threshold", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		// WHEN
+		health, err := healthz.New(ctx, healthz.Config{Indicators: []healthz.IndicatorConfig{{
+			Interval:     time.Second,
+			Timeout:      time.Second,
+			InitialDelay: time.Second,
+			Threshold:    -1,
+		}}})
+		// THEN
+		require.Nil(t, health)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "threshold")
 	})
 }
 
@@ -73,11 +128,12 @@ func TestFullFlow(t *testing.T) {
 		secondInd.On("Configure", healthz.NewDefaultConfig()).Return()
 
 		// WHEN
-		health, err := healthz.New(ctx, healthCfg).
-			RegisterIndicator(firstInd).
+		health, err := healthz.New(ctx, healthCfg)
+		require.NoError(t, err)
+
+		health.RegisterIndicator(firstInd).
 			RegisterIndicator(secondInd).
 			Start()
-		require.NoError(t, err)
 		status := health.ReportStatus()
 
 		// THEN
@@ -116,11 +172,12 @@ func TestFullFlow(t *testing.T) {
 		secondInd.On("Configure", secondConfig).Return()
 
 		// WHEN
-		health, err := healthz.New(ctx, healthCfg).
-			RegisterIndicator(firstInd).
+		health, err := healthz.New(ctx, healthCfg)
+		require.NoError(t, err)
+
+		health.RegisterIndicator(firstInd).
 			RegisterIndicator(secondInd).
 			Start()
-		require.NoError(t, err)
 
 		status := health.ReportStatus()
 
@@ -162,46 +219,18 @@ func TestFullFlow(t *testing.T) {
 		secondInd.On("Configure", healthz.NewDefaultConfig()).Return()
 
 		// WHEN
-		health, err := healthz.New(ctx, healthCfg).
-			RegisterIndicator(firstInd).
+		health, err := healthz.New(ctx, healthCfg)
+		require.NoError(t, err)
+
+		health.RegisterIndicator(firstInd).
 			RegisterIndicator(secondInd).
 			Start()
-		require.NoError(t, err)
 
 		status := health.ReportStatus()
 
 		// THEN
 		require.Equal(t, status, healthz.DOWN)
 		AssertHandlerStatusCodeForHealth(t, health, http.StatusInternalServerError, healthz.DOWN)
-	})
-
-	t.Run("should return error when indicator run fails", func(t *testing.T) {
-		// GIVEN
-		ctx, cancel := context.WithCancel(context.TODO())
-		defer cancel()
-
-		healthCfg := healthz.Config{Indicators: []healthz.IndicatorConfig{}}
-
-		firstInd := &automock.Indicator{}
-		defer firstInd.AssertExpectations(t)
-		firstInd.On("Name").Return("First").Times(2)
-		firstInd.On("Run", ctx).Return(errors.New("some error"))
-		firstInd.On("Configure", healthz.NewDefaultConfig()).Return()
-
-		secondInd := &automock.Indicator{}
-		defer secondInd.AssertExpectations(t)
-		secondInd.On("Name").Return("Second").Times(1)
-		secondInd.On("Configure", healthz.NewDefaultConfig()).Return()
-
-		// WHEN
-		health, err := healthz.New(ctx, healthCfg).
-			RegisterIndicator(firstInd).
-			RegisterIndicator(secondInd).
-			Start()
-
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, health)
 	})
 }
 
