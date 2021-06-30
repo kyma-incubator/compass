@@ -77,7 +77,7 @@ global:
       version: "PR-1910"
     operations_controller:
       dir:
-      version: "PR-1910"
+      version: "PR-1924"
     tenant_fetcher:
       dir:
       version: "PR-1888"
