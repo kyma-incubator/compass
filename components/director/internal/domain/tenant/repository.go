@@ -24,11 +24,13 @@ const tableName string = `public.business_tenant_mappings`
 const labelDefinitionsTableName string = `public.label_definitions`
 const labelDefinitionsTenantIDColumn string = `tenant_id`
 
-var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}
+var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
 var (
 	idColumn                  = "id"
 	externalNameColumn        = "external_name"
 	externalTenantColumn      = "external_tenant"
+	parentColumn              = "parent"
+	typeColumn                = "type"
 	providerNameColumn        = "provider_name"
 	statusColumn              = "status"
 	initializedComputedColumn = "initialized"
