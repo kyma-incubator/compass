@@ -59,7 +59,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, tableColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
 		conv:               conv,
 	}
