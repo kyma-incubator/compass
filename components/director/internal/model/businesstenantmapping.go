@@ -32,7 +32,7 @@ type BusinessTenantMappingInput struct {
 	Name           string `json:"name"`
 	ExternalTenant string `json:"id"`
 	Parent         string
-	Type           string
+	Type           string `json:"type"`
 	Provider       string
 }
 
