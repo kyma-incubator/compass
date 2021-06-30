@@ -3,7 +3,6 @@ package healthz_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -71,7 +70,7 @@ func TestRun(t *testing.T) {
 
 		cfg := healthz.IndicatorConfig{
 			Name:         "First",
-			Interval:     time.Millisecond,
+			Interval:     10 * time.Millisecond,
 			Timeout:      time.Second,
 			InitialDelay: 0,
 			Threshold:    0,
@@ -90,9 +89,8 @@ func TestRun(t *testing.T) {
 
 		// THEN
 		require.Eventually(t, func() bool {
-			fmt.Println(atomic.LoadUint64(&counter))
 			return atomic.LoadUint64(&counter) >= 4
-		}, 5*time.Millisecond, time.Millisecond)
+		}, 50*time.Millisecond, 10*time.Millisecond)
 		require.NotNil(t, indicator)
 	})
 	t.Run("should respect the threshold", func(t *testing.T) {
@@ -102,7 +100,7 @@ func TestRun(t *testing.T) {
 
 		cfg := healthz.IndicatorConfig{
 			Name:         "First",
-			Interval:     time.Millisecond,
+			Interval:     10 * time.Millisecond,
 			Timeout:      time.Second,
 			InitialDelay: 0,
 			Threshold:    3,
@@ -123,7 +121,7 @@ func TestRun(t *testing.T) {
 		require.NoError(t, indicator.Status().Error())
 		require.Eventually(t, func() bool {
 			return indicator.Status().Error() != nil
-		}, 5*time.Millisecond, time.Millisecond)
+		}, 50*time.Millisecond, 10*time.Millisecond)
 	})
 }
 
