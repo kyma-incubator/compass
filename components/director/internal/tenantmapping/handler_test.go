@@ -57,7 +57,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:   username,
 			ConsumerType: "Static User",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.JWTAuthFlow) + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -131,7 +131,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.JWTAuthFlow) + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -207,7 +207,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: identityUsername, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.JWTAuthFlow) + `","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -272,7 +272,7 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.JWTAuthFlow) + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -320,7 +320,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:   objID.String(),
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.OAuth2Flow) + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -369,7 +369,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:   objID.String(),
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.CertificateFlow) + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -418,7 +418,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:   objID.String(),
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.OneTimeTokenFlow) + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
