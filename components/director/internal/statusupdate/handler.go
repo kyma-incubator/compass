@@ -51,7 +51,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if consumerInfo.Flow != oathkeeper.CertificateFlow {
+			if consumerInfo.Flow == oathkeeper.OneTimeTokenFlow {
 				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerInfo.ConsumerID)
 				next.ServeHTTP(w, r)
 				return
