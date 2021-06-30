@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
@@ -17,6 +18,7 @@ const (
 type Consumer struct {
 	ConsumerID string
 	ConsumerType
+	Flow oathkeeper.AuthFlow
 }
 
 func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (ConsumerType, error) {

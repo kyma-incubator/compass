@@ -3,6 +3,7 @@ package authenticator
 import (
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 )
 
 type Claims struct {
@@ -11,6 +12,7 @@ type Claims struct {
 	Scopes         string                `json:"scopes"`
 	ConsumerID     string                `json:"consumerID"`
 	ConsumerType   consumer.ConsumerType `json:"consumerType"`
+	Flow           oathkeeper.AuthFlow   `json:"flow"`
 	jwt.StandardClaims
 }
 
