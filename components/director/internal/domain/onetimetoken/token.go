@@ -65,6 +65,9 @@ func tokenSuggestionEnabled(ctx context.Context, suggestTokenHeaderKey string) b
 	return true
 }
 
+// extractToken tries to extract the original one-time token from the provided token in case it is a suggested one - base64 encoded raw token response,
+// where the token is part of a base64 encoded json, or a legacy url, which contains the original token as a query parameter.
+// If none of those cases is correct, or if any error occurs while checking, the provided token is returned as is.
 func extractToken(currentToken string) string {
 	// already encoded
 	if rawEncoded, err := base64.StdEncoding.DecodeString(currentToken); err == nil {

@@ -245,19 +245,23 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	}, nil
 }
 
+// getSuggestedTokenForApp returns the token that an application would use, depending on its type - if the application belongs to an integration
+// system, then it would use the token as is, if the application is considered "legacy" - an application which still uses the "connectivity-adapter" -
+// then it would use the legacy connector URL, then any new applications which are not managed by an integration system, would use the base64 encoded JSON
+// containing the token, and the connector URL
 func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Application, oneTimeToken *model.OneTimeToken) string {
 	if !tokenSuggestionEnabled(ctx, s.suggestTokenHeaderKey) {
 		return oneTimeToken.Token
 	}
 
 	if app.IntegrationSystemID != nil {
-		log.C(ctx).Infof("Application belongs to an integration system, will use the actual token")
+		log.C(ctx).Infof("Application with ID %s belongs to an integration system, will use the actual token", app.ID)
 		return oneTimeToken.Token
 	}
 
 	appLabels, err := s.appSvc.ListLabels(ctx, app.ID)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to check if application is of legacy type, will use the actual token: %v", err)
+		log.C(ctx).WithError(err).Errorf("Failed to check if application with ID %s is of legacy type, will use the actual token: %v", app.ID, err)
 		return oneTimeToken.Token
 	}
 
@@ -265,11 +269,11 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 		if isLegacy, ok := (label.Value).(bool); ok && isLegacy {
 			suggestedToken, err := legacyConnectorUrlWithToken(s.legacyConnectorURL, oneTimeToken.Token)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Failed to obtain legacy connector URL with token for application, will use the actual token: %v", err)
+				log.C(ctx).WithError(err).Errorf("Failed to obtain legacy connector URL with token for application with ID %s, will use the actual token: %v", app.ID, err)
 				return oneTimeToken.Token
 			}
 
-			log.C(ctx).Infof("Application is of legacy type, will use legacy token URL")
+			log.C(ctx).Infof("Application with ID %s is of legacy type, will use legacy token URL", app.ID)
 			return suggestedToken
 		}
 	}
