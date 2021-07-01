@@ -137,17 +137,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
 	assignSAPVendor(documents)
 
-	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
-	if err != nil {
-		return err
-	}
-
-	eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
-	if err != nil {
-		return err
-	}
-
-	packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
+	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
 	if err != nil {
 		return err
 	}
@@ -604,6 +594,25 @@ func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[st
 	}
 
 	return eventDataFromDB, nil
+}
+
+func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string]*model.EventDefinition, map[string]*model.Package, error) {
+	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
+	}
+
+	eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "while fetching events for app with id %s", appID)
+	}
+
+	packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
+	}
+
+	return apiDataFromDB, eventDataFromDB, packageDataFromDB, nil
 }
 
 func hashResources(docs Documents) (map[string]uint64, error) {

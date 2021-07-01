@@ -1619,6 +1619,22 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				resourceHashes = fixResourceHashes()
 			},
 		}, {
+			Name: "Incremented `version` field when resource has not changed for API",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].VersionInput.Value = "2.1.4"
+
+				newHash, err := open_resource_discovery.HashObject(doc.APIResources[0])
+				require.NoError(t, err)
+
+				resourceHashes[api1ORDID] = newHash
+
+				return []*open_resource_discovery.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		}, {
 			Name: "Valid incremented `version` field when resource definition has changed for API",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()

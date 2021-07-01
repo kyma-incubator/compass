@@ -202,8 +202,6 @@ func (docs Documents) Validate(webhookURL string, apisFromDB map[string]*model.A
 		}
 	}
 
-	// TODO: Validate that every change to a resource leads to version increment. If a resource in the document is different from the one in the DB and both have the same versions, then this is a validation error.
-
 	return nil
 }
 
