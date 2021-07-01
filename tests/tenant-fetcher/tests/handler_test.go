@@ -26,12 +26,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
-
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,17 +73,60 @@ type config struct {
 	TenantProvider            string
 }
 
+const (
+	tenantPathParamValue = "tenant"
+)
+
 type Tenant struct {
-	TenantId string `json:"tenantId"`
+	TenantId   string `json:"tenantId"`
+	CustomerId string `json:"customerId"`
 }
 
 func TestOnboardingHandler(t *testing.T) {
 	config := loadConfig(t)
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success with tenant and customerID", func(t *testing.T) {
 		// GIVEN
+		providedTenant := Tenant{
+			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			CustomerId: "160269",
+		}
 
-		providedTenant := &Tenant{
+		cleanUp(t, Tenant{TenantId: providedTenant.TenantId}, config)
+		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
+
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
+
+		// WHEN
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+		url := config.TenantFetcherURL + config.RootAPI + endpoint
+
+		byteTenant, err := json.Marshal(providedTenant)
+		require.NoError(t, err)
+		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+		require.NoError(t, err)
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+
+		httpClient := http.DefaultClient
+		httpClient.Timeout = 15 * time.Second
+
+		response, err := httpClient.Do(request)
+		require.NoError(t, err)
+
+		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
+
+		// THEN
+		require.Equal(t, len(oldTenantState)+2, len(tenants))
+		require.Equal(t, http.StatusOK, response.StatusCode)
+		containsTenantWithTenantID(providedTenant.TenantId, tenants)
+		containsTenantWithTenantID(providedTenant.CustomerId, tenants)
+	})
+
+	t.Run("Success with only tenant", func(t *testing.T) {
+		// GIVEN
+		providedTenant := Tenant{
 			TenantId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 		}
 
@@ -95,7 +136,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
@@ -114,23 +155,98 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Greater(t, len(tenants), len(oldTenantState))
+		require.Equal(t, len(oldTenantState)+1, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
+		containsTenantWithTenantID(providedTenant.TenantId, tenants)
 	})
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
-		providedTenant := &Tenant{
-			TenantId: config.Tenant,
+		providedTenant := Tenant{
+			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			CustomerId: "160269",
 		}
+
+		cleanUp(t, Tenant{TenantId: providedTenant.TenantId}, config)
+		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
+
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+		url := config.TenantFetcherURL + config.RootAPI + endpoint
+
+		byteTenant, err := json.Marshal(providedTenant)
+		require.NoError(t, err)
+
+		var response *http.Response
+		for i := 0; i < 10; i++ {
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+			require.NoError(t, err)
+			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+
+			httpClient := http.DefaultClient
+			httpClient.Timeout = 15 * time.Second
+
+			response, err = httpClient.Do(request)
+			require.NoError(t, err)
+		}
+
+		// THEN
+		require.Equal(t, http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Should not add already existing tenants", func(t *testing.T) {
+		providedTenant := Tenant{
+			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			CustomerId: "160269",
+		}
+
+		cleanUp(t, Tenant{TenantId: providedTenant.TenantId}, config)
+		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+		url := config.TenantFetcherURL + config.RootAPI + endpoint
+
+		var response *http.Response
+		for i := 0; i < 10; i++ {
+			byteTenant, err := json.Marshal(providedTenant)
+			require.NoError(t, err)
+
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+			require.NoError(t, err)
+			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+
+			httpClient := http.DefaultClient
+			httpClient.Timeout = 15 * time.Second
+
+			response, err = httpClient.Do(request)
+			require.NoError(t, err)
+		}
+
+		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
+
+		// THEN
+		assert.Equal(t, len(oldTenantState)+2, len(tenants))
+		require.Equal(t, http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
+		providedTenant := Tenant{
+			CustomerId: "160269",
+		}
+
+		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
+
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
+
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		byteTenant, err := json.Marshal(providedTenant)
 		require.NoError(t, err)
+
 		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 		require.NoError(t, err)
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
@@ -145,8 +261,8 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(tenants), len(oldTenantState))
-		require.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, len(oldTenantState), len(tenants))
+		require.Equal(t, http.StatusInternalServerError, response.StatusCode)
 	})
 }
 
@@ -155,13 +271,12 @@ func TestDecommissioningHandler(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 		}
 		cleanUp(t, providedTenant, config)
 		// WHEN
-		tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		// Add test tenant
@@ -198,12 +313,12 @@ func TestDecommissioningHandler(t *testing.T) {
 	})
 
 	t.Run("Should not fail when tenant does not exists", func(t *testing.T) {
-		providedTenant := &Tenant{
+		providedTenant := Tenant{
 			TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 		}
 		cleanUp(t, providedTenant, config)
 
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
@@ -272,9 +387,8 @@ func loadConfig(t *testing.T) config {
 	return config
 }
 
-func cleanUp(t *testing.T, tenant *Tenant, config config) {
-	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+func cleanUp(t *testing.T, tenant Tenant, config config) {
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	byteTenant, err := json.Marshal(tenant)
@@ -289,4 +403,13 @@ func cleanUp(t *testing.T, tenant *Tenant, config config) {
 
 	_, err = httpClient.Do(request)
 	require.NoError(t, err)
+}
+
+func containsTenantWithTenantID(tenantID string, tenants []*graphql.Tenant) bool {
+	for _, t := range tenants {
+		if t.ID == tenantID {
+			return true
+		}
+	}
+	return false
 }

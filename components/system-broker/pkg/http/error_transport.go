@@ -17,6 +17,7 @@
 package http
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 
@@ -41,16 +42,16 @@ func (c *ErrorHandlerTransport) RoundTrip(request *http.Request) (*http.Response
 	}
 
 	if response.StatusCode >= http.StatusBadRequest {
-		return nil, handleResponseError(response)
+		return nil, handleResponseError(request.Context(), response)
 	}
 
 	return response, nil
 }
 
-func handleResponseError(response *http.Response) error {
+func handleResponseError(ctx context.Context, response *http.Response) error {
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			log.D().Errorf("ReadCloser couldn't be closed: %v", err)
+			log.C(ctx).Errorf("ReadCloser couldn't be closed: %v", err)
 		}
 	}()
 
