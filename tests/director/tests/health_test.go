@@ -31,7 +31,7 @@ func TestHealthAPI(t *testing.T) {
 			return errors.New(fmt.Sprintf("Health api returned non 200 response: %d", resp.StatusCode))
 		}
 		return nil
-	}, retry.Attempts(5), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
+	}, retry.Attempts(3), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
 		logrus.WithField("component", "TestHealthAPI").Warnf("OnRetry: attempts: %d, error: %v", n, err)
 
 	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
