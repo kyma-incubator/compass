@@ -71,7 +71,7 @@ global:
       version: "PR-1910"
     director:
       dir:
-      version: "PR-1911"
+      version: "PR-1929"
     gateway:
       dir:
       version: "PR-1910"
@@ -80,7 +80,7 @@ global:
       version: "PR-1924"
     tenant_fetcher:
       dir:
-      version: "PR-1888"
+      version: "PR-1929"
     ord_service:
       dir:
       version: "PR-31"

@@ -1,10 +1,8 @@
 package tenant
 
 import (
-	"database/sql"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 )
 
@@ -19,7 +17,7 @@ func (c *converter) ToEntity(in model.TenantModel) tenant.Entity {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.TenantId,
-		Parent:         NewNullString(in.ParentInternalId),
+		Parent:         str.NewNullString(in.ParentInternalId),
 		Type:           in.Type,
 		ProviderName:   in.Provider,
 		Status:         in.Status,
