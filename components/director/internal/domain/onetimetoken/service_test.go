@@ -149,7 +149,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			expectedToken:             rawEncodedToken,
 		},
 		{
-			description: "Generate Application token for legacy application, with suggestion enables, should succeed",
+			description: "Generate Application token for legacy application, with suggestion enabled, should succeed",
 			ctx:         contextWithEnabledSuggestion,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
@@ -338,7 +338,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
-				app := &model.Application{}
+				app := &model.Application{BaseEntity: &model.BaseEntity{ID: appID}}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				app.Tenant = "test-tenant"
 				appSvc := &automock.ApplicationService{}
@@ -726,9 +726,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	}
 }
 
-func TestGenerateOneTimeTokenForApplicationWithSuggestion(t *testing.T) {
-
-}
 func TestRegenerateOneTimeToken(t *testing.T) {
 	const (
 		systemAuthID       = "sysAuthID"
