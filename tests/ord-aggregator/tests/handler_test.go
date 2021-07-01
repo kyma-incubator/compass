@@ -224,6 +224,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Logf("Spec %s not successfully fetched... will try again", specURL)
 				return false
 			}
+			t.Log("Successfully verified api spec")
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
