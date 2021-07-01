@@ -32,6 +32,7 @@ spec:
         allowHeaders:
           - "authorization"
           - "content-type"
+          - {{ $.Values.global.director.suggestTokenHeaderKey }}
         allowMethods:
           - "GET"
           - "POST"

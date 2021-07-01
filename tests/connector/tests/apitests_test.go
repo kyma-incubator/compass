@@ -1,14 +1,15 @@
 package tests
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestTokens(t *testing.T) {
@@ -95,6 +96,84 @@ func TestTokens(t *testing.T) {
 		//then
 		require.Empty(t, configuration)
 		require.Error(t, e)
+	})
+}
+
+func TestTokenSuggestion(t *testing.T) {
+	intSystem := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem.ID)
+
+	tokenFromRaw := func(token graphql.OneTimeTokenForApplicationExt) string {
+		actualTokenFromRaw := gjson.Get(token.Raw, "token").String()
+		require.NotEmpty(t, actualTokenFromRaw)
+		return actualTokenFromRaw
+	}
+	tokenFromLegacyURL := func(token graphql.OneTimeTokenForApplicationExt) string {
+		legacyURL, err := url.Parse(token.LegacyConnectorURL)
+		require.NoError(t, err)
+		tokenFromURL := legacyURL.Query().Get("token")
+		require.NotEmpty(t, tokenFromURL)
+		return tokenFromURL
+	}
+
+	t.Run("should return suggested token on configuration query for Application token", func(t *testing.T) {
+		testCases := []struct {
+			description    string
+			appInput       graphql.ApplicationRegisterInput
+			validationFunc func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt)
+		}{
+			{
+				description: "token should equal rawEncoded token",
+				appInput: graphql.ApplicationRegisterInput{
+					Name: "test-suggested-tokens-app",
+				},
+				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
+					require.Equal(t, ott.RawEncoded, ott.Token)
+					require.NotEqual(t, ott.LegacyConnectorURL, ott.Token)
+					require.NotEqual(t, tokenFromRaw(ott), ott.Token)
+					require.NotEqual(t, tokenFromLegacyURL(ott), ott.Token)
+				},
+			},
+			{
+				description: "token should equal LegacyConnectorURL token when app is legacy",
+				appInput: graphql.ApplicationRegisterInput{
+					Name:   "test-suggested-tokens-legacy-app",
+					Labels: map[string]interface{}{"legacy": true},
+				},
+				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
+					require.Equal(t, ott.Token, ott.LegacyConnectorURL)
+					require.NotEqual(t, ott.Token, ott.RawEncoded)
+					require.NotEqual(t, tokenFromRaw(ott), ott.Token)
+					require.NotEqual(t, tokenFromLegacyURL(ott), ott.Token)
+				},
+			},
+			{
+				description: "token should stay the same when app is managed by integration system",
+				appInput: graphql.ApplicationRegisterInput{
+					Name:                "test-suggested-tokens-int-sys",
+					IntegrationSystemID: &intSystem.ID,
+				},
+				validationFunc: func(t *testing.T, ott graphql.OneTimeTokenForApplicationExt) {
+					require.Equal(t, tokenFromRaw(ott), ott.Token)
+					require.Equal(t, tokenFromLegacyURL(ott), ott.Token)
+					require.NotEqual(t, ott.Token, ott.RawEncoded)
+					require.NotEqual(t, ott.Token, ott.LegacyConnectorURL)
+				},
+			},
+		}
+		for _, test := range testCases {
+			t.Run(test.description, func(t *testing.T) {
+				app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, test.appInput)
+				require.NoError(t, err)
+				appID := app.ID
+				defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+
+				//when
+				token := fixtures.GenerateOneTimeTokenForApplicationWithSuggestedToken(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+				test.validationFunc(t, token)
+				require.Equal(t, tokenFromLegacyURL(token), tokenFromRaw(token))
+			})
+		}
 	})
 }
 
