@@ -4,40 +4,58 @@ global:
   tenants:
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+      type: account
     - name: foo
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
+      type: account
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
+      type: account
     - name: TestTenantSeparation
       id: f1c4b5be-b0e1-41f9-b0bc-b378200dcca0
+      type: account
     - name: TestDeleteLastScenarioForApplication
       id: 0403be1e-f854-475e-9074-922120277af5
+      type: account
     - name: Test_DeleteAutomaticScenarioAssignmentForSelector
       id: d9553135-6115-4c67-b4d9-962c00f3725f
+      type: account
     - name: Test_AutomaticScenarioAssigmentForRuntime
       id: 8c733a45-d988-4472-af10-1256b82c70c0
+      type: account
     - name: TestAutomaticScenarioAssignmentsWholeScenario
       id: 65a63692-c00a-4a7d-8376-8615ee37f45c
+      type: account
     - name: TestTenantsQueryTenantNotInitialized
       id: 72329135-27fd-4284-9bcb-37ea8d6307d0
+      type: account
     - name: Test Default
       id: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      type: account
     - name: TestListLabelDefinitions
       id: 3f641cf5-2d14-4e0f-a122-16e7569926f1
+      type: account
     - name: Test_AutomaticScenarioAssignmentQueries
       id: 8263cc13-5698-4a2d-9257-e8e76b543e88
+      type: account
     - name: TestGetScenariosLabelDefinitionCreatesOneIfNotExists
       id: 2263cc13-5698-4a2d-9257-e8e76b543e33
+      type: account
     - name: TestApplicationsForRuntime
       id: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+      type: account
     - name: Test_DeleteAutomaticScenarioAssignmentForScenario
       id: d08e4cb6-a77f-4a07-b021-e3317a373597
+      type: account
     - name: TestApplicationsForRuntimeWithHiddenApps
       id: 7e1f2df8-36dc-4e40-8be3-d1555d50c91c
+      type: account
     - name: TestTenantsQueryTenantInitialized
       id: 8cf0c909-f816-4fe3-a507-a7917ccd8380
+      type: account
     - name: TestDeleteApplicationIfInScenario
       id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
+      type: account
 
   images:
     containerRegistry:
@@ -53,7 +71,7 @@ global:
       version: "PR-1910"
     director:
       dir:
-      version: "PR-1923"
+      version: "PR-1888"
     gateway:
       dir:
       version: "PR-1910"
@@ -62,13 +80,13 @@ global:
       version: "PR-1924"
     tenant_fetcher:
       dir:
-      version: "PR-1910"
+      version: "PR-1888"
     ord_service:
       dir:
       version: "PR-31"
     schema_migrator:
       dir:
-      version: "PR-1912"
+      version: "PR-1888"
     system_broker:
       dir:
       version: "PR-1910"
@@ -317,6 +335,7 @@ global:
       identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"
+      customerIdProperty: "customerId"
       name: "provider"
 
   ordService:
