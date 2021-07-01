@@ -281,7 +281,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "openapi-v3",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseURL),
+						URL:       fmt.Sprintf("%s/external-api/unsecured/spec/flapping", baseUrl),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -360,7 +360,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "openapi-v3",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseURL),
+						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseUrl),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -446,7 +446,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "asyncapi-v2",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/api/eventCatalog.json", baseURL),
+						URL:       fmt.Sprintf("%s/api/eventCatalog.json", baseUrl),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -806,7 +806,7 @@ func fixApi1SpecInputs() []*model.SpecInput {
 			APIType:    &openApiType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
+				URL: baseURL + "/external-api/unsecured/spec/flapping",
 			},
 		},
 		{

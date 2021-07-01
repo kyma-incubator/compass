@@ -349,7 +349,7 @@ global:
   ordAggregator:
     name: ord-aggregator
     enabled: true
-    schedule: "*/5 * * * *"
+    schedule: "*/1 * * * *"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
