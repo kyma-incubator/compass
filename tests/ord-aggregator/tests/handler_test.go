@@ -29,7 +29,7 @@ const (
 	apisField             = "apis"
 	eventsField           = "events"
 
-	expectedExternalServicesMockSpecURL     = "expectedExternal"
+	expectedExternalServicesMockSpecURL     = "/external-api/unsecured/spec/flapping"
 	expectedSystemInstanceName              = "test-app"
 	expectedSecondSystemInstanceName        = "second-test-app"
 	expectedSystemInstanceDescription       = "test-app-description"
