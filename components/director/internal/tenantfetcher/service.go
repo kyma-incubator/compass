@@ -89,9 +89,10 @@ type Service struct {
 	labelDefService                 LabelDefinitionService
 	retryAttempts                   uint
 	movedRuntimeLabelKey            string
+	fullResyncInterval              time.Duration
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantService, runtimeStorageService RuntimeService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantService, runtimeStorageService RuntimeService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string, fullResyncInterval time.Duration) *Service {
 	return &Service{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -105,6 +106,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 		retryAttempts:                   retryAttempts,
 		labelDefService:                 labelDefService,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
+		fullResyncInterval:              fullResyncInterval,
 	}
 }
 
@@ -112,9 +114,21 @@ func (s Service) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
 
-	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
+	lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
 	if err != nil {
 		return err
+	}
+
+	shouldFullResync, err := s.shouldFullResync(lastResyncTimestamp)
+	if err != nil {
+		return err
+	}
+
+	newLastResyncTimestamp := lastResyncTimestamp
+	if shouldFullResync {
+		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
+		lastConsumedTenantTimestamp = "1"
+		newLastResyncTimestamp = convertTimeToUnixNanoString(startTime)
 	}
 
 	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
@@ -176,7 +190,7 @@ func (s Service) SyncTenants() error {
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixNanoString(startTime)); err != nil {
+	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixNanoString(startTime), newLastResyncTimestamp); err != nil {
 		return err
 	}
 
@@ -464,6 +478,15 @@ func (s Service) getCurrentTenants(ctx context.Context) (map[string]bool, error)
 	}
 
 	return currentTenantsMap, nil
+}
+
+func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) {
+	i, err := strconv.ParseInt(lastFullResyncTimestamp, 10, 64)
+	if err != nil {
+		return false, err
+	}
+	ts := time.Unix(i, 0)
+	return time.Now().After(ts.Add(s.fullResyncInterval)), nil
 }
 
 func convertTimeToUnixNanoString(timestamp time.Time) string {
