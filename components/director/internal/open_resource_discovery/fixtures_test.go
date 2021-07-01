@@ -41,6 +41,14 @@ const (
 	event2ID    = "testEvent2"
 	tombstoneID = "testTs"
 
+	api1spec1ID  = "api1spec1ID"
+	api1spec2ID  = "api1spec2ID"
+	api1spec3ID  = "api1spec3ID"
+	api2spec1ID  = "api2spec1ID"
+	api2spec2ID  = "api2spec2ID"
+	event1specID = "event1specID"
+	event2specID = "event2specID"
+
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
@@ -687,6 +695,15 @@ func fixAPIs() []*model.APIDefinition {
 	}
 }
 
+func fixAPIsNoVersionBump() []*model.APIDefinition {
+	apis := fixAPIs()
+	doc := fixORDDocument()
+	for i, api := range apis {
+		api.Version.Value = doc.APIResources[i].VersionInput.Value
+	}
+	return apis
+}
+
 func fixAPIPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
 	return []*model.ConsumptionBundleReference{
 		{
@@ -771,6 +788,15 @@ func fixEvents() []*model.EventDefinition {
 	}
 }
 
+func fixEventsNoVersionBump() []*model.EventDefinition {
+	events := fixEvents()
+	doc := fixORDDocument()
+	for i, event := range events {
+		event.Version.Value = doc.EventResources[i].VersionInput.Value
+	}
+	return events
+}
+
 func fixApi1SpecInputs() []*model.SpecInput {
 	openApiType := model.APISpecTypeOpenAPIV3
 	edmxAPIType := model.APISpecTypeEDMX
@@ -802,6 +828,40 @@ func fixApi1SpecInputs() []*model.SpecInput {
 	}
 }
 
+func fixApi1Specs() []*model.Spec {
+	openApiType := model.APISpecTypeOpenAPIV3
+	edmxAPIType := model.APISpecTypeEDMX
+	return []*model.Spec{
+		{
+			ID:         api1spec1ID,
+			Format:     "application/json",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api1ID,
+			Data:       str.Ptr("data"),
+		},
+		{
+			ID:         api1spec2ID,
+			Format:     "text/yaml",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api1ID,
+			Data:       str.Ptr("data"),
+		},
+		{
+			ID:         api1spec3ID,
+			Format:     "application/xml",
+			APIType:    &edmxAPIType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api1ID,
+			Data:       str.Ptr("data"),
+		},
+	}
+}
+
 func fixApi2SpecInputs() []*model.SpecInput {
 	edmxAPIType := model.APISpecTypeEDMX
 	openApiType := model.APISpecTypeOpenAPIV3
@@ -825,6 +885,31 @@ func fixApi2SpecInputs() []*model.SpecInput {
 	}
 }
 
+func fixApi2Specs() []*model.Spec {
+	edmxAPIType := model.APISpecTypeEDMX
+	openApiType := model.APISpecTypeOpenAPIV3
+	return []*model.Spec{
+		{
+			ID:         api2spec1ID,
+			Format:     "application/xml",
+			APIType:    &edmxAPIType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api2ID,
+			Data:       str.Ptr("data"),
+		},
+		{
+			ID:         api2spec2ID,
+			Format:     "application/json",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api2ID,
+			Data:       str.Ptr("data"),
+		},
+	}
+}
+
 func fixEvent1SpecInputs() []*model.SpecInput {
 	eventType := model.EventSpecTypeAsyncAPIV2
 	return []*model.SpecInput{
@@ -835,6 +920,21 @@ func fixEvent1SpecInputs() []*model.SpecInput {
 			FetchRequest: &model.FetchRequestInput{
 				URL: "http://localhost:8080/asyncApi2.json",
 			},
+		},
+	}
+}
+
+func fixEvent1Specs() []*model.Spec {
+	eventType := model.EventSpecTypeAsyncAPIV2
+	return []*model.Spec{
+		{
+			ID:         event1specID,
+			Format:     "application/json",
+			EventType:  &eventType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.EventSpecReference,
+			ObjectID:   event1ID,
+			Data:       str.Ptr("data"),
 		},
 	}
 }
@@ -853,6 +953,21 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 	}
 }
 
+func fixEvent2Specs() []*model.Spec {
+	eventType := model.EventSpecTypeAsyncAPIV2
+	return []*model.Spec{
+		{
+			ID:         event2specID,
+			Format:     "application/json",
+			EventType:  &eventType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.EventSpecReference,
+			ObjectID:   event2ID,
+			Data:       str.Ptr("data"),
+		},
+	}
+}
+
 func fixTombstones() []*model.Tombstone {
 	return []*model.Tombstone{
 		{
@@ -861,6 +976,22 @@ func fixTombstones() []*model.Tombstone {
 			TenantID:      tenantID,
 			ApplicationID: appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
+		},
+	}
+}
+
+func fixSuccessfulFetchRequest() *model.FetchRequest {
+	return &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionSucceeded,
+		},
+	}
+}
+
+func fixFailedFetchRequest() *model.FetchRequest {
+	return &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionFailed,
 		},
 	}
 }

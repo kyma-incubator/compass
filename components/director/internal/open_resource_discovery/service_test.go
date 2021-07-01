@@ -193,6 +193,34 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return specSvc
 	}
 
+	successfulSpecRefetch := func() *automock.SpecService {
+		specSvc := &automock.SpecService{}
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixApi1Specs(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID).Return(fixSuccessfulFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec2ID).Return(fixSuccessfulFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec3ID).Return(fixFailedFetchRequest(), nil).Once()
+
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec3ID).Return(nil, nil).Once()
+
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(fixApi2Specs(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec1ID).Return(fixSuccessfulFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec2ID).Return(fixFailedFetchRequest(), nil).Once()
+
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api2spec2ID).Return(nil, nil).Once()
+
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID).Return(fixFailedFetchRequest(), nil).Once()
+
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID).Return(nil, nil).Once()
+
+		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID).Return(fixFailedFetchRequest(), nil).Once()
+
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event2specID).Return(nil, nil).Once()
+
+		return specSvc
+	}
+
 	successfulAPISpecUpdate := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -266,7 +294,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		ExpectedErr     error
 	}{
 		{
-			Name: "Success when resources are already in db should Update them",
+			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
@@ -285,6 +313,45 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecUpdate,
+			packageSvcFn: successfulPackageUpdate,
+			productSvcFn: successfulProductUpdate,
+			vendorSvcFn:  successfulVendorUpdate,
+			tombstoneSvcFn: func() *automock.TombstoneService {
+				tombstoneSvc := &automock.TombstoneService{}
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				tombstoneSvc.On("Update", txtest.CtxWithDBMatcher(), tombstoneID, *sanitizedDoc.Tombstones[0]).Return(nil).Once()
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				return tombstoneSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			appSvcFn:       successfulAppList,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}).Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api2ID, *sanitizedDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}).Return(nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:   func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{}, []string{}).Return(nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{}, []string{}).Return(nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
+				return eventSvc
+			},
+			specSvcFn:    successfulSpecRefetch,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -676,6 +743,78 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn: successfulClientFetch,
 		},
 		{
+			Name:            "Does not resync resources if api spec list fails",
+			TransactionerFn: secondTransactionNotCommited,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}).Return(nil).Once()
+				return apiSvc
+			},
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil, testErr).Once()
+				return specSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name:            "Does not resync resources if api spec get fetch request fails",
+			TransactionerFn: secondTransactionNotCommited,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}).Return(nil).Once()
+				return apiSvc
+			},
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixApi1Specs(), nil).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID).Return(nil, testErr).Once()
+				return specSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name:            "Does not resync resources if api spec refetch fails",
+			TransactionerFn: secondTransactionNotCommited,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}).Return(nil).Once()
+				return apiSvc
+			},
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixApi1Specs(), nil).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID).Return(fixFailedFetchRequest(), nil).Once()
+				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec1ID).Return(nil, testErr).Once()
+				return specSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
 			Name:            "Does not resync resources if event list fails",
 			TransactionerFn: secondTransactionNotCommited,
 			appSvcFn:        successfulAppList,
@@ -821,6 +960,109 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{}, []string{}).Return(nil).Once()
+				return eventSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name:            "Does not resync resources if event spec list fails",
+			TransactionerFn: secondTransactionNotCommited,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
+
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
+
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil, testErr).Once()
+				return specSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{}, []string{}).Return(nil).Once()
+				return eventSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name:            "Does not resync resources if event spec get fetch request fails",
+			TransactionerFn: secondTransactionNotCommited,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
+
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
+
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID).Return(nil, testErr).Once()
+				return specSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{}, []string{}).Return(nil).Once()
+				return eventSvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name:            "Does not resync resources if event spec refetch fails",
+			TransactionerFn: secondTransactionNotCommited,
+			appSvcFn:        successfulAppList,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
+
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixApi1SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
+
+				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID).Return(fixFailedFetchRequest(), nil).Once()
+
+				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID).Return(nil, testErr).Once()
+				return specSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{}, []string{}).Return(nil).Once()
 				return eventSvc
 			},

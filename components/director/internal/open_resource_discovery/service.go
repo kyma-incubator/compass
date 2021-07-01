@@ -437,6 +437,10 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 		if err := s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs); err != nil {
 			return err
 		}
+	} else {
+		if err := s.refetchFailedSpecs(ctx, model.APISpecReference, apisFromDB[i].ID); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -505,6 +509,10 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 		if err := s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs); err != nil {
 			return err
 		}
+	} else {
+		if err := s.refetchFailedSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -532,6 +540,25 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	}
 	_, err := s.tombstoneSvc.Create(ctx, appID, tombstone)
 	return err
+}
+
+func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
+	specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, objectType, objectID)
+	if err != nil {
+		return err
+	}
+	for _, spec := range specsFromDB {
+		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID)
+		if err != nil {
+			return err
+		}
+		if fr.Status != nil && fr.Status.Condition == model.FetchRequestStatusConditionFailed {
+			if _, err := s.specSvc.RefetchSpec(ctx, spec.ID); err != nil {
+				return errors.Wrapf(err, "while refetching spec %s", spec.ID)
+			}
+		}
+	}
+	return nil
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {
