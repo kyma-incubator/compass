@@ -94,10 +94,10 @@ func TestController_Scenarios(t *testing.T) {
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
 	}
 
+	done := make(chan struct{})
+
 	cfg, err := testEnv.Start()
 	require.NoError(t, err)
-	defer func() {
-	}()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
@@ -125,7 +125,7 @@ func TestController_Scenarios(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		err = mgr.Start(ctrl.SetupSignalHandler())
+		err = mgr.Start(done)
 		require.NoError(t, err)
 	}()
 
@@ -981,9 +981,10 @@ func TestController_Scenarios(t *testing.T) {
 
 	})
 
+	done <- struct{}{} // Stop controller manager before stopping testEnv
+
 	err = testEnv.Stop() // deferring the Stop earlier at the top does not seem to work, this is why the Stop is left here at the bottom
 	require.NoError(t, err)
-
 }
 
 func updateInvocationVars(fetchAppCount, updateOpCount, doCount, pollCount *int, directorClient *controllersfakes.FakeDirectorClient, webhookClient *controllersfakes.FakeWebhookClient) {
