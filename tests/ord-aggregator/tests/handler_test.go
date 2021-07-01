@@ -147,7 +147,7 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify system instances
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfSystemInstances {
 				t.Log("Missing System Instances...will try again")
 				return false
 			}
@@ -156,72 +156,81 @@ func TestORDAggregator(t *testing.T) {
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			t.Log("Successfully verified packages")
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfBundles {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
+			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			t.Log("Successfully verified relation between events and bundles")
 
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfProducts {
 				t.Log("Missing Products...will try again")
 				return false
 			}
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
+			t.Log("Successfully verified products")
 
 			// Verify apis
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIs {
 				t.Log("Missing APIs...will try again")
 				return false
 			}
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
+			t.Log("Successfully verified apis")
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEvents {
 				t.Log("Missing Events...will try again")
 				return false
 			}
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
+			t.Log("Successfully verified events")
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstones {
 				t.Log("Missing Tombstones...will try again")
 				return false
 			}
 			assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstones, expectedTombstoneOrdID)
+			t.Log("Successfully verified tombstones")
 
 			// Verify vendors
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) == 0 {
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfVendors {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
 			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
+			t.Log("Successfully verified vendors")
 
 			return true
 		})
