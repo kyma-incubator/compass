@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,6 +18,9 @@ func TestHealthAPI(t *testing.T) {
 	// GIVEN
 	client := &http.Client{
 		Timeout: time.Second * 2,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
 	}
 	req, err := http.NewRequest(http.MethodGet, conf.HealthUrl, nil)
 	require.NoError(t, err)
