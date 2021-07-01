@@ -33,6 +33,8 @@ spec:
           env:
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
             - name: APP_TENANT_PROVIDER
               value: "test-provider"
             - name: APP_TENANT
