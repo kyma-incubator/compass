@@ -59,7 +59,7 @@ global:
       version: "PR-1910"
     operations_controller:
       dir:
-      version: "PR-1910"
+      version: "PR-1924"
     tenant_fetcher:
       dir:
       version: "PR-1910"
@@ -82,10 +82,10 @@ global:
       version: "PR-1910"
     console:
       dir:
-      version: "PR-34"
+      version: "PR-35"
     e2e_tests:
       dir:
-      version: "PR-1912"
+      version: "PR-1919"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -269,7 +269,7 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}"}'
     mutators:
       runtimeMappingService:
         config:

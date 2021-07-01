@@ -18,7 +18,7 @@ func NewPeriodic(period time.Duration, executionFunc func(context.Context)) *per
 	}
 }
 
-// Run starts the periodic work
+// Run starts a periodic worker
 func (e *periodic) Run(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(e.refreshPeriod)
