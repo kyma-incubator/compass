@@ -26,6 +26,7 @@ spec:
             - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
             - "oauth2.{{ .Values.global.ingress.domainName }}"
+            - "director.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       containers:
         - name: director-tests
