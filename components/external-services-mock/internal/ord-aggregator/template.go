@@ -443,11 +443,9 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
-               "defaultEntryPoint":""
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             },
             {
-               "defaultEntryPoint":"https://exmaple.com/test/v1",
                "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
@@ -533,11 +531,9 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
-               "defaultEntryPoint":""
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             },
             {
-               "defaultEntryPoint":"https://exmaple.com/test/v1",
                "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
@@ -623,11 +619,9 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
-               "defaultEntryPoint":""
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             },
             {
-               "defaultEntryPoint":"https://exmaple.com/test/v1",
                "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
