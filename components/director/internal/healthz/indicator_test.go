@@ -133,7 +133,7 @@ func dummyIndicatorFunc(status *automock.Status) func(ctx context.Context) healt
 
 func timeOutIndicatorFunc() func(ctx context.Context) healthz.Status {
 	status := &automock.Status{}
-	status.On("Error").Return(errors.New("timeout")).Times(5)
+	status.On("Error").Return(errors.New("timeout")).Times(6)
 	status.On("Details").Return("some timeout details").Times(2)
 	return func(ctx context.Context) healthz.Status {
 		select {
