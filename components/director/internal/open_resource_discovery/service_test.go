@@ -343,7 +343,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			eventSvcFn:   func() *automock.EventService {
+			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{}, []string{}).Return(nil).Once()
