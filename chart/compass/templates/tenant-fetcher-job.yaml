@@ -108,6 +108,8 @@ spec:
                 value: {{ $config.kubernetes.configMapNamespace }}
               - name: APP_CONFIGMAP_TIMESTAMP_FIELD
                 value: "lastConsumedTenantTimestamp"
+              - name: APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
+                value: "lastFullResyncTimestamp"
               - name: APP_MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
@@ -189,6 +191,7 @@ metadata:
   {{- if empty $configmap }}
 data:
   lastConsumedTenantTimestamp: "1"
+  lastFullResyncTimestamp: "1"
   {{ else }}
 data:
   {{ toYaml $configmap.data | indent 2}}

@@ -2,7 +2,6 @@ package tenantfetcher
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
@@ -12,8 +11,8 @@ import (
 
 //go:generate mockery --name=KubeClient --output=automock --outpkg=automock --case=underscore
 type KubeClient interface {
-	GetTenantFetcherConfigMapData(ctx context.Context) (string, error)
-	UpdateTenantFetcherConfigMapData(ctx context.Context, timestamp string) error
+	GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error)
+	UpdateTenantFetcherConfigMapData(ctx context.Context, lastRunTimestamp, lastResyncTimestamp string) error
 }
 
 func NewKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error) {
@@ -42,20 +41,21 @@ func newNoopKubernetesClient() KubeClient {
 	}
 }
 
-func (k *noopKubernetesClient) GetTenantFetcherConfigMapData(_ context.Context) (string, error) {
-	return "1", nil
+func (k *noopKubernetesClient) GetTenantFetcherConfigMapData(_ context.Context) (string, string, error) {
+	return "1", "1", nil
 }
 
-func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Context, _ string) error {
+func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Context, _, _ string) error {
 	return nil
 }
 
 type KubeConfig struct {
 	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
 
-	ConfigMapNamespace      string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
-	ConfigMapName           string `envconfig:"default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
-	ConfigMapTimestampField string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
+	ConfigMapNamespace            string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
+	ConfigMapName                 string `envconfig:"default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
+	ConfigMapTimestampField       string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
+	ConfigMapResyncTimestampField string `envconfig:"default=lastFullResyncTimestamp,APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
 }
 
 type kubernetesClient struct {
@@ -77,25 +77,32 @@ func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error
 	}, nil
 }
 
-func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (string, error) {
+func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error) {
 	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	if timestamp, ok := configMap.Data[k.cfg.ConfigMapTimestampField]; ok {
-		return timestamp, nil
+	lastRunTimestamp, ok := configMap.Data[k.cfg.ConfigMapTimestampField]
+	if !ok {
+		lastRunTimestamp = "1"
 	}
-	return "", errors.New("failed to find timestamp property in configMap")
+
+	lastResyncTimestamp, ok := configMap.Data[k.cfg.ConfigMapResyncTimestampField]
+	if !ok {
+		lastResyncTimestamp = "1"
+	}
+	return lastRunTimestamp, lastResyncTimestamp, nil
 }
 
-func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(ctx context.Context, timestamp string) error {
+func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(ctx context.Context, lastRunTimestamp, lastResyncTimestamp string) error {
 	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	configMap.Data[k.cfg.ConfigMapTimestampField] = timestamp
+	configMap.Data[k.cfg.ConfigMapTimestampField] = lastRunTimestamp
+	configMap.Data[k.cfg.ConfigMapResyncTimestampField] = lastResyncTimestamp
 	_, err = k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Update(configMap)
 	return err
 }
