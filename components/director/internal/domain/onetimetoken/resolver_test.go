@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const suggestTokenHeaderKey = "suggest_token"
+
 func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -31,7 +33,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForApplication", *tokenModel).Return(expectedToken, nil)
 		persist, transact := txGen.ThatSucceeds()
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		oneTimeToken, err := r.RequestOneTimeTokenForApplication(ctx, appID)
@@ -49,7 +51,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
 		conv := &automock.TokenConverter{}
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
@@ -65,7 +67,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		conv := &automock.TokenConverter{}
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
@@ -80,7 +82,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		svc := &automock.TokenService{}
 		persist, transact := txGen.ThatFailsOnBegin()
 		conv := &automock.TokenConverter{}
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
@@ -97,7 +99,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForApplication", *tokenModel).Return(graphql.OneTimeTokenForApplication{}, errors.New("some-error"))
 		persist, transact := txGen.ThatSucceeds()
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
@@ -114,7 +116,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	runtimeID := "08d805a5-87f0-4194-adc7-277ec10de2ef"
 	ctx := context.TODO()
 	tokenModel := &model.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
-	expectedToken := graphql.OneTimeTokenForRuntime{graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}}
+	expectedToken := graphql.OneTimeTokenForRuntime{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}}
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
@@ -122,7 +124,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		persist, transact := txGen.ThatSucceeds()
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForRuntime", *tokenModel).Return(expectedToken)
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		oneTimeToken, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
@@ -143,7 +145,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
 		conv := &automock.TokenConverter{}
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
@@ -162,7 +164,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		conv := &automock.TokenConverter{}
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
@@ -180,7 +182,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		svc := &automock.TokenService{}
 		persist, transact := txGen.ThatFailsOnBegin()
 		conv := &automock.TokenConverter{}
-		r := onetimetoken.NewTokenResolver(transact, svc, conv)
+		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
@@ -202,7 +204,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
-		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+		r := onetimetoken.NewTokenResolver(nil, nil, nil, "")
 
 		//WHEN
 		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql.TokenWithURL)
@@ -214,7 +216,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 	t.Run("Error - nil token", func(t *testing.T) {
 		//GIVEN
-		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.RawEncoded(ctx, nil)
@@ -232,7 +234,7 @@ func TestResolver_Raw(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
-		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
 		//WHEN
 		baseEncodedToken, err := r.Raw(ctx, &tokenGraphql.TokenWithURL)
@@ -244,7 +246,7 @@ func TestResolver_Raw(t *testing.T) {
 
 	t.Run("Error - nil token", func(t *testing.T) {
 		//GIVEN
-		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
 		//WHEN
 		_, err := r.Raw(ctx, nil)
