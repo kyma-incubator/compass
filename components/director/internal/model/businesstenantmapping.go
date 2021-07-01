@@ -11,6 +11,8 @@ type BusinessTenantMapping struct {
 	ID             string
 	Name           string
 	ExternalTenant string
+	Parent         string
+	Type           string
 	Provider       string
 	Status         TenantStatus
 	Initialized    *bool // computed value
@@ -29,6 +31,8 @@ func (t BusinessTenantMapping) WithStatus(status TenantStatus) BusinessTenantMap
 type BusinessTenantMappingInput struct {
 	Name           string `json:"name"`
 	ExternalTenant string `json:"id"`
+	Parent         string
+	Type           string `json:"type"`
 	Provider       string
 }
 
@@ -43,6 +47,8 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 		ID:             id,
 		Name:           i.Name,
 		ExternalTenant: i.ExternalTenant,
+		Parent:         i.Parent,
+		Type:           i.Type,
 		Provider:       i.Provider,
 		Status:         Active,
 	}
