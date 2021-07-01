@@ -34,17 +34,17 @@ func HandleFunc(rw http.ResponseWriter, req *http.Request) {
 }
 
 func FlappingHandleFunc() func(rw http.ResponseWriter, req *http.Request) {
-	var fail bool
+	var toggle bool
 	lock := sync.Mutex{}
 	return func(rw http.ResponseWriter, req *http.Request) {
 		lock.Lock()
 
 		defer func() {
-			fail = !fail
+			toggle = !toggle
 			lock.Unlock()
 		}()
 
-		if fail {
+		if !toggle {
 			rw.WriteHeader(http.StatusInternalServerError)
 			return
 		}
