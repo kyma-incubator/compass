@@ -89,7 +89,7 @@ global:
       version: "PR-1888"
     system_broker:
       dir:
-      version: "PR-1910"
+      version: "PR-1925"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -100,10 +100,10 @@ global:
       version: "PR-1910"
     console:
       dir:
-      version: "PR-35"
+      version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1888"
+      version: "PR-1930"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -135,6 +135,7 @@ global:
       lastOperationPath: "/last_operation"
 
     clientIDHeaderKey: client_user
+    suggestTokenHeaderKey: suggest_token
 
     tests:
       scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
