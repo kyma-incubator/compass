@@ -108,6 +108,8 @@ spec:
                 value: {{ $config.kubernetes.configMapNamespace }}
               - name: APP_CONFIGMAP_TIMESTAMP_FIELD
                 value: "lastConsumedTenantTimestamp"
+              - name: APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
+                value: "lastFullResyncTimestamp"
               - name: APP_MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
@@ -185,14 +187,15 @@ metadata:
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
-  {{- $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
-  {{- if empty $configmap }}
+{{ $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
+{{ if empty $configmap }}
 data:
   lastConsumedTenantTimestamp: "1"
-  {{ else }}
+  lastFullResyncTimestamp: "1"
+{{ else }}
 data:
-  {{ toYaml $configmap.data | indent 2}}
-  {{ end }}
+{{ toYaml $configmap.data | indent 2}}
+{{ end }}
 ---
 apiVersion: v1
 kind: ServiceAccount

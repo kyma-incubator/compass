@@ -38,6 +38,7 @@ type config struct {
 	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	ClientTimeout        time.Duration `envconfig:"default=60s"`
+	FullResyncInterval   time.Duration `envconfig:"default=12h"`
 }
 
 func main() {
@@ -114,5 +115,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
 }
