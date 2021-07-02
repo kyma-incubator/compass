@@ -163,6 +163,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		CustomImplementationStandardDescription: repo.StringPtrFromNullableString(entity.CustomImplementationStandardDescription),
 		Version:                                 c.version.FromEntity(entity.Version),
 		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
+		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -206,6 +207,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		CustomImplementationStandardDescription: repo.NewNullableString(apiModel.CustomImplementationStandardDescription),
 		Version:                                 c.convertVersionToEntity(apiModel.Version),
 		Extensible:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Extensible),
+		ResourceHash:                            repo.NewNullableString(apiModel.ResourceHash),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

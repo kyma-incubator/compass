@@ -108,8 +108,8 @@ func (i *indicator) Run(ctx context.Context) {
 				i.failureCount = 0
 			}
 
-			if i.failureCount > i.threshold || i.failureCount == 0 {
-				log.C(ctx).Debugf("Changing indicator %s state to %+v", i.Name(), currentStatus)
+			if (i.failureCount > i.threshold || i.failureCount == 0) && i.status.Error() != currentStatus.Error() {
+				log.C(ctx).Infof("Changing indicator %s state to %+v", i.Name(), currentStatus)
 				i.status = currentStatus
 			}
 			i.statusLock.Unlock()
