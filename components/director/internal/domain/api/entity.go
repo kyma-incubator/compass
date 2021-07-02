@@ -37,6 +37,7 @@ type Entity struct {
 	CustomImplementationStandard            sql.NullString `db:"custom_implementation_standard"`
 	CustomImplementationStandardDescription sql.NullString `db:"custom_implementation_standard_description"`
 	Extensible                              sql.NullString `db:"extensible"`
+	ResourceHash                            sql.NullString `db:"resource_hash"`
 
 	*repo.BaseEntity
 	version.Version

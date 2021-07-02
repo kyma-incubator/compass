@@ -40,6 +40,7 @@ func (c *converter) ToEntity(in *model.Package) *Entity {
 		PartOfProducts:    repo.NewNullableStringFromJSONRawMessage(in.PartOfProducts),
 		LineOfBusiness:    repo.NewNullableStringFromJSONRawMessage(in.LineOfBusiness),
 		Industry:          repo.NewNullableStringFromJSONRawMessage(in.Industry),
+		ResourceHash:      repo.NewNullableString(in.ResourceHash),
 	}
 
 	return output
@@ -71,6 +72,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 		PartOfProducts:    repo.JSONRawMessageFromNullableString(entity.PartOfProducts),
 		LineOfBusiness:    repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
 		Industry:          repo.JSONRawMessageFromNullableString(entity.Industry),
+		ResourceHash:      repo.StringPtrFromNullableString(entity.ResourceHash),
 	}
 
 	return output, nil
