@@ -25,4 +25,5 @@ type Entity struct {
 	PartOfProducts    sql.NullString `db:"part_of_products"`
 	LineOfBusiness    sql.NullString `db:"line_of_business"`
 	Industry          sql.NullString `db:"industry"`
+	ResourceHash      sql.NullString `db:"resource_hash"`
 }
