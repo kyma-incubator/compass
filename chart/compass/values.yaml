@@ -97,13 +97,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1910"
+      version: "PR-1927"
     console:
       dir:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1926"
+      version: "PR-1927"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -350,7 +350,7 @@ global:
   ordAggregator:
     name: ord-aggregator
     enabled: true
-    schedule: "*/5 * * * *"
+    schedule: "*/1 * * * *"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2

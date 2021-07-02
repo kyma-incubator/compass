@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"sync"
 
 	"github.com/pkg/errors"
 
@@ -29,5 +30,30 @@ func HandleFunc(rw http.ResponseWriter, req *http.Request) {
 	_, err := rw.Write(randSpec())
 	if err != nil {
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+	}
+}
+
+func FlappingHandleFunc() func(rw http.ResponseWriter, req *http.Request) {
+	var toggle bool
+	lock := sync.Mutex{}
+	return func(rw http.ResponseWriter, req *http.Request) {
+		lock.Lock()
+
+		defer func() {
+			toggle = !toggle
+			lock.Unlock()
+		}()
+
+		if !toggle {
+			rw.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		rw.WriteHeader(http.StatusOK)
+		_, err := rw.Write(randSpec())
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+		}
+
 	}
 }
