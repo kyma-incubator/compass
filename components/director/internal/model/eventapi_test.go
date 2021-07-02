@@ -53,7 +53,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventDefinitionWithinBundle(id, appID, bndlID, tenant)
+			result := testCase.Input.ToEventDefinitionWithinBundle(id, appID, bndlID, tenant, 0)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

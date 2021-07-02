@@ -17,9 +17,9 @@ var (
 	tenantColumn   = "tenant_id"
 	packageColumns = []string{"id", tenantColumn, "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
-		"custom_policy_level", "part_of_products", "line_of_business", "industry"}
+		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
 	updatableColumns = []string{"vendor", "title", "short_description", "description", "version", "package_links", "links",
-		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry"}
+		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore

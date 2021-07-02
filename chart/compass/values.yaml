@@ -71,7 +71,7 @@ global:
       version: "PR-1910"
     director:
       dir:
-      version: "PR-1934"
+      version: "PR-1898"
     gateway:
       dir:
       version: "PR-1910"
@@ -86,7 +86,7 @@ global:
       version: "PR-31"
     schema_migrator:
       dir:
-      version: "PR-1934"
+      version: "PR-1898"
     system_broker:
       dir:
       version: "PR-1925"
