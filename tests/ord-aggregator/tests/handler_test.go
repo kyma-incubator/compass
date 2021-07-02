@@ -3,7 +3,9 @@ package tests
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +29,8 @@ const (
 	apisField             = "apis"
 	eventsField           = "events"
 
+	expectedSpecType                        = "openapi-v3"
+	expectedSpecFormat                      = "application/json"
 	expectedSystemInstanceName              = "test-app"
 	expectedSecondSystemInstanceName        = "second-test-app"
 	expectedSystemInstanceDescription       = "test-app-description"
@@ -48,21 +52,22 @@ const (
 	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
 	expectedVendorTitle                     = "SAP"
 
-	expectedNumberOfSystemInstances = 2
-	expectedNumberOfPackages        = 2
-	expectedNumberOfBundles         = 4
-	expectedNumberOfProducts        = 2
-	expectedNumberOfAPIs            = 2
-	expectedNumberOfEvents          = 4
-	expectedNumberOfTombstones      = 2
-	expectedNumberOfVendors         = 2
+	expectedNumberOfSystemInstances           = 2
+	expectedNumberOfPackages                  = 2
+	expectedNumberOfBundles                   = 4
+	expectedNumberOfProducts                  = 2
+	expectedNumberOfAPIs                      = 2
+	expectedNumberOfResourceDefinitionsPerAPI = 3
+	expectedNumberOfEvents                    = 4
+	expectedNumberOfTombstones                = 2
+	expectedNumberOfVendors                   = 4
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
 	expectedNumberOfEventsInFirstBundle  = 2
 	expectedNumberOfEventsInSecondBundle = 2
 
-	testTimeoutAdditionalBuffer = 1 * time.Minute
+	testTimeoutAdditionalBuffer = 5 * time.Minute
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -139,7 +144,7 @@ func TestORDAggregator(t *testing.T) {
 	require.NoError(t, err)
 
 	defaultTestTimeout := scheduleTime + testTimeoutAdditionalBuffer
-	defaultCheckInterval := scheduleTime / 20
+	defaultCheckInterval := defaultTestTimeout / 20
 
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
@@ -201,6 +206,27 @@ func TestORDAggregator(t *testing.T) {
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 			t.Log("Successfully verified apis")
+
+			// Verify the api spec
+			specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
+			require.Equal(t, expectedNumberOfResourceDefinitionsPerAPI, len(specs))
+
+			var specURL string
+			for _, s := range specs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedSpecType && specFormat == expectedSpecFormat {
+					specURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified api spec")
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
