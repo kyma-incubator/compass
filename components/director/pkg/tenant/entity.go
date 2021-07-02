@@ -44,9 +44,9 @@ func (e Entity) WithStatus(status Status) Entity {
 
 func StrToType(value string) Type {
 	switch value {
-	case Account:
+	case string(Account):
 		return Account
-	case Customer:
+	case string(Customer):
 		return Customer
 	default:
 		return Unknown

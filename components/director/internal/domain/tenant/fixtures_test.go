@@ -25,7 +25,7 @@ const (
 
 var (
 	testError        = errors.New("test error")
-	testTableColumns = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
+	testTableColumns = []string{"id", "external_name", "external_tenant", "subdomain", "parent", "type", "provider_name", "status"}
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
@@ -86,7 +86,7 @@ func fixSQLRowsWithComputedValues(rows []sqlRowWithComputedValues) *sqlmock.Rows
 	columns := append(testTableColumns, initializedColumn)
 	out := sqlmock.NewRows(columns)
 	for _, row := range rows {
-		out.AddRow(row.id, row.name, row.externalTenant, row.parent, row.typeRow, row.provider, row.status, row.initialized)
+		out.AddRow(row.id, row.name, row.externalTenant, row.subdomain, row.parent, row.typeRow, row.provider, row.status, row.initialized)
 	}
 	return out
 }
@@ -100,13 +100,14 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 }
 
 func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
-	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.Parent, ent.Type, ent.ProviderName, ent.Status}
+	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.Subdomain, ent.Parent, ent.Type, ent.ProviderName, ent.Status}
 }
 
 func newModelBusinessTenantMappingInput(name string) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: testExternal,
+		Subdomain:      "",
 		Parent:         "",
 		Type:           string(tenant.Account),
 		Provider:       testProvider,
