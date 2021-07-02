@@ -29,7 +29,8 @@ const (
 	apisField             = "apis"
 	eventsField           = "events"
 
-	expectedExternalServicesMockSpecURL     = "/external-api/unsecured/spec/flapping"
+	expectedSpecType                        = "openapi-v3"
+	expectedSpecFormat                      = "application/json"
 	expectedSystemInstanceName              = "test-app"
 	expectedSecondSystemInstanceName        = "second-test-app"
 	expectedSystemInstanceDescription       = "test-app-description"
@@ -212,9 +213,10 @@ func TestORDAggregator(t *testing.T) {
 
 			var specURL string
 			for _, s := range specs {
-				url := s.Get("url").String()
-				if strings.Contains(url, expectedExternalServicesMockSpecURL) {
-					specURL = url
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedSpecType && specFormat == expectedSpecFormat {
+					specURL = s.Get("url").String()
 					break
 				}
 			}
