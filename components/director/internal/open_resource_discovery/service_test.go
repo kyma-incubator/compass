@@ -886,7 +886,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return specSvc
 			},
 			eventSvcFn: successfulEmptyEventList,
-			clientFn: successfulClientFetch,
+			clientFn:   successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api spec get fetch request fails",
@@ -911,7 +911,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return specSvc
 			},
 			eventSvcFn: successfulEmptyEventList,
-			clientFn: successfulClientFetch,
+			clientFn:   successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api spec refetch fails",
@@ -937,7 +937,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return specSvc
 			},
 			eventSvcFn: successfulEmptyEventList,
-			clientFn: successfulClientFetch,
+			clientFn:   successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event list fails",
