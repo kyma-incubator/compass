@@ -3,6 +3,7 @@ package open_resource_discovery_test
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -143,7 +144,39 @@ var (
       ]`)
 
 	boolPtr = true
+
+	apisFromDB = map[string]*model.APIDefinition{
+		api1ORDID: fixAPIsWithHash()[0],
+		api2ORDID: fixAPIsWithHash()[1],
+	}
+
+	eventsFromDB = map[string]*model.EventDefinition{
+		event1ORDID: fixEventsWithHash()[0],
+		event2ORDID: fixEventsWithHash()[1],
+	}
+
+	pkgsFromDB = map[string]*model.Package{
+		packageORDID: fixPackagesWithHash()[0],
+	}
+
+	hashApi1, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
+	hashApi2, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[1])
+	hashPackage, _ = open_resource_discovery.HashObject(fixORDDocument().Packages[0])
+
+	resourceHashes = fixResourceHashes()
 )
+
+func fixResourceHashes() map[string]uint64 {
+	return map[string]uint64{
+		api1ORDID:    hashApi1,
+		api2ORDID:    hashApi2,
+		event1ORDID:  hashEvent1,
+		event2ORDID:  hashEvent2,
+		packageORDID: hashPackage,
+	}
+}
 
 func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	return &open_resource_discovery.WellKnownConfig{
@@ -621,6 +654,44 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 			Labels:           json.RawMessage(labels),
 		},
 	}
+}
+
+func fixAPIsWithHash() []*model.APIDefinition {
+	apis := fixAPIs()
+
+	for idx, api := range apis {
+		ordID := str.PtrStrToStr(api.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		api.ResourceHash = hash
+		api.Version.Value = fixORDDocument().APIResources[idx].VersionInput.Value
+	}
+
+	return apis
+}
+
+func fixEventsWithHash() []*model.EventDefinition {
+	events := fixEvents()
+
+	for idx, event := range events {
+		ordID := str.PtrStrToStr(event.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		event.ResourceHash = hash
+		event.Version.Value = fixORDDocument().EventResources[idx].VersionInput.Value
+	}
+
+	return events
+}
+
+func fixPackagesWithHash() []*model.Package {
+	pkgs := fixPackages()
+
+	for idx, pkg := range pkgs {
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[pkg.OrdID], 10))
+		pkg.ResourceHash = hash
+		pkg.Version = fixORDDocument().Packages[idx].Version
+	}
+
+	return pkgs
 }
 
 func fixAPIs() []*model.APIDefinition {
