@@ -42,6 +42,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
+			"managed":   false,
 		},
 	}
 
@@ -148,6 +149,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
+			"managed":   false,
 		},
 	}
 	appSecondInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inSecond)
@@ -181,6 +183,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
+			"managed":   false,
 		},
 	}
 	appFourthInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inFourth)
@@ -216,6 +219,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
+			"managed":   false,
 		},
 		StatusCondition: &statusCond,
 	}
@@ -255,6 +259,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 		},
 		Labels: graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
+			"managed":   false,
 		},
 	}
 

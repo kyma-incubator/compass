@@ -126,7 +126,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 }
 
 func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
-	var labels map[string]interface{}
+	labels := make(map[string]interface{})
 	if in.Labels != nil {
 		labels = in.Labels
 	}
