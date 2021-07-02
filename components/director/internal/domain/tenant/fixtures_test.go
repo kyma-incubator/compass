@@ -33,7 +33,7 @@ func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping
 		ID:             id,
 		Name:           name,
 		ExternalTenant: testExternal,
-		Subdomain: 		"",
+		Subdomain:      "",
 		Parent:         "",
 		Type:           tenant.Account,
 		Provider:       testProvider,
@@ -52,7 +52,7 @@ func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
 		ID:             id,
 		Name:           name,
 		ExternalTenant: testExternal,
-		Subdomain:		sql.NullString{},
+		Subdomain:      sql.NullString{},
 		Parent:         sql.NullString{},
 		Type:           tenant.Account,
 		ProviderName:   testProvider,
@@ -70,7 +70,7 @@ type sqlRow struct {
 	id             string
 	name           string
 	externalTenant string
-	subdomain 	   sql.NullString
+	subdomain      sql.NullString
 	parent         sql.NullString
 	typeRow        string
 	provider       string
@@ -94,7 +94,7 @@ func fixSQLRowsWithComputedValues(rows []sqlRowWithComputedValues) *sqlmock.Rows
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
-		out.AddRow(row.id, row.name, row.externalTenant, row.subdomain ,row.parent, row.typeRow, row.provider, row.status)
+		out.AddRow(row.id, row.name, row.externalTenant, row.subdomain, row.parent, row.typeRow, row.provider, row.status)
 	}
 	return out
 }

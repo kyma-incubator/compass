@@ -8,7 +8,7 @@ type Entity struct {
 	ID             string         `db:"id"`
 	Name           string         `db:"external_name"`
 	ExternalTenant string         `db:"external_tenant"`
-	Subdomain	   sql.NullString `db:"subdomain"`
+	Subdomain      sql.NullString `db:"subdomain"`
 	Parent         sql.NullString `db:"parent"`
 	Type           Type           `db:"type"`
 	ProviderName   string         `db:"provider_name"`
