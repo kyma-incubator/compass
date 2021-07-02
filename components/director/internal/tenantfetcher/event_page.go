@@ -3,6 +3,7 @@ package tenantfetcher
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -111,9 +112,20 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.NameField)
 	}
 
+	customerId, ok := gjson.GetBytes(eventData, ep.fieldMapping.CustomerIDField).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.CustomerIDField)
+	}
+	subdomain, ok := gjson.GetBytes(eventData, ep.fieldMapping.SubdomainField).Value().(string)
+	if !ok {
+		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.SubdomainField, id)
+	}
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: id,
+		Subdomain:      subdomain,
+		Parent:         customerId,
+		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       ep.providerName,
 	}, nil
 }

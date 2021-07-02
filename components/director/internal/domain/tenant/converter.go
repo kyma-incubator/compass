@@ -70,4 +70,3 @@ func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*grap
 
 	return tenants
 }
-

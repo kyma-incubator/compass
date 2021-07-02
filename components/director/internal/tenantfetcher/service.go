@@ -26,6 +26,8 @@ type TenantFieldMapping struct {
 
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
+	CustomerIDField    string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
+	SubdomainField     string `envconfig:"optional,APP_MAPPING_FIELD_SUBDOMAIN"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`

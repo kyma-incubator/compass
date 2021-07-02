@@ -24,11 +24,12 @@ const tableName string = `public.business_tenant_mappings`
 const labelDefinitionsTableName string = `public.label_definitions`
 const labelDefinitionsTenantIDColumn string = `tenant_id`
 
-var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
+var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, subdomainColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
 var (
 	idColumn                  = "id"
 	externalNameColumn        = "external_name"
 	externalTenantColumn      = "external_tenant"
+	subdomainColumn           = "subdomain"
 	parentColumn              = "parent"
 	typeColumn                = "type"
 	providerNameColumn        = "provider_name"
@@ -59,7 +60,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, tableColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, subdomainColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
 		conv:               conv,
 	}

@@ -17,6 +17,7 @@ const (
 	idColumn                  = "id"
 	externalNameColumn        = "external_name"
 	externalTenantColumn      = "external_tenant"
+	subdomain                 = "subdomain"
 	parentColumn              = "parent"
 	typeColumn                = "type"
 	providerNameColumn        = "provider_name"
@@ -24,8 +25,8 @@ const (
 	initializedComputedColumn = "initialized"
 )
 
-var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
-var updatableTableColumns = []string{externalNameColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
+var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, subdomain, parentColumn, typeColumn, providerNameColumn, statusColumn}
+var updatableTableColumns = []string{externalNameColumn, subdomain, parentColumn, typeColumn, providerNameColumn, statusColumn}
 
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
