@@ -86,7 +86,7 @@ global:
       version: "PR-31"
     schema_migrator:
       dir:
-      version: "PR-1898"
+      version: "PR-1929"
     system_broker:
       dir:
       version: "PR-1925"
