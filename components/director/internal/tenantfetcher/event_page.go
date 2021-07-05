@@ -3,6 +3,7 @@ package tenantfetcher
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -115,5 +116,6 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		Name:           name,
 		ExternalTenant: id,
 		Provider:       ep.providerName,
+		Type:           string(tenant.Account),
 	}, nil
 }
