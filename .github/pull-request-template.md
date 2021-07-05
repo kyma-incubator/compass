@@ -1,3 +1,4 @@
+
 <!--   Thank you for your contribution. Before you submit the pull request:
 1. Follow contributing guidelines, templates, the recommended Git workflow, and any related documentation.
 2. Read and submit the required Contributor Licence Agreements (https://github.com/kyma-project/community/blob/master/CONTRIBUTING.md#agreements-and-licenses).
@@ -22,3 +23,4 @@ Changes proposed in this pull request:
 - [ ] Unit tests
 - [ ] Integration tests
 - [ ] `chart/compass/values.yaml` is updated <!-- in case of code changes in the `components` or `tests` directories -->
+- [ ] Mocks are regenerated, using the automated script
