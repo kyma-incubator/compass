@@ -53,6 +53,7 @@ func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
+		Type:           string(tenant.Account),
 		Provider:       provider,
 		Type:           tenant.TypeToStr(tenant.Account),
 	}

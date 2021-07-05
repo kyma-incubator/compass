@@ -127,5 +127,6 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		Parent:         customerId,
 		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       ep.providerName,
+		Type:           string(tenant.Account),
 	}, nil
 }
