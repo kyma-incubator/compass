@@ -6,6 +6,8 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -151,6 +153,7 @@ func Test_getTenantMappings(t *testing.T) {
 	expectedTenantMapping := model.BusinessTenantMappingInput{
 		ExternalTenant: id,
 		Name:           name,
+		Type:           string(tenant.Account),
 		Provider:       providerName,
 	}
 

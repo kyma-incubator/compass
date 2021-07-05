@@ -3,6 +3,8 @@ package tenantfetcher_test
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -51,6 +53,7 @@ func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
+		Type:           string(tenant.Account),
 		Provider:       provider,
 	}
 }
