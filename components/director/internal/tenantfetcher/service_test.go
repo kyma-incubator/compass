@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -308,6 +310,7 @@ func TestService_SyncTenants(t *testing.T) {
 				receivedTenants := []model.BusinessTenantMappingInput{{
 					Name:           "updated-name",
 					ExternalTenant: busTenant1.ExternalTenant,
+					Type:           string(tenant.Account),
 					Provider:       busTenant1.Provider,
 				}}
 
