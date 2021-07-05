@@ -78,6 +78,7 @@ func initHTTP(cfg config) http.Handler {
 	router.HandleFunc("/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig)
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)

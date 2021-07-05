@@ -8,10 +8,11 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210623072749-c159dfdd6510
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210624130802-cc5ecb2dda0e
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.8.0
 	github.com/vrischmann/envconfig v1.3.0

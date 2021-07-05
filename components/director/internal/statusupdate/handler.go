@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -40,14 +42,21 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			consumerInfo, err := consumer.LoadFromContext(ctx)
 			logger := log.C(ctx)
 
+			consumerInfo, err := consumer.LoadFromContext(ctx)
 			if err != nil {
 				logger.WithError(err).Errorf("An error has occurred while fetching consumer info from context: %v", err)
 				next.ServeHTTP(w, r)
 				return
 			}
+
+			if consumerInfo.Flow == oathkeeper.OneTimeTokenFlow {
+				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerInfo.ConsumerID)
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			var object WithStatusObject
 			switch consumerInfo.ConsumerType {
 			case consumer.Application:

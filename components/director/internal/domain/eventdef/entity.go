@@ -31,6 +31,7 @@ type Entity struct {
 	LineOfBusiness      sql.NullString `db:"line_of_business"`
 	Industry            sql.NullString `db:"industry"`
 	Extensible          sql.NullString `db:"extensible"`
+	ResourceHash        sql.NullString `db:"resource_hash"`
 	version.Version
 
 	*repo.BaseEntity

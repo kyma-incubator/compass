@@ -3,6 +3,7 @@ package open_resource_discovery_test
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -40,6 +41,14 @@ const (
 	event1ID    = "testEvent1"
 	event2ID    = "testEvent2"
 	tombstoneID = "testTs"
+
+	api1spec1ID  = "api1spec1ID"
+	api1spec2ID  = "api1spec2ID"
+	api1spec3ID  = "api1spec3ID"
+	api2spec1ID  = "api2spec1ID"
+	api2spec2ID  = "api2spec2ID"
+	event1specID = "event1specID"
+	event2specID = "event2specID"
 
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
@@ -135,7 +144,39 @@ var (
       ]`)
 
 	boolPtr = true
+
+	apisFromDB = map[string]*model.APIDefinition{
+		api1ORDID: fixAPIsWithHash()[0],
+		api2ORDID: fixAPIsWithHash()[1],
+	}
+
+	eventsFromDB = map[string]*model.EventDefinition{
+		event1ORDID: fixEventsWithHash()[0],
+		event2ORDID: fixEventsWithHash()[1],
+	}
+
+	pkgsFromDB = map[string]*model.Package{
+		packageORDID: fixPackagesWithHash()[0],
+	}
+
+	hashApi1, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
+	hashApi2, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[1])
+	hashPackage, _ = open_resource_discovery.HashObject(fixORDDocument().Packages[0])
+
+	resourceHashes = fixResourceHashes()
 )
+
+func fixResourceHashes() map[string]uint64 {
+	return map[string]uint64{
+		api1ORDID:    hashApi1,
+		api2ORDID:    hashApi2,
+		event1ORDID:  hashEvent1,
+		event2ORDID:  hashEvent2,
+		packageORDID: hashPackage,
+	}
+}
 
 func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	return &open_resource_discovery.WellKnownConfig{
@@ -273,7 +314,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "openapi-v3",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseURL),
+						URL:       fmt.Sprintf("%s/external-api/unsecured/spec/flapping", baseUrl),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -352,7 +393,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "openapi-v3",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseURL),
+						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseUrl),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -438,7 +479,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "asyncapi-v2",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/api/eventCatalog.json", baseURL),
+						URL:       fmt.Sprintf("%s/api/eventCatalog.json", baseUrl),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -615,6 +656,44 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 	}
 }
 
+func fixAPIsWithHash() []*model.APIDefinition {
+	apis := fixAPIs()
+
+	for idx, api := range apis {
+		ordID := str.PtrStrToStr(api.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		api.ResourceHash = hash
+		api.Version.Value = fixORDDocument().APIResources[idx].VersionInput.Value
+	}
+
+	return apis
+}
+
+func fixEventsWithHash() []*model.EventDefinition {
+	events := fixEvents()
+
+	for idx, event := range events {
+		ordID := str.PtrStrToStr(event.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		event.ResourceHash = hash
+		event.Version.Value = fixORDDocument().EventResources[idx].VersionInput.Value
+	}
+
+	return events
+}
+
+func fixPackagesWithHash() []*model.Package {
+	pkgs := fixPackages()
+
+	for idx, pkg := range pkgs {
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[pkg.OrdID], 10))
+		pkg.ResourceHash = hash
+		pkg.Version = fixORDDocument().Packages[idx].Version
+	}
+
+	return pkgs
+}
+
 func fixAPIs() []*model.APIDefinition {
 	return []*model.APIDefinition{
 		{
@@ -685,6 +764,15 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 	}
+}
+
+func fixAPIsNoVersionBump() []*model.APIDefinition {
+	apis := fixAPIs()
+	doc := fixORDDocument()
+	for i, api := range apis {
+		api.Version.Value = doc.APIResources[i].VersionInput.Value
+	}
+	return apis
 }
 
 func fixAPIPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
@@ -771,6 +859,15 @@ func fixEvents() []*model.EventDefinition {
 	}
 }
 
+func fixEventsNoVersionBump() []*model.EventDefinition {
+	events := fixEvents()
+	doc := fixORDDocument()
+	for i, event := range events {
+		event.Version.Value = doc.EventResources[i].VersionInput.Value
+	}
+	return events
+}
+
 func fixApi1SpecInputs() []*model.SpecInput {
 	openApiType := model.APISpecTypeOpenAPIV3
 	edmxAPIType := model.APISpecTypeEDMX
@@ -780,7 +877,7 @@ func fixApi1SpecInputs() []*model.SpecInput {
 			APIType:    &openApiType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
+				URL: baseURL + "/external-api/unsecured/spec/flapping",
 			},
 		},
 		{
@@ -798,6 +895,40 @@ func fixApi1SpecInputs() []*model.SpecInput {
 			FetchRequest: &model.FetchRequestInput{
 				URL: "https://TEST:443//odata/$metadata",
 			},
+		},
+	}
+}
+
+func fixApi1Specs() []*model.Spec {
+	openApiType := model.APISpecTypeOpenAPIV3
+	edmxAPIType := model.APISpecTypeEDMX
+	return []*model.Spec{
+		{
+			ID:         api1spec1ID,
+			Format:     "application/json",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api1ID,
+			Data:       str.Ptr("data"),
+		},
+		{
+			ID:         api1spec2ID,
+			Format:     "text/yaml",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api1ID,
+			Data:       str.Ptr("data"),
+		},
+		{
+			ID:         api1spec3ID,
+			Format:     "application/xml",
+			APIType:    &edmxAPIType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api1ID,
+			Data:       str.Ptr("data"),
 		},
 	}
 }
@@ -825,6 +956,31 @@ func fixApi2SpecInputs() []*model.SpecInput {
 	}
 }
 
+func fixApi2Specs() []*model.Spec {
+	edmxAPIType := model.APISpecTypeEDMX
+	openApiType := model.APISpecTypeOpenAPIV3
+	return []*model.Spec{
+		{
+			ID:         api2spec1ID,
+			Format:     "application/xml",
+			APIType:    &edmxAPIType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api2ID,
+			Data:       str.Ptr("data"),
+		},
+		{
+			ID:         api2spec2ID,
+			Format:     "application/json",
+			APIType:    &openApiType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.APISpecReference,
+			ObjectID:   api2ID,
+			Data:       str.Ptr("data"),
+		},
+	}
+}
+
 func fixEvent1SpecInputs() []*model.SpecInput {
 	eventType := model.EventSpecTypeAsyncAPIV2
 	return []*model.SpecInput{
@@ -835,6 +991,21 @@ func fixEvent1SpecInputs() []*model.SpecInput {
 			FetchRequest: &model.FetchRequestInput{
 				URL: "http://localhost:8080/asyncApi2.json",
 			},
+		},
+	}
+}
+
+func fixEvent1Specs() []*model.Spec {
+	eventType := model.EventSpecTypeAsyncAPIV2
+	return []*model.Spec{
+		{
+			ID:         event1specID,
+			Format:     "application/json",
+			EventType:  &eventType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.EventSpecReference,
+			ObjectID:   event1ID,
+			Data:       str.Ptr("data"),
 		},
 	}
 }
@@ -853,6 +1024,21 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 	}
 }
 
+func fixEvent2Specs() []*model.Spec {
+	eventType := model.EventSpecTypeAsyncAPIV2
+	return []*model.Spec{
+		{
+			ID:         event2specID,
+			Format:     "application/json",
+			EventType:  &eventType,
+			CustomType: str.Ptr(""),
+			ObjectType: model.EventSpecReference,
+			ObjectID:   event2ID,
+			Data:       str.Ptr("data"),
+		},
+	}
+}
+
 func fixTombstones() []*model.Tombstone {
 	return []*model.Tombstone{
 		{
@@ -861,6 +1047,22 @@ func fixTombstones() []*model.Tombstone {
 			TenantID:      tenantID,
 			ApplicationID: appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
+		},
+	}
+}
+
+func fixSuccessfulFetchRequest() *model.FetchRequest {
+	return &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionSucceeded,
+		},
+	}
+}
+
+func fixFailedFetchRequest() *model.FetchRequest {
+	return &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionFailed,
 		},
 	}
 }
