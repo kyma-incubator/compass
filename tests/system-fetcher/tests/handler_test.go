@@ -271,7 +271,11 @@ func setMockSystems(t *testing.T, mockSystems []byte) {
 	reader := bytes.NewReader(mockSystems)
 	response, err := http.DefaultClient.Post(cfg.ExternalSvcMockURL+"/systemfetcher/configure", "application/json", reader)
 	require.NoError(t, err)
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
 	if response.StatusCode != http.StatusOK {
 		bytes, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
