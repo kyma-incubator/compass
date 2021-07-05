@@ -181,9 +181,9 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) (model.Applic
 		StatusCondition: &initStatusCond,
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
-			"isManaged": true,
+			"managed": true,
 		},
 	}
 
-	return appRegisterInput, sc.TemplateType
+	return appRegisterInput, sc.TemplateID
 }

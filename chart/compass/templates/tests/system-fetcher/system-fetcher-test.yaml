@@ -49,6 +49,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
               value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
+            - name: EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

@@ -476,7 +476,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 
 	normalizedName := s.appNameNormalizer.Normalize(in.Name)
 	for _, app := range applications {
-		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) && in.SystemNumber == app.SystemNumber {
 			return "", apperrors.NewNotUniqueNameError(resource.Application)
 		}
 	}

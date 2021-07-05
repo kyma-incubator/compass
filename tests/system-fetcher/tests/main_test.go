@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -20,11 +21,21 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+type Config struct {
+	ExternalSvcMockURL string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
+}
+
 var (
+	cfg              Config
 	dexGraphQLClient *graphql.Client
 )
 
 func TestMain(m *testing.M) {
+	err := envconfig.Init(&cfg)
+	if err != nil {
+		log.D().Fatal(err)
+	}
+
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 

@@ -104,6 +104,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		IntegrationSystemID:   in.IntegrationSystemID,
 		ApplicationTemplateID: in.ApplicationTemplateID,
 		ProviderName:          in.ProviderName,
+		SystemNumber:          in.SystemNumber,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -211,6 +212,7 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Status:              c.statusGraphQLToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
+		SystemNumber:        obj.SystemNumber,
 		BaseEntity: &model.BaseEntity{
 			ID: obj.ID,
 		},

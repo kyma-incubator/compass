@@ -17,7 +17,10 @@
 package tests
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
+	"net/http"
 	"testing"
 	"time"
 
@@ -28,59 +31,49 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func TestSystemFetcher(t *testing.T) {
+func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
+
+	mockSystems := []byte(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	}]`)
+
+	setMockSystems(t, mockSystems)
 
 	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
 
 	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
-	cronjob, err := k8sClient.BatchV1beta1().CronJobs("compass-system").Get("compass-system-fetcher", metav1.GetOptions{})
-	require.NoError(t, err)
-	t.Log("Got the cronjob")
 	jobName := "system-fetcher-test"
-	job := &v1.Job{
-		Spec: v1.JobSpec{
-			Parallelism:             cronjob.Spec.JobTemplate.Spec.Parallelism,
-			Completions:             cronjob.Spec.JobTemplate.Spec.Completions,
-			ActiveDeadlineSeconds:   cronjob.Spec.JobTemplate.Spec.ActiveDeadlineSeconds,
-			BackoffLimit:            cronjob.Spec.JobTemplate.Spec.BackoffLimit,
-			Selector:                cronjob.Spec.JobTemplate.Spec.Selector,
-			ManualSelector:          cronjob.Spec.JobTemplate.Spec.ManualSelector,
-			Template:                cronjob.Spec.JobTemplate.Spec.Template,
-			TTLSecondsAfterFinished: cronjob.Spec.JobTemplate.Spec.TTLSecondsAfterFinished,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: jobName,
-		},
-	}
-	t.Log("Creating job")
-	_, err = k8sClient.BatchV1().Jobs("compass-system").Create(job)
-	require.NoError(t, err)
-
+	namespace := "compass-system"
+	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		err := k8sClient.BatchV1().Jobs("compass-system").Delete(jobName, metav1.NewDeleteOptions(0))
+		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
 		require.NoError(t, err)
 	}()
 
-	elapsed := time.After(time.Minute * 2)
-	for {
-		select {
-		case <-elapsed:
-			t.Fatal("Timeout reached waiting for job to complete. Exiting...")
-		default:
-		}
-		t.Log("Waiting for job to finish")
-		job, err = k8sClient.BatchV1().Jobs("compass-system").Get(jobName, metav1.GetOptions{})
-		require.NoError(t, err)
-		if job.Status.Succeeded > 0 {
-			break
-		}
-		time.Sleep(time.Second * 2)
-	}
+	waitForJobToSucceed(t, k8sClient, jobName, namespace)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -120,4 +113,168 @@ func TestSystemFetcher(t *testing.T) {
 	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func TestSystemFetcherDuplicateSystems(t *testing.T) {
+	ctx := context.TODO()
+
+	mockSystems := []byte(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	},{
+		"systemNumber": "3",
+		"displayName": "name1",
+		"productDescription": "description",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	}]`)
+
+	setMockSystems(t, mockSystems)
+
+	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+
+	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+	jobName := "system-fetcher-test"
+	namespace := "compass-system"
+	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	defer func() {
+		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
+		require.NoError(t, err)
+	}()
+
+	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+
+	description := "description"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description,
+				ApplicationTemplateID: &template.ID,
+			},
+			Labels: directorSchema.Labels{
+				"managed": true,
+			},
+		},
+		{
+			Application: directorSchema.Application{
+				Name:        "name2",
+				Description: &description,
+			},
+			Labels: directorSchema.Labels{
+				"managed": true,
+			},
+		},
+		{
+			Application: directorSchema.Application{
+				Name:        "name1",
+				Description: &description,
+			},
+			Labels: directorSchema.Labels{
+				"managed": true,
+			},
+		},
+	}
+
+	req := fixtures.FixGetApplicationsRequestWithPagination()
+	var resp directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
+	require.NoError(t, err)
+
+	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	for _, app := range resp.Data {
+		actualApps = append(actualApps, directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  app.Application.Name,
+				Description:           app.Application.Description,
+				ApplicationTemplateID: app.ApplicationTemplateID,
+			},
+			Labels: directorSchema.Labels{
+				"managed": app.Labels["managed"],
+			},
+		})
+	}
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
+		}
+	}()
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+	elapsed := time.After(time.Minute * 2)
+	for {
+		select {
+		case <-elapsed:
+			t.Fatal("Timeout reached waiting for job to complete. Exiting...")
+		default:
+		}
+		t.Log("Waiting for job to finish")
+		job, err := k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		require.NoError(t, err)
+		if job.Status.Succeeded > 0 {
+			break
+		}
+		time.Sleep(time.Second * 2)
+	}
+}
+
+func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
+	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(cronJobName, metav1.GetOptions{})
+	require.NoError(t, err)
+	t.Log("Got the cronjob")
+
+	job := &v1.Job{
+		Spec: v1.JobSpec{
+			Parallelism:             cronjob.Spec.JobTemplate.Spec.Parallelism,
+			Completions:             cronjob.Spec.JobTemplate.Spec.Completions,
+			ActiveDeadlineSeconds:   cronjob.Spec.JobTemplate.Spec.ActiveDeadlineSeconds,
+			BackoffLimit:            cronjob.Spec.JobTemplate.Spec.BackoffLimit,
+			Selector:                cronjob.Spec.JobTemplate.Spec.Selector,
+			ManualSelector:          cronjob.Spec.JobTemplate.Spec.ManualSelector,
+			Template:                cronjob.Spec.JobTemplate.Spec.Template,
+			TTLSecondsAfterFinished: cronjob.Spec.JobTemplate.Spec.TTLSecondsAfterFinished,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+	}
+	t.Log("Creating job")
+	_, err = k8sClient.BatchV1().Jobs(namespace).Create(job)
+	require.NoError(t, err)
+}
+
+func setMockSystems(t *testing.T, mockSystems []byte) {
+	reader := bytes.NewReader(mockSystems)
+	response, err := http.DefaultClient.Post(cfg.ExternalSvcMockURL+"/systemfetcher/configure", "application/json", reader)
+	require.NoError(t, err)
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		bytes, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		t.Fatalf("Failed to set mock systems: %s", string(bytes))
+	}
 }

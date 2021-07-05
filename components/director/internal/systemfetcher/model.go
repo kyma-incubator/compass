@@ -36,7 +36,7 @@ type SystemBase struct {
 
 type System struct {
 	SystemBase
-	TemplateType string `json:"-"`
+	TemplateID string `json:"-"`
 }
 
 func (s *System) UnmarshalJSON(data []byte) error {
@@ -54,7 +54,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 			}
 		}
 		if mapped {
-			s.TemplateType = tm.ID
+			s.TemplateID = tm.ID
 		}
 	}
 

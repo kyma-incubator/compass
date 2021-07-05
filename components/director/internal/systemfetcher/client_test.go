@@ -31,7 +31,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
-		require.Equal(t, systems[0].TemplateType, "")
+		require.Equal(t, systems[0].TemplateID, "")
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
 		require.Len(t, systems, 4)
-		require.Equal(t, systems[0].TemplateType, "type1")
+		require.Equal(t, systems[0].TemplateID, "type1")
 	})
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {

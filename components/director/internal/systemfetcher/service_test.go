@@ -33,7 +33,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateType = "appTmp1"
+				systems[0].TemplateID = "appTmp1"
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
@@ -66,7 +66,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateType = "appTmp1"
+				systems[0].TemplateID = "appTmp1"
 				systems = append(systems, systemfetcher.System{
 					SystemBase: systemfetcher.SystemBase{
 						DisplayName:            "System2",
@@ -74,7 +74,7 @@ func TestSyncSystems(t *testing.T) {
 						BaseURL:                "http://example2.com",
 						InfrastructureProvider: "test",
 					},
-					TemplateType: "appTmp2",
+					TemplateID: "appTmp2",
 				})
 				return systems
 			},
@@ -108,7 +108,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateType = "appTmp1"
+				systems[0].TemplateID = "appTmp1"
 				systems = append(systems, systemfetcher.System{
 					SystemBase: systemfetcher.SystemBase{
 						DisplayName:            "System2",
@@ -116,7 +116,7 @@ func TestSyncSystems(t *testing.T) {
 						BaseURL:                "http://example2.com",
 						InfrastructureProvider: "test",
 					},
-					TemplateType: "appTmp2",
+					TemplateID: "appTmp2",
 				})
 				return systems
 			},
@@ -189,7 +189,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateType = "appTmp1"
+				systems[0].TemplateID = "appTmp1"
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
@@ -223,7 +223,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateType = "type1"
+				systems[0].TemplateID = "type1"
 				systems = append(systems, systemfetcher.System{
 					SystemBase: systemfetcher.SystemBase{
 						DisplayName:            "System2",
@@ -231,7 +231,7 @@ func TestSyncSystems(t *testing.T) {
 						BaseURL:                "http://example2.com",
 						InfrastructureProvider: "test",
 					},
-					TemplateType: "type2",
+					TemplateID: "type2",
 				})
 				return systems
 			},
@@ -298,10 +298,10 @@ func fixAppsInputsBySystems(systems []systemfetcher.System) []model.ApplicationR
 				SystemNumber:    &systems[i].SystemNumber,
 				StatusCondition: &initStatusCond,
 				Labels: map[string]interface{}{
-					"isManaged": true,
+					"managed": true,
 				},
 			},
-			TemplateID: systems[i].TemplateType,
+			TemplateID: systems[i].TemplateID,
 		})
 	}
 	return result

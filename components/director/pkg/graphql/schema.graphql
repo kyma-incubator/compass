@@ -685,6 +685,7 @@ type AppSystemAuth implements SystemAuth {
 type Application {
 	id: ID!
 	name: String!
+	systemNumber: String
 	providerName: String
 	description: String
 	integrationSystemID: ID

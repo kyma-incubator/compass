@@ -220,6 +220,10 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 		appName = s.appNameNormalizer.Normalize(app.Name)
 	}
 
+	if app.SystemNumber != nil {
+		appName += "-" + *app.SystemNumber
+	}
+
 	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
