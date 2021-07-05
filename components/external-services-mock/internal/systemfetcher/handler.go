@@ -3,6 +3,7 @@ package systemfetcher
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -32,7 +33,11 @@ func (s *SystemFetcherHandler) HandleConfigure(rw http.ResponseWriter, req *http
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
 		return
 	}
-	defer req.Body.Close()
+	defer func() {
+		if err := req.Body.Close(); err != nil {
+			log.Printf("Could not close request body: %s", err)
+		}
+	}()
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
