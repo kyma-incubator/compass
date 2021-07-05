@@ -44,7 +44,7 @@ func TestService_SyncTenants(t *testing.T) {
 	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider)
 
 	businessTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2, busTenant3}
-	var parentTenants []model.BusinessTenantMappingInput
+	parentTenants := []model.BusinessTenantMappingInput{}
 
 	event1 := fixEvent(busTenant1.ExternalTenant, "foo", tenantFieldMapping)
 	event2 := fixEvent(busTenant2.ExternalTenant, "bar", tenantFieldMapping)
@@ -93,7 +93,7 @@ func TestService_SyncTenants(t *testing.T) {
 	multiTenantEvents = append(multiTenantEvents, tenantEvents...)
 	multiBusinessTenants := append(businessTenants, businessTenants...)
 	multiBusinessTenants = append(multiBusinessTenants, businessTenants...)
-	var emptySlice []model.BusinessTenantMappingInput
+	emptySlice := []model.BusinessTenantMappingInput{}
 
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
