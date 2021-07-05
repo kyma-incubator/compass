@@ -71,7 +71,7 @@ global:
       version: "PR-1910"
     director:
       dir:
-      version: "PR-1927"
+      version: "PR-1935"
     gateway:
       dir:
       version: "PR-1910"
