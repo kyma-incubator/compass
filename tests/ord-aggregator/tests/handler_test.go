@@ -143,7 +143,7 @@ func TestORDAggregator(t *testing.T) {
 	scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 	require.NoError(t, err)
 
-	defaultTestTimeout := scheduleTime + testTimeoutAdditionalBuffer
+	defaultTestTimeout := 2*scheduleTime + testTimeoutAdditionalBuffer
 	defaultCheckInterval := defaultTestTimeout / 20
 
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
