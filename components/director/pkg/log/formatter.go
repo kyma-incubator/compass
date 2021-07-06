@@ -50,17 +50,17 @@ type KibanaFormatter struct {
 
 // Format formats a logrus entry for Kibana logging
 func (f *KibanaFormatter) Format(e *logrus.Entry) ([]byte, error) {
-	componentName, exists := e.Data[FieldComponentName].(string)
+	componentName, exists := e.Data[fieldComponentName].(string)
 	if !exists {
 		componentName = "-"
 	}
-	delete(e.Data, FieldComponentName)
+	delete(e.Data, fieldComponentName)
 
-	correlationID, exists := e.Data[FieldCorrelationID].(string)
+	correlationID, exists := e.Data[fieldCorrelationID].(string)
 	if !exists {
 		correlationID = "-"
 	}
-	delete(e.Data, FieldCorrelationID)
+	delete(e.Data, fieldCorrelationID)
 
 	if errorField, exists := e.Data[logrus.ErrorKey].(error); exists {
 		e.Message = e.Message + ": " + errorField.Error()
