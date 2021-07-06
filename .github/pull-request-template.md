@@ -22,3 +22,4 @@ Changes proposed in this pull request:
 - [ ] Unit tests
 - [ ] Integration tests
 - [ ] `chart/compass/values.yaml` is updated <!-- in case of code changes in the `components` or `tests` directories -->
+- [ ] Mocks are regenerated, using the automated script
