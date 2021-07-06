@@ -19,8 +19,20 @@ func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.Tena
 	}`, string(events), total, pages))
 }
 
-func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
-	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s"}`, fieldMapping.IDField, id, fieldMapping.NameField, name)
+func fixEvent(fields map[string]string) []byte {
+	eventEntries := ""
+	fieldsCount := len(fields)
+	counter := 0
+
+	for fieldName, fieldValue := range fields {
+		counter++
+		sign := ","
+		if counter == fieldsCount {
+			sign = ""
+		}
+		eventEntries = fmt.Sprintf(`%s "%s":"%s"%s`, eventEntries, fieldName, fieldValue, sign)
+	}
+	eventData := fmt.Sprintf("{%s}", eventEntries)
 
 	return wrapIntoEventPageJSON(eventData)
 }
@@ -49,12 +61,14 @@ func wrapIntoEventPageJSON(eventData string) []byte {
 	}`, fixID(), eventData))
 }
 
-func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.BusinessTenantMappingInput {
+func fixBusinessTenantMappingInput(name, externalTenant, provider string, parent string, subdomain string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
 		Provider:       provider,
-		Type:           tenant.TypeToStr(tenant.Account),
+		Parent:         parent,
+		Subdomain:      subdomain,
+		Type:           tenant.TypeToStr(tenantType),
 	}
 }
 

@@ -213,16 +213,14 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 			if parentInternalID, ok := currTenants[eventsTenants[i].Parent]; ok {
 				eventsTenants[i].Parent = parentInternalID
 			} else {
-
 				parentTenant := model.BusinessTenantMappingInput{
 					Name:           eventsTenants[i].Parent,
 					ExternalTenant: eventsTenants[i].Parent,
 					Subdomain:      "",
 					Parent:         "",
 					Type:           tenant.TypeToStr(tenant.Customer),
-					Provider:       "",
+					Provider:       s.providerName,
 				}
-
 				parentsToCreate = append(parentsToCreate, parentTenant)
 			}
 		}
