@@ -28,7 +28,6 @@ func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 		ProviderName: ptr.String("compass"),
 		Labels: graphql.Labels{
 			placeholder: []interface{}{placeholder},
-			"managed":   false,
 		},
 	}
 }
@@ -37,9 +36,6 @@ func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.A
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
-		Labels: graphql.Labels{
-			"managed": false,
-		},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.WebhookTypeConfigurationChanged,
 			URL:  ptr.String(webhookURL),
@@ -56,9 +52,6 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 			Type: graphql.WebhookTypeOpenResourceDiscovery,
 			URL:  ptr.String(webhookURL),
 		}},
-		Labels: graphql.Labels{
-			"managed": false,
-		},
 	}
 }
 
@@ -102,7 +95,6 @@ func FixApplicationRegisterInputWithBundles(t require.TestingT) graphql.Applicat
 		},
 		Labels: graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
-			"managed":   false,
 		},
 	}
 }
