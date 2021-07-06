@@ -34,17 +34,21 @@ type logKey struct{}
 
 const (
 	FieldRequestID     = "x-request-id"
+	FieldComponentName = "component"
+	FieldCorrelationID = "correlation_id"
 	fieldComponentName = "component"
 	jsonFormatterKey   = "json"
 	textFormatterKey   = "text"
+	kibanaFormatterKey = "kibana"
 )
 
 var (
 	defaultEntry = logrus.NewEntry(logrus.StandardLogger())
 
 	supportedFormatters = map[string]logrus.Formatter{
-		jsonFormatterKey: &logrus.JSONFormatter{},
-		textFormatterKey: &logrus.TextFormatter{},
+		jsonFormatterKey:   &logrus.JSONFormatter{},
+		textFormatterKey:   &logrus.TextFormatter{},
+		kibanaFormatterKey: &KibanaFormatter{},
 	}
 
 	supportedOutputs = map[string]io.Writer{
