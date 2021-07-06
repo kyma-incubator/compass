@@ -30,6 +30,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -244,6 +245,21 @@ func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace
 	t.Log("Deleting test job")
 	err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
 	require.NoError(t, err)
+
+	elapsed := time.After(time.Minute * 2)
+	for {
+		select {
+		case <-elapsed:
+			t.Fatal("Timeout reached waiting for job to be deleted. Exiting...")
+		default:
+		}
+		t.Log("Waiting for job to be deleted")
+		_, err = k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			break
+		}
+		time.Sleep(time.Second * 2)
+	}
 	t.Log("Test job deleted")
 }
 
