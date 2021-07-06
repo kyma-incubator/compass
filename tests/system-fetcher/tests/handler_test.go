@@ -69,8 +69,10 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	namespace := "compass-system"
 	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
+		t.Log("Deleting test job")
 		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
 		require.NoError(t, err)
+		t.Log("Test job deleted")
 	}()
 
 	waitForJobToSucceed(t, k8sClient, jobName, namespace)
@@ -262,9 +264,10 @@ func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes
 			Name: jobName,
 		},
 	}
-	t.Log("Creating job")
+	t.Log("Creating test job")
 	_, err = k8sClient.BatchV1().Jobs(namespace).Create(job)
 	require.NoError(t, err)
+	t.Log("Test job created")
 }
 
 func setMockSystems(t *testing.T, mockSystems []byte) {
