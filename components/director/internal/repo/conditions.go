@@ -153,6 +153,40 @@ func (c *jsonCondition) GetQueryArgs() ([]interface{}, bool) {
 	return []interface{}{c.val}, true
 }
 
+type jsonArrAnyMatchCondition struct {
+	field string
+	val   []interface{}
+}
+
+func NewJSONArrAnyMatchCondition(field string, val []interface{}) Condition {
+	return &jsonArrAnyMatchCondition{
+		field: field,
+		val:   val,
+	}
+}
+
+func NewJSONArrMatchAnyStringCondition(field string, values ...string) Condition {
+	valuesInterfaceSlice := make([]interface{}, 0, len(values))
+	for _, v := range values {
+		valuesInterfaceSlice = append(valuesInterfaceSlice, v)
+	}
+
+	return NewJSONArrAnyMatchCondition(field, valuesInterfaceSlice)
+}
+
+func (c *jsonArrAnyMatchCondition) GetQueryPart() string {
+	valHolders := make([]string, 0, len(c.val))
+	for range c.val {
+		valHolders = append(valHolders, "?")
+	}
+
+	return fmt.Sprintf("%s ?| array[%s]", c.field, strings.Join(valHolders, ","))
+}
+
+func (c *jsonArrAnyMatchCondition) GetQueryArgs() ([]interface{}, bool) {
+	return c.val, true
+}
+
 func NewTenantIsolationCondition(field string, val interface{}) Condition {
 	return NewTenantIsolationConditionWithPlaceholder(field,"?", []interface{}{val})
 }
