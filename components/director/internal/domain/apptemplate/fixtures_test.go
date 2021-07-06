@@ -362,6 +362,7 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+		Labels:         map[string]interface{}{},
 	}
 }
 

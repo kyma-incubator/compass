@@ -264,12 +264,12 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 	log.C(ctx).Infof("Registering Application with name %s", in.Name)
 
 	convertedIn, err := r.appConverter.CreateInputFromGraphQL(ctx, in)
-
-	convertedIn.Labels["managed"] = false
-
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting ApplicationRegister input")
 	}
+
+	convertedIn.Labels["managed"] = false
+
 	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
