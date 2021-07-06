@@ -2,8 +2,6 @@ package bundleinstanceauth_test
 
 import (
 	"context"
-	"testing"
-
 	pkgmock "github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
@@ -11,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -495,7 +494,12 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 	modelInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
 	gqlInstanceAuth := fixSimpleGQLBundleInstanceAuth(id)
 
-	modelBndl := &model.Bundle{DefaultInstanceAuth: fixModelAuth()}
+	modelBndl := &model.Bundle{
+		DefaultInstanceAuth: fixModelAuth(),
+		BaseEntity: &model.BaseEntity{
+			ID: testBundleID,
+		},
+	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -520,7 +524,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -545,7 +549,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -589,7 +593,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -612,7 +616,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -636,7 +640,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -677,7 +681,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {

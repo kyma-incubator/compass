@@ -152,3 +152,22 @@ func (c *jsonCondition) GetQueryPart() string {
 func (c *jsonCondition) GetQueryArgs() ([]interface{}, bool) {
 	return []interface{}{c.val}, true
 }
+
+func NewTenantIsolationCondition(field string, val interface{}) Condition {
+	return NewTenantIsolationConditionWithPlaceholder(field,"?", []interface{}{val})
+}
+
+func NewTenantIsolationConditionWithPlaceholder(field string, placeholder string, args []interface{}) Condition {
+	const query = `
+with recursive children AS
+(SELECT t1.id, t1.parent
+    FROM business_tenant_mappings t1
+    WHERE id = %s
+    UNION ALL
+    SELECT t2.id, t2.parent
+    FROM business_tenant_mappings t2
+    INNER JOIN children t on t.id = t2.parent)
+SELECT id from children
+`
+	return NewInConditionForSubQuery(field, fmt.Sprintf(query, placeholder), args)
+}

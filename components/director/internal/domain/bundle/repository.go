@@ -2,18 +2,11 @@ package mp_bundle
 
 import (
 	"context"
-	"fmt"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -128,35 +121,6 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	}
 
 	bndlModel, err := r.conv.FromEntity(&ent)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating Bundle model from entity")
-	}
-
-	return bndlModel, nil
-}
-
-func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error) {
-	var bndlEnt Entity
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	prefixedFieldNames := str.PrefixStrings(bundleColumns, "b.")
-	stmt := fmt.Sprintf(`SELECT %s FROM %s AS b JOIN %s AS a on a.%s=b.id where a.tenant_id=$1 AND a.id=$2`,
-		strings.Join(prefixedFieldNames, ", "),
-		bundleTable,
-		bundleInstanceAuthTable,
-		bundleInstanceAuthBundleRefField)
-
-	err = persist.GetContext(ctx, &bndlEnt, stmt, tenant, instanceAuthID)
-	switch {
-	case err != nil:
-		return nil, errors.Wrap(err, "while getting Bundle by Instance Auth ID")
-	}
-
-	bndlModel, err := r.conv.FromEntity(&bndlEnt)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Bundle model from entity")
 	}

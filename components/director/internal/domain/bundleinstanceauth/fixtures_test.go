@@ -281,7 +281,8 @@ func fixCreateArgs(ent bundleinstanceauth.Entity) []driver.Value {
 
 func fixSimpleModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
 	return &model.BundleInstanceAuth{
-		ID: id,
+		ID:       id,
+		BundleID: testBundleID,
 	}
 }
 
