@@ -2,6 +2,7 @@ package label
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -19,7 +20,7 @@ const (
 	ExceptSet              SetCombination = "EXCEPT"
 	UnionSet               SetCombination = "UNION"
 	scenariosLabelKey      string         = "SCENARIOS"
-	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = ?`
+	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND`
 	stmtPrefixGlobalFormat string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
 )
 
@@ -62,7 +63,10 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 
 	objectField := labelableObjectField(queryFor)
 
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
+	cond := repo.NewTenantIsolationCondition("tenant_id", tenant)
+	stmtPrefixFormatWithTenantIsolation := stmtPrefixFormat + " " + cond.GetQueryPart()
+
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormatWithTenantIsolation, objectField, tableName, objectField)
 	var stmtPrefixArgs []interface{}
 	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
 
