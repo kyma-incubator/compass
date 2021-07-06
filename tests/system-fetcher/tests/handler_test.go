@@ -69,10 +69,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	namespace := "compass-system"
 	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		t.Log("Deleting test job")
-		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
-		require.NoError(t, err)
-		t.Log("Test job deleted")
+		deleteJob(t, k8sClient, jobName, namespace)
 	}()
 
 	waitForJobToSucceed(t, k8sClient, jobName, namespace)
@@ -161,8 +158,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	namespace := "compass-system"
 	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
-		require.NoError(t, err)
+		deleteJob(t, k8sClient, jobName, namespace)
 	}()
 
 	waitForJobToSucceed(t, k8sClient, jobName, namespace)
@@ -242,6 +238,13 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 		}
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+	t.Log("Deleting test job")
+	err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
+	require.NoError(t, err)
+	t.Log("Test job deleted")
 }
 
 func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
