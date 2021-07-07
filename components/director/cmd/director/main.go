@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
+	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 	"net/http"
 	"net/url"
 	"os"
@@ -228,15 +230,17 @@ func main() {
 	mainRouter.Use(panic_recovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
-	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
-
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 
+	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
+	ownertenantMiddleware := ownertenant.NewMiddleware(transact, tenantindex.NewRepository(), tenant.NewRepository(tenant.NewConverter()))
+
 	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(operationMiddleware)
+	gqlServ.Use(ownertenantMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
 	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
 

@@ -187,10 +187,13 @@ func (c *jsonArrAnyMatchCondition) GetQueryArgs() ([]interface{}, bool) {
 	return c.val, true
 }
 
+// NewTenantIsolationCondition returns a repo condition filtering all resources based on the tenant provided (recursively iterating over all the child tenants)
 func NewTenantIsolationCondition(field string, val interface{}) Condition {
 	return NewTenantIsolationConditionWithPlaceholder(field,"?", []interface{}{val})
 }
 
+// NewTenantIsolationConditionWithPlaceholder return tenant isolation repo condition with different tenant_id input placeholder.
+// This is needed for update sql queries where the tenant_id to search for is not provided as an argument, but is used from the entity being updated.
 func NewTenantIsolationConditionWithPlaceholder(field string, placeholder string, args []interface{}) Condition {
 	const query = `
 with recursive children AS
