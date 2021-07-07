@@ -19,7 +19,7 @@ type EventAPIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
-	ListAllForBundle(ctx context.Context, tenantID string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
+	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
@@ -98,7 +98,7 @@ func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pa
 		return nil, err
 	}
 
-	return s.eventAPIRepo.ListAllForBundle(ctx, tnt, bundleRefs, counts, pageSize, cursor)
+	return s.eventAPIRepo.ListAllForBundle(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
 }
 
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error) {

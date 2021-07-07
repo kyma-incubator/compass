@@ -108,14 +108,17 @@ func getEventDefIDsForBundle(refs []*model.BundleReference) []string {
 	return result
 }
 
-func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	var eventDefIds []string
 	for _, ref := range bundleRefs {
 		eventDefIds = append(eventDefIds, *ref.ObjectID)
 	}
 
-	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues("id", eventDefIds),
+	var conditions repo.Conditions
+	if len(eventDefIds) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues("id", eventDefIds),
+		}
 	}
 
 	var apiDefCollection EventAPIDefCollection
@@ -140,14 +143,13 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	eventDefPages := make([]*model.EventDefinitionPage, len(totalCounts))
-	index := 0
-	for id, count := range totalCounts {
-		ids := getEventDefIDsForBundle(refsByBundleId[id])
+	eventDefPages := make([]*model.EventDefinitionPage, len(bundleIDs))
+	for i, bundleID := range bundleIDs {
+		ids := getEventDefIDsForBundle(refsByBundleId[bundleID])
 		eventDefs := getEventDefsForBundle(ids, eventDefsByEventDefId)
 		hasNextPage := false
 		endCursor := ""
-		if count > offset+len(eventDefs) {
+		if totalCounts[bundleID] > offset+len(eventDefs) {
 			hasNextPage = true
 			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
 		}
@@ -158,8 +160,7 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 			HasNextPage: hasNextPage,
 		}
 
-		eventDefPages[index] = &model.EventDefinitionPage{Data: eventDefs, TotalCount: count, PageInfo: page}
-		index++
+		eventDefPages[i] = &model.EventDefinitionPage{Data: eventDefs, TotalCount: totalCounts[bundleID], PageInfo: page}
 	}
 
 	return eventDefPages, nil

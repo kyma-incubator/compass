@@ -87,14 +87,17 @@ func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
 	return result
 }
 
-func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
+func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	var apidefIds []string
 	for _, ref := range bundleRefs {
 		apidefIds = append(apidefIds, *ref.ObjectID)
 	}
 
-	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues("id", apidefIds),
+	var conditions repo.Conditions
+	if len(apidefIds) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues("id", apidefIds),
+		}
 	}
 
 	var apiDefCollection APIDefCollection
@@ -119,14 +122,14 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	apiDefPages := make([]*model.APIDefinitionPage, len(totalCounts))
-	index := 0
-	for id, count := range totalCounts {
-		ids := getApiDefIDsForBundle(refsByBundleId[id])
+	apiDefPages := make([]*model.APIDefinitionPage, len(bundleIDs))
+	for i, bundleID := range bundleIDs {
+		ids := getApiDefIDsForBundle(refsByBundleId[bundleID])
 		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefId)
+
 		hasNextPage := false
 		endCursor := ""
-		if count > offset+len(apiDefs) {
+		if totalCounts[bundleID] > offset+len(apiDefs) {
 			hasNextPage = true
 			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
 		}
@@ -137,8 +140,7 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 			HasNextPage: hasNextPage,
 		}
 
-		apiDefPages[index] = &model.APIDefinitionPage{Data: apiDefs, TotalCount: count, PageInfo: page}
-		index++
+		apiDefPages[i] = &model.APIDefinitionPage{Data: apiDefs, TotalCount: totalCounts[bundleID], PageInfo: page}
 	}
 
 	return apiDefPages, nil
