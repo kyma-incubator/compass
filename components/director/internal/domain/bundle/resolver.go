@@ -2,10 +2,12 @@ package mp_bundle
 
 import (
 	"context"
+	"fmt"
 	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -437,23 +439,27 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{err}
 	}
 
+	refsByBundleId := map[string][]*model.BundleReference{}
+	for _, ref := range references {
+		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+	}
+
 	apiDefIDtoSpec := make(map[string]*model.Spec)
 	for _, spec := range specs {
 		apiDefIDtoSpec[spec.ObjectID] = spec
 	}
 
-	apiDefIDtoRef := make(map[string]*model.BundleReference)
-	for _, reference := range references {
-		apiDefIDtoRef[*reference.ObjectID] = reference
-	}
-
 	var gqlApiDefs []*graphql.APIDefinitionPage
-	for _, apisPage := range apiDefPages {
+	for i, apisPage := range apiDefPages {
 		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
 		for _, api := range apisPage.Data {
 			apiSpecs = append(apiSpecs, apiDefIDtoSpec[api.ID])
-			apiBundleRefs = append(apiBundleRefs, apiDefIDtoRef[api.ID])
+			br, err := getBundleReferenceForAPI(api.ID, refsByBundleId[bundleIDs[i]])
+			if err != nil {
+				return nil, []error{err}
+			}
+			apiBundleRefs = append(apiBundleRefs, br)
 		}
 
 		gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
@@ -698,4 +704,13 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 	}
 
 	return gqlDocumentPages, nil
+}
+
+func getBundleReferenceForAPI(apiID string, bundleReferences []*model.BundleReference) (*model.BundleReference, error) {
+	for _, br := range bundleReferences {
+		if str.PtrStrToStr(br.ObjectID) == apiID {
+			return br, nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf("could not find BundleReference for API with id %s", apiID))
 }
