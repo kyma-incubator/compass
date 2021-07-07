@@ -2,8 +2,9 @@ package label
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
 

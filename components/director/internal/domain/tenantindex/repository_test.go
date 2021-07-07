@@ -3,12 +3,13 @@ package tenantindex_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRepository_GetOwnerTenantByResourceID(t *testing.T) {

@@ -55,7 +55,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(fmt.Sprintf(`DELETE FROM public\.applications WHERE %s AND id = \$2`,fixTenantIsolationSubquery())).WithArgs(
+		dbMock.ExpectExec(fmt.Sprintf(`DELETE FROM public\.applications WHERE %s AND id = \$2`, fixTenantIsolationSubquery())).WithArgs(
 			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx = persistence.SaveToContext(ctx, db)

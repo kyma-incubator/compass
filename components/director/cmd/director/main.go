@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
-	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
+	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 

@@ -2,6 +2,8 @@ package bundleinstanceauth_test
 
 import (
 	"context"
+	"testing"
+
 	pkgmock "github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
@@ -9,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

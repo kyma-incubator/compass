@@ -2,6 +2,7 @@ package label
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -178,7 +179,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
 	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false,
-		repo.NewEqualCondition("key",selectorKey),
+		repo.NewEqualCondition("key", selectorKey),
 		repo.NewJSONArrMatchAnyStringCondition("value", selectorValue),
 		repo.NewNotNullCondition("runtime_id"))
 

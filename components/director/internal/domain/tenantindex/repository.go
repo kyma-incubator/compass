@@ -2,6 +2,7 @@ package tenantindex
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -9,18 +10,18 @@ import (
 const tenantIndexTableName string = `"public"."id_tenant_id_index"` // It is a view
 
 var (
-	tenantColumn  = "tenant_id"
-	idColumn      = "id"
+	tenantColumn = "tenant_id"
+	idColumn     = "id"
 )
 
 type repository struct {
-	singleGetter    repo.SingleGetter
+	singleGetter repo.SingleGetter
 }
 
 // NewRepository returns new Tenant Index Repository
 func NewRepository() *repository {
 	return &repository{
-		singleGetter:    repo.NewSingleGetter(resource.API, tenantIndexTableName, tenantColumn, []string{tenantColumn}),
+		singleGetter: repo.NewSingleGetter(resource.API, tenantIndexTableName, tenantColumn, []string{tenantColumn}),
 	}
 }
 
