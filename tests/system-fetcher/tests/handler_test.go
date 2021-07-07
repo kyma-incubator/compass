@@ -224,7 +224,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 }
 
 func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
-	elapsed := time.After(time.Minute * 2)
+	elapsed := time.After(time.Minute * 5)
 	for {
 		select {
 		case <-elapsed:
@@ -234,6 +234,9 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 		t.Log("Waiting for job to finish")
 		job, err := k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
 		require.NoError(t, err)
+		if job.Status.Failed > 0 {
+			t.Fatal("Job has failed. Exiting...")
+		}
 		if job.Status.Succeeded > 0 {
 			break
 		}
