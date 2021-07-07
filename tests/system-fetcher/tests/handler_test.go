@@ -173,7 +173,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 			},
 			Labels: directorSchema.Labels{
-				"managed": true,
+				"managed": "true",
 			},
 		},
 		{
@@ -182,7 +182,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description: &description,
 			},
 			Labels: directorSchema.Labels{
-				"managed": true,
+				"managed": "true",
 			},
 		},
 		{
@@ -191,7 +191,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description: &description,
 			},
 			Labels: directorSchema.Labels{
-				"managed": true,
+				"managed": "true",
 			},
 		},
 	}

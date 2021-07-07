@@ -298,7 +298,7 @@ func fixAppsInputsBySystems(systems []systemfetcher.System) []model.ApplicationR
 				SystemNumber:    &systems[i].SystemNumber,
 				StatusCondition: &initStatusCond,
 				Labels: map[string]interface{}{
-					"managed": true,
+					"managed": "true",
 				},
 			},
 			TemplateID: systems[i].TemplateID,
