@@ -1,7 +1,10 @@
 package tenantfetcher_test
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -19,22 +22,12 @@ func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.Tena
 	}`, string(events), total, pages))
 }
 
-func fixEvent(fields map[string]string) []byte {
-	eventEntries := ""
-	fieldsCount := len(fields)
-	counter := 0
-
-	for fieldName, fieldValue := range fields {
-		counter++
-		sign := ","
-		if counter == fieldsCount {
-			sign = ""
-		}
-		eventEntries = fmt.Sprintf(`%s "%s":"%s"%s`, eventEntries, fieldName, fieldValue, sign)
+func fixEvent(t require.TestingT, fields map[string]string) []byte {
+	eventData, err := json.Marshal(fields)
+	if err != nil {
+		require.NoError(t, err)
 	}
-	eventData := fmt.Sprintf("{%s}", eventEntries)
-
-	return wrapIntoEventPageJSON(eventData)
+	return wrapIntoEventPageJSON(string(eventData))
 }
 
 func fixMovedRuntimeByLabelEvent(id, source, target string, fieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping) []byte {

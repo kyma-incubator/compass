@@ -176,6 +176,13 @@ func (s Service) SyncTenants() error {
 
 	//Order of event processing matters
 	if len(tenantsToCreate) > 0 {
+		if err := s.createParents(ctx, currentTenants, tenantsToCreate); err != nil {
+			return errors.Wrap(err, "while storing parents")
+		}
+		currentTenants, err = s.getCurrentTenants(ctx)
+		if err != nil {
+			return err
+		}
 		if err := s.createTenants(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing tenant")
 		}
@@ -203,19 +210,31 @@ func (s Service) SyncTenants() error {
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
-	parentsToCreate := make([]model.BusinessTenantMappingInput, 0)
-	for i := len(eventsTenants) - 1; i >= 0; i-- {
-		if _, ok := currTenants[eventsTenants[i].ExternalTenant]; ok {
+	for _, eventTenant := range eventsTenants {
+		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue
 		}
+		if len(eventTenant.Parent) > 0 {
+			eventTenant.Parent = currTenants[eventTenant.Parent]
+		}
+		tenantsToCreate = append(tenantsToCreate, eventTenant)
+	}
+	if len(tenantsToCreate) > 0 {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+			return errors.Wrap(err, "while storing new tenants")
+		}
+	}
+	return nil
+}
 
-		if len(eventsTenants[i].Parent) > 0 {
-			if parentInternalID, ok := currTenants[eventsTenants[i].Parent]; ok {
-				eventsTenants[i].Parent = parentInternalID
-			} else {
+func (s Service) createParents(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
+	parentsToCreate := make([]model.BusinessTenantMappingInput, 0)
+	for _, eventTenant := range eventsTenants {
+		if len(eventTenant.Parent) > 0 {
+			if _, ok := currTenants[eventTenant.Parent]; !ok {
 				parentTenant := model.BusinessTenantMappingInput{
-					Name:           eventsTenants[i].Parent,
-					ExternalTenant: eventsTenants[i].Parent,
+					Name:           eventTenant.Parent,
+					ExternalTenant: eventTenant.Parent,
 					Subdomain:      "",
 					Parent:         "",
 					Type:           tenant.TypeToStr(tenant.Customer),
@@ -224,30 +243,13 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 				parentsToCreate = append(parentsToCreate, parentTenant)
 			}
 		}
-		tenantsToCreate = append(tenantsToCreate, eventsTenants[i])
 	}
-
 	parentsToCreate = s.dedupeTenants(parentsToCreate)
-
-	if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
-		return errors.Wrap(err, "while storing new parents")
-	}
-
-	allTenants, err := s.getCurrentTenants(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while fetching tenants")
-	}
-
-	for _, currentTenant := range tenantsToCreate {
-		if len(currentTenant.Parent) > 0 {
-			currentTenant.Parent = allTenants[currentTenant.Parent]
+	if len(parentsToCreate) > 0 {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
+			return errors.Wrap(err, "while storing new parents")
 		}
 	}
-
-	if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
-		return errors.Wrap(err, "while storing new tenants")
-	}
-
 	return nil
 }
 
