@@ -12,7 +12,6 @@ type kibanaEntry struct {
 	WrittenAt        string        `json:"written_at"`
 	WrittenTimestamp string        `json:"written_ts"`
 	ComponentType    string        `json:"component_type"`
-	CorrelationID    string        `json:"correlation_id"`
 	Type             string        `json:"type"`
 	Logger           string        `json:"logger"`
 	Level            string        `json:"level"`
@@ -50,17 +49,12 @@ type KibanaFormatter struct {
 
 // Format formats a logrus entry for Kibana logging
 func (f *KibanaFormatter) Format(e *logrus.Entry) ([]byte, error) {
+	// todo remove
 	componentName, exists := e.Data[fieldComponentName].(string)
 	if !exists {
 		componentName = "-"
 	}
 	delete(e.Data, fieldComponentName)
-
-	correlationID, exists := e.Data[fieldCorrelationID].(string)
-	if !exists {
-		correlationID = "-"
-	}
-	delete(e.Data, fieldCorrelationID)
 
 	if errorField, exists := e.Data[logrus.ErrorKey].(error); exists {
 		e.Message = e.Message + ": " + errorField.Error()
@@ -71,7 +65,6 @@ func (f *KibanaFormatter) Format(e *logrus.Entry) ([]byte, error) {
 		Logger:           componentName,
 		Level:            e.Level.String(),
 		Message:          e.Message,
-		CorrelationID:    correlationID,
 		Type:             "log",
 		ComponentType:    "application",
 		WrittenAt:        e.Time.UTC().Format(time.RFC3339Nano),
