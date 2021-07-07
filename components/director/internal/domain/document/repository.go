@@ -21,6 +21,8 @@ const documentTable = "public.documents"
 var (
 	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn    = "tenant_id"
+	bundleIDColumn = "bundle_id"
+	orderByColumns = []string{"bundle_id", "id"}
 )
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
@@ -136,7 +138,7 @@ func (r *repository) ListForBundle(ctx context.Context, tenantID string, bundleI
 
 func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	var documentCollection DocumentCollection
-	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, "bundle_id", pageSize, cursor, []string{"bundle_id", "id"}, &documentCollection)
+	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +147,7 @@ func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bund
 	for _, documentEnt := range documentCollection {
 		m, err := r.conv.FromEntity(documentEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating Bundle model from entity")
+			return nil, errors.Wrap(err, "while creating Document model from entity")
 		}
 		documentByID[documentEnt.BndlID] = append(documentByID[documentEnt.BndlID], &m)
 	}
@@ -155,7 +157,6 @@ func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bund
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	// map the PackagePage to the current app_id
 	documentPages := make([]*model.DocumentPage, len(bundleIDs))
 	for i, bndlID := range bundleIDs {
 		totalCount := counts[bndlID]
