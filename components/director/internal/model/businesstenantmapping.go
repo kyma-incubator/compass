@@ -6,7 +6,6 @@ type BusinessTenantMapping struct {
 	ID             string
 	Name           string
 	ExternalTenant string
-	Subdomain      string
 	Parent         string
 	Type           tenant.Type
 	Provider       string
@@ -27,7 +26,6 @@ func (t BusinessTenantMapping) WithStatus(status tenant.Status) BusinessTenantMa
 type BusinessTenantMappingInput struct {
 	Name           string `json:"name"`
 	ExternalTenant string `json:"id"`
-	Subdomain      string `json:"subdomain"`
 	Parent         string
 	Type           string `json:"type"`
 	Provider       string
@@ -44,7 +42,6 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 		ID:             id,
 		Name:           i.Name,
 		ExternalTenant: i.ExternalTenant,
-		Subdomain:      i.Subdomain,
 		Parent:         i.Parent,
 		Type:           tenant.StrToType(i.Type),
 		Provider:       i.Provider,

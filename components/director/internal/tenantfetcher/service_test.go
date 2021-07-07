@@ -32,7 +32,6 @@ func TestService_SyncTenants(t *testing.T) {
 		NameField:       "name",
 		IDField:         "id",
 		CustomerIDField: "customerId",
-		SubdomainField:  "subdomain",
 	}
 
 	movedRuntimeFieldMapping := tenantfetcher.MovedRuntimeByLabelFieldMapping{
@@ -49,9 +48,9 @@ func TestService_SyncTenants(t *testing.T) {
 	parent2GUID := fixID()
 	parent3GUID := fixID()
 
-	parentTenant1 := fixBusinessTenantMappingInput(parent1, parent1, provider, "", "", tenant.Customer)
-	parentTenant2 := fixBusinessTenantMappingInput(parent2, parent2, provider, "", "", tenant.Customer)
-	parentTenant3 := fixBusinessTenantMappingInput(parent3, parent3, provider, "", "", tenant.Customer)
+	parentTenant1 := fixBusinessTenantMappingInput(parent1, parent1, provider, "", tenant.Customer)
+	parentTenant2 := fixBusinessTenantMappingInput(parent2, parent2, provider, "", tenant.Customer)
+	parentTenant3 := fixBusinessTenantMappingInput(parent3, parent3, provider, "", tenant.Customer)
 	parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3}
 
 	parentTenant1BusinessMapping := parentTenant1.ToBusinessTenantMapping(parent1GUID)
@@ -63,14 +62,14 @@ func TestService_SyncTenants(t *testing.T) {
 	busTenant2GUID := fixID()
 	busTenant3GUID := fixID()
 
-	busTenant1 := fixBusinessTenantMappingInput("foo", "1", provider, parent1, "s1", tenant.Account)
-	busTenant2 := fixBusinessTenantMappingInput("bar", "2", provider, parent2, "s2", tenant.Account)
-	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider, parent3, "s3", tenant.Account)
+	busTenant1 := fixBusinessTenantMappingInput("foo", "1", provider, parent1, tenant.Account)
+	busTenant2 := fixBusinessTenantMappingInput("bar", "2", provider, parent2, tenant.Account)
+	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider, parent3, tenant.Account)
 	businessTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2, busTenant3}
 
-	busTenant1WithParentGUID := fixBusinessTenantMappingInput("foo", "1", provider, parent1GUID, "s1", tenant.Account)
-	busTenant2WithParentGUID := fixBusinessTenantMappingInput("bar", "2", provider, parent2GUID, "s2", tenant.Account)
-	busTenant3WithParentGUID := fixBusinessTenantMappingInput("baz", "3", provider, parent3GUID, "s3", tenant.Account)
+	busTenant1WithParentGUID := fixBusinessTenantMappingInput("foo", "1", provider, parent1GUID, tenant.Account)
+	busTenant2WithParentGUID := fixBusinessTenantMappingInput("bar", "2", provider, parent2GUID, tenant.Account)
+	busTenant3WithParentGUID := fixBusinessTenantMappingInput("baz", "3", provider, parent3GUID, tenant.Account)
 	businessTenantsWithParentGUID := []model.BusinessTenantMappingInput{busTenant1WithParentGUID, busTenant2WithParentGUID, busTenant3WithParentGUID}
 
 	businessTenant1BusinessMapping := busTenant1.ToBusinessTenantMapping(busTenant1GUID)
@@ -82,19 +81,16 @@ func TestService_SyncTenants(t *testing.T) {
 		tenantFieldMapping.IDField:         busTenant1.ExternalTenant,
 		tenantFieldMapping.NameField:       "foo",
 		tenantFieldMapping.CustomerIDField: parent1,
-		tenantFieldMapping.SubdomainField:  "s1",
 	}
 	event2Fields := map[string]string{
 		tenantFieldMapping.IDField:         busTenant2.ExternalTenant,
 		tenantFieldMapping.NameField:       "bar",
 		tenantFieldMapping.CustomerIDField: parent2,
-		tenantFieldMapping.SubdomainField:  "s2",
 	}
 	event3Fields := map[string]string{
 		tenantFieldMapping.IDField:         busTenant3.ExternalTenant,
 		tenantFieldMapping.NameField:       "baz",
 		tenantFieldMapping.CustomerIDField: parent3,
-		tenantFieldMapping.SubdomainField:  "s3",
 	}
 
 	event1 := fixEvent(t, event1Fields)
@@ -363,7 +359,6 @@ func TestService_SyncTenants(t *testing.T) {
 					tenantFieldMapping.IDField:         busTenant1.ExternalTenant,
 					tenantFieldMapping.NameField:       "updated-name",
 					tenantFieldMapping.CustomerIDField: busTenant1.Parent,
-					tenantFieldMapping.SubdomainField:  busTenant1.Subdomain,
 				}
 
 				updatedTenant := fixEvent(t, updatedEventFields)
@@ -383,7 +378,6 @@ func TestService_SyncTenants(t *testing.T) {
 					Type:           busTenant1WithParentGUID.Type,
 					Parent:         busTenant1WithParentGUID.Parent,
 					Provider:       busTenant1WithParentGUID.Provider,
-					Subdomain:      busTenant1WithParentGUID.Subdomain,
 				}}
 
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(parentTenantsBusinessMapping[:1], nil).Twice()
@@ -988,7 +982,6 @@ func TestService_SyncTenants(t *testing.T) {
 				IDField:            "id",
 				NameField:          "name",
 				CustomerIDField:    "customerId",
-				SubdomainField:     "subdomain",
 				TotalPagesField:    "pages",
 				TotalResultsField:  "total",
 			}, tenantfetcher.MovedRuntimeByLabelFieldMapping{
@@ -1051,7 +1044,6 @@ func TestService_SyncTenants(t *testing.T) {
 			IDField:            "id",
 			NameField:          "name",
 			CustomerIDField:    "customerId",
-			SubdomainField:     "subdomain",
 			TotalPagesField:    "pages",
 			TotalResultsField:  "total",
 		}, tenantfetcher.MovedRuntimeByLabelFieldMapping{

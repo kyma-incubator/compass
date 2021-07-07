@@ -6,7 +6,6 @@ type TenantModel struct {
 	ID               string
 	Name             string
 	TenantId         string
-	Subdomain        string
 	ParentInternalId string
 	ParentExternalId string
 	Type             tenant.Type

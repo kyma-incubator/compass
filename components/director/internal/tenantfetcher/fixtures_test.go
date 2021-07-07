@@ -54,13 +54,12 @@ func wrapIntoEventPageJSON(eventData string) []byte {
 	}`, fixID(), eventData))
 }
 
-func fixBusinessTenantMappingInput(name, externalTenant, provider string, parent string, subdomain string, tenantType tenant.Type) model.BusinessTenantMappingInput {
+func fixBusinessTenantMappingInput(name, externalTenant, provider string, parent string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
 		Provider:       provider,
 		Parent:         parent,
-		Subdomain:      subdomain,
 		Type:           tenant.TypeToStr(tenantType),
 	}
 }

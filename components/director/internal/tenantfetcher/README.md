@@ -136,7 +136,6 @@ Tenant Fetcher binary allows you to override some configuration parameters. You 
 | **global.tenantFetchers.*job_name*.fieldMapping.idField** | Name of the field in the event data payload that contains the tenant ID | `"id"` |
 | **global.tenantFetchers.*job_name*.fieldMapping.nameField** | Name of the field in the event data payload that contains the tenant name | `"name"` |
 | **global.tenantFetchers.*job_name*.fieldMapping.customerIdField** | Name of the field in the event data payload that contains the customer ID | `"customerId"` |
-| **global.tenantFetchers.*job_name*.fieldMapping.subdomainField** | Name of the field in the event data payload that contains the tenant subdomain | None |
 | **global.tenantFetchers.*job_name*.fieldMapping.discriminatorField** | Optional name of the field in the event data payload used to filter created tenants. If provided, only the events that contain this field with the value specified in **discriminatorValue** are used. | None |
 | **global.tenantFetchers.*job_name*.fieldMapping.discriminatorValue** | Optional value of the discriminator field used to filter  created tenants. It is used only if **discriminatorField** is provided. | None |
 | **global.tenantFetchers.*job_name*.fieldMapping.tenantEventsField** | Mandatory value of the field name of the top-level events array |
