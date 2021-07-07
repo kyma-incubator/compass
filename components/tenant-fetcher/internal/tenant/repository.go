@@ -32,7 +32,6 @@ type TenantRepository interface {
 	Create(ctx context.Context, item model.TenantModel) error
 	GetByExternalID(ctx context.Context, tenantId string) (model.TenantModel, error)
 	Update(ctx context.Context, item model.TenantModel) error
-	DeleteByExternalID(ctx context.Context, tenantId string) error
 }
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
@@ -114,18 +113,4 @@ func (r *repository) Update(ctx context.Context, item model.TenantModel) error {
 	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, resource.Tenant, resource.Update, "while updating row to '%s' table", r.tableName)
-}
-
-func (r *repository) DeleteByExternalID(ctx context.Context, tenantId string) error {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	stmt := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", r.tableName, externalTenantColumn)
-
-	log.C(ctx).Infof("Executing DB query: %s", stmt)
-	_, err = persist.ExecContext(ctx, stmt, tenantId)
-
-	return persistence.MapSQLError(ctx, err, resource.Tenant, resource.Delete, "while deleting row to '%s' table", r.tableName)
 }
