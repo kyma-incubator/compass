@@ -80,7 +80,7 @@ global:
       version: "PR-1924"
     tenant_fetcher:
       dir:
-      version: "PR-1888"
+      version: "PR-1940"
     ord_service:
       dir:
       version: "PR-31"
@@ -103,7 +103,7 @@ global:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1927"
+      version: "PR-1940"
   isLocalEnv: false
   oauth2:
     host: oauth2
