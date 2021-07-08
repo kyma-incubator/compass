@@ -2,6 +2,7 @@ package tombstone_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -55,7 +56,7 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.tombstones SET removal_date = ? WHERE tenant_id = ? AND id = ?`)
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.tombstones SET removal_date = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -95,7 +96,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM public.tombstones WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := fmt.Sprintf(`^DELETE FROM public.tombstones WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, tombstoneID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EntityConverter{}
@@ -112,7 +113,7 @@ func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.tombstones WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.tombstones WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, tombstoneID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EntityConverter{}
@@ -130,7 +131,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	tombstoneEntity := fixEntityTombstone()
 
-	selectQuery := `^SELECT (.+) FROM public.tombstones WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.tombstones WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -206,8 +207,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	firstTombstoneEntity := fixEntityTombstone()
 	secondTombstoneEntity := fixEntityTombstone()
 
-	selectQuery := `^SELECT (.+) FROM public.tombstones
-		WHERE tenant_id = \$1 AND app_id = \$2`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.tombstones WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)

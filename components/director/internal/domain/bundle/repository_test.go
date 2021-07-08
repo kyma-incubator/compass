@@ -75,7 +75,7 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE tenant_id = ? AND id = ?`)
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE %s AND id = ?`, fixUnescapedUpdateTenantIsolationSubquery()))
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -132,7 +132,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM public.bundles WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := fmt.Sprintf(`^DELETE FROM public.bundles WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EntityConverter{}
@@ -149,7 +149,7 @@ func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.bundles WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.bundles WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, bundleID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EntityConverter{}
@@ -167,7 +167,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT (.+) FROM public.bundles WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -241,7 +241,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 	// given
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT (.+) FROM public.bundles WHERE tenant_id = \$1 AND id = \$2 AND app_id = \$3`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles WHERE %s AND id = \$2 AND app_id = \$3`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -326,11 +326,11 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	secondBndlEntity := fixEntityBundle(secondBndlID, "foo", "bar")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles
-		WHERE tenant_id = \$1 AND app_id = \$2
-		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
+		WHERE %s AND app_id = \$2
+		ORDER BY id LIMIT %d OFFSET %d`, fixTenantIsolationSubquery(), ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := `SELECT COUNT(*) FROM public.bundles
-		WHERE tenant_id = $1 AND app_id = $2`
+	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.bundles
+		WHERE %s AND app_id = $2`, fixUnescapedTenantIsolationSubquery())
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -421,8 +421,8 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 	secondBundleID := "222222222-2222-2222-2222-222222222222"
 	secondBundleEntity := fixEntityBundle(secondBundleID, "foo", "bar")
 
-	selectQuery := `^SELECT (.+) FROM public.bundles 
-		WHERE tenant_id = \$1 AND app_id = \$2`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles 
+		WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)

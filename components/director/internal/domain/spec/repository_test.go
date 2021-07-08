@@ -2,6 +2,7 @@ package spec_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -17,7 +18,7 @@ import (
 
 func TestRepository_GetByID(t *testing.T) {
 	// given
-	selectQuery := `^SELECT (.+) FROM public.specifications WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	t.Run("Success For API", func(t *testing.T) {
 		specEntity := fixAPISpecEntity()
@@ -137,9 +138,9 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
 		secondApiDefEntity := fixAPISpecEntityWithID(secondSpecID)
 
-		selectQuery := `^SELECT (.+) FROM public.specifications 
-		WHERE tenant_id = \$1 AND api_def_id = \$2
-		ORDER BY created_at`
+		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications 
+		WHERE %s AND api_def_id = \$2
+		ORDER BY created_at`, fixTenantIsolationSubquery())
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixSpecColumns()).
@@ -172,9 +173,9 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
 		secondApiDefEntity := fixEventSpecEntityWithID(secondSpecID)
 
-		selectQuery := `^SELECT (.+) FROM public.specifications 
-		WHERE tenant_id = \$1 AND event_def_id = \$2
-		ORDER BY created_at`
+		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications 
+		WHERE %s AND event_def_id = \$2
+		ORDER BY created_at`, fixTenantIsolationSubquery())
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixSpecColumns()).
@@ -205,7 +206,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM public.specifications WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := fmt.Sprintf(`^DELETE FROM public.specifications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenant, specID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.Converter{}
@@ -222,7 +223,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 	t.Run("Success for API", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		deleteQuery := `^DELETE FROM public.specifications WHERE tenant_id = \$1 AND api_def_id = \$2$`
+		deleteQuery := fmt.Sprintf(`^DELETE FROM public.specifications WHERE %s AND api_def_id = \$2$`, fixTenantIsolationSubquery())
 
 		sqlMock.ExpectExec(deleteQuery).WithArgs(tenant, apiID).WillReturnResult(sqlmock.NewResult(-1, 1))
 		convMock := &automock.Converter{}
@@ -238,7 +239,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 	t.Run("Success for Event", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		deleteQuery := `^DELETE FROM public.specifications WHERE tenant_id = \$1 AND event_def_id = \$2$`
+		deleteQuery := fmt.Sprintf(`^DELETE FROM public.specifications WHERE %s AND event_def_id = \$2$`, fixTenantIsolationSubquery())
 
 		sqlMock.ExpectExec(deleteQuery).WithArgs(tenant, eventID).WillReturnResult(sqlmock.NewResult(-1, 1))
 		convMock := &automock.Converter{}
@@ -253,8 +254,8 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?,
-		event_spec_format = ?, event_spec_type = ? WHERE tenant_id = ? AND id = ?`)
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?,
+		event_spec_format = ?, event_spec_type = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 
 	t.Run("Success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -295,7 +296,7 @@ func TestRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.specifications WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.specifications WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenant, specID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.Converter{}

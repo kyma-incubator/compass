@@ -136,5 +136,4 @@ func getExpectedQueryWithINSubquery() (string, int) {
 
 func removeWhitespace(s string) string {
 	return strings.Join(strings.Fields(s), " ")
-
 }

@@ -75,7 +75,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		SelectorValue: "value",
 	}
 
-	selectQuery := `SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2`
+	selectQuery := fmt.Sprintf(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE %s AND scenario = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
@@ -137,7 +137,7 @@ func TestRepository_ListForSelector(t *testing.T) {
 			{scenario: scenarioName, tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 			{scenario: "scenario-B", tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE %s AND selector_key = $2 AND selector_value = $3`, fixUnescapedTenantIsolationSubquery()))).
 			WithArgs(tenantID, "key", "value").
 			WillReturnRows(rowsToReturn)
 
@@ -192,11 +192,11 @@ func TestRepository_List(t *testing.T) {
 	mod2 := fixModelWithScenarioName(scenarioName2)
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.automatic_scenario_assignments
-		WHERE tenant_id = \$1
-		ORDER BY scenario LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
+		WHERE %s
+		ORDER BY scenario LIMIT %d OFFSET %d`, fixTenantIsolationSubquery(), ExpectedLimit, ExpectedOffset)
 
 	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.automatic_scenario_assignments
-		WHERE tenant_id = $1`)
+		WHERE %s`, fixUnescapedTenantIsolationSubquery())
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {
@@ -255,7 +255,7 @@ func TestRepository_List(t *testing.T) {
 }
 
 func TestRepository_DeleteForSelector(t *testing.T) {
-	deleteQuery := regexp.QuoteMeta(`DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND selector_key = $2 AND selector_value = $3`)
+	deleteQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.automatic_scenario_assignments WHERE %s AND selector_key = $2 AND selector_value = $3`, fixUnescapedTenantIsolationSubquery()))
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -302,7 +302,7 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`)).
+		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE %s AND scenario = \$2$`, fixTenantIsolationSubquery())).
 			WithArgs(tenantID, scenarioName).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -320,7 +320,7 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`)).
+		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE %s AND scenario = \$2$`, fixTenantIsolationSubquery())).
 			WithArgs(tenantID, scenarioName).
 			WillReturnError(fixError())
 
