@@ -268,6 +268,9 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 		return nil, errors.Wrap(err, "while converting ApplicationRegister input")
 	}
 
+	if convertedIn.Labels == nil {
+		convertedIn.Labels = make(map[string]interface{})
+	}
 	convertedIn.Labels["managed"] = "false"
 
 	id, err := r.appSvc.Create(ctx, convertedIn)

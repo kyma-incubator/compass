@@ -245,6 +245,9 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 		return nil, errors.Wrap(err, "while converting ApplicationFromTemplate input")
 	}
 
+	if appCreateInputModel.Labels == nil {
+		appCreateInputModel.Labels = make(map[string]interface{})
+	}
 	appCreateInputModel.Labels["managed"] = "false"
 
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
