@@ -146,7 +146,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 
 func (r *Resolver) FetchRequestDocumentDataLoader(keys []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
-		return nil, []error{apperrors.NewInternalError("No ApiDefs found")}
+		return nil, []error{apperrors.NewInternalError("No Documents found")}
 	}
 
 	ctx := keys[0].Ctx

@@ -267,7 +267,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 
 func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
-		return nil, []error{apperrors.NewInternalError("No ApiDefs found")}
+		return nil, []error{apperrors.NewInternalError("No EventDef specs found")}
 	}
 
 	ctx:= keys[0].Ctx
@@ -275,7 +275,7 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 	specIDs := make([]string, len(keys))
 	for i := 0; i < len(keys); i++ {
 		if keys[i].ID == "" {
-			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition ID is empty")}
+			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition Spec ID is empty")}
 		}
 		specIDs[i] = keys[i].ID
 	}

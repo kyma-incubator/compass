@@ -3,7 +3,6 @@ package fetchrequest
 import (
 	"context"
 	"database/sql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -111,8 +110,11 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 
 	var fetchRequestCollection FetchRequestsCollection
 
-	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues(fieldName, objectIds),
+	var conditions repo.Conditions
+	if len(objectIds) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues(fieldName, objectIds),
+		}
 	}
 	if err := r.lister.List(ctx, tenant, &fetchRequestCollection, conditions...); err != nil {
 		return nil, err

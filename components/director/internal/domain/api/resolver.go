@@ -272,7 +272,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 
 func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
-		return nil, []error{apperrors.NewInternalError("No ApiDefs found")}
+		return nil, []error{apperrors.NewInternalError("No ApiDef specs found")}
 	}
 
 	ctx := keys[0].Ctx
@@ -280,7 +280,7 @@ func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequ
 	specIDs := make([]string, len(keys))
 	for i := 0; i < len(keys); i++ {
 		if keys[i].ID == "" {
-			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition ID is empty")}
+			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition Spec ID is empty")}
 		}
 		specIDs[i] = keys[i].ID
 	}
