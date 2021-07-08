@@ -36,7 +36,7 @@ func AssertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app gr
 	appNameNormalizier := normalizer.DefaultNormalizator{}
 
 	if _, ok := in["managed"]; !ok {
-		in["managed"] = false
+		in["managed"] = "false"
 	}
 
 	for key, value := range actual {
