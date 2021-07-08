@@ -110,7 +110,7 @@ func TestPgRepository_Get(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: tenantEntity.TypeToStr(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
@@ -352,7 +352,7 @@ func TestPgRepository_List(t *testing.T) {
 func TestPgRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName).WithStatus(model.Inactive)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
 
 		mockConverter := &automock.Converter{}
@@ -361,7 +361,7 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, sql.NullString{}, "account", "Compass", model.Inactive, testID).
+			WithArgs(testName, testExternal, sql.NullString{}, "account", "Compass", tenantEntity.Inactive, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -376,7 +376,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when updating", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName).WithStatus(model.Inactive)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
 
 		mockConverter := &automock.Converter{}
@@ -385,7 +385,7 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, sql.NullString{}, "account", "Compass", model.Inactive, testID).
+			WithArgs(testName, testExternal, sql.NullString{}, "account", "Compass", tenantEntity.Inactive, testID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
