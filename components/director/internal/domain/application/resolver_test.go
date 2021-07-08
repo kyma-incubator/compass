@@ -44,6 +44,12 @@ func TestResolver_RegisterApplication(t *testing.T) {
 		Description: &desc,
 		Labels:      map[string]interface{}{"managed": "false"},
 	}
+
+	modelInputWithLabel := model.ApplicationRegisterInput{
+		Name:        modelInput.Name,
+		Description: modelInput.Description,
+		Labels:      map[string]interface{}{"managed": "false"},
+	}
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
@@ -61,7 +67,7 @@ func TestResolver_RegisterApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), modelInputWithLabel).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
