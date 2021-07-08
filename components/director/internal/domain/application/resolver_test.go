@@ -42,7 +42,7 @@ func TestResolver_RegisterApplication(t *testing.T) {
 	modelInput := model.ApplicationRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
-		Labels:      map[string]interface{}{"managed": false},
+		Labels:      map[string]interface{}{"managed": "false"},
 	}
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
