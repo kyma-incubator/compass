@@ -85,7 +85,8 @@ func (m *middleware) InterceptField(ctx context.Context, next gqlgen.Resolver) (
 	if len(id) > 0 { // If the mutation has an ID argument - potentially parent entity
 		tnt, err := tenant.LoadFromContext(ctx)
 		if err != nil {
-			return nil, err
+			log.C(ctx).Infof("Mutation call does not have a valid tenant in the context: %s. Proceeding without modifications...", err)
+			return next(ctx)
 		}
 
 		tx, err := m.transact.Begin()

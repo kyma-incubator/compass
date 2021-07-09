@@ -261,7 +261,7 @@ func TestInterceptField(t *testing.T) {
 			ExpectedErr:    "More than one argument with type ID is provided for the mutation",
 		},
 		{
-			Name:            "No calling tenant in context should return error",
+			Name:            "No calling tenant in context should proceed without any modification",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			TenantIndexRepoFn: func() *automock.TenantIndexRepository {
 				return &automock.TenantIndexRepository{}
@@ -274,8 +274,14 @@ func TestInterceptField(t *testing.T) {
 				ctx = gqlgen.WithFieldContext(ctx, fixFieldCtx)
 				return ctx
 			},
-			NextResolverFn: assertNextNotCalledResolverFn,
-			ExpectedErr:    "cannot read tenant from context",
+			NextResolverFn: func() gqlgen.Resolver {
+				return func(ctx context.Context) (res interface{}, err error) {
+					tnt, err := tenant.LoadFromContext(ctx)
+					require.Error(t, err)
+					require.Empty(t, tnt)
+					return nil, nil
+				}
+			},
 		},
 		{
 			Name:            "Transaction Begin failure should return error",
