@@ -55,7 +55,7 @@ func AddPFlags(set *pflag.FlagSet) {
 func DefaultConfig() *Config {
 	return &Config{
 		Server:        server.DefaultConfig(),
-		Log:           &log.Config{},
+		Log:           log.DefaultConfig(),
 		HttpClient:    http.DefaultConfig(),
 		GraphQLClient: graphql.DefaultConfig(),
 		OAuthProvider: oauth.DefaultConfig(),
