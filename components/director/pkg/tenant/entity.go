@@ -1,6 +1,8 @@
 package tenant
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type Entity struct {
 	ID             string         `db:"id"`
@@ -37,4 +39,26 @@ func (a EntityCollection) Len() int {
 func (e Entity) WithStatus(status Status) Entity {
 	e.Status = status
 	return e
+}
+
+func StrToType(value string) Type {
+	switch value {
+	case string(Account):
+		return Account
+	case string(Customer):
+		return Customer
+	default:
+		return Unknown
+	}
+}
+
+func TypeToStr(value Type) string {
+	switch value {
+	case Account:
+		return string(Account)
+	case Customer:
+		return string(Customer)
+	default:
+		return string(Unknown)
+	}
 }
