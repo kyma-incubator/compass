@@ -66,11 +66,11 @@ func (mgr *TestTenantsManager) Init() {
 			ExternalTenant: "5577cf46-4f78-45fa-b55f-a42a3bdba868",
 			ProviderName:   testProvider,
 			Type:           Account,
-			Parent:         testDefaultCustomerTenant,
+			Parent:         TestDefaultCustomerTenant,
 			Status:         Active,
 		},
-		testDefaultCustomerTenant: {
-			Name:           testDefaultCustomerTenant,
+		TestDefaultCustomerTenant: {
+			Name:           TestDefaultCustomerTenant,
 			ExternalTenant: "2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0",
 			ProviderName:   testProvider,
 			Type:           Customer,
