@@ -65,7 +65,7 @@ global:
       version: "PR-1936"
     connectivity_adapter:
       dir:
-      version: "PR-1910"
+      version: "PR-1936"
     pairing_adapter:
       dir:
       version: "PR-1936"
@@ -77,7 +77,7 @@ global:
       version: "PR-1936"
     operations_controller:
       dir:
-      version: "PR-1924"
+      version: "PR-1936"
     tenant_fetcher:
       dir:
       version: "PR-1936"
@@ -164,7 +164,7 @@ global:
         port: 3000
     validator:
       port: 8080
-    # I f secrets do not exist they will be created
+    # If secrets do not exist they will be created
     secrets:
       ca:
         name: compass-connector-app-ca
@@ -381,6 +381,7 @@ global:
         tenantEventsField: "events"
         idField: "id"
         nameField: "name"
+        customerIdField: "customerId"
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
