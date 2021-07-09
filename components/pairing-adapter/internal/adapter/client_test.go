@@ -6,6 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/pairing-adapter/internal/adapter"
@@ -145,8 +149,10 @@ func TestClient(t *testing.T) {
 			TemplateJSONBody:          `{"applicationName":"{{.Application.Name}}"}`,
 			TemplateTokenFromResponse: `{{ .wrongSyntax`,
 		})
+		logger, _ := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
 		// WHEN
-		_, err := cli.Do(nil, adapter.RequestData{
+		_, err := cli.Do(ctx, adapter.RequestData{
 			Tenant: fixTenant(),
 			Application: graphql.Application{
 				BaseEntity: &graphql.BaseEntity{
@@ -170,8 +176,10 @@ func TestClient(t *testing.T) {
 			TemplateJSONBody:          `{"applicationName":"{{.Application.Name}}"}`,
 			TemplateTokenFromResponse: `{{ .missingField }}`,
 		})
+		logger, _ := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
 		// WHEN
-		_, err := cli.Do(nil, adapter.RequestData{
+		_, err := cli.Do(ctx, adapter.RequestData{
 			Tenant: fixTenant(),
 			Application: graphql.Application{
 				BaseEntity: &graphql.BaseEntity{
