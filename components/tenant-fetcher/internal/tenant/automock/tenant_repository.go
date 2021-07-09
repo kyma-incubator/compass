@@ -28,20 +28,6 @@ func (_m *TenantRepository) Create(ctx context.Context, item model.TenantModel) 
 	return r0
 }
 
-// DeleteByExternalID provides a mock function with given fields: ctx, tenantId
-func (_m *TenantRepository) DeleteByExternalID(ctx context.Context, tenantId string) error {
-	ret := _m.Called(ctx, tenantId)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, tenantId)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetByExternalID provides a mock function with given fields: ctx, tenantId
 func (_m *TenantRepository) GetByExternalID(ctx context.Context, tenantId string) (model.TenantModel, error) {
 	ret := _m.Called(ctx, tenantId)

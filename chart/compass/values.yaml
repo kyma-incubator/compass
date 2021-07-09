@@ -62,25 +62,25 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
     connectivity_adapter:
       dir:
-      version: "PR-1939"
+      version: "PR-1910"
     pairing_adapter:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
     director:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
     gateway:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
     operations_controller:
       dir:
-      version: "PR-1939"
+      version: "PR-1924"
     tenant_fetcher:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
     ord_service:
       dir:
       version: "PR-31"
@@ -89,7 +89,7 @@ global:
       version: "PR-1898"
     system_broker:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -103,7 +103,7 @@ global:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1939"
+      version: "PR-1936"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -164,7 +164,7 @@ global:
         port: 3000
     validator:
       port: 8080
-    # If secrets do not exist they will be created
+    # I f secrets do not exist they will be created
     secrets:
       ca:
         name: compass-connector-app-ca

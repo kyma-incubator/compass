@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -26,6 +28,7 @@ type TenantFieldMapping struct {
 
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
+	CustomerIDField    string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
@@ -162,7 +165,7 @@ func (s Service) SyncTenants() error {
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	currentTenants := make(map[string]bool)
+	currentTenants := make(map[string]string)
 	if len(tenantsToCreate) > 0 || len(tenantsToDelete) > 0 {
 		currentTenants, err = s.getCurrentTenants(ctx)
 		if err != nil {
@@ -172,6 +175,13 @@ func (s Service) SyncTenants() error {
 
 	//Order of event processing matters
 	if len(tenantsToCreate) > 0 {
+		if err := s.createParents(ctx, currentTenants, tenantsToCreate); err != nil {
+			return errors.Wrap(err, "while storing parents")
+		}
+		currentTenants, err = s.getCurrentTenants(ctx)
+		if err != nil {
+			return err
+		}
 		if err := s.createTenants(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing tenant")
 		}
@@ -197,19 +207,47 @@ func (s Service) SyncTenants() error {
 	return nil
 }
 
-func (s Service) createTenants(ctx context.Context, currTenants map[string]bool, eventsTenants []model.BusinessTenantMappingInput) error {
+func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
-	for i := len(eventsTenants) - 1; i >= 0; i-- {
-		if currTenants[eventsTenants[i].ExternalTenant] {
+	for _, eventTenant := range eventsTenants {
+		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue
 		}
-		tenantsToCreate = append(tenantsToCreate, eventsTenants[i])
+		if len(eventTenant.Parent) > 0 {
+			eventTenant.Parent = currTenants[eventTenant.Parent]
+		}
+		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
-
-	if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
-		return errors.Wrap(err, "while storing new tenants")
+	if len(tenantsToCreate) > 0 {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+			return errors.Wrap(err, "while storing new tenants")
+		}
 	}
+	return nil
+}
 
+func (s Service) createParents(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
+	parentsToCreate := make([]model.BusinessTenantMappingInput, 0)
+	for _, eventTenant := range eventsTenants {
+		if len(eventTenant.Parent) > 0 {
+			if _, ok := currTenants[eventTenant.Parent]; !ok {
+				parentTenant := model.BusinessTenantMappingInput{
+					Name:           eventTenant.Parent,
+					ExternalTenant: eventTenant.Parent,
+					Parent:         "",
+					Type:           tenant.TypeToStr(tenant.Customer),
+					Provider:       s.providerName,
+				}
+				parentsToCreate = append(parentsToCreate, parentTenant)
+			}
+		}
+	}
+	parentsToCreate = s.dedupeTenants(parentsToCreate)
+	if len(parentsToCreate) > 0 {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
+			return errors.Wrap(err, "while storing new parents")
+		}
+	}
 	return nil
 }
 
@@ -255,10 +293,10 @@ func (s Service) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings [
 	return nil
 }
 
-func (s Service) deleteTenants(ctx context.Context, currTenants map[string]bool, eventsTenants []model.BusinessTenantMappingInput) error {
+func (s Service) deleteTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
-		if currTenants[toDelete.ExternalTenant] {
+		if _, ok := currTenants[toDelete.ExternalTenant]; ok {
 			tenantsToDelete = append(tenantsToDelete, toDelete)
 		}
 	}
@@ -466,15 +504,15 @@ func (s Service) eventsPage(payload []byte) *eventsPage {
 	}
 }
 
-func (s Service) getCurrentTenants(ctx context.Context) (map[string]bool, error) {
+func (s Service) getCurrentTenants(ctx context.Context) (map[string]string, error) {
 	currentTenants, listErr := s.tenantStorageService.List(ctx)
 	if listErr != nil {
 		return nil, errors.Wrap(listErr, "while listing tenants")
 	}
 
-	currentTenantsMap := make(map[string]bool)
+	currentTenantsMap := make(map[string]string)
 	for _, ct := range currentTenants {
-		currentTenantsMap[ct.ExternalTenant] = true
+		currentTenantsMap[ct.ExternalTenant] = ct.ID
 	}
 
 	return currentTenantsMap, nil

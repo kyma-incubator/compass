@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -88,12 +89,9 @@ func TestOnboardingHandler(t *testing.T) {
 	t.Run("Success with tenant and customerID", func(t *testing.T) {
 		// GIVEN
 		providedTenant := Tenant{
-			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
-			CustomerId: "160269",
+			TenantId:   uuid.New().String(),
+			CustomerId: uuid.New().String(),
 		}
-
-		cleanUp(t, Tenant{TenantId: providedTenant.TenantId}, config)
-		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
@@ -127,10 +125,8 @@ func TestOnboardingHandler(t *testing.T) {
 	t.Run("Success with only tenant", func(t *testing.T) {
 		// GIVEN
 		providedTenant := Tenant{
-			TenantId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+			TenantId: uuid.New().String(),
 		}
-
-		cleanUp(t, providedTenant, config)
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
@@ -161,14 +157,13 @@ func TestOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
+		//GIVEN
 		providedTenant := Tenant{
-			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
-			CustomerId: "160269",
+			TenantId:   uuid.New().String(),
+			CustomerId: uuid.New().String(),
 		}
 
-		cleanUp(t, Tenant{TenantId: providedTenant.TenantId}, config)
-		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
-
+		//WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
@@ -193,17 +188,16 @@ func TestOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
+		//GIVEN
 		providedTenant := Tenant{
-			TenantId:   "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
-			CustomerId: "160269",
+			TenantId:   uuid.New().String(),
+			CustomerId: uuid.New().String(),
 		}
-
-		cleanUp(t, Tenant{TenantId: providedTenant.TenantId}, config)
-		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
 
+		//WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
 
@@ -229,14 +223,14 @@ func TestOnboardingHandler(t *testing.T) {
 		// THEN
 		assert.Equal(t, len(oldTenantState)+2, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
+		containsTenantWithTenantID(providedTenant.TenantId, tenants)
+		containsTenantWithTenantID(providedTenant.CustomerId, tenants)
 	})
 
 	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
 		providedTenant := Tenant{
-			CustomerId: "160269",
+			CustomerId: uuid.New().String(),
 		}
-
-		cleanUp(t, Tenant{TenantId: providedTenant.CustomerId}, config)
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
 		require.NoError(t, err)
@@ -269,12 +263,12 @@ func TestOnboardingHandler(t *testing.T) {
 func TestDecommissioningHandler(t *testing.T) {
 	config := loadConfig(t)
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success noop", func(t *testing.T) {
 		// GIVEN
 		providedTenant := Tenant{
-			TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+			TenantId: uuid.New().String(),
 		}
-		cleanUp(t, providedTenant, config)
+
 		// WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
@@ -302,38 +296,6 @@ func TestDecommissioningHandler(t *testing.T) {
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 
 		response, err = httpClient.Do(request)
-		require.NoError(t, err)
-
-		newTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Greater(t, len(oldTenantState), len(newTenantState))
-		require.Equal(t, http.StatusOK, response.StatusCode)
-	})
-
-	t.Run("Should not fail when tenant does not exists", func(t *testing.T) {
-		providedTenant := Tenant{
-			TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
-		}
-		cleanUp(t, providedTenant, config)
-
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
-
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-		request, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
-
-		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
 		newTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
@@ -385,24 +347,6 @@ func loadConfig(t *testing.T) config {
 	require.NotEmpty(t, config.TenantProvider)
 
 	return config
-}
-
-func cleanUp(t *testing.T, tenant Tenant, config config) {
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-	url := config.TenantFetcherURL + config.RootAPI + endpoint
-
-	byteTenant, err := json.Marshal(tenant)
-	require.NoError(t, err)
-
-	request, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-	require.NoError(t, err)
-
-	httpClient := http.DefaultClient
-	httpClient.Timeout = 15 * time.Second
-
-	_, err = httpClient.Do(request)
-	require.NoError(t, err)
 }
 
 func containsTenantWithTenantID(tenantID string, tenants []*graphql.Tenant) bool {
