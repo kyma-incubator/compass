@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 )
@@ -44,11 +44,11 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 
 	defer func() {
 		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
-			logrus.Error("Got error on discarding body content", err)
+			log.C(ctx).Error("Got error on discarding body content", err)
 		}
 
 		if err = resp.Body.Close(); err != nil {
-			logrus.Error("Got error on closing response body", err)
+			log.C(ctx).Error("Got error on closing response body", err)
 		}
 	}()
 
@@ -60,7 +60,7 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 		return nil, fmt.Errorf("wrong status code, got: [%d], body: [%s]", resp.StatusCode, string(b))
 	}
 
-	tkn, err := c.getTokenFromResponse(resp.Body)
+	tkn, err := c.getTokenFromResponse(ctx, resp.Body)
 
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (c *ExternalClient) getHeaders(reqData RequestData) (map[string][]string, e
 	return h, nil
 }
 
-func (c *ExternalClient) getTokenFromResponse(in io.Reader) (string, error) {
+func (c *ExternalClient) getTokenFromResponse(ctx context.Context, in io.Reader) (string, error) {
 	b, err := ioutil.ReadAll(in)
 	if err != nil {
 		return "", errors.Wrap(err, "while reading response body")
@@ -156,7 +156,7 @@ func (c *ExternalClient) getTokenFromResponse(in io.Reader) (string, error) {
 		return "", errors.Wrap(err, "while unmarshalling response body")
 	}
 
-	logrus.Infof("Got response: %s\n", string(b))
+	log.C(ctx).Infof("Got response: %s\n", string(b))
 	respTpl, err := template.New("response").Option("missingkey=error").Parse(c.mapping.TemplateTokenFromResponse)
 	if err != nil {
 		return "", err

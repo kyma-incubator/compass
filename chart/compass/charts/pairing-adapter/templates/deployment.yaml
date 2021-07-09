@@ -58,6 +58,8 @@ spec:
                         key: clientSecret
               - name: OAUTH_AUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
+              - name: LOG_FORMAT
+                value: "kibana"
               ports:
               - name: http
                 containerPort: {{ $.Values.deployment.port }}

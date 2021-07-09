@@ -51,6 +51,8 @@ spec:
               value: "0.0.0.0:{{ .Values.global.connector.validator.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.connector.prefix }}/graphql"
+            - name: APP_LOG_FORMAT
+              value: "kibana"
             - name: APP_CERTIFICATE_VALIDITY_TIME
               value: {{ .Values.deployment.args.certificateValidityTime | quote }}
             - name: APP_CA_SECRET_NAME
