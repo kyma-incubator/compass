@@ -2,12 +2,13 @@ package tests
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTenantIsolation(t *testing.T) {
@@ -72,4 +73,3 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 	accountBundle := fixtures.CreateBundle(t, ctx, dexGraphQLClient, customerTenant, accountApp.ID, "newCustomerBundleInAccountsApp")
 	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, customerTenant, accountBundle.ID)
 }
-

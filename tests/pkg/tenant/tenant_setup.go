@@ -15,8 +15,8 @@ type TenantStatus string
 type TenantType string
 
 const (
-	testProvider              = "Compass Tests"
-	testDefaultTenant         = "Test Default"
+	testProvider      = "Compass Tests"
+	testDefaultTenant = "Test Default"
 
 	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE external_tenant IN (?));`
 
@@ -26,7 +26,7 @@ const (
 	Account  TenantType = "account"
 	Customer TenantType = "customer"
 
-	TestDefaultCustomerTenant = "Test_DefaultCustomer"
+	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
 	TenantSeparationTenantName                                 = "TestTenantSeparation"
 	TenantsQueryNotInitializedTenantName                       = "TestTenantsQueryTenantNotInitialized"
 	TenantsQueryInitializedTenantName                          = "TestTenantsQueryTenantInitialized"
