@@ -80,7 +80,7 @@ global:
       version: "PR-1924"
     tenant_fetcher:
       dir:
-      version: "PR-1940"
+      version: "PR-1929"
     ord_service:
       dir:
       version: "PR-31"
@@ -381,6 +381,7 @@ global:
         tenantEventsField: "events"
         idField: "id"
         nameField: "name"
+        customerIdField: "customerId"
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"

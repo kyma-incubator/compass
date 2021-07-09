@@ -1,6 +1,7 @@
 package str
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -75,4 +76,11 @@ func Matches(actual []string, required []string) bool {
 		}
 	}
 	return true
+}
+
+func NewNullString(s string) sql.NullString {
+	return sql.NullString{
+		String: s,
+		Valid:  len(s) != 0,
+	}
 }
