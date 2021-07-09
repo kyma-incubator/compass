@@ -71,7 +71,7 @@ global:
       version: "PR-1910"
     director:
       dir:
-      version: "PR-1936"
+      version: "PR-1929"
     gateway:
       dir:
       version: "PR-1910"
@@ -80,13 +80,13 @@ global:
       version: "PR-1924"
     tenant_fetcher:
       dir:
-      version: "PR-1940"
+      version: "PR-1929"
     ord_service:
       dir:
       version: "PR-32"
     schema_migrator:
       dir:
-      version: "PR-1898"
+      version: "PR-1929"
     system_broker:
       dir:
       version: "PR-1925"
@@ -381,6 +381,7 @@ global:
         tenantEventsField: "events"
         idField: "id"
         nameField: "name"
+        customerIdField: "customerId"
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
