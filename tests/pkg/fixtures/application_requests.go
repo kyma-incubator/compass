@@ -26,7 +26,9 @@ func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
-		Labels:       graphql.Labels{placeholder: []interface{}{placeholder}},
+		Labels: graphql.Labels{
+			placeholder: []interface{}{placeholder},
+		},
 	}
 }
 
@@ -49,8 +51,7 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.WebhookTypeOpenResourceDiscovery,
 			URL:  ptr.String(webhookURL),
-		},
-		},
+		}},
 	}
 }
 

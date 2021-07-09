@@ -153,7 +153,7 @@ func Test_getTenantMappings(t *testing.T) {
 	expectedTenantMapping := model.BusinessTenantMappingInput{
 		ExternalTenant: id,
 		Name:           name,
-		Type:           string(tenant.Account),
+		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       providerName,
 	}
 

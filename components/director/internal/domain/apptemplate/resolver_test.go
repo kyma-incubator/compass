@@ -696,6 +696,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(testName)
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
+	modelAppWithLabelCreateInput := fixModelApplicationWithLabelCreateInput(testName)
 	gqlAppCreateInput := fixGQLApplicationCreateInput(testName)
 
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, jsonAppCreateInput, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
@@ -734,7 +735,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -924,7 +925,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return("", testError).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID)).Return("", testError).Once()
 				return appSvc
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
@@ -958,7 +959,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appSvc
 			},
@@ -993,7 +994,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},

@@ -34,6 +34,11 @@ func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func AssertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	appNameNormalizier := normalizer.DefaultNormalizator{}
+
+	if _, ok := in["managed"]; !ok {
+		in["managed"] = "false"
+	}
+
 	for key, value := range actual {
 		if key == "integrationSystemID" {
 			if app.IntegrationSystemID == nil {

@@ -11,7 +11,7 @@ import (
 
 const (
 	testID                           = "foo"
-	createQuery                      = "INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )"
+	createQuery                      = "INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ? )"
 	getByExternalIDQueryFormat       = "SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant='%s'"
 	updateQueryFormat                = "UPDATE public.business_tenant_mappings SET external_name = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE external_tenant='%s'"
 	deleteQuery                      = "DELETE FROM public.business_tenant_mappings WHERE external_tenant = $1"

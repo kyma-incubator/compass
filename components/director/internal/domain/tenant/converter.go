@@ -1,8 +1,6 @@
 package tenant
 
 import (
-	"database/sql"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -23,10 +21,10 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent:         newNullString(in.Parent),
-		Type:           tenant.Type(in.Type),
+		Parent:         str.NewNullString(in.Parent),
+		Type:           in.Type,
 		ProviderName:   in.Provider,
-		Status:         tenant.Status(in.Status),
+		Status:         in.Status,
 	}
 }
 
@@ -39,9 +37,9 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
 		Parent:         in.Parent.String,
-		Type:           string(in.Type),
+		Type:           in.Type,
 		Provider:       in.ProviderName,
-		Status:         model.TenantStatus(in.Status),
+		Status:         in.Status,
 		Initialized:    in.Initialized,
 	}
 }
@@ -71,17 +69,4 @@ func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*grap
 	}
 
 	return tenants
-}
-
-func newNullString(s string) sql.NullString {
-	if len(s) == 0 {
-		return sql.NullString{
-			String: "",
-			Valid:  false,
-		}
-	}
-	return sql.NullString{
-		String: s,
-		Valid:  true,
-	}
 }
