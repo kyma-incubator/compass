@@ -61,7 +61,7 @@ func main() {
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
-	logger.Infoln("API listening on %s", cfg.Address)
+	logger.Infof("API listening on %s", cfg.Address)
 	exitOnError(server.ListenAndServe(), fmt.Sprintf("while listening on %s", cfg.Address))
 }
 
