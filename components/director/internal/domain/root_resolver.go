@@ -173,7 +173,6 @@ func NewRootResolver(
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosDefSvc, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, bundleInstanceAuthSvc, featuresConfig.ProtectedLabelPattern)
 	timeService := time.NewService()
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
-	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,

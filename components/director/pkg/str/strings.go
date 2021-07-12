@@ -119,6 +119,8 @@ func IntersectSlice(s1, s2 []string) []string {
 		}
 	}
 	return result
+}
+
 func NewNullString(s string) sql.NullString {
 	return sql.NullString{
 		String: s,
