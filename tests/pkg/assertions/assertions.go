@@ -34,6 +34,11 @@ func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func AssertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	appNameNormalizier := normalizer.DefaultNormalizator{}
+
+	if _, ok := in["managed"]; !ok {
+		in["managed"] = "false"
+	}
+
 	for key, value := range actual {
 		if key == "integrationSystemID" {
 			if app.IntegrationSystemID == nil {
@@ -490,9 +495,13 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 }
 
 func AssertSingleEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField string) {
-	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
-	require.Equal(t, expectedName, gjson.Get(respBody, "value.0.title").String())
-	require.Equal(t, expectedDescription, gjson.Get(respBody, descriptionField).String())
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
+
+	for i := 0; i < numberOfEntities; i++ {
+		require.Equal(t, expectedName, gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String())
+		require.Equal(t, expectedDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, descriptionField)).String())
+	}
 }
 
 func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitiesMap map[string]string, expectedNumber int) {
@@ -528,13 +537,21 @@ func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody s
 }
 
 func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber int, expectedID string) {
-	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
-	require.Equal(t, expectedID, gjson.Get(respBody, "value.0.ordId").String())
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
+
+	for i := 0; i < numberOfEntities; i++ {
+		require.Equal(t, expectedID, gjson.Get(respBody, fmt.Sprintf("value.%d.ordId", i)).String())
+	}
 }
 
 func AssertVendorFromORDService(t *testing.T, respBody string, expectedNumber int, expectedTitle string) {
-	require.Equal(t, expectedNumber, len(gjson.Get(respBody, "value").Array()))
-	require.Equal(t, expectedTitle, gjson.Get(respBody, "value.0.title").String())
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
+
+	for i := 0; i < numberOfEntities; i++ {
+		require.Equal(t, expectedTitle, gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String())
+	}
 }
 
 func urlsAreIdentical(url1, url2 *string) bool {

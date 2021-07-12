@@ -1,7 +1,12 @@
 package tenantfetcher_test
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/google/uuid"
 
@@ -17,10 +22,12 @@ func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.Tena
 	}`, string(events), total, pages))
 }
 
-func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
-	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s"}`, fieldMapping.IDField, id, fieldMapping.NameField, name)
-
-	return wrapIntoEventPageJSON(eventData)
+func fixEvent(t require.TestingT, fields map[string]string) []byte {
+	eventData, err := json.Marshal(fields)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	return wrapIntoEventPageJSON(string(eventData))
 }
 
 func fixMovedRuntimeByLabelEvent(id, source, target string, fieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping) []byte {
@@ -47,11 +54,13 @@ func wrapIntoEventPageJSON(eventData string) []byte {
 	}`, fixID(), eventData))
 }
 
-func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.BusinessTenantMappingInput {
+func fixBusinessTenantMappingInput(name, externalTenant, provider string, parent string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
 		Provider:       provider,
+		Parent:         parent,
+		Type:           tenant.TypeToStr(tenantType),
 	}
 }
 

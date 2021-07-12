@@ -53,7 +53,7 @@ type Document struct {
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(webhookURL string) error {
+func (docs Documents) Validate(webhookURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	for _, doc := range docs {
 		if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
 			return errors.Wrap(err, "error validating system instance")
@@ -88,7 +88,7 @@ func (docs Documents) Validate(webhookURL string) error {
 		}
 
 		for _, pkg := range doc.Packages {
-			if err := validatePackageInput(pkg); err != nil {
+			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
 			}
 		}
@@ -111,7 +111,7 @@ func (docs Documents) Validate(webhookURL string) error {
 			productIDs[product.OrdID] = true
 		}
 		for _, api := range doc.APIResources {
-			if err := validateAPIInput(api, packagePolicyLevels); err != nil {
+			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
 			}
 			if _, ok := apiIDs[*api.OrdID]; ok {
@@ -120,7 +120,7 @@ func (docs Documents) Validate(webhookURL string) error {
 			apiIDs[*api.OrdID] = true
 		}
 		for _, event := range doc.EventResources {
-			if err := validateEventInput(event, packagePolicyLevels); err != nil {
+			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
 			}
 			if _, ok := eventIDs[*event.OrdID]; ok {
@@ -201,8 +201,6 @@ func (docs Documents) Validate(webhookURL string) error {
 			}
 		}
 	}
-
-	// TODO: Validate that every change to a resource leads to version increment. If a resource in the document is different from the one in the DB and both have the same versions, then this is a validation error.
 
 	return nil
 }

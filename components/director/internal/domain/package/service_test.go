@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
-
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -75,7 +73,7 @@ func TestService_Create(t *testing.T) {
 			svc := mp_package.NewService(repo, upackageIDService)
 
 			// when
-			result, err := svc.Create(ctx, appID, testCase.Input)
+			result, err := svc.Create(ctx, appID, testCase.Input, uint64(123456))
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -91,7 +89,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := mp_package.NewService(nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.PackageInput{})
+		_, err := svc.Create(context.TODO(), "", model.PackageInput{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -164,7 +162,7 @@ func TestService_Update(t *testing.T) {
 			svc := mp_package.NewService(repo, nil)
 
 			// when
-			err := svc.Update(ctx, testCase.InputID, testCase.Input)
+			err := svc.Update(ctx, testCase.InputID, testCase.Input, 0)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -180,7 +178,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := mp_package.NewService(nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.PackageInput{})
+		err := svc.Update(context.TODO(), "", model.PackageInput{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -455,7 +453,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := product.NewService(nil)
+		svc := mp_package.NewService(nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN

@@ -1,6 +1,7 @@
 package tombstone
 
 type Entity struct {
+	ID            string `db:"id"`
 	OrdID         string `db:"ord_id"`
 	TenantID      string `db:"tenant_id"`
 	ApplicationID string `db:"app_id"`

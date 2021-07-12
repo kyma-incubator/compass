@@ -150,6 +150,21 @@ func GenerateOneTimeTokenForApplication(t require.TestingT, ctx context.Context,
 	return oneTimeToken
 }
 
+func GenerateOneTimeTokenForApplicationWithSuggestedToken(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.OneTimeTokenForApplicationExt {
+	req := FixRequestOneTimeTokenForApplication(id)
+	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
+	req.Header.Add("suggest_token", "true")
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, oneTimeToken.ConnectorURL)
+	require.NotEmpty(t, oneTimeToken.Token)
+	require.NotEmpty(t, oneTimeToken.Raw)
+	require.NotEmpty(t, oneTimeToken.RawEncoded)
+	require.NotEmpty(t, oneTimeToken.LegacyConnectorURL)
+	return oneTimeToken
+}
+
 func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, defaultScenarioEnabled bool) {
 	labelKey := "scenarios"
 	if defaultScenarioEnabled {

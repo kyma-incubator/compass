@@ -1,18 +1,15 @@
 package model
 
-type TenantStatus string
-
-const (
-	Active   TenantStatus = "Active"
-	Inactive TenantStatus = "Inactive"
-)
+import "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 type BusinessTenantMapping struct {
 	ID             string
 	Name           string
 	ExternalTenant string
+	Parent         string
+	Type           tenant.Type
 	Provider       string
-	Status         TenantStatus
+	Status         tenant.Status
 	Initialized    *bool // computed value
 }
 
@@ -21,7 +18,7 @@ func (t BusinessTenantMapping) WithExternalTenant(externalTenant string) Busines
 	return t
 }
 
-func (t BusinessTenantMapping) WithStatus(status TenantStatus) BusinessTenantMapping {
+func (t BusinessTenantMapping) WithStatus(status tenant.Status) BusinessTenantMapping {
 	t.Status = status
 	return t
 }
@@ -29,6 +26,8 @@ func (t BusinessTenantMapping) WithStatus(status TenantStatus) BusinessTenantMap
 type BusinessTenantMappingInput struct {
 	Name           string `json:"name"`
 	ExternalTenant string `json:"id"`
+	Parent         string
+	Type           string `json:"type"`
 	Provider       string
 }
 
@@ -43,8 +42,10 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 		ID:             id,
 		Name:           i.Name,
 		ExternalTenant: i.ExternalTenant,
+		Parent:         i.Parent,
+		Type:           tenant.StrToType(i.Type),
 		Provider:       i.Provider,
-		Status:         Active,
+		Status:         tenant.Active,
 	}
 }
 
