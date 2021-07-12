@@ -44,7 +44,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeIn := graphql.RuntimeInput{
-		Name: "012345Myaccount_Runtime_aaaaaaaaaaaaаа",
+		Name: "my runtime",
 	}
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=the length must be between 1 and 36]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
 }
 
 func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
@@ -97,7 +97,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 
 	runtimeIn := graphql.RuntimeInput{
-		Name: "012345Myaccount_Runtime_aaaaaaaaaaaaаа",
+		Name: "my runtime",
 	}
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
@@ -109,7 +109,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=the length must be between 1 and 36]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
 }
 
 // Label Definition Validation
