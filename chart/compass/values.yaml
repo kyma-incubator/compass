@@ -433,5 +433,10 @@ global:
       runAsUser: 2000
       allowPrivilegeEscalation: false
 
+  migratorJob:
+    versionConfigMap:
+      name: "compass-migrator-migration-version"
+      namespace: "compass-system"
+
 pairing-adapter:
   enabled: false
