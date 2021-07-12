@@ -17,7 +17,7 @@ BEGIN
           AND c1.column_name = 'id'
           AND c2.column_name = 'tenant_id'
         LOOP
-            sql := 'SELECT ''' || compass_table || ''' as table_name, id, tenant_id FROM public.' || compass_table || ' WHERE tenant_id IS NOT NULL;';
+            sql := 'SELECT ''' || compass_table || '''::TEXT as table_name, id, tenant_id FROM public.' || compass_table || ' WHERE tenant_id IS NOT NULL;';
             RAISE NOTICE 'Executing SQL query: %', sql;
             RETURN QUERY EXECUTE sql;
         END LOOP;
@@ -26,7 +26,9 @@ $func$  LANGUAGE plpgsql;
 
 -- An index view containing all the entity ids with their owning tenant.
 -- It is dynamically updated with the data from each table in the public schema containing 'id' and 'tenant_id' columns.
-CREATE VIEW id_tenant_id_index AS
+CREATE MATERIALIZED VIEW id_tenant_id_index AS
 SELECT id, tenant_id FROM get_id_tenant_id_index();
+
+CREATE UNIQUE INDEX id_tenant_id_index_unique ON id_tenant_id_index(id);
 
 COMMIT;

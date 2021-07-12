@@ -2,6 +2,7 @@ package tenantindex_test
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 
@@ -23,6 +24,30 @@ func TestRepository_GetOwnerTenantByResourceID(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows([]string{"tenant_id"}).
 			AddRow(appOwnerTenantID)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(callingTenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		repository := tenantindex.NewRepository()
+		// WHEN
+		resultOwnerTenantID, err := repository.GetOwnerTenantByResourceID(ctx, callingTenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Equal(t, appOwnerTenantID, resultOwnerTenantID)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("Refresh materialized view on Not Found error", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows([]string{"tenant_id"}).
+			AddRow(appOwnerTenantID)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(callingTenantID, appID).WillReturnError(sql.ErrNoRows)
+
+		sqlMock.ExpectExec(`REFRESH MATERIALIZED VIEW CONCURRENTLY "public"."id_tenant_id_index"`).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(callingTenantID, appID).
