@@ -11,14 +11,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-const specificationsTable string = `public.specifications`
+const (
+	specificationsTable string = `public.specifications`
+	apiDefIDColumn             = "api_def_id"
+	eventAPIDefIDColumn        = "event_def_id"
+	pageSize                   = 1
+	cursor                     = ""
+)
 
-const apiDefIDColumn = "api_def_id"
-const eventAPIDefIDColumn = "event_def_id"
 
 var (
 	specificationsColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
-	orderByColumns        = []string{"created_at", "id"}
+	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("created_at"), repo.NewAscOrderBy("id")}
 	tenantColumn          = "tenant_id"
 )
 
@@ -122,7 +126,7 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 	}
 
 	var specs SpecCollection
-	_, err = r.unionLister.List(ctx, tenant, objectIDs, objectFieldName, 1, "", orderByColumns, &specs, conditions...)
+	_, err = r.unionLister.List(ctx, tenant, objectIDs, objectFieldName, pageSize, cursor, orderByColumns, &specs, conditions...)
 	if err != nil {
 		return nil, err
 	}

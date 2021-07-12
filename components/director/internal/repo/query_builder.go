@@ -15,7 +15,6 @@ import (
 
 type QueryBuilder interface {
 	BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
-	BuildCountQuery(tenantID string, idColumn string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error)
 }
 
 type universalQueryBuilder struct {
@@ -70,10 +69,6 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 	return stmtBuilder.String(), allArgs, nil
 }
 
-func (b *universalQueryBuilder) BuildUnionQuery(queries []string, args [][]interface{}) (string, []interface{}, error) {
-	return buildUnionQuery(queries, args)
-}
-
 func buildUnionQuery(queries []string, args [][]interface{}) (string, []interface{}, error) {
 	if len(queries) == 0 {
 		return "", []interface{}{}, nil
@@ -95,25 +90,14 @@ func buildUnionQuery(queries []string, args [][]interface{}) (string, []interfac
 	return getQueryFromBuilder(stmtBuilder), allArgs, nil
 }
 
-
-
-func (b *universalQueryBuilder) BuildCountQuery(tenantID string, idColumn string, isRebindingNeeded bool, groupByParams GroupByParams, conditions ...Condition) (string, []interface{}, error) {
-	if tenantID == "" {
-		return "", nil, apperrors.NewTenantRequiredError()
-	}
-	conditions = append(Conditions{NewEqualCondition(*b.tenantColumn, tenantID)}, conditions...)
-
-	return buildCountQuery(b.tableName,idColumn, conditions, groupByParams, OrderByParams{}, isRebindingNeeded)
-}
-
-func buildCountQuery(tableName string,idColumn string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildCountQuery(tableName string, idColumn string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	isGroupByParam := false
-	for _,s:=range groupByParams{
-		if idColumn == s{
+	for _, s := range groupByParams {
+		if idColumn == s {
 			isGroupByParam = true
 		}
 	}
-	if isGroupByParam == false{
+	if isGroupByParam == false {
 		return "", nil, errors.New("id column is not in group by params")
 	}
 

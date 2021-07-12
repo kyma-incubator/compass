@@ -22,7 +22,7 @@ var (
 	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn    = "tenant_id"
 	bundleIDColumn = "bundle_id"
-	orderByColumns = []string{"bundle_id", "id"}
+	orderByColumns = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore

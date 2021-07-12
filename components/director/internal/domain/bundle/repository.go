@@ -29,6 +29,7 @@ var (
 	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn     = "tenant_id"
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	orderByColumns = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -197,7 +198,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	var bundleCollection BundleCollection
-	counts, err := r.unionLister.List(ctx, tenantID, applicationIDs, "app_id", pageSize, cursor, []string{"app_id", "id"}, &bundleCollection)
+	counts, err := r.unionLister.List(ctx, tenantID, applicationIDs, "app_id", pageSize, cursor, orderByColumns, &bundleCollection)
 	if err != nil {
 		return nil, err
 	}

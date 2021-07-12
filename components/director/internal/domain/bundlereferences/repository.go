@@ -223,12 +223,12 @@ func getSelectedColumnsByObjectType(objectType model.BundleReferenceObjectType) 
 	return []string{""}, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
 
-func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) ([]string, error) {
+func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) (repo.OrderByParams, error) {
 	switch objectType {
 	case model.BundleAPIReference:
-		return []string{APIDefIDColumn, bundleIDColumn, APIDefURLColumn}, nil
+		return repo.OrderByParams{repo.NewAscOrderBy(APIDefIDColumn), repo.NewAscOrderBy(bundleIDColumn), repo.NewAscOrderBy(APIDefURLColumn)}, nil
 	case model.BundleEventReference:
-		return []string{EventDefIDColumn, bundleIDColumn}, nil
+		return repo.OrderByParams{repo.NewAscOrderBy(EventDefIDColumn), repo.NewAscOrderBy(bundleIDColumn)}, nil
 	}
 	return nil, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
