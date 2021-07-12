@@ -86,7 +86,7 @@ global:
       version: "PR-1929"
     ord_service:
       dir:
-      version: "PR-31"
+      version: "PR-32"
     schema_migrator:
       dir:
       version: "PR-1946"
