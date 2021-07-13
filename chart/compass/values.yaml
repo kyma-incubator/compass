@@ -367,6 +367,8 @@ global:
     queueSize: 100
     # fetchTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
     fetchTimeout: "5s"
+    # directorRequestTimeout - graphql requests timeout to director
+    directorRequestTimeout: "40s"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2

@@ -3,13 +3,22 @@ package systemfetcher
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+)
+
+const (
+	LifecycleAttributeName string = "lifecycleStatus"
+	LifecycleDeleted       string = "DELETED"
 )
 
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
@@ -21,6 +30,7 @@ type TenantService interface {
 //go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
 type SystemsService interface {
 	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
+	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
@@ -28,9 +38,16 @@ type SystemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+type DirectorClient interface {
+	DeleteSystemAsync(ctx context.Context, id, tenant string) error
+}
+
 type Config struct {
-	SystemsQueueSize    int `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
-	FetcherParallellism int `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
+	SystemsQueueSize       int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
+	FetcherParallellism    int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
+	DirectorGraphqlURL     string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
+	DirectorRequestTimeout time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 }
 
 type SystemFetcher struct {
@@ -38,19 +55,33 @@ type SystemFetcher struct {
 	tenantService    TenantService
 	systemsService   SystemsService
 	systemsAPIClient SystemsAPIClient
+	directorClient   DirectorClient
 
 	config  Config
 	workers chan struct{}
 }
 
 func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, config Config) *SystemFetcher {
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(http.DefaultTransport))
+
+	securedClient := &http.Client{
+		Transport: httpTransport,
+		Timeout:   config.DirectorRequestTimeout,
+	}
+
+	graphqlClient := gcli.NewClient(config.DirectorGraphqlURL, gcli.WithHTTPClient(securedClient))
+
 	return &SystemFetcher{
 		transaction:      tx,
 		tenantService:    ts,
 		systemsService:   ss,
 		systemsAPIClient: sac,
-		workers:          make(chan struct{}, config.FetcherParallellism),
-		config:           config,
+		directorClient: &DirectorGraphClient{
+			Client:        graphqlClient,
+			authenticator: &authProvider{},
+		},
+		workers: make(chan struct{}, config.FetcherParallellism),
+		config:  config,
 	}
 }
 
@@ -149,6 +180,22 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, system := range systems {
+		if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted {
+			log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
+			app, err := s.systemsService.GetByNameAndSystemNumber(ctx, system.DisplayName, system.SystemNumber)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
+				continue
+			}
+
+			if err := s.directorClient.DeleteSystemAsync(ctx, app.ID, tenantMapping.ID); err != nil {
+				log.C(ctx).WithError(err).Errorf("Could not delete system")
+				continue
+			}
+			log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
+			continue
+		}
+
 		appInput, templateID := s.convertSystemToAppRegisterInput(system)
 		appInputs = append(appInputs, model.ApplicationRegisterInputWithTemplate{
 			ApplicationRegisterInput: appInput,
