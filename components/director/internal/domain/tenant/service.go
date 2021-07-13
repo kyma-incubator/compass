@@ -67,10 +67,10 @@ func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 		tenantIDs[tenant.ExternalTenant] = id
 	}
-	for _, tenant := range tenants { // Convert parent ID from external to internal id reference
-		if len(tenant.Parent) > 0 {
-			if _, ok := tenantIDs[tenant.Parent]; ok {
-				tenant.Parent = tenantIDs[tenant.Parent]
+	for i := range tenants { // Convert parent ID from external to internal id reference
+		if len(tenants[i].Parent) > 0 {
+			if _, ok := tenantIDs[tenants[i].Parent]; ok {
+				tenants[i].Parent = tenantIDs[tenants[i].Parent]
 			}
 		}
 	}

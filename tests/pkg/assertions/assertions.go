@@ -555,7 +555,7 @@ func AssertVendorFromORDService(t *testing.T, respBody string, expectedNumber in
 }
 
 func AssertApplicationPageContainOnlyIDs(t *testing.T, page graphql.ApplicationPage, ids ...string) {
-	require.Equal(t, len(page.Data), len(ids))
+	require.Equal(t, len(ids), len(page.Data))
 
 	for _, app := range page.Data {
 		require.Contains(t, ids, app.ID)

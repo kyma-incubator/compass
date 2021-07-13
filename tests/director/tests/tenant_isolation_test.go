@@ -44,7 +44,7 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 
 	// Register app in account's tenant
 	accountApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "accountApp", accountTenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, customerTenant, accountApp.ID)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, accountTenant, accountApp.ID)
 
 	// Assert account's app is visible in the account's tenant
 	accountApps = fixtures.GetApplicationPage(t, ctx, dexGraphQLClient, accountTenant)
