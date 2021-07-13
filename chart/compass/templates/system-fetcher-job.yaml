@@ -29,7 +29,7 @@ spec:
                   mountPath: /config
               env:
                 - name: APP_DIRECTOR_GRAPHQL_URL
-                  value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+                  value: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}/director/graphql"
                 - name: APP_DIRECTOR_REQUEST_TIMEOUT
                   value: "{{ .Values.global.systemFetcher.directorRequestTimeout }}"
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
