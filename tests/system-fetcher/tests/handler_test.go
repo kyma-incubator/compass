@@ -30,6 +30,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -69,8 +70,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	namespace := "compass-system"
 	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
-		require.NoError(t, err)
+		deleteJob(t, k8sClient, jobName, namespace)
 	}()
 
 	waitForJobToSucceed(t, k8sClient, jobName, namespace)
@@ -159,8 +159,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	namespace := "compass-system"
 	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
-		require.NoError(t, err)
+		deleteJob(t, k8sClient, jobName, namespace)
 	}()
 
 	waitForJobToSucceed(t, k8sClient, jobName, namespace)
@@ -174,7 +173,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 			},
 			Labels: directorSchema.Labels{
-				"managed": true,
+				"managed": "true",
 			},
 		},
 		{
@@ -183,7 +182,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description: &description,
 			},
 			Labels: directorSchema.Labels{
-				"managed": true,
+				"managed": "true",
 			},
 		},
 		{
@@ -192,7 +191,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description: &description,
 			},
 			Labels: directorSchema.Labels{
-				"managed": true,
+				"managed": "true",
 			},
 		},
 	}
@@ -225,7 +224,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 }
 
 func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
-	elapsed := time.After(time.Minute * 2)
+	elapsed := time.After(time.Minute * 5)
 	for {
 		select {
 		case <-elapsed:
@@ -235,11 +234,36 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 		t.Log("Waiting for job to finish")
 		job, err := k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
 		require.NoError(t, err)
+		if job.Status.Failed > 0 {
+			t.Fatal("Job has failed. Exiting...")
+		}
 		if job.Status.Succeeded > 0 {
 			break
 		}
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+	t.Log("Deleting test job")
+	err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
+	require.NoError(t, err)
+
+	elapsed := time.After(time.Minute * 2)
+	for {
+		select {
+		case <-elapsed:
+			t.Fatal("Timeout reached waiting for job to be deleted. Exiting...")
+		default:
+		}
+		t.Log("Waiting for job to be deleted")
+		_, err = k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			break
+		}
+		time.Sleep(time.Second * 2)
+	}
+	t.Log("Test job deleted")
 }
 
 func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
@@ -262,9 +286,10 @@ func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes
 			Name: jobName,
 		},
 	}
-	t.Log("Creating job")
+	t.Log("Creating test job")
 	_, err = k8sClient.BatchV1().Jobs(namespace).Create(job)
 	require.NoError(t, err)
+	t.Log("Test job created")
 }
 
 func setMockSystems(t *testing.T, mockSystems []byte) {
