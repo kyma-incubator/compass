@@ -66,7 +66,7 @@ spec:
             - name: METRICS_PORT
               value: "{{ .Values.metrics.port }}"
             - name: LOG_FORMAT
-              value: "kibana"
+              value: {{.Values.log.format | quote }}
           livenessProbe:
             httpGet:
               path: /healthz

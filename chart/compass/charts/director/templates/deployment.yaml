@@ -122,7 +122,7 @@ spec:
             - name: APP_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_LOG_FORMAT
-              value: "kibana"
+              value: {{.Values.log.format | quote }}
             - name: APP_OPERATION_PATH
               value: {{ .Values.global.director.operations.path }}
             - name: APP_LAST_OPERATION_PATH

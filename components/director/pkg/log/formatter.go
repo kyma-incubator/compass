@@ -11,7 +11,6 @@ import (
 type kibanaEntry struct {
 	WrittenAt        string        `json:"written_at"`
 	WrittenTimestamp string        `json:"written_ts"`
-	ComponentType    string        `json:"component_type"`
 	Type             string        `json:"type"`
 	Logger           string        `json:"logger"`
 	Level            string        `json:"level"`
@@ -49,7 +48,6 @@ type KibanaFormatter struct {
 
 // Format formats a logrus entry for Kibana logging
 func (f *KibanaFormatter) Format(e *logrus.Entry) ([]byte, error) {
-	// todo remove
 	componentName, exists := e.Data[fieldComponentName].(string)
 	if !exists {
 		componentName = "-"
@@ -66,7 +64,6 @@ func (f *KibanaFormatter) Format(e *logrus.Entry) ([]byte, error) {
 		Level:            e.Level.String(),
 		Message:          e.Message,
 		Type:             "log",
-		ComponentType:    "application",
 		WrittenAt:        e.Time.UTC().Format(time.RFC3339Nano),
 		WrittenTimestamp: fmt.Sprintf("%d", e.Time.UTC().Unix()),
 		Fields:           e.Data,
