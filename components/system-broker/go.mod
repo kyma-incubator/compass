@@ -10,7 +10,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.2.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210623072749-c159dfdd6510
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210713085253-0f67b704c390
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
