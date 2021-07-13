@@ -61,10 +61,18 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 
 func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
 	var tenants []model.BusinessTenantMapping
-
+	tenantIDs := make(map[string]string, len(tenantInputs))
 	for _, tenant := range tenantInputs {
 		id := s.uidService.Generate()
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
+		tenantIDs[tenant.ExternalTenant] = id
+	}
+	for _, tenant := range tenants { // Convert parent ID from external to internal id reference
+		if len(tenant.Parent) > 0 {
+			if _, ok := tenantIDs[tenant.Parent]; ok {
+				tenant.Parent = tenantIDs[tenant.Parent]
+			}
+		}
 	}
 	return tenants
 }
