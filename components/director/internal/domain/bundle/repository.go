@@ -217,8 +217,6 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-
-	// map the PackagePage to the current app_id
 	bundlePages := make([]*model.BundlePage, len(applicationIDs))
 	for i, appID := range applicationIDs {
 		totalCount := counts[appID]
