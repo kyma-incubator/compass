@@ -437,6 +437,10 @@ global:
     versionConfigMap:
       name: "compass-migrator-migration-version"
       namespace: "compass-system"
+    pvc:
+      name: "compass-director-migrations"
+      regional: false
+      migrationsPath: "compass-migrations"
 
 pairing-adapter:
   enabled: false

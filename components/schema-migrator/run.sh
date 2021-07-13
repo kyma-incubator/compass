@@ -70,8 +70,6 @@ fi
 
 CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME_SSL"
 
-LAST_SUCCESSFUL_MIGRATION=$(migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)
-
 if [[ "${DIRECTION}" == "up" ]]; then
   # Save previous successful migration in case of reverting the Compass version
    kubectl create configmap -n $CM_NAMESPACE $CM_NAME --from-literal=version=$LAST_SUCCESSFUL_MIGRATION || \
@@ -79,6 +77,8 @@ if [[ "${DIRECTION}" == "up" ]]; then
 
   CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 
+  rm  ${MIGRATION_STORAGE_PATH}/*
+  cp -R migrations/${MIGRATION_PATH}/. ${MIGRATION_STORAGE_PATH}
   echo '# STARTING MIGRATION #'
   if [[ "${NON_INTERACTIVE}" == "true" ]]; then
       yes | $CMD
@@ -93,14 +93,14 @@ else
     COMPASS_PREVIOUS_VERSION=$(echo "$COMPASS_PREVIOUS_VERSION" | cut -d "-" -f 2)
   fi
 
-  git clone --depth 1 --branch $COMPASS_PREVIOUS_VERSION https://github.com/kyma-incubator/compass.git
-
   # Clean "dirty" flag
-  migrate -path compass/components/schema-migrator/migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
+  migrate -path  -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
 
   # Migrate down until the version matches the wanted version from the previous release
-  while [[ "$(migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)" != "$REVERT_TO" ]]; do
-    migrate -path compass/components/schema-migrator/migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" down 1
+  while [[ "$(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)" != "$REVERT_TO" ]]; do
+    MIGRATION_VERSION="$(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)"
+    migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" down 1
+    rm *"$MIGRATION_VERSION"*
   done
   echo "Successfully migrated down to previous migration version $REVERT_TO"
 fi

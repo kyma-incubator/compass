@@ -20,7 +20,7 @@ spec:
             restartPolicy: Never
             shareProcessNamespace: true
             containers:
-                {{if eq .Values.global.database.embedded.enabled false}}
+                {{ if eq .Values.global.database.embedded.enabled false }}
                 - name: cloudsql-proxy
                   image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
                   command:
@@ -32,10 +32,9 @@ spec:
                       - name: cloudsql-instance-credentials
                         mountPath: /secrets/cloudsql-instance-credentials
                         readOnly: true
-                {{end}}
+                {{ end }}
                 - name: migrator
                   image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
-                  imagePullPolicy: Always
                   env:
                       - name: DB_USER
                         valueFrom:
@@ -69,21 +68,28 @@ spec:
                                 key: postgresql-sslMode
                       - name: MIGRATION_PATH
                         value: "director"
-                      - name: "DIRECTION"
+                      - name: DIRECTION
                         value: "up"
-                      - name: "CM_NAME"
-                        value: {{ .Values.global.migratorJob.versionConfigMap.name | quote }}
-                      - name: "CM_NAMESPACE"
-                        value: {{ .Values.global.migratorJob.versionConfigMap.namespace | quote }}
-
+                      - name: CM_NAME
+                        value: {{ .Values.global.migratorJob.versionConfigMap.name }}
+                      - name: CM_NAMESPACE
+                        value: {{ .Values.global.migratorJob.versionConfigMap.namespace }}
+                      - name: MIGRATION_STORAGE_PATH
+                        value: {{ .Values.global.migratorJob.pvc.migrationsPath }}
                   command:
                     - "/bin/bash"
                   args:
                     - "-c"
                     - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-            {{if eq .Values.global.database.embedded.enabled false}}
+                  volumeMounts:
+                    - name: migrations-storage
+                      mountPath: {{ .Values.global.migratorJob.pvc.migrationsPath }}
             volumes:
+              - name: migrations-storage
+                persistentVolumeClaim:
+                  claimName: {{ .Values.global.migratorJob.pvc.name }}
+            {{ if eq .Values.global.database.embedded.enabled false }}
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
-            {{end}}
+            {{ end }}
