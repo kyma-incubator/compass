@@ -59,7 +59,7 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 	return s.tenantMappingRepo.List(ctx)
 }
 
-func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
+func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
 	var tenants []model.BusinessTenantMapping
 	tenantIDs := make(map[string]string, len(tenantInputs))
 	for _, tenant := range tenantInputs {
@@ -67,10 +67,16 @@ func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 		tenantIDs[tenant.ExternalTenant] = id
 	}
-	for i := range tenants { // Convert parent ID from external to internal id reference
+	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
 		if len(tenants[i].Parent) > 0 {
-			if _, ok := tenantIDs[tenants[i].Parent]; ok {
+			if _, ok := tenantIDs[tenants[i].Parent]; ok { // If the parent is inserted in this request (otherwise we assume that it is already in the db)
 				tenants[i].Parent = tenantIDs[tenants[i].Parent]
+
+				var moved bool
+				tenants, moved = MoveBeforeIfShould(tenants, tenants[i].Parent, i) // Move my parent before me (to be inserted first) if it is not already
+				if moved {
+					i-- // Process the moved parent as well
+				}
 			}
 		}
 	}
@@ -78,7 +84,7 @@ func (s *service) multipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 }
 
 func (s *service) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	tenants := s.multipleToTenantMapping(tenantInputs)
+	tenants := s.MultipleToTenantMapping(tenantInputs)
 	err := s.createIfNotExists(ctx, tenants)
 	if err != nil {
 		return errors.Wrap(err, "while creating many")
@@ -112,4 +118,31 @@ func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessT
 	}
 
 	return nil
+}
+
+// MoveBeforeIfShould moves the tenant with id right before index only if it is not already before it
+func MoveBeforeIfShould(tenants []model.BusinessTenantMapping, id string, indx int) ([]model.BusinessTenantMapping, bool) {
+	var itemIndex int
+	for i, tenant := range tenants {
+		if tenant.ID == id {
+			itemIndex = i
+		}
+	}
+
+	if itemIndex <= indx { // already before indx
+		return tenants, false
+	}
+
+	newTenants := make([]model.BusinessTenantMapping, 0, len(tenants))
+	for i := range tenants {
+		if i == itemIndex {
+			continue
+		}
+		if i == indx {
+			newTenants = append(newTenants, tenants[itemIndex], tenants[i])
+			continue
+		}
+		newTenants = append(newTenants, tenants[i])
+	}
+	return newTenants, true
 }
