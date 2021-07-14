@@ -28,8 +28,14 @@ test-local:
 build-local:
 	@echo ${SKIP_BUILD_MESSAGE}
 
+imports:
+	@echo ${SKIP_CHECK_IMPORTS_MESSAGE}
+
 check-imports:
 	@echo ${SKIP_CHECK_IMPORTS_MESSAGE}
+
+fmt:
+	@echo ${SKIP_CHECK_FMT_MESSAGE}
 
 check-fmt:
 	@echo ${SKIP_CHECK_FMT_MESSAGE}

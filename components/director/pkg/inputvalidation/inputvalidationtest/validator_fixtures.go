@@ -14,7 +14,6 @@ const (
 	EmptyString                         = ""
 	ValidName                           = "thi5-1npu7.15-valid"
 	ValidRuntimeNameWithDigit           = "0thi5-1npu7.15_valid"
-	InValidRuntimeNameTooLong           = "123aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaааа"
 	InValidRuntimeNameInvalidCharacters = "123 456"
 	InvalidName                         = "0iNvALiD"
 	ValidURL                            = "https://kyma-project.io"

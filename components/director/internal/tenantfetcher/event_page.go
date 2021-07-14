@@ -91,31 +91,39 @@ func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRunt
 }
 
 func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
+	jsonPayload := string(eventData)
+	if !gjson.Valid(jsonPayload) {
+		return nil, errors.Errorf("invalid json payload")
+	}
 	if eventType == CreatedEventsType && ep.fieldMapping.DiscriminatorField != "" {
-		discriminator, ok := gjson.GetBytes(eventData, ep.fieldMapping.DiscriminatorField).Value().(string)
-		if !ok {
+		discriminatorResult := gjson.Get(jsonPayload, ep.fieldMapping.DiscriminatorField)
+		if !discriminatorResult.Exists() {
 			return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.DiscriminatorField)
 		}
-
-		if discriminator != ep.fieldMapping.DiscriminatorValue {
+		if discriminatorResult.String() != ep.fieldMapping.DiscriminatorValue {
 			return nil, nil
 		}
 	}
-
-	id, ok := gjson.GetBytes(eventData, ep.fieldMapping.IDField).Value().(string)
-	if !ok {
+	idResult := gjson.Get(jsonPayload, ep.fieldMapping.IDField)
+	if !idResult.Exists() {
 		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.IDField)
 	}
 
-	name, ok := gjson.GetBytes(eventData, ep.fieldMapping.NameField).Value().(string)
-	if !ok {
+	nameResult := gjson.Get(jsonPayload, ep.fieldMapping.NameField)
+	if !nameResult.Exists() {
 		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.NameField)
 	}
 
+	customerIdResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
+	if !customerIdResult.Exists() {
+		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
+	}
+
 	return &model.BusinessTenantMappingInput{
-		Name:           name,
-		ExternalTenant: id,
+		Name:           nameResult.String(),
+		ExternalTenant: idResult.String(),
+		Parent:         customerIdResult.String(),
+		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       ep.providerName,
-		Type:           string(tenant.Account),
 	}, nil
 }
