@@ -365,6 +365,15 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 	}
 }
 
+func fixModelApplicationWithLabelCreateInput(name string) model.ApplicationRegisterInput {
+	return model.ApplicationRegisterInput{
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+		Labels:         map[string]interface{}{"managed": "false"},
+	}
+}
+
 func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:           name,
