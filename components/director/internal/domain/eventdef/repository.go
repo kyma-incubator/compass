@@ -94,8 +94,10 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 
 func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {
 	var result []*model.EventDefinition
-	for _, id := range ids {
-		result = append(result, defs[id])
+	if len(defs) > 0 {
+		for _, id := range ids {
+			result = append(result, defs[id])
+		}
 	}
 	return result
 }

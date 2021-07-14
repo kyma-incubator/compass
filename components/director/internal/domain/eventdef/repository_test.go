@@ -2,6 +2,7 @@ package eventdef_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"testing"
@@ -135,6 +136,224 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		assert.Equal(t, secondEventDefID, modelEventDef[1].ID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
+	})
+}
+
+func TestPgRepository_ListAllForBundle(t *testing.T) {
+	// GIVEN
+	inputPageSize := 3
+	inputCursor := ""
+
+	firstBndlID := "111111111-1111-1111-1111-111111111111"
+	secondBndlID := "222222222-2222-2222-2222-222222222222"
+	bundleIDs := []string{firstBndlID, secondBndlID}
+
+	firstEventDefID := "111111111-1111-1111-1111-111111111111"
+	firstEventDefEntity := fixFullEntityEventDefinition(firstEventDefID, "placeholder")
+	secondEventDefID := "222222222-2222-2222-2222-222222222222"
+	secondEventDefEntity := fixFullEntityEventDefinition(secondEventDefID, "placeholder")
+
+	firstBundleRef := fixModelBundleReference(firstBndlID, firstEventDefID)
+	secondBundleRef := fixModelBundleReference(secondBndlID, secondEventDefID)
+	bundleRefs := []*model.BundleReference{firstBundleRef, secondBundleRef}
+
+	totalCounts := map[string]int{firstBndlID: 1, secondBndlID: 1}
+
+	selectQuery := `SELECT (.+) 
+		FROM "public"."event_api_definitions" 
+		WHERE tenant_id = \$1 AND id IN \(\$2, \$3\)`
+
+	t.Run("success when there are no more pages", func(t *testing.T) {
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...).
+			AddRow(fixEventDefinitionRow(secondEventDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstEventDefID, secondEventDefID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EventAPIDefinitionConverter{}
+		convMock.On("FromEntity", firstEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: firstEventDefID}})
+		convMock.On("FromEntity", secondEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondEventDefID}})
+		pgRepository := event.NewRepository(convMock)
+		// WHEN
+		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelEventDefs, 2)
+		assert.Equal(t, firstEventDefID, modelEventDefs[0].Data[0].ID)
+		assert.Equal(t, secondEventDefID, modelEventDefs[1].Data[0].ID)
+		assert.Equal(t, "", modelEventDefs[0].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForFirstBundle, modelEventDefs[0].TotalCount)
+		assert.False(t, modelEventDefs[0].PageInfo.HasNextPage)
+		assert.Equal(t, "", modelEventDefs[1].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForSecondBundle, modelEventDefs[1].TotalCount)
+		assert.False(t, modelEventDefs[1].PageInfo.HasNextPage)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there is next page", func(t *testing.T) {
+		totalCountForFirstBundle := 10
+		totalCountForSecondBundle := 10
+		totalCounts[firstBndlID] = 10
+		totalCounts[secondBndlID] = 10
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...).
+			AddRow(fixEventDefinitionRow(secondEventDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstEventDefID, secondEventDefID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EventAPIDefinitionConverter{}
+		convMock.On("FromEntity", firstEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: firstEventDefID}})
+		convMock.On("FromEntity", secondEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondEventDefID}})
+		pgRepository := event.NewRepository(convMock)
+		// WHEN
+		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelEventDefs, 2)
+		assert.Equal(t, firstEventDefID, modelEventDefs[0].Data[0].ID)
+		assert.Equal(t, secondEventDefID, modelEventDefs[1].Data[0].ID)
+		assert.Equal(t, "", modelEventDefs[0].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForFirstBundle, modelEventDefs[0].TotalCount)
+		assert.True(t, modelEventDefs[0].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelEventDefs[0].PageInfo.EndCursor)
+		assert.Equal(t, "", modelEventDefs[1].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForSecondBundle, modelEventDefs[1].TotalCount)
+		assert.True(t, modelEventDefs[1].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelEventDefs[1].PageInfo.EndCursor)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there is next page and it can be traversed", func(t *testing.T) {
+		totalCountForFirstBundle := 2
+		totalCountForSecondBundle := 2
+		totalCounts[firstBndlID] = 2
+		totalCounts[secondBndlID] = 2
+
+		thirdEventDefID := "333333333-3333-3333-3333-333333333333"
+		thirdEventDefEntity := fixFullEntityEventDefinition(thirdEventDefID, "placeholder")
+		fourthEventDefID := "444444444-4444-4444-4444-444444444444"
+		fourthEventDefEntity := fixFullEntityEventDefinition(fourthEventDefID, "placeholder")
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rowsFirstPage := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...).
+			AddRow(fixEventDefinitionRow(secondEventDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstEventDefID, secondEventDefID).
+			WillReturnRows(rowsFirstPage)
+
+		rowsSecondPage := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(thirdEventDefID, "placeholder")...).
+			AddRow(fixEventDefinitionRow(fourthEventDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, thirdEventDefID, fourthEventDefID).
+			WillReturnRows(rowsSecondPage)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EventAPIDefinitionConverter{}
+		convMock.On("FromEntity", firstEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: firstEventDefID}})
+		convMock.On("FromEntity", secondEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondEventDefID}})
+		convMock.On("FromEntity", thirdEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: thirdEventDefID}})
+		convMock.On("FromEntity", fourthEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: fourthEventDefID}})
+		pgRepository := event.NewRepository(convMock)
+		// WHEN
+		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelEventDefs, 2)
+		assert.Equal(t, firstEventDefID, modelEventDefs[0].Data[0].ID)
+		assert.Equal(t, secondEventDefID, modelEventDefs[1].Data[0].ID)
+		assert.Equal(t, "", modelEventDefs[0].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForFirstBundle, modelEventDefs[0].TotalCount)
+		assert.True(t, modelEventDefs[0].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelEventDefs[0].PageInfo.EndCursor)
+		assert.Equal(t, "", modelEventDefs[1].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForSecondBundle, modelEventDefs[1].TotalCount)
+		assert.True(t, modelEventDefs[1].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelEventDefs[1].PageInfo.EndCursor)
+		endCursor := modelEventDefs[0].PageInfo.EndCursor
+
+		thirdBundleRef := fixModelBundleReference(firstBndlID, thirdEventDefID)
+		fourthBundleRef := fixModelBundleReference(secondBndlID, fourthEventDefID)
+		bundleRefsSecondPage := []*model.BundleReference{thirdBundleRef, fourthBundleRef}
+
+		modelEventDefsSecondPage, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefsSecondPage, totalCounts, inputPageSize, endCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelEventDefsSecondPage, 2)
+		assert.Equal(t, thirdEventDefID, modelEventDefsSecondPage[0].Data[0].ID)
+		assert.Equal(t, fourthEventDefID, modelEventDefsSecondPage[1].Data[0].ID)
+		assert.Equal(t, totalCountForFirstBundle, modelEventDefsSecondPage[0].TotalCount)
+		assert.False(t, modelEventDefsSecondPage[0].PageInfo.HasNextPage)
+		assert.Equal(t, totalCountForSecondBundle, modelEventDefsSecondPage[1].TotalCount)
+		assert.False(t, modelEventDefsSecondPage[1].PageInfo.HasNextPage)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns empty page", func(t *testing.T) {
+		totalCountForFirstBundle := 0
+		totalCountForSecondBundle := 0
+		totalCounts[firstBndlID] = 0
+		totalCounts[secondBndlID] = 0
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns())
+
+		sqlMock.ExpectQuery(selectQuery).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.EventAPIDefinitionConverter{}
+		pgRepository := event.NewRepository(convMock)
+		// WHEN
+		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		//THEN
+
+		require.NoError(t, err)
+		require.Len(t, modelEventDefs[0].Data, 0)
+		require.Len(t, modelEventDefs[1].Data, 0)
+		assert.Equal(t, totalCountForFirstBundle, modelEventDefs[0].TotalCount)
+		assert.False(t, modelEventDefs[0].PageInfo.HasNextPage)
+		assert.Equal(t, totalCountForSecondBundle, modelEventDefs[1].TotalCount)
+		assert.False(t, modelEventDefs[1].PageInfo.HasNextPage)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		pgRepository := event.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstEventDefID, secondEventDefID).
+			WillReturnError(testError)
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// when
+		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+
+		// then
+		sqlMock.AssertExpectations(t)
+		assert.Nil(t, modelEventDefs)
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 

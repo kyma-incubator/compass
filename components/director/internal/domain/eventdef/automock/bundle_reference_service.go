@@ -66,6 +66,38 @@ func (_m *BundleReferenceService) GetForBundle(ctx context.Context, objectType m
 	return r0, r1
 }
 
+// ListAllByBundleIDs provides a mock function with given fields: ctx, objectType, bundleIDs, pageSize, cursor
+func (_m *BundleReferenceService) ListAllByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+	ret := _m.Called(ctx, objectType, bundleIDs, pageSize, cursor)
+
+	var r0 []*model.BundleReference
+	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) []*model.BundleReference); ok {
+		r0 = rf(ctx, objectType, bundleIDs, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundleReference)
+		}
+	}
+
+	var r1 map[string]int
+	if rf, ok := ret.Get(1).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) map[string]int); ok {
+		r1 = rf(ctx, objectType, bundleIDs, pageSize, cursor)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(map[string]int)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) error); ok {
+		r2 = rf(ctx, objectType, bundleIDs, pageSize, cursor)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // UpdateByReferenceObjectID provides a mock function with given fields: ctx, in, objectType, objectID, bundleID
 func (_m *BundleReferenceService) UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID *string, bundleID *string) error {
 	ret := _m.Called(ctx, in, objectType, objectID, bundleID)

@@ -73,8 +73,10 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 
 func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
 	var result []*model.APIDefinition
-	for _, id := range ids {
-		result = append(result, defs[id])
+	if len(defs) > 0 {
+		for _, id := range ids {
+			result = append(result, defs[id])
+		}
 	}
 	return result
 }
