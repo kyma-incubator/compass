@@ -224,7 +224,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 }
 
 func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
-	elapsed := time.After(time.Minute * 5)
+	elapsed := time.After(time.Minute * 15)
 	for {
 		select {
 		case <-elapsed:
