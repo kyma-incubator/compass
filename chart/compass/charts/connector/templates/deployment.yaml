@@ -52,7 +52,7 @@ spec:
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_LOG_FORMAT
-              value: {{.Values.log.format | quote }}
+              value: {{.Values.global.log.format | quote }}
             - name: APP_CERTIFICATE_VALIDITY_TIME
               value: {{ .Values.deployment.args.certificateValidityTime | quote }}
             - name: APP_CA_SECRET_NAME

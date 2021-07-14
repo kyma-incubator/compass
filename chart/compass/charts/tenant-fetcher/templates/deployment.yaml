@@ -59,7 +59,7 @@ spec:
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
             - name: APP_LOG_FORMAT
-              value: {{.Values.log.format | quote }}
+              value: {{.Values.global.log.format | quote }}
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
