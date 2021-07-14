@@ -526,8 +526,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		sqlMock.ExpectQuery(countQuery).
 			WithArgs(tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(appID, 1).
-				AddRow(appID2, 1))
+				AddRow(appID, totalCountForFirstApp).
+				AddRow(appID2, totalCountForSecondApp))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
@@ -572,8 +572,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		sqlMock.ExpectQuery(countQuery).
 			WithArgs(tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(appID, 10).
-				AddRow(appID2, 10))
+				AddRow(appID, totalCountForFirstApp).
+				AddRow(appID2, totalCountForSecondApp))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
@@ -631,8 +631,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		sqlMock.ExpectQuery(countQuery).
 			WithArgs(tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(appID, 2).
-				AddRow(appID2, 2))
+				AddRow(appID, totalCountForFirstApp).
+				AddRow(appID2, totalCountForSecondApp))
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, appID, ExpectedLimit, ExpectedSecondOffset, tenantID, appID2, ExpectedLimit, ExpectedSecondOffset).
@@ -641,8 +641,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		sqlMock.ExpectQuery(countQuery).
 			WithArgs(tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(appID, 2).
-				AddRow(appID2, 2))
+				AddRow(appID, totalCountForFirstApp).
+				AddRow(appID2, totalCountForSecondApp))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
@@ -695,8 +695,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		sqlMock.ExpectQuery(countQuery).
 			WithArgs(tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(appID, 0).
-				AddRow(appID2, 0))
+				AddRow(appID, totalCountForFirstApp).
+				AddRow(appID2, totalCountForSecondApp))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
@@ -742,6 +742,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		ExpectedLimit := 3
 		ExpectedOffset := 0
 		inputPageSize := 3
+		totalCountForFirstApp := 1
+		totalCountForSecondApp := 1
 		testErr := errors.New("test error")
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -757,8 +759,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		sqlMock.ExpectQuery(countQuery).
 			WithArgs(tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(appID, 1).
-				AddRow(appID2, 1))
+				AddRow(appID, totalCountForFirstApp).
+				AddRow(appID2, totalCountForSecondApp))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}

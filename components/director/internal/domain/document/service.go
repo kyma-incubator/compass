@@ -29,7 +29,7 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	Delete(ctx context.Context, tenant, id string) error
-	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
+	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -175,5 +175,5 @@ func (s *service) ListFetchRequests(ctx context.Context, documentIDs []string) (
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.fetchRequestRepo.ListByReferenceObjectID(ctx, tenant, model.DocumentFetchRequestReference, documentIDs)
+	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.DocumentFetchRequestReference, documentIDs)
 }

@@ -295,6 +295,301 @@ func TestRepository_ListForBundle(t *testing.T) {
 	})
 }
 
+func TestRepository_ListAllForBundle(t *testing.T) {
+	// GIVEN
+	inputCursor := ""
+
+	firstBndlID := "111111111-1111-1111-1111-111111111111"
+	secondBndlID := "222222222-2222-2222-2222-222222222222"
+	bundleIDs := []string{firstBndlID, secondBndlID}
+
+	firstDocID := "111111111-1111-1111-1111-111111111111"
+	firstDocEntity := fixEntityDocument(firstDocID, firstBndlID)
+	secondDocID := "222222222-2222-2222-2222-222222222222"
+	secondDocEntity := fixEntityDocument(secondDocID, secondBndlID)
+
+	selectQuery := `\(SELECT (.+) FROM public\.documents
+		WHERE tenant_id = \$1 AND bundle_id = \$2 ORDER BY bundle_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
+		\(SELECT (.+) FROM public\.documents WHERE tenant_id = \$5 AND bundle_id = \$6 ORDER BY bundle_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`
+
+	countQuery := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.documents WHERE tenant_id = \$1 GROUP BY bundle_id ORDER BY bundle_id ASC`
+
+	t.Run("success when there are no more pages", func(t *testing.T) {
+		ExpectedLimit := 3
+		ExpectedOffset := 0
+		inputPageSize := 3
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(columns).
+			AddRow(firstDocEntity.ID, firstDocEntity.TenantID, firstDocEntity.BndlID, firstDocEntity.Title, firstDocEntity.DisplayName, firstDocEntity.Description, firstDocEntity.Format, firstDocEntity.Kind, firstDocEntity.Data,
+				firstDocEntity.Ready, firstDocEntity.CreatedAt, firstDocEntity.UpdatedAt, firstDocEntity.DeletedAt, firstDocEntity.Error).
+			AddRow(secondDocEntity.ID, secondDocEntity.TenantID, secondDocEntity.BndlID, secondDocEntity.Title, secondDocEntity.DisplayName, secondDocEntity.Description, secondDocEntity.Format, secondDocEntity.Kind, secondDocEntity.Data,
+				secondDocEntity.Ready, secondDocEntity.CreatedAt, secondDocEntity.UpdatedAt, secondDocEntity.DeletedAt, secondDocEntity.Error)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(givenTenant(), firstBndlID, ExpectedLimit, ExpectedOffset, givenTenant(), secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.Converter{}
+		convMock.On("FromEntity", *firstDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: firstDocEntity.ID}}, nil).Once()
+		convMock.On("FromEntity", *secondDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: secondDocEntity.ID}}, nil).Once()
+		pgRepository := document.NewRepository(convMock)
+		// WHEN
+		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelDocs, 2)
+		assert.Equal(t, firstDocID, modelDocs[0].Data[0].ID)
+		assert.Equal(t, secondDocID, modelDocs[1].Data[0].ID)
+		assert.Equal(t, "", modelDocs[0].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForFirstBundle, modelDocs[0].TotalCount)
+		assert.False(t, modelDocs[0].PageInfo.HasNextPage)
+		assert.Equal(t, "", modelDocs[1].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForSecondBundle, modelDocs[1].TotalCount)
+		assert.False(t, modelDocs[1].PageInfo.HasNextPage)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there is next page", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+		totalCountForFirstBundle := 10
+		totalCountForSecondBundle := 10
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(columns).
+			AddRow(firstDocEntity.ID, firstDocEntity.TenantID, firstDocEntity.BndlID, firstDocEntity.Title, firstDocEntity.DisplayName, firstDocEntity.Description, firstDocEntity.Format, firstDocEntity.Kind, firstDocEntity.Data,
+				firstDocEntity.Ready, firstDocEntity.CreatedAt, firstDocEntity.UpdatedAt, firstDocEntity.DeletedAt, firstDocEntity.Error).
+			AddRow(secondDocEntity.ID, secondDocEntity.TenantID, secondDocEntity.BndlID, secondDocEntity.Title, secondDocEntity.DisplayName, secondDocEntity.Description, secondDocEntity.Format, secondDocEntity.Kind, secondDocEntity.Data,
+				secondDocEntity.Ready, secondDocEntity.CreatedAt, secondDocEntity.UpdatedAt, secondDocEntity.DeletedAt, secondDocEntity.Error)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(givenTenant(), firstBndlID, ExpectedLimit, ExpectedOffset, givenTenant(), secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.Converter{}
+		convMock.On("FromEntity", *firstDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: firstDocEntity.ID}}, nil).Once()
+		convMock.On("FromEntity", *secondDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: secondDocEntity.ID}}, nil).Once()
+		pgRepository := document.NewRepository(convMock)
+		// WHEN
+		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelDocs, 2)
+		assert.Equal(t, firstDocID, modelDocs[0].Data[0].ID)
+		assert.Equal(t, secondDocID, modelDocs[1].Data[0].ID)
+		assert.Equal(t, "", modelDocs[0].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForFirstBundle, modelDocs[0].TotalCount)
+		assert.True(t, modelDocs[0].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelDocs[0].PageInfo.EndCursor)
+		assert.Equal(t, "", modelDocs[1].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForSecondBundle, modelDocs[1].TotalCount)
+		assert.True(t, modelDocs[1].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelDocs[1].PageInfo.EndCursor)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there is next page and it can be traversed", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		ExpectedSecondOffset := 1
+		inputPageSize := 1
+		totalCountForFirstBundle := 2
+		totalCountForSecondBundle := 2
+
+		thirdDocID := "333333333-3333-3333-3333-333333333333"
+		thirdDocEntity := fixEntityDocument(thirdDocID, firstBndlID)
+		fourthDocID := "444444444-4444-4444-4444-444444444444"
+		fourthDocEntity := fixEntityDocument(fourthDocID, secondBndlID)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(columns).
+			AddRow(firstDocEntity.ID, firstDocEntity.TenantID, firstDocEntity.BndlID, firstDocEntity.Title, firstDocEntity.DisplayName, firstDocEntity.Description, firstDocEntity.Format, firstDocEntity.Kind, firstDocEntity.Data,
+				firstDocEntity.Ready, firstDocEntity.CreatedAt, firstDocEntity.UpdatedAt, firstDocEntity.DeletedAt, firstDocEntity.Error).
+			AddRow(secondDocEntity.ID, secondDocEntity.TenantID, secondDocEntity.BndlID, secondDocEntity.Title, secondDocEntity.DisplayName, secondDocEntity.Description, secondDocEntity.Format, secondDocEntity.Kind, secondDocEntity.Data,
+				secondDocEntity.Ready, secondDocEntity.CreatedAt, secondDocEntity.UpdatedAt, secondDocEntity.DeletedAt, secondDocEntity.Error)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(givenTenant(), firstBndlID, ExpectedLimit, ExpectedOffset, givenTenant(), secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		rowsSecondPage := sqlmock.NewRows(columns).
+			AddRow(thirdDocEntity.ID, thirdDocEntity.TenantID, thirdDocEntity.BndlID, thirdDocEntity.Title, thirdDocEntity.DisplayName, thirdDocEntity.Description, thirdDocEntity.Format, thirdDocEntity.Kind, thirdDocEntity.Data,
+				thirdDocEntity.Ready, thirdDocEntity.CreatedAt, thirdDocEntity.UpdatedAt, thirdDocEntity.DeletedAt, thirdDocEntity.Error).
+			AddRow(fourthDocEntity.ID, fourthDocEntity.TenantID, fourthDocEntity.BndlID, fourthDocEntity.Title, fourthDocEntity.DisplayName, fourthDocEntity.Description, fourthDocEntity.Format, fourthDocEntity.Kind, fourthDocEntity.Data,
+				fourthDocEntity.Ready, fourthDocEntity.CreatedAt, fourthDocEntity.UpdatedAt, fourthDocEntity.DeletedAt, fourthDocEntity.Error)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(givenTenant(), firstBndlID, ExpectedLimit, ExpectedSecondOffset, givenTenant(), secondBndlID, ExpectedLimit, ExpectedSecondOffset).
+			WillReturnRows(rowsSecondPage)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.Converter{}
+		convMock.On("FromEntity", *firstDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: firstDocEntity.ID}}, nil).Once()
+		convMock.On("FromEntity", *secondDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: secondDocEntity.ID}}, nil).Once()
+		convMock.On("FromEntity", *thirdDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: thirdDocEntity.ID}}, nil).Once()
+		convMock.On("FromEntity", *fourthDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: fourthDocEntity.ID}}, nil).Once()
+		pgRepository := document.NewRepository(convMock)
+		// WHEN
+		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelDocs, 2)
+		assert.Equal(t, firstDocID, modelDocs[0].Data[0].ID)
+		assert.Equal(t, secondDocID, modelDocs[1].Data[0].ID)
+		assert.Equal(t, "", modelDocs[0].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForFirstBundle, modelDocs[0].TotalCount)
+		assert.True(t, modelDocs[0].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelDocs[0].PageInfo.EndCursor)
+		assert.Equal(t, "", modelDocs[1].PageInfo.StartCursor)
+		assert.Equal(t, totalCountForSecondBundle, modelDocs[1].TotalCount)
+		assert.True(t, modelDocs[1].PageInfo.HasNextPage)
+		assert.NotEmpty(t, modelDocs[1].PageInfo.EndCursor)
+		endCursor := modelDocs[0].PageInfo.EndCursor
+
+		modelDocsSecondPage, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, endCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelDocsSecondPage, 2)
+		assert.Equal(t, thirdDocID, modelDocsSecondPage[0].Data[0].ID)
+		assert.Equal(t, fourthDocID, modelDocsSecondPage[1].Data[0].ID)
+		assert.Equal(t, totalCountForFirstBundle, modelDocsSecondPage[0].TotalCount)
+		assert.False(t, modelDocsSecondPage[0].PageInfo.HasNextPage)
+		assert.Equal(t, totalCountForSecondBundle, modelDocsSecondPage[1].TotalCount)
+		assert.False(t, modelDocsSecondPage[1].PageInfo.HasNextPage)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns empty page", func(t *testing.T) {
+		inputPageSize := 1
+		totalCountForFirstBundle := 0
+		totalCountForSecondBundle := 0
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(columns)
+
+		sqlMock.ExpectQuery(selectQuery).WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.Converter{}
+		pgRepository := document.NewRepository(convMock)
+		// WHEN
+		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		//THEN
+
+		require.NoError(t, err)
+		require.Len(t, modelDocs[0].Data, 0)
+		require.Len(t, modelDocs[1].Data, 0)
+		assert.Equal(t, totalCountForFirstBundle, modelDocs[0].TotalCount)
+		assert.False(t, modelDocs[0].PageInfo.HasNextPage)
+		assert.Equal(t, totalCountForSecondBundle, modelDocs[1].TotalCount)
+		assert.False(t, modelDocs[1].PageInfo.HasNextPage)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns error when conversion from entity to model failed", func(t *testing.T) {
+		ExpectedLimit := 3
+		ExpectedOffset := 0
+		inputPageSize := 3
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
+		testErr := errors.New("test error")
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(columns).
+			AddRow(firstDocEntity.ID, firstDocEntity.TenantID, firstDocEntity.BndlID, firstDocEntity.Title, firstDocEntity.DisplayName, firstDocEntity.Description, firstDocEntity.Format, firstDocEntity.Kind, firstDocEntity.Data,
+				firstDocEntity.Ready, firstDocEntity.CreatedAt, firstDocEntity.UpdatedAt, firstDocEntity.DeletedAt, firstDocEntity.Error).
+			AddRow(secondDocEntity.ID, secondDocEntity.TenantID, secondDocEntity.BndlID, secondDocEntity.Title, secondDocEntity.DisplayName, secondDocEntity.Description, secondDocEntity.Format, secondDocEntity.Kind, secondDocEntity.Data,
+				secondDocEntity.Ready, secondDocEntity.CreatedAt, secondDocEntity.UpdatedAt, secondDocEntity.DeletedAt, secondDocEntity.Error)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(givenTenant(), firstBndlID, ExpectedLimit, ExpectedOffset, givenTenant(), secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.Converter{}
+		convMock.On("FromEntity", *firstDocEntity).Return(model.Document{}, testErr).Once()
+		pgRepository := document.NewRepository(convMock)
+		// WHEN
+		_, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		inputPageSize := 1
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+
+		pgRepository := document.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(givenTenant(), firstBndlID, ExpectedLimit, ExpectedOffset, givenTenant(), secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnError(testError)
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// when
+		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+
+		// then
+		sqlMock.AssertExpectations(t)
+		assert.Nil(t, modelDocs)
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+}
+
 func TestRepository_Exists(t *testing.T) {
 	// given
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -506,10 +801,6 @@ func TestRepository_Delete(t *testing.T) {
 
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-}
-
-func appID() string {
-	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
 }
 
 func bndlID() string {

@@ -45,6 +45,20 @@ func fixModelAPISpecWithID(id string) *model.Spec {
 	}
 }
 
+func fixModelAPISpecWithIDs(id, apiDefID string) *model.Spec {
+	var specData = "specData"
+	var apiType = model.APISpecTypeOdata
+	return &model.Spec{
+		ID:         id,
+		Tenant:     tenant,
+		ObjectType: model.APISpecReference,
+		ObjectID:   apiDefID,
+		APIType:    &apiType,
+		Format:     model.SpecFormatXML,
+		Data:       &specData,
+	}
+}
+
 func fixModelEventSpec() *model.Spec {
 	var specData = "specData"
 	var eventType = model.EventSpecTypeAsyncAPI
@@ -67,6 +81,20 @@ func fixModelEventSpecWithID(id string) *model.Spec {
 		Tenant:     tenant,
 		ObjectType: model.EventSpecReference,
 		ObjectID:   eventID,
+		EventType:  &eventType,
+		Format:     model.SpecFormatJSON,
+		Data:       &specData,
+	}
+}
+
+func fixModelEventSpecWithIDs(id, eventDefID string) *model.Spec {
+	var specData = "specData"
+	var eventType = model.EventSpecTypeAsyncAPI
+	return &model.Spec{
+		ID:         id,
+		Tenant:     tenant,
+		ObjectType: model.EventSpecReference,
+		ObjectID:   eventDefID,
 		EventType:  &eventType,
 		Format:     model.SpecFormatJSON,
 		Data:       &specData,
@@ -201,12 +229,20 @@ func fixAPISpecRowWithID(id string) []driver.Value {
 	return []driver.Value{id, tenant, apiID, nil, "specData", "XML", "ODATA", nil, nil, nil}
 }
 
+func fixAPISpecRowWithIDs(id, apiDefID string) []driver.Value {
+	return []driver.Value{id, tenant, apiDefID, nil, "specData", "XML", "ODATA", nil, nil, nil}
+}
+
 func fixEventSpecRow() []driver.Value {
 	return []driver.Value{specID, tenant, nil, eventID, "specData", nil, nil, "JSON", "ASYNC_API", nil}
 }
 
 func fixEventSpecRowWithID(id string) []driver.Value {
 	return []driver.Value{id, tenant, nil, eventID, "specData", nil, nil, "JSON", "ASYNC_API", nil}
+}
+
+func fixEventSpecRowWithIDs(id, eventDefID string) []driver.Value {
+	return []driver.Value{id, tenant, nil, eventDefID, "specData", nil, nil, "JSON", "ASYNC_API", nil}
 }
 
 func fixAPISpecCreateArgs(spec *model.Spec) []driver.Value {
@@ -239,6 +275,17 @@ func fixAPISpecEntityWithID(id string) spec.Entity {
 	}
 }
 
+func fixAPISpecEntityWithIDs(id, apiDefID string) spec.Entity {
+	return spec.Entity{
+		ID:            id,
+		TenantID:      tenant,
+		APIDefID:      repo.NewValidNullableString(apiDefID),
+		SpecData:      repo.NewValidNullableString("specData"),
+		APISpecFormat: repo.NewValidNullableString("XML"),
+		APISpecType:   repo.NewValidNullableString(string(model.APISpecTypeOdata)),
+	}
+}
+
 func fixEventSpecEntity() spec.Entity {
 	return spec.Entity{
 		ID:              specID,
@@ -255,6 +302,17 @@ func fixEventSpecEntityWithID(id string) spec.Entity {
 		ID:              id,
 		TenantID:        tenant,
 		EventAPIDefID:   repo.NewValidNullableString(eventID),
+		SpecData:        repo.NewValidNullableString("specData"),
+		EventSpecType:   repo.NewValidNullableString(string(model.EventSpecTypeAsyncAPI)),
+		EventSpecFormat: repo.NewValidNullableString("JSON"),
+	}
+}
+
+func fixEventSpecEntityWithIDs(id, eventDefID string) spec.Entity {
+	return spec.Entity{
+		ID:              id,
+		TenantID:        tenant,
+		EventAPIDefID:   repo.NewValidNullableString(eventDefID),
 		SpecData:        repo.NewValidNullableString("specData"),
 		EventSpecType:   repo.NewValidNullableString(string(model.EventSpecTypeAsyncAPI)),
 		EventSpecFormat: repo.NewValidNullableString("JSON"),

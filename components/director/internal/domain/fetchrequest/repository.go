@@ -102,7 +102,7 @@ func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
-func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIds []string) ([]*model.FetchRequest, error) {
+func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIds []string) ([]*model.FetchRequest, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
 		return nil, err

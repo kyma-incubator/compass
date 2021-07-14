@@ -284,6 +284,154 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 	})
 }
 
+func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
+	timestamp := time.Now()
+	firstSpecID := "111111111-1111-1111-1111-111111111111"
+	secondSpecID := "222222222-2222-2222-2222-222222222222"
+	firstFRID := "333333333-3333-3333-3333-333333333333"
+	secondFRID := "444444444-4444-4444-4444-444444444444"
+	firstDocID := "333333333-3333-3333-3333-333333333333"
+	secondDocID := "444444444-4444-4444-4444-444444444444"
+	specIDs := []string{firstSpecID, secondSpecID}
+	docIDs := []string{firstDocID, secondDocID}
+
+	firstSpecFREntity := fixFetchRequestEntityWithReferences(firstFRID, timestamp, sql.NullString{
+		String: firstSpecID,
+		Valid:  true,
+	}, sql.NullString{})
+
+	secondSpecFREntity := fixFetchRequestEntityWithReferences(secondFRID, timestamp, sql.NullString{
+		String: secondSpecID,
+		Valid:  true,
+	}, sql.NullString{})
+
+	firstDocFREntity := fixFetchRequestEntityWithReferences(firstFRID, timestamp, sql.NullString{}, sql.NullString{
+		String: firstDocID,
+		Valid:  true,
+	})
+
+	secondDocFREntity := fixFetchRequestEntityWithReferences(secondFRID, timestamp, sql.NullString{}, sql.NullString{
+		String: secondDocID,
+		Valid:  true,
+	})
+
+	selectQuerySpecs := `SELECT (.+) FROM public\.fetch_requests WHERE tenant_id = \$1 AND spec_id IN \(\$2, \$3\)`
+
+	selectQueryDocs := `SELECT (.+) FROM public\.fetch_requests WHERE tenant_id = \$1 AND document_id IN \(\$2, \$3\)`
+
+	t.Run("Success for Specs", func(t *testing.T) {
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", firstSpecFREntity).Return(fixFetchRequestModelWithReference(firstFRID, timestamp, model.SpecFetchRequestReference, firstSpecID), nil).Once()
+		mockConverter.On("FromEntity", secondSpecFREntity).Return(fixFetchRequestModelWithReference(secondFRID, timestamp, model.SpecFetchRequestReference, secondSpecID), nil).Once()
+
+		repo := fetchrequest.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}).
+			AddRow(firstFRID, firstSpecFREntity.TenantID, firstSpecFREntity.DocumentID, firstSpecFREntity.URL, firstSpecFREntity.Auth, firstSpecFREntity.Mode, firstSpecFREntity.Filter, firstSpecFREntity.StatusCondition, firstSpecFREntity.StatusMessage, firstSpecFREntity.StatusTimestamp, firstSpecFREntity.SpecID).
+			AddRow(secondFRID, secondSpecFREntity.TenantID, secondSpecFREntity.DocumentID, secondSpecFREntity.URL, secondSpecFREntity.Auth, secondSpecFREntity.Mode, secondSpecFREntity.Filter, secondSpecFREntity.StatusCondition, secondSpecFREntity.StatusMessage, secondSpecFREntity.StatusTimestamp, secondSpecFREntity.SpecID)
+
+		dbMock.ExpectQuery(selectQuerySpecs).
+			WithArgs(givenTenant(), firstSpecID, secondSpecID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		frModels, err := repo.ListByReferenceObjectIDs(ctx, givenTenant(), model.SpecFetchRequestReference, specIDs)
+		require.NoError(t, err)
+		require.Len(t, frModels, 2)
+		assert.Equal(t, firstFRID, frModels[0].ID)
+		assert.Equal(t, secondFRID, frModels[1].ID)
+		assert.Equal(t, firstSpecID, frModels[0].ObjectID)
+		assert.Equal(t, secondSpecID, frModels[1].ObjectID)
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Success for Docs", func(t *testing.T) {
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", firstDocFREntity).Return(fixFetchRequestModelWithReference(firstFRID, timestamp, model.DocumentFetchRequestReference, firstDocID), nil).Once()
+		mockConverter.On("FromEntity", secondDocFREntity).Return(fixFetchRequestModelWithReference(secondFRID, timestamp, model.DocumentFetchRequestReference, secondDocID), nil).Once()
+
+		repo := fetchrequest.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}).
+			AddRow(firstFRID, firstDocFREntity.TenantID, firstDocFREntity.DocumentID, firstDocFREntity.URL, firstDocFREntity.Auth, firstDocFREntity.Mode, firstDocFREntity.Filter, firstDocFREntity.StatusCondition, firstDocFREntity.StatusMessage, firstDocFREntity.StatusTimestamp, firstDocFREntity.SpecID).
+			AddRow(secondFRID, secondDocFREntity.TenantID, secondDocFREntity.DocumentID, secondDocFREntity.URL, secondDocFREntity.Auth, secondDocFREntity.Mode, secondDocFREntity.Filter, secondDocFREntity.StatusCondition, secondDocFREntity.StatusMessage, secondDocFREntity.StatusTimestamp, secondDocFREntity.SpecID)
+
+		dbMock.ExpectQuery(selectQueryDocs).
+			WithArgs(givenTenant(), firstDocID, secondDocID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		frModels, err := repo.ListByReferenceObjectIDs(ctx, givenTenant(), model.DocumentFetchRequestReference, docIDs)
+		require.NoError(t, err)
+		require.Len(t, frModels, 2)
+		assert.Equal(t, firstFRID, frModels[0].ID)
+		assert.Equal(t, secondFRID, frModels[1].ID)
+		assert.Equal(t, firstDocID, frModels[0].ObjectID)
+		assert.Equal(t, secondDocID, frModels[1].ObjectID)
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Returns error when conversion from entity fails", func(t *testing.T) {
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", firstDocFREntity).Return(model.FetchRequest{}, givenError()).Once()
+
+		repo := fetchrequest.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}).
+			AddRow(firstFRID, firstDocFREntity.TenantID, firstDocFREntity.DocumentID, firstDocFREntity.URL, firstDocFREntity.Auth, firstDocFREntity.Mode, firstDocFREntity.Filter, firstDocFREntity.StatusCondition, firstDocFREntity.StatusMessage, firstDocFREntity.StatusTimestamp, firstDocFREntity.SpecID).
+			AddRow(secondFRID, secondDocFREntity.TenantID, secondDocFREntity.DocumentID, secondDocFREntity.URL, secondDocFREntity.Auth, secondDocFREntity.Mode, secondDocFREntity.Filter, secondDocFREntity.StatusCondition, secondDocFREntity.StatusMessage, secondDocFREntity.StatusTimestamp, secondDocFREntity.SpecID)
+
+		dbMock.ExpectQuery(selectQueryDocs).
+			WithArgs(givenTenant(), firstDocID, secondDocID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.ListByReferenceObjectIDs(ctx, givenTenant(), model.DocumentFetchRequestReference, docIDs)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), givenError().Error())
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		_, err := repo.ListByReferenceObjectIDs(ctx, givenTenant(), "invalidObjectType", docIDs)
+		// THEN
+		require.EqualError(t, err, apperrors.NewInternalError("Invalid type of the Fetch Request reference object").Error())
+	})
+
+	t.Run("Error - DB", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery(selectQueryDocs).
+			WithArgs(givenTenant(), firstDocID, secondDocID).
+			WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		_, err := repo.ListByReferenceObjectIDs(ctx, givenTenant(), model.DocumentFetchRequestReference, docIDs)
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+}
+
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }
