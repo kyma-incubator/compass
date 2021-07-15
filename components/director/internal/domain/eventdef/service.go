@@ -40,7 +40,7 @@ type SpecService interface {
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
-	ListFetchRequestsByReferenceObjectID(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
+	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
@@ -301,13 +301,13 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 	return fetchRequest, nil
 }
 
-func (s *service) ListFetchRequests(ctx context.Context, eventDefIds []string) ([]*model.FetchRequest, error) {
+func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectID(ctx, tnt, eventDefIds)
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil

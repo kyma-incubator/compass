@@ -104,8 +104,8 @@ func (_m *SpecService) ListByReferenceObjectIDs(ctx context.Context, objectType 
 	return r0, r1
 }
 
-// ListFetchRequestsByReferenceObjectID provides a mock function with given fields: ctx, tenant, objectIDs
-func (_m *SpecService) ListFetchRequestsByReferenceObjectID(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error) {
+// ListFetchRequestsByReferenceObjectIDs provides a mock function with given fields: ctx, tenant, objectIDs
+func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error) {
 	ret := _m.Called(ctx, tenant, objectIDs)
 
 	var r0 []*model.FetchRequest

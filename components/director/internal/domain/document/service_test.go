@@ -541,3 +541,207 @@ func TestService_GetFetchRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestService_ListAllByBundleIDs(t *testing.T) {
+	// given
+	testErr := errors.New("test error")
+
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	firstDocID := "foo"
+	secondDocID := "foo2"
+	firstBundleID := "bar"
+	secondBundleID := "bar2"
+	bundleIDs := []string{firstBundleID, secondBundleID}
+
+	docFirstBundle := fixModelDocument(firstDocID, firstBundleID)
+	docSecondBundle := fixModelDocument(secondDocID, secondBundleID)
+
+	docsFirstBundle := []*model.Document{docFirstBundle}
+	docsSecondBundle := []*model.Document{docSecondBundle}
+
+	docPageFirstBundle := &model.DocumentPage{
+		Data:       docsFirstBundle,
+		TotalCount: len(docsFirstBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+	docPageSecondBundle := &model.DocumentPage{
+		Data:       docsSecondBundle,
+		TotalCount: len(docsSecondBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	docPages := []*model.DocumentPage{docPageFirstBundle, docPageSecondBundle}
+
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.DocumentRepository
+		ExpectedResult     []*model.DocumentPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("ListAllForBundle", ctx, tnt, bundleIDs, 2, after).Return(docPages, nil).Once()
+				return repo
+			},
+			PageSize:       2,
+			ExpectedResult: docPages,
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedResult:     docPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Return error when page size is bigger than 200",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			PageSize:           201,
+			ExpectedResult:     docPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Returns error when Documents listing failed",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("ListAllForBundle", ctx, tnt, bundleIDs, 2, after).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := document.NewService(repo, nil, nil)
+
+			// when
+			docs, err := svc.ListAllByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListAllByBundleIDs(context.TODO(), nil, 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListFetchRequests(t *testing.T) {
+	// given
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	testErr := errors.New("test error")
+	frURL := "foo.bar"
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	firstDocID := "docID"
+	secondDocID := "docID2"
+	docIDs := []string{firstDocID, secondDocID}
+	timestamp := time.Now()
+
+	firstFetchRequest := fixModelFetchRequest(firstFRID, frURL, timestamp)
+	secondFetchRequest := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	fetchRequests := []*model.FetchRequest{firstFetchRequest, secondFetchRequest}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.FetchRequestRepository
+		ExpectedResult     []*model.FetchRequest
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tnt, model.DocumentFetchRequestReference, docIDs).Return(fetchRequests, nil).Once()
+				return repo
+			},
+			ExpectedResult: fetchRequests,
+		},
+		{
+			Name: "Returns error when Fetch Requests listing failed",
+			RepositoryFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tnt, model.DocumentFetchRequestReference, docIDs).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := document.NewService(nil, repo, nil)
+
+			// when
+			frs, err := svc.ListFetchRequests(ctx, docIDs)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, frs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListFetchRequests(context.TODO(), nil)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}

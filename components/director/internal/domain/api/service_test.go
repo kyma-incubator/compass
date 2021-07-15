@@ -337,12 +337,12 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
-		Name                string
-		PageSize            int
-		RepositoryFn        func() *automock.APIRepository
-		BundleRefSvcFn      func() *automock.BundleReferenceService
-		ExpectedResult      []*model.APIDefinitionPage
-		ExpectedErrMessage  string
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.APIRepository
+		BundleRefSvcFn     func() *automock.BundleReferenceService
+		ExpectedResult     []*model.APIDefinitionPage
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
@@ -1561,6 +1561,90 @@ func TestService_GetFetchRequest(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
+		assert.True(t, apperrors.IsCannotReadTenant(err))
+	})
+}
+
+func TestService_ListFetchRequests(t *testing.T) {
+	// given
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testErr := errors.New("Test error")
+
+	frURL := "foo.bar"
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	firstSpecID := "specID"
+	secondSpecID := "specID2"
+	specIDs := []string{firstSpecID, secondSpecID}
+	timestamp := time.Now()
+
+	firstFetchRequest := fixModelFetchRequest(firstFRID, frURL, timestamp)
+	secondFetchRequest := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	fetchRequests := []*model.FetchRequest{firstFetchRequest, secondFetchRequest}
+
+	testCases := []struct {
+		Name                  string
+		SpecServiceFn         func() *automock.SpecService
+		ExpectedFetchRequests []*model.FetchRequest
+		ExpectedErrMessage    string
+	}{
+		{
+			Name: "Success",
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(fetchRequests, nil).Once()
+				return svc
+			},
+			ExpectedFetchRequests: fetchRequests,
+		},
+		{
+			Name: "Success - Fetch Request Not Found",
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
+				return svc
+			},
+			ExpectedFetchRequests: nil,
+		},
+		{
+			Name: "Error while listing Fetch Requests",
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, testErr).Once()
+				return svc
+			},
+			ExpectedFetchRequests: nil,
+			ExpectedErrMessage:    testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			specService := testCase.SpecServiceFn()
+
+			svc := api.NewService(nil, nil, specService, nil)
+
+			// when
+			frs, err := svc.ListFetchRequests(ctx, specIDs)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, frs, testCase.ExpectedFetchRequests)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			specService.AssertExpectations(t)
+		})
+	}
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// when
+		_, err := svc.ListFetchRequests(context.TODO(), nil)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }

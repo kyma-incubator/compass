@@ -42,7 +42,7 @@ type SpecService interface {
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 	ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
-	ListFetchRequestsByReferenceObjectID(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
+	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
@@ -322,7 +322,7 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 		return nil, err
 	}
 
-	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectID(ctx, tnt, specIDs)
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
