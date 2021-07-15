@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -42,7 +43,7 @@ func TestGetSingle(t *testing.T) {
 
 	t.Run("success when no conditions", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -63,7 +64,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when more conditions", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name = $2 AND last_name = $3", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -79,7 +80,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -95,7 +96,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition for values", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name IN ($2, $3)")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name IN ($2, $3)", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -111,7 +112,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY first_name ASC")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY first_name ASC", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -127,7 +128,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with multiple order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY first_name ASC, last_name DESC")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY first_name ASC, last_name DESC", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -143,7 +144,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with conditions and order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC")
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC", fixTenantIsolationSubquery()))
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -361,6 +362,6 @@ func TestGetSingleGlobal(t *testing.T) {
 }
 
 func defaultExpectedGetSingleQuery() string {
-	givenQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND id_col = $2"
+	givenQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND id_col = $2", fixTenantIsolationSubquery())
 	return regexp.QuoteMeta(givenQuery)
 }

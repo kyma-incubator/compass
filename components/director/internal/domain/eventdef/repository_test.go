@@ -20,7 +20,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
 
-	selectQuery := `^SELECT (.+) FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -61,11 +61,11 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 	secondApiDefEntity := fixFullEntityEventDefinition(secondApiDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`SELECT (.+) FROM "public"."event_api_definitions"
-		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND event_def_id IS NOT NULL\) 
-		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
+		WHERE %s AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE %s AND bundle_id = \$3 AND event_def_id IS NOT NULL\) 
+		ORDER BY id LIMIT %d OFFSET %d`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2), ExpectedLimit, ExpectedOffset)
 
-	countQuery := `SELECT COUNT\(\*\) FROM "public"."event_api_definitions"
-		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`
+	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM "public"."event_api_definitions"
+		WHERE %s AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE %s AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2))
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -108,8 +108,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	secondEventDefID := "222222222-2222-2222-2222-222222222222"
 	secondEventDefEntity := fixFullEntityEventDefinition(secondEventDefID, "placeholder")
 
-	selectQuery := `^SELECT (.+) FROM "public"."event_api_definitions" 
-		WHERE tenant_id = \$1 AND app_id = \$2`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
+		WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -205,10 +205,10 @@ func TestPgRepository_CreateMany(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE "public"."event_api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE "public"."event_api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, changelog_entries = ?, links = ?, tags = ?, countries = ?, release_status = ?,
 		sunset_date = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?, industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?,
-		version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, extensible = ?, successors = ?, resource_hash = ? WHERE tenant_id = ? AND id = ?`)
+		version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, extensible = ?, successors = ?, resource_hash = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -252,7 +252,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := fmt.Sprintf(`^DELETE FROM "public"."event_api_definitions" WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, eventID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EventAPIDefinitionConverter{}
@@ -268,8 +268,8 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `DELETE FROM "public"."event_api_definitions"
-		WHERE tenant_id = \$1 AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$2 AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`
+	deleteQuery := fmt.Sprintf(`DELETE FROM "public"."event_api_definitions"
+		WHERE %s AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE %s AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2))
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EventAPIDefinitionConverter{}
@@ -286,7 +286,7 @@ func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM "public"."event_api_definitions" WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM "public"."event_api_definitions" WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, eventID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EventAPIDefinitionConverter{}

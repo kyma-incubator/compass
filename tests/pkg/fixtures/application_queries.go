@@ -19,6 +19,16 @@ func GetApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 	return app
 }
 
+func GetApplicationPage(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) graphql.ApplicationPage {
+	getAppReq := FixGetApplicationsRequestWithPagination()
+	apps := graphql.ApplicationPage{}
+
+	// THEN
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getAppReq, &apps)
+	require.NoError(t, err)
+	return apps
+}
+
 func UpdateApplicationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.ApplicationUpdateInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(in)
 	require.NoError(t, err)
@@ -33,6 +43,7 @@ func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcl
 	in := FixSampleApplicationRegisterInputWithName("first", name)
 	app, err := RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
 	return app
 }
 
