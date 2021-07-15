@@ -31,4 +31,6 @@ SELECT id, tenant_id FROM get_id_tenant_id_index();
 
 CREATE UNIQUE INDEX id_tenant_id_index_unique ON id_tenant_id_index(id);
 
+CREATE INDEX parent_index ON business_tenant_mappings(parent);
+
 COMMIT;
