@@ -108,7 +108,9 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		stmtBuilder.WriteString(" WHERE")
 	}
 	if !isGlobal {
-		stmtBuilder.WriteString(fmt.Sprintf(" %s = :%s", *u.tenantColumn, *u.tenantColumn))
+		if err := writeEnumeratedConditions(&stmtBuilder, Conditions{NewTenantIsolationConditionWithPlaceholder(*u.tenantColumn, fmt.Sprintf(":%s", *u.tenantColumn), nil)}); err != nil {
+			return errors.Wrap(err, "while writing enumerated conditions")
+		}
 		if len(u.idColumns) > 0 {
 			stmtBuilder.WriteString(" AND")
 		}

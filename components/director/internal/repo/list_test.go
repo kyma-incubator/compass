@@ -3,6 +3,7 @@ package repo_test
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ func TestList(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...).
 			AddRow(homerRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1")).
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s", fixTenantIsolationSubquery()))).
 			WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
@@ -54,7 +55,7 @@ func TestList(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND age != $3`)).
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(`SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name = $2 AND age != $3`, fixTenantIsolationSubquery()))).
 			WithArgs(givenTenant, "Peter", 18).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection

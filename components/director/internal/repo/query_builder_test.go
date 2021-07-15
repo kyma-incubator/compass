@@ -1,6 +1,8 @@
 package repo_test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -24,7 +26,7 @@ func TestQueryBuilder(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedArgumentsNumber, len(args))
 		assert.Equal(t, givenTenant, args[0])
-		assert.Equal(t, expectedQuery, query)
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
 	})
 
 	t.Run("success with only default tenant condition and no argument rebinding", func(t *testing.T) {
@@ -38,7 +40,7 @@ func TestQueryBuilder(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedArgumentsNumber, len(args))
 		assert.Equal(t, givenTenant, args[0])
-		assert.Equal(t, expectedQuery, query)
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
 	})
 
 	t.Run("success with more conditions", func(t *testing.T) {
@@ -54,7 +56,7 @@ func TestQueryBuilder(t *testing.T) {
 		assert.Equal(t, expectedArgumentsNumber, len(args))
 		assert.Equal(t, givenTenant, args[0])
 		assert.Equal(t, expectedFirstName, args[1])
-		assert.Equal(t, expectedQuery, query)
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
 	})
 
 	t.Run("success with IN condition with values", func(t *testing.T) {
@@ -72,7 +74,7 @@ func TestQueryBuilder(t *testing.T) {
 		assert.Equal(t, givenTenant, args[0])
 		assert.Equal(t, expectedFirstINValue, args[1])
 		assert.Equal(t, expectedSecondINValue, args[2])
-		assert.Equal(t, expectedQuery, query)
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
 	})
 
 	t.Run("success with IN condition with subquery", func(t *testing.T) {
@@ -90,7 +92,7 @@ func TestQueryBuilder(t *testing.T) {
 		assert.Equal(t, givenTenant, args[0])
 		assert.Equal(t, expectedFirstArgument, args[1])
 		assert.Equal(t, expectedSecondArgument, args[2])
-		assert.Equal(t, expectedQuery, query)
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
 
 	})
 
@@ -101,33 +103,37 @@ func TestQueryBuilder(t *testing.T) {
 		// THEN
 		require.NotNil(t, err)
 		assert.True(t, apperrors.IsTenantRequired(err))
-		assert.Equal(t, "", query)
+		assert.Equal(t, "", removeWhitespace(query))
 		assert.Equal(t, []interface{}(nil), args)
 	})
 
 }
 
 func getExpectedQueryWithTenantCondition() (string, int) {
-	expectedQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1"
+	expectedQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s", fixTenantIsolationSubquery())
 	return expectedQuery, 1
 }
 
 func getExpectedQueryWithTenantConditionNoRebinding() (string, int) {
-	expectedQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = ?"
+	expectedQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s", fixTenantIsolationSubqueryNoRebind())
 	return expectedQuery, 1
 }
 
 func getExpectedQueryWithMoreConditions() (string, int) {
-	expectedQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2"
+	expectedQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name = $2", fixTenantIsolationSubquery())
 	return expectedQuery, 2
 }
 
 func getExpectedQueryWithINValues() (string, int) {
-	expectedQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name IN ($2, $3)"
+	expectedQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name IN ($2, $3)", fixTenantIsolationSubquery())
 	return expectedQuery, 3
 }
 
 func getExpectedQueryWithINSubquery() (string, int) {
-	expectedQuery := "SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)"
+	expectedQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)", fixTenantIsolationSubquery())
 	return expectedQuery, 3
+}
+
+func removeWhitespace(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
