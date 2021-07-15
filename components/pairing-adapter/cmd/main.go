@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -21,18 +19,11 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	defer cancel()
-
-	term := make(chan os.Signal)
-	signal.HandleInterrupts(ctx, cancel, term)
-
 	conf := adapter.Configuration{}
 	err := envconfig.Init(&conf)
 	exitOnError(err, "while reading Pairing Adapter configuration")
 
-	ctx, err = log.Configure(ctx, conf.Log)
+	ctx, err := log.Configure(context.Background(), conf.Log)
 	exitOnError(err, "while configuring logger")
 
 	authStyle, err := getAuthStyle(conf.OAuth.AuthStyle)
