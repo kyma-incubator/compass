@@ -11,14 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type TenantStatus string
+type TenantType string
+
 const (
-	testProvider           = "Compass Tests"
-	testDefaultTenant      = "Test Default"
+	testProvider      = "Compass Tests"
+	testDefaultTenant = "Test Default"
+
 	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE external_tenant IN (?));`
 
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
 
+	Account  TenantType = "account"
+	Customer TenantType = "customer"
+
+	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
 	TenantSeparationTenantName                                 = "TestTenantSeparation"
 	TenantsQueryNotInitializedTenantName                       = "TestTenantsQueryTenantNotInitialized"
 	TenantsQueryInitializedTenantName                          = "TestTenantsQueryTenantInitialized"
@@ -40,10 +48,10 @@ type Tenant struct {
 	Name           string       `db:"external_name"`
 	ExternalTenant string       `db:"external_tenant"`
 	ProviderName   string       `db:"provider_name"`
+	Type           TenantType   `db:"type"`
+	Parent         string       `db:"parent"`
 	Status         TenantStatus `db:"status"`
 }
-
-type TenantStatus string
 
 var TestTenants TestTenantsManager
 
@@ -54,108 +62,116 @@ type TestTenantsManager struct {
 func (mgr *TestTenantsManager) Init() {
 	mgr.tenantsByName = map[string]Tenant{
 		testDefaultTenant: {
-			ID:             "5577cf46-4f78-45fa-b55f-a42a3bdba868",
 			Name:           testDefaultTenant,
 			ExternalTenant: "5577cf46-4f78-45fa-b55f-a42a3bdba868",
 			ProviderName:   testProvider,
+			Type:           Account,
+			Parent:         TestDefaultCustomerTenant,
+			Status:         Active,
+		},
+		TestDefaultCustomerTenant: {
+			Name:           TestDefaultCustomerTenant,
+			ExternalTenant: "2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0",
+			ProviderName:   testProvider,
+			Type:           Customer,
 			Status:         Active,
 		},
 		TenantSeparationTenantName: {
-			ID:             "f1c4b5be-b0e1-41f9-b0bc-b378200dcca0",
 			Name:           TenantSeparationTenantName,
 			ExternalTenant: "f1c4b5be-b0e1-41f9-b0bc-b378200dcca0",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		ApplicationsForRuntimeTenantName: {
-			ID:             "5984a414-1eed-4972-af2c-b2b6a415c7d7",
 			Name:           ApplicationsForRuntimeTenantName,
 			ExternalTenant: "5984a414-1eed-4972-af2c-b2b6a415c7d7",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		ListLabelDefinitionsTenantName: {
-			ID:             "3f641cf5-2d14-4e0f-a122-16e7569926f1",
 			Name:           ListLabelDefinitionsTenantName,
 			ExternalTenant: "3f641cf5-2d14-4e0f-a122-16e7569926f1",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		DeleteLastScenarioForApplicationTenantName: {
-			ID:             "0403be1e-f854-475e-9074-922120277af5",
 			Name:           DeleteLastScenarioForApplicationTenantName,
 			ExternalTenant: "0403be1e-f854-475e-9074-922120277af5",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		DeleteAutomaticScenarioAssignmentForScenarioTenantName: {
-			ID:             "d08e4cb6-a77f-4a07-b021-e3317a373597",
 			Name:           DeleteAutomaticScenarioAssignmentForScenarioTenantName,
 			ExternalTenant: "d08e4cb6-a77f-4a07-b021-e3317a373597",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		DeleteAutomaticScenarioAssignmentForSelectorTenantName: {
-			ID:             "d9553135-6115-4c67-b4d9-962c00f3725f",
 			Name:           DeleteAutomaticScenarioAssignmentForSelectorTenantName,
 			ExternalTenant: "d9553135-6115-4c67-b4d9-962c00f3725f",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		AutomaticScenarioAssigmentForRuntimeTenantName: {
-			ID:             "8c733a45-d988-4472-af10-1256b82c70c0",
 			Name:           AutomaticScenarioAssigmentForRuntimeTenantName,
 			ExternalTenant: "8c733a45-d988-4472-af10-1256b82c70c0",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		AutomaticScenarioAssignmentQueriesTenantName: {
-			ID:             "8263cc13-5698-4a2d-9257-e8e76b543e88",
 			Name:           AutomaticScenarioAssignmentQueriesTenantName,
 			ExternalTenant: "8263cc13-5698-4a2d-9257-e8e76b543e88",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		GetScenariosLabelDefinitionCreatesOneIfNotExistsTenantName: {
-			ID:             "2263cc13-5698-4a2d-9257-e8e76b543e33",
 			Name:           GetScenariosLabelDefinitionCreatesOneIfNotExistsTenantName,
 			ExternalTenant: "2263cc13-5698-4a2d-9257-e8e76b543e33",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		AutomaticScenarioAssignmentsWholeScenarioTenantName: {
-			ID:             "65a63692-c00a-4a7d-8376-8615ee37f45c",
 			Name:           AutomaticScenarioAssignmentsWholeScenarioTenantName,
 			ExternalTenant: "65a63692-c00a-4a7d-8376-8615ee37f45c",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		ApplicationsForRuntimeWithHiddenAppsTenantName: {
-			ID:             "7e1f2df8-36dc-4e40-8be3-d1555d50c91c",
 			Name:           ApplicationsForRuntimeWithHiddenAppsTenantName,
 			ExternalTenant: "7e1f2df8-36dc-4e40-8be3-d1555d50c91c",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		TenantsQueryInitializedTenantName: {
-			ID:             "8cf0c909-f816-4fe3-a507-a7917ccd8380",
 			Name:           TenantsQueryInitializedTenantName,
 			ExternalTenant: "8cf0c909-f816-4fe3-a507-a7917ccd8380",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		TenantsQueryNotInitializedTenantName: {
-			ID:             "72329135-27fd-4284-9bcb-37ea8d6307d0",
 			Name:           TenantsQueryNotInitializedTenantName,
 			ExternalTenant: "72329135-27fd-4284-9bcb-37ea8d6307d0",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 		TestDeleteApplicationIfInScenario: {
-			ID:             "0d597250-6b2d-4d89-9c54-e23cb497cd01",
 			Name:           TestDeleteApplicationIfInScenario,
 			ExternalTenant: "0d597250-6b2d-4d89-9c54-e23cb497cd01",
 			ProviderName:   testProvider,
+			Type:           Account,
 			Status:         Active,
 		},
 	}
@@ -212,11 +228,11 @@ func (mgr TestTenantsManager) Cleanup() {
 func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) string {
 	val, ok := mgr.tenantsByName[name]
 	require.True(t, ok)
-	return val.ID
+	return val.ExternalTenant
 }
 
 func (mgr TestTenantsManager) GetDefaultTenantID() string {
-	return mgr.tenantsByName[testDefaultTenant].ID
+	return mgr.tenantsByName[testDefaultTenant].ExternalTenant
 }
 
 func (mgr TestTenantsManager) EmptyTenant() string {
