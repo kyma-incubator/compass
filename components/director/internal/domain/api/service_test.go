@@ -285,6 +285,174 @@ func TestService_ListForBundle(t *testing.T) {
 	})
 }
 
+func TestService_ListAllByBundleIDs(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	firstApiDefID := "foo"
+	secondApiDefID := "foo2"
+	firstBundleID := "bar"
+	secondBundleID := "bar2"
+	name := "foo"
+	targetURL := "https://test.com"
+	numberOfApisInFirstBundle := 1
+	numberOfApisInSecondBundle := 1
+	bundleIDs := []string{firstBundleID, secondBundleID}
+
+	apiDefFirstBundle := fixAPIDefinitionModel(firstApiDefID, name, targetURL)
+	apiDefSecondBundle := fixAPIDefinitionModel(secondApiDefID, name, targetURL)
+
+	apiDefFirstBundleReference := fixModelBundleReference(firstBundleID, firstApiDefID)
+	apiDefSecondBundleReference := fixModelBundleReference(secondBundleID, secondApiDefID)
+	bundleRefs := []*model.BundleReference{apiDefFirstBundleReference, apiDefSecondBundleReference}
+	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+
+	apiDefsFirstBundle := []*model.APIDefinition{apiDefFirstBundle}
+	apiDefsSecondBundle := []*model.APIDefinition{apiDefSecondBundle}
+
+	apiDefPageFirstBundle := &model.APIDefinitionPage{
+		Data:       apiDefsFirstBundle,
+		TotalCount: len(apiDefsFirstBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+	apiDefPageSecondBundle := &model.APIDefinitionPage{
+		Data:       apiDefsSecondBundle,
+		TotalCount: len(apiDefsSecondBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	apiDefPages := []*model.APIDefinitionPage{apiDefPageFirstBundle, apiDefPageSecondBundle}
+
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name                string
+		PageSize            int
+		RepositoryFn        func() *automock.APIRepository
+		BundleRefSvcFn      func() *automock.BundleReferenceService
+		ExpectedResult      []*model.APIDefinitionPage
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListAllByBundleIDs", ctx, model.BundleAPIReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListAllForBundle", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(apiDefPages, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     apiDefPages,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				return svc
+			},
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedResult:     apiDefPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Return error when page size is bigger than 200",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				return svc
+			},
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			PageSize:           201,
+			ExpectedResult:     apiDefPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Returns error when APIDefinition BundleReferences listing failed",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListAllByBundleIDs", ctx, model.BundleAPIReference, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListAllByBundleIDs", ctx, model.BundleAPIReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListAllForBundle", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			bndlRefSvc := testCase.BundleRefSvcFn()
+
+			svc := api.NewService(repo, nil, nil, bndlRefSvc)
+
+			// when
+			apiDefs, err := svc.ListAllByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, apiDefs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListAllByBundleIDs(context.TODO(), nil, 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_ListByApplicationID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")

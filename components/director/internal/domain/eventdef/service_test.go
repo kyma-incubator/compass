@@ -282,6 +282,173 @@ func TestService_ListForBundle(t *testing.T) {
 	})
 }
 
+func TestService_ListAllByBundleIDs(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	firstEventID := "foo"
+	secondEventID := "foo2"
+	firstBundleID := "bar"
+	secondBundleID := "bar2"
+	name := "foo"
+	numberOfEventsInFirstBundle := 1
+	numberOfEventsInSecondBundle := 1
+	bundleIDs := []string{firstBundleID, secondBundleID}
+
+	eventFirstBundle := fixEventDefinitionModel(firstEventID, name)
+	eventSecondBundle := fixEventDefinitionModel(secondEventID, name)
+
+	eventFirstBundleReference := fixModelBundleReference(firstBundleID, firstEventID)
+	eventSecondBundleReference := fixModelBundleReference(secondBundleID, secondEventID)
+	bundleRefs := []*model.BundleReference{eventFirstBundleReference, eventSecondBundleReference}
+	totalCounts := map[string]int{firstBundleID: numberOfEventsInFirstBundle, secondBundleID: numberOfEventsInSecondBundle}
+
+	eventsFirstBundle := []*model.EventDefinition{eventFirstBundle}
+	eventsSecondBundle := []*model.EventDefinition{eventSecondBundle}
+
+	eventPageFirstBundle := &model.EventDefinitionPage{
+		Data:       eventsFirstBundle,
+		TotalCount: len(eventsFirstBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+	eventPageSecondBundle := &model.EventDefinitionPage{
+		Data:       eventsSecondBundle,
+		TotalCount: len(eventsSecondBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	eventPages := []*model.EventDefinitionPage{eventPageFirstBundle, eventPageSecondBundle}
+
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name                string
+		PageSize            int
+		RepositoryFn        func() *automock.EventAPIRepository
+		BundleRefSvcFn      func() *automock.BundleReferenceService
+		ExpectedResult      []*model.EventDefinitionPage
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListAllByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListAllForBundle", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(eventPages, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     eventPages,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				return svc
+			},
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedResult:     eventPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Return error when page size is bigger than 200",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				return svc
+			},
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			PageSize:           201,
+			ExpectedResult:     eventPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Returns error when EventDefinition BundleReferences listing failed",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListAllByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when EventDefinition listing failed",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListAllByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListAllForBundle", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			bndlRefSvc := testCase.BundleRefSvcFn()
+
+			svc := event.NewService(repo, nil, nil, bndlRefSvc)
+
+			// when
+			events, err := svc.ListAllByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, events)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := event.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListAllByBundleIDs(context.TODO(), nil, 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_ListByApplicationID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
