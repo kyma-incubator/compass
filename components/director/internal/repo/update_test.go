@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -34,7 +35,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ? AND id_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE %s AND id_col = ?", fixTenantIsolationSubqueryNoRebind()))).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant", "given_id").WillReturnResult(sqlmock.NewResult(0, 1))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
@@ -49,7 +50,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ?")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE %s", fixTenantIsolationSubqueryNoRebind()))).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant").WillReturnResult(sqlmock.NewResult(0, 1))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
@@ -101,7 +102,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ? AND id_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE %s AND id_col = ?", fixTenantIsolationSubqueryNoRebind()))).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant", "given_id").WillReturnResult(sqlmock.NewResult(0, 157))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
@@ -116,7 +117,7 @@ func TestUpdateSingle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE tenant_id = ? AND id_col = ?")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE users SET first_name = ?, last_name = ?, age = ? WHERE %s AND id_col = ?", fixTenantIsolationSubqueryNoRebind()))).
 			WithArgs("given_first_name", "given_last_name", 55, "given_tenant", "given_id").WillReturnResult(sqlmock.NewResult(0, 0))
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)

@@ -20,7 +20,6 @@ type BundleRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
-	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
 }
@@ -149,20 +148,6 @@ func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
 	bndl, err := s.bndlRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Bundle with ID: [%s]", id)
-	}
-
-	return bndl, nil
-}
-
-func (s *service) GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	bndl, err := s.bndlRepo.GetByInstanceAuthID(ctx, tnt, instanceAuthID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Bundle by BundleInstanceAuth with id %s", instanceAuthID)
 	}
 
 	return bndl, nil

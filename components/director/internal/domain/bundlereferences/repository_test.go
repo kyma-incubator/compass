@@ -2,6 +2,7 @@ package bundlereferences_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -20,8 +21,8 @@ func TestPgRepository_GetByID(t *testing.T) {
 	// GIVEN
 	apiBundleReferenceEntity := fixAPIBundleReferenceEntity()
 
-	selectQueryForAPIWithoutBundleID := `SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$1 AND api_def_id = \$2`
-	selectQueryForAPIWithBundleID := `SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$1 AND api_def_id = \$2 AND bundle_id = \$3`
+	selectQueryForAPIWithoutBundleID := fmt.Sprintf(`SELECT (.+) FROM public\.bundle_references WHERE %s AND api_def_id = \$2`, fixTenantIsolationSubquery())
+	selectQueryForAPIWithBundleID := fmt.Sprintf(`SELECT (.+) FROM public\.bundle_references WHERE %s AND api_def_id = \$2 AND bundle_id = \$3`, fixTenantIsolationSubquery())
 
 	t.Run("success when no bundleID", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -74,7 +75,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 }
 
 func TestPgRepository_GetBundleIDsForObject(t *testing.T) {
-	selectQuery := `SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$1 AND api_def_id = \$2`
+	selectQuery := fmt.Sprintf(`SELECT (.+) FROM public\.bundle_references WHERE %s AND api_def_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
@@ -144,8 +145,8 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQueryWithoutBundleID := regexp.QuoteMeta(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, api_def_url = ? WHERE tenant_id = ? AND api_def_id = ?`)
-	updateQueryWithBundleID := regexp.QuoteMeta(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, bundle_id = ?, api_def_url = ? WHERE tenant_id = ? AND api_def_id = ? AND bundle_id = ?`)
+	updateQueryWithoutBundleID := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, api_def_url = ? WHERE %s AND api_def_id = ?`, fixUpdateTenantIsolationSubquery()))
+	updateQueryWithBundleID := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, bundle_id = ?, api_def_url = ? WHERE %s AND api_def_id = ? AND bundle_id = ?`, fixUpdateTenantIsolationSubquery()))
 
 	t.Run("success without bundleID", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -209,7 +210,7 @@ func TestPgRepository_DeleteByReferenceObjectID(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		deleteQuery := `DELETE FROM public\.bundle_references WHERE tenant_id = \$1 AND api_def_id = \$2 AND bundle_id = \$3`
+		deleteQuery := fmt.Sprintf(`DELETE FROM public\.bundle_references WHERE %s AND api_def_id = \$2 AND bundle_id = \$3`, fixTenantIsolationSubquery())
 
 		sqlMock.ExpectExec(deleteQuery).
 			WithArgs(tenantID, apiDefID, bundleID).

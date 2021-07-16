@@ -3,7 +3,10 @@ package tenant_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
+
+	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
@@ -304,5 +307,152 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+}
 
+func Test_MultipleToTenantMapping(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		InputSlice    []model.BusinessTenantMappingInput
+		ExpectedSlice []model.BusinessTenantMapping
+	}{
+		{
+			Name: "success with more than one parent chain",
+			InputSlice: []model.BusinessTenantMappingInput{
+				{
+					Name:           "acc1",
+					ExternalTenant: "0",
+				},
+				{
+					Name:           "acc2",
+					ExternalTenant: "1",
+					Parent:         "2",
+				},
+				{
+					Name:           "customer1",
+					ExternalTenant: "2",
+					Parent:         "4",
+				},
+				{
+					Name:           "acc3",
+					ExternalTenant: "3",
+				},
+				{
+					Name:           "x1",
+					ExternalTenant: "4",
+				},
+			},
+			ExpectedSlice: []model.BusinessTenantMapping{
+				{
+					ID:             "0",
+					Name:           "acc1",
+					ExternalTenant: "0",
+					Status:         tenant2.Active,
+					Type:           tenant2.Unknown,
+				},
+				{
+					ID:             "4",
+					Name:           "x1",
+					ExternalTenant: "4",
+					Status:         tenant2.Active,
+					Type:           tenant2.Unknown,
+				},
+				{
+					ID:             "2",
+					Name:           "customer1",
+					ExternalTenant: "2",
+					Parent:         "4",
+					Status:         tenant2.Active,
+					Type:           tenant2.Unknown,
+				},
+				{
+					ID:             "1",
+					Name:           "acc2",
+					ExternalTenant: "1",
+					Parent:         "2",
+					Status:         tenant2.Active,
+					Type:           tenant2.Unknown,
+				},
+				{
+					ID:             "3",
+					Name:           "acc3",
+					ExternalTenant: "3",
+					Status:         tenant2.Active,
+					Type:           tenant2.Unknown,
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := tenant.NewService(nil, &serialUUIDService{})
+			require.Equal(t, testCase.ExpectedSlice, svc.MultipleToTenantMapping(testCase.InputSlice))
+		})
+	}
+
+}
+
+func Test_MoveBeforeIndex(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		InputSlice     []model.BusinessTenantMapping
+		TargetTenantID string
+		TargetIndex    int
+		ExpectedSlice  []model.BusinessTenantMapping
+		ShouldMove     bool
+	}{
+		{
+			Name: "success",
+			InputSlice: []model.BusinessTenantMapping{
+				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
+			},
+			TargetTenantID: "4",
+			TargetIndex:    1,
+			ExpectedSlice: []model.BusinessTenantMapping{
+				{ID: "1"}, {ID: "4"}, {ID: "2"}, {ID: "3"}, {ID: "5"},
+			},
+			ShouldMove: true,
+		},
+		{
+			Name: "move before first element",
+			InputSlice: []model.BusinessTenantMapping{
+				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
+			},
+			TargetTenantID: "3",
+			TargetIndex:    0,
+			ExpectedSlice: []model.BusinessTenantMapping{
+				{ID: "3"}, {ID: "1"}, {ID: "2"}, {ID: "4"}, {ID: "5"},
+			},
+			ShouldMove: true,
+		},
+		{
+			Name: "move before last element",
+			InputSlice: []model.BusinessTenantMapping{
+				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
+			},
+			TargetTenantID: "3",
+			TargetIndex:    4,
+			ExpectedSlice: []model.BusinessTenantMapping{
+				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result, moved := tenant.MoveBeforeIfShould(testCase.InputSlice, testCase.TargetTenantID, testCase.TargetIndex)
+			require.Equal(t, testCase.ShouldMove, moved)
+			require.Equal(t, testCase.ExpectedSlice, result)
+		})
+	}
+}
+
+type serialUUIDService struct {
+	i int
+}
+
+func (s *serialUUIDService) Generate() string {
+	result := s.i
+	s.i++
+	return fmt.Sprintf("%d", result)
 }
