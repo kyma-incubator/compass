@@ -290,7 +290,7 @@ func (c *DirectorClient) executeWithRetries(query string, res interface{}) error
 		req := gcli.NewRequest(query)
 		req.Header.Set("Tenant", c.tenant)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		err := c.client.Run(ctx, req, res)

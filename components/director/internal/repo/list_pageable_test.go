@@ -3,6 +3,7 @@ package repo_test
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -38,8 +39,8 @@ func TestListPageable(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...).
 			AddRow(homerRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 10 OFFSET 0")).WithArgs(givenTenant).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(2))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 10 OFFSET 0", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(2))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -59,8 +60,8 @@ func TestListPageable(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...).
 			AddRow(homerRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 2 OFFSET 0")).WithArgs(givenTenant).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 2 OFFSET 0", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -81,10 +82,10 @@ func TestListPageable(t *testing.T) {
 		rowsForPage2 := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(homerRow...)
 
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 1 OFFSET 0")).WithArgs(givenTenant).WillReturnRows(rowsForPage1)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 1 OFFSET 1")).WithArgs(givenTenant).WillReturnRows(rowsForPage2)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 1 OFFSET 0", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(rowsForPage1)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 1 OFFSET 1", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(rowsForPage2)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var first UserCollection
@@ -112,8 +113,8 @@ func TestListPageable(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 2 OFFSET 0")).WithArgs(givenTenant).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 2 OFFSET 0", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -131,10 +132,10 @@ func TestListPageable(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND age != $3 ORDER BY id_col LIMIT 2 OFFSET 0")).
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND first_name = $2 AND age != $3 ORDER BY id_col LIMIT 2 OFFSET 0", fixTenantIsolationSubquery()))).
 			WithArgs(givenTenant, "Peter", 18).
 			WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND first_name = $2 AND age != $3")).
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s AND first_name = $2 AND age != $3", fixTenantIsolationSubquery()))).
 			WithArgs(givenTenant, "Peter", 18).
 			WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -158,8 +159,8 @@ func TestListPageable(t *testing.T) {
 		defer mock.AssertExpectations(t)
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 2 OFFSET 0")).WithArgs(givenTenant).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(0))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 2 OFFSET 0", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(0))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -206,8 +207,8 @@ func TestListPageable(t *testing.T) {
 		defer mock.AssertExpectations(t)
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY id_col LIMIT 2 OFFSET 0")).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1")).WillReturnError(someError())
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s ORDER BY id_col LIMIT 2 OFFSET 0", fixTenantIsolationSubquery()))).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", fixTenantIsolationSubquery()))).WillReturnError(someError())
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
