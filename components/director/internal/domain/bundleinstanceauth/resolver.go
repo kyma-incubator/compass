@@ -32,7 +32,6 @@ type Converter interface {
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
-	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error)
 }
 
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
@@ -231,7 +230,7 @@ func (r *Resolver) RequestBundleInstanceAuthDeletion(ctx context.Context, authID
 		return nil, err
 	}
 
-	bndl, err := r.bndlSvc.GetByInstanceAuthID(ctx, authID)
+	bndl, err := r.bndlSvc.Get(ctx, instanceAuth.BundleID)
 	if err != nil {
 		return nil, err
 	}

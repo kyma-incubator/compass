@@ -3,6 +3,8 @@ package bundlereferences_test
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -94,4 +96,24 @@ func fixBundleIDs(id string) []driver.Value {
 
 func fixBundleReferenceCreateArgs(bRef *model.BundleReference) []driver.Value {
 	return []driver.Value{bRef.Tenant, repo.NewValidNullableString(*bRef.ObjectID), sql.NullString{}, repo.NewValidNullableString(*bRef.BundleID), repo.NewValidNullableString(*bRef.APIDefaultTargetURL)}
+}
+
+func fixUpdateTenantIsolationSubquery() string {
+	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
+}
+
+func fixTenantIsolationSubquery() string {
+	return fixTenantIsolationSubqueryWithArg(1)
+}
+
+func fixUnescapedTenantIsolationSubquery() string {
+	return fixUnescapedTenantIsolationSubqueryWithArg(1)
+}
+
+func fixTenantIsolationSubqueryWithArg(i int) string {
+	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
+}
+
+func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
+	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

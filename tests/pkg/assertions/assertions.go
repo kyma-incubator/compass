@@ -554,6 +554,14 @@ func AssertVendorFromORDService(t *testing.T, respBody string, expectedNumber in
 	}
 }
 
+func AssertApplicationPageContainOnlyIDs(t *testing.T, page graphql.ApplicationPage, ids ...string) {
+	require.Equal(t, len(ids), len(page.Data))
+
+	for _, app := range page.Data {
+		require.Contains(t, ids, app.ID)
+	}
+}
+
 func urlsAreIdentical(url1, url2 *string) bool {
 	identical := url1 == url2
 	if !identical {
