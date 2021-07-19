@@ -53,7 +53,6 @@ func (f *KibanaFormatter) Format(e *logrus.Entry) ([]byte, error) {
 		componentName = "-"
 	}
 	delete(e.Data, fieldComponentName)
-
 	if errorField, exists := e.Data[logrus.ErrorKey].(error); exists {
 		e.Message = e.Message + ": " + errorField.Error()
 	}

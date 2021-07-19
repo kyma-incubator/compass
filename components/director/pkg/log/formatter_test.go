@@ -5,76 +5,59 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("kibana formatter", func() {
+func TestKibanaFormatter(t *testing.T) {
 
-	var buffer *bytes.Buffer
-	var entry *logrus.Entry
+	buffer := &bytes.Buffer{}
+	ctx, err := Configure(context.TODO(), &Config{
+		Level:                  "debug",
+		Format:                 "kibana",
+		BootstrapCorrelationID: "bootstrap",
+		Output:                 os.Stdout.Name(),
+	})
+	require.NoError(t, err)
+	entry := LoggerFromContext(ctx)
+	entry.Logger.SetOutput(buffer)
+	entry.Debug("test")
 
-	BeforeEach(func() {
-		buffer = &bytes.Buffer{}
-		ctx, err := Configure(context.TODO(), &Config{
-			Level:  "debug",
-			Format: "kibana",
-			Output: os.Stdout.Name(),
-		})
-		Expect(err).ToNot(HaveOccurred())
-		entry = LoggerFromContext(ctx)
-		entry.Logger.SetOutput(buffer)
+	t.Run("should contain log level", func(t *testing.T) {
+		assert.Contains(t, buffer.String(), `"level":"debug"`)
 	})
 
-	When("format is kibana", func() {
-		JustBeforeEach(func() {
-			entry.Debug("test")
-		})
-
-		It("should contain correlation_id", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"correlation_id":`))
-		})
-		It("should contain component_type", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"component_type":`))
-		})
-		It("should contain log level", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"level":"debug"`))
-		})
-		It("should contain logger information", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"logger":`))
-		})
-		It("should contain log type", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"type":"log"`))
-		})
-		It("should contain written_at human readable timestamp", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"written_at":`))
-		})
-		It("should contain written_ts timestamp", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"written_ts":`))
-		})
-		It("should contain the message", func() {
-			Expect(buffer.String()).To(ContainSubstring(`"msg":"test"`))
-		})
+	t.Run("should contain logger information", func(t *testing.T) {
+		assert.Contains(t, buffer.String(), `"logger":`)
 	})
 
-	When("error is logged", func() {
-		It("should append it to the message", func() {
-			err := fmt.Errorf("error message")
-			entry.WithError(err).Error("test message")
-
-			Expect(buffer.String()).To(ContainSubstring(`"level":"error"`))
-			Expect(buffer.String()).To(ContainSubstring(`"msg":"test message: ` + err.Error() + `"`))
-		})
+	t.Run("should contain log type", func(t *testing.T) {
+		assert.Contains(t, buffer.String(), `"type":"log"`)
 	})
 
-	When("custom field is logged", func() {
-		It("should not be nested", func() {
-			entry.WithField("test_field", "test_value").Debug("test")
-
-			Expect(buffer.String()).To(ContainSubstring(`,"test_field":"test_value",`))
-		})
+	t.Run("should contain written_at human readable timestamp", func(t *testing.T) {
+		assert.Contains(t, buffer.String(), `"written_at":`)
 	})
 
-})
+	t.Run("should contain written_ts timestamp", func(t *testing.T) {
+		assert.Contains(t, buffer.String(), `"written_ts":`)
+	})
+
+	t.Run("should contain the message", func(t *testing.T) {
+		assert.Contains(t, buffer.String(), `"msg":"test"`)
+	})
+
+	t.Run("error is logged", func(t *testing.T) {
+		err := fmt.Errorf("error message")
+		entry.WithError(err).Error("test message")
+		assert.Contains(t, buffer.String(), `"level":"error"`)
+		assert.Contains(t, buffer.String(), `"msg":"test message: `+err.Error()+`"`)
+	})
+
+	t.Run("custom field is logged", func(t *testing.T) {
+		entry.WithField("test_field", "test_value").Debug("test")
+		assert.Contains(t, buffer.String(), `,"test_field":"test_value",`)
+	})
+}
