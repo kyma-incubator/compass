@@ -47,10 +47,10 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	env, err := env.Default(ctx, config.AddPFlags)
+	environment, err := env.Default(ctx, config.AddPFlags)
 	fatalOnError(err)
 
-	cfg, err := config.New(env)
+	cfg, err := config.New(environment)
 	fatalOnError(err)
 
 	err = cfg.Validate()

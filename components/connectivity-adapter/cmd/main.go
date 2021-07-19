@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -22,11 +26,20 @@ type config struct {
 
 	ServerTimeout time.Duration `envconfig:"default=119s"`
 
+	Log log.Config
+
 	AppRegistry appregistry.Config
 	Connector   connector.Config
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
 
 	err := envconfig.InitWithPrefix(&cfg, "APP")
@@ -44,7 +57,11 @@ func main() {
 		ReadHeaderTimeout: cfg.ServerTimeout,
 	}
 
-	log.D().Printf("API listening on %s", cfg.Address)
+	ctx, err = log.Configure(ctx, &cfg.Log)
+	exitOnError(err, "Failed to configure Logger")
+	logger := log.C(ctx)
+
+	logger.Infof("API listening on %s", cfg.Address)
 	exitOnError(server.ListenAndServe(), fmt.Sprintf("while listening on %s", cfg.Address))
 }
 
