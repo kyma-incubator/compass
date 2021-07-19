@@ -2,6 +2,7 @@ package ownertenant
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
