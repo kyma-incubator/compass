@@ -72,7 +72,7 @@ global:
       version: "PR-1939"
     pairing_adapter:
       dir:
-      version: "PR-1939"
+      version: "PR-1955"
     director:
       dir:
       version: "PR-1939"
@@ -84,7 +84,7 @@ global:
       version: "PR-1939"
     tenant_fetcher:
       dir:
-      version: "PR-1939"
+      version: "PR-1955"
     ord_service:
       dir:
       version: "PR-32"
