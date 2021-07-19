@@ -23,9 +23,9 @@ func TestInterceptField(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	parentTenantID := "parentTenant"
-	ownerTenantID := "ownerTenant"
-	ownerTenantExternalID := "ownerTenantExternalID"
+	parentTenantID := "56384145-8b6c-4394-855a-c6e55619448b"
+	ownerTenantID := "68182a53-ba3a-4cef-8932-055d5c7e0e91"
+	ownerTenantExternalID := "916aa40c-fe7b-4edb-bc34-158c728326b6"
 
 	ownerTenant := &model.BusinessTenantMapping{
 		ID:             ownerTenantID,
@@ -37,7 +37,7 @@ func TestInterceptField(t *testing.T) {
 		Status:         "Active",
 	}
 
-	entityID := "id"
+	entityID := "dc9964c8-4e81-4a58-bc7a-44e788ee1fdd"
 
 	fixFieldCtx := &gqlgen.FieldContext{
 		Object: ownertenant.MutationObject,
@@ -112,6 +112,128 @@ func TestInterceptField(t *testing.T) {
 					return nil, nil
 				}
 			},
+		},
+		{
+			Name:            "Mutation with parent ID in graphQL variable executed by parent tenant should impersonate owner tenant",
+			TransactionerFn: txGen.ThatSucceeds,
+			TenantIndexRepoFn: func() *automock.TenantIndexRepository {
+				repo := &automock.TenantIndexRepository{}
+				repo.On("GetOwnerTenantByResourceID", txtest.CtxWithDBMatcher(), parentTenantID, entityID).Return(ownerTenantID, nil).Once()
+				return repo
+			},
+			TenantRepoFn: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", txtest.CtxWithDBMatcher(), ownerTenantID).Return(ownerTenant, nil).Once()
+				return repo
+			},
+			ContextProviderFn: func() context.Context {
+				ctx := context.TODO()
+				ctx = gqlgen.WithFieldContext(ctx, &gqlgen.FieldContext{
+					Object: ownertenant.MutationObject,
+					Args: map[string]interface{}{
+						"id": entityID,
+					},
+					Field: gqlgen.CollectedField{
+						Field: &ast.Field{
+							Arguments: ast.ArgumentList{
+								&ast.Argument{
+									Value: &ast.Value{
+										Raw: "id",
+										Definition: &ast.Definition{
+											Name:    "ID",
+											BuiltIn: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+				ctx = tenant.SaveToContext(ctx, parentTenantID, parentTenantID)
+				return ctx
+			},
+			NextResolverFn: func() gqlgen.Resolver {
+				return func(ctx context.Context) (res interface{}, err error) {
+					tnt, err := tenant.LoadFromContext(ctx)
+					require.NoError(t, err)
+					require.Equal(t, ownerTenantID, tnt)
+					return nil, nil
+				}
+			},
+		},
+		{
+			Name:            "Mutation with no GUID or GraphQL variable provided for ID should proceed without any modification",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			TenantIndexRepoFn: func() *automock.TenantIndexRepository {
+				return &automock.TenantIndexRepository{}
+			},
+			TenantRepoFn: func() *automock.TenantRepository {
+				return &automock.TenantRepository{}
+			},
+			ContextProviderFn: func() context.Context {
+				ctx := context.TODO()
+				ctx = gqlgen.WithFieldContext(ctx, &gqlgen.FieldContext{
+					Object: ownertenant.MutationObject,
+					Args: map[string]interface{}{
+						"non-existing": "non-existing",
+					},
+					Field: gqlgen.CollectedField{
+						Field: &ast.Field{
+							Arguments: ast.ArgumentList{
+								&ast.Argument{
+									Value: &ast.Value{
+										Raw: "non-guid-or-variable",
+										Definition: &ast.Definition{
+											Name:    "ID",
+											BuiltIn: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+				ctx = tenant.SaveToContext(ctx, parentTenantID, parentTenantID)
+				return ctx
+			},
+			NextResolverFn: assertTenantNotModifiedResolverFn,
+		},
+		{
+			Name:            "Mutation with non-string variable provided for ID should proceed without any modification",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			TenantIndexRepoFn: func() *automock.TenantIndexRepository {
+				return &automock.TenantIndexRepository{}
+			},
+			TenantRepoFn: func() *automock.TenantRepository {
+				return &automock.TenantRepository{}
+			},
+			ContextProviderFn: func() context.Context {
+				ctx := context.TODO()
+				ctx = gqlgen.WithFieldContext(ctx, &gqlgen.FieldContext{
+					Object: ownertenant.MutationObject,
+					Args: map[string]interface{}{
+						"id": struct{}{},
+					},
+					Field: gqlgen.CollectedField{
+						Field: &ast.Field{
+							Arguments: ast.ArgumentList{
+								&ast.Argument{
+									Value: &ast.Value{
+										Raw: "id",
+										Definition: &ast.Definition{
+											Name:    "ID",
+											BuiltIn: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+				ctx = tenant.SaveToContext(ctx, parentTenantID, parentTenantID)
+				return ctx
+			},
+			NextResolverFn: assertTenantNotModifiedResolverFn,
 		},
 		{
 			Name:            "Nil GraphQL Field context should proceed without any modification",
