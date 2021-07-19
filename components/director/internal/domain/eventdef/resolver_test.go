@@ -2,6 +2,7 @@ package eventdef_test
 
 import (
 	"context"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"testing"
 	"time"
 
@@ -1091,12 +1092,21 @@ func TestResolver_FetchRequest(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	id := "bar"
-	url := "foo.bar"
-
+	firstSpecID := "specID"
+	secondSpecID := "specID2"
+	specIDs := []string{firstSpecID, secondSpecID}
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	frURL := "foo.bar"
 	timestamp := time.Now()
-	frModel := fixModelFetchRequest("foo", url, timestamp)
-	frGQL := fixGQLFetchRequest(url, timestamp)
+
+	frFirstSpec := fixModelFetchRequest(firstFRID, frURL, timestamp)
+	frSecondSpec := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	fetchRequests := []*model.FetchRequest{frFirstSpec, frSecondSpec}
+
+	gqlFRFirstSpec := fixGQLFetchRequest(frURL, timestamp)
+	gqlFRSecondSpec := fixGQLFetchRequest(frURL, timestamp)
+	gqlFetchRequests := []*graphql.FetchRequest{gqlFRFirstSpec, gqlFRSecondSpec}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1105,23 +1115,24 @@ func TestResolver_FetchRequest(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventDefService
 		ConverterFn     func() *automock.FetchRequestConverter
-		ExpectedResult  *graphql.FetchRequest
-		ExpectedErr     error
+		ExpectedResult  []*graphql.FetchRequest
+		ExpectedErr     []error
 	}{
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), id).Return(frModel, nil).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), specIDs).Return(fetchRequests, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("ToGraphQL", frModel).Return(frGQL, nil).Once()
+				conv.On("ToGraphQL", frFirstSpec).Return(gqlFRFirstSpec, nil).Once()
+				conv.On("ToGraphQL", frSecondSpec).Return(gqlFRSecondSpec, nil).Once()
 				return conv
 			},
-			ExpectedResult: frGQL,
+			ExpectedResult: gqlFetchRequests,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1136,14 +1147,14 @@ func TestResolver_FetchRequest(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Doesn't exist",
+			Name:            "FetchRequest doesn't exist",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), id).Return(nil, nil).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), specIDs).Return(nil, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
@@ -1154,11 +1165,11 @@ func TestResolver_FetchRequest(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name:            "Parent Object is nil",
+			Name:            "Error when listing Event FetchRequests",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), id).Return(nil, nil).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), specIDs).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
@@ -1166,37 +1177,40 @@ func TestResolver_FetchRequest(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    nil,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Error",
+			Name:            "Error when converting FetchRequest to graphql",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), specIDs).Return(fetchRequests, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
+				conv.On("ToGraphQL", frFirstSpec).Return(nil, testErr).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when commit transaction fails",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), id).Return(frModel, nil).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), specIDs).Return(fetchRequests, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
+				conv.On("ToGraphQL", frFirstSpec).Return(gqlFRFirstSpec, nil).Once()
+				conv.On("ToGraphQL", frSecondSpec).Return(gqlFRSecondSpec, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
@@ -1206,10 +1220,13 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
+			firstFRParams := dataloader.ParamFetchRequestEventDef{ID: firstSpecID, Ctx: context.TODO()}
+			secondFRParams := dataloader.ParamFetchRequestEventDef{ID: secondSpecID, Ctx: context.TODO()}
+			keys := []dataloader.ParamFetchRequestEventDef{firstFRParams, secondFRParams}
 			resolver := event.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
-			result, err := resolver.FetchRequest(context.TODO(), &graphql.EventSpec{DefinitionID: id})
+			result, err := resolver.FetchRequestEventDefDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1221,4 +1238,24 @@ func TestResolver_FetchRequest(t *testing.T) {
 			transact.AssertExpectations(t)
 		})
 	}
+	t.Run("Returns error when there are no Specs", func(t *testing.T) {
+		resolver := event.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.FetchRequestEventDefDataLoader([]dataloader.ParamFetchRequestEventDef{})
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No EventDef specs found").Error())
+	})
+
+	t.Run("Returns error when Specification ID is empty", func(t *testing.T) {
+		params := dataloader.ParamFetchRequestEventDef{ID: "", Ctx: context.TODO()}
+		keys := []dataloader.ParamFetchRequestEventDef{params}
+
+		resolver := event.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.FetchRequestEventDefDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition Spec ID is empty").Error())
+	})
 }

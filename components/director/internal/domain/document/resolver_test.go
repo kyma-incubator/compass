@@ -3,6 +3,10 @@ package document_test
 import (
 	"context"
 	"errors"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"testing"
 	"time"
 
@@ -364,65 +368,71 @@ func TestResolver_DeleteDocument(t *testing.T) {
 
 func TestResolver_FetchRequest(t *testing.T) {
 	// given
-	testErr := errors.New("Test error")
+	testErr := errors.New("test error")
 
-	id := "bar"
-	url := "foo.bar"
-
+	firstDocID := "docID"
+	secondDocID := "docID2"
+	docIDs := []string{firstDocID, secondDocID}
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	frURL := "foo.bar"
 	timestamp := time.Now()
-	frModel := fixModelFetchRequest("foo", url, timestamp)
-	frGQL := fixGQLFetchRequest(url, timestamp)
+
+	frFirstDoc := fixModelFetchRequest(firstFRID, frURL, timestamp)
+	frSecondDoc := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	fetchRequests := []*model.FetchRequest{frFirstDoc, frSecondDoc}
+
+	gqlFRFirstDoc := fixGQLFetchRequest(frURL, timestamp)
+	gqlFRSecondDoc := fixGQLFetchRequest(frURL, timestamp)
+	gqlFetchRequests := []*graphql.FetchRequest{gqlFRFirstDoc, gqlFRSecondDoc}
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
 	testCases := []struct {
 		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.DocumentService
 		ConverterFn     func() *automock.FetchRequestConverter
-		ExpectedResult  *graphql.FetchRequest
-		ExpectedErr     error
+		ExpectedResult  []*graphql.FetchRequest
+		ExpectedErr     []error
 	}{
 		{
 			Name: "Success",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("GetFetchRequest", contextParam, id).Return(frModel, nil).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), docIDs).Return(fetchRequests, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("ToGraphQL", frModel).Return(frGQL, nil).Once()
+				conv.On("ToGraphQL", frFirstDoc).Return(gqlFRFirstDoc, nil).Once()
+				conv.On("ToGraphQL", frSecondDoc).Return(gqlFRSecondDoc, nil).Once()
 				return conv
 			},
-			ExpectedResult: frGQL,
+			ExpectedResult: gqlFetchRequests,
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Doesn't exist",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				persistTx.On("Commit").Return(nil).Once()
-				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
-				return transact
-			},
+			Name:            "Returns error when starting transaction failed",
+			TransactionerFn: txGen.ThatFailsOnBegin,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("GetFetchRequest", contextParam, id).Return(nil, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "FetchRequest doesn't exist",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), docIDs).Return(nil, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
@@ -433,20 +443,11 @@ func TestResolver_FetchRequest(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Error",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
-				return transact
-			},
+			Name:            "Error when listing Document FetchRequests",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("GetFetchRequest", contextParam, id).Return(nil, testErr).Once()
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), docIDs).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
@@ -454,30 +455,85 @@ func TestResolver_FetchRequest(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "Error when converting FetchRequest to graphql",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), docIDs).Return(fetchRequests, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				conv.On("ToGraphQL", frFirstDoc).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "Returns error when commit transaction fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				svc.On("ListFetchRequests", txtest.CtxWithDBMatcher(), docIDs).Return(fetchRequests, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				conv.On("ToGraphQL", frFirstDoc).Return(gqlFRFirstDoc, nil).Once()
+				conv.On("ToGraphQL", frSecondDoc).Return(gqlFRSecondDoc, nil).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			persistTx := testCase.PersistenceFn()
-			transact := testCase.TransactionerFn(persistTx)
+			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
+			firstFRParams := dataloader.ParamFetchRequestDocument{ID: firstDocID, Ctx: context.TODO()}
+			secondFRParams := dataloader.ParamFetchRequestDocument{ID: secondDocID, Ctx: context.TODO()}
+			keys := []dataloader.ParamFetchRequestDocument{firstFRParams, secondFRParams}
 			resolver := document.NewResolver(transact, svc, nil, nil, converter)
 
 			// when
-			result, err := resolver.FetchRequest(context.TODO(), &graphql.Document{BaseEntity: &graphql.BaseEntity{ID: id}})
+			result, err := resolver.FetchRequestDocumentDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			persistTx.AssertExpectations(t)
+			persist.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
+	t.Run("Returns error when there are no Docs", func(t *testing.T) {
+		resolver := document.NewResolver(nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.FetchRequestDocumentDataLoader([]dataloader.ParamFetchRequestDocument{})
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No Documents found").Error())
+	})
+
+	t.Run("Returns error when Document ID is empty", func(t *testing.T) {
+		params := dataloader.ParamFetchRequestDocument{ID: "", Ctx: context.TODO()}
+		keys := []dataloader.ParamFetchRequestDocument{params}
+
+		resolver := document.NewResolver(nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.FetchRequestDocumentDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. Document ID is empty").Error())
+	})
 }

@@ -547,7 +547,7 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first 
 
 func (r *Resolver) BundlesDataLoader(keys []dataloader.Param) ([]*graphql.BundlePage, []error) {
 	if len(keys) == 0 {
-		return nil, []error{apperrors.NewInternalError("No Apps found")}
+		return nil, []error{apperrors.NewInternalError("No Applications found")}
 	}
 
 	var ctx context.Context
@@ -565,15 +565,6 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.Param) ([]*graphql.Bundle
 		applicationIDs[i] = keys[i].ID
 	}
 
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
@@ -583,28 +574,37 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.Param) ([]*graphql.Bundle
 		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
-	bndlPages, err := r.bndlSvc.ListAllByApplicationIDs(ctx, applicationIDs, *first, cursor)
+	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, []error{err}
 	}
 
-	err = tx.Commit()
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	bndlPages, err := r.bndlSvc.ListAllByApplicationIDs(ctx, applicationIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
 
 	var gqlBndls []*graphql.BundlePage
 	for _, page := range bndlPages {
-		pkgs, err := r.bndlConv.MultipleToGraphQL(page.Data)
+		bndls, err := r.bndlConv.MultipleToGraphQL(page.Data)
 		if err != nil {
 			return nil, []error{err}
 		}
 
-		gqlBndls = append(gqlBndls, &graphql.BundlePage{Data: pkgs, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+		gqlBndls = append(gqlBndls, &graphql.BundlePage{Data: bndls, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
 			HasNextPage: page.PageInfo.HasNextPage,
 		}})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
 	}
 
 	return gqlBndls, nil

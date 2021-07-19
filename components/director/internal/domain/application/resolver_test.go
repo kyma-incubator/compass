@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -1529,18 +1530,29 @@ func TestResolver_Bundles(t *testing.T) {
 	testErr := errors.New("test error")
 
 	tenantID := "1"
-	applicationID := "1"
-	app := fixGQLApplication(applicationID, "foo", "bar")
-	modelBundles := []*model.Bundle{
+	firstAppID := "appID"
+	secondAppID := "appID2"
+	appIDs := []string{firstAppID, secondAppID}
 
-		fixModelBundle("foo", tenantID, applicationID, "Foo", "Lorem Ipsum"),
-		fixModelBundle("bar", tenantID, applicationID, "Bar", "Lorem Ipsum"),
-	}
+	bundleFirstApp := fixModelBundle("foo", tenantID, firstAppID, "Foo", "Lorem Ipsum")
+	bundleSecondApp := fixModelBundle("foo", tenantID, secondAppID, "Foo", "Lorem Ipsum")
 
-	gqlBundles := []*graphql.Bundle{
-		fixGQLBundle("foo", applicationID, "Foo", "Lorem Ipsum"),
-		fixGQLBundle("bar", applicationID, "Bar", "Lorem Ipsum"),
-	}
+	bundlesFirstApp := []*model.Bundle{bundleFirstApp}
+	bundlesSecondApp := []*model.Bundle{bundleSecondApp}
+
+	gqlBundleFirstApp := fixGQLBundle("foo", firstAppID, "Foo", "Lorem Ipsum")
+	gqlBundleSecondApp := fixGQLBundle("foo", secondAppID, "Foo", "Lorem Ipsum")
+
+	gqlBundlesFirstApp := []*graphql.Bundle{gqlBundleFirstApp}
+	gqlBundlesSecondApp := []*graphql.Bundle{gqlBundleSecondApp}
+
+	bundlePageFirstApp := fixBundlePage(bundlesFirstApp)
+	bundlePageSecondApp := fixBundlePage(bundlesSecondApp)
+	bundlePages := []*model.BundlePage{bundlePageFirstApp, bundlePageSecondApp}
+
+	gqlBundlePageFirstApp := fixGQLBundlePage(gqlBundlesFirstApp)
+	gqlBundlePageSecondApp := fixGQLBundlePage(gqlBundlesSecondApp)
+	gqlBundlePages := []*graphql.BundlePage{gqlBundlePageFirstApp, gqlBundlePageSecondApp}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1553,23 +1565,24 @@ func TestResolver_Bundles(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.BundleService
 		ConverterFn     func() *automock.BundleConverter
-		ExpectedResult  *graphql.BundlePage
-		ExpectedErr     error
+		ExpectedResult  []*graphql.BundlePage
+		ExpectedErr     []error
 	}{
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixBundlePage(modelBundles), nil).Once()
+				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("MultipleToGraphQL", modelBundles).Return(gqlBundles, nil).Once()
+				conv.On("MultipleToGraphQL", bundlesFirstApp).Return(gqlBundlesFirstApp, nil).Once()
+				conv.On("MultipleToGraphQL", bundlesSecondApp).Return(gqlBundlesSecondApp, nil).Once()
 				return conv
 			},
-			ExpectedResult: fixGQLBundlePage(gqlBundles),
+			ExpectedResult: gqlBundlePages,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1584,14 +1597,14 @@ func TestResolver_Bundles(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when Bundles listing failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(nil, testErr).Once()
+				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1599,38 +1612,40 @@ func TestResolver_Bundles(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "Returns error when converting to GraphQL failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				conv.On("MultipleToGraphQL", bundlesFirstApp).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixBundlePage(modelBundles), nil).Once()
+				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
+				conv.On("MultipleToGraphQL", bundlesFirstApp).Return(gqlBundlesFirstApp, nil).Once()
+				conv.On("MultipleToGraphQL", bundlesSecondApp).Return(gqlBundlesSecondApp, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
-		},
-		{
-			Name:            "Returns error when converting to GraphQL failed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixBundlePage(modelBundles), nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.BundleConverter {
-				conv := &automock.BundleConverter{}
-				conv.On("MultipleToGraphQL", modelBundles).Return(nil, testErr).Once()
-				return conv
-			},
-			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
@@ -1642,8 +1657,12 @@ func TestResolver_Bundles(t *testing.T) {
 			converter := testCase.ConverterFn()
 
 			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter)
+			firstAppParams := dataloader.Param{ID: firstAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondAppParams := dataloader.Param{ID: secondAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.Param{firstAppParams, secondAppParams}
+
 			// when
-			result, err := resolver.Bundles(context.TODO(), app, &first, &gqlAfter)
+			result, err := resolver.BundlesDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1656,13 +1675,25 @@ func TestResolver_Bundles(t *testing.T) {
 		})
 	}
 
-	t.Run("Returns error when application is nil", func(t *testing.T) {
+	t.Run("Returns error when there are no Applications", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.Bundles(context.TODO(), nil, nil, nil)
+		_, err := resolver.BundlesDataLoader([]dataloader.Param{})
 		//then
-		require.Error(t, err)
-		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No Applications found").Error())
+	})
+
+	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
+		firstAppParams := dataloader.Param{ID: firstAppID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.Param{firstAppParams}
+
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.BundlesDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
 }
 

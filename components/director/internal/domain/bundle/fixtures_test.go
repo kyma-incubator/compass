@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -483,6 +484,25 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 		InputParams: &params,
 		Auth:        fixGQLAuth(),
 		Status:      &status,
+	}
+}
+
+func fixModelAPIBundleReference(bundleID, apiID string) *model.BundleReference {
+	return &model.BundleReference{
+		Tenant:              tenantID,
+		BundleID:            str.Ptr(bundleID),
+		ObjectType:          model.BundleAPIReference,
+		ObjectID:            str.Ptr(apiID),
+		APIDefaultTargetURL: str.Ptr(fmt.Sprintf("https://%s.com", apiID)),
+	}
+}
+
+func fixModelEventBundleReference(bundleID, eventID string) *model.BundleReference {
+	return &model.BundleReference{
+		Tenant:              tenantID,
+		BundleID:            str.Ptr(bundleID),
+		ObjectType:          model.BundleEventReference,
+		ObjectID:            str.Ptr(eventID),
 	}
 }
 

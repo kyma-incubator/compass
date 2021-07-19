@@ -297,11 +297,6 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 		return nil, nil
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, []error{err}
-	}
-
 	var gqlFetchRequests []*graphql.FetchRequest
 	for _, fr := range fetchRequests {
 		fetchRequest, err := r.frConverter.ToGraphQL(fr)
@@ -309,6 +304,11 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 			return nil, []error{err}
 		}
 		gqlFetchRequests = append(gqlFetchRequests, fetchRequest)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
 	}
 
 	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)

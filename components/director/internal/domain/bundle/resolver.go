@@ -434,11 +434,6 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{err}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, []error{err}
-	}
-
 	refsByBundleId := map[string][]*model.BundleReference{}
 	for _, ref := range references {
 		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
@@ -472,6 +467,11 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
 			HasNextPage: apisPage.PageInfo.HasNextPage,
 		}})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
 	}
 
 	log.C(ctx).Infof("Successfully fetched api definitions for bundles %v", bundleIDs)
@@ -576,11 +576,6 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		return nil, []error{err}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, []error{err}
-	}
-
 	eventAPIDefIDtoSpec := make(map[string]*model.Spec)
 	for _, spec := range specs {
 		eventAPIDefIDtoSpec[spec.ObjectID] = spec
@@ -611,6 +606,11 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 			EndCursor:   graphql.PageCursor(eventPage.PageInfo.EndCursor),
 			HasNextPage: eventPage.PageInfo.HasNextPage,
 		}})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
 	}
 
 	log.C(ctx).Infof("Successfully fetched event definitions for bundles %v", bundleIDs)
