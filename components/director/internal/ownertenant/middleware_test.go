@@ -199,6 +199,43 @@ func TestInterceptField(t *testing.T) {
 			NextResolverFn: assertTenantNotModifiedResolverFn,
 		},
 		{
+			Name:            "Mutation with non-string variable provided for ID should proceed without any modification",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			TenantIndexRepoFn: func() *automock.TenantIndexRepository {
+				return &automock.TenantIndexRepository{}
+			},
+			TenantRepoFn: func() *automock.TenantRepository {
+				return &automock.TenantRepository{}
+			},
+			ContextProviderFn: func() context.Context {
+				ctx := context.TODO()
+				ctx = gqlgen.WithFieldContext(ctx, &gqlgen.FieldContext{
+					Object: ownertenant.MutationObject,
+					Args: map[string]interface{}{
+						"id": struct{}{},
+					},
+					Field: gqlgen.CollectedField{
+						Field: &ast.Field{
+							Arguments: ast.ArgumentList{
+								&ast.Argument{
+									Value: &ast.Value{
+										Raw: "id",
+										Definition: &ast.Definition{
+											Name:    "ID",
+											BuiltIn: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+				ctx = tenant.SaveToContext(ctx, parentTenantID, parentTenantID)
+				return ctx
+			},
+			NextResolverFn: assertTenantNotModifiedResolverFn,
+		},
+		{
 			Name:            "Nil GraphQL Field context should proceed without any modification",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			TenantIndexRepoFn: func() *automock.TenantIndexRepository {

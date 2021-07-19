@@ -91,7 +91,14 @@ func (m *middleware) InterceptField(ctx context.Context, next gqlgen.Resolver) (
 				log.C(ctx).Infof("Value for ID argument %s is not GUID or a graphQL variable", id)
 				return next(ctx)
 			}
-			id = idValue.(string) // resolve the variable
+
+			idString, ok := idValue.(string)
+			if !ok {
+				log.C(ctx).Infof("Value for %s graphQL variable provided for ID argument is not string", id)
+				return next(ctx)
+			}
+
+			id = idString // resolve the variable
 		}
 
 		tnt, err := tenant.LoadFromContext(ctx)
