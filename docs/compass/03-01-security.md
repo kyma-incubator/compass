@@ -16,7 +16,7 @@ The following diagram represents the architecture of the security in Compass:
 
 ### Tenant Mapping Handler
 
-It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping authentication session data to the tenant. It is built into the Director itself, as it uses the same database. It is implemented as a separate endpoint, such as `/tenant-mapping`.
+It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping authentication session data to the tenant. It is built into the Director itself, as it uses the same database. It is implemented as a separate endpoint, such as `/hydrators/tenant-mapping`.
 
 To unify the approach for mapping, we introduce `authorization_id`, widely used by multiple authentication flows.
 The `authorization_id` is equal to:

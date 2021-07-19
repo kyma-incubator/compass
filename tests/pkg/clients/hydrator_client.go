@@ -63,9 +63,9 @@ func (vc *HydratorClient) ExecuteHydratorRequest(t *testing.T, path string, head
 }
 
 func (vc *HydratorClient) ResolveCertificateData(t *testing.T, headers map[string][]string) oathkeeper.AuthenticationSession {
-	return vc.ExecuteHydratorRequest(t, "/v1/certificate/data/resolve", headers)
+	return vc.ExecuteHydratorRequest(t, "/hydrators/v1/certificate/data/resolve", headers)
 }
 
 func (vc *HydratorClient) ResolveToken(t *testing.T, headers map[string][]string) oathkeeper.AuthenticationSession {
-	return vc.ExecuteHydratorRequest(t, "/v1/tokens/resolve", headers)
+	return vc.ExecuteHydratorRequest(t, "/hydrators/v1/tokens/resolve", headers)
 }

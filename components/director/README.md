@@ -62,7 +62,7 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_DB_CONNECTION_MAX_LIFETIME**           | `30m`                           | The maximum time of keeping a live connection to database          |
 | **APP_API_ENDPOINT**                         | `/graphql`                      | The endpoint for GraphQL API                                       |
 | **APP_PLAYGROUND_API_ENDPOINT**              | `/graphql`                      | The endpoint of GraphQL API for the Playground                     |
-| **APP_TENANT_MAPPING_ENDPOINT**              | `/tenant-mapping`               | The endpoint of Tenant Mapping Service                             |
+| **APP_TENANT_MAPPING_ENDPOINT**              | `/hydrators/tenant-mapping`     | The endpoint of Tenant Mapping Service                             |
 | **APP_CONFIGURATION_FILE**                   | None                            | The path to the configuration file                                 |
 | **APP_CONFIGURATION_FILE_RELOAD**            | `1m`                            | The period after which the configuration file is reloaded          |
 | **APP_JWKS_ENDPOINT**                        | `file://hack/default-jwks.json` | The path for JWKS                                                  |

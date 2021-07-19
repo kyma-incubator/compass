@@ -69,6 +69,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
+			log.C(ctx).Infof("--> bearer token %s <---", bearerToken)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
@@ -139,6 +140,7 @@ func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (Cl
 }
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
+    fmt.Printf("\n---> headers: %v <---\n", r.Header)
 	reqToken := r.Header.Get(AuthorizationHeaderKey)
 	if reqToken == "" {
 		return "", apperrors.NewUnauthorizedError("invalid bearer token")

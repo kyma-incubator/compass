@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"io/ioutil"
 	"net/http"
 
@@ -92,6 +93,17 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
 	}
 
+	token, err := getServiceAccountToken(ctx)
+	if err != nil {
+		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
+	}
+	//headers.Add("X-Internal-Identity", token)
+	headers.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	headers.Add("Tenant", tenantID)
+
 	req.Header = headers
 
 	if webhook.Auth != nil {
@@ -158,6 +170,13 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	if err != nil {
 		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
 	}
+
+	token, err := getServiceAccountToken(ctx)
+	if err != nil {
+		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
+	}
+	//headers.Add("X-Internal-Identity", token)
+	headers.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	req.Header = headers
 
@@ -246,4 +265,15 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
 	}
 	return nil
+}
+
+func getServiceAccountToken(ctx context.Context) (string, error) {
+	log.C(ctx).Info("Getting service account token...")
+	data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		log.C(ctx).Error(err, "Unable to read service account token file")
+		return "", err
+	}
+
+	return string(data), nil
 }

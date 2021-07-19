@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/internal_auth"
 	"net/http"
 	"net/url"
 	"os"
@@ -96,9 +97,10 @@ type config struct {
 
 	Database                      persistence.DatabaseConfig
 	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	TenantMappingEndpoint         string `envconfig:"default=/hydrators/tenant-mapping"`
+	RuntimeMappingEndpoint        string `envconfig:"default=/hydrators/runtime-mapping"`
+	AuthenticationMappingEndpoint string `envconfig:"default=/hydrators/authn-mapping"`
+    InternalAuthenticationEndpoint string `envconfig:"default=/hydrators/internal-auth/sub-path/nested-path"`
 	OperationPath                 string `envconfig:"default=/operation"`
 	LastOperationPath             string `envconfig:"default=/last_operation"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
@@ -257,6 +259,11 @@ func main() {
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
+
+    logger.Infof("Register internal authentication endpoint on %s...", cfg.InternalAuthenticationEndpoint)
+	internalAuthenticationFunc, err := getInternalAuthenticationFunc(transact)
+	exitOnError(err, "Error while configuring internal authenticator handler")
+	mainRouter.HandleFunc(cfg.InternalAuthenticationEndpoint, internalAuthenticationFunc)
 
 	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
@@ -438,6 +445,14 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		tokenVerifier,
 		runtimeSvc,
 		tenantSvc).ServeHTTP, nil
+}
+
+func getInternalAuthenticationFunc(transact persistence.Transactioner) (func(writer http.ResponseWriter, request *http.Request), error) {
+	reqDataParser := oathkeeper.NewReqDataParser()
+	tenantConv := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConv)
+
+	return internal_auth.NewHandler(reqDataParser, tenantRepo, transact).ServeHTTP, nil
 }
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {

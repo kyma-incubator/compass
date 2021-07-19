@@ -3,6 +3,7 @@ package oathkeeper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -165,6 +166,8 @@ func (d *ReqData) GetExternalTenantID() (string, error) {
 		return tenantVal, nil
 	}
 
+	fmt.Println("---> reqData body header tenant not found <---")
+
 	if tenantVal, ok := d.Body.Extra[ExternalTenantKey]; ok {
 		tenant, err := str.Cast(tenantVal)
 		if err != nil {
@@ -174,9 +177,15 @@ func (d *ReqData) GetExternalTenantID() (string, error) {
 		return tenant, nil
 	}
 
+	fmt.Println("---> reqData body extra tenant not found <---")
+
+	fmt.Printf("\n---> request headers %v  <---\n", d.Header)
+
 	if tenantVal := d.Header.Get(ExternalTenantKey); tenantVal != "" {
 		return tenantVal, nil
 	}
+
+	fmt.Println("---> reqData header tenant not found <---")
 
 	return "", apperrors.NewKeyDoesNotExistError(ExternalTenantKey)
 }
