@@ -3,6 +3,8 @@ package ownertenant
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -83,6 +85,22 @@ func (m *middleware) InterceptField(ctx context.Context, next gqlgen.Resolver) (
 	}
 
 	if len(id) > 0 { // If the mutation has an ID argument - potentially parent entity
+		if _, err := uuid.Parse(id); err != nil { // GraphQL variables are used and the raw value is the name of the variable. We should find the real value behind the variable.
+			idValue, ok := fieldCtx.Args[id]
+			if !ok {
+				log.C(ctx).Infof("Value for ID argument %s is not GUID or a graphQL variable", id)
+				return next(ctx)
+			}
+
+			idString, ok := idValue.(string)
+			if !ok {
+				log.C(ctx).Infof("Value for %s graphQL variable provided for ID argument is not string", id)
+				return next(ctx)
+			}
+
+			id = idString // resolve the variable
+		}
+
 		tnt, err := tenant.LoadFromContext(ctx)
 		if err != nil {
 			log.C(ctx).Infof("Mutation call does not have a valid tenant in the context: %s. Proceeding without modifications...", err)
