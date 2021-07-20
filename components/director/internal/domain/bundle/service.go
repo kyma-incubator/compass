@@ -204,6 +204,19 @@ func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string)
 	return s.bndlRepo.ListByApplicationIDNoPaging(ctx, tnt, appID)
 }
 
+func (s *service) ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
+}
+
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID, appID string) error {
 	for i := range in.APIDefinitions {
 		_, err := s.apiSvc.CreateInBundle(ctx, appID, bundleID, *in.APIDefinitions[i], in.APISpecs[i])
@@ -227,17 +240,4 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	}
 
 	return nil
-}
-
-func (s *service) ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
-	}
-
-	return s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
 }

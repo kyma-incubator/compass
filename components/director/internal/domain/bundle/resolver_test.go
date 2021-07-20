@@ -2089,6 +2089,25 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			ExpectedErr:                testErr,
 		},
 		{
+			Name:            "Returns error when conversion to graphql fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelBundleInstanceAuth, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.BundleInstanceAuthConverter {
+				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("ToGraphQL", modelBundleInstanceAuth).Return(nil, testErr).Once()
+				return conv
+			},
+			InputID:                    "foo",
+			Bundle:                     bndl,
+			ExpectedBundleInstanceAuth: nil,
+			ExpectedErr:                testErr,
+		},
+		{
 			Name:            "Returns nil when bundle instance auth for bundle not found",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleInstanceAuthService {
@@ -2133,6 +2152,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleInstanceAuthConverter {
 				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("ToGraphQL", modelBundleInstanceAuth).Return(gqlBundleInstanceAuth, nil).Once()
 				return conv
 			},
 			InputID:                    "foo",
@@ -2245,6 +2265,22 @@ func TestResolver_InstanceAuths(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
+			Name:            "Returns error when Bundle Instance Auths conversion to graphql failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("List", txtest.CtxWithDBMatcher(), bundleID).Return(modelBundleInstanceAuths, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.BundleInstanceAuthConverter {
+				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("MultipleToGraphQL", modelBundleInstanceAuths).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.BundleInstanceAuthService {
@@ -2254,6 +2290,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleInstanceAuthConverter {
 				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("MultipleToGraphQL", modelBundleInstanceAuths).Return(gqlBundleInstanceAuths, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,

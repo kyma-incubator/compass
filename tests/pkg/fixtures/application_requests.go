@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stretchr/testify/require"
 
@@ -86,6 +87,7 @@ func FixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 func FixApplicationRegisterInputWithBundles(t require.TestingT) graphql.ApplicationRegisterInput {
 	bndl1 := FixBundleCreateInputWithRelatedObjects(t, "foo")
 	bndl2 := FixBundleCreateInputWithRelatedObjects(t, "bar")
+	setUniqueRelatedObjectsForBundles([]*graphql.BundleCreateInput{&bndl1, &bndl2})
 	return graphql.ApplicationRegisterInput{
 		Name:         "create-application-with-documents",
 		ProviderName: ptr.String("compass"),
@@ -1747,4 +1749,25 @@ func generateAppInputForDifferentTenants(appInput graphql.ApplicationRegisterInp
 		}
 	}
 	return appInput
+}
+
+func setUniqueRelatedObjectsForBundles(bundles []*graphql.BundleCreateInput) {
+	for _, bndl := range bundles {
+		for _, api := range bndl.APIDefinitions {
+			api.Name = api.Name + "-" + bndl.Name
+
+			if api.Spec != nil && api.Spec.FetchRequest != nil {
+				api.Spec.FetchRequest.URL = api.Spec.FetchRequest.URL + "/" + strings.ReplaceAll(bndl.Name, " ", "")
+			}
+		}
+		for _, event := range bndl.EventDefinitions {
+			event.Name = event.Name + "-" + bndl.Name
+			if event.Spec != nil && event.Spec.FetchRequest != nil {
+				event.Spec.FetchRequest.URL = event.Spec.FetchRequest.URL + "/" + strings.ReplaceAll(bndl.Name, " ", "")
+			}
+		}
+		for _, doc := range bndl.Documents {
+			doc.Title = doc.Title + "-" + bndl.Name
+		}
+	}
 }

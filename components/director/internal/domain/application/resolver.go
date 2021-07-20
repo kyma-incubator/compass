@@ -426,11 +426,16 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	gqlWebhooks, err := r.webhookConverter.MultipleToGraphQL(webhooks)
+	if err != nil {
 		return nil, err
 	}
 
-	return r.webhookConverter.MultipleToGraphQL(webhooks)
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return gqlWebhooks, nil
 }
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
@@ -488,11 +493,6 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
@@ -501,6 +501,11 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		}
 
 		out = append(out, c.(*graphql.AppSystemAuth))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	return out, nil
@@ -631,10 +636,15 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 		return nil, err
 	}
 
+	gqlBundle, err := r.bndlConv.ToGraphQL(bndl)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bndlConv.ToGraphQL(bndl)
+	return gqlBundle, nil
 }

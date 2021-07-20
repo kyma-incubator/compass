@@ -302,13 +302,17 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id str
 		return nil, err
 	}
 
+	gqlAuth, err := r.bundleInstanceAuthConverter.ToGraphQL(bndl)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bundleInstanceAuthConverter.ToGraphQL(bndl)
-
+	return gqlAuth, nil
 }
 
 func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*graphql.BundleInstanceAuth, error) {
@@ -328,12 +332,17 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*g
 		return nil, err
 	}
 
+	gqlAuths, err := r.bundleInstanceAuthConverter.MultipleToGraphQL(bndlInstanceAuths)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bundleInstanceAuthConverter.MultipleToGraphQL(bndlInstanceAuths)
+	return gqlAuths, nil
 }
 
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.APIDefinition, error) {

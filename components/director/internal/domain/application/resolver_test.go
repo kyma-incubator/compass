@@ -1084,6 +1084,23 @@ func TestResolver_Webhooks(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
+			Name:            "Returns error when webhook conversion to graphql fails",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListAllApplicationWebhooks", contextParam, applicationID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
 			Name: "Returns error on starting transaction",
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
@@ -1113,7 +1130,9 @@ func TestResolver_Webhooks(t *testing.T) {
 				return svc
 			},
 			WebhookConverterFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks, nil).Once()
+				return conv
 			},
 			ExpectedErr: testErr,
 		},
@@ -1325,6 +1344,8 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[0]).Return(sysAuthGQL[0], nil).Once()
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[1]).Return(sysAuthGQL[1], nil).Once()
 				return sysAuthConv
 			},
 			InputApp:       gqlApp,
@@ -1341,6 +1362,23 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
+				return sysAuthConv
+			},
+			InputApp:       gqlApp,
+			ExpectedResult: nil,
+			ExpectedErr:    testError,
+		},
+		{
+			Name:            "Returns error when conversion to graphql fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				return svc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[0]).Return(nil, testError).Once()
 				return sysAuthConv
 			},
 			InputApp:       gqlApp,
@@ -1756,6 +1794,24 @@ func TestResolver_Bundle(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
+			Name:            "Returns error when conversion to graphql fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelBundle, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				conv.On("ToGraphQL", modelBundle).Return(nil, testErr).Once()
+				return conv
+			},
+			InputID:        "foo",
+			Application:    app,
+			ExpectedBundle: nil,
+			ExpectedErr:    testErr,
+		},
+		{
 			Name:            "Returns nil when bundle for application not found",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleService {
@@ -1800,6 +1856,7 @@ func TestResolver_Bundle(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
+				conv.On("ToGraphQL", modelBundle).Return(gqlBundle, nil).Once()
 				return conv
 			},
 			InputID:        "foo",
