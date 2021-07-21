@@ -2,6 +2,7 @@ package systemauth_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -164,7 +165,7 @@ func TestRepository_GetByID(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
 			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
 
-		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND id = $2"
+		query := fmt.Sprintf("SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, saID).WillReturnRows(rows)
 
@@ -315,7 +316,7 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.RuntimeReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, objID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -363,7 +364,7 @@ func TestRepository_ListForObject(t *testing.T) {
 			fixEntity("bar", model.ApplicationReference, objID, true),
 		}
 
-		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND app_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE %s AND app_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, objID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -537,7 +538,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		query := fmt.Sprintf(`DELETE FROM public.system_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -554,7 +555,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND app_id = $2`
+		query := fmt.Sprintf(`DELETE FROM public.system_auths WHERE %s AND app_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -588,7 +589,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		query := fmt.Sprintf(`DELETE FROM public.system_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnError(testErr)
@@ -623,7 +624,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL`
+		query := fmt.Sprintf(`DELETE FROM public.system_auths WHERE %s AND id = $2 AND app_id IS NOT NULL`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -640,7 +641,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND runtime_id IS NOT NULL`
+		query := fmt.Sprintf(`DELETE FROM public.system_auths WHERE %s AND id = $2 AND runtime_id IS NOT NULL`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -674,7 +675,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL`
+		query := fmt.Sprintf(`DELETE FROM public.system_auths WHERE %s AND id = $2 AND app_id IS NOT NULL`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnError(testErr)
@@ -700,7 +701,7 @@ func TestRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `UPDATE public.system_auths SET value = ? WHERE tenant_id = ? AND id = ?`
+		query := fmt.Sprintf(`UPDATE public.system_auths SET value = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testMarshalledSchema, testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -726,7 +727,7 @@ func TestRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `UPDATE public.system_auths SET value = ? WHERE tenant_id = ? AND id = ?`
+		query := fmt.Sprintf(`UPDATE public.system_auths SET value = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery())
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testMarshalledSchema, testTenant, sysAuthID).
 			WillReturnError(testErr)

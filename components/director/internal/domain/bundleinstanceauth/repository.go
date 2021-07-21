@@ -183,7 +183,7 @@ func (r *repository) GetForRuntimeAndAnyMatchingScenarios(ctx context.Context, t
 func (r *repository) getForObjectAndAnyMatchingScenarios(ctx context.Context, tenant, objectColumn, objectId string, scenarios []string) ([]*model.BundleInstanceAuth, error) {
 	subqueryConditions := repo.Conditions{
 		repo.NewEqualCondition(objectColumn, objectId),
-		repo.NewJSONArrMatchAnyStringCondition("value", scenarios),
+		repo.NewJSONArrMatchAnyStringCondition("value", scenarios...),
 	}
 
 	subquery, args, err := r.scenariosView.qBuilder.BuildQuery(tenant, false, subqueryConditions...)

@@ -165,7 +165,7 @@ func NewJSONArrAnyMatchCondition(field string, val []interface{}) Condition {
 	}
 }
 
-func NewJSONArrMatchAnyStringCondition(field string, values []string) Condition {
+func NewJSONArrMatchAnyStringCondition(field string, values ...string) Condition {
 	valuesInterfaceSlice := make([]interface{}, 0, len(values))
 	for _, v := range values {
 		valuesInterfaceSlice = append(valuesInterfaceSlice, v)
@@ -185,4 +185,26 @@ func (c *jsonArrAnyMatchCondition) GetQueryPart() string {
 
 func (c *jsonArrAnyMatchCondition) GetQueryArgs() ([]interface{}, bool) {
 	return c.val, true
+}
+
+// NewTenantIsolationCondition returns a repo condition filtering all resources based on the tenant provided (recursively iterating over all the child tenants)
+func NewTenantIsolationCondition(field string, val interface{}) Condition {
+	return NewTenantIsolationConditionWithPlaceholder(field, "?", []interface{}{val})
+}
+
+// NewTenantIsolationConditionWithPlaceholder return tenant isolation repo condition with different tenant_id input placeholder.
+// This is needed for update sql queries where the tenant_id to search for is not provided as an argument, but is used from the entity being updated.
+func NewTenantIsolationConditionWithPlaceholder(field string, placeholder string, args []interface{}) Condition {
+	const query = `
+with recursive children AS
+(SELECT t1.id, t1.parent
+    FROM business_tenant_mappings t1
+    WHERE id = %s
+    UNION ALL
+    SELECT t2.id, t2.parent
+    FROM business_tenant_mappings t2
+    INNER JOIN children t on t.id = t2.parent)
+SELECT id from children
+`
+	return NewInConditionForSubQuery(field, fmt.Sprintf(query, placeholder), args)
 }

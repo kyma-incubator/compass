@@ -118,7 +118,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
 
-		dbMock.ExpectQuery(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id = \$2$`).
+		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
 			WithArgs(testTenant, testID).
 			WillReturnRows(rows)
 
@@ -147,7 +147,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
 
-		dbMock.ExpectQuery(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id = \$2$`).
+		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
 			WithArgs(testTenant, testID).
 			WillReturnRows(rows)
 
@@ -186,7 +186,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 	piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 	piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
-	selectQuery := `^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id = \$2 AND bundle_id = \$3`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2 AND bundle_id = \$3`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -245,7 +245,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 
 		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
 
-		dbMock.ExpectQuery(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id = \$2 AND bundle_id = \$3`).
+		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2 AND bundle_id = \$3`, fixTenantIsolationSubquery())).
 			WithArgs(testTenant, testID, testBundleID).
 			WillReturnRows(rows)
 
@@ -276,7 +276,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND bundle_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -312,7 +312,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND bundle_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -339,7 +339,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND bundle_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND bundle_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testBundleID).
 			WillReturnError(testError)
@@ -371,7 +371,7 @@ func TestRepository_ListByRuntimeID(t *testing.T) {
 			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testRuntimeID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -407,7 +407,7 @@ func TestRepository_ListByRuntimeID(t *testing.T) {
 			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
 		}
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testRuntimeID).
 			WillReturnRows(fixSQLRows([]sqlRow{
@@ -434,7 +434,7 @@ func TestRepository_ListByRuntimeID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, testRuntimeID).
 			WillReturnError(testError)
@@ -452,7 +452,7 @@ func TestRepository_ListByRuntimeID(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := `UPDATE public\.bundle_instance_auths SET auth_value = \?, status_condition = \?, status_timestamp = \?, status_message = \?, status_reason = \? WHERE tenant_id = \? AND id = \?`
+	updateStmt := fmt.Sprintf(`UPDATE public\.bundle_instance_auths SET auth_value = \?, status_condition = \?, status_timestamp = \?, status_message = \?, status_reason = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
 
 	t.Run("Success", func(t *testing.T) {
 		// given
@@ -540,7 +540,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("DELETE FROM public.bundle_instance_auths WHERE tenant_id = $1 AND id = $2")).WithArgs(
+		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.bundle_instance_auths WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
 			testTenant, testID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -593,7 +593,7 @@ func testRepository_GetForObjAndAnyMatchingScenarios(t *testing.T, objIdColumn s
 	objId := "foo"
 	scenarios := []string{"scenario-1", "scenario-2"}
 
-	query := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE tenant_id = \$1 AND id IN \(SELECT bundle_instance_auth_id FROM public.bundle_instance_auths_scenarios_labels WHERE tenant_id = \$2 AND %s = \$3 AND value ?| array[$4,$5]\)`, objIdColumn)
+	query := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id IN \(SELECT bundle_instance_auth_id FROM public.bundle_instance_auths_scenarios_labels WHERE %s AND %s = \$3 AND value ?| array[$4,$5]\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2), objIdColumn)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)

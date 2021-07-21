@@ -16,7 +16,6 @@ const (
 	Vendor                     Type = "vendor"
 	Tombstone                  Type = "tombstone"
 	IntegrationSystem          Type = "integrationSystem"
-	Tenant                     Type = "tenant"
 	SystemAuth                 Type = "systemAuth"
 	FetchRequest               Type = "fetchRequest"
 	Specification              Type = "specification"
@@ -26,6 +25,8 @@ const (
 	EventDefinition            Type = "eventDefinition"
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	Webhook                    Type = "webhook"
+	Tenant                     Type = "tenant"
+	TenantIndex                Type = "tenantIndex"
 )
 
 type SQLOperation string
