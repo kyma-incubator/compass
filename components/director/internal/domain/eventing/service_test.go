@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
@@ -286,30 +287,6 @@ func Test_SetForApplication(t *testing.T) {
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, errors.New("some error"))
-
-		svc := NewService(nil, runtimeRepo, labelRepo)
-
-		// WHEN
-		_, err := svc.SetForApplication(ctx, runtimeID, app)
-
-		// THEN
-		require.Error(t, err)
-		require.EqualError(t, err, expectedError)
-		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
-	})
-
-	t.Run("Error when there are no scenarios assigned to application", func(t *testing.T) {
-		// GIVEN
-		expectedError := fmt.Sprintf(`while getting the runtime: Internal Server Error: application does not belong to scenarios`)
-		ctx := fixCtxWithTenant()
-		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
-			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
-		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
-			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
-			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
 		svc := NewService(nil, runtimeRepo, labelRepo)
 
@@ -1040,25 +1017,31 @@ func Test_GetForApplication(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
-	t.Run("Error when ensuring the scenarios, there are no scenarios assigned to application", func(t *testing.T) {
+	t.Run("Empty configuration when there are no scenarios assigned to application", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while ensuring the scenarios assigned to the runtime and application: while verifing whether runtime [ID=%s] belongs to the application scenarios: Internal Server Error: application does not belong to scenarios`, runtimeID)
 		ctx := fixCtxWithTenant()
+		emptyConfiguration := &model.ApplicationEventingConfiguration{
+			EventingConfiguration: model.EventingConfiguration{
+				DefaultURL: url.URL{},
+			},
+		}
 		runtimeRepo := &automock.RuntimeRepository{}
+		runtimePage := fixRuntimePageWithOne()
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
-			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+			1, mock.Anything).Return(runtimePage, nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimePage.Data[0].ID, fmt.Sprintf("%s_defaultEventing", applicationID.String())).Return(nil)
 
 		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.GetForApplication(ctx, app)
+		conf, err := svc.GetForApplication(ctx, app)
 
 		// THEN
-		require.Error(t, err)
-		require.EqualError(t, err, expectedError)
+		require.NoError(t, err)
+		require.Equal(t, emptyConfiguration, conf)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
