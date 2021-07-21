@@ -250,11 +250,11 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	secondEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(secondBndlID, secondEventID)
 	bundleIDs := []string{firstBndlID, secondBndlID}
 
-	selectQuery := `\(SELECT (.+) FROM public\.bundle_references 
-		WHERE tenant_id = \$1 AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
-		\(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$5 AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`
+	selectQuery := fmt.Sprintf(`\(SELECT (.+) FROM public\.bundle_references 
+		WHERE %s AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE %s AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
-	countQuery := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE tenant_id = \$1 AND api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+	countQuery := fmt.Sprintf(`SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE %s AND api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`, fixTenantIsolationSubquery())
 
 	t.Run("success when everything is returned for APIs", func(t *testing.T) {
 		ExpectedLimit := 1
@@ -322,11 +322,11 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		totalCountForFirstBundle := 1
 		totalCountForSecondBundle := 1
 
-		selectQueryForEvents := `\(SELECT (.+) FROM public\.bundle_references 
-		WHERE tenant_id = \$1 AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
-		\(SELECT (.+) FROM public\.bundle_references WHERE tenant_id = \$5 AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`
+		selectQueryForEvents := fmt.Sprintf(`\(SELECT (.+) FROM public\.bundle_references 
+		WHERE %s AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE %s AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
-		countQueryForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE tenant_id = \$1 AND event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+		countQueryForEvents := fmt.Sprintf(`SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE %s AND event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`, fixTenantIsolationSubquery())
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 

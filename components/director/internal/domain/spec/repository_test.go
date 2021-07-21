@@ -228,17 +228,17 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 	firstEventSpecEntity := fixEventSpecEntityWithIDs(firstSpecID, firstEventID)
 	secondEventSpecEntity := fixEventSpecEntityWithIDs(secondSpecID, secondEventID)
 
-	selectQueryAPIs := `\(SELECT (.+) FROM public\.specifications 
-		WHERE tenant_id = \$1 AND api_def_id IS NOT NULL AND api_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
-		\(SELECT (.+) FROM public\.specifications WHERE tenant_id = \$5 AND api_def_id IS NOT NULL AND api_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`
+	selectQueryAPIs := fmt.Sprintf(`\(SELECT (.+) FROM public\.specifications 
+		WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
+		\(SELECT (.+) FROM public\.specifications WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
-	countQueryAPIs := `SELECT api_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE tenant_id = \$1 AND api_def_id IS NOT NULL GROUP BY api_def_id ORDER BY api_def_id ASC`
+	countQueryAPIs := fmt.Sprintf(`SELECT api_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE %s AND api_def_id IS NOT NULL GROUP BY api_def_id ORDER BY api_def_id ASC`, fixTenantIsolationSubquery())
 
-	selectQueryEvents := `\(SELECT (.+) FROM public\.specifications 
-		WHERE tenant_id = \$1 AND event_def_id IS NOT NULL AND event_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
-		\(SELECT (.+) FROM public\.specifications WHERE tenant_id = \$5 AND event_def_id IS NOT NULL AND event_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`
+	selectQueryEvents := fmt.Sprintf(`\(SELECT (.+) FROM public\.specifications 
+		WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
+		\(SELECT (.+) FROM public\.specifications WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
-	countQueryEvents := `SELECT event_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE tenant_id = \$1 AND event_def_id IS NOT NULL GROUP BY event_def_id ORDER BY event_def_id ASC`
+	countQueryEvents := fmt.Sprintf(`SELECT event_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE %s AND event_def_id IS NOT NULL GROUP BY event_def_id ORDER BY event_def_id ASC`, fixTenantIsolationSubquery())
 
 	t.Run("Success for API", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)

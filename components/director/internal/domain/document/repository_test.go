@@ -308,11 +308,11 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 	secondDocID := "222222222-2222-2222-2222-222222222222"
 	secondDocEntity := fixEntityDocument(secondDocID, secondBndlID)
 
-	selectQuery := `\(SELECT (.+) FROM public\.documents
-		WHERE tenant_id = \$1 AND bundle_id = \$2 ORDER BY bundle_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
-		\(SELECT (.+) FROM public\.documents WHERE tenant_id = \$5 AND bundle_id = \$6 ORDER BY bundle_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`
+	selectQuery := fmt.Sprintf(`\(SELECT (.+) FROM public\.documents
+		WHERE %s AND bundle_id = \$2 ORDER BY bundle_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
+		\(SELECT (.+) FROM public\.documents WHERE %s AND bundle_id = \$6 ORDER BY bundle_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
-	countQuery := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.documents WHERE tenant_id = \$1 GROUP BY bundle_id ORDER BY bundle_id ASC`
+	countQuery := fmt.Sprintf(`SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.documents WHERE %s GROUP BY bundle_id ORDER BY bundle_id ASC`, fixTenantIsolationSubquery())
 
 	t.Run("success when there are no more pages", func(t *testing.T) {
 		ExpectedLimit := 3

@@ -159,9 +159,9 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	totalCounts := map[string]int{firstBndlID: 1, secondBndlID: 1}
 
-	selectQuery := `SELECT (.+) 
+	selectQuery := fmt.Sprintf(`SELECT (.+) 
 		FROM "public"."api_definitions" 
-		WHERE tenant_id = \$1 AND id IN \(\$2, \$3\)`
+		WHERE %s AND id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
 
 	t.Run("success when there are no more pages", func(t *testing.T) {
 		totalCountForFirstBundle := 1

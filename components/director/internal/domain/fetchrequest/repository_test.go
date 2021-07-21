@@ -315,9 +315,9 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		Valid:  true,
 	})
 
-	selectQuerySpecs := `SELECT (.+) FROM public\.fetch_requests WHERE tenant_id = \$1 AND spec_id IN \(\$2, \$3\)`
+	selectQuerySpecs := fmt.Sprintf(`SELECT (.+) FROM public\.fetch_requests WHERE %s AND spec_id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
 
-	selectQueryDocs := `SELECT (.+) FROM public\.fetch_requests WHERE tenant_id = \$1 AND document_id IN \(\$2, \$3\)`
+	selectQueryDocs := fmt.Sprintf(`SELECT (.+) FROM public\.fetch_requests WHERE %s AND document_id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
 
 	t.Run("Success for Specs", func(t *testing.T) {
 		mockConverter := &automock.Converter{}

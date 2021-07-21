@@ -52,7 +52,7 @@ func (l *unionLister) List(ctx context.Context, tenant string, ids []string, ids
 	if tenant == "" {
 		return nil, apperrors.NewTenantRequiredError()
 	}
-	additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+	additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 }
 

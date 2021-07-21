@@ -3,6 +3,7 @@ package repo_test
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -35,8 +36,8 @@ func TestUnionList(t *testing.T) {
 			AddRow(peterRow...).
 			AddRow(homerRow...)
 
-		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND id_col = $2 ORDER BY id_col ASC LIMIT $3 OFFSET $4) UNION (SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $5 AND id_col = $6 ORDER BY id_col ASC LIMIT $7 OFFSET $8)")).WithArgs(givenTenant, peterID, 10, 0, givenTenant, homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id_col AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 GROUP BY id_col ORDER BY id_col ASC")).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1).AddRow(homerID, 1))
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("(SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND id_col = $2 ORDER BY id_col ASC LIMIT $3 OFFSET $4) UNION (SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND id_col = $6 ORDER BY id_col ASC LIMIT $7 OFFSET $8)", fixTenantIsolationSubqueryWithArgPosition(1), fixTenantIsolationSubqueryWithArgPosition(5)))).WithArgs(givenTenant, peterID, 10, 0, givenTenant, homerID, 10, 0).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id_col AS id, COUNT(*) AS total_count FROM users WHERE %s GROUP BY id_col ORDER BY id_col ASC", fixTenantIsolationSubquery()))).WithArgs(givenTenant).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1).AddRow(homerID, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 

@@ -423,11 +423,11 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 	secondBndlEntity := fixEntityBundle(secondBndlID, "foo", "bar")
 	secondBndlEntity.ApplicationID = appID2
 
-	selectQuery := `\(SELECT (.+) FROM public\.bundles
-		WHERE tenant_id = \$1 AND app_id = \$2 ORDER BY app_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
-		\(SELECT (.+) FROM public\.bundles WHERE tenant_id = \$5 AND app_id = \$6 ORDER BY app_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`
+	selectQuery := fmt.Sprintf(`\(SELECT (.+) FROM public\.bundles
+		WHERE %s AND app_id = \$2 ORDER BY app_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
+		\(SELECT (.+) FROM public\.bundles WHERE %s AND app_id = \$6 ORDER BY app_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
-	countQuery := `SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.bundles WHERE tenant_id = \$1 GROUP BY app_id ORDER BY app_id ASC`
+	countQuery := fmt.Sprintf(`SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.bundles WHERE %s GROUP BY app_id ORDER BY app_id ASC`, fixTenantIsolationSubquery())
 
 	t.Run("success when there are no more pages", func(t *testing.T) {
 		ExpectedLimit := 3
