@@ -902,32 +902,6 @@ func TestQuerySpecificApplication(t *testing.T) {
 	})
 }
 
-func TestTenantSeparation(t *testing.T) {
-	// GIVEN
-	appIn := fixtures.FixSampleApplicationRegisterInputWithWebhooks("tenantseparation")
-	inStr, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appIn)
-	require.NoError(t, err)
-
-	createReq := fixtures.FixRegisterApplicationRequest(inStr)
-	actualApp := graphql.ApplicationExt{}
-	ctx := context.Background()
-
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
-
-	require.NoError(t, err)
-	require.NotEmpty(t, actualApp.ID)
-
-	// WHEN
-	getAppReq := fixtures.FixGetApplicationsRequestWithPagination()
-	customTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
-	anotherTenantsApps := graphql.ApplicationPage{}
-	// THEN
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, customTenant, getAppReq, &anotherTenantsApps)
-	require.NoError(t, err)
-	assert.Empty(t, anotherTenantsApps.Data)
-}
-
 func TestApplicationsForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()

@@ -773,7 +773,7 @@ func TestService_Create(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.DefaultTargetURLPerBundle)
+			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.DefaultTargetURLPerBundle, 0)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -792,7 +792,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", nil, nil, model.APIDefinitionInput{}, []*model.SpecInput{}, nil)
+		_, err := svc.Create(context.TODO(), "", nil, nil, model.APIDefinitionInput{}, []*model.SpecInput{}, nil, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -1243,7 +1243,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.DefaultTargetURLPerBundleForUpdate, testCase.DefaultTargetURLPerBundleForCreation, testCase.BundleIDsForDeletion)
+			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.DefaultTargetURLPerBundleForUpdate, testCase.DefaultTargetURLPerBundleForCreation, testCase.BundleIDsForDeletion, 0)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -1261,7 +1261,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.UpdateInManyBundles(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{}, nil, nil, nil)
+		err := svc.UpdateInManyBundles(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{}, nil, nil, nil, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

@@ -2,6 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 type Package struct {
@@ -25,6 +28,7 @@ type Package struct {
 	PartOfProducts    json.RawMessage
 	LineOfBusiness    json.RawMessage
 	Industry          json.RawMessage
+	ResourceHash      *string
 }
 
 type PackageInput struct {
@@ -33,7 +37,7 @@ type PackageInput struct {
 	Title             string          `json:"title"`
 	ShortDescription  string          `json:"shortDescription"`
 	Description       string          `json:"description"`
-	Version           string          `json:"version"`
+	Version           string          `json:"version" hash:"ignore"`
 	PackageLinks      json.RawMessage `json:"packageLinks"`
 	Links             json.RawMessage `json:"links"`
 	LicenseType       *string         `json:"licenseType"`
@@ -47,9 +51,14 @@ type PackageInput struct {
 	Industry          json.RawMessage `json:"industry"`
 }
 
-func (i *PackageInput) ToPackage(id, tenantID, appID string) *Package {
+func (i *PackageInput) ToPackage(id, tenantID, appID string, pkgHash uint64) *Package {
 	if i == nil {
 		return nil
+	}
+
+	var hash *string
+	if pkgHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(pkgHash, 10))
 	}
 
 	return &Package{
@@ -73,10 +82,16 @@ func (i *PackageInput) ToPackage(id, tenantID, appID string) *Package {
 		PartOfProducts:    i.PartOfProducts,
 		LineOfBusiness:    i.LineOfBusiness,
 		Industry:          i.Industry,
+		ResourceHash:      hash,
 	}
 }
 
-func (p *Package) SetFromUpdateInput(update PackageInput) {
+func (p *Package) SetFromUpdateInput(update PackageInput, pkgHash uint64) {
+	var hash *string
+	if pkgHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(pkgHash, 10))
+	}
+
 	p.Vendor = update.Vendor
 	p.Title = update.Title
 	p.ShortDescription = update.ShortDescription
@@ -93,4 +108,5 @@ func (p *Package) SetFromUpdateInput(update PackageInput) {
 	p.PartOfProducts = update.PartOfProducts
 	p.LineOfBusiness = update.LineOfBusiness
 	p.Industry = update.Industry
+	p.ResourceHash = hash
 }

@@ -139,18 +139,22 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 
 func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (interface{}, error) {
 	return func(token *jwt.Token) (interface{}, error) {
+		a.mux.RLock()
+		defer a.mux.RUnlock()
+
 		unsupportedErr := apperrors.NewInternalError("unexpected signing method: %s", token.Method.Alg())
 
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
-			a.mux.RLock()
-			keys := a.cachedJWKS
-			a.mux.RUnlock()
-
 			keyID, err := a.getKeyID(*token)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("An error occurred while getting the token signing key ID: %v", err)
 				return nil, errors.Wrap(err, "while getting the key ID")
+			}
+
+			if a.cachedJWKS == nil {
+				log.C(ctx).Debugf("Empty JWKS cache... Signing key %s is not found", keyID)
+				return nil, apperrors.NewKeyDoesNotExistError(keyID)
 			}
 
 			keyIterator := &authenticator.JWTKeyIterator{
@@ -162,13 +166,13 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 				},
 			}
 
-			if err := arrayiter.Walk(ctx, keys, keyIterator); err != nil {
+			if err := arrayiter.Walk(ctx, a.cachedJWKS, keyIterator); err != nil {
 				log.C(ctx).WithError(err).Errorf("An error occurred while walking through the jwks: %v", err)
 				return nil, err
 			}
 
 			if keyIterator.ResultingKey == nil {
-				log.C(ctx).Debug("Signing key is not found")
+				log.C(ctx).Debugf("Signing key %s is not found", keyID)
 				return nil, apperrors.NewKeyDoesNotExistError(keyID)
 			}
 

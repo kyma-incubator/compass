@@ -2,6 +2,8 @@ package tenant_test
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -18,18 +20,27 @@ import (
 
 func TestRepository_Create(t *testing.T) {
 	tenantModel := model.TenantModel{
-		TenantId:       testID,
-		ID:             testID,
-		Status:         tenantEntity.Active,
-		TenantProvider: testProviderName,
+		ID:               testID,
+		Name:             testID,
+		TenantId:         testID,
+		ParentExternalId: testID,
+		ParentInternalId: testID,
+		Type:             tenantEntity.Account,
+		Provider:         testProviderName,
+		Status:           tenantEntity.Active,
 	}
 
 	entity := tenantEntity.Entity{
+		ID:             testID,
 		Name:           testID,
 		ExternalTenant: testID,
-		ID:             testID,
-		ProviderName:   testProviderName,
-		Status:         tenantEntity.Active,
+		Parent: sql.NullString{
+			String: testID,
+			Valid:  true,
+		},
+		Type:         tenantEntity.Account,
+		ProviderName: testProviderName,
+		Status:       tenantEntity.Active,
 	}
 
 	t.Run("Success", func(t *testing.T) {
@@ -74,7 +85,102 @@ func TestRepository_Create(t *testing.T) {
 	})
 }
 
-func TestRepository_Delete(t *testing.T) {
+func TestRepository_GetByExternalID(t *testing.T) {
+	tenantModel := model.TenantModel{
+		ID:               testID,
+		Name:             testID,
+		TenantId:         testID,
+		ParentExternalId: testID,
+		ParentInternalId: testID,
+		Type:             tenantEntity.Account,
+		Provider:         testProviderName,
+		Status:           tenantEntity.Active,
+	}
+
+	entity := tenantEntity.Entity{
+		ID:             testID,
+		Name:           testID,
+		ExternalTenant: testID,
+		Parent: sql.NullString{
+			String: testID,
+			Valid:  true,
+		},
+		Type:         tenantEntity.Account,
+		ProviderName: testProviderName,
+		Status:       tenantEntity.Active,
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		//GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+
+		ctx := context.Background()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: entity.ID, name: entity.Name, externalTenant: entity.ExternalTenant, parent: entity.Parent.String, tenantType: entity.Type, provider: entity.ProviderName, status: entity.Status},
+		})
+		dbMock.ExpectQuery(fmt.Sprintf(getByExternalIDQueryFormat, entity.ExternalTenant)).
+			WillReturnRows(rowsToReturn)
+		defer dbMock.AssertExpectations(t)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", entity).Return(tenantModel)
+		defer mockConverter.AssertExpectations(t)
+
+		repo := tenant.NewRepository(mockConverter)
+
+		//WHEN
+		tnt, err := repo.GetByExternalID(ctx, tenantModel.ParentExternalId)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, tenantModel, tnt)
+	})
+
+	t.Run("Error when there is no db instance in the context", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+
+		mockConverter := &automock.Converter{}
+		mockConverter.AssertNotCalled(t, "ToEntity")
+		defer mockConverter.AssertExpectations(t)
+
+		repo := tenant.NewRepository(mockConverter)
+
+		//WHEN
+		_, err := repo.GetByExternalID(ctx, tenantModel.ParentExternalId)
+
+		// THEN
+		require.Error(t, err)
+	})
+}
+
+func TestRepository_Update(t *testing.T) {
+	tenantModel := model.TenantModel{
+		ID:               testID,
+		Name:             testID,
+		TenantId:         testID,
+		ParentExternalId: testID,
+		ParentInternalId: testID,
+		Type:             tenantEntity.Account,
+		Provider:         testProviderName,
+		Status:           tenantEntity.Active,
+	}
+
+	entity := tenantEntity.Entity{
+		ID:             testID,
+		Name:           testID,
+		ExternalTenant: testID,
+		Parent: sql.NullString{
+			String: testID,
+			Valid:  true,
+		},
+		Type:         tenantEntity.Account,
+		ProviderName: testProviderName,
+		Status:       tenantEntity.Active,
+	}
+
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
@@ -82,16 +188,18 @@ func TestRepository_Delete(t *testing.T) {
 		ctx = persistence.SaveToContext(ctx, db)
 
 		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", tenantModel).Return(entity)
+		defer mockConverter.AssertExpectations(t)
 
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(deleteQuery)).
-			WithArgs(testID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf(updateQueryFormat, entity.ExternalTenant))).
+			WithArgs(entity.Name, entity.Parent, entity.Type, entity.ProviderName, entity.Status).
+			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		err := repo.DeleteByExternalID(ctx, testID)
+		err := repo.Update(ctx, tenantModel)
 
 		// THEN
 		require.NoError(t, err)
@@ -102,12 +210,13 @@ func TestRepository_Delete(t *testing.T) {
 		ctx := context.Background()
 
 		mockConverter := &automock.Converter{}
+		mockConverter.AssertNotCalled(t, "ToEntity")
 		defer mockConverter.AssertExpectations(t)
 
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		err := repo.DeleteByExternalID(ctx, testID)
+		err := repo.Update(ctx, tenantModel)
 
 		// THEN
 		require.Error(t, err)

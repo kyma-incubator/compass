@@ -139,17 +139,17 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil)
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
 }
 
-func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string) (string, error) {
+func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	id := s.uidService.Generate()
-	eventAPI := in.ToEventDefinition(id, appID, packageID, tnt)
+	eventAPI := in.ToEventDefinition(id, appID, packageID, tnt, eventHash)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
@@ -184,10 +184,10 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil)
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, 0)
 }
 
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -198,7 +198,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return err
 	}
 
-	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, tnt)
+	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, tnt, eventHash)
 
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {

@@ -3,6 +3,9 @@ package model
 import (
 	"encoding/json"
 	"regexp"
+	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -43,6 +46,7 @@ type APIDefinition struct {
 	CustomImplementationStandardDescription *string
 	Version                                 *Version
 	Extensible                              json.RawMessage
+	ResourceHash                            *string
 	*BaseEntity
 }
 
@@ -82,7 +86,7 @@ type APIDefinitionInput struct {
 	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 
-	*VersionInput
+	*VersionInput `hash:"ignore"`
 }
 
 type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched
@@ -150,13 +154,18 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, tenant string) *APIDefinition {
-	return a.ToAPIDefinition(id, appID, nil, tenant)
+func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, tenant string, apiHash uint64) *APIDefinition {
+	return a.ToAPIDefinition(id, appID, nil, tenant, apiHash)
 }
 
-func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, tenant string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, tenant string, apiHash uint64) *APIDefinition {
 	if a == nil {
 		return nil
+	}
+
+	var hash *string
+	if apiHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(apiHash, 10))
 	}
 
 	return &APIDefinition{
@@ -187,6 +196,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		Industry:            a.Industry,
 		Extensible:          a.Extensible,
 		Version:             a.VersionInput.ToVersion(),
+		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

@@ -43,6 +43,8 @@ spec:
                 value: {{ $config.kubernetes.pollTimeout }}
               - name: APP_KUBERNETES_TIMEOUT
                 value: {{ $config.kubernetes.timeout }}
+              - name: APP_LOG_FORMAT
+                value: {{ $.Values.global.log.format | quote }}
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:
@@ -108,10 +110,14 @@ spec:
                 value: {{ $config.kubernetes.configMapNamespace }}
               - name: APP_CONFIGMAP_TIMESTAMP_FIELD
                 value: "lastConsumedTenantTimestamp"
+              - name: APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
+                value: "lastFullResyncTimestamp"
               - name: APP_MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
                 value: {{ $config.fieldMapping.nameField }}
+              - name: APP_MAPPING_FIELD_CUSTOMER_ID
+                value: {{ $config.fieldMapping.customerIdField }}
               - name: APP_MAPPING_FIELD_DISCRIMINATOR
                 value: {{ $config.fieldMapping.discriminatorField }}
               - name: APP_MAPPING_VALUE_DISCRIMINATOR
@@ -153,7 +159,7 @@ spec:
               - "./tenantfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           {{if eq $.Values.global.database.embedded.enabled false}}
           - name: cloudsql-proxy
-            image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
+            image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
             command:
               - /bin/sh
             args:
@@ -185,14 +191,15 @@ metadata:
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
-  {{- $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
-  {{- if empty $configmap }}
+{{ $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
+{{ if empty $configmap }}
 data:
   lastConsumedTenantTimestamp: "1"
-  {{ else }}
+  lastFullResyncTimestamp: "1"
+{{ else }}
 data:
-  {{ toYaml $configmap.data | indent 2}}
-  {{ end }}
+{{ toYaml $configmap.data | indent 2}}
+{{ end }}
 ---
 apiVersion: v1
 kind: ServiceAccount

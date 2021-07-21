@@ -204,9 +204,9 @@ func TestRepository_ListForBundle(t *testing.T) {
 	docEntity2 := fixEntityDocument("2", bndlID())
 
 	selectQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error
-		FROM public.documents WHERE tenant_id = $1 AND bundle_id = $2 ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset))
+		FROM public.documents WHERE %s AND bundle_id = $2 ORDER BY id LIMIT %d OFFSET %d`, fixUnescapedTenantIsolationSubquery(), ExpectedLimit, ExpectedOffset))
 
-	rawCountQuery := "SELECT COUNT(*) FROM public.documents WHERE tenant_id = $1 AND bundle_id = $2"
+	rawCountQuery := fmt.Sprintf("SELECT COUNT(*) FROM public.documents WHERE %s AND bundle_id = $2", fixUnescapedTenantIsolationSubquery())
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {
@@ -595,7 +595,7 @@ func TestRepository_Exists(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta("SELECT 1 FROM public.documents WHERE tenant_id = $1 AND id = $2")).WithArgs(
+	sqlMock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM public.documents WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
 		givenTenant(), givenID()).
 		WillReturnRows(testdb.RowWhenObjectExist())
 
@@ -629,7 +629,7 @@ func TestRepository_GetByID(t *testing.T) {
 			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
 				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error)
 
-		query := "SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE tenant_id = $1 AND id = $2"
+		query := fmt.Sprintf("SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
 
@@ -706,7 +706,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
 				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error)
 
-		query := "SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE tenant_id = $1 AND id = $2 AND bundle_id = $3"
+		query := fmt.Sprintf("SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE %s AND id = $2 AND bundle_id = $3", fixUnescapedTenantIsolationSubquery())
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(givenTenant(), givenID(), bndlID()).WillReturnRows(rows)
 
@@ -771,7 +771,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("DELETE FROM public.documents WHERE tenant_id = $1 AND id = $2")).WithArgs(
+		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.documents WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
 			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

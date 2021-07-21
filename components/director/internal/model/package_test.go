@@ -50,7 +50,7 @@ func TestPackageInput_ToPackage(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToPackage(id, tenant, appID)
+			result := testCase.Input.ToPackage(id, tenant, appID, 0)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

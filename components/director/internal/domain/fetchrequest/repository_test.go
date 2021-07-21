@@ -115,7 +115,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 			rows := sqlmock.NewRows([]string{"id", "tenant_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}).
 				AddRow(givenID(), givenTenant(), testCase.DocumentID, "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp, testCase.SpecID)
 
-			query := fmt.Sprintf("SELECT id, tenant_id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE tenant_id = $1 AND %s = $2", testCase.FieldName)
+			query := fmt.Sprintf("SELECT id, tenant_id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE %s AND %s = $2", fixUnescapedTenantIsolationSubquery(), testCase.FieldName)
 			dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 				WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
 
@@ -195,7 +195,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("DELETE FROM public.fetch_requests WHERE tenant_id = $1 AND id = $2")).WithArgs(
+		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
 			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -242,7 +242,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 			db, dbMock := testdb.MockDatabase(t)
 			defer dbMock.AssertExpectations(t)
 
-			dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE tenant_id = $1 AND %s = $2", testCase.FieldName))).WithArgs(
+			dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE %s AND %s = $2", fixUnescapedTenantIsolationSubquery(), testCase.FieldName))).WithArgs(
 				givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 			ctx := persistence.SaveToContext(context.TODO(), db)

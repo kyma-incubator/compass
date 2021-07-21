@@ -57,7 +57,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, tenant)
+			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, tenant, 0)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

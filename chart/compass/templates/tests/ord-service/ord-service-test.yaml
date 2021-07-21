@@ -43,8 +43,6 @@ spec:
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
-            - name: DIRECTOR_HEALTHZ_URL
-              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
             - name: USER_EMAIL

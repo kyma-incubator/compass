@@ -4,8 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/mod/semver"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/mitchellh/hashstructure/v2"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -22,11 +28,11 @@ const (
 	PackageOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	VendorOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	ProductOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
-	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
 	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
-	StringArrayElementRegex           = "^[a-zA-Z0-9 -\\.\\/]*$"
+	StringArrayElementRegex           = "^[a-zA-Z0-9-_.\\/ ]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
 	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	EventOrdIDRegex                   = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
@@ -137,13 +143,15 @@ func validateDocumentInput(doc *Document) error {
 	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0")))
 }
 
-func validatePackageInput(pkg *model.PackageInput) error {
+func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&pkg.Title, validation.Required),
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required),
-		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
+			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
+		})),
 		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
@@ -206,13 +214,15 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	)
 }
 
-func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
 		validation.Field(&api.Description, validation.Required),
-		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
+			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
+		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRfc)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
@@ -270,13 +280,15 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 	)
 }
 
-func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string) error {
+func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.Name, validation.Required),
 		validation.Field(&event.ShortDescription, shortDescriptionRules...),
 		validation.Field(&event.Description, validation.Required),
-		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
+			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
+		})),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
@@ -593,6 +605,117 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 	}
 
 	return nil
+}
+
+func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgsFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(pkgsFromDB) == 0 {
+		return nil
+	}
+
+	pkgFromDB, ok := pkgsFromDB[pkg.OrdID]
+	if !ok || isResourceHashMissing(pkgFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(pkgFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(resourceHashes[pkg.OrdID], 10)
+
+	return checkHashEquality(pkgFromDB.Version, pkg.Version, hashDB, hashDoc)
+}
+
+func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(eventsFromDB) == 0 {
+		return nil
+	}
+
+	eventFromDB, ok := eventsFromDB[str.PtrStrToStr(event.OrdID)]
+	if !ok || isResourceHashMissing(eventFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(eventFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(eventHashes[str.PtrStrToStr(event.OrdID)], 10)
+
+	return checkHashEquality(eventFromDB.Version.Value, event.VersionInput.Value, hashDB, hashDoc)
+}
+
+func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(apisFromDB) == 0 {
+		return nil
+	}
+
+	apiFromDB, ok := apisFromDB[str.PtrStrToStr(api.OrdID)]
+	if !ok || isResourceHashMissing(apiFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(apiFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(apiHashes[str.PtrStrToStr(api.OrdID)], 10)
+
+	return checkHashEquality(apiFromDB.Version.Value, api.VersionInput.Value, hashDB, hashDoc)
+}
+
+func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
+	bytes, err := json.Marshal(api)
+	if err != nil {
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while marshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+	}
+
+	var normalizedAPIDefinition model.APIDefinitionInput
+	if err := json.Unmarshal(bytes, &normalizedAPIDefinition); err != nil {
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+	}
+
+	return normalizedAPIDefinition, nil
+}
+
+func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDefinitionInput, error) {
+	bytes, err := json.Marshal(event)
+	if err != nil {
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while marshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+	}
+
+	var normalizedEventDefinition model.EventDefinitionInput
+	if err := json.Unmarshal(bytes, &normalizedEventDefinition); err != nil {
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+	}
+
+	return normalizedEventDefinition, nil
+}
+
+func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
+	bytes, err := json.Marshal(pkg)
+	if err != nil {
+		return model.PackageInput{}, errors.Wrapf(err, "error while marshalling package definition with ID %s", pkg.OrdID)
+	}
+
+	var normalizedPkgDefinition model.PackageInput
+	if err := json.Unmarshal(bytes, &normalizedPkgDefinition); err != nil {
+		return model.PackageInput{}, errors.Wrapf(err, "error while unmarshalling package definition with ID %s", pkg.OrdID)
+	}
+
+	return normalizedPkgDefinition, nil
+}
+
+func isResourceHashMissing(hash *string) bool {
+	hashStr := str.PtrStrToStr(hash)
+	if hashStr == "" {
+		return true
+	}
+
+	return false
 }
 
 func noNewLines(s string) bool {
@@ -935,5 +1058,26 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (descriptionValue == "" || !ok) {
 		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
 	}
+	return nil
+}
+
+func HashObject(obj interface{}) (uint64, error) {
+	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
+	if err != nil {
+		return 0, errors.New("failed to hash the given object")
+	}
+
+	return hash, nil
+}
+
+func checkHashEquality(rdFromDBVersion, rdFromDocVersion, hashFromDB, hashFromDoc string) error {
+	rdFromDBVersion = fmt.Sprintf("v%s", rdFromDBVersion)
+	rdFromDocVersion = fmt.Sprintf("v%s", rdFromDocVersion)
+
+	areVersionsEqual := semver.Compare(rdFromDocVersion, rdFromDBVersion)
+	if areHashesEqual := cmp.Equal(hashFromDB, hashFromDoc); !areHashesEqual && areVersionsEqual <= 0 {
+		return errors.New("there is a change in the resource; version value should be incremented")
+	}
+
 	return nil
 }

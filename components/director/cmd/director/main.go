@@ -9,6 +9,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
+	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -127,6 +132,8 @@ type config struct {
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
+
+	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
 }
 
 func main() {
@@ -224,10 +231,8 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	mainRouter.Use(panic_recovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
-
-	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
@@ -241,8 +246,12 @@ func main() {
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader))
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader))
 
+	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
+	ownertenantMiddleware := ownertenant.NewMiddleware(transact, tenantindex.NewRepository(), tenant.NewRepository(tenant.NewConverter()))
+
 	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(operationMiddleware)
+	gqlServ.Use(ownertenantMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
 	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
 
@@ -298,7 +307,13 @@ func main() {
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact))
+	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
+
+	logger.Infof("Registering health endpoint...")
+	health, err := healthz.New(ctx, cfg.HealthConfig)
+	exitOnError(err, "Could not initialize health")
+	health.RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).Start()
+	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
@@ -593,7 +608,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := directorTime.NewService()
-	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters, timeService)
+	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
 }
 
 func systemAuthSvc() oathkeeper.Service {

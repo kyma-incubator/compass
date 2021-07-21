@@ -21,8 +21,10 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
+		Parent:         str.NewNullString(in.Parent),
+		Type:           in.Type,
 		ProviderName:   in.Provider,
-		Status:         tenant.TenantStatus(in.Status),
+		Status:         in.Status,
 	}
 }
 
@@ -34,8 +36,10 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
+		Parent:         in.Parent.String,
+		Type:           in.Type,
 		Provider:       in.ProviderName,
-		Status:         model.TenantStatus(in.Status),
+		Status:         in.Status,
 		Initialized:    in.Initialized,
 	}
 }

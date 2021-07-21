@@ -184,6 +184,9 @@ export APP_CONNECTOR_URL="http://connector.not.configured.url/connector/graphql"
 export APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
 export APP_LOG_LEVEL=debug
 export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
+export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
+export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
+
 
 if [[  ${DEBUG} ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"

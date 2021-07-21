@@ -177,7 +177,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, authenticator.Coordinates{}, handleResponseError(resp)
+			return nil, authenticator.Coordinates{}, handleResponseError(ctx, resp)
 		}
 
 		buf, err := ioutil.ReadAll(resp.Body)
@@ -292,10 +292,10 @@ func extractTokenIssuer(payload []byte) (string, error) {
 }
 
 // handleResponseError builds an error from the given response
-func handleResponseError(response *http.Response) error {
+func handleResponseError(ctx context.Context, response *http.Response) error {
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			log.D().Errorf("ReadCloser couldn't be closed: %v", err)
+			log.C(ctx).Errorf("ReadCloser couldn't be closed: %v", err)
 		}
 	}()
 

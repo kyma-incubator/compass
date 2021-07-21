@@ -19,13 +19,20 @@ type ProductRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error)
 }
 
-type service struct {
-	productRepo ProductRepository
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(productRepo ProductRepository) *service {
+type service struct {
+	productRepo ProductRepository
+	uidService  UIDService
+}
+
+func NewService(productRepo ProductRepository, uidService UIDService) *service {
 	return &service{
 		productRepo: productRepo,
+		uidService:  uidService,
 	}
 }
 
@@ -35,13 +42,14 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pro
 		return "", err
 	}
 
-	product := in.ToProduct(tnt, applicationID)
+	id := s.uidService.Generate()
+	product := in.ToProduct(id, tnt, applicationID)
 
 	err = s.productRepo.Create(ctx, product)
 	if err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for Application with id %s", product.OrdID, product.Title, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
 	}
-	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for Application with id %s", product.OrdID, product.Title, applicationID)
+	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
 
 	return product.OrdID, nil
 }
