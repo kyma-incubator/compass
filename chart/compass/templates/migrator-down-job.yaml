@@ -5,10 +5,10 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-    annotations:
-      "helm.sh/hook": pre-rollback
-      "helm.sh/hook-weight": "0"
-      "helm.sh/hook-delete-policy": before-hook-creation
+  annotations:
+    "helm.sh/hook": pre-rollback
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   template:
     metadata:
