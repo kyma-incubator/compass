@@ -44,7 +44,7 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditi
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, true)
 }
 
@@ -52,7 +52,7 @@ func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, condit
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, false)
 }
 

@@ -2,6 +2,7 @@ package mp_package_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -55,8 +56,8 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
-		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ? WHERE tenant_id = ? AND id = ?`)
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
+		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -96,7 +97,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM public.packages WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := fmt.Sprintf(`^DELETE FROM public.packages WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, packageID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EntityConverter{}
@@ -113,7 +114,7 @@ func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.packages WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.packages WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, packageID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EntityConverter{}
@@ -131,7 +132,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	pkgEntity := fixEntityPackage()
 
-	selectQuery := `^SELECT (.+) FROM public.packages WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.packages WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -207,8 +208,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	firstPkgEntity := fixEntityPackage()
 	secondPkgEntity := fixEntityPackage()
 
-	selectQuery := `^SELECT (.+) FROM public.packages 
-		WHERE tenant_id = \$1 AND app_id = \$2`
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.packages WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
