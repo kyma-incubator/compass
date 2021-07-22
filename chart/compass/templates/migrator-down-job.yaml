@@ -16,7 +16,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-      {{- if .Values.global.migratorJob.nodeSelectorEnabled true }}
+      {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}
       nodeSelector:
         migrationJobs: true
       {{- end }}

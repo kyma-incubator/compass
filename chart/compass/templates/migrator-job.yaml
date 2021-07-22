@@ -16,7 +16,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-        {{- if .Values.global.migratorJob.nodeSelectorEnabled true }}
+        {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}
         nodeSelector:
           migrationJobs: true
         {{- end }}
@@ -24,7 +24,7 @@ spec:
         restartPolicy: Never
         shareProcessNamespace: true
         containers:
-          {{- if eq .Values.global.database.embedded.enabled false }}
+          {{ if eq .Values.global.database.embedded.enabled false }}
           - name: cloudsql-proxy
             image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
             command:
@@ -36,50 +36,50 @@ spec:
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
-          {{- end }}
+          {{ end }}
           - name: migrator
             image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
             env:
-                - name: DB_USER
-                  valueFrom:
-                    secretKeyRef:
-                      name: compass-postgresql
-                      key: postgresql-director-username
-                  - name: DB_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: compass-postgresql
-                        key: postgresql-director-password
-                  - name: DB_HOST
-                    valueFrom:
-                      secretKeyRef:
-                        name: compass-postgresql
-                        key: postgresql-serviceName
-                  - name: DB_PORT
-                    valueFrom:
-                      secretKeyRef:
-                        name: compass-postgresql
-                        key: postgresql-servicePort
-                  - name: DB_NAME
-                    valueFrom:
-                      secretKeyRef:
-                        name: compass-postgresql
-                        key: postgresql-director-db-name
-                  - name: DB_SSL
-                    valueFrom:
-                      secretKeyRef:
-                        name: compass-postgresql
-                        key: postgresql-sslMode
-                  - name: MIGRATION_PATH
-                    value: "director"
-                  - name: DIRECTION
-                    value: "up"
-                  - name: CM_NAME
-                    value: {{ .Values.global.migratorJob.versionConfigMap.name }}
-                  - name: CM_NAMESPACE
-                    value: {{ .Values.global.migratorJob.versionConfigMap.namespace }}
-                  - name: MIGRATION_STORAGE_PATH
-                    value: {{ .Values.global.migratorJob.pvc.migrationsPath }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: MIGRATION_PATH
+              value: "director"
+            - name: DIRECTION
+              value: "up"
+            - name: CM_NAME
+              value: {{ .Values.global.migratorJob.versionConfigMap.name }}
+            - name: CM_NAMESPACE
+              value: {{ .Values.global.migratorJob.versionConfigMap.namespace }}
+            - name: MIGRATION_STORAGE_PATH
+              value: {{ .Values.global.migratorJob.pvc.migrationsPath }}
             command:
               - "/bin/bash"
             args:
