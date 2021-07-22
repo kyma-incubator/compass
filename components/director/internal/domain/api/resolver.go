@@ -19,7 +19,6 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
-	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
 	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 }
 

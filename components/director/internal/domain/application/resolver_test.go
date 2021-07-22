@@ -1701,9 +1701,9 @@ func TestResolver_Bundles(t *testing.T) {
 			converter := testCase.ConverterFn()
 
 			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter)
-			firstAppParams := dataloader.Param{ID: firstAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
-			secondAppParams := dataloader.Param{ID: secondAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
-			keys := []dataloader.Param{firstAppParams, secondAppParams}
+			firstAppParams := dataloader.ParamBundle{ID: firstAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondAppParams := dataloader.ParamBundle{ID: secondAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.ParamBundle{firstAppParams, secondAppParams}
 
 			// when
 			result, err := resolver.BundlesDataLoader(keys)
@@ -1722,15 +1722,15 @@ func TestResolver_Bundles(t *testing.T) {
 	t.Run("Returns error when there are no Applications", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.BundlesDataLoader([]dataloader.Param{})
+		_, err := resolver.BundlesDataLoader([]dataloader.ParamBundle{})
 		//then
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Applications found").Error())
 	})
 
 	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
-		firstAppParams := dataloader.Param{ID: firstAppID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
-		keys := []dataloader.Param{firstAppParams}
+		firstAppParams := dataloader.ParamBundle{ID: firstAppID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.ParamBundle{firstAppParams}
 
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when

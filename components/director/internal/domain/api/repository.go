@@ -67,10 +67,6 @@ func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
-}
-
 func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
 	var result []*model.APIDefinition
 	if len(defs) > 0 {
@@ -159,40 +155,6 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 		apis = append(apis, &apiModel)
 	}
 	return apis, nil
-}
-
-func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	subqueryConditions := repo.Conditions{
-		repo.NewEqualCondition(bundleColumn, bundleID),
-		repo.NewNotNullCondition(bundlereferences.APIDefIDColumn),
-	}
-	subquery, args, err := r.queryBuilder.BuildQuery(tenant, false, subqueryConditions...)
-	if err != nil {
-		return nil, err
-	}
-	inOperatorConditions := repo.Conditions{
-		repo.NewInConditionForSubQuery(idColumn, subquery, args),
-	}
-
-	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &apiDefCollection, inOperatorConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []*model.APIDefinition
-
-	for _, apiDefEnt := range apiDefCollection {
-		m := r.conv.FromEntity(apiDefEnt)
-
-		items = append(items, &m)
-	}
-
-	return &model.APIDefinitionPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {

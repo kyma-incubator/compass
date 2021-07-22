@@ -46,7 +46,6 @@ type BundleInstanceAuthConverter interface {
 
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
@@ -62,7 +61,6 @@ type APIConverter interface {
 
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
-	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
@@ -78,7 +76,6 @@ type EventConverter interface {
 
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
-	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
 	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
 	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)

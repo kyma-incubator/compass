@@ -7,9 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	//"net/http"
-	//"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 

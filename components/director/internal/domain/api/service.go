@@ -2,8 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -19,7 +17,6 @@ type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ListForBundle(ctx context.Context, tenantID, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
@@ -72,18 +69,6 @@ func NewService(repo APIRepository, uidService UIDService, specService SpecServi
 	}
 }
 
-func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
-	}
-
-	return s.repo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
-}
 
 func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -281,39 +266,6 @@ func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) erro
 	}
 
 	return nil
-}
-
-func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	exists, err := s.repo.Exists(ctx, tnt, apiDefID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while checking if API Definition exists")
-	}
-	if !exists {
-		return nil, fmt.Errorf("API Definition with id %s doesn't exist", apiDefID)
-	}
-
-	spec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, apiDefID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", apiDefID)
-	}
-
-	var fetchRequest *model.FetchRequest
-	if spec != nil {
-		fetchRequest, err = s.specService.GetFetchRequest(ctx, spec.ID)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition with id %q", apiDefID)
-		}
-	}
-
-	return fetchRequest, nil
 }
 
 func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {

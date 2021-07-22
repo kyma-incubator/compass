@@ -48,59 +48,6 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 }
 
-func TestPgRepository_ListForBundle(t *testing.T) {
-	// GIVEN
-	ExpectedLimit := 3
-	ExpectedOffset := 0
-
-	inputPageSize := 3
-	inputCursor := ""
-	totalCount := 2
-	firstApiDefID := "111111111-1111-1111-1111-111111111111"
-	firstApiDefEntity := fixFullEntityEventDefinition(firstApiDefID, "placeholder")
-	secondApiDefID := "222222222-2222-2222-2222-222222222222"
-	secondApiDefEntity := fixFullEntityEventDefinition(secondApiDefID, "placeholder")
-
-	selectQuery := fmt.Sprintf(`SELECT (.+) FROM "public"."event_api_definitions"
-		WHERE %s AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE %s AND bundle_id = \$3 AND event_def_id IS NOT NULL\) 
-		ORDER BY id LIMIT %d OFFSET %d`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2), ExpectedLimit, ExpectedOffset)
-
-	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM "public"."event_api_definitions"
-		WHERE %s AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE %s AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2))
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
-			AddRow(fixEventDefinitionRow(firstApiDefID, "placeholder")...).
-			AddRow(fixEventDefinitionRow(secondApiDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, tenantID, bundleID).
-			WillReturnRows(rows)
-
-		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID, tenantID, bundleID).
-			WillReturnRows(testdb.RowCount(2))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", firstApiDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: firstApiDefID}}, nil)
-		convMock.On("FromEntity", secondApiDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondApiDefID}}, nil)
-		pgRepository := event.NewRepository(convMock)
-		// WHEN
-		modelEventDef, err := pgRepository.ListForBundle(ctx, tenantID, bundleID, inputPageSize, inputCursor)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelEventDef.Data, 2)
-		assert.Equal(t, firstApiDefID, modelEventDef.Data[0].ID)
-		assert.Equal(t, secondApiDefID, modelEventDef.Data[1].ID)
-		assert.Equal(t, "", modelEventDef.PageInfo.StartCursor)
-		assert.Equal(t, totalCount, modelEventDef.TotalCount)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-}
-
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	totalCount := 2

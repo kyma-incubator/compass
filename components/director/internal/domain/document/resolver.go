@@ -20,7 +20,6 @@ type DocumentService interface {
 	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
-	GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error)
 	ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error)
 }
 

@@ -129,13 +129,6 @@ func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *repository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("bundle_id", bundleID),
-	}
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
-}
-
 func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	var documentCollection DocumentCollection
 	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
@@ -177,28 +170,4 @@ func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bund
 	}
 
 	return documentPages, nil
-}
-
-func (r *repository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.DocumentPage, error) {
-	var documentCollection Collection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &documentCollection, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []*model.Document
-
-	for _, documentEnt := range documentCollection {
-		m, err := r.conv.FromEntity(documentEnt)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating APIDefinition model from entity")
-		}
-		items = append(items, &m)
-	}
-
-	return &model.DocumentPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
 }

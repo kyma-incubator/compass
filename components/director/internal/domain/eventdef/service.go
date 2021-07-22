@@ -2,8 +2,6 @@ package eventdef
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -18,7 +16,6 @@ type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
-	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
@@ -68,19 +65,6 @@ func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specServ
 		bundleReferenceService: bundleReferenceService,
 		timestampGen:           timestamp.DefaultGenerator(),
 	}
-}
-
-func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while loading tenant from context")
-	}
-
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
-	}
-
-	return s.eventAPIRepo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
 }
 
 func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
@@ -266,39 +250,6 @@ func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) erro
 	}
 
 	return nil
-}
-
-func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	exists, err := s.eventAPIRepo.Exists(ctx, tnt, eventAPIDefID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while checking if Event Definition exists")
-	}
-	if !exists {
-		return nil, fmt.Errorf("event definition with id %s doesn't exist", eventAPIDefID)
-	}
-
-	spec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPIDefID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPIDefID)
-	}
-
-	var fetchRequest *model.FetchRequest
-	if spec != nil {
-		fetchRequest, err = s.specService.GetFetchRequest(ctx, spec.ID)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting FetchRequest by Event Definition with id %q", eventAPIDefID)
-		}
-	}
-
-	return fetchRequest, nil
 }
 
 func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {

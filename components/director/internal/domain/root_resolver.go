@@ -199,7 +199,7 @@ func NewRootResolver(
 	}
 }
 
-func (r *RootResolver) BundlesDataloader(ids []dataloader.Param) ([]*graphql.BundlePage, []error) {
+func (r *RootResolver) BundlesDataloader(ids []dataloader.ParamBundle) ([]*graphql.BundlePage, []error) {
 	return r.app.BundlesDataLoader(ids)
 }
 

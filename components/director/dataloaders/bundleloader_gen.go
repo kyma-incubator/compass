@@ -12,7 +12,7 @@ import (
 // BundleLoaderConfig captures the config to create a new BundleLoader
 type BundleLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []Param) ([]*graphql.BundlePage, []error)
+	Fetch func(keys []ParamBundle) ([]*graphql.BundlePage, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewBundleLoader(config BundleLoaderConfig) *BundleLoader {
 // BundleLoader batches and caches requests
 type BundleLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []Param) ([]*graphql.BundlePage, []error)
+	fetch func(keys []ParamBundle) ([]*graphql.BundlePage, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type BundleLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[Param]*graphql.BundlePage
+	cache map[ParamBundle]*graphql.BundlePage
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -55,7 +55,7 @@ type BundleLoader struct {
 }
 
 type bundleLoaderBatch struct {
-	keys    []Param
+	keys    []ParamBundle
 	data    []*graphql.BundlePage
 	error   []error
 	closing bool
@@ -63,14 +63,14 @@ type bundleLoaderBatch struct {
 }
 
 // Load a BundlePage by key, batching and caching will be applied automatically
-func (l *BundleLoader) Load(key Param) (*graphql.BundlePage, error) {
+func (l *BundleLoader) Load(key ParamBundle) (*graphql.BundlePage, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a BundlePage.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *BundleLoader) LoadThunk(key Param) func() (*graphql.BundlePage, error) {
+func (l *BundleLoader) LoadThunk(key ParamBundle) func() (*graphql.BundlePage, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
@@ -113,7 +113,7 @@ func (l *BundleLoader) LoadThunk(key Param) func() (*graphql.BundlePage, error) 
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *BundleLoader) LoadAll(keys []Param) ([]*graphql.BundlePage, []error) {
+func (l *BundleLoader) LoadAll(keys []ParamBundle) ([]*graphql.BundlePage, []error) {
 	results := make([]func() (*graphql.BundlePage, error), len(keys))
 
 	for i, key := range keys {
@@ -131,7 +131,7 @@ func (l *BundleLoader) LoadAll(keys []Param) ([]*graphql.BundlePage, []error) {
 // LoadAllThunk returns a function that when called will block waiting for a BundlePages.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *BundleLoader) LoadAllThunk(keys []Param) func() ([]*graphql.BundlePage, []error) {
+func (l *BundleLoader) LoadAllThunk(keys []ParamBundle) func() ([]*graphql.BundlePage, []error) {
 	results := make([]func() (*graphql.BundlePage, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
@@ -149,7 +149,7 @@ func (l *BundleLoader) LoadAllThunk(keys []Param) func() ([]*graphql.BundlePage,
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *BundleLoader) Prime(key Param, value *graphql.BundlePage) bool {
+func (l *BundleLoader) Prime(key ParamBundle, value *graphql.BundlePage) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -163,22 +163,22 @@ func (l *BundleLoader) Prime(key Param, value *graphql.BundlePage) bool {
 }
 
 // Clear the value at key from the cache, if it exists
-func (l *BundleLoader) Clear(key Param) {
+func (l *BundleLoader) Clear(key ParamBundle) {
 	l.mu.Lock()
 	delete(l.cache, key)
 	l.mu.Unlock()
 }
 
-func (l *BundleLoader) unsafeSet(key Param, value *graphql.BundlePage) {
+func (l *BundleLoader) unsafeSet(key ParamBundle, value *graphql.BundlePage) {
 	if l.cache == nil {
-		l.cache = map[Param]*graphql.BundlePage{}
+		l.cache = map[ParamBundle]*graphql.BundlePage{}
 	}
 	l.cache[key] = value
 }
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *bundleLoaderBatch) keyIndex(l *BundleLoader, key Param) int {
+func (b *bundleLoaderBatch) keyIndex(l *BundleLoader, key ParamBundle) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i

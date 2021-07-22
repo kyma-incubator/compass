@@ -94,7 +94,6 @@ type RuntimeService interface {
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
-	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 	ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
@@ -552,11 +551,11 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 }
 
 func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
-	param := dataloader.Param{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.For(ctx).BundleById.Load(param)
+	param := dataloader.ParamBundle{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.BundleFor(ctx).BundleById.Load(param)
 }
 
-func (r *Resolver) BundlesDataLoader(keys []dataloader.Param) ([]*graphql.BundlePage, []error) {
+func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.BundlePage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Applications found")}
 	}

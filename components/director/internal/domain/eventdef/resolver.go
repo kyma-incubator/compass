@@ -22,7 +22,6 @@ type EventDefService interface {
 	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
-	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
 	ListFetchRequests(ctx context.Context, eventDefIds []string) ([]*model.FetchRequest, error)
 }
 

@@ -42,7 +42,6 @@ type EventAPIDefinitionConverter interface {
 
 type pgRepository struct {
 	singleGetter    repo.SingleGetter
-	pageableQuerier repo.PageableQuerier
 	queryBuilder    repo.QueryBuilder
 	lister          repo.Lister
 	creator         repo.Creator
@@ -55,7 +54,6 @@ type pgRepository struct {
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
 		lister:          repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
@@ -86,28 +84,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct Event will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
-}
-
-func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
-}
-
-func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {
-	var result []*model.EventDefinition
-	if len(defs) > 0 {
-		for _, id := range ids {
-			result = append(result, defs[id])
-		}
-	}
-	return result
-}
-
-func getEventDefIDsForBundle(refs []*model.BundleReference) []string {
-	var result []string
-	for _, ref := range refs {
-		result = append(result, *ref.ObjectID)
-	}
-	return result
 }
 
 func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
@@ -181,40 +157,6 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return events, nil
 }
 
-func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	subqueryConditions := repo.Conditions{
-		repo.NewEqualCondition(bundleColumn, bundleID),
-		repo.NewNotNullCondition(bundlereferences.EventDefIDColumn),
-	}
-	subquery, args, err := r.queryBuilder.BuildQuery(tenant, false, subqueryConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	inOperatorConditions := repo.Conditions{
-		repo.NewInConditionForSubQuery(idColumn, subquery, args),
-	}
-
-	var eventCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &eventCollection, inOperatorConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []*model.EventDefinition
-
-	for _, eventEnt := range eventCollection {
-		m := r.conv.FromEntity(eventEnt)
-		items = append(items, &m)
-	}
-
-	return &model.EventDefinitionPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
-}
-
 func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -276,4 +218,22 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 	}
 
 	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
+}
+
+func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {
+	var result []*model.EventDefinition
+	if len(defs) > 0 {
+		for _, id := range ids {
+			result = append(result, defs[id])
+		}
+	}
+	return result
+}
+
+func getEventDefIDsForBundle(refs []*model.BundleReference) []string {
+	var result []string
+	for _, ref := range refs {
+		result = append(result, *ref.ObjectID)
+	}
+	return result
 }

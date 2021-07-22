@@ -18,8 +18,6 @@ import (
 )
 
 const bundleTable string = `public.bundles`
-const bundleInstanceAuthTable string = `public.bundle_instance_auths`
-const bundleInstanceAuthBundleRefField string = `bundle_id`
 
 var (
 	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
@@ -38,7 +36,6 @@ type pgRepository struct {
 	existQuerier    repo.ExistQuerier
 	singleGetter    repo.SingleGetter
 	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
 	lister          repo.Lister
 	unionLister     repo.UnionLister
 	creator         repo.Creator
@@ -51,7 +48,6 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		existQuerier:    repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
 		singleGetter:    repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		lister:          repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		unionLister:     repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
@@ -133,34 +129,6 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	}
 
 	return bndlModel, nil
-}
-
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("app_id", applicationID),
-	}
-
-	var bundleCollection BundleCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &bundleCollection, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []*model.Bundle
-
-	for _, bndlEnt := range bundleCollection {
-		m, err := r.conv.FromEntity(&bndlEnt)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating Bundle model from entity")
-		}
-		items = append(items, m)
-	}
-
-	return &model.BundlePage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
 }
 
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {

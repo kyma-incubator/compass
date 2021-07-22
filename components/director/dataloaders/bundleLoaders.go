@@ -1,4 +1,4 @@
-//go:generate go run github.com/vektah/dataloaden BundleLoader Param *github.com/kyma-incubator/compass/components/director/pkg/graphql.BundlePage
+//go:generate go run github.com/vektah/dataloaden BundleLoader ParamBundle *github.com/kyma-incubator/compass/components/director/pkg/graphql.BundlePage
 
 package dataloader
 
@@ -10,23 +10,23 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKey = "dataloaders"
+const loadersKeyBundle = "dataloadersBundle"
 
-type Loaders struct {
+type BundleLoaders struct {
 	BundleById BundleLoader
 }
 
-type Param struct {
+type ParamBundle struct {
 	ID    string
 	First *int
 	After *graphql.PageCursor
 	Ctx   context.Context
 }
 
-func Handler(fetchFunc func(keys []Param) ([]*graphql.BundlePage, []error)) func(next http.Handler) http.Handler {
+func HandlerBundle(fetchFunc func(keys []ParamBundle) ([]*graphql.BundlePage, []error)) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), loadersKey, &Loaders{
+			ctx := context.WithValue(r.Context(), loadersKeyBundle, &BundleLoaders{
 				BundleById: BundleLoader{
 					maxBatch: 100,
 					wait:     1 * time.Millisecond,
@@ -39,6 +39,6 @@ func Handler(fetchFunc func(keys []Param) ([]*graphql.BundlePage, []error)) func
 	}
 }
 
-func For(ctx context.Context) *Loaders {
-	return ctx.Value(loadersKey).(*Loaders)
+func BundleFor(ctx context.Context) *BundleLoaders {
+	return ctx.Value(loadersKeyBundle).(*BundleLoaders)
 }
