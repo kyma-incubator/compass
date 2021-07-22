@@ -69,16 +69,24 @@ if [[ -f seeds/dump.sql ]] && [[ "${DIRECTION}" == "up" ]]; then
 fi
 
 CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME_SSL"
+function currentVersion {
+  echo $(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)
+}
+
+LAST_SUCCESSFUL_MIGRATION=$(currentVersion)
+echo "Last successful migration is $LAST_SUCCESSFUL_MIGRATION"
 
 if [[ "${DIRECTION}" == "up" ]]; then
   # Save previous successful migration in case of reverting the Compass version
-   kubectl create configmap -n $CM_NAMESPACE $CM_NAME --from-literal=version=$LAST_SUCCESSFUL_MIGRATION || \
-      kubectl create configmap -n $CM_NAMESPACE $CM_NAME --from-literal=version=$LAST_SUCCESSFUL_MIGRATION --dry-run -o yaml | kubectl apply -f -
+   kubectl create configmap -n ${CM_NAMESPACE} ${CM_NAME} --from-literal=version=$LAST_SUCCESSFUL_MIGRATION || \
+      kubectl create configmap -n ${CM_NAMESPACE} ${CM_NAME} --from-literal=version=$LAST_SUCCESSFUL_MIGRATION --dry-run=client -o yaml | kubectl apply -f -
 
   CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 
-  rm  ${MIGRATION_STORAGE_PATH}/*
+  echo "Replacing migrations in Persistent Volume with current migrations"
+  rm  ${MIGRATION_STORAGE_PATH}/* || true
   cp -R migrations/${MIGRATION_PATH}/. ${MIGRATION_STORAGE_PATH}
+
   echo '# STARTING MIGRATION #'
   if [[ "${NON_INTERACTIVE}" == "true" ]]; then
       yes | $CMD
@@ -87,21 +95,21 @@ if [[ "${DIRECTION}" == "up" ]]; then
   fi
 else
   REVERT_TO=$(kubectl get configmap -n $CM_NAMESPACE $CM_NAME -o jsonpath='{.data.version}')
-  COMPASS_PREVIOUS_VERSION=$(kubectl get installation compass-installation -o jsonpath='{.metadata.annotations.kyma-project\.io/last-version}')
-  echo "Previous compass version was $COMPASS_PREVIOUS_VERSION"
-  if echo "$COMPASS_PREVIOUS_VERSION" | grep master; then
-    COMPASS_PREVIOUS_VERSION=$(echo "$COMPASS_PREVIOUS_VERSION" | cut -d "-" -f 2)
+  echo "Will perform down migration to version $REVERT_TO"
+  if ! [[ $REVERT_TO =~ ^20[0-9]{12}$ ]]; then
+      echo "Migration version is not valid"
+      exit 1
   fi
 
-  # Clean "dirty" flag
-  migrate -path  -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
+  echo "Cleaning dirty flag"
+  migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
 
   # Migrate down until the version matches the wanted version from the previous release
-  while [[ "$(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)" != "$REVERT_TO" ]]; do
-    MIGRATION_VERSION="$(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)"
+  while [[ "$(currentVersion)" != "$REVERT_TO" ]]; do
+    echo "Migrating down from $(currentVersion)"
     migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" down 1
-    rm *"$MIGRATION_VERSION"*
   done
+
   echo "Successfully migrated down to previous migration version $REVERT_TO"
 fi
 

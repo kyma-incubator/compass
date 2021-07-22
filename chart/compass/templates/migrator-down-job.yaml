@@ -34,7 +34,7 @@ spec:
                         readOnly: true
                 {{ end }}
                 - name: migrator
-                  image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
+                  image: docker.io/dessislava/schema-migrator:final-v2
                   imagePullPolicy: Always
                   env:
                       - name: DB_USER

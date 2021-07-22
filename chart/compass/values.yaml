@@ -439,8 +439,9 @@ global:
       namespace: "compass-system"
     pvc:
       name: "compass-director-migrations"
+      namespace: "compass-system"
       regional: false
-      migrationsPath: "compass-migrations"
+      migrationsPath: "/compass-migrations"
 
 pairing-adapter:
   enabled: false
