@@ -1,96 +1,100 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-    name: compass-migration-down
-    labels:
+  name: compass-migration-down
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    annotations:
+      "helm.sh/hook": pre-rollback
+      "helm.sh/hook-weight": "0"
+      "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
-    annotations:
-        "helm.sh/hook": pre-rollback
-        "helm.sh/hook-weight": "0"
-        "helm.sh/hook-delete-policy": before-hook-creation
-spec:
-    template:
-        metadata:
-            labels:
-                app: {{ .Chart.Name }}
-                release: {{ .Release.Name }}
-        spec:
-            serviceAccountName: {{ .Chart.Name }}-migration
-            restartPolicy: Never
-            shareProcessNamespace: true
-            containers:
-                {{ if eq .Values.global.database.embedded.enabled false }}
-                - name: cloudsql-proxy
-                  image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
-                  command:
-                  - /bin/sh
-                  args:
-                  - -c
-                  - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
-                  volumeMounts:
-                      - name: cloudsql-instance-credentials
-                        mountPath: /secrets/cloudsql-instance-credentials
-                        readOnly: true
-                {{ end }}
-                - name: migrator
-                  image: docker.io/dessislava/schema-migrator:final-v2
-                  imagePullPolicy: Always
-                  env:
-                      - name: DB_USER
-                        valueFrom:
-                            secretKeyRef:
-                                name: compass-postgresql
-                                key: postgresql-director-username
-                      - name: DB_PASSWORD
-                        valueFrom:
-                            secretKeyRef:
-                                name: compass-postgresql
-                                key: postgresql-director-password
-                      - name: DB_HOST
-                        valueFrom:
-                            secretKeyRef:
-                                name: compass-postgresql
-                                key: postgresql-serviceName
-                      - name: DB_PORT
-                        valueFrom:
-                            secretKeyRef:
-                                name: compass-postgresql
-                                key: postgresql-servicePort
-                      - name: DB_NAME
-                        valueFrom:
-                            secretKeyRef:
-                                name: compass-postgresql
-                                key: postgresql-director-db-name
-                      - name: DB_SSL
-                        valueFrom:
-                            secretKeyRef:
-                                name: compass-postgresql
-                                key: postgresql-sslMode
-                      - name: MIGRATION_PATH
-                        value: "director"
-                      - name: DIRECTION
-                        value: "down"
-                      - name: CM_NAME
-                        value: {{ .Values.global.migratorJob.versionConfigMap.name }}
-                      - name: CM_NAMESPACE
-                        value: {{ .Values.global.migratorJob.versionConfigMap.namespace }}
-                      - name: MIGRATION_STORAGE_PATH
-                        value: {{ .Values.global.migratorJob.pvc.migrationsPath }}
-                  command:
-                    - "/bin/bash"
-                  args:
-                    - "-c"
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-                  volumeMounts:
-                    - name: migrations-storage
-                      mountPath: {{ .Values.global.migratorJob.pvc.migrationsPath }}
-            volumes:
-              - name: migrations-storage
-                persistentVolumeClaim:
-                  claimName: {{ .Values.global.migratorJob.pvc.name }}
-          {{ if eq .Values.global.database.embedded.enabled false }}
-              - name: cloudsql-instance-credentials
-                secret:
-                  secretName: cloudsql-instance-credentials
-            {{ end }}
+    spec:
+      {{- if .Values.global.migratorJob.nodeSelectorEnabled true }}
+      nodeSelector:
+        migrationJobs: true
+      {{- end }}
+      serviceAccountName: {{ .Chart.Name }}-migration
+      restartPolicy: Never
+      shareProcessNamespace: true
+      containers:
+        {{- if eq .Values.global.database.embedded.enabled false }}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+        {{- end }}
+        - name: migrator
+          image: docker.io/dessislava/schema-migrator:final-v2
+          imagePullPolicy: Always
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: MIGRATION_PATH
+              value: "director"
+            - name: DIRECTION
+              value: "down"
+            - name: CM_NAME
+              value: {{ .Values.global.migratorJob.versionConfigMap.name }}
+            - name: CM_NAMESPACE
+              value: {{ .Values.global.migratorJob.versionConfigMap.namespace }}
+            - name: MIGRATION_STORAGE_PATH
+              value: {{ .Values.global.migratorJob.pvc.migrationsPath }}
+          command:
+            - "/bin/bash"
+          args:
+            - "-c"
+            - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          volumeMounts:
+            - name: migrations-storage
+              mountPath: {{ .Values.global.migratorJob.pvc.migrationsPath }}
+      volumes:
+        - name: migrations-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.global.migratorJob.pvc.name }}
+      {{- if eq .Values.global.database.embedded.enabled false }}
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      {{- end }}

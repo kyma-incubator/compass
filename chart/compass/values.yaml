@@ -441,6 +441,7 @@ global:
       allowPrivilegeEscalation: false
 
   migratorJob:
+    nodeSelectorEnabled: false
     versionConfigMap:
       name: "compass-migrator-migration-version"
       namespace: "compass-system"
