@@ -18,7 +18,7 @@ spec:
     spec:
         {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}
         nodeSelector:
-          migrationJobs: true
+          migrationJobs: "true"
         {{- end }}
         serviceAccountName: {{ .Chart.Name }}-migration
         restartPolicy: Never
