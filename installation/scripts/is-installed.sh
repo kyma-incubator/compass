@@ -83,9 +83,6 @@ do
   if [ "$STATUS" = "Installed" ]
   then
       echo "compass is installed..."
-      LAST_VERSION_ANNOTATION="kyma-project.io/last-version"
-      CURRENT_COMPASS_IMAGE_VERSION=$(kubectl get deployment -n compass-installer compass-installer -o jsonpath="{.spec.template.spec.containers[*].image}" | cut -d ":" -f 2)
-      kubectl annotate installation compass-installation ${LAST_VERSION_ANNOTATION}=${CURRENT_COMPASS_IMAGE_VERSION} --overwrite
       break
   elif [ "$STATUS" = "Error" ]
   then
