@@ -76,23 +76,26 @@ function currentVersion {
 LAST_SUCCESSFUL_MIGRATION=$(currentVersion)
 echo "Last successful migration is $LAST_SUCCESSFUL_MIGRATION"
 
+CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
+
+# validate.sh uses DRY_RUN
+if [[ "${DRY_RUN}" == "true" ]]; then
+      echo '# STARTING DRY-RUN MIGRATION #'
+      yes | $CMD
+      exit $?
+fi
+
 if [[ "${DIRECTION}" == "up" ]]; then
   # Save previous successful migration in case of reverting the Compass version
    kubectl create configmap -n ${CM_NAMESPACE} ${CM_NAME} --from-literal=version=$LAST_SUCCESSFUL_MIGRATION || \
       kubectl create configmap -n ${CM_NAMESPACE} ${CM_NAME} --from-literal=version=$LAST_SUCCESSFUL_MIGRATION --dry-run=client -o yaml | kubectl apply -f -
-
-  CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 
   echo "Replacing migrations in Persistent Volume with current migrations"
   rm  ${MIGRATION_STORAGE_PATH}/* || true
   cp -R migrations/${MIGRATION_PATH}/. ${MIGRATION_STORAGE_PATH}
 
   echo '# STARTING MIGRATION #'
-  if [[ "${NON_INTERACTIVE}" == "true" ]]; then
-      yes | $CMD
-  else
-      $CMD
-  fi
+  $CMD
 else
   REVERT_TO=$(kubectl get configmap -n $CM_NAMESPACE $CM_NAME -o jsonpath='{.data.version}')
   echo "Will perform down migration to version $REVERT_TO"
