@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -117,7 +118,6 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
-
 
 func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)

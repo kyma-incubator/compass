@@ -347,16 +347,16 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.BundleReferenceConverter{}
 		convMock.On("FromEntity", firstEventBndlRefEntity).Return(model.BundleReference{
-			Tenant:              tenantID,
-			BundleID:            str.Ptr(firstBndlID),
-			ObjectType:          model.BundleEventReference,
-			ObjectID:            str.Ptr(firstEventID),
+			Tenant:     tenantID,
+			BundleID:   str.Ptr(firstBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(firstEventID),
 		}, nil)
 		convMock.On("FromEntity", secondEventBndlRefEntity).Return(model.BundleReference{
-			Tenant:              tenantID,
-			BundleID:            str.Ptr(secondBndlID),
-			ObjectType:          model.BundleEventReference,
-			ObjectID:            str.Ptr(secondEventID),
+			Tenant:     tenantID,
+			BundleID:   str.Ptr(secondBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(secondEventID),
 		}, nil)
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN

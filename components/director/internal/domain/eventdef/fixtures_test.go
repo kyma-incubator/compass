@@ -297,10 +297,10 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 
 func fixModelBundleReference(bundleID, eventID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:              tenantID,
-		BundleID:            str.Ptr(bundleID),
-		ObjectType:          model.BundleEventReference,
-		ObjectID:            str.Ptr(eventID),
+		Tenant:     tenantID,
+		BundleID:   str.Ptr(bundleID),
+		ObjectType: model.BundleEventReference,
+		ObjectID:   str.Ptr(eventID),
 	}
 }
 

@@ -2,6 +2,7 @@ package eventdef
 
 import (
 	"context"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -269,7 +270,7 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 		return nil, []error{apperrors.NewInternalError("No EventDef specs found")}
 	}
 
-	ctx:= keys[0].Ctx
+	ctx := keys[0].Ctx
 
 	specIDs := make([]string, len(keys))
 	for i := 0; i < len(keys); i++ {

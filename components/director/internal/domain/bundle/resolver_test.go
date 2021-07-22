@@ -2,8 +2,9 @@ package mp_bundle_test
 
 import (
 	"context"
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"testing"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

@@ -190,7 +190,6 @@ func TestRepository_CreateMany(t *testing.T) {
 	})
 }
 
-
 func TestRepository_ListAllForBundle(t *testing.T) {
 	// GIVEN
 	inputCursor := ""

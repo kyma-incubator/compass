@@ -501,10 +501,10 @@ func fixModelAPIBundleReference(bundleID, apiID string) *model.BundleReference {
 
 func fixModelEventBundleReference(bundleID, eventID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:              tenantID,
-		BundleID:            str.Ptr(bundleID),
-		ObjectType:          model.BundleEventReference,
-		ObjectID:            str.Ptr(eventID),
+		Tenant:     tenantID,
+		BundleID:   str.Ptr(bundleID),
+		ObjectType: model.BundleEventReference,
+		ObjectID:   str.Ptr(eventID),
 	}
 }
 

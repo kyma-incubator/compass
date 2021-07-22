@@ -3,12 +3,13 @@ package document_test
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/mock"
@@ -397,7 +398,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 		ExpectedErr     []error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}

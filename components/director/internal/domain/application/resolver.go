@@ -2,8 +2,9 @@ package application
 
 import (
 	"context"
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"strings"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 

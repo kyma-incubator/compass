@@ -3,6 +3,7 @@ package fetchrequest
 import (
 	"context"
 	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"

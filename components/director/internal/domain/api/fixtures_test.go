@@ -328,10 +328,10 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 
 func fixModelBundleReference(bundleID, apiID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:              tenantID,
-		BundleID:            str.Ptr(bundleID),
-		ObjectType:          model.BundleAPIReference,
-		ObjectID:            str.Ptr(apiID),
+		Tenant:     tenantID,
+		BundleID:   str.Ptr(bundleID),
+		ObjectType: model.BundleAPIReference,
+		ObjectID:   str.Ptr(apiID),
 	}
 }
 

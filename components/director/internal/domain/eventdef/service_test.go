@@ -224,12 +224,12 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
-		Name                string
-		PageSize            int
-		RepositoryFn        func() *automock.EventAPIRepository
-		BundleRefSvcFn      func() *automock.BundleReferenceService
-		ExpectedResult      []*model.EventDefinitionPage
-		ExpectedErrMessage  string
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.EventAPIRepository
+		BundleRefSvcFn     func() *automock.BundleReferenceService
+		ExpectedResult     []*model.EventDefinitionPage
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",

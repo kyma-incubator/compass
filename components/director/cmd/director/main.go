@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
@@ -183,7 +184,7 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
-	rootResolver :=  domain.NewRootResolver(
+	rootResolver := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
 		transact,
 		cfgProvider,

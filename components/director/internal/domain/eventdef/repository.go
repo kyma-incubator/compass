@@ -2,6 +2,7 @@ package eventdef
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -41,26 +42,26 @@ type EventAPIDefinitionConverter interface {
 }
 
 type pgRepository struct {
-	singleGetter    repo.SingleGetter
-	queryBuilder    repo.QueryBuilder
-	lister          repo.Lister
-	creator         repo.Creator
-	updater         repo.Updater
-	deleter         repo.Deleter
-	existQuerier    repo.ExistQuerier
-	conv            EventAPIDefinitionConverter
+	singleGetter repo.SingleGetter
+	queryBuilder repo.QueryBuilder
+	lister       repo.Lister
+	creator      repo.Creator
+	updater      repo.Updater
+	deleter      repo.Deleter
+	existQuerier repo.ExistQuerier
+	conv         EventAPIDefinitionConverter
 }
 
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
-		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
-		lister:          repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
-		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
-		updater:         repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
-		deleter:         repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
-		existQuerier:    repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
-		conv:            conv,
+		singleGetter: repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		queryBuilder: repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
+		lister:       repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		creator:      repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
+		updater:      repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
+		deleter:      repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
+		existQuerier: repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
+		conv:         conv,
 	}
 }
 

@@ -2,6 +2,7 @@ package spec
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -18,7 +19,6 @@ const (
 	pageSize                   = 1
 	cursor                     = ""
 )
-
 
 var (
 	specificationsColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}

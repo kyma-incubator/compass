@@ -2,9 +2,10 @@ package domain
 
 import (
 	"context"
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 	"net/http"
 	"net/url"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	hydraClient "github.com/ory/hydra-client-go/client"

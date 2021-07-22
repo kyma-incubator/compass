@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -21,8 +22,8 @@ const documentTable = "public.documents"
 var (
 	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn    = "tenant_id"
-	bundleIDColumn = "bundle_id"
-	orderByColumns = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
+	bundleIDColumn  = "bundle_id"
+	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore

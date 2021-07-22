@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -68,7 +69,6 @@ func NewService(repo APIRepository, uidService UIDService, specService SpecServi
 		timestampGen:           timestamp.DefaultGenerator(),
 	}
 }
-
 
 func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)

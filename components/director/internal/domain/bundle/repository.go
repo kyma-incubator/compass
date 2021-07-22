@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -23,7 +22,7 @@ var (
 	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn     = "tenant_id"
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	orderByColumns = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
+	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -33,26 +32,26 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	deleter         repo.Deleter
-	lister          repo.Lister
-	unionLister     repo.UnionLister
-	creator         repo.Creator
-	updater         repo.Updater
-	conv            EntityConverter
+	existQuerier repo.ExistQuerier
+	singleGetter repo.SingleGetter
+	deleter      repo.Deleter
+	lister       repo.Lister
+	unionLister  repo.UnionLister
+	creator      repo.Creator
+	updater      repo.Updater
+	conv         EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
-		lister:          repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		unionLister:     repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:         repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
-		conv:            conv,
+		existQuerier: repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
+		singleGetter: repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		deleter:      repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
+		lister:       repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		unionLister:  repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		creator:      repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
+		updater:      repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
+		conv:         conv,
 	}
 }
 
