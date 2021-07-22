@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -824,6 +826,34 @@ func Test_GetForApplication(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
+	t.Run("Empty configuration when there are no scenarios assigned to application", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		emptyConfiguration := &model.ApplicationEventingConfiguration{
+			EventingConfiguration: model.EventingConfiguration{
+				DefaultURL: url.URL{},
+			},
+		}
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimePage := fixRuntimePageWithOne()
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(runtimePage, nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimePage.Data[0].ID, getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+
+		svc := NewService(nil, runtimeRepo, labelRepo)
+
+		// WHEN
+		conf, err := svc.GetForApplication(ctx, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, emptyConfiguration, conf)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
 	t.Run("Success when current default runtime no longer belongs to the application scenarios", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
@@ -849,6 +879,41 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, "", eventingCfg.DefaultURL.String())
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when new default runtime is elected", func(t *testing.T) {
+		// GIVEN
+		defaultURL := "https://default.URL"
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		newRuntime := fixRuntimes()[0]
+		runtimePage := fixRuntimePageWithOne()
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(), 1, mock.Anything).Return(runtimePage, nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "")).Once()
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(&model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario"}}, nil).Once()
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			newRuntime.ID, RuntimeEventingURLLabel).Return(&model.Label{Key: RuntimeEventingURLLabel, Value: defaultURL}, nil).Once()
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			newRuntime.ID, isNormalizedLabel).Return(&model.Label{Value: "false"}, nil).Once()
+		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimePage.Data[0].ID, getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+		labelRepo.On("Upsert", ctx, mock.Anything).Return(nil)
+		labelFilter := []*labelfilter.LabelFilter{
+			labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "scenario" )`),
+		}
+		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), labelFilter).Return(newRuntime, nil)
+
+		svc := NewService(nil, runtimeRepo, labelRepo)
+
+		// WHEN
+		conf, err := svc.GetForApplication(ctx, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, fmt.Sprintf("%s/%s/v1/events", defaultURL, app.Name), conf.DefaultURL.String())
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -1014,34 +1079,6 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
-	})
-
-	t.Run("Empty configuration when there are no scenarios assigned to application", func(t *testing.T) {
-		// GIVEN
-		ctx := fixCtxWithTenant()
-		emptyConfiguration := &model.ApplicationEventingConfiguration{
-			EventingConfiguration: model.EventingConfiguration{
-				DefaultURL: url.URL{},
-			},
-		}
-		runtimeRepo := &automock.RuntimeRepository{}
-		runtimePage := fixRuntimePageWithOne()
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
-			1, mock.Anything).Return(runtimePage, nil)
-		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
-			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimePage.Data[0].ID, fmt.Sprintf("%s_defaultEventing", applicationID.String())).Return(nil)
-
-		svc := NewService(nil, runtimeRepo, labelRepo)
-
-		// WHEN
-		conf, err := svc.GetForApplication(ctx, app)
-
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, emptyConfiguration, conf)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
