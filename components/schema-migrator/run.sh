@@ -72,12 +72,12 @@ fi
 
 CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME_SSL"
 function currentVersion {
-  echo $(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1 | head -n1 | cut -d " " -f1)
+  echo $(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1)
 }
 
 LAST_SUCCESSFUL_MIGRATION=$(currentVersion)
 echo "Last successful migration is $LAST_SUCCESSFUL_MIGRATION"
-if [[ $LAST_SUCCESSFUL_MIGRATION == *'error'*]]; then
+if [[ $LAST_SUCCESSFUL_MIGRATION == 'error: no migration' ]]; then
   LAST_SUCCESSFUL_MIGRATION=$CLEAN_DB
 fi
 
@@ -112,7 +112,8 @@ else
   else
 
   if [[ $LAST_SUCCESSFUL_MIGRATION != "$CLEAN_DB" ]]; then
-    echo "Cleaning dirty flag"
+    LAST_SUCCESSFUL_MIGRATION=$(echo $LAST_SUCCESSFUL_MIGRATION | head -n1 | cut -d " " -f1)
+    echo "Cleaning dirty flag - force reset to $LAST_SUCCESSFUL_MIGRATION"
     migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
   fi
 
