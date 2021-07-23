@@ -95,12 +95,13 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		Status:              c.statusModelToGraphQL(in.Status),
-		Name:                in.Name,
-		Description:         in.Description,
-		HealthCheckURL:      in.HealthCheckURL,
-		IntegrationSystemID: in.IntegrationSystemID,
-		ProviderName:        in.ProviderName,
+		Status:                c.statusModelToGraphQL(in.Status),
+		Name:                  in.Name,
+		Description:           in.Description,
+		HealthCheckURL:        in.HealthCheckURL,
+		IntegrationSystemID:   in.IntegrationSystemID,
+		ProviderName:          in.ProviderName,
+		ApplicationTemplateID: in.ApplicationTemplateID,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
