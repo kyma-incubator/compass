@@ -18,7 +18,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
@@ -33,7 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	uzap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -51,8 +49,6 @@ var (
 	leaderElectionID = "c8593142.compass"
 	setupLog         = ctrl.Log.WithName("setup")
 )
-
-const LogTimeKey = "written_at"
 
 func init() {
 	err := clientgoscheme.AddToScheme(scheme)
@@ -85,11 +81,19 @@ func main() {
 	err = cfg.Validate()
 	fatalOnError(err)
 
-	loggerConfig := uzap.NewProductionEncoderConfig()
-	loggerConfig.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(ts.UTC().Format(time.RFC3339Nano))
+	loggerConfig := zapcore.EncoderConfig{
+		TimeKey:        "written_at",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.RFC3339NanoTimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-	loggerConfig.TimeKey = LogTimeKey
 	ctrl.SetLogger(zap.New(zap.UseDevMode(devLogging), zap.Encoder(zapcore.NewJSONEncoder(loggerConfig))))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
