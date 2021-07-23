@@ -109,7 +109,7 @@ else
     echo "Migration version $REVERT_TO does not exist, please update the $CM_NAMESPACE/$CM_NAME configmap manually with the correct migration version. Available migrations are:"
     ls ${MIGRATION_STORAGE_PATH}
     exit 1
-  else
+  fi
 
   if [[ $LAST_SUCCESSFUL_MIGRATION != "$CLEAN_DB" ]]; then
     LAST_SUCCESSFUL_MIGRATION=$(echo $LAST_SUCCESSFUL_MIGRATION | head -n1 | cut -d " " -f1)
