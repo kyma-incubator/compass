@@ -99,10 +99,12 @@ if [[ "${DIRECTION}" == "up" ]]; then
 else
   REVERT_TO=$(kubectl get configmap -n $CM_NAMESPACE $CM_NAME -o jsonpath='{.data.version}')
   echo "Will perform down migration to version $REVERT_TO"
-  if ! [[ $REVERT_TO =~ ^20[0-9]{12}$ ]]; then
-      echo "Migration version is not valid"
-      exit 1
-  fi
+  migrationExists=$(ls ${MIGRATION_STORAGE_PATH} | grep $REVERT_TO)
+  if [[ -z $migrationExists ]]; then
+    echo "Migration version $REVERT_TO does not exist, please update the $CM_NAMESPACE/$CM_NAME configmap manually with the correct migration version. Available migrations are:"
+    ls ${MIGRATION_STORAGE_PATH}
+    exit 1
+  else
 
   echo "Cleaning dirty flag"
   migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
