@@ -45,7 +45,7 @@ import (
 )
 
 var (
-	devLogging       = false
+	devLogging       = true
 	scheme           = runtime.NewScheme()
 	port             = 9443
 	leaderElectionID = "c8593142.compass"
