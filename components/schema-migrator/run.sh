@@ -5,6 +5,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
+CLEAN_DB='clean'
+
 for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD MIGRATION_PATH DIRECTION; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"
@@ -75,6 +77,9 @@ function currentVersion {
 
 LAST_SUCCESSFUL_MIGRATION=$(currentVersion)
 echo "Last successful migration is $LAST_SUCCESSFUL_MIGRATION"
+if [[ $LAST_SUCCESSFUL_MIGRATION == *'error'*]]; then
+  LAST_SUCCESSFUL_MIGRATION=$CLEAN_DB
+fi
 
 CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 
@@ -100,14 +105,16 @@ else
   REVERT_TO=$(kubectl get configmap -n $CM_NAMESPACE $CM_NAME -o jsonpath='{.data.version}')
   echo "Will perform down migration to version $REVERT_TO"
   migrationExists=$(ls ${MIGRATION_STORAGE_PATH} | grep $REVERT_TO)
-  if [[ -z $migrationExists ]]; then
+  if [[ -z $migrationExists ]] && [[ "$REVERT_TO" != "$CLEAN_DB" ]]; then
     echo "Migration version $REVERT_TO does not exist, please update the $CM_NAMESPACE/$CM_NAME configmap manually with the correct migration version. Available migrations are:"
     ls ${MIGRATION_STORAGE_PATH}
     exit 1
   else
 
-  echo "Cleaning dirty flag"
-  migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
+  if [[ $LAST_SUCCESSFUL_MIGRATION != "$CLEAN_DB" ]]; then
+    echo "Cleaning dirty flag"
+    migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
+  fi
 
   # Migrate down until the version matches the wanted version from the previous release
   while [[ "$(currentVersion)" != "$REVERT_TO" ]]; do
