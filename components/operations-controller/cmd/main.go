@@ -45,12 +45,14 @@ import (
 )
 
 var (
-	devLogging       = true
+	devLogging       = false
 	scheme           = runtime.NewScheme()
 	port             = 9443
 	leaderElectionID = "c8593142.compass"
 	setupLog         = ctrl.Log.WithName("setup")
 )
+
+const LogTimeKey = "written_at"
 
 func init() {
 	err := clientgoscheme.AddToScheme(scheme)
@@ -87,8 +89,8 @@ func main() {
 	loggerConfig.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
 		encoder.AppendString(ts.UTC().Format(time.RFC3339Nano))
 	}
-	loggerConfig.TimeKey = "written_at"
-	ctrl.SetLogger(zap.New(zap.UseDevMode(false), zap.Encoder(zapcore.NewJSONEncoder(loggerConfig))))
+	loggerConfig.TimeKey = LogTimeKey
+	ctrl.SetLogger(zap.New(zap.UseDevMode(devLogging), zap.Encoder(zapcore.NewJSONEncoder(loggerConfig))))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
