@@ -1,0 +1,156 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-director
+  labels:
+    app: {{ .Chart.Name }}-director-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-director-tests-app
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "oauth2.{{ .Values.global.ingress.domainName }}"
+            - "director.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      containers:
+        - name: director-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/director.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+            - name: DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: ALL_SCOPES
+              value: "{{ .Values.global.director.tests.scopes }}"
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
+            - name: DEFAULT_TEST_TENANT
+              value: "{{ (index .Values.global.tenants 9).id }}"
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
+            - name: GATEWAY_OAUTH20_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.secure.oauth.host }}"
+            - name: GATEWAY_JWT_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.host }}"
+            - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
+              value: "{{ .Values.global.gateway.mtls.host }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_HEALTH_URL
+              value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_WEBHOOK_URL
+              value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO_ENABLED
+              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
+            - name: APP_DEFAULT_SCENARIO
+              value: "DEFAULT"
+            - name: APP_DEFAULT_NORMALIZATION_PREFIX
+              value: "mp-"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+          {{ if .Values.global.isLocalEnv }}
+          volumeMounts:
+            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
+              name: examples
+          {{ end }}
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - "trap 'exit 0' SIGINT SIGTERM; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "killall cloud_sql_proxy"]
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz/ready
+              port: 15021
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+          {{- with .Values.global.tests.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{end}}
+      volumes:
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        {{end}}
+      {{ if .Values.global.isLocalEnv }}
+        - name: examples
+          hostPath:
+            path: "/examples"
+            type: DirectoryOrCreate
+      {{ end }}
+      restartPolicy: Never

@@ -8,6 +8,7 @@ type TenantModel struct {
 	TenantId         string
 	ParentInternalId string
 	ParentExternalId string
+	Subdomain        string
 	Type             tenant.Type
 	Provider         string
 	Status           tenant.Status

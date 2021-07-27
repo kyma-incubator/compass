@@ -35,6 +35,7 @@ const (
 	RuntimeLabelableObject        LabelableObject = "Runtime"
 	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
 	ApplicationLabelableObject    LabelableObject = "Application"
+	TenantLabelableObject         LabelableObject = "Tenant"
 )
 
 func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
@@ -65,6 +66,17 @@ func NewLabelForApplication(app Application, key string, value interface{}) *Lab
 		Tenant:     app.Tenant,
 		ObjectType: ApplicationLabelableObject,
 		ObjectID:   app.ID,
+		Key:        key,
+		Value:      value,
+	}
+}
+
+func NewLabelForTenant(tenant TenantModel, key string, value interface{}) *Label {
+	return &Label{
+		ID:         uuid.New().String(),
+		Tenant:     tenant.ID,
+		ObjectType: TenantLabelableObject,
+		ObjectID:   tenant.ID,
 		Key:        key,
 		Value:      value,
 	}

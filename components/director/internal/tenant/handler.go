@@ -2,11 +2,10 @@ package tenant
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/gorilla/mux"
 	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
@@ -23,11 +22,12 @@ type Config struct {
 
 	TenantProviderTenantIdProperty   string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
 	TenantProviderCustomerIdProperty string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	TenantProviderSubdomainProperty  string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	TenantProvider                   string `envconfig:"APP_TENANT_PROVIDER"`
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoints             string        `envconfig:"APP_JWKS_ENDPOINTS"`
+	JwksEndpoints             string        `envconfig:"default=file://hack/default-jwks.json"` // TODO
 	IdentityZone              string        `envconfig:"APP_TENANT_IDENTITY_ZONE"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
@@ -37,11 +37,11 @@ const compassURL = "https://github.com/kyma-incubator/compass"
 func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authConfig []authenticator.Config, transact persistence.Transactioner) error {
 	logger := log.C(ctx)
 
-	var jwks []string
+	jwks := []string{"file://hack/default-jwks.json"}
 
-	if err := json.Unmarshal([]byte(cfg.JwksEndpoints), &jwks); err != nil {
-		return apperrors.NewInternalError("unable to unmarshal jwks endpoints environment variable")
-	}
+	//if err := json.Unmarshal([]byte(cfg.JwksEndpoints), &jwks); err != nil {
+	//	return apperrors.NewInternalError("unable to unmarshal jwks endpoints environment variable")
+	//}
 
 	middleware := auth.New(
 		jwks,
@@ -64,8 +64,12 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 
 	uidSvc := uid.NewService()
 	converter := NewConverter()
-	repo := NewRepository(converter)
-	service := NewService(repo, transact, uidSvc, cfg)
+	tenantRepo := NewRepository(converter)
+
+	labelConv := label.NewConverter()
+	labelRepo := label.NewRepository(labelConv)
+
+	service := NewService(tenantRepo, labelRepo, transact, uidSvc, cfg)
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
 	router.HandleFunc(cfg.HandlerEndpoint, service.Create).Methods(http.MethodPut)

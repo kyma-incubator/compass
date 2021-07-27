@@ -1,0 +1,127 @@
+{{if and (eq .Values.global.externalServicesMock.enabled true) (eq .Values.gateway.gateway.auditlog.enabled true) (eq .Values.global.externalServicesMock.auditlog true) }}
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-external-services-mock
+  labels:
+    app: {{ .Chart.Name }}-external-services-mock-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-external-services-mock-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-external-services-mock-tests-app
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "oauth2.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "compass-external-services-mock.compass-system.svc.cluster.local"
+      {{ end }}
+      containers:
+        - name: external-services-mock-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/external-services-mock.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+            - name: DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: ALL_SCOPES
+              value: "{{ .Values.global.director.tests.scopes }}"
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
+            - name: APP_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secretName }}
+                  key: auditlog-client-id
+            - name: APP_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secretName }}
+                  key: auditlog-client-secret
+            - name: BASIC_CREDENTIALS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.testCredentials.secretName }}
+                  key: username
+            - name: BASIC_CREDENTIALS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.testCredentials.secretName }}
+                  key: password
+            - name: DEFAULT_TEST_TENANT
+              value: "{{ (index .Values.global.tenants 9).id }}"
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
+            - name: GATEWAY_OAUTH20_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.secure.oauth.host }}"
+            - name: GATEWAY_JWT_SUBDOMAIN
+              value: "{{ .Values.global.gateway.tls.host }}"
+            - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
+              value: "{{ .Values.global.gateway.mtls.host }}"
+            - name: EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+      restartPolicy: Never
+      serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-service-account
+  namespace: kyma-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-operations-role
+  namespace: compass-system
+rules:
+  - apiGroups:
+      - operations.compass
+    resources:
+      - operations
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-operations-role-binding
+  namespace: compass-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Chart.Name }}-operations-tests-operations-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-operations-tests-service-account
+    namespace: kyma-system
+
+{{end}}

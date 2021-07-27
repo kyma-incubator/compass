@@ -341,6 +341,7 @@ global:
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
+      subdomainProperty: "subscribedSubdomain"
       name: "provider"
 
   ordService:
