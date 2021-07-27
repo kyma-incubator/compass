@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -29,6 +31,7 @@ import (
 type Tenants struct {
 	TenantID   string `json:"tenantId"`
 	CustomerID string `json:"customerId"`
+	Subdomain  string `json:"subdomain"`
 }
 
 func TestService_Create(t *testing.T) {
@@ -38,6 +41,7 @@ func TestService_Create(t *testing.T) {
 	requestBodyWithBothIDs, err := json.Marshal(Tenants{
 		TenantID:   testID,
 		CustomerID: testID,
+		Subdomain:  testID,
 	})
 	assert.NoError(t, err)
 	requestBodyWithTenantID, err := json.Marshal(Tenants{
@@ -47,12 +51,13 @@ func TestService_Create(t *testing.T) {
 	invalidRequestBody, err := json.Marshal(model.TenantModel{})
 	assert.NoError(t, err)
 	customerTenant := model.TenantModel{
-		ID:       testID,
-		Name:     testID,
-		TenantId: testID,
-		Type:     tenantEntity.Customer,
-		Status:   tenantEntity.Active,
-		Provider: testProviderName,
+		ID:        testID,
+		Name:      testID,
+		TenantId:  testID,
+		Subdomain: testID,
+		Type:      tenantEntity.Customer,
+		Status:    tenantEntity.Active,
+		Provider:  testProviderName,
 	}
 	accountTenant := model.TenantModel{
 		ID:       testID,
@@ -67,6 +72,7 @@ func TestService_Create(t *testing.T) {
 		ID:               testID,
 		Name:             testID,
 		TenantId:         testID,
+		Subdomain:        testID,
 		Type:             tenantEntity.Account,
 		ParentExternalId: testID,
 		ParentInternalId: testID,
@@ -84,9 +90,14 @@ func TestService_Create(t *testing.T) {
 		Status:           tenantEntity.Active,
 	}
 
+	tenantMatcher := mock.MatchedBy(func(label *model.Label) bool {
+		return label.Tenant == testID && label.Key == "subdomain" && label.ObjectID == testID && label.ObjectType == model.TenantLabelableObject
+	})
+
 	testCases := []struct {
 		Name                  string
 		TenantRepoFn          func() *automock.TenantRepository
+		LabelRepoFn           func() *automock.LabelRepository
 		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		UidFn                 func() *automock.UIDService
 		ConfigFn              func() tenant.Config
@@ -108,6 +119,11 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), accountTenantWithParent).Return(nil).Once()
 				return tenantMappingRepo
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("Upsert", mock.Anything, tenantMatcher).Return(nil)
+				return labelRepo
+			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(testID)
@@ -118,6 +134,7 @@ func TestService_Create(t *testing.T) {
 					TenantProvider:                   testProviderName,
 					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
 					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBodyWithBothIDs)),
@@ -132,6 +149,9 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo := &automock.TenantRepository{}
 				tenantMappingRepo.AssertNotCalled(t, "Create")
 				return tenantMappingRepo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -158,6 +178,9 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo.AssertNotCalled(t, "Create")
 				return tenantMappingRepo
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
+			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.AssertNotCalled(t, "Generate")
@@ -182,6 +205,9 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo := &automock.TenantRepository{}
 				tenantMappingRepo.AssertNotCalled(t, "Create")
 				return tenantMappingRepo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -209,6 +235,11 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), customerTenant).Return(testError)
 				return tenantMappingRepo
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("Upsert", mock.Anything, tenantMatcher).Return(nil)
+				return labelRepo
+			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(testID)
@@ -219,6 +250,7 @@ func TestService_Create(t *testing.T) {
 					TenantProvider:                   testProviderName,
 					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
 					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBodyWithBothIDs)),
@@ -233,6 +265,9 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo := &automock.TenantRepository{}
 				tenantMappingRepo.On("GetByExternalID", txtest.CtxWithDBMatcher(), customerTenant.TenantId).Return(model.TenantModel{}, testError).Once()
 				return tenantMappingRepo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -260,6 +295,11 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo.On("Update", txtest.CtxWithDBMatcher(), accountTenant).Return(nil)
 				return tenantMappingRepo
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("Upsert", mock.Anything, tenantMatcher).Return(nil)
+				return labelRepo
+			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(testID)
@@ -270,6 +310,7 @@ func TestService_Create(t *testing.T) {
 					TenantProvider:                   testProviderName,
 					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
 					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBodyWithTenantID)),
@@ -285,6 +326,11 @@ func TestService_Create(t *testing.T) {
 				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), accountTenant).Return(nil)
 				return tenantMappingRepo
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("Upsert", mock.Anything, tenantMatcher).Return(nil)
+				return labelRepo
+			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(testID)
@@ -295,6 +341,7 @@ func TestService_Create(t *testing.T) {
 					TenantProvider:                   testProviderName,
 					TenantProviderTenantIdProperty:   tenantProviderTenantIdProperty,
 					TenantProviderCustomerIdProperty: tenantProviderCustomerIdProperty,
+					TenantProviderSubdomainProperty:  tenantProviderSubdomainProperty,
 				}
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(requestBodyWithTenantID)),
@@ -308,12 +355,13 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, transact := testCase.TxFn()
 			tenantRepo := testCase.TenantRepoFn()
+			labelRepo := testCase.LabelRepoFn()
 			uidSvc := testCase.UidFn()
 			config := testCase.ConfigFn()
 
 			body, err := json.Marshal(customerTenant)
 			require.NoError(t, err)
-			handler := tenant.NewService(tenantRepo, transact, uidSvc, config)
+			handler := tenant.NewService(tenantRepo, labelRepo, transact, uidSvc, config)
 			req := testCase.Request
 			w := httptest.NewRecorder()
 
@@ -356,6 +404,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		TenantRepoFn        func() *automock.TenantRepository
+		LabelRepoFn         func() *automock.LabelRepository
 		TxFn                func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		UidFn               func() *automock.UIDService
 		ConfigFn            func() tenant.Config
@@ -369,6 +418,9 @@ func TestService_Delete(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
 				return tenantMappingRepo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -391,10 +443,11 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, transact := testCase.TxFn()
 			tenantRepo := testCase.TenantRepoFn()
+			labelRepo := testCase.LabelRepoFn()
 			uidSvc := testCase.UidFn()
 			config := testCase.ConfigFn()
 
-			handler := tenant.NewService(tenantRepo, transact, uidSvc, config)
+			handler := tenant.NewService(tenantRepo, labelRepo, transact, uidSvc, config)
 			req := testCase.Request
 			w := httptest.NewRecorder()
 
@@ -418,4 +471,10 @@ func TestService_Delete(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+}
+
+func TenantMatcher() interface{} {
+	return mock.MatchedBy(func(label model.Label) bool {
+		return label.Key == "subdomain"
+	})
 }

@@ -2,8 +2,11 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
@@ -37,11 +40,11 @@ const compassURL = "https://github.com/kyma-incubator/compass"
 func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authConfig []authenticator.Config, transact persistence.Transactioner) error {
 	logger := log.C(ctx)
 
-	jwks := []string{"file://hack/default-jwks.json"}
+	var jwks []string
 
-	//if err := json.Unmarshal([]byte(cfg.JwksEndpoints), &jwks); err != nil {
-	//	return apperrors.NewInternalError("unable to unmarshal jwks endpoints environment variable")
-	//}
+	if err := json.Unmarshal([]byte(cfg.JwksEndpoints), &jwks); err != nil {
+		return apperrors.NewInternalError("unable to unmarshal jwks endpoints environment variable")
+	}
 
 	middleware := auth.New(
 		jwks,

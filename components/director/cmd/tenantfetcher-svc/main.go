@@ -92,7 +92,6 @@ func main() {
 
 	go func() {
 		<-ctx.Done()
-
 		// Interrupt signal received - shut down the servers
 		shutdownMainSrv()
 	}()

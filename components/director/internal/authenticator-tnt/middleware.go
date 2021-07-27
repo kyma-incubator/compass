@@ -73,12 +73,12 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			//scopes := PrefixScopes(a.trustedClaimPrefixes, a.subscriptionCallbacksScope)
-			//if !stringsAnyEquals(scopes, strings.Join(claims.Scopes, " ")) {
-			//	log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
-			//	a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
-			//	return
-			//}
+			scopes := PrefixScopes(a.trustedClaimPrefixes, a.subscriptionCallbacksScope)
+			if !stringsAnyEquals(scopes, strings.Join(claims.Scopes, " ")) {
+				log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
+				a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
+				return
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
