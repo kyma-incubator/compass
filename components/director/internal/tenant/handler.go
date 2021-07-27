@@ -9,12 +9,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/gorilla/mux"
+	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	auth "github.com/kyma-incubator/compass/components/tenant-fetcher/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
 )
 
 type Config struct {
@@ -62,7 +62,7 @@ func RegisterHandler(ctx context.Context, router *mux.Router, cfg Config, authCo
 	})
 	go periodicExecutor.Run(ctx)
 
-	uidSvc := uuid.NewService()
+	uidSvc := uid.NewService()
 	converter := NewConverter()
 	repo := NewRepository(converter)
 	service := NewService(repo, transact, uidSvc, cfg)

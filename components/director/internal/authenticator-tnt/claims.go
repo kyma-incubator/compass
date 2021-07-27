@@ -1,4 +1,4 @@
-package authenticator
+package authenticator_tnt
 
 import (
 	"github.com/form3tech-oss/jwt-go"

@@ -28,7 +28,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"

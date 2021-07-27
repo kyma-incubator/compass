@@ -1,4 +1,4 @@
-package authenticator
+package authenticator_tnt
 
 import (
 	"context"

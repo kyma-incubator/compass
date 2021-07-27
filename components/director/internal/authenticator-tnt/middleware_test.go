@@ -1,4 +1,4 @@
-package authenticator_test
+package authenticator_tnt_test
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
 	directorAuth "github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/authenticator"
 	"github.com/lestrrat-go/jwx/jwk"
 
 	"github.com/stretchr/testify/assert"
@@ -44,7 +44,7 @@ type Tenant struct {
 func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator_tnt.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 
 		//when
 		err := auth.SynchronizeJWKS(context.TODO())
@@ -55,7 +55,7 @@ func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
 		//given
-		authFake := authenticator.New([]string{fakeJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		authFake := authenticator_tnt.New([]string{fakeJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 
 		//when
 		err := authFake.SynchronizeJWKS(context.TODO())
@@ -95,7 +95,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator_tnt.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -121,7 +121,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator_tnt.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -147,7 +147,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator_tnt.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -179,7 +179,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator_tnt.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -380,13 +380,13 @@ func TestMiddleware_Handler(t *testing.T) {
 }
 
 func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator_tnt.Claims{
 		Scopes: scopes,
 		ZID:    zone,
 	})
 
 	if isSigningKeyAvailable {
-		token.Header[authenticator.JwksKeyIDKey] = keyID
+		token.Header[authenticator_tnt.JwksKeyIDKey] = keyID
 	}
 
 	var rawKey interface{}
@@ -400,7 +400,7 @@ func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, ke
 }
 
 func createMiddleware(t *testing.T) func(next http.Handler) http.Handler {
-	auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+	auth := authenticator_tnt.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 

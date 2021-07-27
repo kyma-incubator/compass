@@ -1,9 +1,9 @@
 package tenant
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 )
 
 type converter struct{}

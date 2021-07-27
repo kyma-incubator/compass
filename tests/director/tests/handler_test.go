@@ -54,7 +54,7 @@ const (
 	tenantProvider            = "APP_TENANT_PROVIDER"
 )
 
-type config struct {
+type cfg struct {
 	TenantFetcherURL          string
 	RootAPI                   string
 	HandlerEndpoint           string
@@ -307,8 +307,8 @@ func TestDecommissioningHandler(t *testing.T) {
 	})
 }
 
-func loadConfig(t *testing.T) config {
-	config := config{
+func loadConfig(t *testing.T) cfg {
+	config := cfg{
 		TenantFetcherURL:          os.Getenv(tenantFetcherURL),
 		RootAPI:                   os.Getenv(rootAPI),
 		HandlerEndpoint:           os.Getenv(handlerEndpoint),

@@ -44,3 +44,7 @@ istio:
 
 health:
   indicators: "{database,5s,1s,1s,3}"
+
+server:
+  handlerEndpoint: "/v1/callback/{tenantId}"
+  tenantPathParam: "tenantId"

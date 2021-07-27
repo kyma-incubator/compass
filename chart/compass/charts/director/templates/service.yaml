@@ -9,6 +9,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
+    - port: {{ .Values.global.tenantFetcher.port }}
+      protocol: TCP
+      name: http-tenant-fetcher
     - port: {{ .Values.global.director.graphql.external.port }}
       protocol: TCP
       name: http

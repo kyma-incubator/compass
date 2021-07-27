@@ -15,8 +15,8 @@ import (
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/tidwall/gjson"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/pkg/errors"
 )
 

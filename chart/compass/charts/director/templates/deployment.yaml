@@ -41,6 +41,9 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
+            - name: http-tenant-fetcher
+              containerPort: {{ .Values.global.tenantFetcher.port }}
+              protocol: TCP
             - name: http
               containerPort: {{ .Values.global.director.graphql.external.port }}
               protocol: TCP
@@ -63,6 +66,25 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
           env:
+            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER
+              value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
+            - name: APP_TENANT
+              value: {{ .Values.global.defaultTenant }}
+            - name: APP_ROOT_API
+              value: {{ .Values.global.tenantFetcher.prefix | quote }}
+            - name: APP_HANDLER_ENDPOINT
+              value: {{ .Values.server.handlerEndpoint | quote }}
+            - name: APP_TENANT_PATH_PARAM
+              value: {{ .Values.server.tenantPathParam | quote }}
+            - name: APP_TENANT_IDENTITY_ZONE
+              value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
+            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
+              value: Callback
+            ####
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
             - name: APP_GRAPHQL_INTERNAL_ADDRESS

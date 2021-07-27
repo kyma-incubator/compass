@@ -7,14 +7,14 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/testdb"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/tenant/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant/automock"
 	"github.com/stretchr/testify/require"
 )
 
