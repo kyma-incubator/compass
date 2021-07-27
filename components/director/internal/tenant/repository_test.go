@@ -55,7 +55,7 @@ func TestRepository_Create(t *testing.T) {
 
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(createQuery)).
-			WithArgs(createQueryArgs...).
+			WithArgs(entity.ID, entity.Name, entity.ExternalTenant, entity.Parent, entity.Type, entity.ProviderName, entity.Status).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := tenant.NewRepository(mockConverter)

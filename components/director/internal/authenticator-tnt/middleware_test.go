@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
+	authenticator_tnt "github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
 	directorAuth "github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/lestrrat-go/jwx/jwk"
 
