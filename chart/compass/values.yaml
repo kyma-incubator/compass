@@ -82,9 +82,6 @@ global:
     operations_controller:
       dir:
       version: "PR-1956"
-    tenant_fetcher:
-      dir:
-      version: "PR-1956"
     ord_service:
       dir:
       version: "PR-32"

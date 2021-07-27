@@ -35,31 +35,6 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "/director.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
-            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
-            - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
-            - name: APP_TENANT_PROVIDER
-              value: "test-provider"
-            - name: APP_TENANT
-              value: {{ .Values.global.defaultTenant }}
-            - name: TENANT_FETCHER_URL
-              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.tenantFetcher.port }}"
-            - name: TENANT_FETCHER_HEALTHZ_URL
-              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
-            - name: ROOT_API
-              value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: HANDLER_ENDPOINT
-              value: "/v1/callback/{tenantId}"
-            - name: TENANT_PATH_PARAM
-              value: "tenantId"
-            - name: APP_DIRECTOR_URL
-              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
-            - name: APP_TENANT_IDENTITY_ZONE
-              value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
-            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
-              value: Callback
-              ######
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: ALL_SCOPES
@@ -130,14 +105,6 @@ spec:
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
-            {{- range $authenticatorName, $config := .Values.global.authenticators }}
-            {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
-              value: {{ $config.trusted_issuers | quote }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
-              value: {{ $config.attributes | quote }}
-            {{- end }}
-            {{- end }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
