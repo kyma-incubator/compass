@@ -293,7 +293,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, uidSvc)
 
 			// WHEN
-			err := svc.CreateManyIfNotExists(ctx, tenantInputs)
+			tenantMappings := svc.MultipleToTenantMapping(tenantInputs)
+			err := svc.CreateManyIfNotExists(ctx, tenantMappings)
 
 			// THEN
 			if testCase.ExpectedOutput != nil {

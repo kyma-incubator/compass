@@ -387,6 +387,7 @@ global:
         idField: "id"
         nameField: "name"
         customerIdField: "customerId"
+        subdomainField: "subdomain"
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"

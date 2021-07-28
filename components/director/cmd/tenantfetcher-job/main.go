@@ -115,5 +115,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelRepository, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
 }

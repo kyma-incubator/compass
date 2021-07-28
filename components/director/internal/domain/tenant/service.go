@@ -83,8 +83,7 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
-func (s *service) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	tenants := s.MultipleToTenantMapping(tenantInputs)
+func (s *service) CreateManyIfNotExists(ctx context.Context, tenants []model.BusinessTenantMapping) error {
 	err := s.createIfNotExists(ctx, tenants)
 	if err != nil {
 		return errors.Wrap(err, "while creating many")

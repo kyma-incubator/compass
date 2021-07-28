@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -29,6 +31,7 @@ type TenantFieldMapping struct {
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
 	CustomerIDField    string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
+	SubdomainField     string `envconfig:"default=subdomain,APP_MAPPING_FIELD_SUBDOMAIN"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
@@ -53,13 +56,19 @@ type QueryConfig struct {
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping
+	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMapping) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
 //go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
 type LabelDefinitionService interface {
 	Upsert(ctx context.Context, def model.LabelDefinition) error
+}
+
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+type LabelRepository interface {
+	Upsert(ctx context.Context, label *model.Label) error
 }
 
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
@@ -90,12 +99,24 @@ type Service struct {
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	labelDefService                 LabelDefinitionService
+	labelRepo                       LabelRepository
 	retryAttempts                   uint
 	movedRuntimeLabelKey            string
 	fullResyncInterval              time.Duration
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantService, runtimeStorageService RuntimeService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string, fullResyncInterval time.Duration) *Service {
+func NewService(queryConfig QueryConfig,
+	transact persistence.Transactioner,
+	kubeClient KubeClient,
+	fieldMapping TenantFieldMapping,
+	movRuntime MovedRuntimeByLabelFieldMapping,
+	providerName string, client EventAPIClient,
+	tenantStorageService TenantService,
+	runtimeStorageService RuntimeService,
+	labelDefService LabelDefinitionService,
+	labelRepository LabelRepository,
+	movedRuntimeLabelKey string,
+	fullResyncInterval time.Duration) *Service {
 	return &Service{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -108,6 +129,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 		movedRuntimeByLabelFieldMapping: movRuntime,
 		retryAttempts:                   retryAttempts,
 		labelDefService:                 labelDefService,
+		labelRepo:                       labelRepository,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 		fullResyncInterval:              fullResyncInterval,
 	}
@@ -219,7 +241,11 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
 	if len(tenantsToCreate) > 0 {
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+		tenants := s.tenantStorageService.MultipleToTenantMapping(tenantsToCreate)
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenants); err != nil {
+			return errors.Wrap(err, "while storing new tenants")
+		}
+		if err := s.upsertSubdomainLabelsForTenants(ctx, tenants); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
 	}
@@ -244,7 +270,8 @@ func (s Service) createParents(ctx context.Context, currTenants map[string]strin
 	}
 	parentsToCreate = s.dedupeTenants(parentsToCreate)
 	if len(parentsToCreate) > 0 {
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
+		tenants := s.tenantStorageService.MultipleToTenantMapping(parentsToCreate)
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenants); err != nil {
 			return errors.Wrap(err, "while storing new parents")
 		}
 	}
@@ -525,6 +552,23 @@ func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) 
 	}
 	ts := time.Unix(i, 0)
 	return time.Now().After(ts.Add(s.fullResyncInterval)), nil
+}
+
+func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []model.BusinessTenantMapping) error {
+	for _, t := range tenants {
+		subdomainLabel := &model.Label{
+			ID:         uuid.New().String(),
+			Tenant:     t.ID,
+			ObjectType: model.TenantLabelableObject,
+			ObjectID:   t.ID,
+			Key:        "subdomain",
+			Value:      t.Subdomain,
+		}
+		if err := s.labelRepo.Upsert(ctx, subdomainLabel); err != nil {
+			return errors.Wrap(err, "while inserting subdomain label")
+		}
+	}
+	return nil
 }
 
 func convertTimeToUnixNanoString(timestamp time.Time) string {

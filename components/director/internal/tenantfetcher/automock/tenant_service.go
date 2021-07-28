@@ -15,11 +15,11 @@ type TenantService struct {
 }
 
 // CreateManyIfNotExists provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantService) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+func (_m *TenantService) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMapping) error {
 	ret := _m.Called(ctx, tenantInputs)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMappingInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMapping) error); ok {
 		r0 = rf(ctx, tenantInputs)
 	} else {
 		r0 = ret.Error(0)
@@ -84,4 +84,20 @@ func (_m *TenantService) List(ctx context.Context) ([]*model.BusinessTenantMappi
 	}
 
 	return r0, r1
+}
+
+// MultipleToTenantMapping provides a mock function with given fields: tenantInputs
+func (_m *TenantService) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
+	ret := _m.Called(tenantInputs)
+
+	var r0 []model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func([]model.BusinessTenantMappingInput) []model.BusinessTenantMapping); ok {
+		r0 = rf(tenantInputs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.BusinessTenantMapping)
+		}
+	}
+
+	return r0
 }
