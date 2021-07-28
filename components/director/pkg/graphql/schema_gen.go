@@ -109,6 +109,7 @@ type ComplexityRoot struct {
 		Name                  func(childComplexity int) int
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
+		SystemNumber          func(childComplexity int) int
 		UpdatedAt             func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -955,6 +956,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Status(childComplexity), true
+
+	case "Application.systemNumber":
+		if e.complexity.Application.SystemNumber == nil {
+			break
+		}
+
+		return e.complexity.Application.SystemNumber(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -4054,6 +4062,7 @@ type AppSystemAuth implements SystemAuth {
 type Application {
 	id: ID!
 	name: String!
+	systemNumber: String
 	providerName: String
 	description: String
 	integrationSystemID: ID
@@ -7658,6 +7667,37 @@ func (ec *executionContext) _Application_name(ctx context.Context, field graphql
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_systemNumber(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SystemNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_providerName(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -22674,6 +22714,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "systemNumber":
+			out.Values[i] = ec._Application_systemNumber(ctx, field, obj)
 		case "providerName":
 			out.Values[i] = ec._Application_providerName(ctx, field, obj)
 		case "description":

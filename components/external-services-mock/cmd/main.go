@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/apispec"
 	ord_aggregator "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/systemfetcher"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
@@ -28,6 +29,7 @@ type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
 	OAuthConfig
 	BasicCredentialsConfig
+	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 }
 
 type OAuthConfig struct {
@@ -80,6 +82,11 @@ func initHTTP(cfg config) http.Handler {
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig)
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
+
+	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
+	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
+	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
+	router.HandleFunc("/systemfetcher/oauth/token", oauthHandler.GenerateWithoutCredentials)
 
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
 	oauthRouter.Use(oauthMiddleware)
