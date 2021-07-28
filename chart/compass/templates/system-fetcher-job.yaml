@@ -1,0 +1,141 @@
+{{if .Values.global.systemFetcher.enabled }}
+{{ $configmapName := printf "%s-%s-config" $.Chart.Name .Values.global.systemFetcher.name }}
+{{ $secretName := printf "%s-%s-secret" $.Chart.Name .Values.global.systemFetcher.name }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "{{ $.Chart.Name }}-{{ .Values.global.systemFetcher.name }}"
+spec:
+  schedule: "{{ .Values.global.systemFetcher.schedule }}"
+  failedJobsHistoryLimit: 5
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60 # Fix for https://github.com/kyma-incubator/compass/issues/1155
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: {{ .Values.global.systemFetcher.name }}
+    spec:
+      template:
+        metadata:
+          labels:
+            cronjob: {{ .Values.global.systemFetcher.name }}
+        spec:
+          containers:
+            - name: system-fetcher
+              image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: director-config
+                  mountPath: /config
+              env:
+                - name: APP_SYSTEM_INFORMATION_PARALLELLISM
+                  value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
+                - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
+                  value: "{{ .Values.global.systemFetcher.queueSize }}"
+                - name: APP_SYSTEM_INFORMATION_FETCH_TIMEOUT
+                  value: {{ .Values.global.systemFetcher.fetchTimeout | quote }}
+                - name: APP_SYSTEM_INFORMATION_ENDPOINT
+                  value: {{ .Values.global.systemFetcher.systemsAPIEndpoint | quote }}
+                - name: APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN
+                  value: {{ .Values.global.systemFetcher.systemsAPIFilterTenantCriteriaPattern | quote }}
+                - name: APP_SYSTEM_INFORMATION_FILTER_CRITERIA
+                  value: {{ .Values.global.systemFetcher.systemsAPIFilterCriteria | quote }}
+                - name: APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS
+                  value: {{ .Values.global.systemFetcher.systemToTemplateMappings | quote }}
+                - name: "APP_OAUTH_TENANT_HEADER_NAME"
+                  value: "{{ .Values.global.systemFetcher.oauth.tenantHeaderName }}"
+                - name: "APP_OAUTH_SCOPES_CLAIM"
+                  value: "{{ .Values.global.systemFetcher.oauth.scopesClaim }}"
+                - name: APP_OAUTH_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ $secretName }}"
+                      key: oauth-client-id
+                - name: APP_OAUTH_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ $secretName }}"
+                      key: oauth-client-secret
+                - name: APP_OAUTH_TOKEN_ENDPOINT_PATTERN
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ $secretName }}"
+                      key: oauth-token-endpoint-pattern
+                - name: APP_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-director-username
+                - name: APP_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-director-password
+                - name: APP_DB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-serviceName
+                - name: APP_DB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-servicePort
+                - name: APP_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-director-db-name
+                - name: APP_DB_SSL
+                  valueFrom:
+                    secretKeyRef:
+                      name: compass-postgresql
+                      key: postgresql-sslMode
+                - name: APP_DB_MAX_OPEN_CONNECTIONS
+                  value: "{{ .Values.global.systemFetcher.dbPool.maxOpenConnections }}"
+                - name: APP_DB_MAX_IDLE_CONNECTIONS
+                  value: "{{ .Values.global.systemFetcher.dbPool.maxIdleConnections }}"
+                - name: APP_CONFIGURATION_FILE
+                  value: /config/config.yaml
+              command:
+                - "/bin/sh"
+              args:
+                - "-c"
+                - "./systemfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+            {{if eq $.Values.global.database.embedded.enabled false}}
+            - name: cloudsql-proxy
+              image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ $.Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+            {{end}}
+          restartPolicy: Never
+          shareProcessNamespace: true
+          volumes:
+            {{if eq $.Values.global.database.embedded.enabled false}}
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+            {{end}}
+            - name: director-config
+              configMap:
+                name: compass-director-config
+{{- if and (eq .Values.global.systemFetcher.enabled true) (eq .Values.global.systemFetcher.manageSecrets true) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  oauth-client-id: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
+  oauth-client-secret: {{ .Values.global.systemFetcher.oauth.secret | b64enc | quote }}
+  oauth-token-endpoint-pattern: {{ .Values.global.systemFetcher.oauth.tokenURLPattern | b64enc | quote }}
+{{ end }}
+{{ end }}
