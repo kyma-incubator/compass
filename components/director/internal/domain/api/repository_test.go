@@ -106,7 +106,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	totalCounts := map[string]int{firstBndlID: 1, secondBndlID: 1}
 
-	selectQuery := fmt.Sprintf(`SELECT (.+) 
+	selectQuery := fmt.Sprintf(`^SELECT (.+) 
 		FROM "public"."api_definitions" 
 		WHERE %s AND id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
 
@@ -129,7 +129,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondApiDefID}})
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDefs, 2)
@@ -166,7 +166,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondApiDefID}})
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDefs, 2)
@@ -220,7 +220,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", fourthApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: fourthApiDefID}})
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDefs, 2)
@@ -240,7 +240,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		fourthBundleRef := fixModelBundleReference(secondBndlID, fourthApiDefID)
 		bundleRefsSecondPage := []*model.BundleReference{thirdBundleRef, fourthBundleRef}
 
-		modelAPIDefsSecondPage, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefsSecondPage, totalCounts, inputPageSize, endCursor)
+		modelAPIDefsSecondPage, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefsSecondPage, totalCounts, inputPageSize, endCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDefsSecondPage, 2)
@@ -269,7 +269,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock := &automock.APIDefinitionConverter{}
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 
 		require.NoError(t, err)
@@ -295,7 +295,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelAPIDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 
 		// then
 		sqlMock.AssertExpectations(t)

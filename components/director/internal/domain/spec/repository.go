@@ -131,7 +131,7 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 		return nil, err
 	}
 
-	var specifications []*model.Spec
+	specifications := make([]*model.Spec, 0, len(specs))
 	for _, s := range specs {
 		entity, err := r.conv.FromEntity(s)
 		if err != nil {

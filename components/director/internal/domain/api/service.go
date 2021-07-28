@@ -18,7 +18,7 @@ type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
+	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error
@@ -49,7 +49,7 @@ type BundleReferenceService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
-	ListAllByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
+	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 type service struct {
@@ -70,7 +70,7 @@ func NewService(repo APIRepository, uidService UIDService, specService SpecServi
 	}
 }
 
-func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
+func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -80,12 +80,12 @@ func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pa
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	bundleRefs, counts, err := s.bundleReferenceService.ListAllByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, pageSize, cursor)
+	bundleRefs, counts, err := s.bundleReferenceService.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, pageSize, cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.repo.ListAllForBundle(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
+	return s.repo.ListByBundleIDs(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
 }
 
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error) {

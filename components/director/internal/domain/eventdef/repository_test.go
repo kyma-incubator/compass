@@ -106,7 +106,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	totalCounts := map[string]int{firstBndlID: 1, secondBndlID: 1}
 
-	selectQuery := fmt.Sprintf(`SELECT (.+) 
+	selectQuery := fmt.Sprintf(`^SELECT (.+) 
 		FROM "public"."event_api_definitions" 
 		WHERE %s AND id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
 
@@ -129,7 +129,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", secondEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondEventDefID}})
 		pgRepository := event.NewRepository(convMock)
 		// WHEN
-		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelEventDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelEventDefs, 2)
@@ -166,7 +166,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", secondEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: secondEventDefID}})
 		pgRepository := event.NewRepository(convMock)
 		// WHEN
-		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelEventDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelEventDefs, 2)
@@ -220,7 +220,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", fourthEventDefEntity).Return(model.EventDefinition{BaseEntity: &model.BaseEntity{ID: fourthEventDefID}})
 		pgRepository := event.NewRepository(convMock)
 		// WHEN
-		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelEventDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelEventDefs, 2)
@@ -240,7 +240,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		fourthBundleRef := fixModelBundleReference(secondBndlID, fourthEventDefID)
 		bundleRefsSecondPage := []*model.BundleReference{thirdBundleRef, fourthBundleRef}
 
-		modelEventDefsSecondPage, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefsSecondPage, totalCounts, inputPageSize, endCursor)
+		modelEventDefsSecondPage, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefsSecondPage, totalCounts, inputPageSize, endCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelEventDefsSecondPage, 2)
@@ -269,7 +269,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock := &automock.EventAPIDefinitionConverter{}
 		pgRepository := event.NewRepository(convMock)
 		// WHEN
-		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelEventDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 		//THEN
 
 		require.NoError(t, err)
@@ -295,7 +295,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelEventDefs, err := pgRepository.ListAllForBundle(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
+		modelEventDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
 
 		// then
 		sqlMock.AssertExpectations(t)

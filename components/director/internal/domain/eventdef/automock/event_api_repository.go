@@ -138,29 +138,6 @@ func (_m *EventAPIRepository) GetForBundle(ctx context.Context, tenant string, i
 	return r0, r1
 }
 
-// ListAllForBundle provides a mock function with given fields: ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor
-func (_m *EventAPIRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
-	ret := _m.Called(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
-
-	var r0 []*model.EventDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) []*model.EventDefinitionPage); ok {
-		r0 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.EventDefinitionPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) error); ok {
-		r1 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListByApplicationID provides a mock function with given fields: ctx, tenantID, appID
 func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID string, appID string) ([]*model.EventDefinition, error) {
 	ret := _m.Called(ctx, tenantID, appID)
@@ -177,6 +154,29 @@ func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByBundleIDs provides a mock function with given fields: ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor
+func (_m *EventAPIRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
+
+	var r0 []*model.EventDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) []*model.EventDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.EventDefinitionPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) error); ok {
+		r1 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

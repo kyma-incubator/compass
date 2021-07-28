@@ -3,7 +3,8 @@ package api
 import (
 	"context"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -277,12 +278,12 @@ func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequ
 
 	ctx := keys[0].Ctx
 
-	specIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		if keys[i].ID == "" {
+	specIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.ID == "" {
 			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition Spec ID is empty")}
 		}
-		specIDs[i] = keys[i].ID
+		specIDs = append(specIDs, key.ID)
 	}
 
 	tx, err := r.transact.Begin()
@@ -302,7 +303,7 @@ func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequ
 		return nil, nil
 	}
 
-	var gqlFetchRequests []*graphql.FetchRequest
+	gqlFetchRequests := make([]*graphql.FetchRequest, 0, len(fetchRequests))
 	for _, fr := range fetchRequests {
 		fetchRequest, err := r.frConverter.ToGraphQL(fr)
 		if err != nil {

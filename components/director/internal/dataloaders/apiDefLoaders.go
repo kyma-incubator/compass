@@ -23,13 +23,13 @@ type ParamApiDef struct {
 	After *graphql.PageCursor
 }
 
-func HandlerApiDef(fetchFunc func(keys []ParamApiDef) ([]*graphql.APIDefinitionPage, []error)) func(next http.Handler) http.Handler {
+func HandlerApiDef(fetchFunc func(keys []ParamApiDef) ([]*graphql.APIDefinitionPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyApiDef, &ApiDefLoaders{
 				ApiDefById: ApiDefLoader{
-					maxBatch: 100,
-					wait:     1 * time.Millisecond,
+					maxBatch: maxBatch,
+					wait:     wait,
 					fetch:    fetchFunc,
 				},
 			})

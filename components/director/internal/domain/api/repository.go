@@ -68,34 +68,16 @@ func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
-	var result []*model.APIDefinition
-	if len(defs) > 0 {
-		for _, id := range ids {
-			result = append(result, defs[id])
-		}
-	}
-	return result
-}
-
-func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
-	var result []string
-	for _, ref := range refs {
-		result = append(result, *ref.ObjectID)
-	}
-	return result
-}
-
-func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
-	var apidefIds []string
+func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
+	apiDefIds := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
-		apidefIds = append(apidefIds, *ref.ObjectID)
+		apiDefIds = append(apiDefIds, *ref.ObjectID)
 	}
 
 	var conditions repo.Conditions
-	if len(apidefIds) > 0 {
+	if len(apiDefIds) > 0 {
 		conditions = repo.Conditions{
-			repo.NewInConditionForStringValues("id", apidefIds),
+			repo.NewInConditionForStringValues("id", apiDefIds),
 		}
 	}
 
@@ -105,24 +87,15 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 		return nil, err
 	}
 
-	refsByBundleId := map[string][]*model.BundleReference{}
-	for _, ref := range bundleRefs {
-		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
-	}
-
-	apiDefsByApiDefId := map[string]*model.APIDefinition{}
-	for _, apiDefEnt := range apiDefCollection {
-		m := r.conv.FromEntity(apiDefEnt)
-		apiDefsByApiDefId[apiDefEnt.ID] = &m
-	}
+	refsByBundleId, apiDefsByApiDefId := r.groupEntitiesByID(bundleRefs, apiDefCollection)
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	apiDefPages := make([]*model.APIDefinitionPage, len(bundleIDs))
-	for i, bundleID := range bundleIDs {
+	apiDefPages := make([]*model.APIDefinitionPage, 0, len(bundleIDs))
+	for _, bundleID := range bundleIDs {
 		ids := getApiDefIDsForBundle(refsByBundleId[bundleID])
 		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefId)
 
@@ -139,7 +112,7 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 			HasNextPage: hasNextPage,
 		}
 
-		apiDefPages[i] = &model.APIDefinitionPage{Data: apiDefs, TotalCount: totalCounts[bundleID], PageInfo: page}
+		apiDefPages = append(apiDefPages, &model.APIDefinitionPage{Data: apiDefs, TotalCount: totalCounts[bundleID], PageInfo: page})
 	}
 
 	return apiDefPages, nil
@@ -235,4 +208,37 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 	}
 
 	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
+}
+
+func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
+	result := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		result = append(result, *ref.ObjectID)
+	}
+	return result
+}
+
+func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
+	result := make([]*model.APIDefinition, 0, len(ids))
+	if len(defs) > 0 {
+		for _, id := range ids {
+			result = append(result, defs[id])
+		}
+	}
+	return result
+}
+
+func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, apiDefCollection APIDefCollection) (map[string][]*model.BundleReference, map[string]*model.APIDefinition) {
+	refsByBundleId := map[string][]*model.BundleReference{}
+	for _, ref := range bundleRefs {
+		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+	}
+
+	apiDefsByApiDefId := map[string]*model.APIDefinition{}
+	for _, apiDefEnt := range apiDefCollection {
+		m := r.conv.FromEntity(apiDefEnt)
+		apiDefsByApiDefId[apiDefEnt.ID] = &m
+	}
+
+	return refsByBundleId, apiDefsByApiDefId
 }

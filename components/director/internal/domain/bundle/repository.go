@@ -151,8 +151,8 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	bundlePages := make([]*model.BundlePage, len(applicationIDs))
-	for i, appID := range applicationIDs {
+	bundlePages := make([]*model.BundlePage, 0, len(applicationIDs))
+	for _, appID := range applicationIDs {
 		totalCount := counts[appID]
 		hasNextPage := false
 		endCursor := ""
@@ -167,7 +167,7 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 			HasNextPage: hasNextPage,
 		}
 
-		bundlePages[i] = &model.BundlePage{Data: bundleByID[appID], TotalCount: totalCount, PageInfo: page}
+		bundlePages = append(bundlePages, &model.BundlePage{Data: bundleByID[appID], TotalCount: totalCount, PageInfo: page})
 	}
 
 	return bundlePages, nil

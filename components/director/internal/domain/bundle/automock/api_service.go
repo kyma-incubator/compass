@@ -72,8 +72,8 @@ func (_m *APIService) GetForBundle(ctx context.Context, id string, bundleID stri
 	return r0, r1
 }
 
-// ListAllByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
-func (_m *APIService) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
+// ListByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
+func (_m *APIService) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	ret := _m.Called(ctx, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.APIDefinitionPage

@@ -352,7 +352,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	}
 }
 
-func TestService_ListAllByBundleIDs(t *testing.T) {
+func TestService_ListByBundleIDs(t *testing.T) {
 	testErr := errors.New("test err")
 
 	firstApiDefID := "apiID"
@@ -391,7 +391,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("ListAllForBundle", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
 				return repo
 			},
 			PageSize:            2,
@@ -420,7 +420,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Error on listing bundle references",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("ListAllForBundle", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
 				return repo
 			},
 			PageSize:            2,
@@ -437,7 +437,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			svc := bundlereferences.NewService(repo)
 
 			// when
-			bndlRefs, counts, err := svc.ListAllByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, testCase.PageSize, after)
+			bndlRefs, counts, err := svc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -456,7 +456,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := bundlereferences.NewService(nil)
 		// WHEN
-		_, _, err := svc.ListAllByBundleIDs(context.TODO(), model.BundleAPIReference, nil, 2, "")
+		_, _, err := svc.ListByBundleIDs(context.TODO(), model.BundleAPIReference, nil, 2, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

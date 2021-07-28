@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -47,7 +47,7 @@ type BundleInstanceAuthConverter interface {
 
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
+	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
@@ -62,7 +62,7 @@ type APIConverter interface {
 
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
-	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
+	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
@@ -79,7 +79,7 @@ type EventConverter interface {
 type DocumentService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
 	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
-	ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
+	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 }
 
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore
@@ -101,7 +101,7 @@ type SpecService interface {
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
-	ListAllByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
+	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 type Resolver struct {
@@ -397,9 +397,9 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 	first := keys[0].First
 	after := keys[0].After
 
-	bundleIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		bundleIDs[i] = keys[i].ID
+	bundleIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		bundleIDs = append(bundleIDs, key.ID)
 	}
 
 	var cursor string
@@ -419,7 +419,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	apiDefPages, err := r.apiSvc.ListAllByBundleIDs(ctx, bundleIDs, *first, cursor)
+	apiDefPages, err := r.apiSvc.ListByBundleIDs(ctx, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -436,7 +436,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{err}
 	}
 
-	references, _, err := r.bundleReferenceSvc.ListAllByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
+	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -451,7 +451,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		apiDefIDtoSpec[spec.ObjectID] = spec
 	}
 
-	var gqlApiDefs []*graphql.APIDefinitionPage
+	gqlApiDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
 	for i, apisPage := range apiDefPages {
 		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
@@ -539,9 +539,9 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	first := keys[0].First
 	after := keys[0].After
 
-	bundleIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		bundleIDs[i] = keys[i].ID
+	bundleIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		bundleIDs = append(bundleIDs, key.ID)
 	}
 
 	var cursor string
@@ -561,7 +561,7 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPIDefPages, err := r.eventSvc.ListAllByBundleIDs(ctx, bundleIDs, *first, cursor)
+	eventAPIDefPages, err := r.eventSvc.ListByBundleIDs(ctx, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -578,7 +578,7 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		return nil, []error{err}
 	}
 
-	references, _, err := r.bundleReferenceSvc.ListAllByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)
+	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -593,7 +593,7 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		eventAPIDefIDtoRef[*reference.ObjectID] = reference
 	}
 
-	var gqlEventDefs []*graphql.EventDefinitionPage
+	gqlEventDefs := make([]*graphql.EventDefinitionPage, 0, len(eventAPIDefPages))
 	for _, eventPage := range eventAPIDefPages {
 		eventSpecs := make([]*model.Spec, 0, len(eventPage.Data))
 		eventBundleRefs := make([]*model.BundleReference, 0, len(eventPage.Data))
@@ -663,9 +663,9 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 	first := keys[0].First
 	after := keys[0].After
 
-	bundleIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		bundleIDs[i] = keys[i].ID
+	bundleIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		bundleIDs = append(bundleIDs, key.ID)
 	}
 
 	var cursor string
@@ -685,7 +685,7 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	documentPages, err := r.documentSvc.ListAllByBundleIDs(ctx, bundleIDs, *first, cursor)
+	documentPages, err := r.documentSvc.ListByBundleIDs(ctx, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -695,7 +695,7 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 		return nil, []error{err}
 	}
 
-	var gqlDocumentPages []*graphql.DocumentPage
+	gqlDocumentPages := make([]*graphql.DocumentPage, 0, len(documentPages))
 	for _, page := range documentPages {
 		gqlDocuments := r.documentConverter.MultipleToGraphQL(page.Data)
 

@@ -173,7 +173,7 @@ func TestService_GetForBundle(t *testing.T) {
 	})
 }
 
-func TestService_ListAllByBundleIDs(t *testing.T) {
+func TestService_ListByBundleIDs(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
@@ -235,12 +235,12 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Success",
 			BundleRefSvcFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("ListAllForBundle", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(eventPages, nil).Once()
+				repo.On("ListByBundleIDs", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(eventPages, nil).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -279,7 +279,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Returns error when EventDefinition BundleReferences listing failed",
 			BundleRefSvcFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				svc.On("ListByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
 				return svc
 			},
 			RepositoryFn: func() *automock.EventAPIRepository {
@@ -294,12 +294,12 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Returns error when EventDefinition listing failed",
 			BundleRefSvcFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("ListAllForBundle", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(nil, testErr).Once()
+				repo.On("ListByBundleIDs", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -316,7 +316,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			svc := event.NewService(repo, nil, nil, bndlRefSvc)
 
 			// when
-			events, err := svc.ListAllByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
+			events, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -333,7 +333,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.ListAllByBundleIDs(context.TODO(), nil, 5, "")
+		_, err := svc.ListByBundleIDs(context.TODO(), nil, 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

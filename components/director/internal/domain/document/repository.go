@@ -130,7 +130,7 @@ func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
+func (r *repository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	var documentCollection DocumentCollection
 	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
 	if err != nil {
@@ -151,8 +151,8 @@ func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bund
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	documentPages := make([]*model.DocumentPage, len(bundleIDs))
-	for i, bndlID := range bundleIDs {
+	documentPages := make([]*model.DocumentPage, 0, len(bundleIDs))
+	for _, bndlID := range bundleIDs {
 		totalCount := counts[bndlID]
 		hasNextPage := false
 		endCursor := ""
@@ -167,7 +167,7 @@ func (r *repository) ListAllForBundle(ctx context.Context, tenantID string, bund
 			HasNextPage: hasNextPage,
 		}
 
-		documentPages[i] = &model.DocumentPage{Data: documentByID[bndlID], TotalCount: totalCount, PageInfo: page}
+		documentPages = append(documentPages, &model.DocumentPage{Data: documentByID[bndlID], TotalCount: totalCount, PageInfo: page})
 	}
 
 	return documentPages, nil

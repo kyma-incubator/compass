@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -95,7 +95,7 @@ type RuntimeService interface {
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
-	ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
+	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
@@ -561,19 +561,13 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.
 		return nil, []error{apperrors.NewInternalError("No Applications found")}
 	}
 
-	var ctx context.Context
-	var first *int
-	var after *graphql.PageCursor
+	ctx := keys[0].Ctx
+	first := keys[0].First
+	after := keys[0].After
 
-	applicationIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		if i == 0 {
-			ctx = keys[i].Ctx
-			first = keys[i].First
-			after = keys[i].After
-			applicationIDs[i] = keys[i].ID
-		}
-		applicationIDs[i] = keys[i].ID
+	applicationIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		applicationIDs = append(applicationIDs, key.ID)
 	}
 
 	var cursor string
@@ -594,12 +588,12 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	bndlPages, err := r.bndlSvc.ListAllByApplicationIDs(ctx, applicationIDs, *first, cursor)
+	bndlPages, err := r.bndlSvc.ListByApplicationIDs(ctx, applicationIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
 
-	var gqlBndls []*graphql.BundlePage
+	gqlBndls := make([]*graphql.BundlePage, 0, len(bndlPages))
 	for _, page := range bndlPages {
 		bndls, err := r.bndlConv.MultipleToGraphQL(page.Data)
 		if err != nil {

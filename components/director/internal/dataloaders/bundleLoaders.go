@@ -23,13 +23,13 @@ type ParamBundle struct {
 	Ctx   context.Context
 }
 
-func HandlerBundle(fetchFunc func(keys []ParamBundle) ([]*graphql.BundlePage, []error)) func(next http.Handler) http.Handler {
+func HandlerBundle(fetchFunc func(keys []ParamBundle) ([]*graphql.BundlePage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyBundle, &BundleLoaders{
 				BundleById: BundleLoader{
-					maxBatch: 100,
-					wait:     1 * time.Millisecond,
+					maxBatch: maxBatch,
+					wait:     wait,
 					fetch:    fetchFunc,
 				},
 			})

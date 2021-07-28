@@ -23,13 +23,13 @@ type ParamEventDef struct {
 	Ctx   context.Context
 }
 
-func HandlerEventDef(fetchFunc func(keys []ParamEventDef) ([]*graphql.EventDefinitionPage, []error)) func(next http.Handler) http.Handler {
+func HandlerEventDef(fetchFunc func(keys []ParamEventDef) ([]*graphql.EventDefinitionPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyEventDef, &EventDefLoaders{
 				EventDefById: EventDefLoader{
-					maxBatch: 100,
-					wait:     1 * time.Millisecond,
+					maxBatch: maxBatch,
+					wait:     wait,
 					fetch:    fetchFunc,
 				},
 			})

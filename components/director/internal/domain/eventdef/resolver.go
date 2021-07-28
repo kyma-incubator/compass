@@ -3,7 +3,7 @@ package eventdef
 import (
 	"context"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -272,12 +272,12 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 
 	ctx := keys[0].Ctx
 
-	specIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		if keys[i].ID == "" {
+	specIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.ID == "" {
 			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition Spec ID is empty")}
 		}
-		specIDs[i] = keys[i].ID
+		specIDs = append(specIDs, key.ID)
 	}
 
 	tx, err := r.transact.Begin()
@@ -297,7 +297,7 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 		return nil, nil
 	}
 
-	var gqlFetchRequests []*graphql.FetchRequest
+	gqlFetchRequests := make([]*graphql.FetchRequest, 0, len(fetchRequests))
 	for _, fr := range fetchRequests {
 		fetchRequest, err := r.frConverter.ToGraphQL(fr)
 		if err != nil {

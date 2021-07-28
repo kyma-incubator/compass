@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	hydraClient "github.com/ory/hydra-client-go/client"

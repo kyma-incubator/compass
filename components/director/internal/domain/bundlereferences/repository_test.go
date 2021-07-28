@@ -250,7 +250,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	secondEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(secondBndlID, secondEventID)
 	bundleIDs := []string{firstBndlID, secondBndlID}
 
-	selectQuery := fmt.Sprintf(`\(SELECT (.+) FROM public\.bundle_references 
+	selectQuery := fmt.Sprintf(`^\(SELECT (.+) FROM public\.bundle_references 
 		WHERE %s AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
 		\(SELECT (.+) FROM public\.bundle_references WHERE %s AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
@@ -298,7 +298,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		}, nil)
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
-		modelBndlRefs, totalCounts, err := pgRepository.ListAllForBundle(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelBndlRefs, 2)
@@ -322,7 +322,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		totalCountForFirstBundle := 1
 		totalCountForSecondBundle := 1
 
-		selectQueryForEvents := fmt.Sprintf(`\(SELECT (.+) FROM public\.bundle_references 
+		selectQueryForEvents := fmt.Sprintf(`^\(SELECT (.+) FROM public\.bundle_references 
 		WHERE %s AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
 		\(SELECT (.+) FROM public\.bundle_references WHERE %s AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
@@ -360,7 +360,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		}, nil)
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
-		modelBndlRefs, totalCounts, err := pgRepository.ListAllForBundle(ctx, model.BundleEventReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleEventReference, tenantID, bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelBndlRefs, 2)
@@ -416,7 +416,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		}, nil)
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
-		modelBndlRefs, totalCounts, err := pgRepository.ListAllForBundle(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelBndlRefs, 2)
@@ -462,7 +462,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{}, testErr)
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
-		_, _, err := pgRepository.ListAllForBundle(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		_, _, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
@@ -486,7 +486,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelBndlRefs, totalCounts, err := pgRepository.ListAllForBundle(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
 
 		// then
 		sqlMock.AssertExpectations(t)

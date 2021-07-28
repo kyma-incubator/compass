@@ -163,7 +163,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bund
 	return r.deleter.DeleteOne(ctx, tenant, conditions)
 }
 
-func (r *repository) ListAllForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	columns, err := getSelectedColumnsByObjectType(objectType)
 	if err != nil {
 		return nil, nil, err
@@ -192,7 +192,7 @@ func (r *repository) ListAllForBundle(ctx context.Context, objectType model.Bund
 		return nil, nil, err
 	}
 
-	var bundleReferences []*model.BundleReference
+	bundleReferences := make([]*model.BundleReference, 0, len(objectBundleIDs))
 	for _, d := range objectBundleIDs {
 		entity, err := r.conv.FromEntity(d)
 		if err != nil {

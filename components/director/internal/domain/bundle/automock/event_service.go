@@ -72,8 +72,8 @@ func (_m *EventService) GetForBundle(ctx context.Context, id string, bundleID st
 	return r0, r1
 }
 
-// ListAllByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
-func (_m *EventService) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+// ListByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
+func (_m *EventService) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	ret := _m.Called(ctx, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.EventDefinitionPage

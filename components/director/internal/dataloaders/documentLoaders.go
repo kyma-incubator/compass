@@ -23,13 +23,13 @@ type ParamDocument struct {
 	Ctx   context.Context
 }
 
-func HandlerDocument(fetchFunc func(keys []ParamDocument) ([]*graphql.DocumentPage, []error)) func(next http.Handler) http.Handler {
+func HandlerDocument(fetchFunc func(keys []ParamDocument) ([]*graphql.DocumentPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyDocument, &DocumentLoaders{
 				DocumentById: DocumentLoader{
-					maxBatch: 100,
-					wait:     1 * time.Millisecond,
+					maxBatch: maxBatch,
+					wait:     wait,
 					fetch:    fetchFunc,
 				},
 			})

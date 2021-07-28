@@ -21,13 +21,13 @@ type ParamFetchRequestDocument struct {
 	Ctx context.Context
 }
 
-func HandlerFetchRequestDocument(fetchFunc func(keys []ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error)) func(next http.Handler) http.Handler {
+func HandlerFetchRequestDocument(fetchFunc func(keys []ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestDocument, &LoadersFetchRequestDocument{
 				FetchRequestDocumentById: FetchRequestDocumentLoader{
-					maxBatch: 500,
-					wait:     3 * time.Millisecond,
+					maxBatch: maxBatch,
+					wait:     wait,
 					fetch:    fetchFunc,
 				},
 			})

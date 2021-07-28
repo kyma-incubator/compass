@@ -322,7 +322,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 	secondBndlEntity := fixEntityBundle(secondBndlID, "foo", "bar")
 	secondBndlEntity.ApplicationID = appID2
 
-	selectQuery := fmt.Sprintf(`\(SELECT (.+) FROM public\.bundles
+	selectQuery := fmt.Sprintf(`^\(SELECT (.+) FROM public\.bundles
 		WHERE %s AND app_id = \$2 ORDER BY app_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
 		\(SELECT (.+) FROM public\.bundles WHERE %s AND app_id = \$6 ORDER BY app_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -372,7 +372,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -382,7 +382,7 @@ func TestResolver_Apis(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -417,7 +417,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -437,7 +437,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -459,7 +459,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -469,7 +469,7 @@ func TestResolver_Apis(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(nil, nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(nil, nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -483,7 +483,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -494,7 +494,7 @@ func TestResolver_Apis(t *testing.T) {
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
 				invalidBundleRefs := []*model.BundleReference{apiDefSecondBundleReference}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(invalidBundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(invalidBundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -509,7 +509,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -519,7 +519,7 @@ func TestResolver_Apis(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -535,7 +535,7 @@ func TestResolver_Apis(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -545,7 +545,7 @@ func TestResolver_Apis(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -965,7 +965,7 @@ func TestResolver_Events(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -975,7 +975,7 @@ func TestResolver_Events(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
@@ -1010,7 +1010,7 @@ func TestResolver_Events(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1030,7 +1030,7 @@ func TestResolver_Events(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1052,7 +1052,7 @@ func TestResolver_Events(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1062,7 +1062,7 @@ func TestResolver_Events(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(nil, nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(nil, nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
@@ -1076,7 +1076,7 @@ func TestResolver_Events(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1086,7 +1086,7 @@ func TestResolver_Events(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
@@ -1102,7 +1102,7 @@ func TestResolver_Events(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1112,7 +1112,7 @@ func TestResolver_Events(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("ListAllByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
@@ -1368,7 +1368,7 @@ func TestResolver_Documents(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("ListAllByBundleIDs", contextParam, bundleIDs, first, after).Return(docPages, nil).Once()
+				svc.On("ListByBundleIDs", contextParam, bundleIDs, first, after).Return(docPages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -1386,7 +1386,7 @@ func TestResolver_Documents(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("ListAllByBundleIDs", contextParam, bundleIDs, first, after).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", contextParam, bundleIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {

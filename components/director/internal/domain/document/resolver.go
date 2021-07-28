@@ -3,7 +3,8 @@ package document
 import (
 	"context"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -150,12 +151,12 @@ func (r *Resolver) FetchRequestDocumentDataLoader(keys []dataloader.ParamFetchRe
 	}
 
 	ctx := keys[0].Ctx
-	documentIDs := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		if keys[i].ID == "" {
+	documentIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.ID == "" {
 			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. Document ID is empty")}
 		}
-		documentIDs[i] = keys[i].ID
+		documentIDs = append(documentIDs, key.ID)
 	}
 
 	tx, err := r.transact.Begin()
@@ -175,7 +176,7 @@ func (r *Resolver) FetchRequestDocumentDataLoader(keys []dataloader.ParamFetchRe
 		return nil, nil
 	}
 
-	var gqlFetchRequests []*graphql.FetchRequest
+	gqlFetchRequests := make([]*graphql.FetchRequest, 0, len(fetchRequests))
 	for _, fr := range fetchRequests {
 		fetchRequest, err := r.frConverter.ToGraphQL(fr)
 		if err != nil {

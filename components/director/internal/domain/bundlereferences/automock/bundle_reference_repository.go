@@ -88,8 +88,8 @@ func (_m *BundleReferenceRepository) GetByID(ctx context.Context, objectType mod
 	return r0, r1
 }
 
-// ListAllForBundle provides a mock function with given fields: ctx, objectType, tenantID, bundleIDs, pageSize, cursor
-func (_m *BundleReferenceRepository) ListAllForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+// ListByBundleIDs provides a mock function with given fields: ctx, objectType, tenantID, bundleIDs, pageSize, cursor
+func (_m *BundleReferenceRepository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	ret := _m.Called(ctx, objectType, tenantID, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.BundleReference

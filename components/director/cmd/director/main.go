@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
@@ -135,6 +135,9 @@ type config struct {
 	DisableAsyncMode bool `envconfig:"default=false"`
 
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
+
+	DataloaderMaxBatch int           `envconfig:"default=200"`
+	DataloaderWait     time.Duration `envconfig:"default=5ms"`
 }
 
 func main() {
@@ -239,13 +242,13 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader))
-	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader))
-	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader))
-	gqlAPIRouter.Use(dataloader.HandlerDocument(rootResolver.DocumentsDataloader))
-	gqlAPIRouter.Use(dataloader.HandlerFetchRequestApiDef(rootResolver.FetchRequestApiDefDataloader))
-	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader))
-	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader))
+	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerDocument(rootResolver.DocumentsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestApiDef(rootResolver.FetchRequestApiDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
 	ownertenantMiddleware := ownertenant.NewMiddleware(transact, tenantindex.NewRepository(), tenant.NewRepository(tenant.NewConverter()))

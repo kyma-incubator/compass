@@ -87,8 +87,8 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 	return r.GetByID(ctx, tenant, id)
 }
 
-func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
-	var eventDefIds []string
+func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+	eventDefIds := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
 		eventDefIds = append(eventDefIds, *ref.ObjectID)
 	}
@@ -100,30 +100,21 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 		}
 	}
 
-	var apiDefCollection EventAPIDefCollection
-	err := r.lister.List(ctx, tenantID, &apiDefCollection, conditions...)
+	var eventCollection EventAPIDefCollection
+	err := r.lister.List(ctx, tenantID, &eventCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
 
-	refsByBundleId := map[string][]*model.BundleReference{}
-	for _, ref := range bundleRefs {
-		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
-	}
-
-	eventDefsByEventDefId := map[string]*model.EventDefinition{}
-	for _, apiDefEnt := range apiDefCollection {
-		m := r.conv.FromEntity(apiDefEnt)
-		eventDefsByEventDefId[apiDefEnt.ID] = &m
-	}
+	refsByBundleId, eventDefsByEventDefId := r.groupEntitiesByID(bundleRefs, eventCollection)
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	eventDefPages := make([]*model.EventDefinitionPage, len(bundleIDs))
-	for i, bundleID := range bundleIDs {
+	eventDefPages := make([]*model.EventDefinitionPage, 0, len(bundleIDs))
+	for _, bundleID := range bundleIDs {
 		ids := getEventDefIDsForBundle(refsByBundleId[bundleID])
 		eventDefs := getEventDefsForBundle(ids, eventDefsByEventDefId)
 		hasNextPage := false
@@ -139,7 +130,7 @@ func (r *pgRepository) ListAllForBundle(ctx context.Context, tenantID string, bu
 			HasNextPage: hasNextPage,
 		}
 
-		eventDefPages[i] = &model.EventDefinitionPage{Data: eventDefs, TotalCount: totalCounts[bundleID], PageInfo: page}
+		eventDefPages = append(eventDefPages, &model.EventDefinitionPage{Data: eventDefs, TotalCount: totalCounts[bundleID], PageInfo: page})
 	}
 
 	return eventDefPages, nil
@@ -222,7 +213,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 }
 
 func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {
-	var result []*model.EventDefinition
+	result := make([]*model.EventDefinition, 0, len(ids))
 	if len(defs) > 0 {
 		for _, id := range ids {
 			result = append(result, defs[id])
@@ -232,9 +223,24 @@ func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition)
 }
 
 func getEventDefIDsForBundle(refs []*model.BundleReference) []string {
-	var result []string
+	result := make([]string, 0, len(refs))
 	for _, ref := range refs {
 		result = append(result, *ref.ObjectID)
 	}
 	return result
+}
+
+func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, eventCollectionCollection EventAPIDefCollection) (map[string][]*model.BundleReference, map[string]*model.EventDefinition) {
+	refsByBundleId := map[string][]*model.BundleReference{}
+	for _, ref := range bundleRefs {
+		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+	}
+
+	eventsByApiDefId := map[string]*model.EventDefinition{}
+	for _, eventEnt := range eventCollectionCollection {
+		m := r.conv.FromEntity(eventEnt)
+		eventsByApiDefId[eventEnt.ID] = &m
+	}
+
+	return refsByBundleId, eventsByApiDefId
 }

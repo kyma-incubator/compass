@@ -2,7 +2,6 @@ package fetchrequest
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -121,7 +120,7 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 		return nil, err
 	}
 
-	fetchRequestsByID := map[sql.NullString]*model.FetchRequest{}
+	fetchRequestsByID := map[string]*model.FetchRequest{}
 	for _, fetchRequestEnt := range fetchRequestCollection {
 		m, err := r.conv.FromEntity(fetchRequestEnt)
 		if err != nil {
@@ -129,15 +128,15 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 		}
 
 		if fieldName == specIDColumn {
-			fetchRequestsByID[fetchRequestEnt.SpecID] = &m
+			fetchRequestsByID[fetchRequestEnt.SpecID.String] = &m
 		} else if fieldName == documentIDColumn {
-			fetchRequestsByID[fetchRequestEnt.DocumentID] = &m
+			fetchRequestsByID[fetchRequestEnt.DocumentID.String] = &m
 		}
 	}
 
-	fetchRequests := make([]*model.FetchRequest, len(objectIds))
-	for i, objectID := range objectIds {
-		fetchRequests[i] = fetchRequestsByID[sql.NullString{String: objectID, Valid: true}]
+	fetchRequests := make([]*model.FetchRequest, 0, len(objectIds))
+	for _, objectID := range objectIds {
+		fetchRequests = append(fetchRequests, fetchRequestsByID[objectID])
 	}
 
 	return fetchRequests, nil

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/dataloaders"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -1618,7 +1618,7 @@ func TestResolver_Bundles(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1649,7 +1649,7 @@ func TestResolver_Bundles(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(nil, testErr).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1664,7 +1664,7 @@ func TestResolver_Bundles(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1680,7 +1680,7 @@ func TestResolver_Bundles(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListAllByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {

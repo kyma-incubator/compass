@@ -83,17 +83,17 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		stmts = append(stmts, q.statement)
 	}
 
-	var args [][]interface{}
+	args := make([]interface{}, 0, len(queries))
 	for _, q := range queries {
-		args = append(args, q.args)
+		args = append(args, q.args...)
 	}
 
-	query, arguments, err := buildUnionQuery(stmts, args)
+	query, err := buildUnionQuery(stmts)
 	if err != nil {
 		return nil, err
 	}
 
-	err = persist.SelectContext(ctx, dest, query, arguments...)
+	err = persist.SelectContext(ctx, dest, query, args...)
 	if err != nil {
 		return nil, persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while fetching list page of objects from '%s' table", l.tableName)
 	}

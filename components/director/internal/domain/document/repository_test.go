@@ -203,7 +203,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 	secondDocID := "222222222-2222-2222-2222-222222222222"
 	secondDocEntity := fixEntityDocument(secondDocID, secondBndlID)
 
-	selectQuery := fmt.Sprintf(`\(SELECT (.+) FROM public\.documents
+	selectQuery := fmt.Sprintf(`^\(SELECT (.+) FROM public\.documents
 		WHERE %s AND bundle_id = \$2 ORDER BY bundle_id ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
 		\(SELECT (.+) FROM public\.documents WHERE %s AND bundle_id = \$6 ORDER BY bundle_id ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
@@ -239,7 +239,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", *secondDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: secondDocEntity.ID}}, nil).Once()
 		pgRepository := document.NewRepository(convMock)
 		// WHEN
-		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		modelDocs, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelDocs, 2)
@@ -285,7 +285,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", *secondDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: secondDocEntity.ID}}, nil).Once()
 		pgRepository := document.NewRepository(convMock)
 		// WHEN
-		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		modelDocs, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelDocs, 2)
@@ -357,7 +357,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", *fourthDocEntity).Return(model.Document{BaseEntity: &model.BaseEntity{ID: fourthDocEntity.ID}}, nil).Once()
 		pgRepository := document.NewRepository(convMock)
 		// WHEN
-		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		modelDocs, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelDocs, 2)
@@ -373,7 +373,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		assert.NotEmpty(t, modelDocs[1].PageInfo.EndCursor)
 		endCursor := modelDocs[0].PageInfo.EndCursor
 
-		modelDocsSecondPage, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, endCursor)
+		modelDocsSecondPage, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, endCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelDocsSecondPage, 2)
@@ -407,7 +407,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		convMock := &automock.Converter{}
 		pgRepository := document.NewRepository(convMock)
 		// WHEN
-		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		modelDocs, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
 		//THEN
 
 		require.NoError(t, err)
@@ -452,7 +452,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		convMock.On("FromEntity", *firstDocEntity).Return(model.Document{}, testErr).Once()
 		pgRepository := document.NewRepository(convMock)
 		// WHEN
-		_, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		_, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
 		//THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
@@ -476,7 +476,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelDocs, err := pgRepository.ListAllForBundle(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
+		modelDocs, err := pgRepository.ListByBundleIDs(ctx, givenTenant(), bundleIDs, inputPageSize, inputCursor)
 
 		// then
 		sqlMock.AssertExpectations(t)

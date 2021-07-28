@@ -176,7 +176,7 @@ func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string)
 	return s.bndlRepo.ListByApplicationIDNoPaging(ctx, tnt, appID)
 }
 
-func (s *service) ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
+func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err

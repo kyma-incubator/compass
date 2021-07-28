@@ -51,8 +51,8 @@ func (_m *BundleService) GetForApplication(ctx context.Context, id string, appli
 	return r0, r1
 }
 
-// ListAllByApplicationIDs provides a mock function with given fields: ctx, applicationIDs, pageSize, cursor
-func (_m *BundleService) ListAllByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
+// ListByApplicationIDs provides a mock function with given fields: ctx, applicationIDs, pageSize, cursor
+func (_m *BundleService) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
 
 	var r0 []*model.BundlePage

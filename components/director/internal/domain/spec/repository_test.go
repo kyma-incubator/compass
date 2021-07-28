@@ -228,13 +228,13 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 	firstEventSpecEntity := fixEventSpecEntityWithIDs(firstSpecID, firstEventID)
 	secondEventSpecEntity := fixEventSpecEntityWithIDs(secondSpecID, secondEventID)
 
-	selectQueryAPIs := fmt.Sprintf(`\(SELECT (.+) FROM public\.specifications 
+	selectQueryAPIs := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications 
 		WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
 		\(SELECT (.+) FROM public\.specifications WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
 	countQueryAPIs := fmt.Sprintf(`SELECT api_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE %s AND api_def_id IS NOT NULL GROUP BY api_def_id ORDER BY api_def_id ASC`, fixTenantIsolationSubquery())
 
-	selectQueryEvents := fmt.Sprintf(`\(SELECT (.+) FROM public\.specifications 
+	selectQueryEvents := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications 
 		WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
 		\(SELECT (.+) FROM public\.specifications WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 

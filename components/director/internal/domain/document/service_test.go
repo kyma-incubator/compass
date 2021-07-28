@@ -351,7 +351,7 @@ func TestService_Delete(t *testing.T) {
 	}
 }
 
-func TestService_ListAllByBundleIDs(t *testing.T) {
+func TestService_ListByBundleIDs(t *testing.T) {
 	// given
 	testErr := errors.New("test error")
 
@@ -406,7 +406,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("ListAllForBundle", ctx, tnt, bundleIDs, 2, after).Return(docPages, nil).Once()
+				repo.On("ListByBundleIDs", ctx, tnt, bundleIDs, 2, after).Return(docPages, nil).Once()
 				return repo
 			},
 			PageSize:       2,
@@ -436,7 +436,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			Name: "Returns error when Documents listing failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("ListAllForBundle", ctx, tnt, bundleIDs, 2, after).Return(nil, testErr).Once()
+				repo.On("ListByBundleIDs", ctx, tnt, bundleIDs, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -452,7 +452,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 			svc := document.NewService(repo, nil, nil)
 
 			// when
-			docs, err := svc.ListAllByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
+			docs, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -469,7 +469,7 @@ func TestService_ListAllByBundleIDs(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.ListAllByBundleIDs(context.TODO(), nil, 5, "")
+		_, err := svc.ListByBundleIDs(context.TODO(), nil, 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

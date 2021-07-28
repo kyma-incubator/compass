@@ -742,7 +742,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 	})
 }
 
-func TestService_ListAllByApplicationIDs(t *testing.T) {
+func TestService_ListByApplicationIDs(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
@@ -844,7 +844,7 @@ func TestService_ListAllByApplicationIDs(t *testing.T) {
 			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
-			bndls, err := svc.ListAllByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
+			bndls, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -861,7 +861,7 @@ func TestService_ListAllByApplicationIDs(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.ListAllByApplicationIDs(context.TODO(), nil, 5, "")
+		_, err := svc.ListByApplicationIDs(context.TODO(), nil, 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

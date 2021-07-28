@@ -17,7 +17,7 @@ type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
-	ListAllForBundle(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
+	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
@@ -47,7 +47,7 @@ type BundleReferenceService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
-	ListAllByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
+	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 type service struct {
@@ -68,7 +68,7 @@ func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specServ
 	}
 }
 
-func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while loading tenant from context")
@@ -78,12 +78,12 @@ func (s *service) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pa
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	bundleRefs, counts, err := s.bundleReferenceService.ListAllByBundleIDs(ctx, model.BundleEventReference, bundleIDs, pageSize, cursor)
+	bundleRefs, counts, err := s.bundleReferenceService.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, pageSize, cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.eventAPIRepo.ListAllForBundle(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
+	return s.eventAPIRepo.ListByBundleIDs(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
 }
 
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error) {

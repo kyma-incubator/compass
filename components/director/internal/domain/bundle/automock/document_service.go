@@ -58,8 +58,8 @@ func (_m *DocumentService) GetForBundle(ctx context.Context, id string, bundleID
 	return r0, r1
 }
 
-// ListAllByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
-func (_m *DocumentService) ListAllByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
+// ListByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
+func (_m *DocumentService) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	ret := _m.Called(ctx, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.DocumentPage
