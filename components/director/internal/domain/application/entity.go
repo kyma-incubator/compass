@@ -18,6 +18,7 @@ type Entity struct {
 	HealthCheckURL        sql.NullString `db:"healthcheck_url"`
 	IntegrationSystemID   sql.NullString `db:"integration_system_id"`
 	BaseURL               sql.NullString `db:"base_url"`
+	SystemNumber          sql.NullString `db:"system_number"`
 	Labels                sql.NullString `db:"labels"`
 	CorrelationIds        sql.NullString `db:"correlation_ids"`
 	*repo.BaseEntity

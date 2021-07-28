@@ -35,6 +35,11 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
 		return
 	}
+
+	h.GenerateWithoutCredentials(writer, r)
+}
+
+func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
 	token := jwt.New(jwt.SigningMethodNone)
 	output, err := token.SigningString()
 	if err != nil {
