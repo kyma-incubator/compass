@@ -39,6 +39,11 @@ spec:
         - name: {{ .Chart.Name }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          command:
+            - "/bin/sh"
+          args:
+              - "-c"
+              - "./tenantfetcher-svc; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           ports:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
@@ -139,12 +144,6 @@ spec:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-          command:
-            - "/bin/sh"
-          args:
-              - "-c"
-              - "./tenantfetcher-svc; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-        - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
