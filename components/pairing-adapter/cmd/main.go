@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -22,6 +23,9 @@ func main() {
 	err := envconfig.Init(&conf)
 	exitOnError(err, "while reading Pairing Adapter configuration")
 
+	ctx, err := log.Configure(context.Background(), conf.Log)
+	exitOnError(err, "while configuring logger")
+
 	authStyle, err := getAuthStyle(conf.OAuth.AuthStyle)
 	exitOnError(err, "while getting Auth Style")
 
@@ -35,7 +39,7 @@ func main() {
 	baseClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, baseClient)
 
 	client := cc.Client(ctx)
 	client.Timeout = conf.ClientTimeout
@@ -66,7 +70,7 @@ func main() {
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 

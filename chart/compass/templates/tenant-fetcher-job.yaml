@@ -43,6 +43,8 @@ spec:
                 value: {{ $config.kubernetes.pollTimeout }}
               - name: APP_KUBERNETES_TIMEOUT
                 value: {{ $config.kubernetes.timeout }}
+              - name: APP_LOG_FORMAT
+                value: {{ $.Values.global.log.format | quote }}
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:

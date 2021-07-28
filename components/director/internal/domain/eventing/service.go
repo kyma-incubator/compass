@@ -338,7 +338,7 @@ func (s *service) getRuntimeForApplicationScenarios(ctx context.Context, tenantI
 	}
 
 	if !hasScenarios {
-		return nil, false, apperrors.NewInternalError("application does not belong to scenarios")
+		return nil, false, nil
 	}
 
 	runtime, err := s.runtimeRepo.GetByFiltersAndID(ctx, tenantID, runtimeID.String(), runtimeScenariosFilter)
