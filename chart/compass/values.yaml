@@ -66,25 +66,25 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1936"
+      version: "PR-1956"
     connectivity_adapter:
       dir:
-      version: "PR-1910"
+      version: "PR-1956"
     pairing_adapter:
       dir:
-      version: "PR-1910"
+      version: "PR-1956"
     director:
       dir:
       version: "PR-1950"
     gateway:
       dir:
-      version: "PR-1910"
+      version: "PR-1956"
     operations_controller:
       dir:
-      version: "PR-1924"
+      version: "PR-1963"
     tenant_fetcher:
       dir:
-      version: "PR-1929"
+      version: "PR-1956"
     ord_service:
       dir:
       version: "PR-32"
@@ -93,7 +93,7 @@ global:
       version: "PR-1905"
     system_broker:
       dir:
-      version: "PR-1925"
+      version: "PR-1956"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -149,6 +149,9 @@ global:
     secretName: "compass-gateway-auditlog-secret"
     script:
       configMapName: "auditlog-script"
+
+  log:
+    format: "kibana"
 
   testCredentials:
     secretName: "test-credentials-secret"

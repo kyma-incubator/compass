@@ -3,6 +3,8 @@ package adapter
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -20,6 +22,7 @@ type Configuration struct {
 	Port          string        `envconfig:"default=8080"`
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 	ServerTimeout time.Duration `envconfig:"default=30s"`
+	Log           *log.Config
 }
 
 type Mapping struct {

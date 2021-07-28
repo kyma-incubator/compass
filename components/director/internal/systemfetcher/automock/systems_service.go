@@ -27,7 +27,6 @@ func (_m *SystemsService) CreateManyIfNotExistsWithEventualTemplate(ctx context.
 
 	return r0
 }
-
 // GetByNameAndSystemNumber provides a mock function with given fields: ctx, name, systemNumber
 func (_m *SystemsService) GetByNameAndSystemNumber(ctx context.Context, name string, systemNumber string) (*model.Application, error) {
 	ret := _m.Called(ctx, name, systemNumber)
