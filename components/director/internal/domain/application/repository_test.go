@@ -860,14 +860,11 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 
 func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
 	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
-	// app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
 	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
-	// appEntity2 := fixDetailedEntityApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
 
 	appModel1 := fixDetailedModelApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
-	// appModel2 := fixDetailedModelApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
 
-	getQuery := `^SELECT (.+) FROM public\.applications WHERE tenant_id = \$1 AND name = \$2 AND system_number = \$3`
+	getQuery := `^SELECT (.+) FROM public\.applications WHERE ` + fixTenantIsolationSubqueryWithArg(1) + ` AND name = \$2 AND system_number = \$3`
 
 	t.Run("Success", func(t *testing.T) {
 		// given
