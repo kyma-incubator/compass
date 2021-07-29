@@ -161,22 +161,22 @@ func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID 
 	return r0, r1
 }
 
-// ListForBundle provides a mock function with given fields: ctx, tenantID, bundleID, pageSize, cursor
-func (_m *EventAPIRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	ret := _m.Called(ctx, tenantID, bundleID, pageSize, cursor)
+// ListByBundleIDs provides a mock function with given fields: ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor
+func (_m *EventAPIRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 
-	var r0 *model.EventDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventDefinitionPage); ok {
-		r0 = rf(ctx, tenantID, bundleID, pageSize, cursor)
+	var r0 []*model.EventDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) []*model.EventDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventDefinitionPage)
+			r0 = ret.Get(0).([]*model.EventDefinitionPage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, tenantID, bundleID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) error); ok {
+		r1 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

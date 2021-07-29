@@ -58,22 +58,22 @@ func (_m *DocumentService) GetForBundle(ctx context.Context, id string, bundleID
 	return r0, r1
 }
 
-// ListForBundle provides a mock function with given fields: ctx, bundleID, pageSize, cursor
-func (_m *DocumentService) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	ret := _m.Called(ctx, bundleID, pageSize, cursor)
+// ListByBundleIDs provides a mock function with given fields: ctx, bundleIDs, pageSize, cursor
+func (_m *DocumentService) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
+	ret := _m.Called(ctx, bundleIDs, pageSize, cursor)
 
-	var r0 *model.DocumentPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.DocumentPage); ok {
-		r0 = rf(ctx, bundleID, pageSize, cursor)
+	var r0 []*model.DocumentPage
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.DocumentPage); ok {
+		r0 = rf(ctx, bundleIDs, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.DocumentPage)
+			r0 = ret.Get(0).([]*model.DocumentPage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
-		r1 = rf(ctx, bundleID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
+		r1 = rf(ctx, bundleIDs, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

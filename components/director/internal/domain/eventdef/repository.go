@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -41,28 +42,26 @@ type EventAPIDefinitionConverter interface {
 }
 
 type pgRepository struct {
-	singleGetter    repo.SingleGetter
-	pageableQuerier repo.PageableQuerier
-	queryBuilder    repo.QueryBuilder
-	lister          repo.Lister
-	creator         repo.Creator
-	updater         repo.Updater
-	deleter         repo.Deleter
-	existQuerier    repo.ExistQuerier
-	conv            EventAPIDefinitionConverter
+	singleGetter repo.SingleGetter
+	queryBuilder repo.QueryBuilder
+	lister       repo.Lister
+	creator      repo.Creator
+	updater      repo.Updater
+	deleter      repo.Deleter
+	existQuerier repo.ExistQuerier
+	conv         EventAPIDefinitionConverter
 }
 
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
-		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
-		lister:          repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
-		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
-		updater:         repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
-		deleter:         repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
-		existQuerier:    repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
-		conv:            conv,
+		singleGetter: repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		queryBuilder: repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
+		lister:       repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		creator:      repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
+		updater:      repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
+		deleter:      repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
+		existQuerier: repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
+		conv:         conv,
 	}
 }
 
@@ -88,8 +87,53 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 	return r.GetByID(ctx, tenant, id)
 }
 
-func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
+func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
+	eventDefIds := make([]string, 0, len(bundleRefs))
+	for _, ref := range bundleRefs {
+		eventDefIds = append(eventDefIds, *ref.ObjectID)
+	}
+
+	var conditions repo.Conditions
+	if len(eventDefIds) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues("id", eventDefIds),
+		}
+	}
+
+	var eventCollection EventAPIDefCollection
+	err := r.lister.List(ctx, tenantID, &eventCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	refsByBundleId, eventDefsByEventDefId := r.groupEntitiesByID(bundleRefs, eventCollection)
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	eventDefPages := make([]*model.EventDefinitionPage, 0, len(bundleIDs))
+	for _, bundleID := range bundleIDs {
+		ids := getEventDefIDsForBundle(refsByBundleId[bundleID])
+		eventDefs := getEventDefsForBundle(ids, eventDefsByEventDefId)
+		hasNextPage := false
+		endCursor := ""
+		if totalCounts[bundleID] > offset+len(eventDefs) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		eventDefPages = append(eventDefPages, &model.EventDefinitionPage{Data: eventDefs, TotalCount: totalCounts[bundleID], PageInfo: page})
+	}
+
+	return eventDefPages, nil
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
@@ -103,40 +147,6 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 		events = append(events, &eventModel)
 	}
 	return events, nil
-}
-
-func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	subqueryConditions := repo.Conditions{
-		repo.NewEqualCondition(bundleColumn, bundleID),
-		repo.NewNotNullCondition(bundlereferences.EventDefIDColumn),
-	}
-	subquery, args, err := r.queryBuilder.BuildQuery(tenant, false, subqueryConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	inOperatorConditions := repo.Conditions{
-		repo.NewInConditionForSubQuery(idColumn, subquery, args),
-	}
-
-	var eventCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &eventCollection, inOperatorConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []*model.EventDefinition
-
-	for _, eventEnt := range eventCollection {
-		m := r.conv.FromEntity(eventEnt)
-		items = append(items, &m)
-	}
-
-	return &model.EventDefinitionPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
 }
 
 func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) error {
@@ -200,4 +210,37 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 	}
 
 	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
+}
+
+func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {
+	result := make([]*model.EventDefinition, 0, len(ids))
+	if len(defs) > 0 {
+		for _, id := range ids {
+			result = append(result, defs[id])
+		}
+	}
+	return result
+}
+
+func getEventDefIDsForBundle(refs []*model.BundleReference) []string {
+	result := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		result = append(result, *ref.ObjectID)
+	}
+	return result
+}
+
+func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, eventCollectionCollection EventAPIDefCollection) (map[string][]*model.BundleReference, map[string]*model.EventDefinition) {
+	refsByBundleId := map[string][]*model.BundleReference{}
+	for _, ref := range bundleRefs {
+		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+	}
+
+	eventsByApiDefId := map[string]*model.EventDefinition{}
+	for _, eventEnt := range eventCollectionCollection {
+		m := r.conv.FromEntity(eventEnt)
+		eventsByApiDefId[eventEnt.ID] = &m
+	}
+
+	return refsByBundleId, eventsByApiDefId
 }

@@ -89,6 +89,78 @@ func TestService_ListByReferenceObjectID(t *testing.T) {
 	})
 }
 
+func TestService_ListByReferenceObjectIDs(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	firstAPIID := "apiID"
+	secondAPIID := "apiID2"
+	apiIDs := []string{firstAPIID, secondAPIID}
+
+	specForFirstAPI := fixModelAPISpecWithID(firstAPIID)
+	specForSecondAPI := fixModelAPISpecWithID(secondAPIID)
+	specs := []*model.Spec{specForFirstAPI, specForSecondAPI}
+
+	ctx := context.TODO()
+	ctx = tnt.SaveToContext(ctx, tenant, externalTenant)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.SpecRepository
+		ExpectedResult     []*model.Spec
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tenant, model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				return repo
+			},
+			ExpectedResult: specs,
+		},
+		{
+			Name: "Returns error when Specs listing failed",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tenant, model.APISpecReference, apiIDs).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := spec.NewService(repo, nil, nil, nil)
+
+			// when
+			specifications, err := svc.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiIDs)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, specifications)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := spec.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByReferenceObjectIDs(context.TODO(), model.APISpecReference, apiIDs)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -1016,4 +1088,87 @@ func TestService_GetFetchRequest(t *testing.T) {
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
+}
+
+func TestService_ListFetchRequestsByReferenceObjectIDs(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	frURL := "foo.bar"
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	firstSpecID := "specID"
+	secondSpecID := "specID2"
+	specIDs := []string{firstSpecID, secondSpecID}
+	timestamp := time.Now()
+
+	firstFetchRequest := &model.FetchRequest{
+		ID:  firstFRID,
+		URL: frURL,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+	}
+
+	secondFetchRequest := &model.FetchRequest{
+		ID:  secondFRID,
+		URL: frURL,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+	}
+	fetchRequests := []*model.FetchRequest{firstFetchRequest, secondFetchRequest}
+
+	ctx := context.TODO()
+	ctx = tnt.SaveToContext(ctx, tenant, externalTenant)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.FetchRequestRepository
+		ExpectedResult     []*model.FetchRequest
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tenant, model.SpecFetchRequestReference, specIDs).Return(fetchRequests, nil).Once()
+				return repo
+			},
+			ExpectedResult: fetchRequests,
+		},
+		{
+			Name: "Returns error when Fetch Requests listing failed",
+			RepositoryFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tenant, model.SpecFetchRequestReference, specIDs).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := spec.NewService(nil, repo, nil, nil)
+
+			// when
+			frs, err := svc.ListFetchRequestsByReferenceObjectIDs(ctx, tenant, specIDs)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, frs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
 }

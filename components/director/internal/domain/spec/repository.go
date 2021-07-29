@@ -12,13 +12,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-const specificationsTable string = `public.specifications`
-
-const apiDefIDColumn = "api_def_id"
-const eventAPIDefIDColumn = "event_def_id"
+const (
+	specificationsTable string = `public.specifications`
+	apiDefIDColumn             = "api_def_id"
+	eventAPIDefIDColumn        = "event_def_id"
+	pageSize                   = 1
+	cursor                     = ""
+)
 
 var (
 	specificationsColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
+	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("created_at"), repo.NewAscOrderBy("id")}
 	tenantColumn          = "tenant_id"
 )
 
@@ -31,6 +35,7 @@ type Converter interface {
 type repository struct {
 	creator      repo.Creator
 	lister       repo.Lister
+	unionLister  repo.UnionLister
 	getter       repo.SingleGetter
 	deleter      repo.Deleter
 	updater      repo.Updater
@@ -48,6 +53,7 @@ func NewRepository(conv Converter) *repository {
 				Dir:   repo.AscOrderBy,
 			},
 		}),
+		unionLister:  repo.NewUnionLister(resource.Specification, specificationsTable, tenantColumn, specificationsColumns),
 		deleter:      repo.NewDeleter(resource.Specification, specificationsTable, tenantColumn),
 		updater:      repo.NewUpdater(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, tenantColumn, []string{"id"}),
 		existQuerier: repo.NewExistQuerier(resource.Specification, specificationsTable, tenantColumn),
@@ -89,7 +95,7 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 		repo.NewEqualCondition(fieldName, objectID),
 	}
 
-	var specCollection specCollection
+	var specCollection SpecCollection
 	err = r.lister.List(ctx, tenant, &specCollection, conditions...)
 	if err != nil {
 		return nil, err
@@ -107,6 +113,34 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 	}
 
 	return items, nil
+}
+
+func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error) {
+	objectFieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewNotNullCondition(objectFieldName),
+	}
+
+	var specs SpecCollection
+	_, err = r.unionLister.List(ctx, tenant, objectIDs, objectFieldName, pageSize, cursor, orderByColumns, &specs, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	specifications := make([]*model.Spec, 0, len(specs))
+	for _, s := range specs {
+		entity, err := r.conv.FromEntity(s)
+		if err != nil {
+			return nil, err
+		}
+		specifications = append(specifications, &entity)
+	}
+
+	return specifications, nil
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
@@ -147,8 +181,8 @@ func (r *repository) referenceObjectFieldName(objectType model.SpecReferenceObje
 	return "", apperrors.NewInternalError("Invalid type of the Specification reference object")
 }
 
-type specCollection []Entity
+type SpecCollection []Entity
 
-func (r specCollection) Len() int {
+func (r SpecCollection) Len() int {
 	return len(r)
 }
