@@ -2,11 +2,12 @@ package healthz_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	automock2 "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	automock2 "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 
 	"github.com/pkg/errors"
 
@@ -32,7 +33,6 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
 		transactioner.On("PingContext", ctxWithTransaction).Once().Return(nil)
 		defer transactioner.AssertExpectations(t)
-
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
@@ -106,7 +106,6 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
-
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("", errors.New("db error"))
