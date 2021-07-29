@@ -187,18 +187,12 @@ export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
 export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
 export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
 
-export APP_TENANT_PROVIDER_TENANT_ID_PROPERTY=tenantId
-export APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY=customerId
-export APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY=subscribedSubdomain
-export APP_TENANT_PROVIDER=provider
-export APP_TENANT_IDENTITY_ZONE=europe-1
-export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
 
 if [[  ${DEBUG} ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"
     cd $GOPATH/src/github.com/kyma-incubator/compass/components/director
-    CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/tenantfetcher-svc
-    dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./tenantfetcher-svc
+    CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/director
+    dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./director
 else
-    go run ${ROOT_PATH}/cmd/tenantfetcher-svc/main.go
+    go run ${ROOT_PATH}/cmd/director/main.go
 fi
