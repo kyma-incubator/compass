@@ -299,7 +299,7 @@ func main() {
 
 	logger.Infof("Registering readiness endpoint...")
 	schemaRepo := schema.NewRepository()
-	ready := healthz.NewReady(ctx, transact, cfg.ReadyConfig, schemaRepo)
+	ready := healthz.NewReady(context.WithValue(ctx, "PersistenceCtxKey", transact), transact, cfg.ReadyConfig, schemaRepo)
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")

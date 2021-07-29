@@ -2,6 +2,8 @@ package healthz_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	automock2 "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,18 +22,23 @@ var (
 )
 
 func TestNewReadinessHandler(t *testing.T) {
+	tx := &automock2.PersistenceTx{}
 
 	t.Run("success", func(t *testing.T) {
 		ctx := context.TODO()
-		pinger := &automock.Pinger{}
-		pinger.On("PingContext", ctx).Once().Return(nil)
-		defer pinger.AssertExpectations(t)
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(tx, nil)
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("PingContext", ctxWithTransaction).Once().Return(nil)
+		defer transactioner.AssertExpectations(t)
+
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctx).Once().Return("XXXXXXXXXXXXXX", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, pinger, cfg, repository)
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 200, "")
@@ -39,15 +46,18 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("success when cached result", func(t *testing.T) {
 		ctx := context.TODO()
-		pinger := &automock.Pinger{}
-		pinger.On("PingContext", ctx).Twice().Return(nil)
-		defer pinger.AssertExpectations(t)
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(tx, nil)
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("PingContext", ctxWithTransaction).Twice().Return(nil)
+		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctx).Once().Return("XXXXXXXXXXXXXX", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, pinger, cfg, repository)
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 200, "")
@@ -56,15 +66,18 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail when ping fails", func(t *testing.T) {
 		ctx := context.TODO()
-		pinger := &automock.Pinger{}
-		pinger.On("PingContext", ctx).Once().Return(errors.New("Ping failure"))
-		defer pinger.AssertExpectations(t)
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(tx, nil)
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("PingContext", ctxWithTransaction).Once().Return(errors.New("Ping failure"))
+		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctx).Once().Return("XXXXXXXXXXXXXX", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, pinger, cfg, repository)
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
@@ -72,13 +85,16 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail when schema compatibility check fails", func(t *testing.T) {
 		ctx := context.TODO()
-		pinger := &automock.Pinger{}
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(tx, nil)
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctx).Once().Return("YYYYYYYYYYYYY", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("YYYYYYYYYYYYY", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, pinger, cfg, repository)
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
@@ -86,13 +102,31 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail when error is received while getting schema version from database", func(t *testing.T) {
 		ctx := context.TODO()
-		pinger := &automock.Pinger{}
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(tx, nil)
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctx).Once().Return("", errors.New("db error"))
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("", errors.New("db error"))
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, pinger, cfg, repository)
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+
+		// THEN
+		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
+	})
+
+	t.Run("fail while opening transaction", func(t *testing.T) {
+		ctx := context.TODO()
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+
+		repository := &automock.Repository{}
+
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")

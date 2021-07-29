@@ -2,6 +2,9 @@ package healthz
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -16,16 +19,16 @@ type ReadyConfig struct {
 
 type Ready struct {
 	ctx              context.Context
-	pinger           Pinger
+	transactioner    persistence.Transactioner
 	schemaCompatible bool
 	cfg              ReadyConfig
 	repo             Repository
 }
 
-func NewReady(ctx context.Context, pinger Pinger, cfg ReadyConfig, repository Repository) *Ready {
+func NewReady(ctx context.Context, transactioner persistence.Transactioner, cfg ReadyConfig, repository Repository) *Ready {
 	return &Ready{
 		ctx:              ctx,
-		pinger:           pinger,
+		transactioner:    transactioner,
 		schemaCompatible: false,
 		cfg:              cfg,
 		repo:             repository,
@@ -37,8 +40,18 @@ func (r *Ready) checkSchemaCompatibility() bool {
 		return true
 	}
 
+	tx, err := r.transactioner.Begin()
+	if err != nil {
+		log.C(r.ctx).Errorf(errors.Wrap(err, "while starting transaction").Error())
+		return false
+	}
+	defer r.transactioner.RollbackUnlessCommitted(r.ctx, tx)
+
+	r.ctx = persistence.SaveToContext(r.ctx, tx)
+
 	schemaVersion, err := r.repo.GetVersion(r.ctx)
 	if err != nil {
+		log.C(r.ctx).Errorf("Failed to get schema version: %s", err.Error())
 		return false
 	}
 
@@ -59,7 +72,7 @@ func NewReadinessHandler(r *Ready) func(writer http.ResponseWriter, request *htt
 			return
 		}
 
-		if err := r.pinger.PingContext(r.ctx); err != nil {
+		if err := r.transactioner.PingContext(r.ctx); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
