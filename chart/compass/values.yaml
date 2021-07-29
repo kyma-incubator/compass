@@ -440,5 +440,8 @@ global:
       runAsUser: 2000
       allowPrivilegeEscalation: false
 
+  schema:
+    version: "20210715113344"
+
 pairing-adapter:
   enabled: false

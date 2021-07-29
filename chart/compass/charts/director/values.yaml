@@ -44,3 +44,8 @@ istio:
 
 health:
   indicators: "{database,5s,1s,1s,3}"
+
+readinessProbe:
+  initialDelaySeconds: 5
+  timeoutSeconds: 2
+  periodSeconds: 5
