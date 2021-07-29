@@ -64,3 +64,26 @@ func (_m *FetchRequestRepository) GetByReferenceObjectID(ctx context.Context, te
 
 	return r0, r1
 }
+
+// ListByReferenceObjectIDs provides a mock function with given fields: ctx, tenant, objectType, objectIDs
+func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
+	ret := _m.Called(ctx, tenant, objectType, objectIDs)
+
+	var r0 []*model.FetchRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) []*model.FetchRequest); ok {
+		r0 = rf(ctx, tenant, objectType, objectIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FetchRequest)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) error); ok {
+		r1 = rf(ctx, tenant, objectType, objectIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

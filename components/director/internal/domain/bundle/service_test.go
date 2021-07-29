@@ -667,116 +667,6 @@ func TestService_GetForApplication(t *testing.T) {
 	})
 }
 
-func TestService_ListByApplicationID(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	applicationID := "bar"
-	name := "foo"
-	desc := "bar"
-
-	bundles := []*model.Bundle{
-		fixBundleModel(name, desc),
-		fixBundleModel(name, desc),
-		fixBundleModel(name, desc),
-	}
-	bundlePage := &model.BundlePage{
-		Data:       bundles,
-		TotalCount: len(bundles),
-		PageInfo: &pagination.Page{
-			HasNextPage: false,
-			EndCursor:   "end",
-			StartCursor: "start",
-		},
-	}
-
-	after := "test"
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
-
-	testCases := []struct {
-		Name               string
-		PageSize           int
-		RepositoryFn       func() *automock.BundleRepository
-		ExpectedResult     *model.BundlePage
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(bundlePage, nil).Once()
-				return repo
-			},
-			PageSize:           2,
-			ExpectedResult:     bundlePage,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Return error when page size is less than 1",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				return repo
-			},
-			PageSize:           0,
-			ExpectedResult:     bundlePage,
-			ExpectedErrMessage: "page size must be between 1 and 200",
-		},
-		{
-			Name: "Return error when page size is bigger than 200",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				return repo
-			},
-			PageSize:           201,
-			ExpectedResult:     bundlePage,
-			ExpectedErrMessage: "page size must be between 1 and 200",
-		},
-		{
-			Name: "Returns error when Bundle listing failed",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(nil, testErr).Once()
-				return repo
-			},
-			PageSize:           2,
-			ExpectedResult:     nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
-
-			// when
-			docs, err := svc.ListByApplicationID(ctx, applicationID, testCase.PageSize, after)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, docs)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
-		// WHEN
-		_, err := svc.ListByApplicationID(context.TODO(), "", 5, "")
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot read tenant from context")
-	})
-}
-
 func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -846,6 +736,132 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationIDNoPaging(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListByApplicationIDs(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	firstAppID := "bar"
+	secondAppID := "bar2"
+	name := "foo"
+	desc := "bar"
+	appIDs := []string{firstAppID, secondAppID}
+
+	bundleFirstApp := fixBundleModel(name, desc)
+	bundleFirstApp.ApplicationID = firstAppID
+	bundleSecondApp := fixBundleModel(name, desc)
+	bundleSecondApp.ApplicationID = secondAppID
+
+	bundlesFirstApp := []*model.Bundle{bundleFirstApp}
+	bundlesSecondApp := []*model.Bundle{bundleSecondApp}
+
+	bundlePageFirstApp := &model.BundlePage{
+		Data:       bundlesFirstApp,
+		TotalCount: len(bundlesFirstApp),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+	bundlePageSecondApp := &model.BundlePage{
+		Data:       bundlesSecondApp,
+		TotalCount: len(bundlesSecondApp),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	bundlePages := []*model.BundlePage{bundlePageFirstApp, bundlePageSecondApp}
+
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.BundleRepository
+		ExpectedResult     []*model.BundlePage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDs", ctx, tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     bundlePages,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedResult:     bundlePages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Return error when page size is bigger than 200",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				return repo
+			},
+			PageSize:           201,
+			ExpectedResult:     bundlePages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Returns error when Bundle listing failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDs", ctx, tenantID, appIDs, 2, after).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+
+			// when
+			bndls, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, bndls)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationIDs(context.TODO(), nil, 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

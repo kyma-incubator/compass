@@ -17,6 +17,7 @@ type SpecRepository interface {
 	Create(ctx context.Context, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
 	Update(ctx context.Context, item *model.Spec) error
@@ -28,6 +29,7 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
+	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -84,6 +86,17 @@ func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.S
 	}
 
 	return nil, nil
+}
+
+func (s *service) ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	specs, err := s.repo.ListByReferenceObjectIDs(ctx, tnt, objectType, objectIDs)
+
+	return specs, err
 }
 
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
@@ -229,6 +242,10 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.Fe
 	}
 
 	return fetchRequest, nil
+}
+
+func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error) {
+	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.SpecFetchRequestReference, objectIDs)
 }
 
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
