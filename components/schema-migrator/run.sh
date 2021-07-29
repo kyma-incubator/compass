@@ -5,7 +5,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-CLEAN_DB='clean'
+CLEAN_DB_MESSAGE='error: no migration'
 
 for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD MIGRATION_PATH DIRECTION; do
     if [ -z "${!var}" ] ; then
@@ -75,11 +75,16 @@ function currentVersion {
   echo $(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1)
 }
 
-LAST_SUCCESSFUL_MIGRATION=$(currentVersion)
-echo "Last successful migration is $LAST_SUCCESSFUL_MIGRATION"
-if [[ $LAST_SUCCESSFUL_MIGRATION == 'error: no migration' ]]; then
-  LAST_SUCCESSFUL_MIGRATION=$CLEAN_DB
-fi
+function ensureMigrationExists() {
+    LOCATION=$1
+    MIGRATION=$2
+    echo "Ensuring migration version \"$MIGRATION\" exists in \"$LOCATION\"..."
+    if [[ -z "$MIGRATION" ]] || [[ -z $(ls -al "$LOCATION" | grep "$MIGRATION") ]]; then
+      echo "Migration version \"$MIGRATION\" does not exist in \"$LOCATION\". Available migrations are:"
+      ls -al $LOCATION || true
+      exit 1
+    fi
+}
 
 CMD="migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" ${DIRECTION}"
 
@@ -91,10 +96,6 @@ if [[ "${DRY_RUN}" == "true" ]]; then
 fi
 
 if [[ "${DIRECTION}" == "up" ]]; then
-  # Save previous successful migration in case of reverting the Compass version
-   kubectl create configmap -n ${CM_NAMESPACE} ${CM_NAME} --from-literal=version=$LAST_SUCCESSFUL_MIGRATION || \
-      kubectl create configmap -n ${CM_NAMESPACE} ${CM_NAME} --from-literal=version=$LAST_SUCCESSFUL_MIGRATION --dry-run=client -o yaml | kubectl apply -f -
-
   echo "Replacing migrations in Persistent Volume with current migrations"
   rm  ${MIGRATION_STORAGE_PATH}/* || true
   cp -R migrations/${MIGRATION_PATH}/. ${MIGRATION_STORAGE_PATH}
@@ -102,18 +103,22 @@ if [[ "${DIRECTION}" == "up" ]]; then
   echo '# STARTING MIGRATION #'
   $CMD
 else
-  REVERT_TO=$(kubectl get configmap -n $CM_NAMESPACE $CM_NAME -o jsonpath='{.data.version}')
-  echo "Will perform down migration to version $REVERT_TO"
-  migrationExists=$(ls ${MIGRATION_STORAGE_PATH} | grep $REVERT_TO)
-  if [[ -z $migrationExists ]] && [[ "$REVERT_TO" != "$CLEAN_DB" ]]; then
-    echo "Migration version $REVERT_TO does not exist, please update the $CM_NAMESPACE/$CM_NAME configmap manually with the correct migration version. Available migrations are:"
-    ls ${MIGRATION_STORAGE_PATH}
-    exit 1
+  REVERT_TO=$(ls -lr migrations/${MIGRATION_PATH} | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
+  LAST_SUCCESSFUL_MIGRATION=$(currentVersion)
+  echo "Last successful migration is $LAST_SUCCESSFUL_MIGRATION"
+  if [[ $LAST_SUCCESSFUL_MIGRATION == $CLEAN_DB_MESSAGE ]]; then
+    REVERT_TO=$CLEAN_DB_MESSAGE
   fi
 
-  if [[ $LAST_SUCCESSFUL_MIGRATION != "$CLEAN_DB" ]]; then
+  echo "Will perform down migration to version $REVERT_TO"
+  if [[ "$REVERT_TO" != "$CLEAN_DB_MESSAGE" ]]; then
+    ensureMigrationExists ${MIGRATION_STORAGE_PATH} $REVERT_TO
+  fi
+
+  if [[ $LAST_SUCCESSFUL_MIGRATION != "$CLEAN_DB_MESSAGE" ]]; then
     LAST_SUCCESSFUL_MIGRATION=$(echo $LAST_SUCCESSFUL_MIGRATION | head -n1 | cut -d " " -f1)
-    echo "Cleaning dirty flag - force reset to $LAST_SUCCESSFUL_MIGRATION"
+    echo "Cleaning dirty flag - will force reset to last successful migration version \"$LAST_SUCCESSFUL_MIGRATION\""
+    ensureMigrationExists ${MIGRATION_STORAGE_PATH} $LAST_SUCCESSFUL_MIGRATION
     migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" force $LAST_SUCCESSFUL_MIGRATION
   fi
 
