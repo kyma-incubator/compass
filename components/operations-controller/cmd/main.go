@@ -21,18 +21,18 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
+	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
+	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-
-	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
-	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
-	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -81,7 +81,20 @@ func main() {
 	err = cfg.Validate()
 	fatalOnError(err)
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(devLogging)))
+	loggerConfig := zapcore.EncoderConfig{
+		TimeKey:        "written_at",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.RFC3339NanoTimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+	ctrl.SetLogger(zap.New(zap.UseDevMode(devLogging), zap.Encoder(zapcore.NewJSONEncoder(loggerConfig))))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

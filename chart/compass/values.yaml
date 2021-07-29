@@ -75,13 +75,13 @@ global:
       version: "PR-1956"
     director:
       dir:
-      version: "PR-1956"
+      version: "PR-1965"
     gateway:
       dir:
       version: "PR-1956"
     operations_controller:
       dir:
-      version: "PR-1956"
+      version: "PR-1963"
     tenant_fetcher:
       dir:
       version: "PR-1956"
@@ -101,13 +101,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1956"
+      version: "PR-1905"
     console:
       dir:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1956"
+      version: "PR-1905"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -361,6 +361,36 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+
+  systemFetcher:
+    enabled: false
+    name: "system-fetcher"
+    schedule: "0 0 * * *"
+    manageSecrets: true
+    # fetchParallellism - shows how many http calls will be made in parallel to fetch systems
+    fetchParallellism: 30
+    # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
+    # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
+    queueSize: 100
+    # fetchTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
+    fetchTimeout: "5s"
+    dbPool:
+      maxOpenConnections: 2
+      maxIdleConnections: 2
+    # systemsAPIEndpoint - endpoint of the service to fetch systems from
+    systemsAPIEndpoint: ""
+    # systemsAPIFilterCriteria - criteria for fetching systems
+    systemsAPIFilterCriteria: ""
+    # systemsAPIFilterTenantCriteriaPattern - criateria for fetching systems with tenant filter
+    systemsAPIFilterTenantCriteriaPattern: ""
+    # systemToTemplateMappings - how to map system properties to an existing application template
+    systemToTemplateMappings: '{}'
+    oauth:
+      client: ""
+      secret: ""
+      tokenURLPattern: ""
+      scopesClaim: ""
+      tenantHeaderName: ""
 
   tenantFetchers:
     job1:
