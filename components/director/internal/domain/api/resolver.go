@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -19,7 +21,7 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
-	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
+	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
@@ -179,6 +181,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	log.C(ctx).Infof("APIDefinition with id %s successfully updated.", id)
 	return gqlAPI, nil
 }
+
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -264,38 +267,55 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	log.C(ctx).Infof("Fetching request for APIDefinition with id %s", obj.DefinitionID)
+	params := dataloader.ParamFetchRequestApiDef{ID: obj.ID, Ctx: ctx}
+	return dataloader.ForFetchRequestApiDef(ctx).FetchRequestApiDefById.Load(params)
+}
 
-	if obj == nil {
-		return nil, apperrors.NewInternalError("Error occurred when fetching request for APIDefinition. API Spec cannot be empty")
+func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No ApiDef specs found")}
+	}
+
+	ctx := keys[0].Ctx
+
+	specIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.ID == "" {
+			return nil, []error{apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition Spec ID is empty")}
+		}
+		specIDs = append(specIDs, key.ID)
 	}
 
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if obj.DefinitionID == "" {
-		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition ID is empty")
-	}
-
-	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)
+	fetchRequests, err := r.svc.ListFetchRequests(ctx, specIDs)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	if fr == nil {
+	if fetchRequests == nil {
 		return nil, nil
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
+	gqlFetchRequests := make([]*graphql.FetchRequest, 0, len(fetchRequests))
+	for _, fr := range fetchRequests {
+		fetchRequest, err := r.frConverter.ToGraphQL(fr)
+		if err != nil {
+			return nil, []error{err}
+		}
+		gqlFetchRequests = append(gqlFetchRequests, fetchRequest)
 	}
 
-	log.C(ctx).Infof("Successfully fetched request for APIDefinition %s", obj.DefinitionID)
-	return r.frConverter.ToGraphQL(fr)
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
+	return gqlFetchRequests, nil
 }

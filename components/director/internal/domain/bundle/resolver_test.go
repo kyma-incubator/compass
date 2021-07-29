@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
@@ -297,48 +299,57 @@ func TestResolver_API(t *testing.T) {
 func TestResolver_Apis(t *testing.T) {
 	// given
 	testErr := errors.New("test error")
-
-	bundleID := "1"
 	group := "group"
-	app := fixGQLBundle(bundleID, "foo", "foo")
-	modelAPIDefinitions := []*model.APIDefinition{
-		fixModelAPIDefinition("foo", "Foo", "Lorem Ipsum", group),
-		fixModelAPIDefinition("bar", "Bar", "Lorem Ipsum", group),
-	}
+	desc := "desc"
+	name := "test name"
 
-	modelSpecs := []*model.Spec{
-		{
-			ID:         "test-spec-1",
-			ObjectType: model.APISpecReference,
-			ObjectID:   "foo",
-		},
-		{
-			ID:         "test-spec-2",
-			ObjectType: model.APISpecReference,
-			ObjectID:   "bar",
-		},
-	}
+	firstBundleID := "bundleID"
+	secondBundleID := "bundleID2"
+	bundleIDs := []string{firstBundleID, secondBundleID}
+	firstAPIID := "apiID"
+	secondAPIID := "apiID2"
+	apiIDs := []string{firstAPIID, secondAPIID}
+	firstSpecID := "specID"
+	secondSpecID := "specID2"
 
-	modelBundleRefs := []*model.BundleReference{
-		{
-			Tenant:              tenantID,
-			BundleID:            &bundleID,
-			ObjectType:          model.BundleAPIReference,
-			ObjectID:            &modelAPIDefinitions[0].ID,
-			APIDefaultTargetURL: str.Ptr(""),
-		}, {
-			Tenant:              tenantID,
-			BundleID:            &bundleID,
-			ObjectType:          model.BundleAPIReference,
-			ObjectID:            &modelAPIDefinitions[1].ID,
-			APIDefaultTargetURL: str.Ptr(""),
-		},
-	}
+	// model ApiDefs
+	apiDefFirstBundle := fixModelAPIDefinition(firstAPIID, "Foo", "Lorem Ipsum", group)
+	apiDefSecondBundle := fixModelAPIDefinition(secondAPIID, "Bar", "Lorem Ipsum", group)
 
-	gqlAPIDefinitions := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", bundleID, "Foo", "Lorem Ipsum", group),
-		fixGQLAPIDefinition("bar", bundleID, "Bar", "Lorem Ipsum", group),
-	}
+	apiDefsFirstBundle := []*model.APIDefinition{apiDefFirstBundle}
+	apiDefsSecondBundle := []*model.APIDefinition{apiDefSecondBundle}
+
+	apiDefPageFirstBundle := fixAPIDefinitionPage(apiDefsFirstBundle)
+	apiDefPageSecondBundle := fixAPIDefinitionPage(apiDefsSecondBundle)
+	apiDefPages := []*model.APIDefinitionPage{apiDefPageFirstBundle, apiDefPageSecondBundle}
+
+	// GQL ApiDefs
+	gqlApiDefFirstBundle := fixGQLAPIDefinition(firstAPIID, firstBundleID, name, desc, group)
+	gqlApiDefSecondBundle := fixGQLAPIDefinition(secondAPIID, secondBundleID, name, desc, group)
+
+	gqlApiDefsFirstBundle := []*graphql.APIDefinition{gqlApiDefFirstBundle}
+	gqlApiDefsSecondBundle := []*graphql.APIDefinition{gqlApiDefSecondBundle}
+
+	gqlApiDefPageFirstBundle := fixGQLAPIDefinitionPage(gqlApiDefsFirstBundle)
+	gqlApiDefPageSecondBundle := fixGQLAPIDefinitionPage(gqlApiDefsSecondBundle)
+	gqlApiDefPages := []*graphql.APIDefinitionPage{gqlApiDefPageFirstBundle, gqlApiDefPageSecondBundle}
+
+	// API BundleReferences
+	numberOfApisInFirstBundle := 1
+	numberOfApisInSecondBundle := 1
+	apiDefFirstBundleReference := fixModelAPIBundleReference(firstBundleID, firstAPIID)
+	apiDefSecondBundleReference := fixModelAPIBundleReference(secondBundleID, secondAPIID)
+	bundleRefsFirstAPI := []*model.BundleReference{apiDefFirstBundleReference}
+	bundleRefsSecondAPI := []*model.BundleReference{apiDefSecondBundleReference}
+	bundleRefs := []*model.BundleReference{apiDefFirstBundleReference, apiDefSecondBundleReference}
+	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+
+	// API Specs
+	apiDefFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.APISpecReference, ObjectID: firstAPIID}
+	apiDefSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.APISpecReference, ObjectID: secondAPIID}
+	specsFirstAPI := []*model.Spec{apiDefFirstSpec}
+	specsSecondAPI := []*model.Spec{apiDefSecondSpec}
+	specs := []*model.Spec{apiDefFirstSpec, apiDefSecondSpec}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -353,35 +364,34 @@ func TestResolver_Apis(t *testing.T) {
 		ConverterFn       func() *automock.APIConverter
 		SpecServiceFn     func() *automock.SpecService
 		BundleReferenceFn func() *automock.BundleReferenceService
-		ExpectedResult    *graphql.APIDefinitionPage
-		ExpectedErr       error
+		ExpectedResult    []*graphql.APIDefinitionPage
+		ExpectedErr       []error
 	}{
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[1].ID).Return(modelSpecs[1], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[0].ID, &bundleID).Return(modelBundleRefs[0], nil).Once()
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[1].ID, &bundleID).Return(modelBundleRefs[1], nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", modelAPIDefinitions, modelSpecs, modelBundleRefs).Return(gqlAPIDefinitions, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlApiDefsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlApiDefsSecondBundle, nil).Once()
 				return conv
 			},
-			ExpectedResult: fixGQLAPIDefinitionPage(gqlAPIDefinitions),
+			ExpectedResult: gqlApiDefPages,
 			ExpectedErr:    nil,
 		},
 		{
@@ -400,14 +410,14 @@ func TestResolver_Apis(t *testing.T) {
 				return &automock.APIConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Returns error when APIS listing failed",
+			Name:            "Returns error when APIs listing failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -420,19 +430,19 @@ func TestResolver_Apis(t *testing.T) {
 				return &automock.APIConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Returns error when Spec retrieval failed",
+			Name:            "Returns error when Specs retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[0].ID).Return(nil, testErr).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(nil, testErr).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -442,87 +452,110 @@ func TestResolver_Apis(t *testing.T) {
 				return &automock.APIConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Returns error when BundleReference retrieval failed",
+			Name:            "Returns error when BundleReferences retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[0].ID, &bundleID).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(nil, nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				return &automock.APIConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "Returns error when there is no BundleReference for API",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
+				return svc
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				invalidBundleRefs := []*model.BundleReference{apiDefSecondBundleReference}
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(invalidBundleRefs, totalCounts, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{errors.New("could not find BundleReference for API with id")},
 		},
 		{
 			Name:            "Returns error when converting to GraphQL failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[1].ID).Return(modelSpecs[1], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[0].ID, &bundleID).Return(modelBundleRefs[0], nil).Once()
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[1].ID, &bundleID).Return(modelBundleRefs[1], nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", modelAPIDefinitions, modelSpecs, modelBundleRefs).Return(nil, testErr).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(nil, testErr).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(apiDefPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinitions[1].ID).Return(modelSpecs[1], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[0].ID, &bundleID).Return(modelBundleRefs[0], nil).Once()
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinitions[1].ID, &bundleID).Return(modelBundleRefs[1], nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleAPIReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", modelAPIDefinitions, modelSpecs, modelBundleRefs).Return(gqlAPIDefinitions, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlApiDefsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlApiDefsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
@@ -535,15 +568,18 @@ func TestResolver_Apis(t *testing.T) {
 			specService := testCase.SpecServiceFn()
 			bundleRefService := testCase.BundleReferenceFn()
 
+			firstBundleParams := dataloader.ParamApiDef{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondBundleParams := dataloader.ParamApiDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.ParamApiDef{firstBundleParams, secondBundleParams}
 			resolver := mp_bundle.NewResolver(transact, nil, nil, bundleRefService, svc, nil, nil, nil, nil, converter, nil, nil, specService)
 			// when
-			result, err := resolver.APIDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
+			result, err := resolver.ApiDefinitionsDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
 			if testCase.ExpectedErr != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+				require.Error(t, err[0])
+				assert.Contains(t, err[0].Error(), testCase.ExpectedErr[0].Error())
 			} else {
 				require.Nil(t, err)
 			}
@@ -556,6 +592,27 @@ func TestResolver_Apis(t *testing.T) {
 			bundleRefService.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
+		resolver := mp_bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.ApiDefinitionsDataLoader([]dataloader.ParamApiDef{})
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
+	})
+
+	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
+		params := dataloader.ParamApiDef{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.ParamApiDef{params}
+
+		resolver := mp_bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.ApiDefinitionsDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
+	})
 }
 
 func TestResolver_Event(t *testing.T) {
@@ -835,47 +892,57 @@ func TestResolver_Event(t *testing.T) {
 func TestResolver_Events(t *testing.T) {
 	// given
 	testErr := errors.New("test error")
-
-	bundleID := "1"
-	var nilBundleID *string
 	group := "group"
-	app := fixGQLBundle(bundleID, "foo", "foo")
-	modelEventDefinitions := []*model.EventDefinition{
-		fixModelEventAPIDefinition("foo", "Foo", "Lorem Ipsum", group),
-		fixModelEventAPIDefinition("bar", "Bar", "Lorem Ipsum", group),
-	}
+	desc := "desc"
+	name := "test name"
 
-	modelSpecs := []*model.Spec{
-		{
-			ID:         "test-spec-1",
-			ObjectType: model.EventSpecReference,
-			ObjectID:   "foo",
-		},
-		{
-			ID:         "test-spec-2",
-			ObjectType: model.EventSpecReference,
-			ObjectID:   "bar",
-		},
-	}
+	firstBundleID := "bundleID"
+	secondBundleID := "bundleID2"
+	bundleIDs := []string{firstBundleID, secondBundleID}
+	firstEventID := "eventID"
+	secondEventID := "eventID2"
+	eventIDs := []string{firstEventID, secondEventID}
+	firstSpecID := "specID"
+	secondSpecID := "specID2"
 
-	modelBundleRefs := []*model.BundleReference{
-		{
-			Tenant:     tenantID,
-			BundleID:   &bundleID,
-			ObjectType: model.BundleEventReference,
-			ObjectID:   &modelEventDefinitions[0].ID,
-		}, {
-			Tenant:     tenantID,
-			BundleID:   &bundleID,
-			ObjectType: model.BundleEventReference,
-			ObjectID:   &modelEventDefinitions[1].ID,
-		},
-	}
+	// model Events
+	eventFirstBundle := fixModelEventAPIDefinition(firstEventID, "Foo", "Lorem Ipsum", group)
+	eventSecondBundle := fixModelEventAPIDefinition(secondEventID, "Bar", "Lorem Ipsum", group)
 
-	gqlEventDefinitions := []*graphql.EventDefinition{
-		fixGQLEventDefinition("foo", bundleID, "Foo", "Lorem Ipsum", group),
-		fixGQLEventDefinition("bar", bundleID, "Bar", "Lorem Ipsum", group),
-	}
+	eventsFirstBundle := []*model.EventDefinition{eventFirstBundle}
+	eventsSecondBundle := []*model.EventDefinition{eventSecondBundle}
+
+	eventPageFirstBundle := fixEventAPIDefinitionPage(eventsFirstBundle)
+	eventPageSecondBundle := fixEventAPIDefinitionPage(eventsSecondBundle)
+	eventPages := []*model.EventDefinitionPage{eventPageFirstBundle, eventPageSecondBundle}
+
+	// GQL Events
+	gqlEventFirstBundle := fixGQLEventDefinition(firstEventID, firstBundleID, name, desc, group)
+	gqlEventSecondBundle := fixGQLEventDefinition(secondEventID, secondBundleID, name, desc, group)
+
+	gqlEventsFirstBundle := []*graphql.EventDefinition{gqlEventFirstBundle}
+	gqlEventsSecondBundle := []*graphql.EventDefinition{gqlEventSecondBundle}
+
+	gqlEventPageFirstBundle := fixGQLEventDefinitionPage(gqlEventsFirstBundle)
+	gqlEventPageSecondBundle := fixGQLEventDefinitionPage(gqlEventsSecondBundle)
+	gqlEventPages := []*graphql.EventDefinitionPage{gqlEventPageFirstBundle, gqlEventPageSecondBundle}
+
+	// Event BundleReferences
+	numberOfEventsInFirstBundle := 1
+	numberOfEventsInSecondBundle := 1
+	eventFirstBundleReference := fixModelEventBundleReference(firstBundleID, firstEventID)
+	eventSecondBundleReference := fixModelEventBundleReference(secondBundleID, secondEventID)
+	bundleRefsFirstEvent := []*model.BundleReference{eventFirstBundleReference}
+	bundleRefsSecondEvent := []*model.BundleReference{eventSecondBundleReference}
+	bundleRefs := []*model.BundleReference{eventFirstBundleReference, eventSecondBundleReference}
+	totalCounts := map[string]int{firstBundleID: numberOfEventsInFirstBundle, secondBundleID: numberOfEventsInSecondBundle}
+
+	// Event Specs
+	eventFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.EventSpecReference, ObjectID: firstEventID}
+	eventSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.EventSpecReference, ObjectID: secondEventID}
+	specsFirstEvent := []*model.Spec{eventFirstSpec}
+	specsSecondEvent := []*model.Spec{eventSecondSpec}
+	specs := []*model.Spec{eventFirstSpec, eventSecondSpec}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -884,41 +951,40 @@ func TestResolver_Events(t *testing.T) {
 	after := "test"
 
 	testCases := []struct {
-		Name               string
-		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn          func() *automock.EventService
-		ConverterFn        func() *automock.EventConverter
-		SpecServiceFn      func() *automock.SpecService
-		BundleRefServiceFn func() *automock.BundleReferenceService
-		ExpectedResult     *graphql.EventDefinitionPage
-		ExpectedErr        error
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn         func() *automock.EventService
+		ConverterFn       func() *automock.EventConverter
+		SpecServiceFn     func() *automock.SpecService
+		BundleReferenceFn func() *automock.BundleReferenceService
+		ExpectedResult    []*graphql.EventDefinitionPage
+		ExpectedErr       []error
 	}{
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixEventAPIDefinitionPage(modelEventDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[1].ID).Return(modelSpecs[1], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[0].ID, nilBundleID).Return(modelBundleRefs[0], nil).Once()
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[1].ID, nilBundleID).Return(modelBundleRefs[1], nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleToGraphQL", modelEventDefinitions, modelSpecs, modelBundleRefs).Return(gqlEventDefinitions, nil).Once()
+				conv.On("MultipleToGraphQL", eventsFirstBundle, specsFirstEvent, bundleRefsFirstEvent).Return(gqlEventsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", eventsSecondBundle, specsSecondEvent, bundleRefsSecondEvent).Return(gqlEventsSecondBundle, nil).Once()
 				return conv
 			},
-			ExpectedResult: fixGQLEventDefinitionPage(gqlEventDefinitions),
+			ExpectedResult: gqlEventPages,
 			ExpectedErr:    nil,
 		},
 		{
@@ -930,136 +996,133 @@ func TestResolver_Events(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.EventConverter {
 				return &automock.EventConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when Events listing failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.EventConverter {
 				return &automock.EventConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Returns error when Spec retrieval failed",
+			Name:            "Returns error when Specs retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixEventAPIDefinitionPage(modelEventDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[0].ID).Return(nil, testErr).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(nil, testErr).Once()
 				return svc
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				return &automock.BundleReferenceService{}
 			},
 			ConverterFn: func() *automock.EventConverter {
 				return &automock.EventConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
-			Name:            "Returns error when BundleReference retrieval failed",
+			Name:            "Returns error when BundleReferences retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixEventAPIDefinitionPage(modelEventDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[0].ID, nilBundleID).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(nil, nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
 				return &automock.EventConverter{}
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when converting to GraphQL failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixEventAPIDefinitionPage(modelEventDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[1].ID).Return(modelSpecs[1], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[0].ID, nilBundleID).Return(modelBundleRefs[0], nil).Once()
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[1].ID, nilBundleID).Return(modelBundleRefs[1], nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleToGraphQL", modelEventDefinitions, modelSpecs, modelBundleRefs).Return(nil, testErr).Once()
+				conv.On("MultipleToGraphQL", eventsFirstBundle, specsFirstEvent, bundleRefsFirstEvent).Return(nil, testErr).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("ListForBundle", txtest.CtxWithDBMatcher(), bundleID, first, after).Return(fixEventAPIDefinitionPage(modelEventDefinitions), nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), bundleIDs, first, after).Return(eventPages, nil).Once()
 				return svc
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[0].ID).Return(modelSpecs[0], nil).Once()
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEventDefinitions[1].ID).Return(modelSpecs[1], nil).Once()
+				svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
-			BundleRefServiceFn: func() *automock.BundleReferenceService {
+			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[0].ID, nilBundleID).Return(modelBundleRefs[0], nil).Once()
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinitions[1].ID, nilBundleID).Return(modelBundleRefs[1], nil).Once()
+				svc.On("ListByBundleIDs", txtest.CtxWithDBMatcher(), model.BundleEventReference, bundleIDs, first, after).Return(bundleRefs, totalCounts, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleToGraphQL", modelEventDefinitions, modelSpecs, modelBundleRefs).Return(gqlEventDefinitions, nil).Once()
+				conv.On("MultipleToGraphQL", eventsFirstBundle, specsFirstEvent, bundleRefsFirstEvent).Return(gqlEventsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", eventsSecondBundle, specsSecondEvent, bundleRefsSecondEvent).Return(gqlEventsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
@@ -1070,17 +1133,20 @@ func TestResolver_Events(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			specService := testCase.SpecServiceFn()
-			bndlRefService := testCase.BundleRefServiceFn()
+			bundleRefService := testCase.BundleReferenceFn()
 
-			resolver := mp_bundle.NewResolver(transact, nil, nil, bndlRefService, nil, svc, nil, nil, nil, nil, converter, nil, specService)
+			firstBundleParams := dataloader.ParamEventDef{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondBundleParams := dataloader.ParamEventDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.ParamEventDef{firstBundleParams, secondBundleParams}
+			resolver := mp_bundle.NewResolver(transact, nil, nil, bundleRefService, nil, svc, nil, nil, nil, nil, converter, nil, specService)
 			// when
-			result, err := resolver.EventDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
+			result, err := resolver.EventDefinitionsDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
 			if testCase.ExpectedErr != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+				require.Error(t, err[0])
+				assert.Contains(t, err[0].Error(), testCase.ExpectedErr[0].Error())
 			} else {
 				require.Nil(t, err)
 			}
@@ -1090,9 +1156,30 @@ func TestResolver_Events(t *testing.T) {
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 			specService.AssertExpectations(t)
-			bndlRefService.AssertExpectations(t)
+			bundleRefService.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
+		resolver := mp_bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.EventDefinitionsDataLoader([]dataloader.ParamEventDef{})
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
+	})
+
+	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
+		params := dataloader.ParamEventDef{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.ParamEventDef{params}
+
+		resolver := mp_bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.EventDefinitionsDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
+	})
 }
 
 func TestResolver_Document(t *testing.T) {
@@ -1231,18 +1318,35 @@ func TestResolver_Document(t *testing.T) {
 
 func TestResolver_Documents(t *testing.T) {
 	// given
-	bndlID := "fooid"
 	contextParam := txtest.CtxWithDBMatcher()
 
-	modelDocuments := []*model.Document{
-		fixModelDocument(bndlID, "foo"),
-		fixModelDocument(bndlID, "bar"),
-	}
-	gqlDocuments := []*graphql.Document{
-		fixGQLDocument("foo"),
-		fixGQLDocument("bar"),
-	}
-	bndl := fixGQLBundle(bndlID, "foo", "foo")
+	firstBundleID := "bundleID"
+	secondBundleID := "bundleID2"
+	bundleIDs := []string{firstBundleID, secondBundleID}
+	firstDocID := "docID"
+	secondDocID := "docID2"
+
+	// model Docs
+	docFirstBundle := fixModelDocument(firstBundleID, firstDocID)
+	docSecondBundle := fixModelDocument(secondBundleID, secondDocID)
+
+	docsFirstBundle := []*model.Document{docFirstBundle}
+	docsSecondBundle := []*model.Document{docSecondBundle}
+
+	docPageFirstBundle := fixModelDocumentPage(docsFirstBundle)
+	docPageSecondBundle := fixModelDocumentPage(docsSecondBundle)
+	docPages := []*model.DocumentPage{docPageFirstBundle, docPageSecondBundle}
+
+	// GQL Docs
+	gqlDocFirstBundle := fixGQLDocument(firstDocID)
+	gqlDocSecondBundle := fixGQLDocument(secondDocID)
+
+	gqlDocsFirstBundle := []*graphql.Document{gqlDocFirstBundle}
+	gqlDocsSecondBundle := []*graphql.Document{gqlDocSecondBundle}
+
+	gqlDocPageFirstBundle := fixGQLDocumentPage(gqlDocsFirstBundle)
+	gqlDocPageSecondBundle := fixGQLDocumentPage(gqlDocsSecondBundle)
+	gqlDocPages := []*graphql.DocumentPage{gqlDocPageFirstBundle, gqlDocPageSecondBundle}
 
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
@@ -1255,8 +1359,8 @@ func TestResolver_Documents(t *testing.T) {
 		ConverterFn     func() *automock.DocumentConverter
 		PersistenceFn   func() *persistenceautomock.PersistenceTx
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ExpectedResult  *graphql.DocumentPage
-		ExpectedErr     error
+		ExpectedResult  []*graphql.DocumentPage
+		ExpectedErr     []error
 	}{
 		{
 			Name:            "Success",
@@ -1264,15 +1368,16 @@ func TestResolver_Documents(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("ListForBundle", contextParam, bndlID, first, after).Return(fixModelDocumentPage(modelDocuments), nil).Once()
+				svc.On("ListByBundleIDs", contextParam, bundleIDs, first, after).Return(docPages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("MultipleToGraphQL", modelDocuments).Return(gqlDocuments).Once()
+				conv.On("MultipleToGraphQL", docsFirstBundle).Return(gqlDocsFirstBundle).Once()
+				conv.On("MultipleToGraphQL", docsSecondBundle).Return(gqlDocsSecondBundle).Once()
 				return conv
 			},
-			ExpectedResult: fixGQLDocumentPage(gqlDocuments),
+			ExpectedResult: gqlDocPages,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1281,7 +1386,7 @@ func TestResolver_Documents(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("ListForBundle", contextParam, bndlID, first, after).Return(nil, testErr).Once()
+				svc.On("ListByBundleIDs", contextParam, bundleIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -1289,7 +1394,7 @@ func TestResolver_Documents(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
@@ -1300,10 +1405,13 @@ func TestResolver_Documents(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
+			firstBundleParams := dataloader.ParamDocument{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondBundleParams := dataloader.ParamDocument{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.ParamDocument{firstBundleParams, secondBundleParams}
 			resolver := mp_bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
 
 			// when
-			result, err := resolver.Documents(context.TODO(), bndl, &first, &gqlAfter)
+			result, err := resolver.DocumentsDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1315,6 +1423,27 @@ func TestResolver_Documents(t *testing.T) {
 			transact.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
+		resolver := mp_bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.DocumentsDataLoader([]dataloader.ParamDocument{})
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
+	})
+
+	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
+		params := dataloader.ParamDocument{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.ParamDocument{params}
+
+		resolver := mp_bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.DocumentsDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
+	})
 }
 
 func TestResolver_AddBundle(t *testing.T) {
@@ -1961,6 +2090,25 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			ExpectedErr:                testErr,
 		},
 		{
+			Name:            "Returns error when conversion to graphql fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelBundleInstanceAuth, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.BundleInstanceAuthConverter {
+				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("ToGraphQL", modelBundleInstanceAuth).Return(nil, testErr).Once()
+				return conv
+			},
+			InputID:                    "foo",
+			Bundle:                     bndl,
+			ExpectedBundleInstanceAuth: nil,
+			ExpectedErr:                testErr,
+		},
+		{
 			Name:            "Returns nil when bundle instance auth for bundle not found",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleInstanceAuthService {
@@ -2005,6 +2153,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleInstanceAuthConverter {
 				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("ToGraphQL", modelBundleInstanceAuth).Return(gqlBundleInstanceAuth, nil).Once()
 				return conv
 			},
 			InputID:                    "foo",
@@ -2117,6 +2266,22 @@ func TestResolver_InstanceAuths(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
+			Name:            "Returns error when Bundle Instance Auths conversion to graphql failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("List", txtest.CtxWithDBMatcher(), bundleID).Return(modelBundleInstanceAuths, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.BundleInstanceAuthConverter {
+				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("MultipleToGraphQL", modelBundleInstanceAuths).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.BundleInstanceAuthService {
@@ -2126,6 +2291,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleInstanceAuthConverter {
 				conv := &automock.BundleInstanceAuthConverter{}
+				conv.On("MultipleToGraphQL", modelBundleInstanceAuths).Return(gqlBundleInstanceAuths, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,

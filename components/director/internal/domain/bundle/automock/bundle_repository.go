@@ -86,29 +86,6 @@ func (_m *BundleRepository) GetByID(ctx context.Context, tenant string, id strin
 	return r0, r1
 }
 
-// GetByInstanceAuthID provides a mock function with given fields: ctx, tenant, instanceAuthID
-func (_m *BundleRepository) GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error) {
-	ret := _m.Called(ctx, tenant, instanceAuthID)
-
-	var r0 *model.Bundle
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Bundle); ok {
-		r0 = rf(ctx, tenant, instanceAuthID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Bundle)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, instanceAuthID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
 func (_m *BundleRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error) {
 	ret := _m.Called(ctx, tenant, id, applicationID)
@@ -132,29 +109,6 @@ func (_m *BundleRepository) GetForApplication(ctx context.Context, tenant string
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
-func (_m *BundleRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
-	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
-
-	var r0 *model.BundlePage
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.BundlePage); ok {
-		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BundlePage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, tenantID, applicationID, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListByApplicationIDNoPaging provides a mock function with given fields: ctx, tenantID, appID
 func (_m *BundleRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID string, appID string) ([]*model.Bundle, error) {
 	ret := _m.Called(ctx, tenantID, appID)
@@ -171,6 +125,29 @@ func (_m *BundleRepository) ListByApplicationIDNoPaging(ctx context.Context, ten
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByApplicationIDs provides a mock function with given fields: ctx, tenantID, applicationIDs, pageSize, cursor
+func (_m *BundleRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
+	ret := _m.Called(ctx, tenantID, applicationIDs, pageSize, cursor)
+
+	var r0 []*model.BundlePage
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.BundlePage); ok {
+		r0 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundlePage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

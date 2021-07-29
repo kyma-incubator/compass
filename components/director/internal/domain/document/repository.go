@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -20,6 +22,8 @@ const documentTable = "public.documents"
 var (
 	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn    = "tenant_id"
+	bundleIDColumn  = "bundle_id"
+	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
@@ -31,6 +35,7 @@ type Converter interface {
 type repository struct {
 	existQuerier    repo.ExistQuerier
 	singleGetter    repo.SingleGetter
+	unionLister     repo.UnionLister
 	deleter         repo.Deleter
 	pageableQuerier repo.PageableQuerier
 	creator         repo.Creator
@@ -42,11 +47,18 @@ func NewRepository(conv Converter) *repository {
 	return &repository{
 		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable, tenantColumn),
 		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, tenantColumn, documentColumns),
+		unionLister:     repo.NewUnionLister(resource.Document, documentTable, tenantColumn, documentColumns),
 		deleter:         repo.NewDeleter(resource.Document, documentTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, tenantColumn, documentColumns),
 		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
 		conv:            conv,
 	}
+}
+
+type DocumentCollection []Entity
+
+func (d DocumentCollection) Len() int {
+	return len(d)
 }
 
 func (r *repository) Exists(ctx context.Context, tenant, id string) (bool, error) {
@@ -118,33 +130,45 @@ func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *repository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("bundle_id", bundleID),
-	}
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
-}
-
-func (r *repository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.DocumentPage, error) {
-	var documentCollection Collection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &documentCollection, conditions...)
+func (r *repository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
+	var documentCollection DocumentCollection
+	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
 	if err != nil {
 		return nil, err
 	}
 
-	var items []*model.Document
-
+	documentByID := map[string][]*model.Document{}
 	for _, documentEnt := range documentCollection {
 		m, err := r.conv.FromEntity(documentEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating APIDefinition model from entity")
+			return nil, errors.Wrap(err, "while creating Document model from entity")
 		}
-		items = append(items, &m)
+		documentByID[documentEnt.BndlID] = append(documentByID[documentEnt.BndlID], &m)
 	}
 
-	return &model.DocumentPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	documentPages := make([]*model.DocumentPage, 0, len(bundleIDs))
+	for _, bndlID := range bundleIDs {
+		totalCount := counts[bndlID]
+		hasNextPage := false
+		endCursor := ""
+		if totalCount > offset+len(documentByID[bndlID]) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		documentPages = append(documentPages, &model.DocumentPage{Data: documentByID[bndlID], TotalCount: totalCount, PageInfo: page})
+	}
+
+	return documentPages, nil
 }

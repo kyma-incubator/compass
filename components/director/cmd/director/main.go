@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 
@@ -133,6 +135,9 @@ type config struct {
 	DisableAsyncMode bool `envconfig:"default=false"`
 
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
+
+	DataloaderMaxBatch int           `envconfig:"default=200"`
+	DataloaderWait     time.Duration `envconfig:"default=10ms"`
 }
 
 func main() {
@@ -182,20 +187,22 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
+	rootResolver := domain.NewRootResolver(
+		&normalizer.DefaultNormalizator{},
+		transact,
+		cfgProvider,
+		cfg.OneTimeToken,
+		cfg.OAuth20,
+		pairingAdapters,
+		cfg.Features,
+		metricsCollector,
+		httpClient,
+		cfg.OneTimeToken.Length,
+		adminURL,
+	)
+
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(
-			&normalizer.DefaultNormalizator{},
-			transact,
-			cfgProvider,
-			cfg.OneTimeToken,
-			cfg.OAuth20,
-			pairingAdapters,
-			cfg.Features,
-			metricsCollector,
-			httpClient,
-			cfg.OneTimeToken.Length,
-			adminURL,
-		),
+		Resolvers: rootResolver,
 		Directives: graphql.DirectiveRoot{
 			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
@@ -235,6 +242,13 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
+	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerDocument(rootResolver.DocumentsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestApiDef(rootResolver.FetchRequestApiDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
 	ownertenantMiddleware := ownertenant.NewMiddleware(transact, tenantindex.NewRepository(), tenant.NewRepository(tenant.NewConverter()))

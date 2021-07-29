@@ -69,6 +69,89 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 	return stmtBuilder.String(), allArgs, nil
 }
 
+func buildUnionQuery(queries []string) (string, error) {
+	if len(queries) == 0 {
+		return "", nil
+	}
+
+	for i := range queries {
+		queries[i] = "(" + queries[i] + ")"
+	}
+
+	unionQuery := strings.Join(queries, " UNION ")
+	var stmtBuilder strings.Builder
+	stmtBuilder.WriteString(unionQuery)
+
+	return getQueryFromBuilder(stmtBuilder), nil
+}
+
+func buildCountQuery(tableName string, idColumn string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	isGroupByParam := false
+	for _, s := range groupByParams {
+		if idColumn == s {
+			isGroupByParam = true
+		}
+	}
+	if isGroupByParam == false {
+		return "", nil, errors.New("id column is not in group by params")
+	}
+
+	var stmtBuilder strings.Builder
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s AS id, COUNT(*) AS total_count FROM %s", idColumn, tableName))
+	if len(conditions) > 0 {
+		stmtBuilder.WriteString(" WHERE")
+	}
+
+	err := writeEnumeratedConditions(&stmtBuilder, conditions)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
+	}
+
+	err = writeGroupByPart(&stmtBuilder, groupByParams)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing order by part")
+	}
+
+	err = writeOrderByPart(&stmtBuilder, orderByParams)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing order by part")
+	}
+
+	allArgs := getAllArgs(conditions)
+
+	if isRebindingNeeded {
+		return getQueryFromBuilder(stmtBuilder), allArgs, nil
+	}
+	return stmtBuilder.String(), allArgs, nil
+}
+
+func buildSelectQueryWithLimitAndOffset(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
+	query, args, err := buildSelectQuery(tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+	if err != nil {
+		return "", nil, err
+	}
+
+	var stmtBuilder strings.Builder
+	stmtBuilder.WriteString(query)
+
+	err = writeLimitPart(&stmtBuilder)
+	if err != nil {
+		return "", nil, err
+	}
+	args = append(args, limit)
+
+	err = writeOffsetPart(&stmtBuilder)
+	if err != nil {
+		return "", nil, err
+	}
+	args = append(args, offset)
+
+	if isRebindingNeeded {
+		return getQueryFromBuilder(stmtBuilder), args, nil
+	}
+	return stmtBuilder.String(), args, nil
+}
+
 func getAllArgs(conditions Conditions) []interface{} {
 	var allArgs []interface{}
 
@@ -143,5 +226,40 @@ func writeOrderByPart(builder *strings.Builder, orderByParams OrderByParams) err
 		builder.WriteString(fmt.Sprintf(" %s %s", orderBy.Field, orderBy.Dir))
 	}
 
+	return nil
+}
+
+type GroupByParams []string
+
+func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) error {
+	if builder == nil {
+		return apperrors.NewInternalError("builder cannot be nil")
+	}
+
+	if groupByParams == nil || len(groupByParams) == 0 {
+		return nil
+	}
+
+	builder.WriteString(" GROUP BY ")
+	builder.WriteString(strings.Join(groupByParams, " ,"))
+
+	return nil
+}
+
+func writeLimitPart(builder *strings.Builder) error {
+	if builder == nil {
+		return apperrors.NewInternalError("builder cannot be nil")
+	}
+
+	builder.WriteString(" LIMIT ?")
+	return nil
+}
+
+func writeOffsetPart(builder *strings.Builder) error {
+	if builder == nil {
+		return apperrors.NewInternalError("builder cannot be nil")
+	}
+
+	builder.WriteString(" OFFSET ?")
 	return nil
 }

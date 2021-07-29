@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -67,8 +68,54 @@ func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	return r.list(ctx, tenantID, idColumn, bundleID, pageSize, cursor)
+func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
+	apiDefIds := make([]string, 0, len(bundleRefs))
+	for _, ref := range bundleRefs {
+		apiDefIds = append(apiDefIds, *ref.ObjectID)
+	}
+
+	var conditions repo.Conditions
+	if len(apiDefIds) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues("id", apiDefIds),
+		}
+	}
+
+	var apiDefCollection APIDefCollection
+	err := r.lister.List(ctx, tenantID, &apiDefCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	refsByBundleId, apiDefsByApiDefId := r.groupEntitiesByID(bundleRefs, apiDefCollection)
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	apiDefPages := make([]*model.APIDefinitionPage, 0, len(bundleIDs))
+	for _, bundleID := range bundleIDs {
+		ids := getApiDefIDsForBundle(refsByBundleId[bundleID])
+		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefId)
+
+		hasNextPage := false
+		endCursor := ""
+		if totalCounts[bundleID] > offset+len(apiDefs) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		apiDefPages = append(apiDefPages, &model.APIDefinitionPage{Data: apiDefs, TotalCount: totalCounts[bundleID], PageInfo: page})
+	}
+
+	return apiDefPages, nil
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
@@ -82,41 +129,6 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 		apis = append(apis, &apiModel)
 	}
 	return apis, nil
-}
-
-func (r *pgRepository) list(ctx context.Context, tenant, idColumn, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	subqueryConditions := repo.Conditions{
-		repo.NewEqualCondition(bundleColumn, bundleID),
-		repo.NewNotNullCondition(bundlereferences.APIDefIDColumn),
-	}
-	subquery, args, err := r.queryBuilder.BuildQuery(tenant, false, subqueryConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	inOperatorConditions := repo.Conditions{
-		repo.NewInConditionForSubQuery(idColumn, subquery, args),
-	}
-
-	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &apiDefCollection, inOperatorConditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []*model.APIDefinition
-
-	for _, apiDefEnt := range apiDefCollection {
-		m := r.conv.FromEntity(apiDefEnt)
-
-		items = append(items, &m)
-	}
-
-	return &model.APIDefinitionPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
@@ -196,4 +208,37 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 	}
 
 	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
+}
+
+func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
+	result := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		result = append(result, *ref.ObjectID)
+	}
+	return result
+}
+
+func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
+	result := make([]*model.APIDefinition, 0, len(ids))
+	if len(defs) > 0 {
+		for _, id := range ids {
+			result = append(result, defs[id])
+		}
+	}
+	return result
+}
+
+func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, apiDefCollection APIDefCollection) (map[string][]*model.BundleReference, map[string]*model.APIDefinition) {
+	refsByBundleId := map[string][]*model.BundleReference{}
+	for _, ref := range bundleRefs {
+		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+	}
+
+	apiDefsByApiDefId := map[string]*model.APIDefinition{}
+	for _, apiDefEnt := range apiDefCollection {
+		m := r.conv.FromEntity(apiDefEnt)
+		apiDefsByApiDefId[apiDefEnt.ID] = &m
+	}
+
+	return refsByBundleId, apiDefsByApiDefId
 }
