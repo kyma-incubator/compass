@@ -133,6 +133,8 @@ type config struct {
 	DisableAsyncMode bool `envconfig:"default=false"`
 
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
+
+	ReadyConfig healthz.ReadyConfig
 }
 
 func main() {
@@ -294,7 +296,9 @@ func main() {
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
-	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
+	ready, err := healthz.NewReady(ctx, transact, cfg.ReadyConfig)
+	exitOnError(err, "Could not initialize ready")
+	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
 	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
