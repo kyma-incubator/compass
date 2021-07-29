@@ -160,7 +160,7 @@ spec:
             - name: APP_HEALTH_CONFIG_INDICATORS
               value: {{ .Values.health.indicators | quote }}
             - name: APP_SCHEMA_MIGRATION_VERSION
-              value: {{ .Values.global.schema.version }}
+              value: {{ .Values.global.schema.version | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

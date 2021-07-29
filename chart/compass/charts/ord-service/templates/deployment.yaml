@@ -54,8 +54,8 @@ spec:
               value: "{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: ve
-              value: {{ .Values.global.schema.version }}
+            - name: SCHEMA_MIGRATION_VERSION
+              value: {{ .Values.global.schema.version | quote }}
             - name: SERVER_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: ODATA_JPA_REQUEST_MAPPING_PATH
