@@ -41,6 +41,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
+	golang.org/x/tools v0.1.5 // indirect
 	k8s.io/api v0.17.2 // DO NOT BUMP
 	k8s.io/apimachinery v0.17.2 // DO NOT BUMP
 	k8s.io/client-go v0.17.2 // DO NOT BUMP

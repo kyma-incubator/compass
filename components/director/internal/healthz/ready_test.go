@@ -2,10 +2,11 @@ package healthz_test
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz/automock"
