@@ -45,6 +45,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
 		BaseURL:               repo.NewNullableString(in.BaseURL),
+		SystemNumber:          repo.NewNullableString(in.SystemNumber),
 		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		CorrelationIds:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIds),
 		BaseEntity: &repo.BaseEntity{
@@ -67,6 +68,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		ProviderName: repo.StringPtrFromNullableString(entity.ProviderName),
 		Tenant:       entity.TenantID,
 		Name:         entity.Name,
+		SystemNumber: repo.StringPtrFromNullableString(entity.SystemNumber),
 		Description:  repo.StringPtrFromNullableString(entity.Description),
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusCondition(entity.StatusCondition),
@@ -95,12 +97,14 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		Status:              c.statusModelToGraphQL(in.Status),
-		Name:                in.Name,
-		Description:         in.Description,
-		HealthCheckURL:      in.HealthCheckURL,
-		IntegrationSystemID: in.IntegrationSystemID,
-		ProviderName:        in.ProviderName,
+		Status:                c.statusModelToGraphQL(in.Status),
+		Name:                  in.Name,
+		Description:           in.Description,
+		HealthCheckURL:        in.HealthCheckURL,
+		IntegrationSystemID:   in.IntegrationSystemID,
+		ApplicationTemplateID: in.ApplicationTemplateID,
+		ProviderName:          in.ProviderName,
+		SystemNumber:          in.SystemNumber,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -113,16 +117,16 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Application {
-	var runtimes []*graphql.Application
+	var applications []*graphql.Application
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 
-		runtimes = append(runtimes, c.ToGraphQL(r))
+		applications = append(applications, c.ToGraphQL(r))
 	}
 
-	return runtimes
+	return applications
 }
 
 func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
@@ -208,6 +212,7 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Status:              c.statusGraphQLToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
+		SystemNumber:        obj.SystemNumber,
 		BaseEntity: &model.BaseEntity{
 			ID: obj.ID,
 		},

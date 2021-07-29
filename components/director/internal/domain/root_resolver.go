@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -295,6 +296,11 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 	if shouldNormalize {
 		for i := range apps.Data {
 			apps.Data[i].Name = r.appNameNormalizer.Normalize(apps.Data[i].Name)
+		}
+	}
+	for i := range apps.Data {
+		if apps.Data[i].SystemNumber != nil {
+			apps.Data[i].Name = fmt.Sprintf("%s-%s", apps.Data[i].Name, *apps.Data[i].SystemNumber)
 		}
 	}
 

@@ -46,6 +46,8 @@ spec:
                   secretKeyRef:
                     name: {{ .Values.global.testCredentials.secretName }}
                     key: password
+              - name: APP_DEFAULT_TENANT
+                value: "{{ (index .Values.global.tenants 9).id }}"
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
