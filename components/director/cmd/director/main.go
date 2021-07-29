@@ -137,7 +137,7 @@ type config struct {
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
-	DataloaderWait     time.Duration `envconfig:"default=5ms"`
+	DataloaderWait     time.Duration `envconfig:"default=10ms"`
 }
 
 func main() {
