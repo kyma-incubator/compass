@@ -550,7 +550,7 @@ func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	ts := time.Unix(i, 0)
+	ts := time.Unix(0, i)
 	return time.Now().After(ts.Add(s.fullResyncInterval)), nil
 }
 
@@ -572,5 +572,5 @@ func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []
 }
 
 func convertTimeToUnixNanoString(timestamp time.Time) string {
-	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
+	return strconv.FormatInt(timestamp.UnixNano(), 10)
 }
