@@ -2,10 +2,13 @@ package healthz
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"net/http"
 )
+
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
+type Repository interface {
+	GetVersion(ctx context.Context) (string, error)
+}
 
 type ReadyConfig struct {
 	SchemaMigrationVersion string `envconfig:"APP_SCHEMA_MIGRATION_VERSION"`
@@ -13,20 +16,20 @@ type ReadyConfig struct {
 
 type Ready struct {
 	ctx              context.Context
-	transact         persistence.Transactioner
+	pinger           Pinger
 	schemaCompatible bool
 	cfg              ReadyConfig
-	repo             *schema.PgRepository
+	repo             Repository
 }
 
-func NewReady(ctx context.Context, transactioner persistence.Transactioner, cfg ReadyConfig) (*Ready, error) {
+func NewReady(ctx context.Context, pinger Pinger, cfg ReadyConfig, repository Repository) *Ready {
 	return &Ready{
 		ctx:              ctx,
-		transact:         transactioner,
+		pinger:           pinger,
 		schemaCompatible: false,
 		cfg:              cfg,
-		repo:             schema.NewRepository(),
-	}, nil
+		repo:             repository,
+	}
 }
 
 func (r *Ready) checkSchemaCompatibility() bool {
@@ -56,7 +59,7 @@ func NewReadinessHandler(r *Ready) func(writer http.ResponseWriter, request *htt
 			return
 		}
 
-		if err := r.transact.PingContext(r.ctx); err != nil {
+		if err := r.pinger.PingContext(r.ctx); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}

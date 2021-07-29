@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"net/http"
 	"net/url"
 	"os"
@@ -296,8 +297,8 @@ func main() {
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
-	ready, err := healthz.NewReady(ctx, transact, cfg.ReadyConfig)
-	exitOnError(err, "Could not initialize ready")
+	schemaRepo := schema.NewRepository()
+	ready := healthz.NewReady(ctx, transact, cfg.ReadyConfig, schemaRepo)
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
