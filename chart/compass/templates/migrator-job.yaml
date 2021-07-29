@@ -20,7 +20,6 @@ spec:
         nodeSelector:
           migrationJobs: "true"
         {{- end }}
-        serviceAccountName: {{ .Chart.Name }}-migration
         restartPolicy: Never
         shareProcessNamespace: true
         containers:
