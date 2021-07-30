@@ -73,22 +73,22 @@ func (_m *DocumentService) Get(ctx context.Context, id string) (*model.Document,
 	return r0, r1
 }
 
-// GetFetchRequest provides a mock function with given fields: ctx, documentID
-func (_m *DocumentService) GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error) {
-	ret := _m.Called(ctx, documentID)
+// ListFetchRequests provides a mock function with given fields: ctx, documentIDs
+func (_m *DocumentService) ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error) {
+	ret := _m.Called(ctx, documentIDs)
 
-	var r0 *model.FetchRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FetchRequest); ok {
-		r0 = rf(ctx, documentID)
+	var r0 []*model.FetchRequest
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FetchRequest); ok {
+		r0 = rf(ctx, documentIDs)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.FetchRequest)
+			r0 = ret.Get(0).([]*model.FetchRequest)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, documentID)
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, documentIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

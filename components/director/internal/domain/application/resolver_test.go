@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -1089,6 +1091,23 @@ func TestResolver_Webhooks(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
+			Name:            "Returns error when webhook conversion to graphql fails",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListAllApplicationWebhooks", contextParam, applicationID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
 			Name: "Returns error on starting transaction",
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
@@ -1118,7 +1137,9 @@ func TestResolver_Webhooks(t *testing.T) {
 				return svc
 			},
 			WebhookConverterFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks, nil).Once()
+				return conv
 			},
 			ExpectedErr: testErr,
 		},
@@ -1330,6 +1351,8 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[0]).Return(sysAuthGQL[0], nil).Once()
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[1]).Return(sysAuthGQL[1], nil).Once()
 				return sysAuthConv
 			},
 			InputApp:       gqlApp,
@@ -1346,6 +1369,23 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
+				return sysAuthConv
+			},
+			InputApp:       gqlApp,
+			ExpectedResult: nil,
+			ExpectedErr:    testError,
+		},
+		{
+			Name:            "Returns error when conversion to graphql fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				return svc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[0]).Return(nil, testError).Once()
 				return sysAuthConv
 			},
 			InputApp:       gqlApp,
@@ -1535,18 +1575,29 @@ func TestResolver_Bundles(t *testing.T) {
 	testErr := errors.New("test error")
 
 	tenantID := "1"
-	applicationID := "1"
-	app := fixGQLApplication(applicationID, "foo", "bar")
-	modelBundles := []*model.Bundle{
+	firstAppID := "appID"
+	secondAppID := "appID2"
+	appIDs := []string{firstAppID, secondAppID}
 
-		fixModelBundle("foo", tenantID, applicationID, "Foo", "Lorem Ipsum"),
-		fixModelBundle("bar", tenantID, applicationID, "Bar", "Lorem Ipsum"),
-	}
+	bundleFirstApp := fixModelBundle("foo", tenantID, firstAppID, "Foo", "Lorem Ipsum")
+	bundleSecondApp := fixModelBundle("foo", tenantID, secondAppID, "Foo", "Lorem Ipsum")
 
-	gqlBundles := []*graphql.Bundle{
-		fixGQLBundle("foo", applicationID, "Foo", "Lorem Ipsum"),
-		fixGQLBundle("bar", applicationID, "Bar", "Lorem Ipsum"),
-	}
+	bundlesFirstApp := []*model.Bundle{bundleFirstApp}
+	bundlesSecondApp := []*model.Bundle{bundleSecondApp}
+
+	gqlBundleFirstApp := fixGQLBundle("foo", firstAppID, "Foo", "Lorem Ipsum")
+	gqlBundleSecondApp := fixGQLBundle("foo", secondAppID, "Foo", "Lorem Ipsum")
+
+	gqlBundlesFirstApp := []*graphql.Bundle{gqlBundleFirstApp}
+	gqlBundlesSecondApp := []*graphql.Bundle{gqlBundleSecondApp}
+
+	bundlePageFirstApp := fixBundlePage(bundlesFirstApp)
+	bundlePageSecondApp := fixBundlePage(bundlesSecondApp)
+	bundlePages := []*model.BundlePage{bundlePageFirstApp, bundlePageSecondApp}
+
+	gqlBundlePageFirstApp := fixGQLBundlePage(gqlBundlesFirstApp)
+	gqlBundlePageSecondApp := fixGQLBundlePage(gqlBundlesSecondApp)
+	gqlBundlePages := []*graphql.BundlePage{gqlBundlePageFirstApp, gqlBundlePageSecondApp}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1559,23 +1610,24 @@ func TestResolver_Bundles(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.BundleService
 		ConverterFn     func() *automock.BundleConverter
-		ExpectedResult  *graphql.BundlePage
-		ExpectedErr     error
+		ExpectedResult  []*graphql.BundlePage
+		ExpectedErr     []error
 	}{
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixBundlePage(modelBundles), nil).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("MultipleToGraphQL", modelBundles).Return(gqlBundles, nil).Once()
+				conv.On("MultipleToGraphQL", bundlesFirstApp).Return(gqlBundlesFirstApp, nil).Once()
+				conv.On("MultipleToGraphQL", bundlesSecondApp).Return(gqlBundlesSecondApp, nil).Once()
 				return conv
 			},
-			ExpectedResult: fixGQLBundlePage(gqlBundles),
+			ExpectedResult: gqlBundlePages,
 			ExpectedErr:    nil,
 		},
 		{
@@ -1590,14 +1642,14 @@ func TestResolver_Bundles(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when Bundles listing failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(nil, testErr).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1605,38 +1657,40 @@ func TestResolver_Bundles(t *testing.T) {
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "Returns error when converting to GraphQL failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				conv.On("MultipleToGraphQL", bundlesFirstApp).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{testErr},
 		},
 		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixBundlePage(modelBundles), nil).Once()
+				svc.On("ListByApplicationIDs", txtest.CtxWithDBMatcher(), appIDs, first, after).Return(bundlePages, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
+				conv.On("MultipleToGraphQL", bundlesFirstApp).Return(gqlBundlesFirstApp, nil).Once()
+				conv.On("MultipleToGraphQL", bundlesSecondApp).Return(gqlBundlesSecondApp, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
-			ExpectedErr:    testErr,
-		},
-		{
-			Name:            "Returns error when converting to GraphQL failed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixBundlePage(modelBundles), nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.BundleConverter {
-				conv := &automock.BundleConverter{}
-				conv.On("MultipleToGraphQL", modelBundles).Return(nil, testErr).Once()
-				return conv
-			},
-			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			ExpectedErr:    []error{testErr},
 		},
 	}
 
@@ -1648,8 +1702,12 @@ func TestResolver_Bundles(t *testing.T) {
 			converter := testCase.ConverterFn()
 
 			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter)
+			firstAppParams := dataloader.ParamBundle{ID: firstAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondAppParams := dataloader.ParamBundle{ID: secondAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.ParamBundle{firstAppParams, secondAppParams}
+
 			// when
-			result, err := resolver.Bundles(context.TODO(), app, &first, &gqlAfter)
+			result, err := resolver.BundlesDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1662,13 +1720,25 @@ func TestResolver_Bundles(t *testing.T) {
 		})
 	}
 
-	t.Run("Returns error when application is nil", func(t *testing.T) {
+	t.Run("Returns error when there are no Applications", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.Bundles(context.TODO(), nil, nil, nil)
+		_, err := resolver.BundlesDataLoader([]dataloader.ParamBundle{})
 		//then
-		require.Error(t, err)
-		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No Applications found").Error())
+	})
+
+	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
+		firstAppParams := dataloader.ParamBundle{ID: firstAppID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.ParamBundle{firstAppParams}
+
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		//when
+		_, err := resolver.BundlesDataLoader(keys)
+		//then
+		require.Error(t, err[0])
+		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
 }
 
@@ -1731,6 +1801,24 @@ func TestResolver_Bundle(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
+			Name:            "Returns error when conversion to graphql fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelBundle, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				conv.On("ToGraphQL", modelBundle).Return(nil, testErr).Once()
+				return conv
+			},
+			InputID:        "foo",
+			Application:    app,
+			ExpectedBundle: nil,
+			ExpectedErr:    testErr,
+		},
+		{
 			Name:            "Returns nil when bundle for application not found",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.BundleService {
@@ -1775,6 +1863,7 @@ func TestResolver_Bundle(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
+				conv.On("ToGraphQL", modelBundle).Return(gqlBundle, nil).Once()
 				return conv
 			},
 			InputID:        "foo",

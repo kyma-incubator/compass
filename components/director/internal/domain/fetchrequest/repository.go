@@ -31,6 +31,7 @@ type Converter interface {
 type repository struct {
 	creator      repo.Creator
 	singleGetter repo.SingleGetter
+	lister       repo.Lister
 	deleter      repo.Deleter
 	updater      repo.Updater
 	conv         Converter
@@ -40,6 +41,7 @@ func NewRepository(conv Converter) *repository {
 	return &repository{
 		creator:      repo.NewCreator(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
 		singleGetter: repo.NewSingleGetter(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
+		lister:       repo.NewLister(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
 		deleter:      repo.NewDeleter(resource.FetchRequest, fetchRequestTable, tenantColumn),
 		updater:      repo.NewUpdater(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, tenantColumn, []string{"id"}),
 		conv:         conv,
@@ -100,6 +102,46 @@ func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIds []string) ([]*model.FetchRequest, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	var fetchRequestCollection FetchRequestsCollection
+
+	var conditions repo.Conditions
+	if len(objectIds) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues(fieldName, objectIds),
+		}
+	}
+	if err := r.lister.List(ctx, tenant, &fetchRequestCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	fetchRequestsByID := map[string]*model.FetchRequest{}
+	for _, fetchRequestEnt := range fetchRequestCollection {
+		m, err := r.conv.FromEntity(fetchRequestEnt)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating FetchRequest model from entity")
+		}
+
+		if fieldName == specIDColumn {
+			fetchRequestsByID[fetchRequestEnt.SpecID.String] = &m
+		} else if fieldName == documentIDColumn {
+			fetchRequestsByID[fetchRequestEnt.DocumentID.String] = &m
+		}
+	}
+
+	fetchRequests := make([]*model.FetchRequest, 0, len(objectIds))
+	for _, objectID := range objectIds {
+		fetchRequests = append(fetchRequests, fetchRequestsByID[objectID])
+	}
+
+	return fetchRequests, nil
+}
+
 func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {
 	switch objectType {
 	case model.DocumentFetchRequestReference:
@@ -109,4 +151,10 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 	}
 
 	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
+}
+
+type FetchRequestsCollection []Entity
+
+func (r FetchRequestsCollection) Len() int {
+	return len(r)
 }

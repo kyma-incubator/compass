@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -348,4 +350,115 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+}
+
+func TestService_ListByBundleIDs(t *testing.T) {
+	testErr := errors.New("test err")
+
+	firstApiDefID := "apiID"
+	secondApiDefID := "apiID2"
+	firstBundleID := "bundleID"
+	secondBundleID := "bundleID2"
+	bundleIDs := []string{firstBundleID, secondBundleID}
+
+	firstApiDefBundleRef := fixAPIBundleReferenceModel()
+	firstApiDefBundleRef.BundleID = str.Ptr(firstBundleID)
+	firstApiDefBundleRef.ObjectID = str.Ptr(firstApiDefID)
+
+	secondApiDefBundleRef := fixAPIBundleReferenceModel()
+	secondApiDefBundleRef.BundleID = str.Ptr(secondBundleID)
+	secondApiDefBundleRef.ObjectID = str.Ptr(secondApiDefID)
+	bundleRefs := []*model.BundleReference{&firstApiDefBundleRef, &secondApiDefBundleRef}
+
+	numberOfApisInFirstBundle := 1
+	numberOfApisInSecondBundle := 1
+	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name                string
+		PageSize            int
+		RepositoryFn        func() *automock.BundleReferenceRepository
+		ExpectedBundleRefs  []*model.BundleReference
+		ExpectedTotalCounts map[string]int
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return repo
+			},
+			PageSize:            2,
+			ExpectedBundleRefs:  bundleRefs,
+			ExpectedTotalCounts: totalCounts,
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Return error when page size is more than 200",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				return repo
+			},
+			PageSize:           201,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Error on listing bundle references",
+			RepositoryFn: func() *automock.BundleReferenceRepository {
+				repo := &automock.BundleReferenceRepository{}
+				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				return repo
+			},
+			PageSize:            2,
+			ExpectedBundleRefs:  nil,
+			ExpectedTotalCounts: nil,
+			ExpectedErrMessage:  testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			// given
+			repo := testCase.RepositoryFn()
+			svc := bundlereferences.NewService(repo)
+
+			// when
+			bndlRefs, counts, err := svc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, testCase.PageSize, after)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedBundleRefs, bndlRefs)
+				assert.Equal(t, testCase.ExpectedTotalCounts[firstBundleID], counts[firstBundleID])
+				assert.Equal(t, testCase.ExpectedTotalCounts[secondBundleID], counts[secondBundleID])
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := bundlereferences.NewService(nil)
+		// WHEN
+		_, _, err := svc.ListByBundleIDs(context.TODO(), model.BundleAPIReference, nil, 2, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }

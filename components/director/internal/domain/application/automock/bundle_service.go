@@ -51,22 +51,22 @@ func (_m *BundleService) GetForApplication(ctx context.Context, id string, appli
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: ctx, applicationID, pageSize, cursor
-func (_m *BundleService) ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
-	ret := _m.Called(ctx, applicationID, pageSize, cursor)
+// ListByApplicationIDs provides a mock function with given fields: ctx, applicationIDs, pageSize, cursor
+func (_m *BundleService) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
+	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
 
-	var r0 *model.BundlePage
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.BundlePage); ok {
-		r0 = rf(ctx, applicationID, pageSize, cursor)
+	var r0 []*model.BundlePage
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.BundlePage); ok {
+		r0 = rf(ctx, applicationIDs, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BundlePage)
+			r0 = ret.Get(0).([]*model.BundlePage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
-		r1 = rf(ctx, applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
+		r1 = rf(ctx, applicationIDs, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

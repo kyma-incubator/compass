@@ -73,22 +73,22 @@ func (_m *EventDefService) Get(ctx context.Context, id string) (*model.EventDefi
 	return r0, r1
 }
 
-// GetFetchRequest provides a mock function with given fields: ctx, eventAPIDefID
-func (_m *EventDefService) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error) {
-	ret := _m.Called(ctx, eventAPIDefID)
+// ListFetchRequests provides a mock function with given fields: ctx, eventDefIds
+func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIds []string) ([]*model.FetchRequest, error) {
+	ret := _m.Called(ctx, eventDefIds)
 
-	var r0 *model.FetchRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FetchRequest); ok {
-		r0 = rf(ctx, eventAPIDefID)
+	var r0 []*model.FetchRequest
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FetchRequest); ok {
+		r0 = rf(ctx, eventDefIds)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.FetchRequest)
+			r0 = ret.Get(0).([]*model.FetchRequest)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, eventAPIDefID)
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, eventDefIds)
 	} else {
 		r1 = ret.Error(1)
 	}
