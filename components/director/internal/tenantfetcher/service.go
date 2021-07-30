@@ -131,7 +131,7 @@ func (s Service) SyncTenants() error {
 	if shouldFullResync {
 		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
 		lastConsumedTenantTimestamp = "1"
-		newLastResyncTimestamp = convertTimeToUnixNanoString(startTime)
+		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
 	}
 
 	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
@@ -200,7 +200,7 @@ func (s Service) SyncTenants() error {
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixNanoString(startTime), newLastResyncTimestamp); err != nil {
+	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
 		return err
 	}
 
@@ -523,10 +523,10 @@ func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	ts := time.Unix(0, i)
+	ts := time.Unix(i/1000, 0)
 	return time.Now().After(ts.Add(s.fullResyncInterval)), nil
 }
 
-func convertTimeToUnixNanoString(timestamp time.Time) string {
-	return strconv.FormatInt(timestamp.UnixNano(), 10)
+func convertTimeToUnixMilliSecondString(timestamp time.Time) string {
+	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
 }
