@@ -23,10 +23,11 @@ var (
 )
 
 func TestNewReadinessHandler(t *testing.T) {
-	tx := &automock2.PersistenceTx{}
-
 	t.Run("success", func(t *testing.T) {
 		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+		tx.On("Commit").Once().Return(nil)
+
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
@@ -46,6 +47,9 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("success when cached result", func(t *testing.T) {
 		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+		tx.On("Commit").Once().Return(nil)
+
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
@@ -66,6 +70,9 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail when ping fails", func(t *testing.T) {
 		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+		tx.On("Commit").Once().Return(nil)
+
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
@@ -85,6 +92,9 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail when schema compatibility check fails", func(t *testing.T) {
 		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+		tx.On("Commit").Once().Return(nil)
+
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
@@ -102,6 +112,9 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail when error is received while getting schema version from database", func(t *testing.T) {
 		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+		tx.On("Commit").Once().Return(nil)
+
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
@@ -119,6 +132,25 @@ func TestNewReadinessHandler(t *testing.T) {
 
 	t.Run("fail while opening transaction", func(t *testing.T) {
 		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+
+		transactioner := &automock2.Transactioner{}
+		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+
+		repository := &automock.Repository{}
+
+		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+
+		// THEN
+		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
+	})
+
+	t.Run("fail while committing", func(t *testing.T) {
+		ctx := context.TODO()
+		tx := &automock2.PersistenceTx{}
+		tx.On("Commit").Once().Return(errors.New("commit error"))
+
 		transactioner := &automock2.Transactioner{}
 		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()

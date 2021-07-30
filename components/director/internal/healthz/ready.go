@@ -52,7 +52,12 @@ func (r *Ready) checkSchemaCompatibility() bool {
 
 	schemaVersion, err := r.repo.GetVersion(r.ctx)
 	if err != nil {
-		log.C(r.ctx).Errorf("Failed to get schema version: %s", err.Error())
+		log.C(r.ctx).Error(err.Error())
+		return false
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.C(r.ctx).Error(errors.Wrap(err, "while committing transaction").Error())
 		return false
 	}
 
