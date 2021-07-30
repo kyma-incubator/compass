@@ -150,6 +150,8 @@ func TestService_SyncTenants(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
+	tNowInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+
 	testCases := []struct {
 		Name                string
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -641,7 +643,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", strconv.FormatInt(time.Now().UnixNano(), 10), nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", tNowInMillis, nil).Once()
 				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
