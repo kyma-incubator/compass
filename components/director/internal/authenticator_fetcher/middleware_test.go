@@ -1,4 +1,4 @@
-package authenticator_tnt_test
+package authenticator_fetcher_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/form3tech-oss/jwt-go"
-	authenticator_tnt "github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
+	authenticator_tnt "github.com/kyma-incubator/compass/components/director/internal/authenticator_fetcher"
 	directorAuth "github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/lestrrat-go/jwx/jwk"
 

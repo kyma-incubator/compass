@@ -196,7 +196,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Twice()
 				return svc
 			},
 			RuntimeStorageSvcFn: func() *automock.RuntimeService {
@@ -228,7 +228,6 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{parentTenant1BusinessMapping, parentTenant2BusinessMapping, parentTenant3BusinessMapping}, nil).Once()
 
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument2(parentTenantsBusinessMapping)).Return(nil)
-				//svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenantsWithParentGUID)).Return(nil)
 
 				svc.On("MultipleToTenantMapping", matchArrayWithoutOrderArgument(parentTenants)).Return(parentTenantsBusinessMapping)
 				svc.On("MultipleToTenantMapping", matchArrayWithoutOrderArgument(businessTenantsWithParentGUID)).Return(parentTenantsBusinessMapping)
@@ -238,7 +237,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil)
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -283,7 +282,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Twice()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -307,7 +306,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil)
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -412,21 +411,12 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-
-				//receivedTenants := []*model.BusinessTenantMappingInput{{
-				//	Name:           "updated-name",
-				//	ExternalTenant: busTenant1WithParentGUID.ExternalTenant,
-				//	Type:           busTenant1WithParentGUID.Type,
-				//	Parent:         busTenant1WithParentGUID.Parent,
-				//	Provider:       busTenant1WithParentGUID.Provider,
-				//}}
-
 				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{parentTenant1BusinessMapping}, nil).Twice()
 				svc.On("MultipleToTenantMapping", matchArrayWithoutOrderArgument(businessTenantsWithParentGUID[:1])).Return(parentTenantsBusinessMapping[:1])
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument2(parentTenantsBusinessMapping[:1])).Return(nil).Once()
@@ -487,7 +477,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Twice()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -567,7 +557,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Twice()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -616,7 +606,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelDefSvcFn: UnusedLabelLabelSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
 				svc := &automock.LabelRepository{}
-				svc.On("Upsert", mock.Anything, mock.Anything).Return(nil) // TODO
+				svc.On("Upsert", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Twice()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,

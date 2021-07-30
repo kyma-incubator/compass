@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/gorilla/mux"
-	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator-tnt"
+	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator_fetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
