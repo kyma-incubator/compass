@@ -57,6 +57,8 @@ spec:
                                 value: "{{.Values.global.tenantConfig.dbPool.maxOpenConnections}}"
                               - name: APP_DB_MAX_IDLE_CONNECTIONS
                                 value: "{{.Values.global.tenantConfig.dbPool.maxIdleConnections}}"
+                              - name: APP_LOG_FORMAT
+                                value: {{ .Values.global.log.format | quote }}
                           volumeMounts:
                             - name: external-tenant-config
                               mountPath: /data/external-tenants.json
