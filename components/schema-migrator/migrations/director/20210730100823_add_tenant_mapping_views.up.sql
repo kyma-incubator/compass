@@ -63,7 +63,7 @@ FROM api_definitions AS apis
 
 
 
-CREATE OR REPLACE VIEW tenant_events  AS
+CREATE OR REPLACE VIEW tenants_events  AS
 SELECT t_apps.tenant_id, events.id, events.app_id, events.name, events.description, events.group_name, events.version_value,
        events.version_deprecated, events.version_deprecated_since, events.version_for_removal, events.ord_id,
        events.short_description, events.system_instance_aware, events.changelog_entries, events.links, events.tags,
