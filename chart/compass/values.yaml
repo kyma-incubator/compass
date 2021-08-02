@@ -482,5 +482,13 @@ global:
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
 
+  migratorJob:
+    nodeSelectorEnabled: false
+    pvc:
+      name: "compass-director-migrations"
+      namespace: "compass-system"
+      regional: false
+      migrationsPath: "/compass-migrations"
+
 pairing-adapter:
   enabled: false
