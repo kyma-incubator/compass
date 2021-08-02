@@ -70,21 +70,13 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: MIGRATION_PATH
-              value: "director"
-            - name: DIRECTION
-              value: "down"
-            - name: CM_NAME
-              value: {{ .Values.global.migratorJob.versionConfigMap.name }}
-            - name: CM_NAMESPACE
-              value: {{ .Values.global.migratorJob.versionConfigMap.namespace }}
             - name: MIGRATION_STORAGE_PATH
               value: {{ .Values.global.migratorJob.pvc.migrationsPath }}
           command:
             - "/bin/bash"
           args:
             - "-c"
-            - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+            - "sleep 20; ./run.sh --down --component director; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           volumeMounts:
             - name: migrations-storage
               mountPath: {{ .Values.global.migratorJob.pvc.migrationsPath }}

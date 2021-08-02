@@ -472,9 +472,6 @@ global:
 
   migratorJob:
     nodeSelectorEnabled: false
-    versionConfigMap:
-      name: "compass-migrator-migration-version"
-      namespace: "compass-system"
     pvc:
       name: "compass-director-migrations"
       namespace: "compass-system"

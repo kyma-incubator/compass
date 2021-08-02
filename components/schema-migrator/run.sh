@@ -7,12 +7,57 @@ NC='\033[0m' # No Color
 
 CLEAN_DB_MESSAGE='error: no migration'
 
+function checkInputParameterValue() {
+    if [ -z "${1}" ] || [ "${1:0:2}" == "--" ]; then
+        echo "Wrong parameter value"
+        echo "Make sure parameter value is neither empty nor start with two hyphens"
+        exit 1
+    fi
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case ${key} in
+        --component)
+            checkInputParameterValue "${2}"
+            MIGRATION_PATH="${2}"
+            shift # past argument
+            shift # past value
+        ;;
+        --up)
+            DIRECTION=up
+            shift # past argument
+        ;;
+        --down)
+            DIRECTION=down
+            shift # past argument
+        ;;
+        --*)
+            echo "Unknown flag ${1}"
+            exit 1
+        ;;
+        *)    # unknown option
+            POSITIONAL+=("$1") # save it in an array for later
+            shift # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
 for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD MIGRATION_PATH DIRECTION; do
-    if [ -z "${!var}" ] ; then
+    if [ -z "${!var}" ]; then
         echo "ERROR: $var is not set"
         discoverUnsetVar=true
     fi
 done
+if [[ -z "$DRY_RUN" ]] && [[ -z "$MIGRATION_STORAGE_PATH" ]] ; then
+  echo "ERROR: MIGRATION_STORAGE_PATH is not set"
+  discoverUnsetVar=true
+fi
+
 if [ "${discoverUnsetVar}" = true ] ; then
     exit 1
 fi
