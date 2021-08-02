@@ -127,6 +127,8 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 	defer fixtures.UnregisterApplication(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID)
 
 	bundle := fixtures.CreateBundle(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID, testBundleName)
+	defer fixtures.DeleteBundle(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, bundle.ID)
+
 	api := fixtures.AddAPIToBundleWithInput(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, bundle.ID, apiDefInput)
 
 	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
