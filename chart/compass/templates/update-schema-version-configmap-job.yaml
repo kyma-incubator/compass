@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: update-schema-version-config
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-rollback
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      shareProcessNamespace: true
+      containers:
+        - name: editor
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
+          imagePullPolicy: Always
+          command:
+            - "/bin/bash"
+          args:
+            - "-c"
+            - "sleep 20; ./update-migration-version.sh {{ .Values.global.schemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.schemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          volumeMounts:
+            - name: migrations-storage
+              mountPath: {{ .Values.global.schemaVersionUpdateJob.pvc.migrationsPath }}
+      volumes:
+        - name: migrations-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.global.schemaVersionUpdateJob.pvc.name }}

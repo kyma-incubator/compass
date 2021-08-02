@@ -160,7 +160,10 @@ spec:
             - name: APP_HEALTH_CONFIG_INDICATORS
               value: {{ .Values.health.indicators | quote }}
             - name: APP_SCHEMA_MIGRATION_VERSION
-              value: {{ .Values.global.schema.version | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: schema-version
+                  key: schemaVersion
             - name: APP_DATALOADER_MAX_BATCH
               value: {{ .Values.deployment.dataloaders.maxBatch | quote }}
             - name: APP_DATALOADER_WAIT

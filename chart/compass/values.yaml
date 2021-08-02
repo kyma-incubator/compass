@@ -473,5 +473,14 @@ global:
   schema:
     version: "20210716403210"
 
+  schemaVersionUpdateJob:
+    cm:
+      name: "schema-version"
+      migrationsPath: "director"
+    pvc:
+      name: "update-schema-version-configmap"
+      namespace: "compass-system"
+      migrationsPath: "/compass-migrations"
+
 pairing-adapter:
   enabled: false
