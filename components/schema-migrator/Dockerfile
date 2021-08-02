@@ -11,5 +11,6 @@ RUN mv migrate.linux-amd64 /usr/local/bin/migrate
 COPY ./migrations/ ./migrations
 COPY ./seeds/ ./seeds
 COPY ./run.sh ./run.sh
+COPY ./update-migration-version.sh ./update-migration-version.sh
 
 ENTRYPOINT ["./run.sh"]
