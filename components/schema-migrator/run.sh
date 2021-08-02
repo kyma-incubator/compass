@@ -27,6 +27,12 @@ do
             shift # past argument
             shift # past value
         ;;
+        --pv-path)
+            checkInputParameterValue "${2}"
+            MIGRATION_STORAGE_PATH="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --up)
             DIRECTION=up
             shift # past argument
