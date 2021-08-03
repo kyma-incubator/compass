@@ -1,3 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+   "helm.sh/hook": pre-install
+   "helm.sh/hook-weight": "-5"
+  name: update-expected-schema-version
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+  name: update-expected-schema-version
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: update-expected-schema-version
+subjects:
+  - kind: ServiceAccount
+    name: update-expected-schema-version
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+  name: update-expected-schema-version
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "patch"]
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -14,6 +53,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
+      serviceAccountName: update-expected-schema-version
       restartPolicy: Never
       shareProcessNamespace: true
       containers:
@@ -24,7 +64,7 @@ spec:
         - "/bin/bash"
         args:
         - "-c"
-        - "sleep 20; ./update-migration-version.sh {{ .Values.global.schemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.schemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+        - "./update-migration-version.sh {{ .Values.global.schemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.schemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
         volumeMounts:
         - name: migrations-storage
           mountPath: {{ .Values.global.schemaVersionUpdateJob.pvc.migrationsPath }}
