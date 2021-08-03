@@ -162,7 +162,7 @@ spec:
             - name: APP_SCHEMA_MIGRATION_VERSION
               valueFrom:
                 configMapKeyRef:
-                  name: schema-version
+                  name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
                   key: schemaVersion
             - name: APP_DATALOADER_MAX_BATCH
               value: {{ .Values.deployment.dataloaders.maxBatch | quote }}
