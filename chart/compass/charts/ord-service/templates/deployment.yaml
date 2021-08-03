@@ -55,7 +55,10 @@ spec:
             - name: SERVER_SELF_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: SCHEMA_MIGRATION_VERSION
-              value: {{ .Values.global.schema.version | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
+                  key: schemaVersion
             - name: SERVER_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: ODATA_JPA_REQUEST_MAPPING_PATH
