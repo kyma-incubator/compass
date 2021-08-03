@@ -21,6 +21,6 @@ RUN apk add --update ca-certificates \
 COPY ./migrations/ ./migrations
 COPY ./seeds/ ./seeds
 COPY ./run.sh ./run.sh
-COPY ./update-migration-version.sh ./update-migration-version.sh
+COPY ./update-expected-schema-version.sh ./update-expected-schema-version.sh
 
 ENTRYPOINT ["./run.sh"]

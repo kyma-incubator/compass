@@ -37,10 +37,31 @@ rules:
     resources: ["configmaps"]
     verbs: ["create", "get", "patch"]
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+  name: {{ .Values.global.expectedSchemaVersionUpdateJob.pvc.name }}
+  namespace: {{ .Values.global.expectedSchemaVersionUpdateJob.pvc.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  storageClassName: standard
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: update-schema-version-config
+  name: update-expected-schema-version
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -64,11 +85,11 @@ spec:
         - "/bin/bash"
         args:
         - "-c"
-        - "./update-migration-version.sh {{ .Values.global.schemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.schemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+        - " chmod +x ./update-expected-schema-version.sh; ./update-migration-version.sh {{ .Values.global.expectedSchemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
         volumeMounts:
         - name: migrations-storage
-          mountPath: {{ .Values.global.schemaVersionUpdateJob.pvc.migrationsPath }}
+          mountPath: {{ .Values.global.expectedSchemaVersionUpdateJob.pvc.migrationsPath }}
       volumes:
       - name: migrations-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.global.schemaVersionUpdateJob.pvc.name }}
+          claimName: {{ .Values.global.expectedSchemaVersionUpdateJob.pvc.name }}

@@ -4,7 +4,7 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-5"
-  name: {{ .Values.global.schemaVersionUpdateJob.cm.name }}
+  name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}

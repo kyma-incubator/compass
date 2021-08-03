@@ -473,12 +473,12 @@ global:
   schema:
     version: "20210716403210"
 
-  schemaVersionUpdateJob:
+  expectedSchemaVersionUpdateJob:
     cm:
-      name: "schema-version"
+      name: "expected-schema-version"
       migrationsPath: "director"
     pvc:
-      name: "update-schema-version-configmap"
+      name: "expected-schema-version"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
 
