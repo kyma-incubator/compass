@@ -470,9 +470,6 @@ global:
       runAsUser: 2000
       allowPrivilegeEscalation: false
 
-  schema:
-    version: "20210716403210"
-
   expectedSchemaVersionUpdateJob:
     cm:
       name: "expected-schema-version"

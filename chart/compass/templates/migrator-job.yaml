@@ -6,6 +6,8 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
   annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   template:
