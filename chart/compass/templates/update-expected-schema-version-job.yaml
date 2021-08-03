@@ -85,7 +85,7 @@ spec:
         - "/bin/bash"
         args:
         - "-c"
-        - " chmod +x ./update-expected-schema-version.sh; ./update-migration-version.sh {{ .Values.global.expectedSchemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+        - " chmod +x ./update-expected-schema-version.sh; ./update-expected-schema-version.sh {{ .Values.global.expectedSchemaVersionUpdateJob.cm.migrationsPath }} {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
         volumeMounts:
         - name: migrations-storage
           mountPath: {{ .Values.global.expectedSchemaVersionUpdateJob.pvc.migrationsPath }}
