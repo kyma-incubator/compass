@@ -5,6 +5,7 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   template:
     metadata:
