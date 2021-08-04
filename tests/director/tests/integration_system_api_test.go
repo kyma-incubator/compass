@@ -63,6 +63,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	newDescription := "new description"
 	t.Log("Register integration system")
 	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
 
 	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
 	intSysGQL, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
@@ -74,7 +75,6 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateIntegrationSystemRequest, &updateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, updateOutput.ID)
 
 	//THEN
 	t.Log("Check if Integration System was updated")
@@ -120,6 +120,8 @@ func TestQueryIntegrationSystem(t *testing.T) {
 
 	t.Log("Register integration system")
 	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+
 	getIntegrationSystemRequest := fixtures.FixGetIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
 
@@ -128,7 +130,6 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, output.ID)
 
 	//THEN
 	t.Log("Check if Integration System was received")

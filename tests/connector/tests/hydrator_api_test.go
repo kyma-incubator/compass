@@ -25,6 +25,7 @@ func TestHydrators(t *testing.T) {
 		Name: "test-hydrators-app",
 	})
 	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
 	appID := app.ID
 	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 

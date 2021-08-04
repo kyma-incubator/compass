@@ -45,11 +45,11 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
 	require.NoError(t, err)
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
+
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
-
-	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
 }
@@ -75,9 +75,9 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	appTemplate := graphql.ApplicationTemplate{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
 	require.NoError(t, err)
-	require.Len(t, appTemplate.Webhooks, 1)
-
 	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
+
+	require.Len(t, appTemplate.Webhooks, 1)
 
 	t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
 	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
@@ -89,10 +89,10 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
 	require.NoError(t, err)
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
+
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
-
-	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, dexGraphQLClient)
 }
@@ -118,9 +118,9 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	appTemplate := graphql.ApplicationTemplate{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
 	require.NoError(t, err)
-	require.Len(t, appTemplate.Webhooks, 1)
-
 	defer deleteApplicationTemplateOnExit(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
+
+	require.Len(t, appTemplate.Webhooks, 1)
 
 	t.Log(fmt.Sprintf("Registering application from template: %s", appName))
 	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
@@ -132,6 +132,8 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
 	require.NoError(t, err)
+	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
+
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 	require.Len(t, app.Webhooks, 1)
 	nearCreationTime := time.Now().Add(-1 * time.Second)
@@ -144,8 +146,6 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	webhookResult := graphql.Webhook{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
 	require.NoError(t, err)
-
-	defer deleteApplicationOnExit(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
 
 	triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, dexGraphQLClient)
 }

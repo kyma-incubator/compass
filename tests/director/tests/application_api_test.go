@@ -52,6 +52,8 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
+
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
 	require.NoError(t, err)
@@ -60,7 +62,6 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	t.Log("SCOPES: ", testctx.Tc.CurrentScopes)
 
 	//THEN
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	assertions.AssertApplication(t, in, actualApp)
@@ -224,16 +225,17 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	require.NoError(t, err)
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
 
 	// WHEN
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+
 	assertions.AssertApplication(t, in, actualApp)
 	assert.Equal(t, statusCond, actualApp.Status.Condition)
 }
@@ -284,10 +286,10 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
@@ -315,8 +317,8 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName)
 		err := testctx.Tc.NewOperation(ctx).Run(request, dexGraphQLClient, &actualApp)
 		appID := actualApp.ID
-		packageID := actualApp.Packages.Data[0].ID
 		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appID)
+		packageID := actualApp.Packages.Data[0].ID
 
 		require.NoError(t, err)
 		require.NotEmpty(t, appID)
@@ -502,7 +504,6 @@ func TestDeleteApplication(t *testing.T) {
 
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 		require.NoError(t, err)
-
 		require.NotEmpty(t, actualApp.ID)
 
 		// WHEN
@@ -810,6 +811,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 	actualApp := graphql.Application{}
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	err = testctx.Tc.RunOperation(context.Background(), dexGraphQLClient, request, &actualApp)
+	require.NotEmpty(t, actualApp.ID)
 	appID := actualApp.ID
 	defer fixtures.UnregisterApplication(t, context.Background(), dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appID)
 
