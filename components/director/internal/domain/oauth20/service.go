@@ -31,10 +31,10 @@ type UIDService interface {
 
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore
 type OryHydraService interface {
-	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams) (*admin.ListOAuth2ClientsOK, error)
-	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams) (*admin.CreateOAuth2ClientCreated, error)
-	UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams) (*admin.UpdateOAuth2ClientOK, error)
-	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams) (*admin.DeleteOAuth2ClientNoContent, error)
+	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, options ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error)
+	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams, options ...admin.ClientOption) (*admin.CreateOAuth2ClientCreated, error)
+	UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams, options ...admin.ClientOption) (*admin.UpdateOAuth2ClientOK, error)
+	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams, options ...admin.ClientOption) (*admin.DeleteOAuth2ClientNoContent, error)
 }
 
 type ClientDetails struct {
