@@ -1,4 +1,6 @@
 /*
+Copyright 2021.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -66,9 +68,9 @@ func NewOperationReconciler(config *webhook.Config, statusManager StatusManager,
 // +kubebuilder:rbac:groups=operations.compass,resources=operations/status,verbs=get;update;patch
 
 // Reconcile contains the Operations Controller logic concerned with processing and executing webhooks based on Operation CRs
-func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.Log.WithValues("operation", req.NamespacedName)
-	ctx := log.ContextWithLogger(context.Background(), logger)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	operation, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {

@@ -1,7 +1,16 @@
 domain: compass
+layout:
+- go.kubebuilder.io/v3
+projectName: operations-controller
 repo: github.com/kyma-incubator/compass/components/operations-controller
 resources:
-- group: operations
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: compass
+  group: operations
   kind: Operation
+  path: github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1
   version: v1alpha1
-version: "2"
+version: "3"
