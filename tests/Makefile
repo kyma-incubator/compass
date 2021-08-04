@@ -1,6 +1,6 @@
 APP_NAME = compass-tests
 APP_PATH = tests
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20210804-d3a9d497
 SCRIPTS_DIR = $(realpath $(shell pwd)/..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/..)/installation/scripts
 CHARTS_DIR = $(realpath $(shell pwd)/..)/chart

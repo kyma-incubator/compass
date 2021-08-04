@@ -1,6 +1,6 @@
 APP_NAME = compass-schema-migrator
 APP_PATH = components/schema-migrator
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20210804-d3a9d497
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export SKIP_DEPLOY_MESSAGE = "Building minikube image and redeployment of Schema Migrator is not allowed"
 export SKIP_TEST_MESSAGE = "Test goal for Schema Migrator is empty"
