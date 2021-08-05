@@ -83,7 +83,7 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.global.migratorJob.pvc.name }}
       {{- if eq .Values.global.database.embedded.enabled false }}
-      - name: cloudsql-instance-credentials
-        secret:
-          secretName: cloudsql-instance-credentials
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
       {{- end }}
