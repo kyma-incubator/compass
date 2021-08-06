@@ -36,6 +36,24 @@ func NewReady(ctx context.Context, transactioner persistence.Transactioner, cfg 
 	}
 }
 
+// NewReadinessHandler returns handler that returns OK if the db schema is compatible and successful
+// db ping is performed or InternalServerError otherwise
+func NewReadinessHandler(r *Ready) func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if r.schemaCompatible = r.checkSchemaCompatibility(); !r.schemaCompatible {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := r.transactioner.PingContext(r.ctx); err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
 func (r *Ready) checkSchemaCompatibility() bool {
 	if r.schemaCompatible {
 		return true
@@ -62,27 +80,4 @@ func (r *Ready) checkSchemaCompatibility() bool {
 	}
 
 	return r.cfg.SchemaMigrationVersion == schemaVersion
-}
-
-// NewReadinessHandler returns handler that returns OK if the db schema is compatible and successful
-// db ping is performed or InternalServerError otherwise
-func NewReadinessHandler(r *Ready) func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		isCompatible := r.checkSchemaCompatibility()
-		if isCompatible {
-			r.schemaCompatible = true
-		}
-
-		if !r.schemaCompatible {
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if err := r.transactioner.PingContext(r.ctx); err != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		writer.WriteHeader(http.StatusOK)
-	}
 }
