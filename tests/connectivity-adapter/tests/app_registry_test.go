@@ -131,6 +131,7 @@ func TestAppRegistry(t *testing.T) {
 		}
 
 		createServiceResponse, errorResponse := adapterClient.CreateService(t, metadataURL, service)
+		defer adapterClient.CleanupService(t, metadataURL, createServiceResponse.ID)
 		require.Nil(t, errorResponse)
 		require.NotNil(t, createServiceResponse.ID)
 
