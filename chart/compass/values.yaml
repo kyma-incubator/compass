@@ -473,11 +473,6 @@ global:
   expectedSchemaVersionUpdateJob:
     cm:
       name: "expected-schema-version"
-      migrationsPath: "director"
-    pvc:
-      name: "expected-schema-version"
-      namespace: "compass-system"
-      migrationsPath: "/compass-migrations"
 
   migratorJob:
     nodeSelectorEnabled: false
