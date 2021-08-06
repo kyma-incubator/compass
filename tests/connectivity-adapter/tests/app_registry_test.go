@@ -60,20 +60,18 @@ func TestAppRegistry(t *testing.T) {
 	require.NoError(t, err)
 
 	appID, err := directorClient.CreateApplication(appInput)
-	require.NoError(t, err)
-
 	defer func() {
-		err = directorClient.DeleteApplication(appID)
+		err = directorClient.CleanupApplication(appID)
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	runtimeID, err := directorClient.CreateRuntime(runtimeInput)
-	require.NoError(t, err)
-
 	defer func() {
-		err = directorClient.DeleteRuntime(runtimeID)
+		err = directorClient.CleanupRuntime(runtimeID)
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	err = directorClient.SetDefaultEventing(runtimeID, appID, cfg.EventsBaseURL)
 	require.NoError(t, err)

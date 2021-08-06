@@ -59,20 +59,18 @@ func TestConnector(t *testing.T) {
 	require.NoError(t, err)
 
 	appID, err := client.CreateApplication(appInput)
-	require.NoError(t, err)
-
 	defer func() {
-		err = client.DeleteApplication(appID)
+		err = client.CleanupApplication(appID)
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	runtimeID, err := client.CreateRuntime(runtimeInput)
-	require.NoError(t, err)
-
 	defer func() {
-		err = client.DeleteRuntime(runtimeID)
+		err = client.CleanupRuntime(runtimeID)
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	err = client.SetDefaultEventing(runtimeID, appID, cfg.EventsBaseURL)
 	require.NoError(t, err)

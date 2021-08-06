@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -22,13 +23,18 @@ import (
 const (
 	consumerID   = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
 	consumerType = "USER"
+
+	cleanupRetryCount = 2
+	defaultRetryCount = 20
 )
 
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
+	CleanupRuntime(runtimeID string) error
 	DeleteRuntime(runtimeID string) error
 	SetRuntimeLabel(runtimeID, key, value string) error
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
+	CleanupApplication(appID string) error
 	DeleteApplication(appID string) error
 	SetApplicationLabel(applicationID, key, value string) error
 	DeleteApplicationLabel(applicationID, key string) error
@@ -41,6 +47,37 @@ type DirectorClient struct {
 	tenant       string
 	graphqulizer graphqlizer.Graphqlizer
 	client       *gcli.Client
+}
+
+func (c *DirectorClient) CleanupRuntime(runtimeID string) error {
+	if runtimeID == "" {
+		return nil
+	}
+
+	var result RuntimeResponse
+	query := fixtures.FixUnregisterRuntimeRequest(runtimeID)
+
+	err := c.executeWithRetries(query.Query(), &result, cleanupRetryOptions()...)
+	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
+		return err
+	}
+
+	return nil
+}
+
+func (c *DirectorClient) CleanupApplication(appID string) error {
+	if appID == "" {
+		return nil
+	}
+	var result ApplicationResponse
+	query := fixtures.FixUnregisterApplicationRequest(appID)
+
+	err := c.executeWithRetries(query.Query(), &result, cleanupRetryOptions()...)
+	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
+		return err
+	}
+
+	return nil
 }
 
 type ApplicationResponse struct {
@@ -131,7 +168,7 @@ func (c *DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (
 	var result ApplicationResponse
 	query := fixtures.FixRegisterApplicationRequest(appGraphql)
 
-	err = c.executeWithRetries(query.Query(), &result)
+	err = c.executeWithDefaultRetries(query.Query(), &result)
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +181,7 @@ func (c *DirectorClient) DeleteApplication(appID string) error {
 	var result ApplicationResponse
 	query := fixtures.FixUnregisterApplicationRequest(appID)
 
-	err := c.executeWithRetries(query.Query(), &result)
+	err := c.executeWithDefaultRetries(query.Query(), &result)
 	if err != nil {
 		return err
 	}
@@ -156,7 +193,7 @@ func (c *DirectorClient) SetApplicationLabel(applicationID, key, value string) e
 	query := fixtures.FixSetApplicationLabelRequest(applicationID, key, value)
 	var response SetLabelResponse
 
-	err := c.executeWithRetries(query.Query(), &response)
+	err := c.executeWithDefaultRetries(query.Query(), &response)
 	if err != nil {
 		return err
 	}
@@ -168,7 +205,7 @@ func (c *DirectorClient) DeleteApplicationLabel(applicationID, key string) error
 	query := fixtures.FixDeleteApplicationLabelRequest(applicationID, key)
 	var response SetLabelResponse
 
-	err := c.executeWithRetries(query.Query(), &response)
+	err := c.executeWithDefaultRetries(query.Query(), &response)
 	if err != nil {
 		return err
 	}
@@ -183,7 +220,7 @@ func (c *DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
 	var result RuntimeResponse
 	query := fixtures.FixRegisterRuntimeRequest(runtimeGraphQL)
 
-	err = c.executeWithRetries(query.Query(), &result)
+	err = c.executeWithDefaultRetries(query.Query(), &result)
 	if err != nil {
 		return "", err
 	}
@@ -196,7 +233,7 @@ func (c *DirectorClient) DeleteRuntime(runtimeID string) error {
 	var result RuntimeResponse
 	query := fixtures.FixUnregisterRuntimeRequest(runtimeID)
 
-	err := c.executeWithRetries(query.Query(), &result)
+	err := c.executeWithDefaultRetries(query.Query(), &result)
 	if err != nil {
 		return err
 	}
@@ -208,7 +245,7 @@ func (c *DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
 	query := fixtures.FixSetRuntimeLabelRequest(runtimeID, key, value)
 	var response SetLabelResponse
 
-	err := c.executeWithRetries(query.Query(), &response)
+	err := c.executeWithDefaultRetries(query.Query(), &response)
 	if err != nil {
 		return err
 	}
@@ -222,7 +259,7 @@ func (c *DirectorClient) SetDefaultEventing(runtimeID string, appID string, even
 		query := fixtures.FixSetRuntimeLabelRequest(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
 		var response SetLabelResponse
 
-		err := c.executeWithRetries(query.Query(), &response)
+		err := c.executeWithDefaultRetries(query.Query(), &response)
 		if err != nil {
 			return err
 		}
@@ -232,7 +269,7 @@ func (c *DirectorClient) SetDefaultEventing(runtimeID string, appID string, even
 		query := fixtures.FixSetDefaultEventingForApplication(appID, runtimeID)
 		var response SetDefaultAppEventingResponse
 
-		err := c.executeWithRetries(query.Query(), &response)
+		err := c.executeWithDefaultRetries(query.Query(), &response)
 		if err != nil {
 			return err
 		}
@@ -246,7 +283,7 @@ func (c *DirectorClient) GetOneTimeTokenUrl(appID string) (string, string, error
 	query := fixtures.FixRequestOneTimeTokenForApplication(appID)
 	var response OneTimeTokenResponse
 
-	err := c.executeWithRetries(query.Query(), &response)
+	err := c.executeWithDefaultRetries(query.Query(), &response)
 	if err != nil {
 		return "", "", err
 	}
@@ -285,7 +322,7 @@ func getInternalTenantID(directorURL string, externalTenantID string) (string, e
 	return "", errors.New("Cannot find test tenant.")
 }
 
-func (c *DirectorClient) executeWithRetries(query string, res interface{}) error {
+func (c *DirectorClient) executeWithRetries(query string, res interface{}, opts ...retry.Option) error {
 	return retry.Do(func() error {
 		req := gcli.NewRequest(query)
 		req.Header.Set("Tenant", c.tenant)
@@ -296,8 +333,12 @@ func (c *DirectorClient) executeWithRetries(query string, res interface{}) error
 		err := c.client.Run(ctx, req, res)
 
 		return err
-	}, defaultRetryOptions()...)
+	}, opts...)
 
+}
+
+func (c *DirectorClient) executeWithDefaultRetries(query string, res interface{}) error {
+	return c.executeWithRetries(query, res, defaultRetryOptions()...)
 }
 
 func getClient(url string, tenant string, scopes []string) (*gcli.Client, error) {
@@ -320,5 +361,9 @@ func getToken(tenant string, scopes []string) (string, error) {
 }
 
 func defaultRetryOptions() []retry.Option {
-	return []retry.Option{retry.Attempts(20), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
+	return []retry.Option{retry.Attempts(defaultRetryCount), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
+}
+
+func cleanupRetryOptions() []retry.Option {
+	return []retry.Option{retry.Attempts(cleanupRetryCount), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
 }
