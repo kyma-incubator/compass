@@ -19,15 +19,15 @@ func TestHydrators(t *testing.T) {
 		Name: "test-hydrators-runtime",
 	})
 	runtimeID := runtime.ID
-	defer fixtures.UnregisterRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID)
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID)
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-hydrators-app",
 	})
+	appID := app.ID
+	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
-	appID := app.ID
-	defer fixtures.UnregisterApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
 
 	hash := "df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a"
 

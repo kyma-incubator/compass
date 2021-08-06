@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
@@ -40,6 +42,16 @@ func UnregisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
 	require.NoError(t, err)
+}
+
+func CleanupRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
+	delReq := FixUnregisterRuntimeRequest(id)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
 func UnregisterGracefullyRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {

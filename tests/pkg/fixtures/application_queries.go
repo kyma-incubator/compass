@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
@@ -83,6 +85,17 @@ func UnregisterApplication(t require.TestingT, ctx context.Context, gqlClient *g
 func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	req := FixAsyncUnregisterApplicationRequest(id)
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
+}
+
+func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
+	deleteRequest := FixUnregisterApplicationRequest(id)
+	app := graphql.ApplicationExt{}
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
 func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {

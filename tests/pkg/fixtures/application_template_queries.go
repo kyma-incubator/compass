@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
@@ -42,4 +43,14 @@ func DeleteApplicationTemplate(t require.TestingT, ctx context.Context, gqlClien
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)
+}
+
+func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
+	req := FixDeleteApplicationTemplateRequest(id)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }

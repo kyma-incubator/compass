@@ -3,6 +3,8 @@ package fixtures
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
@@ -47,6 +49,15 @@ func UnregisterIntegrationSystemWithErr(t require.TestingT, ctx context.Context,
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "The record cannot be deleted because another record refers to it")
+}
+
+func CleanupIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	if id == "" {
+		return
+	}
+	req := FixUnregisterIntegrationSystem(id)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
 func GetSystemAuthsForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) []*graphql.IntSysSystemAuth {
