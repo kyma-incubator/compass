@@ -10,19 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateApplicationTemplateFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input graphql.ApplicationTemplateInput) graphql.ApplicationTemplate {
+func CreateApplicationTemplateFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input graphql.ApplicationTemplateInput) (graphql.ApplicationTemplate, error) {
 	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(input)
 	require.NoError(t, err)
 
 	req := FixCreateApplicationTemplateRequest(appTemplate)
 	appTpl := graphql.ApplicationTemplate{}
 
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
-	require.NoError(t, err)
-	return appTpl
+	return appTpl, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
 }
 
-func CreateApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) graphql.ApplicationTemplate {
+func CreateApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) (graphql.ApplicationTemplate, error) {
 	return CreateApplicationTemplateFromInput(t, ctx, gqlClient, tenant, FixApplicationTemplate(name))
 }
 

@@ -19,20 +19,18 @@ func GetIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gc
 	return &intSys
 }
 
-func RegisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, name string) *graphql.IntegrationSystemExt {
+func RegisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, name string) (*graphql.IntegrationSystemExt, error) {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(input)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	req := FixRegisterIntegrationSystemRequest(in)
 	intSys := &graphql.IntegrationSystemExt{}
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys)
-	return intSys
+	return intSys, err
 }
 
 func UnregisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {

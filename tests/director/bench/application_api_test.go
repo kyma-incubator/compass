@@ -33,8 +33,10 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
 
-	rt := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, dexGraphQLClient, tenantID, &runtime)
-	defer fixtures.UnregisterRuntime(b, ctx, dexGraphQLClient, tenantID, rt.ID)
+	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, dexGraphQLClient, tenantID, &runtime)
+	defer fixtures.CleanupRuntime(b, ctx, dexGraphQLClient, tenantID, rt.ID)
+	require.NoError(b, err)
+	require.NotEmpty(b, rt.ID)
 
 	request := fixtures.FixApplicationForRuntimeRequestWithPageSize(rt.ID, appsCount)
 	request.Header.Set("Tenant", tenantID)

@@ -13,11 +13,13 @@ import (
 )
 
 func TestTokens(t *testing.T) {
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
 		Name: "test-tokens-runtime",
 	})
 	runtimeID := runtime.ID
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-tokens-app",
@@ -100,8 +102,10 @@ func TestTokens(t *testing.T) {
 }
 
 func TestTokenSuggestion(t *testing.T) {
-	intSystem := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
+	intSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
 	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSystem.ID)
 
 	tokenFromRaw := func(token graphql.OneTimeTokenForApplicationExt) string {
 		actualTokenFromRaw := gjson.Get(token.Raw, "token").String()

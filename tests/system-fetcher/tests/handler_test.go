@@ -61,8 +61,10 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	setMockSystems(t, mockSystems)
 
-	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
 
 	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -108,7 +110,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	}
 	defer func() {
 		for _, app := range resp.Data {
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
+			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
 		}
 	}()
 
@@ -150,8 +152,10 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 
 	setMockSystems(t, mockSystems)
 
-	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
 
 	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -216,7 +220,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	}
 	defer func() {
 		for _, app := range resp.Data {
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
+			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
 		}
 	}()
 

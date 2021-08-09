@@ -41,12 +41,9 @@ func UpdateApplicationWithinTenant(t require.TestingT, ctx context.Context, gqlC
 	return app, err
 }
 
-func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) graphql.ApplicationExt {
+func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) (graphql.ApplicationExt, error) {
 	in := FixSampleApplicationRegisterInputWithName("first", name)
-	app, err := RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
-	require.NoError(t, err)
-	require.NotEmpty(t, app.ID)
-	return app
+	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 }
 
 func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
