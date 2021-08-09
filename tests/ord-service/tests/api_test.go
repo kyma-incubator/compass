@@ -221,7 +221,7 @@ func TestORDService(t *testing.T) {
 	}
 
 	// create label definition
-	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT", scenarioName})
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT", scenarioName})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT"})
 
 	// create automatic scenario assigment for subTenant
