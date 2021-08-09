@@ -23,7 +23,10 @@ func TestCompassAuth(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Register Integration System with Dex id token")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	t.Log("Request Client Credentials for Integration System")
 	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
@@ -43,6 +46,7 @@ func TestCompassAuth(t *testing.T) {
 		IntegrationSystemID: &intSys.ID,
 	}
 	appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appByIntSys.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, appByIntSys.ID)
 

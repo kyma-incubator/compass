@@ -18,8 +18,10 @@ func TestIntegrationSystemScenario(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Register Integration System with Dex id token")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	t.Log("Request Client Credentials for Integration System")
 	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
@@ -38,6 +40,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			IntegrationSystemID: &intSys.ID,
 		}
 		appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appByIntSys.ID)
 		require.NoError(t, err)
 		require.NotEmpty(t, appByIntSys.ID)
 
@@ -63,7 +66,9 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
 		}
-		appTpl := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTplInput)
+		appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTplInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTpl.ID)
+		require.NoError(t, err)
 		require.NotEmpty(t, appTpl.ID)
 
 		t.Log("Get application template")
@@ -81,7 +86,9 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test",
 		}
-		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
+		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
 		t.Log("Get runtime")
