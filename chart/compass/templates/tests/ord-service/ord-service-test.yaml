@@ -85,6 +85,8 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
+            - name: APP_DEFAULT_SCENARIO_ENABLED
+              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_IS_WITH_TOKEN

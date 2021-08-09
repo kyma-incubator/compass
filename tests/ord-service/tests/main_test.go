@@ -38,6 +38,7 @@ type config struct {
 	ORDServiceURL                 string
 	ORDServiceStaticURL           string
 	ORDServiceDefaultResponseType string
+	DefaultScenarioEnabled        bool `envconfig:"default=true"`
 }
 
 var testConfig config

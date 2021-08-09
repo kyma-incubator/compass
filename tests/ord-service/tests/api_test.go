@@ -26,12 +26,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -236,6 +235,7 @@ func TestORDService(t *testing.T) {
 	// assign application to scenario
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInScenario.ID, testConfig.DefaultScenarioEnabled)
 
 	for _, testData := range []struct {
 		tenant    string
