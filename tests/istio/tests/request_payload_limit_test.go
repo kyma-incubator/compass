@@ -52,8 +52,10 @@ func TestCallingCompassGateways(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 	logrus.Infof("Registering runtime with name: %s, within tenant: %s", runtimeInput.Name, tenant)
 
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, runtimeInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, runtimeInput)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	logrus.Infof("Generating one-time token for runtime with id: %s", runtime.ID)
 	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
