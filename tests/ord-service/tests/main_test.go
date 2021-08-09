@@ -20,13 +20,12 @@ import (
 	"os"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -35,8 +34,6 @@ var (
 )
 
 type config struct {
-	DefaultTestTenant             string
-	SecondaryTenant               string
 	DirectorURL                   string
 	ORDServiceURL                 string
 	ORDServiceStaticURL           string
@@ -50,6 +47,9 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
+
+	tenant.TestTenants.Init()
+	defer tenant.TestTenants.Cleanup()
 
 	dexToken := server.Token()
 
