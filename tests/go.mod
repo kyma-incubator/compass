@@ -22,7 +22,7 @@ require (
 	github.com/tidwall/gjson v1.8.0
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1
-	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
+	golang.org/x/oauth2 v0.0.0-20210805134026-6f1e6394065a
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
