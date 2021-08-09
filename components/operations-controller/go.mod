@@ -11,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.10.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	go.uber.org/zap v1.13.0
+	go.uber.org/zap v1.16.0
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
