@@ -70,17 +70,18 @@ func TestORDService(t *testing.T) {
 	ctx := context.Background()
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
 	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, appInput2)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, app2.ID)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, app2.ID)
 
 	t.Log("Create integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-	require.NotEmpty(t, intSys)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
