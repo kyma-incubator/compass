@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
@@ -37,17 +39,24 @@ import (
 )
 
 const (
-	acceptHeader = "Accept"
-	tenantHeader = "Tenant"
+	acceptHeader   = "Accept"
+	tenantHeader   = "Tenant"
+	scenarioName   = "formation-filtering"
+	scenariosLabel = "scenarios"
+	selectorKey    = "global_subaccount_id"
+	subTenantID    = "123e4567-e89b-12d3-a456-426614174001"
 )
 
 func TestORDService(t *testing.T) {
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
-	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
+	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+	tenantFilteringTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 
 	// Cannot use tenant constants as the names become too long and cannot be inserted
 	appInput := fixtures.CreateApp("tenant1")
 	appInput2 := fixtures.CreateApp("tenant2")
+	appInputInScenario := fixtures.CreateApp("tenant3-in-scenario")
+	appInputNotInScenario := fixtures.CreateApp("tenant3-no-scenario")
 
 	apisMap := make(map[string]directorSchema.APIDefinitionInput, 0)
 	for _, apiDefinition := range appInput.Bundles[0].APIDefinitions {
@@ -69,6 +78,26 @@ func TestORDService(t *testing.T) {
 		eventsMap2[eventDefinition.Name] = *eventDefinition
 	}
 
+	apisMapInScenario := make(map[string]directorSchema.APIDefinitionInput, 0)
+	for _, apiDefinition := range appInputInScenario.Bundles[0].APIDefinitions {
+		apisMapInScenario[apiDefinition.Name] = *apiDefinition
+	}
+
+	eventsMapInScenario := make(map[string]directorSchema.EventDefinitionInput, 0)
+	for _, eventDefinition := range appInputInScenario.Bundles[0].EventDefinitions {
+		eventsMapInScenario[eventDefinition.Name] = *eventDefinition
+	}
+
+	apisMapNotInScenario := make(map[string]directorSchema.APIDefinitionInput, 0)
+	for _, apiDefinition := range appInputNotInScenario.Bundles[0].APIDefinitions {
+		apisMapNotInScenario[apiDefinition.Name] = *apiDefinition
+	}
+
+	eventsMapNotInScenario := make(map[string]directorSchema.EventDefinitionInput, 0)
+	for _, eventDefinition := range appInputNotInScenario.Bundles[0].EventDefinitions {
+		eventsMapNotInScenario[eventDefinition.Name] = *eventDefinition
+	}
+
 	ctx := context.Background()
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, defaultTestTenant, appInput)
@@ -78,6 +107,14 @@ func TestORDService(t *testing.T) {
 	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, secondaryTenant, appInput2)
 	require.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, secondaryTenant, app2.ID)
+
+	appInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputInScenario)
+	require.NoError(t, err)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInScenario.ID)
+
+	appNotInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputNotInScenario)
+	require.NoError(t, err)
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, appNotInScenario.ID)
 
 	t.Log("Create integration system")
 	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
@@ -183,6 +220,23 @@ func TestORDService(t *testing.T) {
 		})
 	}
 
+	// create label definition
+	fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT", scenarioName})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT"})
+
+	// create automatic scenario assigment for subTenant
+	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarioName, selectorKey, subTenantID)
+	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantFilteringTenant)
+	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, scenarioName)
+
+	// assert no system instances are visible without formation
+	respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {subTenantID}})
+	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
+
+	// assign application to scenario
+	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
+
 	for _, testData := range []struct {
 		tenant    string
 		appInput  directorSchema.ApplicationRegisterInput
@@ -199,6 +253,12 @@ func TestORDService(t *testing.T) {
 			appInput:  appInput2,
 			apisMap:   apisMap2,
 			eventsMap: eventsMap2,
+		},
+		{
+			tenant:    subTenantID,
+			appInput:  appInputInScenario,
+			apisMap:   apisMapInScenario,
+			eventsMap: eventsMapInScenario,
 		},
 	} {
 
