@@ -14,8 +14,10 @@ import (
 func TestTenantIsolation(t *testing.T) {
 	ctx := context.Background()
 
-	actualApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "tenantseparation", tenant.TestTenants.GetDefaultTenantID())
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+	actualApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "tenantseparation", tenant.TestTenants.GetDefaultTenantID())
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
 
 	customTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, dexGraphQLClient, customTenant)
@@ -30,8 +32,10 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 	accountTenant := tenant.TestTenants.GetDefaultTenantID()
 
 	// Register app in customer's tenant
-	customerApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "customerApp", customerTenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, customerTenant, customerApp.ID)
+	customerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "customerApp", customerTenant)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, customerTenant, customerApp.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, customerApp.ID)
 
 	// Assert customer's app is visible in the customer's tenant
 	customerApps := fixtures.GetApplicationPage(t, ctx, dexGraphQLClient, customerTenant)
@@ -43,8 +47,10 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 	require.Len(t, accountApps.Data, 0)
 
 	// Register app in account's tenant
-	accountApp := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "accountApp", accountTenant)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, accountTenant, accountApp.ID)
+	accountApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "accountApp", accountTenant)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, accountTenant, accountApp.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, accountApp.ID)
 
 	// Assert account's app is visible in the account's tenant
 	accountApps = fixtures.GetApplicationPage(t, ctx, dexGraphQLClient, accountTenant)
@@ -57,7 +63,7 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 
 	// Assert customer can update his own application
 	customerAppUpdateInput := fixtures.FixSampleApplicationUpdateInput("customerAppUpdated")
-	customerApp, err := fixtures.UpdateApplicationWithinTenant(t, ctx, dexGraphQLClient, customerTenant, customerApp.ID, customerAppUpdateInput)
+	customerApp, err = fixtures.UpdateApplicationWithinTenant(t, ctx, dexGraphQLClient, customerTenant, customerApp.ID, customerAppUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's application

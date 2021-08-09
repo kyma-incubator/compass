@@ -23,8 +23,10 @@ func TestScopesAuthorization(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixRuntimeInput("runtime-test")
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	id := uuid.New().String()
 

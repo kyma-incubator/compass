@@ -26,13 +26,17 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	t.Log("Creating application template")
 	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
-	appTemplate := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
-	runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
@@ -45,7 +49,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
 
 	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
@@ -65,8 +69,10 @@ func TestSensitiveDataStrip(t *testing.T) {
 	applicationOAuthGraphQLClient := gqlClient(t, appOauthCredentialData, token.ApplicationScopes)
 
 	t.Log(fmt.Sprintf("Registering integration system %q", intSysName))
-	integrationSystem := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSysName)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem.ID)
+	integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSysName)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, integrationSystem.ID)
 
 	t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), dexGraphQLClient, tenantId, integrationSystem.ID)
