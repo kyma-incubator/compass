@@ -42,8 +42,8 @@ const (
 )
 
 func TestORDService(t *testing.T) {
-	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
-	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
+	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 
 	// Cannot use tenant constants as the names become too long and cannot be inserted
 	appInput := fixtures.CreateApp("tenant1")
