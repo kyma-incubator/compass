@@ -19,11 +19,11 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
@@ -41,6 +41,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	// +kubebuilder:scaffold:imports
 )
+
+const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
 
 var (
 	devLogging       = true
@@ -152,7 +154,7 @@ func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
 
 	basicProvider := auth.NewBasicAuthorizationProvider()
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	unsignedTokenProvider := auth.NewUnsignedTokenAuthorizationProvider()
+	unsignedTokenProvider := auth.NewUnsignedTokenAuthorizationProvider(requiredScopes)
 
 	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, unsignedTokenProvider)
 	securedClient := &http.Client{
