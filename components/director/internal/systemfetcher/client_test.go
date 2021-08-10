@@ -109,7 +109,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.Len(t, systems, 6)
 		require.Equal(t, systems[0].TemplateID, "type1")
 		require.Equal(t, systems[1].TemplateID, "type2")
-		require.Equal(t, systems[1].TemplateID, "")
+		require.Equal(t, systems[2].TemplateID, "")
 	})
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {
