@@ -37,7 +37,7 @@ spec:
                 - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
                   value: "{{ .Values.global.systemFetcher.queueSize }}"
                 - name: APP_SYSTEM_INFORMATION_FETCH_TIMEOUT
-                  value: {{ .Values.global.systemFetcher.fetchTimeout | quote }}
+                  value: {{ .Values.global.systemFetcher.fetchRequestTimeout | quote }}
                 - name: APP_SYSTEM_INFORMATION_ENDPOINT
                   value: {{ .Values.global.systemFetcher.systemsAPIEndpoint | quote }}
                 - name: APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN

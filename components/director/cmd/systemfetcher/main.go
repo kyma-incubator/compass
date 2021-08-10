@@ -42,7 +42,6 @@ type config struct {
 	SystemFetcher                  systemfetcher.Config
 	Database                       persistence.DatabaseConfig
 	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
-	SystemTypeFieldName            string `envconfig:"default=productDescription,APP_SYSTEM_TYPE_FIELD_NAME"`
 
 	Log log.Config
 
