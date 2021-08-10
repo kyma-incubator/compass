@@ -24,18 +24,16 @@ const (
 	consumerID   = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
 	consumerType = "USER"
 
-	cleanupRetryCount = 2
+	cleanupRetryCount = 3
 	defaultRetryCount = 20
 )
 
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
 	CleanupRuntime(runtimeID string) error
-	DeleteRuntime(runtimeID string) error
 	SetRuntimeLabel(runtimeID, key, value string) error
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
 	CleanupApplication(appID string) error
-	DeleteApplication(appID string) error
 	SetApplicationLabel(applicationID, key, value string) error
 	DeleteApplicationLabel(applicationID, key string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
@@ -57,7 +55,7 @@ func (c *DirectorClient) CleanupRuntime(runtimeID string) error {
 	var result RuntimeResponse
 	query := fixtures.FixUnregisterRuntimeRequest(runtimeID)
 
-	err := c.executeWithRetries(query.Query(), &result, cleanupRetryOptions()...)
+	err := c.executeWithRetries(query.Query(), &result, retryOptions(cleanupRetryCount)...)
 	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
 		return err
 	}
@@ -72,7 +70,7 @@ func (c *DirectorClient) CleanupApplication(appID string) error {
 	var result ApplicationResponse
 	query := fixtures.FixUnregisterApplicationRequest(appID)
 
-	err := c.executeWithRetries(query.Query(), &result, cleanupRetryOptions()...)
+	err := c.executeWithRetries(query.Query(), &result, retryOptions(cleanupRetryCount)...)
 	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
 		return err
 	}
@@ -155,7 +153,7 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 		}
 
 		return nil
-	}, defaultRetryOptions()...)
+	}, retryOptions(defaultRetryCount)...)
 }
 
 func (c *DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
@@ -174,19 +172,6 @@ func (c *DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (
 	}
 
 	return result.Result.ID, nil
-}
-
-func (c *DirectorClient) DeleteApplication(appID string) error {
-
-	var result ApplicationResponse
-	query := fixtures.FixUnregisterApplicationRequest(appID)
-
-	err := c.executeWithDefaultRetries(query.Query(), &result)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (c *DirectorClient) SetApplicationLabel(applicationID, key, value string) error {
@@ -226,19 +211,6 @@ func (c *DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
 	}
 
 	return result.Result.ID, nil
-}
-
-func (c *DirectorClient) DeleteRuntime(runtimeID string) error {
-
-	var result RuntimeResponse
-	query := fixtures.FixUnregisterRuntimeRequest(runtimeID)
-
-	err := c.executeWithDefaultRetries(query.Query(), &result)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (c *DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
@@ -338,7 +310,7 @@ func (c *DirectorClient) executeWithRetries(query string, res interface{}, opts 
 }
 
 func (c *DirectorClient) executeWithDefaultRetries(query string, res interface{}) error {
-	return c.executeWithRetries(query, res, defaultRetryOptions()...)
+	return c.executeWithRetries(query, res, retryOptions(defaultRetryCount)...)
 }
 
 func getClient(url string, tenant string, scopes []string) (*gcli.Client, error) {
@@ -360,10 +332,6 @@ func getToken(tenant string, scopes []string) (string, error) {
 	return token, nil
 }
 
-func defaultRetryOptions() []retry.Option {
-	return []retry.Option{retry.Attempts(defaultRetryCount), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
-}
-
-func cleanupRetryOptions() []retry.Option {
-	return []retry.Option{retry.Attempts(cleanupRetryCount), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
+func retryOptions(retryCount uint) []retry.Option {
+	return []retry.Option{retry.Attempts(retryCount), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second)}
 }
