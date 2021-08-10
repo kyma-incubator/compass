@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -78,7 +79,7 @@ func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss Systems
 		systemsAPIClient: sac,
 		directorClient: &DirectorGraphClient{
 			Client:        graphqlClient,
-			authenticator: &authProvider{},
+			authenticator: auth.NewUnsignedTokenAuthorizationProvider("application:write"),
 		},
 		workers: make(chan struct{}, config.FetcherParallellism),
 		config:  config,

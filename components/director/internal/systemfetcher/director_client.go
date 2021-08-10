@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
 type Authenticator interface {
-	GetAuthorization(ctx context.Context, tenant string) (string, error)
+	GetAuthorization(ctx context.Context) (string, error)
 }
 
 type DirectorGraphClient struct {
@@ -18,7 +19,7 @@ type DirectorGraphClient struct {
 	authenticator Authenticator
 }
 
-func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenant string) error {
+func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenantID string) error {
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`mutation {
 			  unregisterApplication(
 				id: %q,
@@ -27,7 +28,8 @@ func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenant 
 				  id
 			    }
 			}`, id))
-	token, err := d.authenticator.GetAuthorization(ctx, tenant)
+	ctx = tenant.SaveToContext(ctx, tenantID)
+	token, err := d.authenticator.GetAuthorization(ctx)
 	if err != nil {
 		return err
 	}
