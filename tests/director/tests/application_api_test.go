@@ -1256,7 +1256,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		registerWithNormalizationRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeWithNormalizationInputGQL)
 		runtimeWithNormalization := graphql.Runtime{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, &graphql.RuntimeExt{Runtime: runtimeWithoutNormalization})
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, &graphql.RuntimeExt{Runtime: runtimeWithNormalization})
 
 		require.NoError(t, err)
 		require.NotEmpty(t, runtimeWithNormalization.ID)
