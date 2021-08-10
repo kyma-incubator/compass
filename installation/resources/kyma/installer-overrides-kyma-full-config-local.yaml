@@ -142,6 +142,8 @@ data:
   global.ory.hydra.persistence.enabled: "false"
   global.ory.hydra.persistence.postgresql.enabled: "false"
   hydra.hydra.autoMigrate: "false"
+  hydra.deployment.autoscaling.minReplicas: "1"
+  hydra.deployment.autoscaling.maxReplicas: "1"
   hydra.deployment.resources.requests.cpu: "50m"
   hydra.deployment.resources.limits.cpu: "150m"
   oathkeeper.oathkeeper.config.serve.api.timeout.read: "120s"
