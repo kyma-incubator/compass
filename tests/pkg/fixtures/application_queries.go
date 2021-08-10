@@ -85,7 +85,7 @@ func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context,
 }
 
 func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt) {
-	if app == nil || app.ID == "" {
+	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
 		return
 	}
 	deleteRequest := FixUnregisterApplicationRequest(app.ID)
