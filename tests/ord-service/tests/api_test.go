@@ -87,16 +87,6 @@ func TestORDService(t *testing.T) {
 		eventsMapInScenario[eventDefinition.Name] = *eventDefinition
 	}
 
-	apisMapNotInScenario := make(map[string]directorSchema.APIDefinitionInput, 0)
-	for _, apiDefinition := range appInputNotInScenario.Bundles[0].APIDefinitions {
-		apisMapNotInScenario[apiDefinition.Name] = *apiDefinition
-	}
-
-	eventsMapNotInScenario := make(map[string]directorSchema.EventDefinitionInput, 0)
-	for _, eventDefinition := range appInputNotInScenario.Bundles[0].EventDefinitions {
-		eventsMapNotInScenario[eventDefinition.Name] = *eventDefinition
-	}
-
 	ctx := context.Background()
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, defaultTestTenant, appInput)
