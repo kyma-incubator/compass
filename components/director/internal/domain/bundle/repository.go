@@ -3,6 +3,8 @@ package mp_bundle
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -15,13 +17,12 @@ import (
 )
 
 const bundleTable string = `public.bundles`
-const bundleInstanceAuthTable string = `public.bundle_instance_auths`
-const bundleInstanceAuthBundleRefField string = `bundle_id`
 
 var (
 	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn     = "tenant_id"
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
 
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
@@ -31,26 +32,26 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
-	lister          repo.Lister
-	creator         repo.Creator
-	updater         repo.Updater
-	conv            EntityConverter
+	existQuerier repo.ExistQuerier
+	singleGetter repo.SingleGetter
+	deleter      repo.Deleter
+	lister       repo.Lister
+	unionLister  repo.UnionLister
+	creator      repo.Creator
+	updater      repo.Updater
+	conv         EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		lister:          repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:         repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
-		conv:            conv,
+		existQuerier: repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
+		singleGetter: repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		deleter:      repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
+		lister:       repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		unionLister:  repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		creator:      repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
+		updater:      repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
+		conv:         conv,
 	}
 }
 
@@ -129,32 +130,47 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	return bndlModel, nil
 }
 
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("app_id", applicationID),
-	}
-
+func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	var bundleCollection BundleCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &bundleCollection, conditions...)
+	counts, err := r.unionLister.List(ctx, tenantID, applicationIDs, "app_id", pageSize, cursor, orderByColumns, &bundleCollection)
 	if err != nil {
 		return nil, err
 	}
 
-	var items []*model.Bundle
-
-	for _, bndlEnt := range bundleCollection {
-		m, err := r.conv.FromEntity(&bndlEnt)
+	bundleByID := map[string][]*model.Bundle{}
+	for _, bundleEnt := range bundleCollection {
+		m, err := r.conv.FromEntity(&bundleEnt)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating Bundle model from entity")
 		}
-		items = append(items, m)
+		bundleByID[bundleEnt.ApplicationID] = append(bundleByID[bundleEnt.ApplicationID], m)
 	}
 
-	return &model.BundlePage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	bundlePages := make([]*model.BundlePage, 0, len(applicationIDs))
+	for _, appID := range applicationIDs {
+		totalCount := counts[appID]
+		hasNextPage := false
+		endCursor := ""
+		if totalCount > offset+len(bundleByID[appID]) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		bundlePages = append(bundlePages, &model.BundlePage{Data: bundleByID[appID], TotalCount: totalCount, PageInfo: page})
+	}
+
+	return bundlePages, nil
 }
 
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {

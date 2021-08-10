@@ -90,6 +90,8 @@ spec:
                     secretKeyRef:
                       name: compass-postgresql
                       key: postgresql-director-db-name
+                - name: APP_LOG_FORMAT
+                  value: {{ .Values.global.log.format | quote }}
                 - name: APP_DB_SSL
                   valueFrom:
                     secretKeyRef:

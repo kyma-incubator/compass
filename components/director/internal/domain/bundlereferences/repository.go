@@ -13,6 +13,7 @@ const (
 	BundleReferenceTable string = `public.bundle_references`
 
 	APIDefIDColumn   string = "api_def_id"
+	APIDefURLColumn  string = "api_def_url"
 	EventDefIDColumn string = "event_def_id"
 	bundleIDColumn   string = "bundle_id"
 )
@@ -31,22 +32,24 @@ type BundleReferenceConverter interface {
 }
 
 type repository struct {
-	creator repo.Creator
-	lister  repo.Lister
-	getter  repo.SingleGetter
-	deleter repo.Deleter
-	updater repo.Updater
-	conv    BundleReferenceConverter
+	creator     repo.Creator
+	unionLister repo.UnionLister
+	lister      repo.Lister
+	getter      repo.SingleGetter
+	deleter     repo.Deleter
+	updater     repo.Updater
+	conv        BundleReferenceConverter
 }
 
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
-		creator: repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		lister:  repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		getter:  repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		deleter: repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
-		updater: repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
-		conv:    conv,
+		creator:     repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		unionLister: repo.NewUnionLister(resource.BundleReference, BundleReferenceTable, tenantColumn, []string{}),
+		lister:      repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
+		getter:      repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
+		deleter:     repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
+		updater:     repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
+		conv:        conv,
 	}
 }
 
@@ -73,7 +76,6 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 			repo.NewEqualCondition(bundleIDColumn, bundleID),
 		}
 	}
-
 	err = r.getter.Get(ctx, tenantID, conditions, repo.NoOrderBy, &bundleReferenceEntity)
 	if err != nil {
 		return nil, err
@@ -161,6 +163,47 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bund
 	return r.deleter.DeleteOne(ctx, tenant, conditions)
 }
 
+func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+	columns, err := getSelectedColumnsByObjectType(objectType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unionLister := r.unionLister.Clone()
+	unionLister.SetSelectedColumns(columns)
+
+	objectFieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewNotNullCondition(objectFieldName),
+	}
+
+	orderByColumns, err := getOrderByColumnsByObjectType(objectType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var objectBundleIDs BundleReferencesCollection
+	counts, err := unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &objectBundleIDs, conditions...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bundleReferences := make([]*model.BundleReference, 0, len(objectBundleIDs))
+	for _, d := range objectBundleIDs {
+		entity, err := r.conv.FromEntity(d)
+		if err != nil {
+			return nil, nil, err
+		}
+		bundleReferences = append(bundleReferences, &entity)
+	}
+
+	return bundleReferences, counts, nil
+}
+
 func (r *repository) referenceObjectFieldName(objectType model.BundleReferenceObjectType) (string, error) {
 	switch objectType {
 	case model.BundleAPIReference:
@@ -169,6 +212,26 @@ func (r *repository) referenceObjectFieldName(objectType model.BundleReferenceOb
 		return EventDefIDColumn, nil
 	}
 	return "", apperrors.NewInternalError("Invalid type of the BundleReference object")
+}
+
+func getSelectedColumnsByObjectType(objectType model.BundleReferenceObjectType) ([]string, error) {
+	switch objectType {
+	case model.BundleAPIReference:
+		return []string{APIDefIDColumn, bundleIDColumn, APIDefURLColumn}, nil
+	case model.BundleEventReference:
+		return []string{EventDefIDColumn, bundleIDColumn}, nil
+	}
+	return []string{""}, apperrors.NewInternalError("Invalid type of the BundleReference object")
+}
+
+func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) (repo.OrderByParams, error) {
+	switch objectType {
+	case model.BundleAPIReference:
+		return repo.OrderByParams{repo.NewAscOrderBy(APIDefIDColumn), repo.NewAscOrderBy(bundleIDColumn), repo.NewAscOrderBy(APIDefURLColumn)}, nil
+	case model.BundleEventReference:
+		return repo.OrderByParams{repo.NewAscOrderBy(EventDefIDColumn), repo.NewAscOrderBy(bundleIDColumn)}, nil
+	}
+	return nil, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
 
 type IDs []string

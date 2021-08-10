@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	httptransport "github.com/go-openapi/runtime/client"
 	hydraClient "github.com/ory/hydra-client-go/client"
 
@@ -197,6 +199,34 @@ func NewRootResolver(
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
 	}
+}
+
+func (r *RootResolver) BundlesDataloader(ids []dataloader.ParamBundle) ([]*graphql.BundlePage, []error) {
+	return r.app.BundlesDataLoader(ids)
+}
+
+func (r *RootResolver) ApiDefinitionsDataloader(ids []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
+	return r.mpBundle.ApiDefinitionsDataLoader(ids)
+}
+
+func (r *RootResolver) EventDefinitionsDataloader(ids []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
+	return r.mpBundle.EventDefinitionsDataLoader(ids)
+}
+
+func (r *RootResolver) DocumentsDataloader(ids []dataloader.ParamDocument) ([]*graphql.DocumentPage, []error) {
+	return r.mpBundle.DocumentsDataLoader(ids)
+}
+
+func (r *RootResolver) FetchRequestApiDefDataloader(ids []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
+	return r.api.FetchRequestApiDefDataLoader(ids)
+}
+
+func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {
+	return r.eventAPI.FetchRequestEventDefDataLoader(ids)
+}
+
+func (r *RootResolver) FetchRequestDocumentDataloader(ids []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
+	return r.doc.FetchRequestDocumentDataLoader(ids)
 }
 
 func (r *RootResolver) Mutation() graphql.MutationResolver {

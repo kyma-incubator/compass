@@ -60,6 +60,56 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, systems, 4)
 		require.Equal(t, systems[0].TemplateID, "type1")
+		require.Equal(t, systems[1].TemplateID, "")
+	})
+
+	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
+		systemfetcher.Mappings = []systemfetcher.TemplateMapping{
+			{
+				Name:        "type1",
+				ID:          "type1",
+				SourceKey:   []string{"templateProp"},
+				SourceValue: []string{"type1"},
+			},
+			{
+				Name:        "type2",
+				ID:          "type2",
+				SourceKey:   []string{"templateProp"},
+				SourceValue: []string{"type2"},
+			},
+			{
+				Name:        "type3",
+				ID:          "type3",
+				SourceKey:   []string{"templateProp"},
+				SourceValue: []string{"type3"},
+			},
+		}
+		mock.bodyToReturn = []byte(`[{
+			"displayName": "name1",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"templateProp": "type1"
+		}, {
+			"displayName": "name2",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"templateProp": "type2"
+		}, {
+			"displayName": "name3",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"templateProp": "type4"
+		}]`)
+		mock.callNumber = 1
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		require.NoError(t, err)
+		require.Len(t, systems, 6)
+		require.Equal(t, systems[0].TemplateID, "type1")
+		require.Equal(t, systems[1].TemplateID, "type2")
+		require.Equal(t, systems[2].TemplateID, "")
 	})
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {

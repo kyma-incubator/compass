@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -93,7 +95,7 @@ type RuntimeService interface {
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
-	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
+	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
@@ -430,11 +432,16 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	gqlWebhooks, err := r.webhookConverter.MultipleToGraphQL(webhooks)
+	if err != nil {
 		return nil, err
 	}
 
-	return r.webhookConverter.MultipleToGraphQL(webhooks)
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return gqlWebhooks, nil
 }
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
@@ -492,11 +499,6 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
@@ -505,6 +507,11 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		}
 
 		out = append(out, c.(*graphql.AppSystemAuth))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	return out, nil
@@ -545,17 +552,23 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 }
 
 func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
-	if obj == nil {
-		return nil, apperrors.NewInternalError("Application cannot be empty")
+	param := dataloader.ParamBundle{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.BundleFor(ctx).BundleById.Load(param)
+}
+
+func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.BundlePage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Applications found")}
 	}
 
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx := keys[0].Ctx
+	first := keys[0].First
+	after := keys[0].After
 
-	ctx = persistence.SaveToContext(ctx, tx)
+	applicationIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		applicationIDs = append(applicationIDs, key.ID)
+	}
 
 	var cursor string
 	if after != nil {
@@ -563,33 +576,43 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first 
 	}
 
 	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
-	bndlsPage, err := r.bndlSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
+	tx, err := r.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
+	}
+
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	bndlPages, err := r.bndlSvc.ListByApplicationIDs(ctx, applicationIDs, *first, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	gqlBndls := make([]*graphql.BundlePage, 0, len(bndlPages))
+	for _, page := range bndlPages {
+		bndls, err := r.bndlConv.MultipleToGraphQL(page.Data)
+		if err != nil {
+			return nil, []error{err}
+		}
+
+		gqlBndls = append(gqlBndls, &graphql.BundlePage{Data: bndls, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
+		}})
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
-	gqlBndls, err := r.bndlConv.MultipleToGraphQL(bndlsPage.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphql.BundlePage{
-		Data:       gqlBndls,
-		TotalCount: bndlsPage.TotalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(bndlsPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(bndlsPage.PageInfo.EndCursor),
-			HasNextPage: bndlsPage.PageInfo.HasNextPage,
-		},
-	}, nil
+	return gqlBndls, nil
 }
 
 func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
@@ -613,10 +636,15 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 		return nil, err
 	}
 
+	gqlBundle, err := r.bndlConv.ToGraphQL(bndl)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bndlConv.ToGraphQL(bndl)
+	return gqlBundle, nil
 }

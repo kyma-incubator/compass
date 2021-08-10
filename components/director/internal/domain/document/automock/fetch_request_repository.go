@@ -43,22 +43,22 @@ func (_m *FetchRequestRepository) Delete(ctx context.Context, tenant string, id 
 	return r0
 }
 
-// GetByReferenceObjectID provides a mock function with given fields: ctx, tenant, objectType, objectID
-func (_m *FetchRequestRepository) GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
-	ret := _m.Called(ctx, tenant, objectType, objectID)
+// ListByReferenceObjectIDs provides a mock function with given fields: ctx, tenant, objectType, objectIDs
+func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
+	ret := _m.Called(ctx, tenant, objectType, objectIDs)
 
-	var r0 *model.FetchRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, string) *model.FetchRequest); ok {
-		r0 = rf(ctx, tenant, objectType, objectID)
+	var r0 []*model.FetchRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) []*model.FetchRequest); ok {
+		r0 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.FetchRequest)
+			r0 = ret.Get(0).([]*model.FetchRequest)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, string) error); ok {
-		r1 = rf(ctx, tenant, objectType, objectID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) error); ok {
+		r1 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

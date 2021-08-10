@@ -90,7 +90,7 @@ global:
       version: "PR-32"
     schema_migrator:
       dir:
-      version: "PR-1905"
+      version: "PR-1948"
     system_broker:
       dir:
       version: "PR-1956"
@@ -471,6 +471,14 @@ global:
     securityContext: # Set on container level
       runAsUser: 2000
       allowPrivilegeEscalation: false
+
+  migratorJob:
+    nodeSelectorEnabled: false
+    pvc:
+      name: "compass-director-migrations"
+      namespace: "compass-system"
+      regional: false
+      migrationsPath: "/compass-migrations"
 
 pairing-adapter:
   enabled: false

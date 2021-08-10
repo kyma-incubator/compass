@@ -2,7 +2,6 @@ package eventdef
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -18,7 +17,7 @@ type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
-	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
@@ -39,6 +38,7 @@ type SpecService interface {
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
+	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
@@ -47,6 +47,7 @@ type BundleReferenceService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 type service struct {
@@ -67,7 +68,7 @@ func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specServ
 	}
 }
 
-func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while loading tenant from context")
@@ -77,7 +78,12 @@ func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize i
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.eventAPIRepo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
+	bundleRefs, counts, err := s.bundleReferenceService.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.eventAPIRepo.ListByBundleIDs(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
 }
 
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
@@ -247,35 +253,19 @@ func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) erro
 	return nil
 }
 
-func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error) {
+func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := s.eventAPIRepo.Exists(ctx, tnt, eventAPIDefID)
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "while checking if Event Definition exists")
-	}
-	if !exists {
-		return nil, fmt.Errorf("event definition with id %s doesn't exist", eventAPIDefID)
-	}
-
-	spec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPIDefID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPIDefID)
-	}
-
-	var fetchRequest *model.FetchRequest
-	if spec != nil {
-		fetchRequest, err = s.specService.GetFetchRequest(ctx, spec.ID)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting FetchRequest by Event Definition with id %q", eventAPIDefID)
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
 		}
+		return nil, err
 	}
 
-	return fetchRequest, nil
+	return fetchRequests, nil
 }
