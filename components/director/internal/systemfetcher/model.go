@@ -45,18 +45,21 @@ func (s *System) UnmarshalJSON(data []byte) error {
 	}
 
 	for _, tm := range Mappings {
-		mapped := true
-		for i, sk := range tm.SourceKey {
-			v := gjson.GetBytes(data, sk).String()
-			if v != tm.SourceValue[i] {
-				mapped = false
-				break
-			}
-		}
-		if mapped {
+		if matchProps(data, tm) {
 			s.TemplateID = tm.ID
+			return nil
 		}
 	}
 
 	return nil
+}
+
+func matchProps(data []byte, tm TemplateMapping) bool {
+	for i, sk := range tm.SourceKey {
+		v := gjson.GetBytes(data, sk).String()
+		if v != tm.SourceValue[i] {
+			return false
+		}
+	}
+	return true
 }
