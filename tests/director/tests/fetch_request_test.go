@@ -45,8 +45,8 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 	}
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	assert.NoError(t, err)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 	api := app.Bundles.Data[0].APIDefinitions.Data[0]
 
@@ -61,7 +61,7 @@ func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -92,7 +92,7 @@ func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -127,7 +127,7 @@ func TestRefetchAPISpec(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 

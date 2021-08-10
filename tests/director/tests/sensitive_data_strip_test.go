@@ -27,14 +27,14 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Log("Creating application template")
 	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmpInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTemplate.ID)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeRegInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -49,7 +49,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 
 	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
@@ -70,7 +70,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	t.Log(fmt.Sprintf("Registering integration system %q", intSysName))
 	integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSysName)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, integrationSystem)
 	require.NoError(t, err)
 	require.NotEmpty(t, integrationSystem.ID)
 

@@ -32,7 +32,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	t.Log("Register integration system")
 
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerIntegrationSystemRequest, &output)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, output.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 
@@ -63,7 +63,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	newDescription := "new description"
 	t.Log("Register integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
@@ -94,7 +94,7 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 
 	t.Log("Register integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
@@ -125,7 +125,7 @@ func TestQueryIntegrationSystem(t *testing.T) {
 
 	t.Log("Register integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
@@ -154,12 +154,12 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	t.Log("Register integration systems")
 	intSys1, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name1)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys1.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys1)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys1.ID)
 
 	intSys2, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name2)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys2.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys2)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys2.ID)
 

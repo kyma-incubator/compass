@@ -49,11 +49,11 @@ func UnregisterIntegrationSystemWithErr(t require.TestingT, ctx context.Context,
 	require.Contains(t, err.Error(), "The record cannot be deleted because another record refers to it")
 }
 
-func CleanupIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
-	if id == "" {
+func CleanupIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, intSys *graphql.IntegrationSystemExt) {
+	if intSys == nil || intSys.ID == "" {
 		return
 	}
-	req := FixUnregisterIntegrationSystem(id)
+	req := FixUnregisterIntegrationSystem(intSys.ID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }

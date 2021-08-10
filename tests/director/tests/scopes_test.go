@@ -24,7 +24,7 @@ func TestScopesAuthorization(t *testing.T) {
 
 	input := fixtures.FixRuntimeInput("runtime-test")
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 

@@ -16,17 +16,17 @@ func TestTokens(t *testing.T) {
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
 		Name: "test-tokens-runtime",
 	})
-	runtimeID := runtime.ID
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID)
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
+	runtimeID := runtime.ID
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-tokens-app",
 	})
-	appID := app.ID
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
+	appID := app.ID
 
 	t.Run("should return valid response on configuration query for Application token", func(t *testing.T) {
 		//when
@@ -103,7 +103,7 @@ func TestTokens(t *testing.T) {
 
 func TestTokenSuggestion(t *testing.T) {
 	intSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSystem.ID)
 
@@ -168,9 +168,9 @@ func TestTokenSuggestion(t *testing.T) {
 		for _, test := range testCases {
 			t.Run(test.description, func(t *testing.T) {
 				app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, test.appInput)
-				appID := app.ID
-				defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+				defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
 				require.NoError(t, err)
+				appID := app.ID
 
 				//when
 				token := fixtures.GenerateOneTimeTokenForApplicationWithSuggestedToken(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
@@ -185,9 +185,9 @@ func TestCertificateGeneration(t *testing.T) {
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-cert-gen-app",
 	})
-	appID := app.ID
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
+	appID := app.ID
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
@@ -289,9 +289,9 @@ func TestFullConnectorFlow(t *testing.T) {
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-full-flow-app",
 	})
-	appID := app.ID
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
+	appID := app.ID
 
 	t.Log("Generating certificate...")
 	certificationResult, configuration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)

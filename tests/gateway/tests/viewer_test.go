@@ -21,7 +21,7 @@ func TestViewerQuery(t *testing.T) {
 	t.Run("Test viewer as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, intSys.ID)
@@ -57,7 +57,7 @@ func TestViewerQuery(t *testing.T) {
 
 		t.Log("Register Application with Dex id token")
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
 
@@ -92,7 +92,7 @@ func TestViewerQuery(t *testing.T) {
 
 		t.Log("Register Runtime with Dex id token")
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

@@ -15,9 +15,10 @@ func TestOathkeeperSecurity(t *testing.T) {
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-oathkeeper-security-app",
 	})
-	appID := app.ID
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
+	appID := app.ID
 
 	certResult, configuration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, appID, clientKey)
 	certChain := certs.DecodeCertChain(t, certResult.CertificateChain)

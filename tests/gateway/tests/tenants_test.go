@@ -37,7 +37,7 @@ func TestTenantErrors(t *testing.T) {
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
 	is, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "test")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, is.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, is)
 	require.NoError(t, err)
 	require.NotEmpty(t, is.ID)
 

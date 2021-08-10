@@ -44,7 +44,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	saveExampleInCustomDir(t, registerReq.Query(), RegisterRuntimeCategory, "register runtime")
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, actualRuntime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	//WHEN
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createAppReq, &actualApp)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, actualApp.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -148,7 +148,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualRuntime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -260,7 +260,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &firstRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &firstRuntime)
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
@@ -299,7 +299,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &secondRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, secondRuntime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &secondRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -335,7 +335,7 @@ func TestQueryRuntimes(t *testing.T) {
 	defer func() {
 		for _, id := range idsToRemove {
 			if id != "" {
-				fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, id)
+				fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, id)
 			}
 		}
 	}()
@@ -401,7 +401,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	createdRuntime := graphql.Runtime{}
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &createdRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, createdRuntime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: createdRuntime})
 
 	require.NoError(t, err)
 	require.NotEmpty(t, createdRuntime.ID)
@@ -438,7 +438,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 
 		runtime := graphql.Runtime{}
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &runtime)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: runtime})
 
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
@@ -495,7 +495,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{Name: name}
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -538,7 +538,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	}
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 

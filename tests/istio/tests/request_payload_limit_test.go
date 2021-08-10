@@ -35,7 +35,6 @@ var (
 	runtimeInput = &graphql.RuntimeInput{
 		Name: "test-runtime",
 	}
-	dexToken string
 )
 
 func TestCallingCompassGateways(t *testing.T) {
@@ -53,7 +52,7 @@ func TestCallingCompassGateways(t *testing.T) {
 	logrus.Infof("Registering runtime with name: %s, within tenant: %s", runtimeInput.Name, tenant)
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 

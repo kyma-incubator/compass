@@ -43,11 +43,11 @@ func DeleteApplicationTemplate(t require.TestingT, ctx context.Context, gqlClien
 	require.NoError(t, err)
 }
 
-func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
-	if id == "" {
+func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, appTemplate *graphql.ApplicationTemplate) {
+	if appTemplate == nil || appTemplate.ID == "" {
 		return
 	}
-	req := FixDeleteApplicationTemplateRequest(id)
+	req := FixDeleteApplicationTemplateRequest(appTemplate.ID)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)

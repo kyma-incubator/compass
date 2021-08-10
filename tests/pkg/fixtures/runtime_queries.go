@@ -41,11 +41,11 @@ func UnregisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.
 	require.NoError(t, err)
 }
 
-func CleanupRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
-	if id == "" {
+func CleanupRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, rtm *graphql.RuntimeExt) {
+	if rtm == nil || rtm.ID == "" {
 		return
 	}
-	delReq := FixUnregisterRuntimeRequest(id)
+	delReq := FixUnregisterRuntimeRequest(rtm.ID)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)

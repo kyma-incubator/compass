@@ -32,7 +32,7 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, result.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: result})
 
 	// THEN
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, result.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: result})
 
 	// THEN
 	require.Error(t, err)
@@ -67,7 +67,7 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	input := fixtures.FixRuntimeInput("validation-test-rtm")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
@@ -94,7 +94,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	input := fixtures.FixRuntimeInput("validation-test-rtm")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
@@ -170,7 +170,7 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "validation-test-app", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -193,7 +193,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	input := fixtures.FixRuntimeInput("validation-test-rtm")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
@@ -239,7 +239,7 @@ func TestUpdateApplication_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-name", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -264,7 +264,7 @@ func TestAddDocument_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-name", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -312,7 +312,7 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
@@ -337,7 +337,7 @@ func TestAddAPI_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -364,7 +364,7 @@ func TestUpdateAPI_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -394,7 +394,7 @@ func TestAddEventAPI_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -422,7 +422,7 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "name", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -480,7 +480,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	input := fixtures.FixApplicationTemplate("validation-test-app-tpl")
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, appTpl.ID)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, &appTpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTpl.ID)
 
@@ -512,7 +512,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	input := fixtures.FixApplicationTemplate("validation-app")
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, tmpl.ID)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, &tmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, tmpl.ID)
 

@@ -108,7 +108,7 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 
 		rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rmtInput)
 		rtms[i] = &rtm
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, &rtm)
 		require.NoError(t, err)
 		require.NotEmpty(t, rtm.ID)
 	}
@@ -370,7 +370,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	}
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rtmInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 

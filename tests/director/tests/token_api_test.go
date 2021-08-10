@@ -25,7 +25,7 @@ func TestTokenGeneration(t *testing.T) {
 
 		input := fixtures.FixRuntimeInput("test")
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 		tokenRequestNumber := 3
@@ -48,7 +48,7 @@ func TestTokenGeneration(t *testing.T) {
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "test", tenantId)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 		tokenRequestNumber := 3

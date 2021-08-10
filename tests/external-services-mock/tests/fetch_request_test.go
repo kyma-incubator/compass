@@ -63,7 +63,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 			appName := "app-test-bundle"
 			application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant, &application)
 			require.NoError(t, err)
 			require.NotEmpty(t, application.ID)
 
@@ -152,7 +152,7 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 
 			appName := "app-test-bundle"
 			application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant, &application)
 			require.NoError(t, err)
 			require.NotEmpty(t, application.ID)
 

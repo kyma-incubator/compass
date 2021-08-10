@@ -35,7 +35,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 
 	appName := "app-test-eventing"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -44,7 +44,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime1)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime1.ID)
 
@@ -55,7 +55,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
 
 	runtime2, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input2)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime2.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime2)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime2.ID)
 
@@ -81,7 +81,7 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	input := fixtures.FixRuntimeInput("runtime-eventing")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -109,7 +109,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	appName := "app-test-eventing"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -118,7 +118,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime1)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime1.ID)
 
@@ -129,7 +129,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
 
 	runtime2, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input2)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime2.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime2)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime2.ID)
 
@@ -163,14 +163,14 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-eventing", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime1)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime1.ID)
 
@@ -196,7 +196,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 
 	appName := "app-test-eventing"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -205,7 +205,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input1)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime1.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime1)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime1.ID)
 
@@ -216,7 +216,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
 
 	runtime2, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input2)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, runtime2.ID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime2)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime2.ID)
 

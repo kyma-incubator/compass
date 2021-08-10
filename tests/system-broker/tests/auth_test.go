@@ -54,7 +54,7 @@ var (
 func TestSystemBrokerAuthentication(t *testing.T) {
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -122,12 +122,12 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 func TestCallingORDServiceWithCert(t *testing.T) {
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
 	app, err := fixtures.RegisterApplicationFromInput(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, applicationInput)
-	defer fixtures.CleanupApplication(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID)
+	defer fixtures.CleanupApplication(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, &app)
 	require.NoError(t, err)
 
 	bundle := fixtures.CreateBundle(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID, testBundleName)

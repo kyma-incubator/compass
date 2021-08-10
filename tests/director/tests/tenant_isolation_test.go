@@ -15,7 +15,7 @@ func TestTenantIsolation(t *testing.T) {
 	ctx := context.Background()
 
 	actualApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "tenantseparation", tenant.TestTenants.GetDefaultTenantID())
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 
@@ -33,7 +33,7 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 
 	// Register app in customer's tenant
 	customerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "customerApp", customerTenant)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, customerTenant, customerApp.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, customerTenant, &customerApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, customerApp.ID)
 
@@ -48,7 +48,7 @@ func TestHierarchicalTenantIsolation(t *testing.T) {
 
 	// Register app in account's tenant
 	accountApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "accountApp", accountTenant)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, accountTenant, accountApp.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, accountTenant, &accountApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, accountApp.ID)
 

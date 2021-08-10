@@ -84,12 +84,11 @@ func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context,
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
-func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
-	if id == "" {
+func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt) {
+	if app == nil || app.ID == "" {
 		return
 	}
-	deleteRequest := FixUnregisterApplicationRequest(id)
-	app := graphql.ApplicationExt{}
+	deleteRequest := FixUnregisterApplicationRequest(app.ID)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)

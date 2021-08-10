@@ -44,7 +44,7 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTestTenant)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
 
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
@@ -75,7 +75,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 	appTemplate := graphql.ApplicationTemplate{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 	require.NoError(t, err)
 
 	require.Len(t, appTemplate.Webhooks, 1)
@@ -90,7 +90,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 	registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 	require.NoError(t, err)
 
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
@@ -120,7 +120,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 	appTemplate := graphql.ApplicationTemplate{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 	require.NoError(t, err)
 
 	require.Len(t, appTemplate.Webhooks, 1)
@@ -135,7 +135,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, appTemplate.ID, testConfig.DefaultTestTenant)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
 
 	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)

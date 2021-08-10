@@ -70,16 +70,16 @@ func TestORDService(t *testing.T) {
 	ctx := context.Background()
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
 
 	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, appInput2)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, app2.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.SecondaryTenant, &app2)
 	require.NoError(t, err)
 
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 

@@ -34,7 +34,7 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	(runtime.Labels)["isNormalized"] = "false"
 
 	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, dexGraphQLClient, tenantID, &runtime)
-	defer fixtures.CleanupRuntime(b, ctx, dexGraphQLClient, tenantID, rt.ID)
+	defer fixtures.CleanupRuntime(b, ctx, dexGraphQLClient, tenantID, &rt)
 	require.NoError(b, err)
 	require.NotEmpty(b, rt.ID)
 

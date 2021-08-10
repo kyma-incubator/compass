@@ -19,7 +19,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Log("Register Integration System with Dex id token")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
@@ -40,7 +40,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			IntegrationSystemID: &intSys.ID,
 		}
 		appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appByIntSys.ID)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appByIntSys)
 		require.NoError(t, err)
 		require.NotEmpty(t, appByIntSys.ID)
 
@@ -67,7 +67,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			AccessLevel:  "GLOBAL",
 		}
 		appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTpl.ID)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &appTpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTpl.ID)
 
@@ -87,7 +87,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Name: "test",
 		}
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

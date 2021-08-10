@@ -22,7 +22,7 @@ func TestAddAPIToBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -53,7 +53,7 @@ func TestManageAPIInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -93,7 +93,7 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -121,7 +121,7 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -161,7 +161,7 @@ func TestAddDocumentToBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -189,7 +189,7 @@ func TestManageDocumentInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -215,7 +215,7 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -243,7 +243,7 @@ func TestEventDefinitionInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -271,7 +271,7 @@ func TestDocumentInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -298,7 +298,7 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -330,7 +330,7 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -363,7 +363,7 @@ func TestDocumentsInBundle(t *testing.T) {
 
 	appName := "app-test-bundle"
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -395,7 +395,7 @@ func TestAddBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -434,7 +434,7 @@ func TestQueryBundles(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -460,7 +460,7 @@ func TestUpdateBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 
 	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
 	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
@@ -490,7 +490,7 @@ func TestDeleteBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, application.ID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
 
 	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
 
