@@ -555,10 +555,10 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 
 		createApplicationReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
-		application := graphql.Application{}
+		application := graphql.ApplicationExt{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: application})
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &application)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -599,10 +599,10 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 
 		createApplicationReq := fixtures.FixRegisterApplicationRequest(appInputGQL)
-		application := graphql.Application{}
+		application := graphql.ApplicationExt{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantID, &graphql.ApplicationExt{Application: application})
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantID, &application)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -743,11 +743,11 @@ func TestQueryApplications(t *testing.T) {
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
 
-		actualApp := graphql.Application{}
+		actualApp := graphql.ApplicationExt{}
 		request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp})
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
 	}
 	actualAppPage := graphql.ApplicationPage{}
@@ -825,12 +825,13 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	err = testctx.Tc.RunOperation(context.Background(), dexGraphQLClient, request, &actualApp)
+	defer fixtures.CleanupApplication(t, context.Background(), dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+
 	require.NotEmpty(t, actualApp.ID)
 	appID := actualApp.ID
-	defer fixtures.CleanupApplication(t, context.Background(), dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp})
 
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
