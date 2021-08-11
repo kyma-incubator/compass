@@ -90,20 +90,20 @@ func TestORDService(t *testing.T) {
 	ctx := context.Background()
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, defaultTestTenant, appInput)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTestTenant, &app)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, defaultTestTenant, app.ID)
 
 	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, secondaryTenant, appInput2)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app2)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, secondaryTenant, app2.ID)
 
 	appInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputInScenario)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, &appInScenario)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInScenario.ID)
 
 	appNotInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputNotInScenario)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, &appNotInScenario)
 	require.NoError(t, err)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, appNotInScenario.ID)
 
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
