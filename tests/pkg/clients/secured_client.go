@@ -28,6 +28,7 @@ type SecuredClient interface {
 	GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *model2.Error)
 	UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *model2.Error)
 	DeleteService(t *testing.T, url string, id string) *model2.Error
+	CleanupService(t *testing.T, url string, id string) *model2.Error
 }
 
 type securedConnectorClient struct {
@@ -141,6 +142,12 @@ func (cc *securedConnectorClient) DeleteService(t *testing.T, url string, id str
 	return cc.secureConnectorRequest(t, request, nil, http.StatusNoContent)
 }
 
+func (cc *securedConnectorClient) CleanupService(t *testing.T, url string, id string) *model2.Error {
+	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodDelete)
+
+	return cc.cleanupRequest(t, request)
+}
+
 func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *model2.Error {
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
@@ -159,4 +166,19 @@ func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *
 	}
 
 	return nil
+}
+
+func (cc *securedConnectorClient) cleanupRequest(t *testing.T, request *http.Request) *model2.Error {
+	response, err := cc.httpClient.Do(request)
+	require.NoError(t, err)
+
+	defer func() {
+		err := response.Body.Close()
+		require.NoError(t, err)
+	}()
+
+	if response.StatusCode == http.StatusNoContent || response.StatusCode == http.StatusNotFound {
+		return nil
+	}
+	return parseErrorResponse(t, response)
 }
