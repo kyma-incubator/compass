@@ -41,4 +41,10 @@ else
     sudo ${INSTALLATION_DIR}/cmd/run.sh
 fi
 
-sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh
+if [[ ${DUMP_DB} ]]; then
+    sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db true
+else
+    sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db false
+fi
+
+
