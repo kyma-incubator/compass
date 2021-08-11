@@ -26,25 +26,60 @@ The `operation_controller.go` file is a Kubernetes controller for the CRD.
 
 ### CRD
 
-1. To install the CRD into a Kubernetes cluster, use the following command: `make manifests` to generate the CRD.
-2. Then apply the generated CRD file onto the cluster with `kubectl apply -f ${CRD_FILE_NAME}.yaml`.
+###### Steps
+
+1. Generate the CRD.
+
+`make manifests`
+
+2. Download the Kustomize binary locally.
+
+`make kustomize`
+
+3. Build the CRD into a single file named `crds.yaml`.
+
+`./bin/kustomize build config/crd > crds.yaml`
+
+5. Apply the generated CRD file onto a Kubernetes cluster.
+   
+`kubectl apply -f crds.yaml`
 
 ### Controller
 
-0. Make sure you have the CRD installed.
-1. To deploy the Kubernetes controller for the operation CRD onto a Kubernetes cluster, create a Docker image using `docker build -t compass/${IMAGE_NAME} .` and push it to a Docker repository using `docker push ${IMAGE_NAME}`.
-2. To run the controller, create an instance of the Docker image in the Kubernetes cluster using the following command: `kubectl run operations-controller --image=${IMAGE_NAME}`. If there's an already existing Kubernetes deployment for the controller (i.e., if you have a local installation of Compass), just hotswap its image. 
+###### Prerequisites
+
+* Make sure you have the CRD installed.
+
+###### Steps
+
+1. Deploy the Kubernetes controller for the operation CRD onto a Kubernetes cluster. To do that, create a Docker image.
+   
+`docker build -t compass/${IMAGE_NAME}`
+
+2. push the Docker image to a Docker repository.
+   
+`docker push ${IMAGE_NAME}`
+
+3. Run the controller. To do that, create an instance of the Docker image in the Kubernetes cluster.
+   
+`kubectl run operations-controller --image=${IMAGE_NAME}`
+
+Note: If there's an already existing Kubernetes deployment for the controller (i.e., if you have a local installation of Compass), just hotswap its image. 
 
 ## Usage and Development
 
 ### CRD
 
-1.	If there are changes to the CRD, you must regenerate the files that define the CRD.\
-To do this, use the following command: `make manifests`.
+1. Make the required changes to the CRD in `./api/v1alpha1/operation_types.go`. 
 
-2.	As a next step, you must copy these files to the component's Helm chart at the following location: `compass/chart/compass/charts/operations-controller`.\
-To do this, use the following command: `make copy-crds-to-chart`.
+2. Regenerate the CRD.
+
+`make manifests`
+
+3.	Copy the new generated CRD to the component's Helm chart at `compass/chart/compass/charts/operations-controller`. You can also use a Makefile target to do this.
+
+`make copy-crds-to-chart`
 
 ### Controller
 
-If there are changes to the controller you should create a Docker image for the new version of the controller. Then, deploy the image manually on a Kubernetes cluster.
+If there are changes to the controller, you have to create a Docker image for the new version of the controller. Then, deploy the image manually on a Kubernetes cluster.

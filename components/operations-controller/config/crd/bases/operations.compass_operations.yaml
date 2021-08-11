@@ -86,8 +86,8 @@ spec:
             properties:
               conditions:
                 items:
-                  description: Condition defines the states in which the Operation
-                    CR can be
+                  description: Condition defines the states which the Operation CR
+                    can take
                   properties:
                     message:
                       type: string

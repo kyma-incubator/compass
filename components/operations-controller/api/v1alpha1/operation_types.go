@@ -79,7 +79,7 @@ const (
 	ConditionTypeError ConditionType = "Error"
 )
 
-// Condition defines the states in which the Operation CR can be
+// Condition defines the states which the Operation CR can take
 type Condition struct {
 	Type    ConditionType          `json:"type"`
 	Status  corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`
