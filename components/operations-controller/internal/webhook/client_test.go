@@ -38,7 +38,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 var (
 	invalidTemplate   = "invalidTemplate"
 	emptyTemplate     = "{}"
