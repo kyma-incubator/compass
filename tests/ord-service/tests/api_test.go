@@ -106,9 +106,10 @@ func TestORDService(t *testing.T) {
 	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, appNotInScenario.ID)
 
 	t.Log("Create integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-	require.NotEmpty(t, intSys)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
