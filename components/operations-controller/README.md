@@ -26,13 +26,14 @@ The `operation_controller.go` file is a Kubernetes controller for the CRD.
 
 ### CRD
 
-1. To install the CRD into a Kubernetes cluster, use the following command: `make install`.
-2. To revert the CRD installation, use the following command: `make uninstall`.
+1. To install the CRD into a Kubernetes cluster, use the following command: `make manifests` to generate the CRD.
+2. Then apply the generated CRD file onto the cluster with `kubectl apply -f ${CRD_FILE_NAME}.yaml`.
 
 ### Controller
 
-1.	To deploy the Kubernetes controller for the operation CRD onto a Kubernetes cluster, use the following command: `make deploy`.
-2.	To run a local instance of the controller operation CRD, use the following command: `make run`.
+0. Make sure you have the CRD installed.
+1. To deploy the Kubernetes controller for the operation CRD onto a Kubernetes cluster, create a Docker image using `docker build -t compass/${IMAGE_NAME} .` and push it to a Docker repository using `docker push ${IMAGE_NAME}`.
+2. To run the controller, create an instance of the Docker image in the Kubernetes cluster using the following command: `kubectl run operations-controller --image=${IMAGE_NAME}`. If there's an already existing Kubernetes deployment for the controller (i.e., if you have a local installation of Compass), just hotswap its image. 
 
 ## Usage and Development
 
@@ -46,11 +47,4 @@ To do this, use the following command: `make copy-crds-to-chart`.
 
 ### Controller
 
-If there are changes to the controller, you must proceed with one of the following options:
-- Direct deployment
-  - Using the `make deploy` command, you can deploy the new version of the controller directly into the Kubernetes cluster described by the `~/.kube/config` file.
-  - Alternatively, you can use the `make run` command to run an instance of the controller locally. This also connects to the Kubernetes cluster described by the `~/.kube/config` file.\
-  The advantage of the `make run` command is that it provides a faster development cycle.
-
-- Manual deployment\
-Create a Docker image for the new version of the controller. Then, deploy the image manually on a Kubernetes cluster.
+If there are changes to the controller you should create a Docker image for the new version of the controller. Then, deploy the image manually on a Kubernetes cluster.
