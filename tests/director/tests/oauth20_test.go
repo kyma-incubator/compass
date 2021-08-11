@@ -24,16 +24,17 @@ func TestGenerateClientCredentialsToApplication(t *testing.T) {
 	name := "app"
 
 	t.Log("Create application")
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NotEmpty(t, app)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	require.NoError(t, err)
 
 	generateApplicationClientCredentialsRequest := fixtures.FixRequestClientCredentialsForApplication(app.ID)
 	appAuth := graphql.AppSystemAuth{}
 
 	// WHEN
 	t.Log("Generate client credentials for application")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, generateApplicationClientCredentialsRequest, &appAuth)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, generateApplicationClientCredentialsRequest, &appAuth)
 	require.NoError(t, err)
 
 	//THEN
@@ -61,16 +62,18 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	input := fixtures.FixRuntimeInput(name)
 
 	t.Log("Create runtime")
-	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NotEmpty(t, rtm)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	require.NotEmpty(t, rtm.ID)
+	require.NoError(t, err)
 
 	generateRuntimeClientCredentialsRequest := fixtures.FixRequestClientCredentialsForRuntime(rtm.ID)
 	rtmAuth := graphql.RuntimeSystemAuth{}
 
 	// WHEN
 	t.Log("Generate client credentials for runtime")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, generateRuntimeClientCredentialsRequest, &rtmAuth)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, generateRuntimeClientCredentialsRequest, &rtmAuth)
 	require.NoError(t, err)
 
 	//THEN
@@ -97,16 +100,17 @@ func TestGenerateClientCredentialsToIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	require.NotEmpty(t, intSys)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	generateIntSysAuthRequest := fixtures.FixRequestClientCredentialsForIntegrationSystem(intSys.ID)
 	intSysAuth := graphql.IntSysSystemAuth{}
 
 	// WHEN
 	t.Log("Generate client credentials for integration system")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, generateIntSysAuthRequest, &intSysAuth)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, generateIntSysAuthRequest, &intSysAuth)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSysAuth.Auth)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSysAuth.ID)
@@ -130,9 +134,10 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	name := "app"
 
 	t.Log("Create application")
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
+	require.NoError(t, err)
 	require.NotEmpty(t, app)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, dexGraphQLClient, app.ID)
 	require.NotEmpty(t, appAuth)
@@ -142,7 +147,7 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete system auth for application")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, deleteOutput)
 
@@ -161,9 +166,10 @@ func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t 
 	name := "app"
 
 	t.Log("Create application")
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
-	require.NotEmpty(t, app)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
 
 	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, dexGraphQLClient, app.ID)
 	require.NotEmpty(t, appAuth)
@@ -174,7 +180,7 @@ func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t 
 
 	// WHEN
 	t.Log("Delete system auth for application using runtime mutation")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
 
 	// THEN
 	require.Error(t, err)
@@ -189,9 +195,10 @@ func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldRepo
 	name := "app"
 
 	t.Log("Create application")
-	app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
+	require.NoError(t, err)
 	require.NotEmpty(t, app)
-	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
 
 	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, dexGraphQLClient, app.ID)
 	require.NotEmpty(t, appAuth)
@@ -202,7 +209,7 @@ func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldRepo
 
 	// WHEN
 	t.Log("Delete system auth for application using runtime mutation")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
 
 	// THEN
 	require.Error(t, err)
@@ -218,9 +225,11 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	input := fixtures.FixRuntimeInput(name)
 
 	t.Log("Create runtime")
-	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NotEmpty(t, rtm)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	require.NotEmpty(t, rtm.ID)
+	require.NoError(t, err)
 
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
@@ -230,7 +239,7 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete system auth for runtime")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, deleteOutput)
 
@@ -249,9 +258,11 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 	name := "rtm"
 	input := fixtures.FixRuntimeInput(name)
 	t.Log("Create runtime")
-	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NotEmpty(t, rtm)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	require.NotEmpty(t, rtm.ID)
+	require.NoError(t, err)
 
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
@@ -262,7 +273,7 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 
 	// WHEN
 	t.Log("Delete system auth for runtime using application mutation")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
 
 	//THEN
 	require.Error(t, err)
@@ -277,9 +288,11 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 	name := "rtm"
 	input := fixtures.FixRuntimeInput(name)
 	t.Log("Create runtime")
-	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &rtm)
 	require.NotEmpty(t, rtm)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
+	require.NotEmpty(t, rtm.ID)
+	require.NoError(t, err)
 
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
@@ -290,7 +303,7 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 
 	// WHEN
 	t.Log("Delete system auth for runtime using integration system mutation")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
 
 	//THEN
 	require.Error(t, err)
@@ -305,9 +318,10 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	require.NotEmpty(t, intSys)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
@@ -317,7 +331,7 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete system auth for integration system")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, deleteOutput)
 
@@ -336,9 +350,10 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutationShouldRepo
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	require.NotEmpty(t, intSys)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
@@ -349,7 +364,7 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutationShouldRepo
 
 	// WHEN
 	t.Log("Delete system auth for integration system using application mutation")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
 
 	//THEN
 	require.Error(t, err)
@@ -364,9 +379,10 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutationShouldReportEr
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
-	require.NotEmpty(t, intSys)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
@@ -377,7 +393,7 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutationShouldReportEr
 
 	// WHEN
 	t.Log("Delete system auth for integration system using runtime mutation")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
 
 	//THEN
 	require.Error(t, err)

@@ -2,7 +2,8 @@ package fixtures
 
 import (
 	"context"
-	"strings"
+
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) graphql.RuntimeExt {
+func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) (graphql.RuntimeExt, error) {
 	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 
@@ -18,9 +19,7 @@ func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Contex
 	var runtime graphql.RuntimeExt
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, registerRuntimeRequest, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
-	return runtime
+	return runtime, err
 }
 
 func RequestClientCredentialsForRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeSystemAuth {
@@ -42,17 +41,14 @@ func UnregisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.
 	require.NoError(t, err)
 }
 
-func UnregisterGracefullyRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
-	if id == "" {
+func CleanupRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, rtm *graphql.RuntimeExt) {
+	if rtm == nil || rtm.ID == "" {
 		return
 	}
-	delReq := FixUnregisterRuntimeRequest(id)
+	delReq := FixUnregisterRuntimeRequest(rtm.ID)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
-
-	if err != nil && !strings.Contains(err.Error(), "Object not found [object=runtime]") {
-		require.NoError(t, err)
-	}
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
 func GetRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeExt {

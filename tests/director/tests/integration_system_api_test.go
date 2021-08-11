@@ -32,9 +32,9 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	t.Log("Register integration system")
 
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerIntegrationSystemRequest, &output)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, output.ID)
 
 	//THEN
 	require.NotEmpty(t, output.Name)
@@ -62,7 +62,10 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	newName := "new-int-system"
 	newDescription := "new description"
 	t.Log("Register integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
 	intSysGQL, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
@@ -74,7 +77,6 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateIntegrationSystemRequest, &updateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, updateOutput.ID)
 
 	//THEN
 	t.Log("Check if Integration System was updated")
@@ -91,14 +93,17 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Register integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
 	unregisterIntegrationSystemRequest := fixtures.FixUnregisterIntegrationSystem(intSys.ID)
 	deleteOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Unregister integration system")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
@@ -119,16 +124,19 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Register integration system")
-	intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
 	getIntegrationSystemRequest := fixtures.FixGetIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Get integration system")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &output)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, output.ID)
 
 	//THEN
 	t.Log("Check if Integration System was received")
@@ -145,11 +153,15 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	name2 := "int-system-2"
 
 	t.Log("Register integration systems")
-	intSys1 := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name1)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys1.ID)
+	intSys1, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name1)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys1)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys1.ID)
 
-	intSys2 := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name2)
-	defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys2.ID)
+	intSys2, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, name2)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, tenantId, intSys2)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys2.ID)
 
 	first := 100
 	after := ""
@@ -159,7 +171,7 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	// WHEN
 	t.Log("List integration systems")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemsRequest, &output)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN

@@ -75,7 +75,7 @@ global:
       version: "PR-1956"
     director:
       dir:
-      version: "PR-1969"
+      version: "PR-1977"
     gateway:
       dir:
       version: "PR-1956"
@@ -107,7 +107,7 @@ global:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1961"
+      version: "PR-1975"
   isLocalEnv: false
   oauth2:
     host: oauth2
