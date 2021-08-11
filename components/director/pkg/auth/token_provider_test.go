@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-
 func TestTokenAuthorizationProviderTestSuite(t *testing.T) {
 	suite.Run(t, new(TokenAuthorizationProviderTestSuite))
 }
