@@ -399,9 +399,9 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	createdRuntime := graphql.Runtime{}
+	createdRuntime := graphql.RuntimeExt{}
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &createdRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: createdRuntime})
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &createdRuntime)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, createdRuntime.ID)

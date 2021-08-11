@@ -28,11 +28,11 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	}
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
-	var result graphql.Runtime
+	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: result})
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &result)
 
 	// THEN
 	require.NoError(t, err)
@@ -48,11 +48,11 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	}
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
-	var result graphql.Runtime
+	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &result)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: result})
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -76,7 +76,7 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 	}
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
-	var result graphql.Runtime
+	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
 
 	// WHEN
@@ -103,7 +103,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 	}
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
-	var result graphql.Runtime
+	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
 
 	// WHEN
@@ -125,7 +125,7 @@ func TestCreateLabelDefinition_Validation(t *testing.T) {
 	}
 	inputString, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
-	var result graphql.Runtime
+	var result graphql.RuntimeExt
 	request := fixtures.FixCreateLabelDefinitionRequest(inputString)
 
 	// WHEN
@@ -150,7 +150,7 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	}
 	inputString, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
-	var result graphql.Runtime
+	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateLabelDefinitionRequest(inputString)
 
 	// WHEN
