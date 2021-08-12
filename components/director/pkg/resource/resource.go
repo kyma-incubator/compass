@@ -27,6 +27,7 @@ const (
 	Webhook                    Type = "webhook"
 	Tenant                     Type = "tenant"
 	TenantIndex                Type = "tenantIndex"
+	Schema                     Type = "schemaMigration"
 )
 
 type SQLOperation string

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
@@ -135,6 +136,8 @@ type config struct {
 	DisableAsyncMode bool `envconfig:"default=false"`
 
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
+
+	ReadyConfig healthz.ReadyConfig
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -308,7 +311,9 @@ func main() {
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
-	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
+	schemaRepo := schema.NewRepository()
+	ready := healthz.NewReady(context.WithValue(ctx, "PersistenceCtxKey", transact), transact, cfg.ReadyConfig, schemaRepo)
+	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
 	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())

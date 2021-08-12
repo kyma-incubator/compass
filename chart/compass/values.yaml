@@ -75,7 +75,7 @@ global:
       version: "PR-1956"
     director:
       dir:
-      version: "PR-1977"
+      version: "PR-1966"
     gateway:
       dir:
       version: "PR-1956"
@@ -87,10 +87,10 @@ global:
       version: "PR-1956"
     ord_service:
       dir:
-      version: "PR-32"
+      version: "PR-34"
     schema_migrator:
       dir:
-      version: "PR-1948"
+      version: "PR-1966"
     system_broker:
       dir:
       version: "PR-1956"
@@ -107,7 +107,7 @@ global:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1961"
+      version: "PR-1967"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -482,6 +482,10 @@ global:
     securityContext: # Set on container level
       runAsUser: 2000
       allowPrivilegeEscalation: false
+
+  expectedSchemaVersionUpdateJob:
+    cm:
+      name: "expected-schema-version"
 
   migratorJob:
     nodeSelectorEnabled: false
