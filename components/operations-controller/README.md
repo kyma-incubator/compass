@@ -56,7 +56,7 @@ The `operation_controller.go` file is a Kubernetes controller for the CRD.
    
 `docker build -t compass/${IMAGE_NAME}`
 
-2. push the Docker image to a Docker repository.
+2. Push the Docker image to a Docker repository.
    
 `docker push ${IMAGE_NAME}`
 
@@ -64,7 +64,7 @@ The `operation_controller.go` file is a Kubernetes controller for the CRD.
    
 `kubectl run operations-controller --image=${IMAGE_NAME}`
 
-Note: If there's an already existing Kubernetes deployment for the controller (i.e., if you have a local installation of Compass), just hotswap its image. 
+Note: If there's an already existing Kubernetes deployment for the controller (that is, if you have a local installation of Compass), just hotswap its image. 
 
 ## Usage and Development
 
