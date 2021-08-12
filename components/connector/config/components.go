@@ -21,7 +21,8 @@ type Components struct {
 	CertificateService     certificates.Service
 	RevokedCertsRepository revocation.RevokedCertificatesRepository
 
-	CSRSubjectConsts certificates.CSRSubjectConsts
+	ExternalIssuerSubjectConsts certificates.SubjectConsts
+	CSRSubjectConsts            certificates.SubjectConsts
 }
 
 func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, directorGCLI tokens.GraphQLClient) (Components, certificates.Loader, revocation.Loader) {
@@ -50,11 +51,12 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, direc
 	)
 
 	return Components{
-		Authenticator:          authentication.NewAuthenticator(),
-		TokenService:           tokens.NewTokenService(directorGCLI),
-		CertificateService:     certsService,
-		RevokedCertsRepository: revokedCertsRepository,
-		CSRSubjectConsts:       newCSRSubjectConsts(cfg),
+		Authenticator:               authentication.NewAuthenticator(),
+		TokenService:                tokens.NewTokenService(directorGCLI),
+		CertificateService:          certsService,
+		RevokedCertsRepository:      revokedCertsRepository,
+		CSRSubjectConsts:            newCSRSubjectConsts(cfg),
+		ExternalIssuerSubjectConsts: newExternalIssuerSubjectConsts(cfg),
 	}, certsLoader, revokedCertsLoader
 }
 
@@ -72,12 +74,20 @@ func newSecretsRepository(k8sClientSet kubernetes.Interface) secrets.Repository 
 	})
 }
 
-func newCSRSubjectConsts(config Config) certificates.CSRSubjectConsts {
-	return certificates.CSRSubjectConsts{
+func newCSRSubjectConsts(config Config) certificates.SubjectConsts {
+	return certificates.SubjectConsts{
 		Country:            config.CSRSubject.Country,
 		Organization:       config.CSRSubject.Organization,
 		OrganizationalUnit: config.CSRSubject.OrganizationalUnit,
 		Locality:           config.CSRSubject.Locality,
 		Province:           config.CSRSubject.Province,
+	}
+}
+
+func newExternalIssuerSubjectConsts(config Config) certificates.SubjectConsts {
+	return certificates.SubjectConsts{
+		Country:            config.ExternalIssuerSubject.Country,
+		Organization:       config.ExternalIssuerSubject.Organization,
+		OrganizationalUnit: config.ExternalIssuerSubject.OrganizationalUnitPattern,
 	}
 }

@@ -65,7 +65,7 @@ func main() {
 	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, correlation.AttachCorrelationIDToContext(), log.RequestLogger(), authContextMiddleware.PropagateAuthentication)
 	exitOnError(err, "Failed configuring external graphQL handler")
 
-	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.CSRSubjectConsts, internalComponents.ExternalIssuerSubjectConsts, internalComponents.RevokedCertsRepository, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}

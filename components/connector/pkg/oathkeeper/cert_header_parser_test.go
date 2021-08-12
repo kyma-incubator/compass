@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	csrSubjectConsts = certificates.CSRSubjectConsts{
+	csrSubjectConsts = certificates.SubjectConsts{
 		Country:            "DE",
 		Organization:       "organization",
 		OrganizationalUnit: "OrgUnit",

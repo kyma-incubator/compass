@@ -2,6 +2,8 @@ package config
 
 import (
 	"net/http"
+	"regexp"
+	"strings"
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 
@@ -41,10 +43,26 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	}, nil
 }
 
-func PrepareHydratorServer(cfg Config, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
-	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
+func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.SubjectConsts, ExternalSubjectConsts certificates.SubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
+	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, func(subject string) bool {
+		return oathkeeper.GetOrganization(subject) == CSRSubjectConsts.Organization && oathkeeper.GetOrganizationalUnit(subject) == CSRSubjectConsts.OrganizationalUnit &&
+			oathkeeper.GetCountry(subject) == CSRSubjectConsts.Country && oathkeeper.GetLocality(subject) == CSRSubjectConsts.Locality && oathkeeper.GetProvince(subject) == CSRSubjectConsts.Province
+	}, oathkeeper.GetCommonName)
 
-	validationHydrator := oathkeeper.NewValidationHydrator(certHeaderParser, revokedCertsRepository)
+	connectorValidationHydrator := oathkeeper.NewValidationHydrator(connectorCertHeaderParser, revokedCertsRepository, oathkeeper.ConnectorIssuer)
+
+	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, func(subject string) bool {
+		if oathkeeper.GetCountry(subject) != ExternalSubjectConsts.Country || oathkeeper.GetOrganization(subject) != ExternalSubjectConsts.Organization {
+			return false
+		}
+		orgUnitRegex := regexp.MustCompile(ExternalSubjectConsts.OrganizationalUnit)
+		ou := strings.Join(oathkeeper.GetAllOrganizationalUnits(subject), ",")
+		return orgUnitRegex.MatchString(ou)
+	}, func(subject string) string {
+		return oathkeeper.GetAllOrganizationalUnits(subject)[0]
+	})
+
+	externalValidationHydrator := oathkeeper.NewValidationHydrator(externalCertHeaderParser, revokedCertsRepository, oathkeeper.ExternalIssuer)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,9 +72,8 @@ func PrepareHydratorServer(cfg Config, subjectConsts certificates.CSRSubjectCons
 	router.Use(middlewares...)
 
 	v1Router := router.PathPrefix("/v1").Subrouter()
-	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
-
-	router.Use(middlewares...)
+	v1Router.HandleFunc("/certificate/data/resolve", connectorValidationHydrator.ResolveIstioCertHeader)
+	v1Router.HandleFunc("/external/certificate/data/resolve", externalValidationHydrator.ResolveIstioCertHeader)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
 	if err != nil {

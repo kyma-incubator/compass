@@ -10,6 +10,10 @@ const (
 	ClientIdFromTokenHeader       = "Client-Id-From-Token"
 	ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
 	ClientCertificateHashHeader   = "Client-Certificate-Hash"
+	ClientCertificateIssuerHeader = "Client-Certificate-Issuer"
+
+	ConnectorIssuer = "connector"
+	ExternalIssuer  = "certificate-service"
 )
 
 type AuthenticationSession struct {

@@ -22,20 +22,25 @@ const (
 	OAuth2Flow       AuthFlow = "OAuth2"
 	JWTAuthFlow      AuthFlow = "JWT"
 
-	ClientIDKey       = "client_id"
-	EmailKey          = "email"
-	UsernameKey       = "name"
-	GroupsKey         = "groups"
-	ClientIDCertKey   = "client-id-from-certificate"
-	ClientIDTokenKey  = "client-id-from-token"
-	ExternalTenantKey = "tenant"
-	ScopesKey         = "scope"
+	ClientIDKey        = "client_id"
+	EmailKey           = "email"
+	UsernameKey        = "name"
+	GroupsKey          = "groups"
+	ClientIDCertKey    = "client-id-from-certificate"
+	ClientIDCertIssuer = "client-certificate-issuer"
+	ClientIDTokenKey   = "client-id-from-token"
+	ExternalTenantKey  = "tenant"
+	ScopesKey          = "scope"
+
+	ConnectorIssuer = "connector"
+	ExternalIssuer  = "certificate-service"
 )
 
 // AuthDetails contains information about the currently authenticated client - AuthID, AuthFlow and Authenticator to use for further processing
 type AuthDetails struct {
 	AuthID        string
 	AuthFlow      AuthFlow
+	CertIssuer    string
 	Authenticator *authenticator.Config
 	ScopePrefix   string
 }
@@ -131,7 +136,7 @@ func (d *ReqData) GetAuthIDWithAuthenticators(ctx context.Context, authenticator
 	}
 
 	if idVal := d.Body.Header.Get(ClientIDCertKey); idVal != "" {
-		return &AuthDetails{AuthID: idVal, AuthFlow: CertificateFlow}, nil
+		return &AuthDetails{AuthID: idVal, AuthFlow: CertificateFlow, CertIssuer: d.Body.Header.Get(ClientIDCertIssuer)}, nil
 	}
 
 	if idVal := d.Body.Header.Get(ClientIDTokenKey); idVal != "" {

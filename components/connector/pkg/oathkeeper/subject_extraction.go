@@ -10,6 +10,10 @@ func GetOrganizationalUnit(subject string) string {
 	return getRegexMatch("OU=([^,]+)", subject)
 }
 
+func GetAllOrganizationalUnits(subject string) []string{
+	return getAllRegexMatches("OU=([^,]+)", subject)
+}
+
 func GetCountry(subject string) string {
 	return getRegexMatch("C=([^,]+)", subject)
 }
@@ -27,12 +31,24 @@ func GetCommonName(subject string) string {
 }
 
 func getRegexMatch(regex, text string) string {
-	cnRegex := regexp.MustCompile(regex)
-	matches := cnRegex.FindStringSubmatch(text)
+	matches := getAllRegexMatches(regex, text)
+	if len(matches) > 0 {
+		return matches[0]
+	}
+	return ""
+}
 
-	if len(matches) != 2 {
-		return ""
+func getAllRegexMatches(regex, text string) []string {
+	cnRegex := regexp.MustCompile(regex)
+	matches := cnRegex.FindAllStringSubmatch(text, -1)
+
+	result := make([]string, 0, len(matches))
+	for _, match := range matches {
+		if len(match) != 2 {
+			continue
+		}
+		result = append(result, match[1])
 	}
 
-	return matches[1]
+	return result
 }

@@ -13,6 +13,7 @@ const (
 	Application       ConsumerType = "Application"
 	IntegrationSystem ConsumerType = "Integration System"
 	User              ConsumerType = "Static User"
+	TechnicalCustomer ConsumerType = "Technical Customer"
 )
 
 type Consumer struct {

@@ -384,7 +384,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "cname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "country",
 				Organization:       "organization",
 				OrganizationalUnit: "organizationalUnit",
@@ -429,7 +429,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "differentCname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "country",
 				Organization:       "organization",
 				OrganizationalUnit: "organizationalUnit",
@@ -453,7 +453,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "cname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "invalidCountry",
 				Organization:       "organization",
 				OrganizationalUnit: "organizationalUnit",
@@ -478,7 +478,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "cname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "country",
 				Organization:       "invalidOrganization",
 				OrganizationalUnit: "organizationalUnit",
@@ -502,7 +502,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "cname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "country",
 				Organization:       "organization",
 				OrganizationalUnit: "invalidOrganizationalUnit",
@@ -526,7 +526,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "cname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "country",
 				Organization:       "organization",
 				OrganizationalUnit: "organizationalUnit",
@@ -550,7 +550,7 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
 			CommonName: "cname",
-			CSRSubjectConsts: CSRSubjectConsts{
+			SubjectConsts: SubjectConsts{
 				Country:            "country",
 				Organization:       "organization",
 				OrganizationalUnit: "organizationalUnit",

@@ -18,12 +18,14 @@ type ValidationHydrator interface {
 type validationHydrator struct {
 	certHeaderParser       CertificateHeaderParser
 	revokedCertsRepository revocation.RevokedCertificatesRepository
+	issuer                 string
 }
 
-func NewValidationHydrator(certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository) ValidationHydrator {
+func NewValidationHydrator(certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository, issuer string) ValidationHydrator {
 	return &validationHydrator{
 		certHeaderParser:       certHeaderParser,
 		revokedCertsRepository: revokedCertsRepository,
+		issuer:                 issuer,
 	}
 }
 
@@ -60,6 +62,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	authSession.Header.Add(ClientIdFromCertificateHeader, commonName)
 	authSession.Header.Add(ClientCertificateHashHeader, hash)
+	authSession.Header.Add(ClientCertificateIssuerHeader, tvh.issuer)
 
 	log.C(ctx).Info("Certificate header validated successfully")
 	respondWithAuthSession(ctx, w, authSession)

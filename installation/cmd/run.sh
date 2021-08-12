@@ -156,4 +156,4 @@ bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-install
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
 echo "Adding Compass entries to /etc/hosts..."
-sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local director.kyma.local" >> /etc/hosts'
+sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-sap-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local director.kyma.local" >> /etc/hosts'

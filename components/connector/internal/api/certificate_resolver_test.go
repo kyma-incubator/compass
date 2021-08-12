@@ -29,7 +29,7 @@ var (
 	decodedCSR, _ = decodeStringFromBase64(CSR)
 	subject       = certificates.CSRSubject{
 		CommonName: "clientId",
-		CSRSubjectConsts: certificates.CSRSubjectConsts{
+		SubjectConsts: certificates.SubjectConsts{
 			Country:            "country",
 			Organization:       "organization",
 			OrganizationalUnit: "organizationalunit",
@@ -62,7 +62,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", mock.Anything, decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		certificationResult, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -95,7 +95,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -125,7 +125,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), "not base 64 csr")
@@ -145,7 +145,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", mock.Anything, decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -165,7 +165,7 @@ func TestCertificateResolver_RevokeCertificate(t *testing.T) {
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 		revokedCertsRepository.On("Insert", certificateHash).Return(nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		revocationResult, err := certificateResolver.RevokeCertificate(context.Background())
@@ -182,7 +182,7 @@ func TestCertificateResolver_RevokeCertificate(t *testing.T) {
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 		revokedCertsRepository.On("Insert", certificateHash).Return(nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		revocationResult, err := certificateResolver.RevokeCertificate(context.Background())
@@ -199,7 +199,7 @@ func TestCertificateResolver_RevokeCertificate(t *testing.T) {
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 		revokedCertsRepository.On("Insert", certificateHash).Return(errors.Errorf("error"))
 
-		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		revocationResult, err := certificateResolver.RevokeCertificate(context.Background())
@@ -220,7 +220,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		tokenService.On("GetToken", mock.Anything, subject.CommonName).Return(token, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -230,7 +230,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		assert.Equal(t, token, configurationResult.Token.Token)
 		assert.Equal(t, &directorURL, configurationResult.ManagementPlaneInfo.DirectorURL)
 		assert.Equal(t, &certSecuredConnectorURL, configurationResult.ManagementPlaneInfo.CertificateSecuredConnectorURL)
-		assert.Equal(t, expectedSubject(subject.CSRSubjectConsts, subject.CommonName), configurationResult.CertificateSigningRequestInfo.Subject)
+		assert.Equal(t, expectedSubject(subject.SubjectConsts, subject.CommonName), configurationResult.CertificateSigningRequestInfo.Subject)
 		assert.Equal(t, "rsa2048", configurationResult.CertificateSigningRequestInfo.KeyAlgorithm)
 		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
@@ -243,7 +243,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		tokenService.On("GetToken", mock.Anything, subject.CommonName).Return("", apperrors.Internal("error"))
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -261,7 +261,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		tokenService := &tokensMocks.Service{}
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.SubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -274,6 +274,6 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 
 }
 
-func expectedSubject(c certificates.CSRSubjectConsts, commonName string) string {
+func expectedSubject(c certificates.SubjectConsts, commonName string) string {
 	return fmt.Sprintf("O=%s,OU=%s,L=%s,ST=%s,C=%s,CN=%s", c.Organization, c.OrganizationalUnit, c.Locality, c.Province, c.Country, commonName)
 }

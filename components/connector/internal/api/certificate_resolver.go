@@ -25,7 +25,7 @@ type certificateResolver struct {
 	authenticator                  authentication.Authenticator
 	tokenService                   tokens.Service
 	certificatesService            certificates.Service
-	csrSubjectConsts               certificates.CSRSubjectConsts
+	csrSubjectConsts               certificates.SubjectConsts
 	directorURL                    string
 	certificateSecuredConnectorURL string
 	revokedCertsRepository         revocation.RevokedCertificatesRepository
@@ -35,7 +35,7 @@ func NewCertificateResolver(
 	authenticator authentication.Authenticator,
 	tokenService tokens.Service,
 	certificatesService certificates.Service,
-	csrSubjectConsts certificates.CSRSubjectConsts,
+	csrSubjectConsts certificates.SubjectConsts,
 	directorURL string,
 	certificateSecuredConnectorURL string,
 	revokedCertsRepository revocation.RevokedCertificatesRepository) CertificateResolver {
@@ -102,8 +102,8 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 	}
 
 	subject := certificates.CSRSubject{
-		CommonName:       clientId,
-		CSRSubjectConsts: r.csrSubjectConsts,
+		CommonName:    clientId,
+		SubjectConsts: r.csrSubjectConsts,
 	}
 
 	encodedCertificates, err := r.certificatesService.SignCSR(ctx, rawCSR, subject)
