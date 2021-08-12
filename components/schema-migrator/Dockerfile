@@ -4,7 +4,7 @@ ARG MIGRATE_VER=4.5.0
 
 WORKDIR /migrate
 
-RUN apk --no-cache add bash postgresql-client curl
+RUN apk --no-cache add bash postgresql-client curl jq
 RUN wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-amd64.tar.gz -O - | tar -xz
 RUN mv migrate.linux-amd64 /usr/local/bin/migrate
 
@@ -21,5 +21,6 @@ RUN apk add --update ca-certificates \
 COPY ./migrations/ ./migrations
 COPY ./seeds/ ./seeds
 COPY ./run.sh ./run.sh
+COPY ./update-expected-schema-version.sh ./update-expected-schema-version.sh
 
 ENTRYPOINT ["./run.sh"]
