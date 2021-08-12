@@ -6,10 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	gcli "github.com/machinebox/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -185,7 +189,20 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, cfg.SystemFetcher)
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(http.DefaultTransport))
+
+	securedClient := &http.Client{
+		Transport: httpTransport,
+		Timeout:   cfg.SystemFetcher.DirectorRequestTimeout,
+	}
+
+	graphqlClient := gcli.NewClient(cfg.SystemFetcher.DirectorGraphqlURL, gcli.WithHTTPClient(securedClient))
+	directorClient := &systemfetcher.DirectorGraphClient{
+		Client:        graphqlClient,
+		Authenticator: pkgAuth.NewUnsignedTokenAuthorizationProvider("application:write"),
+	}
+
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, directorClient, cfg.SystemFetcher)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

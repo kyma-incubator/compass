@@ -3,23 +3,22 @@ package systemfetcher
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
 const (
 	LifecycleAttributeName string = "lifecycleStatus"
 	LifecycleDeleted       string = "DELETED"
+
+	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 )
 
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
@@ -62,27 +61,15 @@ type SystemFetcher struct {
 	workers chan struct{}
 }
 
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, config Config) *SystemFetcher {
-	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(http.DefaultTransport))
-
-	securedClient := &http.Client{
-		Transport: httpTransport,
-		Timeout:   config.DirectorRequestTimeout,
-	}
-
-	graphqlClient := gcli.NewClient(config.DirectorGraphqlURL, gcli.WithHTTPClient(securedClient))
-
+func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:      tx,
 		tenantService:    ts,
 		systemsService:   ss,
 		systemsAPIClient: sac,
-		directorClient: &DirectorGraphClient{
-			Client:        graphqlClient,
-			authenticator: auth.NewUnsignedTokenAuthorizationProvider("application:write"),
-		},
-		workers: make(chan struct{}, config.FetcherParallellism),
-		config:  config,
+		directorClient:   directorClient,
+		workers:          make(chan struct{}, config.FetcherParallellism),
+		config:           config,
 	}
 }
 
@@ -105,7 +92,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 			wgDB.Done()
 		}()
 		for tenantSystems := range systemsQueue {
-			err = s.saveSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems)
+			err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems)
 			if err != nil {
 				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
 				continue
@@ -167,7 +154,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 	return tenants, nil
 }
 
-func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
+func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
 	log.C(ctx).Infof("Saving %d systems for tenant %s", len(systems), tenantMapping.Name)
 	var appInputs []model.ApplicationRegisterInputWithTemplate
 
@@ -188,9 +175,16 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 				log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
 				continue
 			}
-
+			if !app.Ready && app.GetDeletedAt().IsZero() {
+				log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
+				continue
+			}
 			if err := s.directorClient.DeleteSystemAsync(ctx, app.ID, tenantMapping.ID); err != nil {
-				log.C(ctx).WithError(err).Errorf("Could not delete system")
+				if strings.Contains(err.Error(), ConcurrentDeleteOperationErrMsg) {
+					log.C(ctx).Warnf("Delete operation is in progress for system with id %s", app.ID)
+				} else {
+					log.C(ctx).WithError(err).Errorf("Could not delete system with id %s", app.ID)
+				}
 				continue
 			}
 			log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
@@ -204,9 +198,11 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 		})
 	}
 
-	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs)
-	if err != nil {
-		return errors.Wrap(err, "failed to create applications")
+	if len(appInputs) > 0 {
+		err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs)
+		if err != nil {
+			return errors.Wrap(err, "failed to create applications")
+		}
 	}
 
 	err = tx.Commit()

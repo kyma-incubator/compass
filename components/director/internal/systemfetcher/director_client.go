@@ -16,7 +16,7 @@ type Authenticator interface {
 
 type DirectorGraphClient struct {
 	*gcli.Client
-	authenticator Authenticator
+	Authenticator Authenticator
 }
 
 func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenantID string) error {
@@ -29,7 +29,7 @@ func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenantI
 			    }
 			}`, id))
 	ctx = tenant.SaveToContext(ctx, tenantID)
-	token, err := d.authenticator.GetAuthorization(ctx)
+	token, err := d.Authenticator.GetAuthorization(ctx)
 	if err != nil {
 		return err
 	}
