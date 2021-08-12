@@ -8,6 +8,38 @@ readonly TMP_DIR=$(mktemp -d)
 echo "ARTIFACTS: ${ARTIFACTS}"
 readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-suite.xml"
 
+function checkInputParameterValue() {
+    if [ -z "${1}" ] || [ "${1:0:2}" == "--" ]; then
+        echo "Wrong parameter value"
+        echo "Make sure parameter value is neither empty nor start with two hyphens"
+        exit 1
+    fi
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case ${key} in
+        --dump-db)
+            checkInputParameterValue "${2}"
+            DUMP_DB="$2"
+            shift
+            shift
+        ;;
+        --*)
+            echo "Unknown flag ${1}"
+            exit 1
+        ;;
+        *)    # unknown option
+            POSITIONAL+=("$1") # save it in an array for later
+            shift # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
 suiteName="compass-e2e-tests"
 testDefinitionName=$1
 echo "${1:-All tests}"
@@ -27,6 +59,13 @@ fi
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
+  if [[ "${DUMP_DB}" == "true" ]]
+  then
+    labelSelector=',!disable-db-dump'
+  elif [[ "${DUMP_DB}" == "false" ]]
+  then
+    labelSelector=',disable-db-dump'
+  fi
       cat <<EOF | ${kc} apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
       kind: ClusterTestSuite
@@ -39,7 +78,7 @@ then
         concurrency: 1
         selectors:
           matchLabelExpressions:
-            - "!benchmark"
+            - "!benchmark${labelSelector}"
 EOF
 
 else

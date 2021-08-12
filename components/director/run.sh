@@ -11,6 +11,7 @@ NC='\033[0m' # No Color
 set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+echo $ROOT_PATH
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
@@ -128,8 +129,8 @@ else
     echo -e "${GREEN}Populate DB${NC}"
 
     if [[ ${DUMP_DB} = false ]]; then
-        cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
-            docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+        CONNECTION_STRING="postgres://$DB_USER:$DB_PWD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+        migrate -path ${ROOT_PATH}/../schema-migrator/migrations/director -database "$CONNECTION_STRING" up
 
         cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
             docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
@@ -158,6 +159,7 @@ else
     fi
 fi
 
+echo "Migration version: $(migrate -path ${ROOT_PATH}/../schema-migrator/migrations/director -database "$CONNECTION_STRING" version 2>&1)"
 . ${ROOT_PATH}/hack/jwt_generator.sh
 
 if [[  ${SKIP_APP_START} ]]; then
@@ -186,6 +188,7 @@ export APP_LOG_LEVEL=debug
 export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
 export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
 export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
+export APP_SCHEMA_MIGRATION_VERSION=$(ls -lr ${ROOT_PATH}/../schema-migrator/migrations/director | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
 
 
 if [[  ${DEBUG} ]]; then

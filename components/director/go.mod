@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/director
 go 1.15
 
 require (
-	github.com/99designs/gqlgen v0.13.0
+	github.com/99designs/gqlgen v0.11.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
