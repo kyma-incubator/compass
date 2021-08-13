@@ -26,6 +26,7 @@ spec:
             - "dex.{{ .Values.global.ingress.domainName }}"
             - "oauth2.{{ .Values.global.ingress.domainName }}"
       {{ end }}
+      serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
       containers:
         - name: ord-service-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
