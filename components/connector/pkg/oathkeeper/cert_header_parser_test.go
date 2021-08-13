@@ -34,6 +34,7 @@ func TestParseCertHeader(t *testing.T) {
 		name             string
 		certHeader       string
 		subjectConsts    certificates.SubjectConsts
+		issuer           string
 		subjectMatcher   func(consts certificates.SubjectConsts) func(string) bool
 		clientIDFunc     func(string) string
 		found            bool
@@ -45,6 +46,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=test-application,OU=OrgUnit,O=organization,L=Waldorf,ST=Waldorf,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			subjectConsts:    connectorSubjectConsts,
+			issuer:           oathkeeper.ConnectorIssuer,
 			subjectMatcher:   oathkeeper.ConnectorCertificateSubjectMatcher,
 			clientIDFunc:     oathkeeper.GetCommonName,
 			found:            true,
@@ -56,6 +58,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=test-application,OU=2d149cda-a4fe-45c9-a21d-915c52fb56a1,OU=Region,OU=SAP Cloud Platform Clients,O=organization,L=Waldorf,ST=Waldorf,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			subjectConsts:    externalSubjectConsts,
+			issuer:           oathkeeper.ExternalIssuer,
 			subjectMatcher:   oathkeeper.ExternalCertIssuerSubjectMatcher,
 			clientIDFunc:     oathkeeper.GetOrganizationalUnit,
 			found:            true,
@@ -67,6 +70,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			subjectConsts:  connectorSubjectConsts,
+			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher,
 			clientIDFunc:   oathkeeper.GetCommonName,
 			found:          false,
@@ -75,6 +79,7 @@ func TestParseCertHeader(t *testing.T) {
 			name:           "should not found certificate data if header is invalid",
 			certHeader:     "invalid header",
 			subjectConsts:  connectorSubjectConsts,
+			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher,
 			clientIDFunc:   oathkeeper.GetCommonName,
 			found:          false,
@@ -83,6 +88,7 @@ func TestParseCertHeader(t *testing.T) {
 			name:           "should not found certificate data if header is empty",
 			certHeader:     "",
 			subjectConsts:  connectorSubjectConsts,
+			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher,
 			clientIDFunc:   oathkeeper.GetCommonName,
 			found:          false,
@@ -94,7 +100,7 @@ func TestParseCertHeader(t *testing.T) {
 
 			r.Header.Set(certHeader, testCase.certHeader)
 
-			hp := oathkeeper.NewHeaderParser(certHeader, testCase.subjectMatcher(testCase.subjectConsts), testCase.clientIDFunc)
+			hp := oathkeeper.NewHeaderParser(certHeader, testCase.issuer, testCase.subjectMatcher(testCase.subjectConsts), testCase.clientIDFunc)
 
 			//when
 			clientID, hash, found := hp.GetCertificateData(r)
@@ -103,6 +109,7 @@ func TestParseCertHeader(t *testing.T) {
 			require.Equal(t, testCase.found, found)
 			require.Equal(t, testCase.expectedHash, hash)
 			require.Equal(t, testCase.expectedClientID, clientID)
+			require.Equal(t, testCase.issuer, hp.GetIssuer())
 		})
 	}
 }

@@ -42,11 +42,10 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 }
 
 func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.SubjectConsts, externalSubjectConsts certificates.SubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
-	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), oathkeeper.GetCommonName)
-	connectorValidationHydrator := oathkeeper.NewValidationHydrator(connectorCertHeaderParser, revokedCertsRepository, oathkeeper.ConnectorIssuer)
+	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer, oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), oathkeeper.GetCommonName)
+	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), oathkeeper.GetOrganizationalUnit)
 
-	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), oathkeeper.GetOrganizationalUnit)
-	externalValidationHydrator := oathkeeper.NewValidationHydrator(externalCertHeaderParser, revokedCertsRepository, oathkeeper.ExternalIssuer)
+	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -56,8 +55,7 @@ func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.SubjectCons
 	router.Use(middlewares...)
 
 	v1Router := router.PathPrefix("/v1").Subrouter()
-	v1Router.HandleFunc("/certificate/data/resolve", connectorValidationHydrator.ResolveIstioCertHeader)
-	v1Router.HandleFunc("/external/certificate/data/resolve", externalValidationHydrator.ResolveIstioCertHeader)
+	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
 	if err != nil {

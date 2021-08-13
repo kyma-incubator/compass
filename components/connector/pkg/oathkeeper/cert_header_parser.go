@@ -8,6 +8,7 @@ import (
 //go:generate mockery --name=CertificateHeaderParser
 type CertificateHeaderParser interface {
 	GetCertificateData(r *http.Request) (string, string, bool)
+	GetIssuer() string
 }
 
 type certificateInfo struct {
@@ -17,13 +18,15 @@ type certificateInfo struct {
 
 type headerParser struct {
 	certHeaderName         string
+	issuer                 string
 	isSubjectMatching      func(subject string) bool
 	getClientIDFromSubject func(subject string) string
 }
 
-func NewHeaderParser(certHeaderName string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string) CertificateHeaderParser {
+func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string) *headerParser {
 	return &headerParser{
 		certHeaderName:         certHeaderName,
+		issuer:                 issuer,
 		isSubjectMatching:      isSubjectMatching,
 		getClientIDFromSubject: getClientIDFromSubject,
 	}
@@ -49,6 +52,10 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 	}
 
 	return hp.getClientIDFromSubject(certificateInfo.Subject), certificateInfo.Hash, true
+}
+
+func (hp *headerParser) GetIssuer() string {
+	return hp.issuer
 }
 
 func createCertInfos(subjects, hashes []string) []certificateInfo {
