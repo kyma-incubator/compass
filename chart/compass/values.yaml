@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1956"
+      version: "PR-1981"
     connectivity_adapter:
       dir:
       version: "PR-1956"
@@ -75,7 +75,7 @@ global:
       version: "PR-1956"
     director:
       dir:
-      version: "PR-1966"
+      version: "PR-1981"
     gateway:
       dir:
       version: "PR-1956"
