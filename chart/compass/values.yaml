@@ -75,7 +75,7 @@ global:
       version: "PR-1956"
     director:
       dir:
-      version: "PR-1966"
+      version: "PR-1971"
     gateway:
       dir:
       version: "PR-1956"
@@ -93,7 +93,7 @@ global:
       version: "PR-1966"
     system_broker:
       dir:
-      version: "PR-1956"
+      version: "PR-1971"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
