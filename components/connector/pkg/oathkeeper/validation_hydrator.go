@@ -27,6 +27,9 @@ func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificates
 	}
 }
 
+// ResolveIstioCertHeader checks the certificate forwarded by the istio mtls gateway against all the configured CertificateHeaderParsers
+// First CertificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
+// If there is no matching CertificateHeaderParser, an empty oathkeeper session is returned.
 func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

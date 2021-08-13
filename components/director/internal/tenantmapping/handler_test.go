@@ -419,9 +419,9 @@ func TestHandler(t *testing.T) {
 				TenantID:         externalTenantID,
 			},
 			ConsumerID:   externalTenantID,
-			ConsumerType: consumer.TechnicalCustomer,
+			ConsumerType: consumer.Runtime,
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + externalTenantID + `","consumerType":"Technical Customer","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.CertificateFlow) + `","scope":"` + "" + `","tenant":"` + externalTenantID + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + externalTenantID + `","consumerType":"Runtime","externalTenant":"` + externalTenantID + `","flow":"` + string(oathkeeper.CertificateFlow) + `","scope":"` + "" + `","tenant":"` + externalTenantID + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()

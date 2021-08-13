@@ -17,8 +17,13 @@
 package tests
 
 import (
+	"context"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
@@ -34,11 +39,18 @@ var (
 )
 
 type config struct {
-	DirectorURL                   string
-	ORDServiceURL                 string
-	ORDServiceStaticURL           string
-	ORDServiceDefaultResponseType string
-	DefaultScenarioEnabled        bool `envconfig:"default=true"`
+	DirectorURL                      string
+	ORDServiceURL                    string
+	ORDExternalCertSecuredServiceURL string
+	ORDServiceStaticURL              string
+	ORDServiceDefaultResponseType    string
+	CACertificate                    []byte `envconfig:"-"`
+	CAKey                            []byte `envconfig:"-"`
+	CASecretName                     string
+	CASecretNamespace                string
+	CASecretCertificateKey           string
+	CASecretKeyKey                   string
+	DefaultScenarioEnabled           bool `envconfig:"default=true"`
 }
 
 var testConfig config
@@ -51,6 +63,19 @@ func TestMain(m *testing.M) {
 
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
+
+	k8sClientSet, err := clients.NewK8SClientSet(context.Background(), time.Second, time.Minute, time.Minute)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+	}
+
+	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CASecretNamespace).Get(testConfig.CASecretName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	}
+
+	testConfig.CACertificate = secret.Data[testConfig.CASecretCertificateKey]
+	testConfig.CAKey = secret.Data[testConfig.CASecretKeyKey]
 
 	dexToken := server.Token()
 

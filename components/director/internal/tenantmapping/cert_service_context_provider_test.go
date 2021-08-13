@@ -22,7 +22,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 	objectCtx, err := provider.GetObjectContext(context.TODO(), oathkeeper.ReqData{}, authDetails)
 	require.NoError(t, err)
 
-	require.Equal(t, consumer.TechnicalCustomer, objectCtx.ConsumerType)
+	require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
 	require.Equal(t, subaccount, objectCtx.ConsumerID)
 	require.Equal(t, subaccount, objectCtx.TenantContext.TenantID)
 	require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
