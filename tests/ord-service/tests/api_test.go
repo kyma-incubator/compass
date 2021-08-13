@@ -663,7 +663,9 @@ func extIssuerCertClient(t *testing.T) *http.Client {
 	if err != nil {
 		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
 		require.NoError(t, err)
-		caPrivateKey = caPrivateKeyPKCS8.(*rsa.PrivateKey)
+		var ok bool
+		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)
+		require.True(t, ok)
 	}
 
 	clientCert := x509.Certificate{
