@@ -3,10 +3,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.global.migratorJob.pvc.name }}
   namespace: {{ .Values.global.migratorJob.pvc.namespace }}
-  annotations:
-  {{- if eq .Values.global.migratorJob.pvc.regional true }}
-    topology.kubernetes.io/region: {{ .Values.global.migratorJob.pvc.region }}
-  {{- end }}
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app: {{ .Chart.Name }}
