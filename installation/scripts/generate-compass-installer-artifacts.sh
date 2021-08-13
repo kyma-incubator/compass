@@ -45,7 +45,14 @@ fi
 
     sed -i '/action: install/d' kyma-installer.yaml
     cat ${RESOURCES_DIR}/kyma/installer-cr-kyma-minimal.yaml >> kyma-installer.yaml
+
+    lineNum=$(($(cat kyma-installer.yaml | grep -n 'kind: Installation' | head -2 | tail -1 | cut -d ':' -f1) - 1))
+    touch kyma-installation.yaml
+    sed -n "$lineNum,$"p kyma-installer.yaml > kyma-installation.yaml
+    sed -i "$lineNum,$"d kyma-installer.yaml
+
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
+    mv kyma-installation.yaml ${ARTIFACTS_DIR}/kyma-installation.yaml
 }
 
 generateArtifact
