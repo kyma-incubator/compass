@@ -44,19 +44,19 @@ func GetCommonName(subject string) string {
 
 // ExternalCertIssuerSubjectMatcher returns a function matching certificate subjects issued by the external trusted issuer configured
 // It checks Country, Organization as single values and OrganizationalUnit as regex pattern for easier matching of multiple values (joined by ',').
-func ExternalCertIssuerSubjectMatcher(externalSubjectConsts certificates.SubjectConsts) func(subject string) bool {
+func ExternalCertIssuerSubjectMatcher(externalSubjectConsts certificates.ExternalIssuerSubjectConsts) func(subject string) bool {
 	return func(subject string) bool {
 		if GetCountry(subject) != externalSubjectConsts.Country || GetOrganization(subject) != externalSubjectConsts.Organization {
 			return false
 		}
-		orgUnitRegex := regexp.MustCompile(externalSubjectConsts.OrganizationalUnit)
+		orgUnitRegex := regexp.MustCompile(externalSubjectConsts.OrganizationalUnitPattern)
 		ou := strings.Join(GetAllOrganizationalUnits(subject), ",")
 		return orgUnitRegex.MatchString(ou)
 	}
 }
 
 // ConnectorCertificateSubjectMatcher returns a function matching certificate subjects issued by compass's connector
-func ConnectorCertificateSubjectMatcher(CSRSubjectConsts certificates.SubjectConsts) func(subject string) bool {
+func ConnectorCertificateSubjectMatcher(CSRSubjectConsts certificates.CSRSubjectConsts) func(subject string) bool {
 	return func(subject string) bool {
 		return GetOrganization(subject) == CSRSubjectConsts.Organization && GetOrganizationalUnit(subject) == CSRSubjectConsts.OrganizationalUnit &&
 			GetCountry(subject) == CSRSubjectConsts.Country && GetLocality(subject) == CSRSubjectConsts.Locality && GetProvince(subject) == CSRSubjectConsts.Province

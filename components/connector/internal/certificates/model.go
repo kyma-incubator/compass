@@ -8,10 +8,10 @@ import (
 
 type CSRSubject struct {
 	CommonName string
-	SubjectConsts
+	CSRSubjectConsts
 }
 
-type SubjectConsts struct {
+type CSRSubjectConsts struct {
 	Country            string
 	Organization       string
 	OrganizationalUnit string
@@ -19,7 +19,7 @@ type SubjectConsts struct {
 	Province           string
 }
 
-func (s SubjectConsts) ToString(commonName string) string {
+func (s CSRSubjectConsts) ToString(commonName string) string {
 	return fmt.Sprintf("O=%s,OU=%s,L=%s,ST=%s,C=%s,CN=%s", s.Organization, s.OrganizationalUnit, s.Locality, s.Province, s.Country, commonName)
 }
 
@@ -35,4 +35,10 @@ func ToCertificationResult(encodedChain EncodedCertificateChain) externalschema.
 		ClientCertificate: encodedChain.ClientCertificate,
 		CaCertificate:     encodedChain.CaCertificate,
 	}
+}
+
+type ExternalIssuerSubjectConsts struct {
+	Country                   string
+	Organization              string
+	OrganizationalUnitPattern string
 }

@@ -21,8 +21,8 @@ type Components struct {
 	CertificateService     certificates.Service
 	RevokedCertsRepository revocation.RevokedCertificatesRepository
 
-	ExternalIssuerSubjectConsts certificates.SubjectConsts
-	CSRSubjectConsts            certificates.SubjectConsts
+	ExternalIssuerSubjectConsts certificates.ExternalIssuerSubjectConsts
+	CSRSubjectConsts            certificates.CSRSubjectConsts
 }
 
 func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, directorGCLI tokens.GraphQLClient) (Components, certificates.Loader, revocation.Loader) {
@@ -74,8 +74,8 @@ func newSecretsRepository(k8sClientSet kubernetes.Interface) secrets.Repository 
 	})
 }
 
-func newCSRSubjectConsts(config Config) certificates.SubjectConsts {
-	return certificates.SubjectConsts{
+func newCSRSubjectConsts(config Config) certificates.CSRSubjectConsts {
+	return certificates.CSRSubjectConsts{
 		Country:            config.CSRSubject.Country,
 		Organization:       config.CSRSubject.Organization,
 		OrganizationalUnit: config.CSRSubject.OrganizationalUnit,
@@ -84,10 +84,10 @@ func newCSRSubjectConsts(config Config) certificates.SubjectConsts {
 	}
 }
 
-func newExternalIssuerSubjectConsts(config Config) certificates.SubjectConsts {
-	return certificates.SubjectConsts{
-		Country:            config.ExternalIssuerSubject.Country,
-		Organization:       config.ExternalIssuerSubject.Organization,
-		OrganizationalUnit: config.ExternalIssuerSubject.OrganizationalUnitPattern,
+func newExternalIssuerSubjectConsts(config Config) certificates.ExternalIssuerSubjectConsts {
+	return certificates.ExternalIssuerSubjectConsts{
+		Country:                   config.ExternalIssuerSubject.Country,
+		Organization:              config.ExternalIssuerSubject.Organization,
+		OrganizationalUnitPattern: config.ExternalIssuerSubject.OrganizationalUnitPattern,
 	}
 }

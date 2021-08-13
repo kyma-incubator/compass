@@ -61,7 +61,7 @@ var (
 
 	subjectValues = certificates.CSRSubject{
 		CommonName: appName,
-		SubjectConsts: certificates.SubjectConsts{
+		CSRSubjectConsts: certificates.CSRSubjectConsts{
 			Country:            country,
 			Organization:       organization,
 			OrganizationalUnit: organizationalUnit,
