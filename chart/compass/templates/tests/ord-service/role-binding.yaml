@@ -20,7 +20,7 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Chart.Name }}-e2e-system-fetcher
+  name: {{ .Chart.Name }}-e2e-ord-service
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
