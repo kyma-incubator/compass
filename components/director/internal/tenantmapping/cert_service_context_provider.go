@@ -2,6 +2,7 @@ package tenantmapping
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -20,7 +21,9 @@ type certServiceContextProvider struct {
 }
 
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
-func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+// By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
+// There we should only convert the tenant identifier from external to internal. Additionally, we mark the consumer in this flow as Technical Customer.
+func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.TechnicalCustomer,
 	})

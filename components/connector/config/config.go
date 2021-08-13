@@ -26,9 +26,9 @@ type Config struct {
 		Province           string `envconfig:"default=State"`
 	}
 	ExternalIssuerSubject struct {
-		Country                   string
-		Organization              string
-		OrganizationalUnitPattern string
+		Country                   string `envconfig:"default=DE"`
+		Organization              string `envconfig:"default=Org"`
+		OrganizationalUnitPattern string `envconfig:"default=OrgUnit"`
 	}
 	CertificateValidityTime time.Duration `envconfig:"default=2160h"`
 	CASecret                struct {
@@ -60,7 +60,7 @@ func (c *Config) String() string {
 	return fmt.Sprintf("ExternalAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
-		"SAPSubjectCountry: %s, SAPSubjectOrganization: %s, SAPSubjectOrganizationalUnitPattern: %s," +
+		"SAPSubjectCountry: %s, SAPSubjectOrganization: %s, SAPSubjectOrganizationalUnitPattern: %s,"+
 		"CertificateValidityTime: %s, CASecretName: %s, CASecretCertificateKey: %s, CASecretKeyKey: %s, "+
 		"RootCASecretName: %s, RootCASecretCertificateKey: %s, CertificateDataHeader: %s, "+
 		"CertificateSecuredConnectorURL: %s, "+

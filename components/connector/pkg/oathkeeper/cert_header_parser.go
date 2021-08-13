@@ -16,15 +16,15 @@ type certificateInfo struct {
 }
 
 type headerParser struct {
-	certHeaderName string
-	isSubjectMatching func (subject string) bool
-	getClientIDFromSubject func (subject string) string
+	certHeaderName         string
+	isSubjectMatching      func(subject string) bool
+	getClientIDFromSubject func(subject string) string
 }
 
-func NewHeaderParser(certHeaderName string, isSubjectMatching func (subject string) bool, getClientIDFromSubject func (subject string) string) CertificateHeaderParser {
+func NewHeaderParser(certHeaderName string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string) CertificateHeaderParser {
 	return &headerParser{
-		certHeaderName: certHeaderName,
-		isSubjectMatching: isSubjectMatching,
+		certHeaderName:         certHeaderName,
+		isSubjectMatching:      isSubjectMatching,
 		getClientIDFromSubject: getClientIDFromSubject,
 	}
 }

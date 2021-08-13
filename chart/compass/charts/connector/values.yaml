@@ -20,7 +20,7 @@ deployment:
     externalIssuerSubject:
       country: "DE"
       organization: "SAP SE"
-      organizationalUnitPattern: "SAP Cloud Platform Clients,Region,(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}" # Matches SAP Cloud Platform Clients,Region,<UUID>
+      organizationalUnitPattern: "(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12},Region,SAP Cloud Platform Clients" # Matches <UUID>,Region,SAP Cloud Platform Clients
     certificateValidityTime: "2160h"
     attachRootCAToChain: false
   kubernetesClient:
