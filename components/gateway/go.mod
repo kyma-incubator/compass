@@ -9,6 +9,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210816105621-314850e49405
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
