@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/form3tech-oss/jwt-go v3.2.5
+	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.4
