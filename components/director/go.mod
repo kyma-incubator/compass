@@ -22,7 +22,7 @@ require (
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210623072749-c159dfdd6510
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210623072749-c159dfdd6510
 	github.com/lestrrat-go/iter v1.0.1
-	github.com/lestrrat-go/jwx v1.2.0
+	github.com/lestrrat-go/jwx v1.2.4
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/hashstructure/v2 v2.0.2
