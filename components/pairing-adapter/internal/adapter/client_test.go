@@ -90,7 +90,7 @@ func TestClient(t *testing.T) {
 		// WHEN
 		_, err := cli.Do(context.TODO(), adapter.RequestData{})
 		// THEN
-		assert.EqualError(t, err, "template: header:1: unexpected bad character U+0022 '\"' in command")
+		assert.EqualError(t, err, "template: header:1: bad character U+0022 '\"'")
 	})
 
 	t.Run("fails when headers template access not existing field", func(t *testing.T) {
@@ -126,7 +126,7 @@ func TestClient(t *testing.T) {
 		// WHEN
 		_, err := cli.Do(nil, adapter.RequestData{})
 		// THEN
-		assert.EqualError(t, err, "template: body:1: unexpected bad character U+0022 '\"' in command")
+		assert.EqualError(t, err, "template: body:1: bad character U+0022 '\"'")
 	})
 
 	t.Run("fails when body template access not existing field", func(t *testing.T) {
