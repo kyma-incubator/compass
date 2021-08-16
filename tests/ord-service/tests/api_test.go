@@ -713,7 +713,7 @@ func extIssuerCertClient(t *testing.T) *http.Client {
 	}
 
 	return &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 120 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
 		},
