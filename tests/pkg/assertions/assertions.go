@@ -562,6 +562,12 @@ func AssertApplicationPageContainOnlyIDs(t *testing.T, page graphql.ApplicationP
 	}
 }
 
+func AssertNoErrorForOtherThanNotFound(t require.TestingT, err error) {
+	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
+		require.NoError(t, err)
+	}
+}
+
 func urlsAreIdentical(url1, url2 *string) bool {
 	identical := url1 == url2
 	if !identical {
