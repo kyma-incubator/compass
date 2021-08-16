@@ -683,39 +683,24 @@ func extIssuerCertClient(t *testing.T) *http.Client {
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 
-	clientKey, err := certs.GenerateKey()
-	require.NoError(t, err)
+	clientKey := certs.CreateKey(t)
 
 	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientKey.PublicKey, caPrivateKey)
 	require.NoError(t, err)
 
-	//clientCertPEM := new(bytes.Buffer)
-	//require.NoError(t, pem.Encode(clientCertPEM, &pem.Block{
-	//	Type:  "CERTIFICATE",
-	//	Bytes: clientCrtRaw,
-	//}))
-	//
-	//clientKeyPEM := new(bytes.Buffer)
-	//require.NoError(t, pem.Encode(clientKeyPEM, &pem.Block{
-	//	Type:  "RSA PRIVATE KEY",
-	//	Bytes: x509.MarshalPKCS1PrivateKey(clientKey),
-	//}))
-
-	tlsCert := tls.Certificate{
-		Certificate: [][]byte{caCRT.Raw, clientCrtRaw},
-		PrivateKey:  clientKey,
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{tlsCert},
-		ClientAuth:         tls.RequireAndVerifyClientCert,
-		InsecureSkipVerify: true,
-	}
-
 	return &http.Client{
-		Timeout: 120 * time.Second,
+		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: [][]byte{clientCrtRaw, caCRT.Raw},
+						PrivateKey:  clientKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: true,
+			},
 		},
 	}
 }

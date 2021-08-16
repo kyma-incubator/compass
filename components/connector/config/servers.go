@@ -43,7 +43,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 
 func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectConsts, externalSubjectConsts certificates.ExternalIssuerSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
 	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer, oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), oathkeeper.GetCommonName)
-	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), oathkeeper.GetOrganizationalUnit)
+	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), oathkeeper.GetUUIDOrganizationalUnit)
 
 	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 

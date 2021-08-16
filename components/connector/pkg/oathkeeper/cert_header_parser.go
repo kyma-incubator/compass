@@ -3,6 +3,9 @@ package oathkeeper
 import (
 	"net/http"
 	"regexp"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 //go:generate mockery --name=CertificateHeaderParser
@@ -45,6 +48,8 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 	hashes := extractFromHeader(certHeader, hashRegex)
 
 	certificateInfos := createCertInfos(subjects, hashes)
+
+	log.C(r.Context()).Debugf("Trying to match certificate subjects [%s] for issuer %s", strings.Join(subjects, ","), hp.GetIssuer())
 
 	certificateInfo, found := hp.getCertificateInfoWithMatchingSubject(certificateInfos)
 	if !found {
