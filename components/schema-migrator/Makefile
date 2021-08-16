@@ -5,6 +5,7 @@ SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export SKIP_DEPLOY_MESSAGE = "Building minikube image and redeployment of Schema Migrator is not allowed"
 export SKIP_TEST_MESSAGE = "Test goal for Schema Migrator is empty"
 export SKIP_BUILD_MESSAGE = "Build goal for Schema Migrator is empty"
+export SKIP_ERROR_CHECK_MESSAGE = "Error check goal for Schema Migrator is empty"
 export SKIP_CHECK_IMPORTS_MESSAGE = "Check imports goal for Schema Migrator is empty"
 export SKIP_CHECK_FMT_MESSAGE = "Check fmt goal for Schema Migrator is empty"
 
@@ -33,6 +34,9 @@ imports:
 
 check-imports:
 	@echo ${SKIP_CHECK_IMPORTS_MESSAGE}
+
+errcheck:
+	@echo ${SKIP_ERROR_CHECK_MESSAGE}
 
 fmt:
 	@echo ${SKIP_CHECK_FMT_MESSAGE}
