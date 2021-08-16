@@ -137,3 +137,9 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+      volumes:
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        {{end}}
