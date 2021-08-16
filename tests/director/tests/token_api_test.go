@@ -6,6 +6,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/stretchr/testify/assert"
@@ -22,8 +24,10 @@ func TestTokenGeneration(t *testing.T) {
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 		input := fixtures.FixRuntimeInput("test")
-		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
 		tokenRequestNumber := 3
 
 		//WHEN
@@ -43,8 +47,10 @@ func TestTokenGeneration(t *testing.T) {
 
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-		app := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "test", tenantId)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, app.ID)
+		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "test", tenantId)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
+		require.NoError(t, err)
+		require.NotEmpty(t, app.ID)
 		tokenRequestNumber := 3
 
 		//WHEN

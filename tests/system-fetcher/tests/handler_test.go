@@ -62,8 +62,10 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	setMockSystems(t, mockSystems)
 
-	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
 
 	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
@@ -114,7 +116,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	}
 	defer func() {
 		for _, app := range resp.Data {
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
+			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
 
@@ -156,8 +158,10 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 
 	setMockSystems(t, mockSystems)
 
-	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
-	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
 
 	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
@@ -227,7 +231,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	}
 	defer func() {
 		for _, app := range resp.Data {
-			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
+			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
 
