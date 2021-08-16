@@ -175,7 +175,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
 				continue
 			}
-			if !app.Ready && app.GetDeletedAt().IsZero() {
+			if !app.Ready && !app.GetDeletedAt().IsZero() {
 				log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
 				continue
 			}

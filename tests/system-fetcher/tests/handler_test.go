@@ -28,6 +28,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -63,6 +64,11 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2 := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2.ID)
 
 	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -152,6 +158,11 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 
 	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2 := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2.ID)
 
 	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -245,12 +256,26 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {}
+	}, {
+		"systemNumber": "3",
+		"displayName": "name3",
+		"productDescription": "description",
+		"prop": "val2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
 	}]`)
 
 	setMockSystems(t, mockSystems)
 
 	template := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template.ID)
+
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2 := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.DeleteApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2.ID)
 
 	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -280,6 +305,13 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			Application: directorSchema.Application{
 				Name:        "name2",
 				Description: &description,
+			},
+		},
+		{
+			Application: directorSchema.Application{
+				Name:                  "name3",
+				Description:           &description,
+				ApplicationTemplateID: &template2.ID,
 			},
 		},
 	}
@@ -318,9 +350,32 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {}
+	}, {
+		"systemNumber": "3",
+		"displayName": "name3",
+		"productDescription": "description",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {
+			"lifecycleStatus": "DELETED"
+		}
 	}]`)
 
 	setMockSystems(t, mockSystems)
+
+	t.Log("Unlock the mock application webhook")
+	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
+
+	var idToDelete string
+	for _, app := range resp.Data {
+		if app.Name == "name3" {
+			idToDelete = app.ID
+			break
+		}
+	}
+	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), idToDelete)
 
 	jobName = "system-fetcher-test2"
 	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
@@ -330,8 +385,10 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	waitForJobToSucceed(t, k8sClient, jobName, namespace)
 
+	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
+
 	t.Log("Waiting for asynchronous deletion to take place")
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 40)
 
 	req = fixtures.FixGetApplicationsRequestWithPagination()
 	var resp2 directorSchema.ApplicationPageExt

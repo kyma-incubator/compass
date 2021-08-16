@@ -34,7 +34,7 @@ func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenantI
 		return err
 	}
 
-	gqlRequest.Header.Set("Authorization", "Bearer "+token)
+	gqlRequest.Header.Set("Authorization", token)
 
 	if err := d.Run(ctx, gqlRequest, nil); err != nil {
 		return errors.Wrapf(err, "while executing GraphQL call to delete a system with id %s", id)
