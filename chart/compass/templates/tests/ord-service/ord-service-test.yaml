@@ -39,8 +39,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_EXTERNAL_CERT_SECURED_SERVICE_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_STATIC_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.staticPrefix }}"
+            - name: ORD_SERVICE_STATIC_PREFIX
+              value: "{{ .Values.global.ordService.staticPrefix }}"
             - name: ORD_SERVICE_HEALTHZ_URL
               value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE

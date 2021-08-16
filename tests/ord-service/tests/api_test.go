@@ -264,7 +264,7 @@ func TestORDService(t *testing.T) {
 			url:       testConfig.ORDServiceURL,
 		},
 		{
-			msg:       subTenantID + " as Technical Customer using externally issued certificate",
+			msg:       subTenantID + " as Runtime using externally issued certificate",
 			headers:   map[string][]string{}, // The tenant comes from the certificate
 			appInput:  appInputInScenario,
 			apisMap:   apisMapInScenario,
@@ -351,7 +351,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/api/%s/specification", apiID)
-				require.Contains(t, specURL, testConfig.ORDServiceStaticURL+specPath)
+				require.Contains(t, specURL, testConfig.ORDServiceStaticPrefix+specPath)
 
 				respBody := makeRequestWithHeaders(t, testData.client, specURL, testData.headers)
 
@@ -417,7 +417,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/event/%s/specification", eventID)
-				require.Contains(t, specURL, testConfig.ORDServiceStaticURL+specPath)
+				require.Contains(t, specURL, testConfig.ORDServiceStaticPrefix+specPath)
 
 				respBody := makeRequestWithHeaders(t, testData.client, specURL, testData.headers)
 

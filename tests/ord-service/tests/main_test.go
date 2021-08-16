@@ -42,7 +42,7 @@ type config struct {
 	DirectorURL                      string
 	ORDServiceURL                    string
 	ORDExternalCertSecuredServiceURL string
-	ORDServiceStaticURL              string
+	ORDServiceStaticPrefix           string
 	ORDServiceDefaultResponseType    string
 	CACertificate                    []byte `envconfig:"-"`
 	CAKey                            []byte `envconfig:"-"`
