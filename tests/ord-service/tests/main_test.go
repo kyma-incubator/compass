@@ -38,18 +38,23 @@ var (
 	dexGraphQLClient *graphql.Client
 )
 
-type config struct {
-	DirectorURL                      string
-	ORDServiceURL                    string
-	ORDExternalCertSecuredServiceURL string
-	ORDServiceStaticPrefix           string
-	ORDServiceDefaultResponseType    string
+type connectorCAConfig struct {
 	CACertificate                    []byte `envconfig:"-"`
 	CAKey                            []byte `envconfig:"-"`
 	CASecretName                     string
 	CASecretNamespace                string
 	CASecretCertificateKey           string
 	CASecretKeyKey                   string
+}
+
+type config struct {
+	connectorCAConfig
+
+	DirectorURL                      string
+	ORDServiceURL                    string
+	ORDExternalCertSecuredServiceURL string
+	ORDServiceStaticPrefix           string
+	ORDServiceDefaultResponseType    string
 	DefaultScenarioEnabled           bool `envconfig:"default=true"`
 }
 

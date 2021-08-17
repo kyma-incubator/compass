@@ -247,7 +247,7 @@ global:
 
   istio:
     externalMtlsGateway:
-      name: "compass-gateway-sap-mtls"
+      name: "compass-gateway-external-mtls"
       namespace: "compass-system"
     mtlsGateway:
       name: "compass-gateway-mtls"
