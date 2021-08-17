@@ -48,6 +48,8 @@ type Config struct {
 	FetcherParallellism    int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
 	DirectorGraphqlURL     string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
 	DirectorRequestTimeout time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
+
+	EnableSystemDeletion bool `envconfig:"default=false,APP_ENABLE_SYSTEM_DELETION"`
 }
 
 type SystemFetcher struct {
@@ -168,7 +170,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, system := range systems {
-		if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted {
+		if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
 			log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
 			app, err := s.systemsService.GetByNameAndSystemNumber(ctx, system.DisplayName, system.SystemNumber)
 			if err != nil {

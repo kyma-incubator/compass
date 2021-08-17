@@ -367,6 +367,8 @@ global:
     name: "system-fetcher"
     schedule: "0 0 * * *"
     manageSecrets: true
+    # enableSystemDeletion - whether systems in deleted state should be deleted from director database
+    enableSystemDeletion: true
     # fetchParallellism - shows how many http calls will be made in parallel to fetch systems
     fetchParallellism: 30
     # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)

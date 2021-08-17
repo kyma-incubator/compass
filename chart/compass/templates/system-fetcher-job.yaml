@@ -32,6 +32,8 @@ spec:
                   value: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}/director/graphql"
                 - name: APP_DIRECTOR_REQUEST_TIMEOUT
                   value: "{{ .Values.global.systemFetcher.directorRequestTimeout }}"
+                - name: APP_ENABLE_SYSTEM_DELETION
+                  value: "{{ .Values.global.systemFetcher.enableSystemDeletion }}"
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
                   value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
                 - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
