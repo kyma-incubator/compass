@@ -49,6 +49,7 @@ func (p *PageIterator) Next() (bool, error) {
 	if err != nil {
 		return false, errors.Wrapf(err, "while fetching next page: ")
 	}
+
 	if count < p.pageSize {
 		return false, nil
 	}
@@ -57,13 +58,11 @@ func (p *PageIterator) Next() (bool, error) {
 }
 
 //FetchAll fetches all the pages (calls Next method) that the PageIterator can fetch.
-func (p *PageIterator) FetchAll() error {
-	for again, err := p.Next(); again; again, err = p.Next() {
-		if err != nil {
-			return err
-		}
+func (p *PageIterator) FetchAll() (err error) {
+	var again bool
+	for again, err = p.Next(); again; again, err = p.Next() {
 	}
-	return nil
+	return err
 }
 
 func (p *PageIterator) buildNextURL() {
