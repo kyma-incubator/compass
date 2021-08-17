@@ -38,17 +38,17 @@ var (
 	dexGraphQLClient *graphql.Client
 )
 
-type ConnectorCAConfig struct {
-	CACertificate          []byte `envconfig:"-"`
-	CAKey                  []byte `envconfig:"-"`
-	CASecretName           string
-	CASecretNamespace      string
-	CASecretCertificateKey string
-	CASecretKeyKey         string
+type connectorCAConfig struct {
+	Certificate          []byte `envconfig:"-"`
+	Key                  []byte `envconfig:"-"`
+	SecretName           string
+	SecretNamespace      string
+	SecretCertificateKey string
+	SecretKeyKey         string
 }
 
 type config struct {
-	ConnectorCAConfig
+	CA connectorCAConfig
 
 	DirectorURL                      string
 	ORDServiceURL                    string
@@ -74,13 +74,13 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CASecretNamespace).Get(testConfig.CASecretName, metav1.GetOptions{})
+	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(testConfig.CA.SecretName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}
 
-	testConfig.CACertificate = secret.Data[testConfig.CASecretCertificateKey]
-	testConfig.CAKey = secret.Data[testConfig.CASecretKeyKey]
+	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey]
+	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]
 
 	dexToken := server.Token()
 

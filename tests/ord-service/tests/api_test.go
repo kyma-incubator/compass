@@ -649,14 +649,14 @@ func integrationSystemClient(t *testing.T, ctx context.Context, base *http.Clien
 // and a subject matching external issuer's subject contract.
 func extIssuerCertClient(t *testing.T) *http.Client {
 	// Parse the CA cert
-	pemBlock, _ := pem.Decode(testConfig.CACertificate)
+	pemBlock, _ := pem.Decode(testConfig.CA.Certificate)
 	require.NotNil(t, pemBlock)
 
 	caCRT, err := x509.ParseCertificate(pemBlock.Bytes)
 	require.NoError(t, err)
 
 	// Parse the CA key
-	keyPemBlock, _ := pem.Decode(testConfig.CAKey)
+	keyPemBlock, _ := pem.Decode(testConfig.CA.Key)
 	require.NotNil(t, keyPemBlock)
 
 	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
