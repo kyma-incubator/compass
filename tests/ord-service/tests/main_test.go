@@ -38,7 +38,7 @@ var (
 	dexGraphQLClient *graphql.Client
 )
 
-type connectorCAConfig struct {
+type ConnectorCAConfig struct {
 	Certificate          []byte `envconfig:"-"`
 	Key                  []byte `envconfig:"-"`
 	SecretName           string
@@ -48,7 +48,7 @@ type connectorCAConfig struct {
 }
 
 type config struct {
-	CA connectorCAConfig
+	CA ConnectorCAConfig
 
 	DirectorURL                      string
 	ORDServiceURL                    string
