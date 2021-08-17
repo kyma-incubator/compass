@@ -39,12 +39,12 @@ var (
 )
 
 type connectorCAConfig struct {
-	CACertificate                    []byte `envconfig:"-"`
-	CAKey                            []byte `envconfig:"-"`
-	CASecretName                     string
-	CASecretNamespace                string
-	CASecretCertificateKey           string
-	CASecretKeyKey                   string
+	CACertificate          []byte `envconfig:"-"`
+	CAKey                  []byte `envconfig:"-"`
+	CASecretName           string
+	CASecretNamespace      string
+	CASecretCertificateKey string
+	CASecretKeyKey         string
 }
 
 type config struct {
