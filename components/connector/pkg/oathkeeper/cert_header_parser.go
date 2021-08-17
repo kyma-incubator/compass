@@ -3,13 +3,15 @@ package oathkeeper
 import (
 	"net/http"
 	"regexp"
+	"strings"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 //go:generate mockery --name=CertificateHeaderParser
 type CertificateHeaderParser interface {
 	GetCertificateData(r *http.Request) (string, string, bool)
+	GetIssuer() string
 }
 
 type certificateInfo struct {
@@ -18,14 +20,18 @@ type certificateInfo struct {
 }
 
 type headerParser struct {
-	certHeaderName string
-	certificates.CSRSubjectConsts
+	certHeaderName         string
+	issuer                 string
+	isSubjectMatching      func(subject string) bool
+	getClientIDFromSubject func(subject string) string
 }
 
-func NewHeaderParser(certHeaderName string, csrSubjectConsts certificates.CSRSubjectConsts) CertificateHeaderParser {
+func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string) *headerParser {
 	return &headerParser{
-		certHeaderName:   certHeaderName,
-		CSRSubjectConsts: csrSubjectConsts,
+		certHeaderName:         certHeaderName,
+		issuer:                 issuer,
+		isSubjectMatching:      isSubjectMatching,
+		getClientIDFromSubject: getClientIDFromSubject,
 	}
 }
 
@@ -43,12 +49,18 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 
 	certificateInfos := createCertInfos(subjects, hashes)
 
+	log.C(r.Context()).Debugf("Trying to match certificate subjects [%s] for issuer %s", strings.Join(subjects, ","), hp.GetIssuer())
+
 	certificateInfo, found := hp.getCertificateInfoWithMatchingSubject(certificateInfos)
 	if !found {
 		return "", "", false
 	}
 
-	return GetCommonName(certificateInfo.Subject), certificateInfo.Hash, true
+	return hp.getClientIDFromSubject(certificateInfo.Subject), certificateInfo.Hash, true
+}
+
+func (hp *headerParser) GetIssuer() string {
+	return hp.issuer
 }
 
 func createCertInfos(subjects, hashes []string) []certificateInfo {
@@ -66,7 +78,7 @@ func createCertInfos(subjects, hashes []string) []certificateInfo {
 
 func (hp *headerParser) getCertificateInfoWithMatchingSubject(infos []certificateInfo) (certificateInfo, bool) {
 	for _, info := range infos {
-		if hp.isSubjectMatching(info) {
+		if hp.isSubjectMatching(info.Subject) {
 			return info, true
 		}
 	}
@@ -79,11 +91,6 @@ func newCertificateInfo(subject, hash string) certificateInfo {
 		Subject: subject,
 	}
 	return certInfo
-}
-
-func (hp *headerParser) isSubjectMatching(i certificateInfo) bool {
-	return GetOrganization(i.Subject) == hp.Organization && GetOrganizationalUnit(i.Subject) == hp.OrganizationalUnit &&
-		GetCountry(i.Subject) == hp.Country && GetLocality(i.Subject) == hp.Locality && GetProvince(i.Subject) == hp.Province
 }
 
 func extractFromHeader(certHeader string, regex *regexp.Regexp) []string {

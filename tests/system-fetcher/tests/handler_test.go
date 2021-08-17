@@ -24,6 +24,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -74,7 +76,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
@@ -172,7 +174,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
@@ -289,7 +291,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	k8sClient, err := newK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
