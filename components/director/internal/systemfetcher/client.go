@@ -9,10 +9,17 @@ import (
 	urlpkg "net/url"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/paging"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
+)
+
+const (
+	pageSkipFormat = "$skip=%d"
+	pageTopFormat  = "$top=%d"
 )
 
 type OAuth2Config struct {
@@ -62,21 +69,26 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreator cli
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
 	ctx, httpClient := c.clientForTenant(ctx, tenant)
 
-	url := c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)
-	systems, err := fetchSystemsForTenant(ctx, httpClient, url)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
+	qp1 := []string{"$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)}
+	var systems []System
+
+	systemsFunc := getSystemsPagingFunc(ctx, httpClient, &systems)
+	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageTopFormat, qp1, 50, systemsFunc)
+	if err := pi1.FetchAll(); err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
 	}
-	log.C(ctx).Infof("Fetched systems for URL %s", url)
 
 	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
-	url = c.apiConfig.Endpoint + "?$filter=" + urlpkg.QueryEscape(tenantFilter)
-	systemsByTenantFilter, err := fetchSystemsForTenant(ctx, httpClient, url)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch systems from %s", url)
-	}
-	log.C(ctx).Infof("Fetched systems for tenant filter with URL %s", url)
+	qp2 := []string{"$filter=" + urlpkg.QueryEscape(tenantFilter)}
+	var systemsByTenantFilter []System
 
+	systemsByTenantFilterFunc := getSystemsPagingFunc(ctx, httpClient, &systemsByTenantFilter)
+	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageTopFormat, qp2, 50, systemsByTenantFilterFunc)
+	if err := pi2.FetchAll(); err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch systems with tenant filter for tenant %s", tenant)
+	}
+
+	log.C(ctx).Infof("Fetched systems for tenant %s", tenant)
 	return append(systems, systemsByTenantFilter...), nil
 }
 
@@ -130,4 +142,16 @@ func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url str
 	}
 
 	return systems, nil
+}
+
+func getSystemsPagingFunc(ctx context.Context, httpClient *http.Client, systems *[]System) func(string) (uint, error) {
+	return func(url string) (uint, error) {
+		currentSystems, err := fetchSystemsForTenant(ctx, httpClient, url)
+		if err != nil {
+			return 0, err
+		}
+		log.C(ctx).Infof("Fetched page of systems for URL %s", url)
+		*systems = append(*systems, currentSystems...)
+		return uint(len(currentSystems)), nil
+	}
 }
