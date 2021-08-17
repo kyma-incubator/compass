@@ -49,7 +49,7 @@ type Config struct {
 	DirectorGraphqlURL     string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
 	DirectorRequestTimeout time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 
-	EnableSystemDeletion bool `envconfig:"default=false,APP_ENABLE_SYSTEM_DELETION"`
+	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 }
 
 type SystemFetcher struct {

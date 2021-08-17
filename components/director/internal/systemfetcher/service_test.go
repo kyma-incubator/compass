@@ -354,8 +354,9 @@ func TestSyncSystems(t *testing.T) {
 			directorClient := testCase.setupDirectorClient(testSystems, appsInputs)
 
 			svc := systemfetcher.NewSystemFetcher(transactioner, tenantSvc, systemSvc, sysAPIClient, directorClient, systemfetcher.Config{
-				SystemsQueueSize:    100,
-				FetcherParallellism: 30,
+				SystemsQueueSize:     100,
+				FetcherParallellism:  30,
+				EnableSystemDeletion: true,
 			})
 			err := svc.SyncSystems(context.TODO())
 			require.NoError(t, err)
