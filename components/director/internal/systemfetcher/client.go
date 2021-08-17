@@ -17,11 +17,6 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-const (
-	pageSkipFormat = "$skip=%d"
-	pageTopFormat  = "$top=%d"
-)
-
 type OAuth2Config struct {
 	ClientID             string   `envconfig:"APP_OAUTH_CLIENT_ID"`
 	ClientSecret         string   `envconfig:"APP_OAUTH_CLIENT_SECRET"`
@@ -35,6 +30,9 @@ type APIConfig struct {
 	FilterCriteria              string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
 	FilterTenantCriteriaPattern string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
 	Timeout                     time.Duration `envconfig:"APP_SYSTEM_INFORMATION_FETCH_TIMEOUT"`
+	PageSize                    uint          `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
+	PagingSkipParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
+	PagingSizeParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 }
 
 type Client struct {
@@ -67,13 +65,17 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreator cli
 
 // FetchSystemsForTenant fetches systems from the service by making 2 HTTP calls with different filter criteria
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
+	var (
+		pageSkipFormat = c.apiConfig.PagingSkipParam + "=%d"
+		pageSizeFormat = c.apiConfig.PagingSizeParam + "=%d"
+	)
 	ctx, httpClient := c.clientForTenant(ctx, tenant)
 
 	qp1 := []string{"$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)}
 	var systems []System
 
 	systemsFunc := getSystemsPagingFunc(ctx, httpClient, &systems)
-	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageTopFormat, qp1, 50, systemsFunc)
+	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageSizeFormat, qp1, c.apiConfig.PageSize, systemsFunc)
 	if err := pi1.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
 	}
@@ -83,7 +85,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	var systemsByTenantFilter []System
 
 	systemsByTenantFilterFunc := getSystemsPagingFunc(ctx, httpClient, &systemsByTenantFilter)
-	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageTopFormat, qp2, 50, systemsByTenantFilterFunc)
+	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageSizeFormat, qp2, c.apiConfig.PageSize, systemsByTenantFilterFunc)
 	if err := pi2.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems with tenant filter for tenant %s", tenant)
 	}
