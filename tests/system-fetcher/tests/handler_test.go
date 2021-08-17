@@ -366,7 +366,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "3",
 		"displayName": "name3",
 		"productDescription": "description",
-		"prop": "val1",
+		"prop": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
