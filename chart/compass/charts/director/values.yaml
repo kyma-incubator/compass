@@ -22,6 +22,9 @@ deployment:
   dbPool:
     maxOpenConnections: 30
     maxIdleConnections: 2
+  dataloaders:
+    maxBatch: 200
+    wait: 10ms
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
 
@@ -44,3 +47,8 @@ istio:
 
 health:
   indicators: "{database,5s,1s,1s,3}"
+
+readinessProbe:
+  initialDelaySeconds: 5
+  timeoutSeconds: 2
+  periodSeconds: 5

@@ -82,6 +82,29 @@ func (_m *SpecService) GetFetchRequest(ctx context.Context, specID string) (*mod
 	return r0, r1
 }
 
+// ListFetchRequestsByReferenceObjectIDs provides a mock function with given fields: ctx, tenant, objectIDs
+func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error) {
+	ret := _m.Called(ctx, tenant, objectIDs)
+
+	var r0 []*model.FetchRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.FetchRequest); ok {
+		r0 = rf(ctx, tenant, objectIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FetchRequest)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenant, objectIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RefetchSpec provides a mock function with given fields: ctx, id
 func (_m *SpecService) RefetchSpec(ctx context.Context, id string) (*model.Spec, error) {
 	ret := _m.Called(ctx, id)

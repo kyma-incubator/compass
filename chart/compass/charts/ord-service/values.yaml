@@ -6,6 +6,10 @@ deployment:
     initialDelaySeconds: 60
     timeoutSeconds: 10
     periodSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 2
+    periodSeconds: 5
   image:
     pullPolicy: IfNotPresent
   resources: {}

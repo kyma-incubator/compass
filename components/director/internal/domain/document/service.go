@@ -2,7 +2,6 @@ package document
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -18,7 +17,7 @@ type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
-	ListForBundle(ctx context.Context, tenant string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
+	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 	Create(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
@@ -26,8 +25,8 @@ type DocumentRepository interface {
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
-	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	Delete(ctx context.Context, tenant, id string) error
+	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -79,15 +78,6 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return document, nil
 }
 
-func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	return s.repo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
-}
-
 func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -129,27 +119,24 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error) {
+func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := s.repo.Exists(ctx, tnt, documentID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while checking if Document exists")
-	}
-	if !exists {
-		return nil, fmt.Errorf("Document with ID %s doesn't exist", documentID)
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.DocumentFetchRequestReference, documentID)
+	return s.repo.ListByBundleIDs(ctx, tnt, bundleIDs, pageSize, cursor)
+}
+
+func (s *service) ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error) {
+	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrapf(err, "while getting FetchRequest by Document ID %s", documentID)
+		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return fetchRequest, nil
+	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.DocumentFetchRequestReference, documentIDs)
 }

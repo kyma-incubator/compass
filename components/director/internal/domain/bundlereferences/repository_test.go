@@ -2,7 +2,11 @@ package bundlereferences_test
 
 import (
 	"context"
+
+	"errors"
+
 	"fmt"
+
 	"regexp"
 	"testing"
 
@@ -225,5 +229,269 @@ func TestPgRepository_DeleteByReferenceObjectID(t *testing.T) {
 		require.NoError(t, err)
 		sqlMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
+	})
+}
+
+func TestPgRepository_ListAllForBundle(t *testing.T) {
+	// GIVEN
+	inputCursor := ""
+	firstTargetURL := "https://test.com"
+	secondTargetURL := "https://test2.com"
+	firstBndlID := "111111111-1111-1111-1111-111111111111"
+	secondBndlID := "222222222-2222-2222-2222-222222222222"
+	firstAPIID := "333333333-3333-3333-3333-333333333333"
+	secondAPIID := "444444444-4444-4444-4444-444444444444"
+	firstEventID := "555555555-5555-5555-5555-555555555555"
+	secondEventID := "666666666-6666-6666-6666-666666666666"
+
+	firstAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(firstBndlID, firstAPIID, firstTargetURL)
+	secondAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(secondBndlID, secondAPIID, secondTargetURL)
+	firstEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(firstBndlID, firstEventID)
+	secondEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(secondBndlID, secondEventID)
+	bundleIDs := []string{firstBndlID, secondBndlID}
+
+	selectQuery := fmt.Sprintf(`^\(SELECT (.+) FROM public\.bundle_references 
+		WHERE %s AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE %s AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
+
+	countQuery := fmt.Sprintf(`SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE %s AND api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`, fixTenantIsolationSubquery())
+
+	t.Run("success when everything is returned for APIs", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstBndlID, ExpectedLimit, ExpectedOffset, tenantID, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{
+			Tenant:              tenantID,
+			BundleID:            str.Ptr(firstBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(firstAPIID),
+			APIDefaultTargetURL: str.Ptr(firstTargetURL),
+		}, nil)
+		convMock.On("FromEntity", secondAPIBndlRefEntity).Return(model.BundleReference{
+			Tenant:              tenantID,
+			BundleID:            str.Ptr(secondBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(secondAPIID),
+			APIDefaultTargetURL: str.Ptr(secondTargetURL),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 2)
+		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[1].BundleID)
+		assert.Equal(t, firstAPIID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, secondAPIID, *modelBndlRefs[1].ObjectID)
+		assert.Equal(t, firstTargetURL, *modelBndlRefs[0].APIDefaultTargetURL)
+		assert.Equal(t, secondTargetURL, *modelBndlRefs[1].APIDefaultTargetURL)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when everything is returned for Events", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
+
+		selectQueryForEvents := fmt.Sprintf(`^\(SELECT (.+) FROM public\.bundle_references 
+		WHERE %s AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE %s AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
+
+		countQueryForEvents := fmt.Sprintf(`SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE %s AND event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`, fixTenantIsolationSubquery())
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutAPIIDWithArgs(firstBndlID, firstEventID)...).
+			AddRow(fixBundleReferenceRowWithoutAPIIDWithArgs(secondBndlID, secondEventID)...)
+
+		sqlMock.ExpectQuery(selectQueryForEvents).
+			WithArgs(tenantID, firstBndlID, ExpectedLimit, ExpectedOffset, tenantID, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQueryForEvents).
+			WithArgs(tenantID).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", firstEventBndlRefEntity).Return(model.BundleReference{
+			Tenant:     tenantID,
+			BundleID:   str.Ptr(firstBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(firstEventID),
+		}, nil)
+		convMock.On("FromEntity", secondEventBndlRefEntity).Return(model.BundleReference{
+			Tenant:     tenantID,
+			BundleID:   str.Ptr(secondBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(secondEventID),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleEventReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 2)
+		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[1].BundleID)
+		assert.Equal(t, firstEventID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, secondEventID, *modelBndlRefs[1].ObjectID)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there are more records", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 10
+		totalCountForSecondBundle := 10
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstBndlID, ExpectedLimit, ExpectedOffset, tenantID, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{
+			Tenant:              tenantID,
+			BundleID:            str.Ptr(firstBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(firstAPIID),
+			APIDefaultTargetURL: str.Ptr(firstTargetURL),
+		}, nil)
+		convMock.On("FromEntity", secondAPIBndlRefEntity).Return(model.BundleReference{
+			Tenant:              tenantID,
+			BundleID:            str.Ptr(secondBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(secondAPIID),
+			APIDefaultTargetURL: str.Ptr(secondTargetURL),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 2)
+		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[1].BundleID)
+		assert.Equal(t, firstAPIID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, secondAPIID, *modelBndlRefs[1].ObjectID)
+		assert.Equal(t, firstTargetURL, *modelBndlRefs[0].APIDefaultTargetURL)
+		assert.Equal(t, secondTargetURL, *modelBndlRefs[1].APIDefaultTargetURL)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns error when conversion from entity fails", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
+
+		testErr := errors.New("test error")
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstBndlID, ExpectedLimit, ExpectedOffset, tenantID, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQuery).
+			WithArgs(tenantID).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{}, testErr)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		_, _, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		inputPageSize := 1
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+
+		pgRepository := bundlereferences.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, firstBndlID, ExpectedLimit, ExpectedOffset, tenantID, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnError(testError)
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// when
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, tenantID, bundleIDs, inputPageSize, inputCursor)
+
+		// then
+		sqlMock.AssertExpectations(t)
+		assert.Nil(t, modelBndlRefs)
+		assert.Nil(t, totalCounts)
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }

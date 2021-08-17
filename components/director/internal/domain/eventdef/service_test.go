@@ -173,27 +173,50 @@ func TestService_GetForBundle(t *testing.T) {
 	})
 }
 
-func TestService_ListForBundle(t *testing.T) {
+func TestService_ListByBundleIDs(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	id := "foo"
+	firstEventID := "foo"
+	secondEventID := "foo2"
+	firstBundleID := "bar"
+	secondBundleID := "bar2"
 	name := "foo"
+	numberOfEventsInFirstBundle := 1
+	numberOfEventsInSecondBundle := 1
+	bundleIDs := []string{firstBundleID, secondBundleID}
 
-	eventDefinitions := []*model.EventDefinition{
-		fixEventDefinitionModel(id, name),
-		fixEventDefinitionModel(id, name),
-		fixEventDefinitionModel(id, name),
-	}
-	eventDefinitionPage := &model.EventDefinitionPage{
-		Data:       eventDefinitions,
-		TotalCount: len(eventDefinitions),
+	eventFirstBundle := fixEventDefinitionModel(firstEventID, name)
+	eventSecondBundle := fixEventDefinitionModel(secondEventID, name)
+
+	eventFirstBundleReference := fixModelBundleReference(firstBundleID, firstEventID)
+	eventSecondBundleReference := fixModelBundleReference(secondBundleID, secondEventID)
+	bundleRefs := []*model.BundleReference{eventFirstBundleReference, eventSecondBundleReference}
+	totalCounts := map[string]int{firstBundleID: numberOfEventsInFirstBundle, secondBundleID: numberOfEventsInSecondBundle}
+
+	eventsFirstBundle := []*model.EventDefinition{eventFirstBundle}
+	eventsSecondBundle := []*model.EventDefinition{eventSecondBundle}
+
+	eventPageFirstBundle := &model.EventDefinitionPage{
+		Data:       eventsFirstBundle,
+		TotalCount: len(eventsFirstBundle),
 		PageInfo: &pagination.Page{
 			HasNextPage: false,
 			EndCursor:   "end",
 			StartCursor: "start",
 		},
 	}
+	eventPageSecondBundle := &model.EventDefinitionPage{
+		Data:       eventsSecondBundle,
+		TotalCount: len(eventsSecondBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	eventPages := []*model.EventDefinitionPage{eventPageFirstBundle, eventPageSecondBundle}
 
 	after := "test"
 
@@ -204,45 +227,79 @@ func TestService_ListForBundle(t *testing.T) {
 		Name               string
 		PageSize           int
 		RepositoryFn       func() *automock.EventAPIRepository
-		ExpectedResult     *model.EventDefinitionPage
+		BundleRefSvcFn     func() *automock.BundleReferenceService
+		ExpectedResult     []*model.EventDefinitionPage
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return svc
+			},
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("ListForBundle", ctx, tenantID, bundleID, 2, after).Return(eventDefinitionPage, nil).Once()
+				repo.On("ListByBundleIDs", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(eventPages, nil).Once()
 				return repo
 			},
 			PageSize:           2,
-			ExpectedResult:     eventDefinitionPage,
+			ExpectedResult:     eventPages,
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Return error when page size is less than 1",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				return svc
+			},
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				return repo
 			},
 			PageSize:           0,
-			ExpectedResult:     eventDefinitionPage,
+			ExpectedResult:     eventPages,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
 			Name: "Return error when page size is bigger than 200",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				return svc
+			},
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				return repo
 			},
 			PageSize:           201,
-			ExpectedResult:     eventDefinitionPage,
+			ExpectedResult:     eventPages,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when EventDefinition listing failed",
+			Name: "Returns error when EventDefinition BundleReferences listing failed",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				return svc
+			},
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("ListForBundle", ctx, tenantID, bundleID, 2, after).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when EventDefinition listing failed",
+			BundleRefSvcFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("ListByBundleIDs", ctx, model.BundleEventReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				return svc
+			},
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListByBundleIDs", ctx, tenantID, bundleIDs, bundleRefs, totalCounts, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -254,16 +311,17 @@ func TestService_ListForBundle(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
+			bndlRefSvc := testCase.BundleRefSvcFn()
 
-			svc := event.NewService(repo, nil, nil, nil)
+			svc := event.NewService(repo, nil, nil, bndlRefSvc)
 
 			// when
-			docs, err := svc.ListForBundle(ctx, bundleID, testCase.PageSize, after)
+			events, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, docs)
+				assert.Equal(t, testCase.ExpectedResult, events)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -275,7 +333,7 @@ func TestService_ListForBundle(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.ListForBundle(context.TODO(), "", 5, "")
+		_, err := svc.ListByBundleIDs(context.TODO(), nil, 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -1127,164 +1185,86 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 	})
 }
 
-func TestService_GetFetchRequest(t *testing.T) {
+func TestService_ListFetchRequests(t *testing.T) {
 	// given
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testErr := errors.New("Test error")
 
-	eventID := "event-id"
-	refID := "doc-id"
 	frURL := "foo.bar"
-
-	spec := "spec"
-
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	firstSpecID := "specID"
+	secondSpecID := "specID2"
+	specIDs := []string{firstSpecID, secondSpecID}
 	timestamp := time.Now()
 
-	modelSpec := &model.Spec{
-		ID:         refID,
-		Tenant:     tenantID,
-		ObjectType: model.EventSpecReference,
-		ObjectID:   eventID,
-		Data:       &spec,
-	}
-
-	fetchRequestModel := fixModelFetchRequest("foo", frURL, timestamp)
+	firstFetchRequest := fixModelFetchRequest(firstFRID, frURL, timestamp)
+	secondFetchRequest := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	fetchRequests := []*model.FetchRequest{firstFetchRequest, secondFetchRequest}
 
 	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.EventAPIRepository
-		SpecServiceFn        func() *automock.SpecService
-		InputEventDefID      string
-		ExpectedFetchRequest *model.FetchRequest
-		ExpectedErrMessage   string
+		Name                  string
+		SpecServiceFn         func() *automock.SpecService
+		ExpectedFetchRequests []*model.FetchRequest
+		ExpectedErrMessage    string
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
-				return repo
-			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("GetFetchRequest", ctx, refID).Return(fetchRequestModel, nil).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(fetchRequests, nil).Once()
 				return svc
 			},
-			InputEventDefID:      eventID,
-			ExpectedFetchRequest: fetchRequestModel,
-			ExpectedErrMessage:   "",
-		},
-		{
-			Name: "Error - Event Definition Not Exist",
-			RepositoryFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tenantID, eventID).Return(false, nil).Once()
-				return repo
-			},
-			SpecServiceFn: func() *automock.SpecService {
-				return &automock.SpecService{}
-			},
-			InputEventDefID:      eventID,
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   fmt.Sprintf("event definition with id %s doesn't exist", eventID),
-		},
-		{
-			Name: "Success - Spec Not Found",
-			RepositoryFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
-				return repo
-			},
-			SpecServiceFn: func() *automock.SpecService {
-				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(nil, nil).Once()
-				return svc
-			},
-			InputEventDefID:      eventID,
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   "",
+			ExpectedFetchRequests: fetchRequests,
 		},
 		{
 			Name: "Success - Fetch Request Not Found",
-			RepositoryFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
-				return repo
-			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("GetFetchRequest", ctx, refID).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
 				return svc
 			},
-			InputEventDefID:      eventID,
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   "",
+			ExpectedFetchRequests: nil,
 		},
 		{
-			Name: "Error - Get Spec",
-			RepositoryFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
-				return repo
-			},
+			Name: "Error while listing Fetch Requests",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(nil, testErr).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, testErr).Once()
 				return svc
 			},
-			InputEventDefID:      eventID,
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   testErr.Error(),
-		},
-		{
-			Name: "Error - Get FetchRequest",
-			RepositoryFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
-				return repo
-			},
-			SpecServiceFn: func() *automock.SpecService {
-				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("GetFetchRequest", ctx, refID).Return(nil, testErr).Once()
-				return svc
-			},
-			InputEventDefID:      eventID,
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   testErr.Error(),
+			ExpectedFetchRequests: nil,
+			ExpectedErrMessage:    testErr.Error(),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
 			specService := testCase.SpecServiceFn()
 
-			svc := event.NewService(repo, nil, specService, nil)
+			svc := event.NewService(nil, nil, specService, nil)
 
 			// when
-			l, err := svc.GetFetchRequest(ctx, testCase.InputEventDefID)
+			frs, err := svc.ListFetchRequests(ctx, specIDs)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, l, testCase.ExpectedFetchRequest)
+				assert.Equal(t, frs, testCase.ExpectedFetchRequests)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			repo.AssertExpectations(t)
+			specService.AssertExpectations(t)
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
 		// when
-		_, err := svc.GetFetchRequest(context.TODO(), "dd")
+		_, err := svc.ListFetchRequests(context.TODO(), nil)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }

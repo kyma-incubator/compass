@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -166,85 +164,6 @@ func TestService_GetForBundle(t *testing.T) {
 	})
 }
 
-func TestService_ListForBundle(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	bundleID := "bar"
-	modelDocuments := []*model.Document{
-		fixModelDocument("foo", bundleID),
-		fixModelDocument("bar", bundleID),
-		fixModelDocument("baz", bundleID),
-	}
-	documentPage := &model.DocumentPage{
-		Data:       modelDocuments,
-		TotalCount: len(modelDocuments),
-		PageInfo: &pagination.Page{
-			HasNextPage: false,
-			EndCursor:   "end",
-			StartCursor: "start",
-		},
-	}
-
-	tnt := modelDocuments[0].Tenant
-
-	first := 2
-	after := "test"
-	externalTenantID := "external-tnt"
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant, externalTenantID)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.DocumentRepository
-		ExpectedResult     *model.DocumentPage
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("ListForBundle", ctx, tnt, bundleID, first, after).Return(documentPage, nil).Once()
-				return repo
-			},
-			ExpectedResult:     documentPage,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Returns error when document listing failed",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("ListForBundle", ctx, tnt, bundleID, first, after).Return(nil, testErr).Once()
-				return repo
-			},
-			ExpectedResult:     nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-
-			svc := document.NewService(repo, nil, nil)
-
-			// when
-			docs, err := svc.ListForBundle(ctx, bundleID, first, after)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, docs)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-}
 func TestService_CreateToBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -432,112 +351,206 @@ func TestService_Delete(t *testing.T) {
 	}
 }
 
-func TestService_GetFetchRequest(t *testing.T) {
+func TestService_ListByBundleIDs(t *testing.T) {
 	// given
+	testErr := errors.New("test error")
+
 	tnt := "tenant"
 	externalTnt := "external-tenant"
+	firstDocID := "foo"
+	secondDocID := "foo2"
+	firstBundleID := "bar"
+	secondBundleID := "bar2"
+	bundleIDs := []string{firstBundleID, secondBundleID}
+
+	docFirstBundle := fixModelDocument(firstDocID, firstBundleID)
+	docSecondBundle := fixModelDocument(secondDocID, secondBundleID)
+
+	docsFirstBundle := []*model.Document{docFirstBundle}
+	docsSecondBundle := []*model.Document{docSecondBundle}
+
+	docPageFirstBundle := &model.DocumentPage{
+		Data:       docsFirstBundle,
+		TotalCount: len(docsFirstBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+	docPageSecondBundle := &model.DocumentPage{
+		Data:       docsSecondBundle,
+		TotalCount: len(docsSecondBundle),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	docPages := []*model.DocumentPage{docPageFirstBundle, docPageSecondBundle}
+
+	after := "test"
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-	testErr := errors.New("Test error")
-
-	refID := "doc-id"
-	frURL := "foo.bar"
-	timestamp := time.Now()
-
-	fetchRequestModel := fixModelFetchRequest("foo", frURL, timestamp)
-
 	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.DocumentRepository
-		FetchRequestRepoFn   func() *automock.FetchRequestRepository
-		ExpectedFetchRequest *model.FetchRequest
-		ExpectedErrMessage   string
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.DocumentRepository
+		ExpectedResult     []*model.DocumentPage
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Exists", ctx, tnt, refID).Return(true, nil).Once()
+				repo.On("ListByBundleIDs", ctx, tnt, bundleIDs, 2, after).Return(docPages, nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(fetchRequestModel, nil).Once()
-				return repo
-			},
-			ExpectedFetchRequest: fetchRequestModel,
-			ExpectedErrMessage:   "",
+			PageSize:       2,
+			ExpectedResult: docPages,
 		},
 		{
-			Name: "Success - Not Found",
+			Name: "Return error when page size is less than 1",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Exists", ctx, tnt, refID).Return(true, nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, apperrors.NewNotFoundError(resource.Document, "")).Once()
-				return repo
-			},
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   "",
+			PageSize:           0,
+			ExpectedResult:     docPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Error - Get FetchRequest",
+			Name: "Return error when page size is bigger than 200",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Exists", ctx, tnt, refID).Return(true, nil).Once()
-
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, testErr).Once()
-				return repo
-			},
-			ExpectedFetchRequest: nil,
-			ExpectedErrMessage:   testErr.Error(),
+			PageSize:           201,
+			ExpectedResult:     docPages,
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Error - Document doesn't exist",
+			Name: "Returns error when Documents listing failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Exists", ctx, tnt, refID).Return(false, nil).Once()
-
+				repo.On("ListByBundleIDs", ctx, tnt, bundleIDs, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			ExpectedErrMessage:   "Document with ID doc-id doesn't exist",
-			ExpectedFetchRequest: nil,
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := document.NewService(repo, fetchRequestRepo, nil)
+
+			svc := document.NewService(repo, nil, nil)
 
 			// when
-			l, err := svc.GetFetchRequest(ctx, refID)
+			docs, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, l, testCase.ExpectedFetchRequest)
+				assert.Equal(t, testCase.ExpectedResult, docs)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
 			repo.AssertExpectations(t)
-			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByBundleIDs(context.TODO(), nil, 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListFetchRequests(t *testing.T) {
+	// given
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	testErr := errors.New("test error")
+	frURL := "foo.bar"
+	firstFRID := "frID"
+	secondFRID := "frID2"
+	firstDocID := "docID"
+	secondDocID := "docID2"
+	docIDs := []string{firstDocID, secondDocID}
+	timestamp := time.Now()
+
+	firstFetchRequest := fixModelFetchRequest(firstFRID, frURL, timestamp)
+	secondFetchRequest := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	fetchRequests := []*model.FetchRequest{firstFetchRequest, secondFetchRequest}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.FetchRequestRepository
+		ExpectedResult     []*model.FetchRequest
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tnt, model.DocumentFetchRequestReference, docIDs).Return(fetchRequests, nil).Once()
+				return repo
+			},
+			ExpectedResult: fetchRequests,
+		},
+		{
+			Name: "Returns error when Fetch Requests listing failed",
+			RepositoryFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("ListByReferenceObjectIDs", ctx, tnt, model.DocumentFetchRequestReference, docIDs).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := document.NewService(nil, repo, nil)
+
+			// when
+			frs, err := svc.ListFetchRequests(ctx, docIDs)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, frs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListFetchRequests(context.TODO(), nil)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }

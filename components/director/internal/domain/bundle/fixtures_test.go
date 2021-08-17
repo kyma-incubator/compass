@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+
 	"regexp"
 	"time"
 
@@ -170,6 +171,7 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 const (
 	bundleID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	appID2           = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	ordID            = "com.compass.v1"
@@ -414,6 +416,10 @@ func fixBundleRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
+func fixBundleRowWithAppID(id, applicationID string) []driver.Value {
+	return []driver.Value{id, tenantID, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+}
+
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
 	return []driver.Value{bundleID, tenantID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error}
 }
@@ -480,6 +486,25 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 		InputParams: &params,
 		Auth:        fixGQLAuth(),
 		Status:      &status,
+	}
+}
+
+func fixModelAPIBundleReference(bundleID, apiID string) *model.BundleReference {
+	return &model.BundleReference{
+		Tenant:              tenantID,
+		BundleID:            str.Ptr(bundleID),
+		ObjectType:          model.BundleAPIReference,
+		ObjectID:            str.Ptr(apiID),
+		APIDefaultTargetURL: str.Ptr(fmt.Sprintf("https://%s.com", apiID)),
+	}
+}
+
+func fixModelEventBundleReference(bundleID, eventID string) *model.BundleReference {
+	return &model.BundleReference{
+		Tenant:     tenantID,
+		BundleID:   str.Ptr(bundleID),
+		ObjectType: model.BundleEventReference,
+		ObjectID:   str.Ptr(eventID),
 	}
 }
 

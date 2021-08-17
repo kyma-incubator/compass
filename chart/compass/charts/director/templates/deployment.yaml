@@ -159,6 +159,15 @@ spec:
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
               value: {{ .Values.health.indicators | quote }}
+            - name: APP_SCHEMA_MIGRATION_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
+                  key: schemaVersion
+            - name: APP_DATALOADER_MAX_BATCH
+              value: {{ .Values.deployment.dataloaders.maxBatch | quote }}
+            - name: APP_DATALOADER_WAIT
+              value: {{ .Values.deployment.dataloaders.wait | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
@@ -170,9 +179,9 @@ spec:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
               path: "/readyz"
-            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
-            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
             - mountPath: /config
               name: director-config
