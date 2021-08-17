@@ -1685,17 +1685,18 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
-		Name               string
-		AppNameNormalizer  normalizer.Normalizator
-		AppRepoFn          func() *automock.ApplicationRepository
-		WebhookRepoFn      func() *automock.WebhookRepository
-		IntSysRepoFn       func() *automock.IntegrationSystemRepository
-		ScenariosServiceFn func() *automock.ScenariosService
-		LabelServiceFn     func() *automock.LabelUpsertService
-		BundleServiceFn    func() *automock.BundleService
-		UIDServiceFn       func() *automock.UIDService
-		Inputs             []model.ApplicationRegisterInputWithTemplate
-		ExpectedErr        error
+		Name                 string
+		AppNameNormalizer    normalizer.Normalizator
+		AppRepoFn            func() *automock.ApplicationRepository
+		WebhookRepoFn        func() *automock.WebhookRepository
+		IntSysRepoFn         func() *automock.IntegrationSystemRepository
+		ScenariosServiceFn   func() *automock.ScenariosService
+		ScenarioDefServiceFn func() *automock.ScenariosDefinitionService
+		LabelServiceFn       func() *automock.LabelUpsertService
+		BundleServiceFn      func() *automock.BundleService
+		UIDServiceFn         func() *automock.UIDService
+		Inputs               []model.ApplicationRegisterInputWithTemplate
+		ExpectedErr          error
 	}{
 		{
 			Name:              "Success for inputs with no template types",
@@ -1724,10 +1725,13 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				return intSysRepo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
-				return scenarioSvc
+				return &automock.ScenariosService{}
+			},
+			ScenarioDefServiceFn: func() *automock.ScenariosDefinitionService {
+				scenarioDefService := &automock.ScenariosDefinitionService{}
+				scenarioDefService.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioDefService.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioDefService
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				labelSvc := &automock.LabelUpsertService{}
@@ -1781,10 +1785,13 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				return intSysRepo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
-				return scenarioSvc
+				return &automock.ScenariosService{}
+			},
+			ScenarioDefServiceFn: func() *automock.ScenariosDefinitionService {
+				scenarioDefService := &automock.ScenariosDefinitionService{}
+				scenarioDefService.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioDefService.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioDefService
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				labelSvc := &automock.LabelUpsertService{}
@@ -1843,10 +1850,13 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				return intSysRepo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
-				return scenarioSvc
+				return &automock.ScenariosService{}
+			},
+			ScenarioDefServiceFn: func() *automock.ScenariosDefinitionService {
+				scenarioDefService := &automock.ScenariosDefinitionService{}
+				scenarioDefService.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioDefService.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioDefService
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				labelSvc := &automock.LabelUpsertService{}
@@ -1932,10 +1942,13 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				return intSysRepo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
-				return scenarioSvc
+				return &automock.ScenariosService{}
+			},
+			ScenarioDefServiceFn: func() *automock.ScenariosDefinitionService {
+				scenarioDefService := &automock.ScenariosDefinitionService{}
+				scenarioDefService.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
+				scenarioDefService.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				return scenarioDefService
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				labelSvc := &automock.LabelUpsertService{}
@@ -2009,8 +2022,10 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				return intSysRepo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				scenarioSvc := &automock.ScenariosService{}
-				return scenarioSvc
+				return &automock.ScenariosService{}
+			},
+			ScenarioDefServiceFn: func() *automock.ScenariosDefinitionService {
+				return &automock.ScenariosDefinitionService{}
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				labelSvc := &automock.LabelUpsertService{}
@@ -2044,11 +2059,12 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			scenariosSvc := testCase.ScenariosServiceFn()
+			scenarioDefSvc := testCase.ScenarioDefServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenarioDefSvc, scenariosSvc, bndlSvc, uidSvc, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -2067,6 +2083,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			intSysRepo.AssertExpectations(t)
 			webhookRepo.AssertExpectations(t)
 			scenariosSvc.AssertExpectations(t)
+			scenarioDefSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 			bndlSvc.AssertExpectations(t)
 		})

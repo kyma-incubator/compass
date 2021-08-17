@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -172,9 +174,10 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
+	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	scenariosDefinitionService := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
@@ -182,7 +185,9 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	scenariosSvc := label.NewScenarioService(labelRepo)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc, bundleSvc, scenariosSvc, labelUpsertSvc)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosDefinitionService, scenariosSvc, bundleSvc, uidSvc, bundleInstanceAuthSvc)
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
