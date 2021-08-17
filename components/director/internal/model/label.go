@@ -71,7 +71,7 @@ func NewLabelForApplication(app Application, key string, value interface{}) *Lab
 	}
 }
 
-func NewLabelForTenant(tenant TenantModel, key string, value interface{}) *Label {
+func NewLabelForTenant(tenant BusinessTenantMapping, key string, value interface{}) *Label {
 	return &Label{
 		ID:         uuid.New().String(),
 		Tenant:     tenant.ID,

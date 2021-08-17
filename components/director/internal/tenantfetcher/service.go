@@ -231,6 +231,7 @@ func (s Service) SyncTenants() error {
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
+	subdomainMapping := make(map[string]string, 0)
 	for _, eventTenant := range eventsTenants {
 		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue
@@ -239,13 +240,14 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 			eventTenant.Parent = currTenants[eventTenant.Parent]
 		}
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
+		subdomainMapping[eventTenant.ExternalTenant] = eventTenant.Subdomain
 	}
 	if len(tenantsToCreate) > 0 {
 		tenants := s.tenantStorageService.MultipleToTenantMapping(tenantsToCreate)
 		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenants); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
-		if err := s.upsertSubdomainLabelsForTenants(ctx, tenants); err != nil {
+		if err := s.upsertSubdomainLabelsForTenants(ctx, tenants, subdomainMapping); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
 	}
@@ -554,7 +556,7 @@ func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) 
 	return time.Now().After(ts.Add(s.fullResyncInterval)), nil
 }
 
-func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []model.BusinessTenantMapping) error {
+func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []model.BusinessTenantMapping, subdomainMapping map[string]string) error {
 	for _, t := range tenants {
 		subdomainLabel := &model.Label{
 			ID:         uuid.New().String(),
@@ -562,7 +564,7 @@ func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []
 			ObjectType: model.TenantLabelableObject,
 			ObjectID:   t.ID,
 			Key:        "subdomain",
-			Value:      t.Subdomain,
+			Value:      subdomainMapping[t.ExternalTenant],
 		}
 		if err := s.labelRepo.Upsert(ctx, subdomainLabel); err != nil {
 			return errors.Wrap(err, "while inserting subdomain label")

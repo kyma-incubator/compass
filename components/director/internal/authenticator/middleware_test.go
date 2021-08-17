@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -46,11 +48,21 @@ const (
 	fakeJWKSURL     = "file://testdata/invalid.json"
 )
 
-func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
+type testClaims struct {
+	Tenant         string                `json:"tenant"`
+	ExternalTenant string                `json:"externalTenant"`
+	Scopes         string                `json:"scopes"`
+	ConsumerID     string                `json:"consumerID"`
+	ConsumerType   consumer.ConsumerType `json:"consumerType"`
+	Flow           oathkeeper.AuthFlow   `json:"flow"`
+	ZID            string                `json:"zid"`
+	jwt.StandardClaims
+}
 
+func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey)
+		auth := authenticator.New(true, ClientIDHeaderKey, nil, PublicJWKSURL)
 		//when
 		err := auth.SynchronizeJWKS(context.TODO())
 
@@ -60,7 +72,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
 		//given
-		authFake := authenticator.New(fakeJWKSURL, true, ClientIDHeaderKey)
+		authFake := authenticator.New(true, ClientIDHeaderKey, nil, fakeJWKSURL)
 
 		//when
 		err := authFake.SynchronizeJWKS(context.TODO())
@@ -169,7 +181,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey)
+		auth := authenticator.New(false, ClientIDHeaderKey, claims.NewOathkeeperClaimsParser(), PublicJWKSURL)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -198,7 +210,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
+		auth := authenticator.New(false, ClientIDHeaderKey, claims.NewOathkeeperClaimsParser(), PublicJWKS3URL)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -225,7 +237,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
+		auth := authenticator.New(false, ClientIDHeaderKey, claims.NewOathkeeperClaimsParser(), PublicJWKS3URL)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -252,7 +264,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey)
+		auth := authenticator.New(false, ClientIDHeaderKey, claims.NewOathkeeperClaimsParser(), PublicJWKSURL)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -445,7 +457,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodNone, authenticator.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, testClaims{
 		Tenant:       tenant,
 		Scopes:       scopes,
 		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
@@ -459,7 +471,7 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 }
 
 func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, testClaims{
 		Tenant:         tnt,
 		ExternalTenant: "externalTenantName",
 		Scopes:         scopes,
@@ -482,7 +494,7 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key j
 }
 
 func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Handler) http.Handler {
-	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey)
+	auth := authenticator.New(allowJWTSigningNone, ClientIDHeaderKey, claims.NewOathkeeperClaimsParser(), PublicJWKSURL)
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 	return auth.Handler()
