@@ -69,10 +69,16 @@ func NewTenantsHTTPHandler(tenantSvc TenantService, labelRepository LabelReposit
 func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	accountTenant, subdomain, err := h.tenantInfoFromBody(request)
+	body, err := readBody(request)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
+		http.Error(writer, "Failed to read tenant information from request body", http.StatusInternalServerError)
+		return
+	}
+	accountTenant, subdomain, err := h.tenantInfoFromBody(body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to extract tenant information from request body: %v", err)
-		http.Error(writer, "Failed to extract tenant information from request body", http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -110,7 +116,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	subdomainLabel := model.NewLabelForTenant(*accountTenant, subdomainLabelKey, subdomain)
 	if err := h.labelRepo.Upsert(ctx, subdomainLabel); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to add subdomain label to tenant with external ID %s: %v", externalTenantID, err)
-		http.Error(writer, fmt.Sprintf("Failed to add subdomain label to tenant with external ID %s", externalTenantID), http.StatusInternalServerError)
+		http.Error(writer, fmt.Sprintf("Failed to add subdomain label to tenant with ID %s", externalTenantID), http.StatusInternalServerError)
 		return
 	}
 
@@ -132,18 +138,13 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, _ *http.Request
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) tenantInfoFromBody(r *http.Request) (*model.BusinessTenantMapping, string, error) {
-	body, err := readBody(r)
-	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to read request body")
-	}
-
+func (h *handler) tenantInfoFromBody(body []byte) (*model.BusinessTenantMapping, string, error) {
 	tenantId := gjson.GetBytes(body, h.config.TenantProviderTenantIdProperty)
-	if !tenantId.Exists() {
+	if len(tenantId.String()) <= 0 {
 		return nil, "", fmt.Errorf("mandatory tenant ID property %q is missing from request body", h.config.TenantProviderTenantIdProperty)
 	}
 	subdomain := gjson.GetBytes(body, h.config.TenantProviderSubdomainProperty)
-	if !subdomain.Exists() {
+	if len(subdomain.String()) <= 0 {
 		return nil, "", fmt.Errorf("mandatory subdomain property %q is missing from request body", h.config.TenantProviderSubdomainProperty)
 	}
 	customerId := gjson.GetBytes(body, h.config.TenantProviderCustomerIdProperty)
@@ -188,7 +189,7 @@ func (h *handler) ensureParentExists(ctx context.Context, parentTenantID, childT
 	}
 
 	log.C(ctx).Infof("Creating parent tenant with external ID %s", parentTenantID)
-	tenant := customerTenant(parentTenantID)
+	tenant := h.customerTenant(parentTenantID)
 	err = h.tenantSvc.CreateManyIfNotExists(ctx, []model.BusinessTenantMapping{tenant})
 	if err != nil && apperrors.IsNotUniqueError(err) {
 		log.C(ctx).Infof("Parent tenant with external ID %s already exists", parentTenantID)
@@ -197,11 +198,13 @@ func (h *handler) ensureParentExists(ctx context.Context, parentTenantID, childT
 		return "", errors.Wrapf(err, "failed to create parent tenant with ID %s", parentTenantID)
 	}
 
+	log.C(ctx).Infof("Successfully created parent tenant with external ID %s and internal ID %s", parentTenantID, tenant.ID)
 	return tenant.ID, nil
 }
 
-func customerTenant(tenantID string) model.BusinessTenantMapping {
+func (h *handler) customerTenant(tenantID string) model.BusinessTenantMapping {
 	return model.BusinessTenantMapping{
+		ID:             h.uidService.Generate(),
 		Name:           tenantID,
 		ExternalTenant: tenantID,
 		Type:           tenantEntity.Customer,
