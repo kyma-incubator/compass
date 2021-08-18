@@ -94,7 +94,7 @@ func TestReconcile_FailureToGetOperationCRDueToNotFoundError_ShouldResultNoReque
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), nil, k8sClient, nil, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -118,7 +118,7 @@ func TestReconcile_FailureToGetOperationCRDueToGeneralError_ShouldResultNoRequeu
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), nil, k8sClient, nil, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -149,7 +149,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -184,7 +184,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_S
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -220,7 +220,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -258,7 +258,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorUpdateOperationFails
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -297,7 +297,7 @@ func TestReconcile_FailureToParseRequestObject_When_StatusManagerFailedStatusFai
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -337,7 +337,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorAndStatusManagerUpda
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -375,7 +375,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Wh
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -414,7 +414,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -448,7 +448,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -482,7 +482,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManager
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -517,7 +517,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -551,7 +551,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_When_UpdateOpera
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -586,7 +586,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -624,7 +624,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorUpdateOperationFails_ShouldResu
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -664,7 +664,7 @@ func TestReconcile_WebhookIsMissing_When_StatusManagerFailedStatusFails_ShouldRe
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -705,7 +705,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorAndStatusManagerUpdateSucceeds_
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -740,7 +740,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_DirectorUpdateOperationFail
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -776,7 +776,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_StatusManagerFailedStatusFa
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -813,7 +813,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_DirectorAndStatusManagerUpda
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -855,7 +855,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -901,7 +901,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -950,7 +950,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1000,7 +1000,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1052,7 +1052,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1102,7 +1102,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	}
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1153,7 +1153,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	}
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1205,7 +1205,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	}
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1246,7 +1246,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucce
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1287,7 +1287,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucce
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1327,7 +1327,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1369,7 +1369,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1412,7 +1412,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1460,7 +1460,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1508,7 +1508,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_St
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1557,7 +1557,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1605,7 +1605,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1648,7 +1648,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1696,7 +1696,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1747,7 +1747,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1799,7 +1799,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1852,7 +1852,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1906,7 +1906,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -1961,7 +1961,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2006,7 +2006,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2051,7 +2051,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2100,7 +2100,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2152,7 +2152,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2204,7 +2204,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2249,7 +2249,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2295,7 +2295,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2342,7 +2342,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2387,7 +2387,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2433,7 +2433,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2480,7 +2480,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2527,7 +2527,7 @@ func TestReconcile_OperationNoWebhookPollURL_And_PollIntervalHasNotPassed_And_Sh
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
@@ -2574,7 +2574,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
-	res, err := controller.Reconcile(ctrlRequest)
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
 
 	// THEN:
 	// GENERAL ASSERTIONS:
