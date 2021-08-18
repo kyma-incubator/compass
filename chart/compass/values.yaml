@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1956"
+      version: "PR-1981"
     connectivity_adapter:
       dir:
       version: "PR-1956"
@@ -87,7 +87,7 @@ global:
       version: "PR-1956"
     ord_service:
       dir:
-      version: "PR-34"
+      version: "PR-35"
     schema_migrator:
       dir:
       version: "PR-1966"
@@ -107,7 +107,7 @@ global:
       version: "PR-36"
     e2e_tests:
       dir:
-      version: "PR-1967"
+      version: "PR-1981"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -218,6 +218,9 @@ global:
     mtls:
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
+      external:
+        host: compass-gateway-sap-mtls
+        certSecret: compass-gateway-mtls-certs # Use connector's root CA as root CA by default. This should be overridden for productive deployments.
     headers:
       request:
         remove:
@@ -243,6 +246,9 @@ global:
     certificateDataHeader: "Certificate-Data"
 
   istio:
+    externalMtlsGateway:
+      name: "compass-gateway-external-mtls"
+      namespace: "compass-system"
     mtlsGateway:
       name: "compass-gateway-mtls"
       namespace: "compass-system"

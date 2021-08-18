@@ -40,3 +40,17 @@ func (_m *CertificateHeaderParser) GetCertificateData(r *http.Request) (string, 
 
 	return r0, r1, r2
 }
+
+// GetIssuer provides a mock function with given fields:
+func (_m *CertificateHeaderParser) GetIssuer() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}

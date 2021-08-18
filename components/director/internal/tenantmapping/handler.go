@@ -21,6 +21,7 @@ const (
 	UserObjectContextProvider          = "UserObjectContextProvider"
 	SystemAuthObjectContextProvider    = "SystemAuthObjectContextProvider"
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
+	CertServiceObjectContextProvider   = "CertServiceObjectContextProvider"
 )
 
 //go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
@@ -142,8 +143,13 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqDa
 		} else {
 			provider = h.objectContextProviders[UserObjectContextProvider]
 		}
-	case oathkeeper.OAuth2Flow, oathkeeper.CertificateFlow, oathkeeper.OneTimeTokenFlow:
+	case oathkeeper.OAuth2Flow, oathkeeper.OneTimeTokenFlow:
 		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
+	case oathkeeper.CertificateFlow:
+		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
+		if authDetails.CertIssuer == oathkeeper.ExternalIssuer {
+			provider = h.objectContextProviders[CertServiceObjectContextProvider]
+		}
 	default:
 		return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authDetails.AuthFlow)
 	}

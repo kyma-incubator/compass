@@ -36,3 +36,9 @@ func ToCertificationResult(encodedChain EncodedCertificateChain) externalschema.
 		CaCertificate:     encodedChain.CaCertificate,
 	}
 }
+
+type ExternalIssuerSubjectConsts struct {
+	Country                   string
+	Organization              string
+	OrganizationalUnitPattern string
+}

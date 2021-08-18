@@ -1,0 +1,52 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}-external-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  hosts:
+    - '{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}'
+  gateways:
+    - {{ .Values.global.istio.externalMtlsGateway.namespace }}/{{ .Values.global.istio.externalMtlsGateway.name }}
+  http:
+    - match:
+      - uri:
+          exact: {{ .Values.global.ordService.staticPrefix }}
+      redirect:
+        uri: {{ .Values.global.ordService.staticPrefix }}/
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+    - match:
+      - uri:
+          exact: {{ .Values.global.ordService.prefix }}
+      redirect:
+        uri: {{ .Values.global.ordService.prefix }}/
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+    - match:
+        - uri:
+            regex: /.*
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+      route:
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
