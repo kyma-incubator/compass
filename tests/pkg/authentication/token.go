@@ -15,7 +15,7 @@ type Claims struct {
 
 func CreateNotSingedToken(t *testing.T) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
-		Scopes: []string{"prefix.Callback"},
+		Scopes: []string{"Callback"},
 		ZID:    "id-zone",
 	})
 

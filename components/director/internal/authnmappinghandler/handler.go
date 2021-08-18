@@ -160,7 +160,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 		return nil, authenticator.Coordinates{}, errors.New("invalid token: missing issuer URL")
 	}
 
-	matchedAuthenticator, ok := reqData.Header[authenticator.HeaderName]
+	matchedAuthenticator, ok := reqData.Body.Header[authenticator.HeaderName]
 	if !ok || len(matchedAuthenticator) == 0 {
 		return nil, authenticator.Coordinates{}, errors.New("empty matched authenticator header")
 	}

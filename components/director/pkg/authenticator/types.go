@@ -21,7 +21,7 @@ import (
 )
 
 const CoordinatesKey = "authenticator_coordinates"
-const HeaderName = "x-authenticator-name"
+const HeaderName = "X-Authenticator-Name"
 
 // Config holds all configuration related to an additional authenticator provided to the Director
 type Config struct {
