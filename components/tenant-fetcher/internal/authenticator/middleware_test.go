@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	PrivateJWKSURL             = "file://../../../director/internal/authenticator/testdata/jwks-private.json"
-	PrivateJWKS2URL            = "file://../../../director/internal/authenticator/testdata/jwks-private2.json"
-	PublicJWKSURL              = "file://../../../director/internal/authenticator/testdata/jwks-public.json"
-	PublicJWKS2URL             = "file://../../../director/internal/authenticator/testdata/jwks-public2.json"
-	fakeJWKSURL                = "file://../../../director/internal/authenticator/testdata/invalid.json"
+	PrivateJWKSURL             = "file://./testdata/jwks-private.json"
+	PrivateJWKS2URL            = "file://./testdata/jwks-private2.json"
+	PublicJWKSURL              = "file://./testdata/jwks-public.json"
+	PublicJWKS2URL             = "file://./testdata/jwks-public2.json"
+	fakeJWKSURL                = "file://./testdata/invalid.json"
 	HandlerEndpoint            = "tenants/v1/callback/test-tenant"
 	SubscriptionCallbacksScope = "Callback"
 )
