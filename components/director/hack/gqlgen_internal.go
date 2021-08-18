@@ -1,4 +1,6 @@
+// +build ignore
 // +build tools
+
 package main
 
 import "github.com/99designs/gqlgen/cmd"
