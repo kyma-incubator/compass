@@ -160,7 +160,14 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 		return nil, authenticator.Coordinates{}, errors.New("invalid token: missing issuer URL")
 	}
 
-	coordinates, err := h.getAuthenticatorCoordinates(tokenPayload, issuerURL)
+	matchedAuthenticator, ok := reqData.Header[authenticator.HeaderName]
+	if !ok || len(matchedAuthenticator) == 0 {
+		return nil, authenticator.Coordinates{}, errors.New("empty matched authenticator header")
+	}
+
+	log.C(ctx).Infof("Matched authenticator is %s", matchedAuthenticator[0])
+
+	coordinates, err := h.getAuthenticatorCoordinates(matchedAuthenticator[0], tokenPayload, issuerURL)
 	if err != nil {
 		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting authenticator coordinates")
 	}
@@ -246,11 +253,14 @@ func (h *Handler) getOpenIDConfig(ctx context.Context, issuerURL string) (*http.
 	return resp, nil
 }
 
-func (h *Handler) getAuthenticatorCoordinates(payload []byte, issuerURL string) (authenticator.Coordinates, error) {
+func (h *Handler) getAuthenticatorCoordinates(matchedAuthenticatorName string, payload []byte, issuerURL string) (authenticator.Coordinates, error) {
 	var authConfig *authenticator.Config
 	for i, authn := range h.authenticators {
-		uniqueAttribute := gjson.GetBytes(payload, authn.Attributes.UniqueAttribute.Key).String()
-		if uniqueAttribute != "" || uniqueAttribute == authn.Attributes.UniqueAttribute.Value {
+		if authn.Name == matchedAuthenticatorName {
+			uniqueAttribute := gjson.GetBytes(payload, authn.Attributes.UniqueAttribute.Key).String()
+			if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
+				return authenticator.Coordinates{}, errors.New("unique attribute mismatch")
+			}
 			authConfig = &h.authenticators[i]
 			break
 		}

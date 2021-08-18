@@ -57,9 +57,11 @@ func TestHandler(t *testing.T) {
 	jwksURL := "http://tenant." + domainURL + "/keys"
 	uniqueAttributeKey := "unique_key"
 	uniqueAttributeValue := "testUniqueValue"
+	authenticatorName := "authenticatorName"
 	mockedAttributes := map[string]interface{}{uniqueAttributeKey: uniqueAttributeValue}
 	authenticators := []authenticator.Config{
 		{
+			Name: authenticatorName,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "custom_attributes." + uniqueAttributeKey,
@@ -93,7 +95,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken},
+				"Authorization":          {"Bearer " + mockedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -133,7 +136,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken},
+				"Authorization":          {"Bearer " + mockedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -186,7 +190,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken},
+				"Authorization":          {"Bearer " + mockedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -230,7 +235,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken1},
+				"Authorization":          {"Bearer " + mockedToken1},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -241,7 +247,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken2},
+				"Authorization":          {"Bearer " + mockedToken2},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -325,7 +332,8 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
+				"Authorization":          {"Bearer " + signedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -365,7 +373,8 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken},
+				"Authorization":          {"Bearer " + mockedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -398,7 +407,8 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
+				"Authorization":          {"Bearer " + signedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -611,7 +621,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + mockedToken},
+				"Authorization":          {"Bearer " + mockedToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -658,7 +669,8 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + invalidToken},
+				"Authorization":          {"Bearer " + invalidToken},
+				authenticator.HeaderName: []string{authenticatorName},
 			},
 		}
 
@@ -679,6 +691,44 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "could not find trusted issuer in given authenticator")
+	})
+	t.Run("error when no matching authenticator is found in header", func(t *testing.T) {
+		logsBuffer := &bytes.Buffer{}
+		entry := log.DefaultLogger()
+		entry.Logger.SetOutput(logsBuffer)
+		ctx := log.ContextWithLogger(context.Background(), entry)
+
+		unknownIssuer := "http://tenant." + "unknown.com" + "/oauth/token"
+		invalidToken := generateToken(t, unknownIssuer, mockedAttributes)
+
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					"tenant": "test-tenant",
+				},
+			},
+			Header: map[string][]string{
+				"Authorization": {"Bearer " + invalidToken},
+			},
+		}
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		verifierMock := &authnMock.TokenVerifier{}
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
+			return verifierMock
+		}, authenticators)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+		require.Contains(t, logsBuffer.String(), "empty matched authenticator header")
 	})
 }
 

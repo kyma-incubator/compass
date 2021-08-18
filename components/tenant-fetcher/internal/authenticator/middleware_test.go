@@ -25,16 +25,13 @@ const (
 	PublicJWKSURL              = "file://../../../director/internal/authenticator/testdata/jwks-public.json"
 	PublicJWKS2URL             = "file://../../../director/internal/authenticator/testdata/jwks-public2.json"
 	fakeJWKSURL                = "file://../../../director/internal/authenticator/testdata/invalid.json"
-	ZoneId                     = "private-zone"
 	HandlerEndpoint            = "tenants/v1/callback/test-tenant"
 	SubscriptionCallbacksScope = "Callback"
 )
 
 var (
-	trustedPrefixes   = []string{"scopeA."}
-	untrustedPrefixes = []string{"fakeScope"}
-	fakeScopes        = []string{fmt.Sprintf("%s%s", untrustedPrefixes[0], SubscriptionCallbacksScope)}
-	scopes            = []string{fmt.Sprintf("%s%s", trustedPrefixes[0], SubscriptionCallbacksScope)}
+	fakeScopes = []string{"notCallback"}
+	scopes     = []string{SubscriptionCallbacksScope}
 )
 
 type Tenant struct {
@@ -44,7 +41,7 @@ type Tenant struct {
 func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator.New([]string{PublicJWKSURL}, SubscriptionCallbacksScope, true)
 
 		//when
 		err := auth.SynchronizeJWKS(context.TODO())
@@ -55,7 +52,7 @@ func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
 		//given
-		authFake := authenticator.New([]string{fakeJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		authFake := authenticator.New([]string{fakeJWKSURL}, SubscriptionCallbacksScope, true)
 
 		//when
 		err := authFake.SynchronizeJWKS(context.TODO())
@@ -83,7 +80,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, ok)
 
 		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		token := createTokenWithSigningMethod(t, scopes, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 		//when
 		middleware(handler).ServeHTTP(rr, req)
@@ -95,7 +92,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, SubscriptionCallbacksScope, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -108,7 +105,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, ok)
 
 		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		token := createTokenWithSigningMethod(t, scopes, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -121,7 +118,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator.New([]string{PublicJWKSURL, PublicJWKS2URL}, SubscriptionCallbacksScope, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -134,7 +131,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, ok)
 
 		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		token := createTokenWithSigningMethod(t, scopes, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -147,7 +144,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator.New([]string{PublicJWKSURL}, SubscriptionCallbacksScope, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -166,7 +163,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, ok)
 
 		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		token := createTokenWithSigningMethod(t, scopes, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -179,7 +176,7 @@ func TestMiddleware_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+		auth := authenticator.New([]string{PublicJWKSURL}, SubscriptionCallbacksScope, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -198,7 +195,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, ok)
 
 		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, &keyID, true)
+		token := createTokenWithSigningMethod(t, scopes, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -227,7 +224,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		key, ok := privateJWKS.Get(0)
 		assert.True(t, ok)
 
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, key, nil, false)
+		token := createTokenWithSigningMethod(t, scopes, key, nil, false)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 		//when
 		middleware(handler).ServeHTTP(rr, req)
@@ -283,7 +280,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, ok)
 
 		oldKeyID := oldKey.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, ZoneId, newKey, &oldKeyID, true)
+		token := createTokenWithSigningMethod(t, scopes, newKey, &oldKeyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -317,37 +314,6 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
-	t.Run("Error - untrusted zone id provided in token", func(t *testing.T) {
-		//given
-		untrustedZoneId := "fakeZone"
-		middleware := createMiddleware(t)
-		handler := testHandler(t)
-		rr := httptest.NewRecorder()
-		req := emptyRequest(t)
-
-		key, isOkay := privateJWKS.Get(0)
-		assert.True(t, isOkay)
-
-		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, scopes, untrustedZoneId, key, &keyID, true)
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-
-		//when
-		middleware(handler).ServeHTTP(rr, req)
-
-		//then
-		var response map[string]interface{}
-		err = json.Unmarshal(rr.Body.Bytes(), &response)
-		require.NoError(t, err)
-
-		message, ok := response["message"]
-		require.True(t, ok)
-
-		expected := fmt.Sprintf(`Zone id "%s" from user token is not trusted`, untrustedZoneId)
-		assert.Equal(t, expected, message)
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	})
-
 	t.Run("Error - invalid scopes provided in token", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t)
@@ -359,7 +325,7 @@ func TestMiddleware_Handler(t *testing.T) {
 		assert.True(t, isOkay)
 
 		keyID := key.KeyID()
-		token := createTokenWithSigningMethod(t, fakeScopes, ZoneId, key, &keyID, true)
+		token := createTokenWithSigningMethod(t, fakeScopes, key, &keyID, true)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -379,10 +345,9 @@ func TestMiddleware_Handler(t *testing.T) {
 	})
 }
 
-func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
+func createTokenWithSigningMethod(t *testing.T, scopes []string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
 		Scopes: scopes,
-		ZID:    zone,
 	})
 
 	if isSigningKeyAvailable {
@@ -400,7 +365,7 @@ func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, ke
 }
 
 func createMiddleware(t *testing.T) func(next http.Handler) http.Handler {
-	auth := authenticator.New([]string{PublicJWKSURL}, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
+	auth := authenticator.New([]string{PublicJWKSURL}, SubscriptionCallbacksScope, true)
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 
