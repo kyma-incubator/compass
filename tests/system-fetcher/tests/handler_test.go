@@ -72,12 +72,12 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
-	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		deleteJob(t, k8sClient, jobName, namespace)
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
-	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -163,12 +163,12 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
-	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		deleteJob(t, k8sClient, jobName, namespace)
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
-	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 	description := "description"
 	expectedApps := []directorSchema.ApplicationExt{
@@ -229,7 +229,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
-func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+func waitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
 	elapsed := time.After(time.Minute * 15)
 	for {
 		select {
@@ -238,7 +238,7 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 		default:
 		}
 		t.Log("Waiting for job to finish")
-		job, err := k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		require.NoError(t, err)
 		if job.Status.Failed > 0 {
 			t.Fatal("Job has failed. Exiting...")
@@ -250,9 +250,9 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 	}
 }
 
-func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+func deleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
 	t.Log("Deleting test job")
-	err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
+	err := k8sClient.BatchV1().Jobs(namespace).Delete(ctx, jobName, *metav1.NewDeleteOptions(0))
 	require.NoError(t, err)
 
 	elapsed := time.After(time.Minute * 2)
@@ -263,7 +263,7 @@ func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace
 		default:
 		}
 		t.Log("Waiting for job to be deleted")
-		_, err = k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		_, err = k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
 			break
 		}
@@ -272,8 +272,8 @@ func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace
 	t.Log("Test job deleted")
 }
 
-func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
-	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(cronJobName, metav1.GetOptions{})
+func createJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
+	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
 	require.NoError(t, err)
 	t.Log("Got the cronjob")
 
@@ -293,7 +293,7 @@ func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes
 		},
 	}
 	t.Log("Creating test job")
-	_, err = k8sClient.BatchV1().Jobs(namespace).Create(job)
+	_, err = k8sClient.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	require.NoError(t, err)
 	t.Log("Test job created")
 }

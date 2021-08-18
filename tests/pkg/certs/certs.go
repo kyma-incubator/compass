@@ -1,6 +1,7 @@
 package certs
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -264,7 +265,9 @@ func CreateCertDataHeader(subject, hash string) string {
 }
 
 func Cleanup(t *testing.T, configmapCleaner *k8s.ConfigmapCleaner, certificationResult externalschema.CertificationResult) {
+	ctx := context.Background()
+
 	hash := GetCertificateHash(t, certificationResult.ClientCertificate)
-	err := configmapCleaner.CleanRevocationList(hash)
+	err := configmapCleaner.CleanRevocationList(ctx, hash)
 	assert.NoError(t, err)
 }

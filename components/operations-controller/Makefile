@@ -35,21 +35,26 @@ manifests: controller-gen
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
-copy-crds-to-chart:
-	kustomize build config/crd > crds.yaml
+KUSTOMIZE = $(shell pwd)/bin/kustomize
+kustomize:
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(abspath ./bin) go get $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
+
+copy-crds-to-chart: kustomize
+	$(KUSTOMIZE) build config/crd > crds.yaml
 	mv crds.yaml ${CHART_PATH}/templates/

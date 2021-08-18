@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210816105621-314850e49405
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f38c361ff5
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.4
 	github.com/pkg/errors v0.9.1

@@ -1,26 +1,13 @@
 
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.5
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: operations.operations.compass
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .spec.operation_type
-    name: Type
-    type: string
-  - JSONPath: .spec.resource_id
-    name: Resource ID
-    type: string
-  - JSONPath: .spec.resource_type
-    name: Resource Type
-    type: string
-  - JSONPath: .status.phase
-    name: Status
-    type: string
   group: operations.compass
   names:
     kind: Operation
@@ -28,127 +15,139 @@ spec:
     plural: operations
     singular: operation
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: Operation is the Schema for the operations API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: OperationSpec defines the desired state of Operation
-          properties:
-            correlation_id:
-              type: string
-            operation_category:
-              type: string
-            operation_id:
-              type: string
-            operation_type:
-              enum:
-              - Create
-              - Update
-              - Delete
-              type: string
-            request_object:
-              type: string
-            resource_id:
-              type: string
-            resource_type:
-              type: string
-            webhook_ids:
-              items:
-                type: string
-              type: array
-          required:
-          - correlation_id
-          - operation_category
-          - operation_id
-          - operation_type
-          - request_object
-          - resource_id
-          - resource_type
-          - webhook_ids
-          type: object
-        status:
-          description: OperationStatus defines the observed state of Operation
-          properties:
-            conditions:
-              items:
-                description: Condition defines the states in which the Operation CR
-                  can be
-                properties:
-                  message:
-                    type: string
-                  status:
-                    type: string
-                  type:
-                    enum:
-                    - Ready
-                    - Error
-                    type: string
-                required:
-                - status
-                - type
-                type: object
-              type: array
-            initialized_at:
-              format: date-time
-              type: string
-            observed_generation:
-              format: int64
-              type: integer
-            phase:
-              enum:
-              - Success
-              - Failed
-              - In Progress
-              type: string
-            webhooks:
-              items:
-                description: Webhook is an entity part of the OperationStatus which
-                  holds information about the progression of the webhook execution
-                properties:
-                  last_poll_timestamp:
-                    type: string
-                  retries_count:
-                    type: integer
-                  state:
-                    enum:
-                    - Success
-                    - Failed
-                    - In Progress
-                    type: string
-                  webhook_id:
-                    type: string
-                  webhook_poll_url:
-                    type: string
-                required:
-                - last_poll_timestamp
-                - retries_count
-                - state
-                - webhook_id
-                - webhook_poll_url
-                type: object
-              type: array
-          type: object
-      type: object
-  version: v1alpha1
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.operation_type
+      name: Type
+      type: string
+    - jsonPath: .spec.resource_id
+      name: Resource ID
+      type: string
+    - jsonPath: .spec.resource_type
+      name: Resource Type
+      type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Operation is the Schema for the operations API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OperationSpec defines the desired state of Operation
+            properties:
+              correlation_id:
+                type: string
+              operation_category:
+                type: string
+              operation_id:
+                type: string
+              operation_type:
+                enum:
+                - Create
+                - Update
+                - Delete
+                type: string
+              request_object:
+                type: string
+              resource_id:
+                type: string
+              resource_type:
+                type: string
+              webhook_ids:
+                items:
+                  type: string
+                type: array
+            required:
+            - correlation_id
+            - operation_category
+            - operation_id
+            - operation_type
+            - request_object
+            - resource_id
+            - resource_type
+            - webhook_ids
+            type: object
+          status:
+            description: OperationStatus defines the observed state of Operation
+            properties:
+              conditions:
+                items:
+                  description: Condition defines the states which the Operation CR
+                    can take
+                  properties:
+                    message:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      enum:
+                      - Ready
+                      - Error
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              initialized_at:
+                format: date-time
+                type: string
+              observed_generation:
+                format: int64
+                type: integer
+              phase:
+                enum:
+                - Success
+                - Failed
+                - In Progress
+                type: string
+              webhooks:
+                items:
+                  description: Webhook is an entity part of the OperationStatus which
+                    holds information about the progression of the webhook execution
+                  properties:
+                    last_poll_timestamp:
+                      type: string
+                    retries_count:
+                      type: integer
+                    state:
+                      enum:
+                      - Success
+                      - Failed
+                      - In Progress
+                      type: string
+                    webhook_id:
+                      type: string
+                    webhook_poll_url:
+                      type: string
+                  required:
+                  - last_poll_timestamp
+                  - retries_count
+                  - state
+                  - webhook_id
+                  - webhook_poll_url
+                  type: object
+                type: array
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
