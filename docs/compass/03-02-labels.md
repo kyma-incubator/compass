@@ -130,12 +130,39 @@ query {
 }
 ```
 
-To filter objects by their key and string value, use this query:
-
-```graphql
-runtimes(filter: { key: "{KEY}" query: "\"{VALUE}\"" })
+Assume you have the following applications:
+```json
+{
+  "id": "850aa414-6076-4b04-9d00-d087614be555",
+  "name": "test-labeling2",
+  "labels": {
+    "source": "value"
+  },
+}, {
+  "id": "3e2b38fc-c11c-43a3-bff0-3fd844172976",
+  "name": "test-labeling",
+  "labels": {
+    "source": [
+      "value"
+    ]
+  }
+}
 ```
 
+To filter applications by their label key and string value, use this query:
+
+```graphql
+applications(filter: { key: "source" query: "\"value\"" })
+```
+
+To filter applications by their label key and array value, use this query:
+**Note: it will search whether the provided array is contained within the label with key `source`
+
+```graphql
+applications(filter: { key: "source" query: "[\"value\"]" })
+```
+
+**Note: the following works only for `scenarios` key**
 You can also search for objects by their key and array values. In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`. For example, to filter all objects assigned to the `default` scenario, run:
 
 ```graphql
