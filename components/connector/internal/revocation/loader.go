@@ -54,7 +54,7 @@ func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 		default:
 		}
 		log.C(ctx).Info("Starting watcher for revocation list configmap changes...")
-		watcher, err := rl.configMapManager.Watch(metav1.ListOptions{
+		watcher, err := rl.configMapManager.Watch(ctx, metav1.ListOptions{
 			FieldSelector: "metadata.name=" + rl.configMapName,
 			Watch:         true,
 		})
