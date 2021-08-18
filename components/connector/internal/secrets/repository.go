@@ -1,6 +1,8 @@
 package secrets
 
 import (
+	"context"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -12,12 +14,12 @@ type ManagerConstructor func(namespace string) Manager
 
 //go:generate mockery --name=Manager
 type Manager interface {
-	Get(name string, options metav1.GetOptions) (*v1.Secret, error)
+	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.Secret, error)
 }
 
 //go:generate mockery --name=Repository
 type Repository interface {
-	Get(name types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError)
+	Get(ctx context.Context, name types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError)
 }
 
 type repository struct {
@@ -31,9 +33,9 @@ func NewRepository(secretsManagerConstructor ManagerConstructor) Repository {
 	}
 }
 
-func (r *repository) Get(secret types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError) {
+func (r *repository) Get(ctx context.Context, secret types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError) {
 	secretsManager := r.secretsManagerConstructor(secret.Namespace)
-	secretObj, err := secretsManager.Get(secret.Name, metav1.GetOptions{})
+	secretObj, err := secretsManager.Get(ctx, secret.Name, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil, apperrors.NotFound("secret %s not found", secret)

@@ -1,4 +1,6 @@
 /*
+Copyright 2021.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -77,7 +79,7 @@ const (
 	ConditionTypeError ConditionType = "Error"
 )
 
-// Condition defines the states in which the Operation CR can be
+// Condition defines the states which the Operation CR can take
 type Condition struct {
 	Type    ConditionType          `json:"type"`
 	Status  corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`

@@ -130,7 +130,7 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 	log.C(ctx).Infof("Revoking certificate for client with id %s", clientId)
 
 	log.C(ctx).Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
-	err = r.revokedCertsRepository.Insert(certificateHash)
+	err = r.revokedCertsRepository.Insert(ctx, certificateHash)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to add certificate hash of client with id %s to revocation list: %v", clientId, err)
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")

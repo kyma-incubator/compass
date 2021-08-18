@@ -19,8 +19,8 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210623072749-c159dfdd6510
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210623072749-c159dfdd6510
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210816091934-c8f38c361ff5
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210816091934-c8f38c361ff5
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/lib/pq v1.10.2
@@ -41,9 +41,8 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
-	golang.org/x/tools v0.1.5 // indirect
-	k8s.io/api v0.17.2 // DO NOT BUMP
-	k8s.io/apimachinery v0.17.2 // DO NOT BUMP
-	k8s.io/client-go v0.17.2 // DO NOT BUMP
-	sigs.k8s.io/controller-runtime v0.5.0 // DO NOT BUMP
+	k8s.io/api v0.20.2 // DO NOT BUMP
+	k8s.io/apimachinery v0.20.2 // DO NOT BUMP
+	k8s.io/client-go v0.20.2 // DO NOT BUMP
+	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
 )
