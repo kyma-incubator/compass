@@ -422,7 +422,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + generateToken(t, issuer, map[string]interface{}{uniqueAttributeKey:"unexpected-unique-attribute-value"})},
+				"Authorization": {"Bearer " + generateToken(t, issuer, map[string]interface{}{uniqueAttributeKey: "unexpected-unique-attribute-value"})},
 			},
 		}
 
