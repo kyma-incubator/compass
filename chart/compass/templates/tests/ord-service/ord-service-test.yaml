@@ -23,9 +23,11 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
             - "oauth2.{{ .Values.global.ingress.domainName }}"
       {{ end }}
+      serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
       containers:
         - name: ord-service-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -35,8 +37,10 @@ spec:
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_STATIC_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.staticPrefix }}"
+            - name: ORD_EXTERNAL_CERT_SECURED_SERVICE_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
+            - name: ORD_SERVICE_STATIC_PREFIX
+              value: "{{ .Values.global.ordService.staticPrefix }}"
             - name: ORD_SERVICE_HEALTHZ_URL
               value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
@@ -45,6 +49,14 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: ALL_SCOPES
               value: "{{ .Values.global.director.tests.scopes }}"
+            - name: CA_SECRET_NAME
+              value: "{{ .Values.global.connector.secrets.ca.name }}"
+            - name: CA_SECRET_NAMESPACE
+              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
+            - name: CA_SECRET_CERTIFICATE_KEY
+              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
+            - name: CA_SECRET_KEY_KEY
+              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
