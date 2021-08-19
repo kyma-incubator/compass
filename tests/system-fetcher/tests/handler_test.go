@@ -19,6 +19,7 @@ package tests
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -36,6 +37,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+const mockSystemFormat = `{
+		"systemNumber": "%d",
+		"displayName": "name%d",
+		"productDescription": "description",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+}`
 
 func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
@@ -99,6 +112,57 @@ func TestSystemFetcherSuccess(t *testing.T) {
 			},
 		},
 	}
+
+	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	for _, app := range resp.Data {
+		actualApps = append(actualApps, directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  app.Application.Name,
+				Description:           app.Application.Description,
+				ApplicationTemplateID: app.ApplicationTemplateID,
+			},
+		})
+	}
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
+	ctx := context.TODO()
+
+	setMultipleMockSystemsResponses(t)
+
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+	jobName := "system-fetcher-test"
+	namespace := "compass-system"
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	defer func() {
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
+	}()
+
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+
+	req := fixtures.FixGetApplicationsRequestWithPagination()
+	var resp directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
+	require.NoError(t, err)
+	description := "description"
+	expectedCount := cfg.SystemFetcherPageSize
+	if expectedCount > 1 {
+		expectedCount++
+	}
+	expectedApps := getFixExpectedMockSystems(expectedCount, template.ID, description)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
@@ -312,4 +376,39 @@ func setMockSystems(t *testing.T, mockSystems []byte) {
 		require.NoError(t, err)
 		t.Fatalf("Failed to set mock systems: %s", string(bytes))
 	}
+}
+
+func setMultipleMockSystemsResponses(t *testing.T) {
+	mockSystems := []byte(getFixMockSystemsJSON(cfg.SystemFetcherPageSize))
+	setMockSystems(t, mockSystems)
+
+	if cfg.SystemFetcherPageSize > 1 {
+		mockSystems2 := []byte("[" + fmt.Sprintf(mockSystemFormat, cfg.SystemFetcherPageSize, cfg.SystemFetcherPageSize) + "]")
+		setMockSystems(t, mockSystems2)
+	}
+}
+
+func getFixMockSystemsJSON(count int) string {
+	result := "["
+	for i := 0; i < count; i++ {
+		result = result + fmt.Sprintf(mockSystemFormat, i, i)
+		if i < count-1 {
+			result = result + ","
+		}
+	}
+	return result + "]"
+}
+
+func getFixExpectedMockSystems(count int, tempID, description string) []directorSchema.ApplicationExt {
+	result := make([]directorSchema.ApplicationExt, count)
+	for i := 0; i < count; i++ {
+		result[i] = directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  fmt.Sprintf("name%d", i),
+				Description:           &description,
+				ApplicationTemplateID: &tempID,
+			},
+		}
+	}
+	return result
 }

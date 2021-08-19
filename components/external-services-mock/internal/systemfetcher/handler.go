@@ -15,13 +15,14 @@ import (
 type SystemFetcherHandler struct {
 	mutex         sync.Mutex
 	defaulTenant  string
-	mockedSystems []byte
+	mockedSystems [][]byte
 }
 
 func NewSystemFetcherHandler(defaultTenant string) *SystemFetcherHandler {
 	return &SystemFetcherHandler{
-		mutex:        sync.Mutex{},
-		defaulTenant: defaultTenant,
+		mutex:         sync.Mutex{},
+		defaulTenant:  defaultTenant,
+		mockedSystems: make([][]byte, 0),
 	}
 }
 
@@ -45,7 +46,7 @@ func (s *SystemFetcherHandler) HandleConfigure(rw http.ResponseWriter, req *http
 		return
 	}
 
-	s.mockedSystems = bodyBytes
+	s.mockedSystems = append(s.mockedSystems, bodyBytes)
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -60,9 +61,15 @@ func (s *SystemFetcherHandler) HandleFunc(rw http.ResponseWriter, req *http.Requ
 		}
 		return
 	}
+
+	resp := []byte("[]")
+	if len(s.mockedSystems) > 0 {
+		resp = s.mockedSystems[0]
+		s.mockedSystems = s.mockedSystems[1:]
+	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	_, err := rw.Write(s.mockedSystems)
+	_, err := rw.Write(resp)
 	if err != nil {
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 	}
