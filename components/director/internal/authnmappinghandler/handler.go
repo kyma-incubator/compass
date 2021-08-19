@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -151,66 +153,83 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting token payload")
 	}
 
-	issuerURL, err := extractTokenIssuer(tokenPayload)
+	issuerSubdomain, err := extractTokenIssuerSubdomain(tokenPayload)
 	if err != nil {
-		return nil, authenticator.Coordinates{}, errors.Errorf("error while extracting token properties: %s", err)
+		return nil, authenticator.Coordinates{}, errors.Wrap(err, "error while extracting token issuer subdomain")
 	}
 
-	if issuerURL == "" {
-		return nil, authenticator.Coordinates{}, errors.New("invalid token: missing issuer URL")
+	matchedAuthenticator, ok := reqData.Body.Header[authenticator.HeaderName]
+	if !ok || len(matchedAuthenticator) == 0 {
+		return nil, authenticator.Coordinates{}, errors.New("empty matched authenticator header")
 	}
 
-	coordinates, err := h.getAuthenticatorCoordinates(tokenPayload, issuerURL)
+	log.C(ctx).Infof("Matched authenticator is %s", matchedAuthenticator[0])
+
+	config, err := h.getAuthenticatorConfig(matchedAuthenticator[0], tokenPayload)
 	if err != nil {
-		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting authenticator coordinates")
+		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting mathched authenticator config")
 	}
 
-	h.verifiersMutex.RLock()
-	verifier, found := h.verifiers[issuerURL]
-	h.verifiersMutex.RUnlock()
+	index := -1
+	var claims TokenData
+	aggregatedErr := errors.New("aggregated error for all issuers")
 
-	if !found {
-		log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
-		resp, err := h.getOpenIDConfig(ctx, issuerURL)
+	for i, issuer := range config.TrustedIssuers {
+		issuerURL := fmt.Sprintf("%s://%s.%s%s", "https", issuerSubdomain, issuer.DomainURL, "/oauth/token")
+
+		h.verifiersMutex.RLock()
+		verifier, found := h.verifiers[issuerURL]
+		h.verifiersMutex.RUnlock()
+
+		if !found {
+			log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
+			resp, err := h.getOpenIDConfig(ctx, issuerURL)
+			if err != nil {
+				aggregatedErr = errors.Wrapf(aggregatedErr, "error while getting OpenIDCOnfig for issuer %q: %s", issuerURL, err)
+				continue
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				aggregatedErr = errors.Wrapf(aggregatedErr, "error for issuer %q: %s", issuerURL, handleResponseError(ctx, resp))
+				continue
+			}
+
+			var m OpenIDMetadata
+			if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+				aggregatedErr = errors.Wrapf(aggregatedErr, "while decoding body of response for issuer %q: %s", issuerURL, err)
+				continue
+			}
+
+			defer httputils.Close(ctx, resp.Body)
+
+			verifier = h.tokenVerifierProvider(ctx, m)
+
+			h.verifiersMutex.Lock()
+			h.verifiers[issuerURL] = verifier
+			h.verifiersMutex.Unlock()
+
+			log.C(ctx).Infof("Successfully constructed verifier for issuer %q", issuerURL)
+		} else {
+			log.C(ctx).Infof("Verifier for issuer %q exists", issuerURL)
+		}
+
+		claims, err = verifier.Verify(ctx, token)
 		if err != nil {
-			return nil, authenticator.Coordinates{}, err
+			aggregatedErr = errors.Wrapf(aggregatedErr, "unable to verify token with issuer %q: %s", issuerURL, err)
+			continue
 		}
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, authenticator.Coordinates{}, handleResponseError(ctx, resp)
-		}
-
-		buf, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, authenticator.Coordinates{}, errors.Wrap(err, "failed read content from response")
-		}
-
-		var m OpenIDMetadata
-		if err := json.Unmarshal(buf, &m); err != nil {
-			return nil, authenticator.Coordinates{}, fmt.Errorf("while decoding body of response with status %s: %s", resp.Status, err.Error())
-		}
-
-		if issuerURL != m.Issuer {
-			return nil, authenticator.Coordinates{}, errors.New(fmt.Sprintf("token issuer from token %q does not mismatch token issuer from well-known endpoint %q", issuerURL, m.Issuer))
-		}
-
-		verifier = h.tokenVerifierProvider(ctx, m)
-
-		h.verifiersMutex.Lock()
-		h.verifiers[issuerURL] = verifier
-		h.verifiersMutex.Unlock()
-
-		log.C(ctx).Infof("Successfully constructed verifier for issuer %q", issuerURL)
-	} else {
-		log.C(ctx).Infof("Verifier for issuer %q exists", issuerURL)
+		index = i
+		break
 	}
 
-	claims, err := verifier.Verify(ctx, token)
-	if err != nil {
-		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "unable to verify token")
+	if index == -1 {
+		return nil, authenticator.Coordinates{}, aggregatedErr
 	}
 
-	return claims, coordinates, nil
+	return claims, authenticator.Coordinates{
+		Name:  config.Name,
+		Index: index,
+	}, nil
 }
 
 func (h *Handler) logError(ctx context.Context, err error, message string) {
@@ -246,27 +265,23 @@ func (h *Handler) getOpenIDConfig(ctx context.Context, issuerURL string) (*http.
 	return resp, nil
 }
 
-func (h *Handler) getAuthenticatorCoordinates(payload []byte, issuerURL string) (authenticator.Coordinates, error) {
+func (h *Handler) getAuthenticatorConfig(matchedAuthenticatorName string, payload []byte) (*authenticator.Config, error) {
 	var authConfig *authenticator.Config
 	for i, authn := range h.authenticators {
-		uniqueAttribute := gjson.GetBytes(payload, authn.Attributes.UniqueAttribute.Key).String()
-		if uniqueAttribute != "" || uniqueAttribute == authn.Attributes.UniqueAttribute.Value {
+		if authn.Name == matchedAuthenticatorName {
+			uniqueAttribute := gjson.GetBytes(payload, authn.Attributes.UniqueAttribute.Key).String()
+			if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
+				return nil, errors.New("unique attribute mismatch")
+			}
 			authConfig = &h.authenticators[i]
 			break
 		}
 	}
 	if authConfig == nil {
-		return authenticator.Coordinates{}, errors.New("could not find authenticator for token")
+		return nil, errors.New("could not find authenticator for token")
 	}
 
-	i, trusted := getTrustedIssuerIndex(authConfig, issuerURL)
-	if !trusted {
-		return authenticator.Coordinates{}, errors.New("could not find trusted issuer in given authenticator")
-	}
-	return authenticator.Coordinates{
-		Name:  authConfig.Name,
-		Index: i,
-	}, nil
+	return authConfig, nil
 }
 
 func getTokenPayload(token string) ([]byte, error) {
@@ -280,7 +295,7 @@ func getTokenPayload(token string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(payload)
 }
 
-func extractTokenIssuer(payload []byte) (string, error) {
+func extractTokenIssuerSubdomain(payload []byte) (string, error) {
 	data := &struct {
 		IssuerURL string `json:"iss"`
 	}{}
@@ -288,7 +303,17 @@ func extractTokenIssuer(payload []byte) (string, error) {
 		return "", err
 	}
 
-	return data.IssuerURL, nil
+	parsedIssuer, err := url.Parse(data.IssuerURL)
+	if err != nil {
+		return "", err
+	}
+
+	s := strings.Split(parsedIssuer.Hostname(), ".")
+	if len(s) < 2 || s[0] == "" {
+		return "", fmt.Errorf("could not extract subdomain from issuer URL %s", data.IssuerURL)
+	}
+
+	return s[0], nil
 }
 
 // handleResponseError builds an error from the given response
@@ -309,20 +334,4 @@ func handleResponseError(ctx context.Context, response *http.Response) error {
 		return fmt.Errorf("request %s %s failed: %s", response.Request.Method, response.Request.URL, err)
 	}
 	return fmt.Errorf("request failed: %s", err)
-}
-
-func getTrustedIssuerIndex(authConfig *authenticator.Config, issuerURL string) (index int, found bool) {
-	if !strings.Contains(issuerURL, ".") || !strings.Contains(issuerURL, "/") {
-		return -1, false
-	}
-	stripedIssuerURL := issuerURL[strings.Index(issuerURL, ".")+1:] //strip the period as well
-	stripedIssuerURL = stripedIssuerURL[:strings.Index(stripedIssuerURL, "/")]
-
-	for i, iss := range authConfig.TrustedIssuers {
-		if iss.DomainURL == stripedIssuerURL {
-			index, found = i, true
-			return
-		}
-	}
-	return -1, false
 }

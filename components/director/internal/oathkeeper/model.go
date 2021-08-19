@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -110,10 +112,15 @@ func (d *ReqData) GetAuthIDWithAuthenticators(ctx context.Context, authenticator
 			if authn.Name != coords.Name {
 				continue
 			}
-
 			log.C(ctx).Infof("Request token matches %q authenticator", authn.Name)
-			identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
-			if !ok {
+
+			extra, err := d.MarshalExtra()
+			if err != nil {
+				return nil, err
+			}
+
+			identity := gjson.Get(extra, authn.Attributes.IdentityAttribute.Key).String()
+			if len(identity) == 0 {
 				return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
 			}
 
