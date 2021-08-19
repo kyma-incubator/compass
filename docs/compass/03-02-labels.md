@@ -115,7 +115,7 @@ You can define a LabelFilter to list the top-level entities according to their l
  applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
 ```
 
-To search for all objects with a given label ignoring their values, use:
+* Option 1 - To search for all objects with a given label ignoring their values
 
 ```graphql
 query {
@@ -130,7 +130,9 @@ query {
 }
 ```
 
-Assume you have the following applications:
+* Option 2 - To search for applications with label value that is a string
+
+Assume you have this application:
 ```json
 {
   "id": "850aa414-6076-4b04-9d00-d087614be555",
@@ -138,7 +140,20 @@ Assume you have the following applications:
   "labels": {
     "source": "value"
   },
-}, {
+}
+```
+
+It has only one label with key `source` and value `value` which is a string.
+To filter applications by this kind label key and string value, use this query:
+
+```graphql
+applications(filter: { key: "source" query: "\"value\"" })
+```
+
+* Option 3 - To search for applications with label value that is an array of strings
+
+```json
+{
   "id": "3e2b38fc-c11c-43a3-bff0-3fd844172976",
   "name": "test-labeling",
   "labels": {
@@ -149,18 +164,14 @@ Assume you have the following applications:
 }
 ```
 
-To filter applications by their label key and string value, use this query:
-
-```graphql
-applications(filter: { key: "source" query: "\"value\"" })
-```
-
 To filter applications by their label key and array value, use this query:
 **Note: Search whether the provided array is contained within the label with key `source`.**
 
 ```graphql
 applications(filter: { key: "source" query: "[\"value\"]" })
 ```
+
+* Option 4 - To search for label key with `scenarios`
 
 **Note: The following works only for labels with key `scenarios`.**
 You can also search for objects by their key and array values. In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`. For example, to filter all objects assigned to the `default` scenario, run:
