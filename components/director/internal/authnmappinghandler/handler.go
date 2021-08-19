@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -192,17 +194,13 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 				continue
 			}
 
-			buf, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				aggregatedErr = errors.Wrapf(aggregatedErr, "failed read content from response for issuer %q: %s", issuerURL, err)
-				continue
-			}
-
 			var m OpenIDMetadata
-			if err := json.Unmarshal(buf, &m); err != nil {
+			if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
 				aggregatedErr = errors.Wrapf(aggregatedErr, "while decoding body of response for issuer %q: %s", issuerURL, err)
 				continue
 			}
+
+			defer httputils.Close(ctx, resp.Body)
 
 			verifier = h.tokenVerifierProvider(ctx, m)
 
