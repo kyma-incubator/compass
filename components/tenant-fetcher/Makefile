@@ -10,9 +10,6 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
 
-test-local:
-	@echo ${SKIP_STEP_MESSAGE}
-
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
