@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	urlpkg "net/url"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
@@ -30,7 +29,7 @@ type APIConfig struct {
 	FilterCriteria              string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
 	FilterTenantCriteriaPattern string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
 	Timeout                     time.Duration `envconfig:"APP_SYSTEM_INFORMATION_FETCH_TIMEOUT"`
-	PageSize                    uint          `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
+	PageSize                    uint64        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
 	PagingSkipParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
 	PagingSizeParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 }
@@ -65,27 +64,23 @@ func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreator cli
 
 // FetchSystemsForTenant fetches systems from the service by making 2 HTTP calls with different filter criteria
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	var (
-		pageSkipFormat = c.apiConfig.PagingSkipParam + "=%d"
-		pageSizeFormat = c.apiConfig.PagingSizeParam + "=%d"
-	)
 	ctx, httpClient := c.clientForTenant(ctx, tenant)
 
-	qp1 := []string{"$filter=" + urlpkg.QueryEscape(c.apiConfig.FilterCriteria)}
+	qp1 := map[string]string{"$filter": c.apiConfig.FilterCriteria}
 	var systems []System
 
 	systemsFunc := getSystemsPagingFunc(ctx, httpClient, &systems)
-	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageSizeFormat, qp1, c.apiConfig.PageSize, systemsFunc)
+	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp1, c.apiConfig.PageSize, systemsFunc)
 	if err := pi1.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
 	}
 
 	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
-	qp2 := []string{"$filter=" + urlpkg.QueryEscape(tenantFilter)}
+	qp2 := map[string]string{"$filter": tenantFilter}
 	var systemsByTenantFilter []System
 
 	systemsByTenantFilterFunc := getSystemsPagingFunc(ctx, httpClient, &systemsByTenantFilter)
-	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, pageSkipFormat, pageSizeFormat, qp2, c.apiConfig.PageSize, systemsByTenantFilterFunc)
+	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp2, c.apiConfig.PageSize, systemsByTenantFilterFunc)
 	if err := pi2.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems with tenant filter for tenant %s", tenant)
 	}
@@ -146,14 +141,14 @@ func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url str
 	return systems, nil
 }
 
-func getSystemsPagingFunc(ctx context.Context, httpClient *http.Client, systems *[]System) func(string) (uint, error) {
-	return func(url string) (uint, error) {
+func getSystemsPagingFunc(ctx context.Context, httpClient *http.Client, systems *[]System) func(string) (uint64, error) {
+	return func(url string) (uint64, error) {
 		currentSystems, err := fetchSystemsForTenant(ctx, httpClient, url)
 		if err != nil {
 			return 0, err
 		}
 		log.C(ctx).Infof("Fetched page of systems for URL %s", url)
 		*systems = append(*systems, currentSystems...)
-		return uint(len(currentSystems)), nil
+		return uint64(len(currentSystems)), nil
 	}
 }

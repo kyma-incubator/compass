@@ -206,7 +206,6 @@ func fixHttpClient(t *testing.T) (*mockData, string) {
 	mock := mockData{
 		callNumber: 1,
 	}
-	// 0 1 2 0 1 2
 	mux.HandleFunc("/fetch", func(w http.ResponseWriter, r *http.Request) {
 		filter := r.URL.Query().Get("$filter")
 		if mock.callNumber < mock.pageCount {

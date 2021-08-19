@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	testBaseURL        = "https://test.com"
-	testSkipFormat     = "$skip=%d"
-	testPageSizeFormat = "$page=%d"
+	testBaseURL       = "https://test.com"
+	testSkipParam     = "$skip"
+	testPageSizeParam = "$page"
 )
 
 func TestPageIterator(t *testing.T) {
@@ -23,17 +23,19 @@ func TestPageIterator(t *testing.T) {
 		err        error
 		i          = 0
 		numPages   = 5
-		additional = "$foo=bar"
-		testErr    = errors.New("test error")
+		additional = map[string]string{
+			"$foo": "bar",
+		}
+		testErr = errors.New("test error")
 	)
 	tests := []struct {
 		name          string
-		pagingFunc    func(u string) (uint, error)
+		pagingFunc    func(u string) (uint64, error)
 		expectedError error
 	}{
 		{
 			name: fmt.Sprintf("Sucessfully fetches all pages for %d pages", pageSize),
-			pagingFunc: func(u string) (uint, error) {
+			pagingFunc: func(u string) (uint64, error) {
 				defer func() { i++ }()
 
 				url, err := url_pkg.ParseRequestURI(u)
@@ -52,22 +54,22 @@ func TestPageIterator(t *testing.T) {
 				require.Equal(t, "bar", additionalValue)
 
 				if i < numPages {
-					return uint(pageSize), nil
+					return uint64(pageSize), nil
 				}
-				return uint(pageSize - 1), nil
+				return uint64(pageSize - 1), nil
 			},
 			expectedError: nil,
 		},
 		{
 			name: "Returns an error when an error occurs during first paging func execution",
-			pagingFunc: func(u string) (uint, error) {
+			pagingFunc: func(u string) (uint64, error) {
 				return 0, testErr
 			},
 			expectedError: testErr,
 		},
 		{
 			name: "Returns an error when an error occurs during other but the first paging func execution",
-			pagingFunc: func(u string) (uint, error) {
+			pagingFunc: func(u string) (uint64, error) {
 				url, err := url_pkg.ParseRequestURI(u)
 				require.NoError(t, err)
 
@@ -75,7 +77,7 @@ func TestPageIterator(t *testing.T) {
 				skipValue, err := strconv.Atoi(q.Get("$skip"))
 				require.NoError(t, err)
 				if skipValue == 0 {
-					return uint(pageSize), nil
+					return uint64(pageSize), nil
 				} else {
 					return 0, testErr
 				}
@@ -86,7 +88,7 @@ func TestPageIterator(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iterator := NewPageIterator(testBaseURL, testSkipFormat, testPageSizeFormat, []string{additional}, uint(pageSize), test.pagingFunc)
+			iterator := NewPageIterator(testBaseURL, testSkipParam, testPageSizeParam, additional, uint64(pageSize), test.pagingFunc)
 
 			err = iterator.FetchAll()
 			if test.expectedError == nil {
