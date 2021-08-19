@@ -32,10 +32,10 @@ spec:
       - uri:
           prefix: {{ .Values.global.tenantFetcher.prefix }}
       route:
-      - destination:
-          host: {{ .Values.global.tenantFetcher.host }}
-          port:
-            number: {{ .Values.global.tenantFetcher.port }}
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
     - match:
       - uri:
           prefix:  {{ .Values.global.ordService.docsPrefix }}
