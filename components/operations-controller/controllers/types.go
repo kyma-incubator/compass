@@ -24,7 +24,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	typesbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/types"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,7 +41,7 @@ type StatusManager interface {
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . KubernetesClient
 type KubernetesClient interface {
 	Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Operation, error)
-	Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error
+	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 }
 
 // DirectorClient defines a Director client which is capable of fetching an application

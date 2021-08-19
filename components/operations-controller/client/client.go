@@ -51,7 +51,7 @@ func (c *OperationsClient) List(ctx context.Context, opts metav1.ListOptions) (*
 		Namespace(c.namespace).
 		Resource("operations").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(&result)
 
 	return &result, err
@@ -65,7 +65,7 @@ func (c *OperationsClient) Get(ctx context.Context, name string, opts metav1.Get
 		Resource("operations").
 		Name(name).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(&result)
 
 	return &result, err
@@ -78,7 +78,7 @@ func (c *OperationsClient) Create(ctx context.Context, operation *v1alpha1.Opera
 		Namespace(c.namespace).
 		Resource("operations").
 		Body(operation).
-		Do().
+		Do(ctx).
 		Into(&result)
 
 	return &result, err
@@ -91,7 +91,7 @@ func (c *OperationsClient) Delete(ctx context.Context, name string, opts metav1.
 		Resource("operations").
 		Name(name).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Error()
 }
 
@@ -102,7 +102,7 @@ func (c *OperationsClient) Update(ctx context.Context, operation *v1alpha1.Opera
 		Resource("operations").
 		Name(operation.Name).
 		Body(operation).
-		Do().
+		Do(ctx).
 		Into(operation)
 
 	return operation, err
@@ -115,5 +115,5 @@ func (c *OperationsClient) Watch(ctx context.Context, opts metav1.ListOptions) (
 		Namespace(c.namespace).
 		Resource("operations").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
+		Watch(ctx)
 }
