@@ -30,8 +30,8 @@ const (
 )
 
 var (
-	fakeScopes = []string{"notCallback"}
-	scopes     = []string{SubscriptionCallbacksScope}
+	fakeScopes = "notCallback"
+	scopes     = SubscriptionCallbacksScope
 )
 
 type Tenant struct {
@@ -345,7 +345,7 @@ func TestMiddleware_Handler(t *testing.T) {
 	})
 }
 
-func createTokenWithSigningMethod(t *testing.T, scopes []string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
+func createTokenWithSigningMethod(t *testing.T, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
 		Scopes: scopes,
 	})
