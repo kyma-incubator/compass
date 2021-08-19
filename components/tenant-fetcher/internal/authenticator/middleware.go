@@ -62,7 +62,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if !stringsAnyEquals(claims.Scopes, a.subscriptionCallbacksScope) {
+			if !stringsAnyEquals(strings.Split(claims.Scopes, " "), a.subscriptionCallbacksScope) {
 				log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
 				a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
 				return
