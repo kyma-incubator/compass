@@ -311,56 +311,6 @@ func TestHandler(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
 	})
 
-	t.Run("error when well-known configuration issuer mismatches the issuer value in the token", func(t *testing.T) {
-		logsBuffer := &bytes.Buffer{}
-		entry := log.DefaultLogger()
-		entry.Logger.SetOutput(logsBuffer)
-
-		ctx := log.ContextWithLogger(context.Background(), entry)
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
-		req = req.WithContext(ctx)
-		w := httptest.NewRecorder()
-
-		tokenIssuer := issuer
-		wellKnownIssuer := "abc"
-
-		wellKnownResp := fmt.Sprintf(wellKnownRespPattern, wellKnownIssuer, jwksURL)
-
-		mockedWellKnownClient := &http.Client{
-			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(wellKnownResp)),
-				}
-			}),
-		}
-
-		signedToken := generateToken(t, tokenIssuer, mockedAttributes)
-
-		reqDataMock := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
-			},
-			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
-			},
-		}
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownClient, nil, authenticators)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-
-		require.Contains(t, logsBuffer.String(), "does not mismatch token issuer from well-known endpoint")
-	})
-
 	t.Run("error when well-known configuration responds with different than 200 OK status code", func(t *testing.T) {
 		logsBuffer := &bytes.Buffer{}
 		entry := log.DefaultLogger()
@@ -471,7 +421,7 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
-		require.Contains(t, logsBuffer.String(), "could not find trusted issuer in given authenticator")
+		require.Contains(t, logsBuffer.String(), "error while extracting token issuer subdomain")
 	})
 
 	t.Run("error when token JWT token doesn't contain issuer url", func(t *testing.T) {
@@ -504,7 +454,7 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
-		require.Contains(t, logsBuffer.String(), "invalid token: missing issuer URL")
+		require.Contains(t, logsBuffer.String(), "error while extracting token issuer subdomain")
 	})
 
 	t.Run("error when token in authorization header isn't valid JWT token in terms of encoding", func(t *testing.T) {
@@ -735,7 +685,11 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 
+		mockErr := errors.New("invalid token")
+
 		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, invalidToken).Return(nil, mockErr).Once()
+
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		}, authenticators)
@@ -744,7 +698,7 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
-		require.Contains(t, logsBuffer.String(), "could not find trusted issuer in given authenticator")
+		require.Contains(t, logsBuffer.String(), mockErr.Error())
 	})
 	t.Run("error when no matching authenticator is found in header", func(t *testing.T) {
 		logsBuffer := &bytes.Buffer{}
