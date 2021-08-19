@@ -84,7 +84,7 @@ global:
       version: "PR-1971"
     tenant_fetcher:
       dir:
-      version: "PR-1971"
+      version: "PR-1988"
     ord_service:
       dir:
       version: "PR-35"
@@ -346,7 +346,6 @@ global:
     authentication:
       allowJWTSigningNone: true
       jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
-      identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
@@ -453,6 +452,8 @@ global:
       gatewayHost: "compass-gateway-authenticator0"
       trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix."}, {}]'
       attributes: '{"uniqueAttribute": { "key": "key", "value": "val" }, "tenant": { "key": "key" }, "identity": { "key": "key" } }'
+      path: director/graphql
+      upstreamComponent: "compass-gateway"
 
   externalServicesMock:
     enabled: false

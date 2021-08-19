@@ -39,15 +39,15 @@ spec:
               value: "test-provider"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
-            - name: TENANT_FETCHER_URL
+            - name: APP_TENANT_FETCHER_URL
               value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}"
-            - name: TENANT_FETCHER_HEALTHZ_URL
+            - name: APP_TENANT_FETCHER_HEALTHZ_URL
               value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
-            - name: ROOT_API
+            - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: HANDLER_ENDPOINT
+            - name: APP_HANDLER_ENDPOINT
               value: "/v1/callback/{tenantId}"
-            - name: TENANT_PATH_PARAM
+            - name: APP_TENANT_PATH_PARAM
               value: "tenantId"
             - name: APP_DIRECTOR_URL
               value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
@@ -90,16 +90,6 @@ spec:
               value: "{{ .Values.global.tests.db.maxOpenConnections }}"
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
-            - name: APP_TENANT_IDENTITY_ZONE
-              value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
-            {{- range $authenticatorName, $config := .Values.global.authenticators }}
-            {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
-              value: {{ $config.trusted_issuers | quote }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
-              value: {{ $config.attributes | quote }}
-            {{- end }}
-            {{- end }}
       restartPolicy: Never

@@ -8,14 +8,14 @@ import (
 )
 
 type Claims struct {
-	Scopes []string `json:"scope"`
-	ZID    string   `json:"zid"`
+	Scopes string `json:"scopes"`
+	ZID    string `json:"zid"`
 	jwt.StandardClaims
 }
 
 func CreateNotSingedToken(t *testing.T) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
-		Scopes: []string{"prefix.Callback"},
+		Scopes: "Callback",
 		ZID:    "id-zone",
 	})
 
