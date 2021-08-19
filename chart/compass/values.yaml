@@ -87,7 +87,7 @@ global:
       version: "PR-1979"
     ord_service:
       dir:
-      version: "PR-35"
+      version: "PR-36"
     schema_migrator:
       dir:
       version: "PR-1979"
@@ -104,7 +104,7 @@ global:
       version: "PR-1979"
     console:
       dir:
-      version: "PR-36"
+      version: "PR-40"
     e2e_tests:
       dir:
       version: "PR-1979"
