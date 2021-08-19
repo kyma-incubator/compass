@@ -6,7 +6,7 @@ kind: Rule
 metadata:
   name: "compass-gateway-{{ $authenticatorName }}"
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass {{ $authenticatorName }} gateway
+  # Configuration of oathkeeper for secure endpoint of compass <authenticatorName> gateway
   upstream:
     url: "http://compass-gateway.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
   match:
