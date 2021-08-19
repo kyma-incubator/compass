@@ -156,13 +156,13 @@ applications(filter: { key: "source" query: "\"value\"" })
 ```
 
 To filter applications by their label key and array value, use this query:
-**Note: it will search whether the provided array is contained within the label with key `source`
+**Note: Search whether the provided array is contained within the label with key `source`.**
 
 ```graphql
 applications(filter: { key: "source" query: "[\"value\"]" })
 ```
 
-**Note: the following works only for `scenarios` key**
+**Note: The following works only for labels with key `scenarios`.**
 You can also search for objects by their key and array values. In the **query** field, use only the limited SQL/JSON path expressions. The supported syntax is `$[*] ? (@ == "{VALUE}" )`. For example, to filter all objects assigned to the `default` scenario, run:
 
 ```graphql
