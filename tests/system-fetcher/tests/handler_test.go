@@ -43,7 +43,6 @@ const mockSystemFormat = `{
 		"displayName": "name%d",
 		"productDescription": "description",
 		"type": "type1",
-		"prop": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
@@ -137,11 +136,6 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 
 	setMultipleMockSystemsResponses(t)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
-	require.NoError(t, err)
-	require.NotEmpty(t, template.ID)
-
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
@@ -157,12 +151,19 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	var resp directorSchema.ApplicationPageExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
 	require.NoError(t, err)
+
+	req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
+	var resp2 directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req2, &resp2)
+	require.NoError(t, err)
+	resp.Data = append(resp.Data, resp2.Data...)
+
 	description := "description"
 	expectedCount := cfg.SystemFetcherPageSize
 	if expectedCount > 1 {
 		expectedCount++
 	}
-	expectedApps := getFixExpectedMockSystems(expectedCount, template.ID, description)
+	expectedApps := getFixExpectedMockSystems(expectedCount, description)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
@@ -399,14 +400,13 @@ func getFixMockSystemsJSON(count int) string {
 	return result + "]"
 }
 
-func getFixExpectedMockSystems(count int, tempID, description string) []directorSchema.ApplicationExt {
+func getFixExpectedMockSystems(count int, description string) []directorSchema.ApplicationExt {
 	result := make([]directorSchema.ApplicationExt, count)
 	for i := 0; i < count; i++ {
 		result[i] = directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
-				Name:                  fmt.Sprintf("name%d", i),
-				Description:           &description,
-				ApplicationTemplateID: &tempID,
+				Name:        fmt.Sprintf("name%d", i),
+				Description: &description,
 			},
 		}
 	}
