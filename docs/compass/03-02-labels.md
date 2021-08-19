@@ -144,7 +144,7 @@ Assume you have this application:
 ```
 
 It has only one label with key `source` and value `value` which is a string.
-To filter applications by this kind label key and string value, use this query:
+To filter applications by this kind of label key and string value, use this query:
 
 ```graphql
 applications(filter: { key: "source" query: "\"value\"" })
@@ -152,6 +152,7 @@ applications(filter: { key: "source" query: "\"value\"" })
 
 * Option 3 - To search for applications with label value that is an array of strings
 
+Assume you have this application:
 ```json
 {
   "id": "3e2b38fc-c11c-43a3-bff0-3fd844172976",
