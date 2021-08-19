@@ -28,7 +28,7 @@ type client struct {
 	ctrlclient.Client
 }
 
-// New constructs a new client instance
+// NewClient constructs a new client instance
 func NewClient(ctrlClient ctrlclient.Client) *client {
 	return &client{Client: ctrlClient}
 }

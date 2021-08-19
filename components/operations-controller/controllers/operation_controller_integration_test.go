@@ -22,6 +22,10 @@ import (
 	"path/filepath"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
@@ -62,16 +66,8 @@ var (
 )
 
 func init() {
-	err := clientgoscheme.AddToScheme(scheme)
-	if err != nil {
-		panic(err)
-	}
-
-	err = v1alpha1.AddToScheme(scheme)
-	if err != nil {
-		panic(err)
-	}
-
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 }
 
 /*
@@ -94,8 +90,6 @@ func TestController_Scenarios(t *testing.T) {
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
 	}
 
-	done := make(chan struct{})
-
 	cfg, err := testEnv.Start()
 	require.NoError(t, err)
 
@@ -108,6 +102,11 @@ func TestController_Scenarios(t *testing.T) {
 	webhookClient := &controllersfakes.FakeWebhookClient{}
 
 	kubeClient := mgr.GetClient()
+
+	err = kubeClient.Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: opNamespace},
+	})
+	require.NoError(t, err)
 
 	webhookConfig := webhook.DefaultConfig()
 	webhookConfig.RequeueInterval = 100 * time.Millisecond
@@ -124,8 +123,9 @@ func TestController_Scenarios(t *testing.T) {
 	err = controller.SetupWithManager(mgr)
 	require.NoError(t, err)
 
+	mgrCtx, cancel := context.WithCancel(context.Background())
 	go func() {
-		err = mgr.Start(done)
+		err = mgr.Start(mgrCtx)
 		require.NoError(t, err)
 	}()
 
@@ -981,7 +981,7 @@ func TestController_Scenarios(t *testing.T) {
 
 	})
 
-	done <- struct{}{} // Stop controller manager before stopping testEnv
+	cancel() // Stop controller manager before stopping testEnv
 
 	err = testEnv.Stop() // deferring the Stop earlier at the top does not seem to work, this is why the Stop is left here at the bottom
 	require.NoError(t, err)

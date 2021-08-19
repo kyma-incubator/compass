@@ -78,7 +78,7 @@ func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error
 }
 
 func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error) {
-	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
+	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(ctx, k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return "", "", err
 	}
@@ -96,13 +96,13 @@ func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (s
 }
 
 func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(ctx context.Context, lastRunTimestamp, lastResyncTimestamp string) error {
-	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
+	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(ctx, k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	configMap.Data[k.cfg.ConfigMapTimestampField] = lastRunTimestamp
 	configMap.Data[k.cfg.ConfigMapResyncTimestampField] = lastResyncTimestamp
-	_, err = k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Update(configMap)
+	_, err = k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Update(ctx, configMap, metav1.UpdateOptions{})
 	return err
 }

@@ -3,3 +3,6 @@ manager:
 
 metrics:
   port: 3001
+
+health:
+  port: 3002

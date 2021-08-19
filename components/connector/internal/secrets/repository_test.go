@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
@@ -34,17 +35,19 @@ func TestRepository_Get(t *testing.T) {
 
 	t.Run("should get secret", func(t *testing.T) {
 		// given
+		ctx := context.Background()
+
 		secretMap := make(map[string][]byte)
 		secretMap["ca.crt"] = expectedCaCrt
 		secretMap["ca.key"] = expectedCaKey
 
 		secretsManager := &mocks.Manager{}
-		secretsManager.On("Get", appName, metav1.GetOptions{}).Return(&v1.Secret{Data: secretMap}, nil)
+		secretsManager.On("Get", ctx, appName, metav1.GetOptions{}).Return(&v1.Secret{Data: secretMap}, nil)
 
 		repository := NewRepository(prepareManagerConstructor(secretsManager))
 
 		// when
-		secretData, err := repository.Get(namespacedName)
+		secretData, err := repository.Get(ctx, namespacedName)
 
 		// then
 		require.NoError(t, err)
@@ -55,16 +58,18 @@ func TestRepository_Get(t *testing.T) {
 
 	t.Run("should fail in case secret not found", func(t *testing.T) {
 		// given
+		ctx := context.Background()
+
 		k8sNotFoundError := &k8serrors.StatusError{
 			ErrStatus: metav1.Status{Reason: metav1.StatusReasonNotFound},
 		}
 		secretsManager := &mocks.Manager{}
-		secretsManager.On("Get", appName, metav1.GetOptions{}).Return(nil, k8sNotFoundError)
+		secretsManager.On("Get", ctx, appName, metav1.GetOptions{}).Return(nil, k8sNotFoundError)
 
 		repository := NewRepository(prepareManagerConstructor(secretsManager))
 
 		// when
-		secretData, err := repository.Get(namespacedName)
+		secretData, err := repository.Get(ctx, namespacedName)
 
 		// then
 		require.Error(t, err)
@@ -74,13 +79,15 @@ func TestRepository_Get(t *testing.T) {
 
 	t.Run("should fail if couldn't get secret", func(t *testing.T) {
 		// given
+		ctx := context.Background()
+
 		secretsManager := &mocks.Manager{}
-		secretsManager.On("Get", appName, metav1.GetOptions{}).Return(nil, &k8serrors.StatusError{})
+		secretsManager.On("Get", ctx, appName, metav1.GetOptions{}).Return(nil, &k8serrors.StatusError{})
 
 		repository := NewRepository(prepareManagerConstructor(secretsManager))
 
 		// when
-		secretData, err := repository.Get(namespacedName)
+		secretData, err := repository.Get(ctx, namespacedName)
 
 		// then
 		require.Error(t, err)
