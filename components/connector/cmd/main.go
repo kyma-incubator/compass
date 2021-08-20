@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	gcli "github.com/machinebox/graphql"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/connector/config"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
@@ -171,7 +172,7 @@ func newInternalGraphQLClient(URL string, timeout time.Duration) *gcli.Client {
 	}
 
 	client := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(transport),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(transport)),
 		Timeout:   timeout,
 	}
 

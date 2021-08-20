@@ -185,6 +185,11 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
+	internalHttpClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+	}
+
 	appRepo := applicationRepo()
 
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
@@ -200,6 +205,7 @@ func main() {
 		cfg.Features,
 		metricsCollector,
 		httpClient,
+		internalHttpClient,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)
@@ -303,7 +309,7 @@ func main() {
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, internalHttpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
 	timeService := directorTime.NewService()
@@ -570,7 +576,7 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 	return handlerWithTimeout, nil
 }
 
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHttpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -618,7 +624,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := directorTime.NewService()
-	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
+	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHttpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
 }
 
 func systemAuthSvc() oathkeeper.Service {
