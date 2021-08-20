@@ -390,19 +390,18 @@ func setMockSystems(t *testing.T, mockSystems []byte) {
 }
 
 func setMultipleMockSystemsResponses(t *testing.T) {
-	mockSystems := []byte(getFixMockSystemsJSON(cfg.SystemFetcherPageSize))
+	mockSystems := []byte(getFixMockSystemsJSON(cfg.SystemFetcherPageSize, 0))
 	setMockSystems(t, mockSystems)
 
-	if cfg.SystemFetcherPageSize > 1 {
-		mockSystems2 := []byte("[" + fmt.Sprintf(mockSystemFormat, cfg.SystemFetcherPageSize, cfg.SystemFetcherPageSize) + "]")
-		setMockSystems(t, mockSystems2)
-	}
+	mockSystems2 := []byte(getFixMockSystemsJSON(1, cfg.SystemFetcherPageSize))
+	setMockSystems(t, mockSystems2)
 }
 
-func getFixMockSystemsJSON(count int) string {
+func getFixMockSystemsJSON(count, startingNumber int) string {
 	result := "["
 	for i := 0; i < count; i++ {
-		result = result + fmt.Sprintf(mockSystemFormat, i, i)
+		systemNumber := startingNumber + i
+		result = result + fmt.Sprintf(mockSystemFormat, systemNumber, systemNumber)
 		if i < count-1 {
 			result = result + ","
 		}

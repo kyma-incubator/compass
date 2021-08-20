@@ -47,16 +47,16 @@ func NewPageIterator(baseURL, skipParam, sizeParam string, additionalQueryParams
 }
 
 //Next fetches the next page of the PageIterator. In order to get all the results that the PageIterator can fetch
-//Next should be called until HasNext returns false.
-//Once HasNext returns false, Next should not be called anymore, or it will return an error.
-func (p *PageIterator) Next() error {
+//Next should be called until it returns false and no error.
+//Once Next returns false and no error, Next should not be called anymore because it will do nothing.
+func (p *PageIterator) Next() (bool, error) {
 	if !p.hasNext {
-		return errors.New("no pages left to fetch")
+		return false, errors.New("no pages left to fetch")
 	}
 	p.buildNextURL()
 	count, err := p.do(p.nextURL)
 	if err != nil {
-		return errors.Wrapf(err, "while fetching next page: ")
+		return p.hasNext, errors.Wrapf(err, "while fetching next page: ")
 	}
 
 	if count == p.pageSize {
@@ -64,22 +64,18 @@ func (p *PageIterator) Next() error {
 	} else {
 		p.hasNext = false
 	}
-	return nil
+	return p.hasNext, nil
 }
 
 //FetchAll fetches all the pages (calls Next method) that the PageIterator can fetch.
-func (p *PageIterator) FetchAll() error {
-	for p.HasNext() {
-		if err := p.Next(); err != nil {
+func (p *PageIterator) FetchAll() (err error) {
+	var hasNext bool
+	for hasNext, err = p.Next(); hasNext; hasNext, err = p.Next() {
+		if err != nil {
 			return err
 		}
 	}
-	return nil
-}
-
-//HasNext returns whether there possibly is another page to fetch
-func (p *PageIterator) HasNext() bool {
-	return p.hasNext
+	return err
 }
 
 func (p *PageIterator) buildNextURL() {
