@@ -101,13 +101,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1971"
+      version: "PR-1985"
     console:
       dir:
       version: "PR-40"
     e2e_tests:
       dir:
-      version: "PR-1988"
+      version: "PR-1985"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -402,6 +402,10 @@ global:
       tokenURLPattern: ""
       scopesClaim: ""
       tenantHeaderName: ""
+    paging:
+      pageSize: 200
+      sizeParam: "$top"
+      skipParam: "$skip"
 
   tenantFetchers:
     job1:
