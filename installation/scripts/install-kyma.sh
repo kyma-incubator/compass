@@ -43,13 +43,32 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
+CERT=$(<$HOME/.minikube/ca.crt)
+CERT="${CERT//$'\n'/\\\\n}"
+
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-minimal.yaml
 OVERRIDES_KYMA_MINIMAL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-minimal-config-local.yaml
-KIALI_OVERRIDES="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kiali.yaml
-CORE_TESTS_OVERRIDES="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-core-tests.yaml
+
+MINIMAL_OVERRIDES_FILENAME=override-local-minimal.yaml
+MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_MINIMAL_CFG_LOCAL}")
+
+>"${MINIMAL_OVERRIDES_FILENAME}" cat <<-EOF
+$MINIMAL_OVERRIDES_CONTENT
+EOF
+
+trap "rm -f ${MINIMAL_OVERRIDES_FILENAME}" EXIT INT TERM
 
 INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma.yaml
 OVERRIDES_KYMA_FULL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-full-config-local.yaml
+
+FULL_OVERRIDES_FILENAME=override-local-full.yaml
+FULL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_FULL_CFG_LOCAL}")
+
+>"${FULL_OVERRIDES_FILENAME}" cat <<-EOF
+$FULL_OVERRIDES_CONTENT
+EOF
+
+trap "rm -f ${FULL_OVERRIDES_FILENAME}" EXIT INT TERM
 
 if [[ $KYMA_RELEASE == *PR-* ]]; then
   KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_RELEASE}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')
@@ -69,9 +88,9 @@ echo "Installing Kyma..."
 set -o xtrace
 if [[ $KYMA_INSTALLATION == *full* ]]; then
   echo "Installing full Kyma"
-  kyma install -c $INSTALLER_CR_FULL_PATH -o $OVERRIDES_KYMA_FULL_CFG_LOCAL --source $KYMA_SOURCE
+  kyma install -c $INSTALLER_CR_FULL_PATH -o $FULL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma install -c $INSTALLER_CR_PATH -o $OVERRIDES_KYMA_MINIMAL_CFG_LOCAL --source $KYMA_SOURCE
+  kyma install -c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 fi
 set +o xtrace

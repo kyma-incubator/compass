@@ -1,10 +1,11 @@
 package http_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/http/automock"

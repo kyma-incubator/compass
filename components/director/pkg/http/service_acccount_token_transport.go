@@ -1,9 +1,10 @@
 package http
 
 import (
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 const DefaultServiceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"

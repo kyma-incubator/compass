@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -167,12 +166,8 @@ func newK8SClientSet(ctx context.Context, interval, pollingTimeout, timeout time
 }
 
 func newInternalGraphQLClient(URL string, timeout time.Duration) *gcli.Client {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
 	client := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(transport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 		Timeout:   timeout,
 	}
 
