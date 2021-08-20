@@ -85,6 +85,7 @@ func initHTTP(cfg config) http.Handler {
 
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
+	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
 	router.HandleFunc("/systemfetcher/oauth/token", oauthHandler.GenerateWithoutCredentials)
 
