@@ -51,7 +51,7 @@ func NewPageIterator(baseURL, skipParam, sizeParam string, additionalQueryParams
 //Once Next returns false and no error, Next should not be called anymore because it will do nothing.
 func (p *PageIterator) Next() (bool, error) {
 	if !p.hasNext {
-		return false, errors.New("no pages left to fetch")
+		return false, nil
 	}
 	p.buildNextURL()
 	count, err := p.do(p.nextURL)
