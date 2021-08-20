@@ -74,3 +74,11 @@ func (s *SystemFetcherHandler) HandleFunc(rw http.ResponseWriter, req *http.Requ
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 	}
 }
+
+func (s *SystemFetcherHandler) HandleReset(rw http.ResponseWriter, _ *http.Request) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	log.Println("Recieved a reset call.SystemFetcher queue will be emptied...")
+	s.mockedSystems = make([][]byte, 0)
+	rw.WriteHeader(http.StatusOK)
+}

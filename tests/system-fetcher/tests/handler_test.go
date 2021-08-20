@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -74,6 +76,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	}]`)
 
 	setMockSystems(t, mockSystems)
+	defer cleanupMockSystems(t)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
@@ -135,6 +138,12 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	ctx := context.TODO()
 
 	setMultipleMockSystemsResponses(t)
+	defer cleanupMockSystems(t)
+
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -218,6 +227,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	}]`)
 
 	setMockSystems(t, mockSystems)
+	defer cleanupMockSystems(t)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
@@ -411,4 +421,25 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 		}
 	}
 	return result
+}
+
+func cleanupMockSystems(t *testing.T) {
+	req, err := http.NewRequest(http.MethodDelete, cfg.ExternalSvcMockURL+"/systemfetcher/reset", nil)
+	require.NoError(t, err)
+
+	response, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	if response.StatusCode != http.StatusOK {
+		bytes, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		t.Fatalf("Failed to reset mock systems: %s", string(bytes))
+		return
+	}
+	log.D().Info("Successfully reset mock systems")
 }
