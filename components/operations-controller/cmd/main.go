@@ -159,9 +159,9 @@ func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
 
 	basicProvider := auth.NewBasicAuthorizationProvider()
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	unsignedTokenProvider := auth.NewUnsignedTokenAuthorizationProvider()
+	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, unsignedTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.Timeout,

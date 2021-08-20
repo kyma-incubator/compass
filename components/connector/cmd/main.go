@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	gcli "github.com/machinebox/graphql"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/pkg/errors"
@@ -46,7 +48,7 @@ func main() {
 	k8sClientSet, appErr := newK8SClientSet(ctx, cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
-	directorGCLI := graphql_client.NewGraphQLClient(cfg.OneTimeTokenURL, cfg.HTTPClientTimeout)
+	directorGCLI := newInternalGraphQLClient(cfg.OneTimeTokenURL, cfg.HTTPClientTimeout)
 	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
 	go certsLoader.Run(ctx)
 	go revokedCertsLoader.Run(ctx)
@@ -161,4 +163,17 @@ func newK8SClientSet(ctx context.Context, interval, pollingTimeout, timeout time
 
 	log.C(ctx).Info("Successfully initialized kubernetes client")
 	return k8sClientSet, nil
+}
+
+func newInternalGraphQLClient(URL string, timeout time.Duration) *gcli.Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(transport),
+		Timeout:   timeout,
+	}
+
+	return gcli.NewClient(URL, gcli.WithHTTPClient(client))
 }

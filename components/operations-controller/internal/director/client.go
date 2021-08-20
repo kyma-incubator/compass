@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	graphqlbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
@@ -69,6 +71,13 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 	if err != nil {
 		return err
 	}
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("tenant", tenantID)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
