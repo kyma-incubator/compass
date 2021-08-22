@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -59,16 +57,12 @@ type TenantService interface {
 	MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping
 	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMapping) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	SetLabel(ctx context.Context, labelInput *model.LabelInput) error
 }
 
 //go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
 type LabelDefinitionService interface {
 	Upsert(ctx context.Context, def model.LabelDefinition) error
-}
-
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
-type LabelRepository interface {
-	Upsert(ctx context.Context, label *model.Label) error
 }
 
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
@@ -99,7 +93,6 @@ type Service struct {
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	labelDefService                 LabelDefinitionService
-	labelRepo                       LabelRepository
 	retryAttempts                   uint
 	movedRuntimeLabelKey            string
 	fullResyncInterval              time.Duration
@@ -114,7 +107,6 @@ func NewService(queryConfig QueryConfig,
 	tenantStorageService TenantService,
 	runtimeStorageService RuntimeService,
 	labelDefService LabelDefinitionService,
-	labelRepository LabelRepository,
 	movedRuntimeLabelKey string,
 	fullResyncInterval time.Duration) *Service {
 	return &Service{
@@ -129,7 +121,6 @@ func NewService(queryConfig QueryConfig,
 		movedRuntimeByLabelFieldMapping: movRuntime,
 		retryAttempts:                   retryAttempts,
 		labelDefService:                 labelDefService,
-		labelRepo:                       labelRepository,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 		fullResyncInterval:              fullResyncInterval,
 	}
@@ -558,18 +549,18 @@ func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) 
 
 func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []model.BusinessTenantMapping, subdomainMapping map[string]string) error {
 	for _, t := range tenants {
-		subdomainLabel := &model.Label{
-			ID:         uuid.New().String(),
-			Tenant:     t.ID,
+		subdomainLabel := &model.LabelInput{
 			ObjectType: model.TenantLabelableObject,
 			ObjectID:   t.ID,
-			Key:        "subdomain",
+			Key:        subdomainLabelKey,
 			Value:      subdomainMapping[t.ExternalTenant],
 		}
-		if err := s.labelRepo.Upsert(ctx, subdomainLabel); err != nil {
-			return errors.Wrap(err, "while inserting subdomain label")
+
+		if err := s.tenantStorageService.SetLabel(ctx, subdomainLabel); err != nil {
+			return errors.Wrapf(err, "while storing subdomain label for tenant with ID %s", t.ID)
 		}
 	}
+
 	return nil
 }
 

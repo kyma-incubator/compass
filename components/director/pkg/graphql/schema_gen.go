@@ -48,6 +48,7 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 	RuntimeContext() RuntimeContextResolver
+	Tenant() TenantResolver
 }
 
 type DirectiveRoot struct {
@@ -497,6 +498,7 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		Initialized func(childComplexity int) int
 		InternalID  func(childComplexity int) int
+		Labels      func(childComplexity int, key *string) int
 		Name        func(childComplexity int) int
 	}
 
@@ -666,6 +668,9 @@ type RuntimeResolver interface {
 }
 type RuntimeContextResolver interface {
 	Labels(ctx context.Context, obj *RuntimeContext, key *string) (Labels, error)
+}
+type TenantResolver interface {
+	Labels(ctx context.Context, obj *Tenant, key *string) (Labels, error)
 }
 
 type executableSchema struct {
@@ -3143,6 +3148,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.InternalID(childComplexity), true
 
+	case "Tenant.labels":
+		if e.complexity.Tenant.Labels == nil {
+			break
+		}
+
+		args, err := ec.field_Tenant_labels_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tenant.Labels(childComplexity, args["key"].(*string)), true
+
 	case "Tenant.name":
 		if e.complexity.Tenant.Name == nil {
 			break
@@ -4418,6 +4435,7 @@ type Tenant {
 	internalID: ID!
 	name: String
 	initialized: Boolean
+	labels(key: String): Labels
 }
 
 type Version {
@@ -6823,6 +6841,20 @@ func (ec *executionContext) field_RuntimeContext_labels_args(ctx context.Context
 }
 
 func (ec *executionContext) field_Runtime_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["key"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Tenant_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -19325,6 +19357,44 @@ func (ec *executionContext) _Tenant_initialized(ctx context.Context, field graph
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Tenant_labels(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Tenant_labels_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Tenant().Labels(rctx, obj, args["key"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(Labels)
+	fc.Result = res
+	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Version_value(ctx context.Context, field graphql.CollectedField, obj *Version) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25165,17 +25235,28 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 		case "id":
 			out.Values[i] = ec._Tenant_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "internalID":
 			out.Values[i] = ec._Tenant_internalID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Tenant_name(ctx, field, obj)
 		case "initialized":
 			out.Values[i] = ec._Tenant_initialized(ctx, field, obj)
+		case "labels":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tenant_labels(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

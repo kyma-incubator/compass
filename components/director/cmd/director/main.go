@@ -219,7 +219,7 @@ func main() {
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey, claims.NewOathkeeperClaimsParser(), cfg.JWKSEndpoint)
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey, claims.NewValidator())
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)

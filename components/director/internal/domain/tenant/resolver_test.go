@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -121,4 +122,112 @@ func TestResolver_Tenants(t *testing.T) {
 		})
 	}
 
+}
+
+func TestResolver_Labels(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantID := "2af44425-d02d-4aed-9086-b0fc3122b508"
+	testTenant := &graphql.Tenant{ID: "externalID", InternalID: tenantID}
+
+	testLabelKey := "my-key"
+	testLabels := map[string]*model.Label{
+		testLabelKey: {
+			ID:         "5d0ec128-47da-418a-99f5-8409105ce82d",
+			Tenant:     tenantID,
+			Key:        testLabelKey,
+			Value:      "value",
+			ObjectID:   tenantID,
+			ObjectType: model.TenantLabelableObject,
+		},
+	}
+
+	t.Run("Succeeds", func(t *testing.T) {
+		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(testLabels, nil)
+		tenantConv := &automock.BusinessTenantMappingConverter{}
+		persist, transact := txGen.ThatSucceeds()
+
+		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
+
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+		result, err := resolver.Labels(ctx, testTenant, nil)
+		assert.NoError(t, err)
+
+		assert.NotNil(t, result)
+		assert.Len(t, result, len(testLabels))
+		assert.Equal(t, testLabels[testLabelKey].Value, result[testLabelKey])
+	})
+	t.Run("Succeeds when labels do not exist", func(t *testing.T) {
+		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(nil, errors.New("doesn't exist"))
+		tenantConv := &automock.BusinessTenantMappingConverter{}
+		persist, transact := txGen.ThatSucceeds()
+
+		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
+
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+		labels, err := resolver.Labels(ctx, testTenant, nil)
+		assert.NoError(t, err)
+		assert.Nil(t, labels)
+	})
+	t.Run("Returns error when the provided tenant is nil", func(t *testing.T) {
+		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantConv := &automock.BusinessTenantMappingConverter{}
+		persist, transact := txGen.ThatDoesntStartTransaction()
+
+		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
+
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+		_, err := resolver.Labels(ctx, nil, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Tenant cannot be empty")
+	})
+	t.Run("Returns error when starting transaction fails", func(t *testing.T) {
+		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantConv := &automock.BusinessTenantMappingConverter{}
+		persist, transact := txGen.ThatFailsOnBegin()
+
+		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
+
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+		result, err := resolver.Labels(ctx, testTenant, nil)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+	t.Run("Returns error when it fails to list labels", func(t *testing.T) {
+		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(nil, testError)
+		tenantConv := &automock.BusinessTenantMappingConverter{}
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
+
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+		_, err := resolver.Labels(ctx, testTenant, nil)
+		assert.Error(t, err)
+		assert.Equal(t, testError, err)
+	})
+	t.Run("Returns error when commit fails", func(t *testing.T) {
+		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(testLabels, nil)
+		tenantConv := &automock.BusinessTenantMappingConverter{}
+		persist, transact := txGen.ThatFailsOnCommit()
+
+		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
+
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+		_, err := resolver.Labels(ctx, testTenant, nil)
+		assert.Error(t, err)
+		assert.Equal(t, testError, err)
+	})
 }

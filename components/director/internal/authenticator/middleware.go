@@ -25,26 +25,25 @@ const (
 )
 
 //go:generate mockery --name=ClaimsParser --output=automock --outpkg=automock --case=underscore
-type ClaimsParser interface {
-	ParseClaims(ctx context.Context, bearerToken string, keyfunc jwt.Keyfunc) (claims.Claims, error)
+type ClaimsValidator interface {
+	Validate(context.Context, claims.Claims) error
 }
 
 type Authenticator struct {
-	jwksEndpoints       []string
+	jwksEndpoint        string
 	allowJWTSigningNone bool
 	cachedJWKS          jwk.Set
 	clientIDHeaderKey   string
 	mux                 sync.RWMutex
-	claimsParser        ClaimsParser
+	claimsValidator     ClaimsValidator
 }
 
-// TODO clientIDHeaderKey
-func New(allowJWTSigningNone bool, clientIDHeaderKey string, claimsParser ClaimsParser, jwksEndpoints ...string) *Authenticator {
+func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
 	return &Authenticator{
-		jwksEndpoints:       jwksEndpoints,
+		jwksEndpoint:        jwksEndpoint,
 		allowJWTSigningNone: allowJWTSigningNone,
 		clientIDHeaderKey:   clientIDHeaderKey,
-		claimsParser:        claimsParser,
+		claimsValidator:     claimsValidator,
 	}
 }
 
@@ -52,40 +51,20 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	newJWKS := jwk.NewSet()
 
-	for _, jwksEndpoint := range a.jwksEndpoints {
-		jwks, err := authenticator.FetchJWK(ctx, jwksEndpoint)
-		if err != nil {
-			return errors.Wrapf(err, "while fetching JWKS from endpoint %s", jwksEndpoint)
-		}
-		keyIterator := &authenticator.JWTKeyIterator{
-			AlgorithmCriteria: func(alg string) bool {
-				return true
-			},
-			IDCriteria: func(id string) bool {
-				return true
-			},
-		}
-
-		if err := arrayiter.Walk(ctx, jwks, keyIterator); err != nil {
-			return errors.Wrapf(err, "while walking through JWKS")
-		}
-
-		for _, key := range keyIterator.AllKeys {
-			key, ok := key.(jwk.Key)
-			if !ok {
-				return apperrors.NewInternalError("unable to parse jwk key")
-			}
-
-			newJWKS.Add(key)
-		}
+	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
+	if err != nil {
+		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
 
-	a.cachedJWKS = newJWKS
+	a.cachedJWKS = jwks
 	log.C(ctx).Info("Successfully synchronized JWKS")
 
 	return nil
+}
+
+func (a *Authenticator) SetJWKSEndpoint(url string) {
+	a.jwksEndpoint = url
 }
 
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
@@ -99,9 +78,15 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
+			tokenClaims, err := a.parseClaimsWithRetry(ctx, bearerToken)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
+				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
+				return
+			}
+
+			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {
+				log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
 				switch apperrors.ErrorCode(err) {
 				case apperrors.TenantNotFound:
 					apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
@@ -111,7 +96,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			ctx = claims.ContextWithClaims(r.Context())
+			ctx = tokenClaims.ContextWithClaims(ctx)
 
 			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
@@ -123,34 +108,23 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	}
 }
 
-func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (claims.Claims, error) {
-	var parsedClaims claims.Claims
-	var err error
-
-	parsedClaims, err = a.claimsParser.ParseClaims(ctx, bearerToken, a.getKeyFunc(ctx))
+func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (*claims.Claims, error) {
+	parsedClaims, err := a.parseClaims(ctx, bearerToken)
 	if err != nil {
-		if apperrors.IsTenantNotFoundError(err) {
-			return nil, err
-		}
 		validationErr, ok := err.(*jwt.ValidationError)
 		if !ok || (validationErr.Inner != rsa.ErrVerification && !apperrors.IsKeyDoesNotExist(validationErr.Inner)) {
 			return nil, apperrors.NewUnauthorizedError(err.Error())
 		}
 
-		err := a.SynchronizeJWKS(ctx)
-		if err != nil {
+		if err := a.SynchronizeJWKS(ctx); err != nil {
 			return nil, apperrors.InternalErrorFrom(err, "while synchronizing JWKS during parsing token")
 		}
 
-		parsedClaims, err = a.claimsParser.ParseClaims(ctx, bearerToken, a.getKeyFunc(ctx))
+		parsedClaims, err = a.parseClaims(ctx, bearerToken)
 		if err != nil {
-			if apperrors.IsTenantNotFoundError(err) {
-				return nil, err
-			}
+			log.C(ctx).WithError(err).Errorf("Failed to parse claims: %v", err)
 			return nil, apperrors.NewUnauthorizedError(err.Error())
 		}
-
-		return parsedClaims, err
 	}
 
 	return parsedClaims, nil
@@ -164,6 +138,16 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 
 	reqToken = strings.TrimPrefix(reqToken, "Bearer ")
 	return reqToken, nil
+}
+
+func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*claims.Claims, error) {
+	parsed := claims.Claims{}
+
+	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
+		return nil, err
+	}
+
+	return &parsed, nil
 }
 
 func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (interface{}, error) {

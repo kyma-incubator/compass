@@ -2,8 +2,10 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -19,21 +21,49 @@ type TenantMappingRepository interface {
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+type LabelUpsertService interface {
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+}
+
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+type LabelRepository interface {
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+}
+
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	tenantMappingRepo TenantMappingRepository
+type labeledService struct {
+	service
+	labelRepo      LabelRepository
+	labelUpsertSvc LabelUpsertService
+}
 
-	uidService UIDService
+type service struct {
+	uidService        UIDService
+	tenantMappingRepo TenantMappingRepository
+	labelRepo         LabelRepository
+	labelUpsertSvc    LabelUpsertService
 }
 
 func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *service {
 	return &service{
-		tenantMappingRepo: tenantMapping,
 		uidService:        uidService,
+		tenantMappingRepo: tenantMapping,
+	}
+}
+
+func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService) *labeledService {
+	return &labeledService{
+		service: service{
+			uidService:        uidService,
+			tenantMappingRepo: tenantMapping,
+		},
+		labelRepo:      labelRepo,
+		labelUpsertSvc: labelUpsertSvc,
 	}
 }
 
@@ -114,6 +144,47 @@ func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessT
 		if err != nil {
 			return errors.Wrap(err, "while deleting tenant")
 		}
+	}
+
+	return nil
+}
+
+func (s *labeledService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
+	tenantID := labelInput.ObjectID
+	labelInput.ObjectType = model.TenantLabelableObject
+
+	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
+		return errors.Wrapf(err, "while ensuring tenant with %s exists", tenantID)
+	}
+	if err := s.labelUpsertSvc.UpsertLabel(ctx, tenantID, labelInput); err != nil {
+		return errors.Wrapf(err, "while creating label for tenant with ID %s", tenantID)
+	}
+
+	return nil
+}
+
+func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
+	log.C(ctx).Infof("getting labels for tenant with ID %s",tenantID)
+	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
+		return nil, err
+	}
+
+	labels, err := s.labelRepo.ListForObject(ctx, tenantID, model.TenantLabelableObject, tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "whilie listing labels for tenant with ID %s", tenantID)
+	}
+
+	return labels, nil
+}
+
+func (s *service) ensureTenantExists(ctx context.Context, id string) error {
+	exists, err := s.tenantMappingRepo.Exists(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if tenant with ID %s exists", id)
+	}
+
+	if !exists {
+		return fmt.Errorf("tenant with ID %s does not exist", id)
 	}
 
 	return nil

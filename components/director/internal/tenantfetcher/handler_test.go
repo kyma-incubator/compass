@@ -121,14 +121,13 @@ func TestService_Create(t *testing.T) {
 		Provider:       testProviderName,
 	}
 
-	tenantLabelMatcher := mock.MatchedBy(func(label *model.Label) bool {
-		return label.Tenant == tenantID && label.Key == "subdomain" && label.ObjectID == tenantID && label.ObjectType == model.TenantLabelableObject
+	tenantLabelMatcher := mock.MatchedBy(func(label *model.LabelInput) bool {
+		return label.ObjectID == tenantID && label.ObjectType == model.TenantLabelableObject && label.Value == tenantSubdomain && label.Key == "subdomain"
 	})
 
 	testCases := []struct {
 		Name                  string
 		TenantSvcFn           func() *automock.TenantService
-		LabelRepoFn           func() *automock.LabelRepository
 		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		UidFn                 func() *automock.UIDService
 		HandlerCfg            tenantfetcher.HandlerConfig
@@ -144,12 +143,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetInternalTenant", mock.Anything, customerTenant.ExternalTenant).Return(parentTenantIntID, nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenant}).Return(nil).Once()
+				tenantSvc.On("SetLabel", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Upsert", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
-				return labelRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -169,12 +164,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetInternalTenant", mock.Anything, customerTenant.ExternalTenant).Return("", apperrors.NewNotFoundError(resource.Tenant, customerTenant.ExternalTenant)).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{customerTenant}).Return(nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenant}).Return(nil).Once()
+				tenantSvc.On("SetLabel", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Upsert", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
-				return labelRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -193,12 +184,8 @@ func TestService_Create(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenantWithoutParent}).Return(nil).Once()
+				tenantSvc.On("SetLabel", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Upsert", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
-				return labelRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -219,12 +206,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{customerTenant}).Return(apperrors.NewNotUniqueError(resource.Tenant)).Once()
 				tenantSvc.On("GetInternalTenant", mock.Anything, customerTenant.ExternalTenant).Return(customerTenant.ID, nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenant}).Return(nil).Once()
+				tenantSvc.On("SetLabel", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Upsert", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
-				return labelRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -242,9 +225,6 @@ func TestService_Create(t *testing.T) {
 			TxFn: txGen.ThatDoesntStartTransaction,
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				return &automock.UIDService{}
@@ -264,9 +244,6 @@ func TestService_Create(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
 			UidFn: func() *automock.UIDService {
 				return &automock.UIDService{}
 			},
@@ -281,9 +258,6 @@ func TestService_Create(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
 			UidFn: func() *automock.UIDService {
 				return &automock.UIDService{}
 			},
@@ -297,9 +271,6 @@ func TestService_Create(t *testing.T) {
 			TxFn: txGen.ThatFailsOnBegin,
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -320,9 +291,6 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{customerTenant}).Return(testError).Once()
 				return tenantSvc
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(accountTenant.ID).Once()
@@ -342,9 +310,6 @@ func TestService_Create(t *testing.T) {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), customerTenant.ExternalTenant).Return("", testError).Once()
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -367,9 +332,6 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenant}).Return(testError).Once()
 				return tenantSvc
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(accountTenant.ID).Once()
@@ -390,12 +352,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{customerTenant}).Return(apperrors.NewNotUniqueError(resource.Tenant)).Once()
 				tenantSvc.On("GetInternalTenant", mock.Anything, customerTenant.ExternalTenant).Return(customerTenant.ID, nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenant}).Return(nil).Once()
+				tenantSvc.On("SetLabel", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(testError)
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Upsert", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(testError)
-				return labelRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -416,12 +374,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), customerTenant.ExternalTenant).Return("", apperrors.NewNotFoundError(resource.Tenant, customerTenant.ExternalTenant)).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{customerTenant}).Return(nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), []model.BusinessTenantMapping{accountTenant}).Return(nil).Once()
+				tenantSvc.On("SetLabel", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
 				return tenantSvc
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Upsert", txtest.CtxWithDBMatcher(), tenantLabelMatcher).Return(nil)
-				return labelRepo
 			},
 			UidFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
@@ -440,17 +394,13 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, transact := testCase.TxFn()
 			tenantSvc := testCase.TenantSvcFn()
-			labelRepo := testCase.LabelRepoFn()
 			uidSvc := testCase.UidFn()
-			defer transact.AssertExpectations(t)
-			defer tenantSvc.AssertExpectations(t)
-			defer labelRepo.AssertExpectations(t)
-			defer uidSvc.AssertExpectations(t)
+			defer mock.AssertExpectationsForObjects(t, transact, tenantSvc, uidSvc)
 
 			body, err := json.Marshal(customerTenant)
 			require.NoError(t, err)
 
-			handler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, labelRepo, transact, uidSvc, testCase.HandlerCfg)
+			handler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, transact, uidSvc, testCase.HandlerCfg)
 			req := testCase.Request
 			w := httptest.NewRecorder()
 
@@ -493,16 +443,14 @@ func TestService_Delete(t *testing.T) {
 	t.Run("DeleteByExternalID handler is noop", func(t *testing.T) {
 		_, transact := txGen.ThatDoesntStartTransaction()
 		tenantSvc := &automock.TenantService{}
-		labelRepo := &automock.LabelRepository{}
 		uidSvc := &automock.UIDService{}
 		defer transact.AssertExpectations(t)
 		defer tenantSvc.AssertExpectations(t)
-		defer labelRepo.AssertExpectations(t)
 		defer uidSvc.AssertExpectations(t)
 
 		config := tenantfetcher.HandlerConfig{}
 
-		handler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, labelRepo, transact, uidSvc, config)
+		handler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, transact, uidSvc, config)
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
 		w := httptest.NewRecorder()
 

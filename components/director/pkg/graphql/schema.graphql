@@ -1041,6 +1041,7 @@ type Tenant {
 	internalID: ID!
 	name: String
 	initialized: Boolean
+	labels(key: String): Labels
 }
 
 type Version {

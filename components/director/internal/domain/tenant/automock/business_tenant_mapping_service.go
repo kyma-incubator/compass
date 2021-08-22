@@ -36,3 +36,26 @@ func (_m *BusinessTenantMappingService) List(ctx context.Context) ([]*model.Busi
 
 	return r0, r1
 }
+
+// ListLabels provides a mock function with given fields: ctx, tenantID
+func (_m *BusinessTenantMappingService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, tenantID)
+
+	var r0 map[string]*model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
+		r0 = rf(ctx, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

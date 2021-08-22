@@ -93,5 +93,5 @@ spec:
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
-              value: Callback
+              value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
       restartPolicy: Never

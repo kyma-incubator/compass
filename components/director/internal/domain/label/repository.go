@@ -212,6 +212,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "runtime_id"
 	case model.RuntimeContextLabelableObject:
 		return "runtime_context_id"
+	case model.TenantLabelableObject:
+		return "tenant_id"
 	}
 
 	return ""
