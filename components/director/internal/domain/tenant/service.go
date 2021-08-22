@@ -164,7 +164,7 @@ func (s *labeledService) SetLabel(ctx context.Context, labelInput *model.LabelIn
 }
 
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
-	log.C(ctx).Infof("getting labels for tenant with ID %s",tenantID)
+	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
 	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
 		return nil, err
 	}

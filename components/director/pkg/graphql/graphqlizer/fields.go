@@ -447,7 +447,8 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		id
 		internalID
 		name
-		initialized`
+		initialized
+		labels`
 }
 
 func (fp *GqlFieldsProvider) OmitForBundle(omittedProperties []string) string {

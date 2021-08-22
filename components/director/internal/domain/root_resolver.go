@@ -278,6 +278,7 @@ func (r *RootResolver) OneTimeTokenForRuntime() graphql.OneTimeTokenForRuntimeRe
 func (r *RootResolver) Tenant() graphql.TenantResolver {
 	return &tenantResolver{r}
 }
+
 type queryResolver struct {
 	*RootResolver
 }
