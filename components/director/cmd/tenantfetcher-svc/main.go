@@ -186,7 +186,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	tenantRepo := tenant.NewRepository(converter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, transact, uidSvc, cfg)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, transact, cfg)
 
 	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
 	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)

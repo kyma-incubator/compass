@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -35,10 +37,17 @@ func main() {
 		exitOnError(err, "error while closing the connection to the database")
 	}()
 
+	UIDSvc := uid.NewService()
+
+	labelConv := label.NewConverter()
+	labelRepo := label.NewRepository(labelConv)
+	labelDefConv := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConv)
+	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, UIDSvc)
+
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	UIDSvc := uid.NewService()
-	tenantSvc := tenant.NewService(tenantRepo, UIDSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, UIDSvc, labelRepo, labelUpsertSvc)
 
 	tenants, err := externaltenant.MapTenants(tenantsDirectoryPath)
 	exitOnError(err, "error while mapping tenants from file")
@@ -49,8 +58,7 @@ func main() {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenantMappings := tenantSvc.MultipleToTenantMapping(tenants)
-	err = tenantSvc.CreateManyIfNotExists(ctx, tenantMappings)
+	err = tenantSvc.CreateManyIfNotExists(ctx, tenants)
 	exitOnError(err, "error while creating tenants")
 
 	err = tx.Commit()

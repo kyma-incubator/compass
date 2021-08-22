@@ -15,11 +15,11 @@ type TenantService struct {
 }
 
 // CreateManyIfNotExists provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantService) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMapping) error {
+func (_m *TenantService) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, tenantInputs)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMapping) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMappingInput) error); ok {
 		r0 = rf(ctx, tenantInputs)
 	} else {
 		r0 = ret.Error(0)
@@ -84,34 +84,4 @@ func (_m *TenantService) List(ctx context.Context) ([]*model.BusinessTenantMappi
 	}
 
 	return r0, r1
-}
-
-// MultipleToTenantMapping provides a mock function with given fields: tenantInputs
-func (_m *TenantService) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
-	ret := _m.Called(tenantInputs)
-
-	var r0 []model.BusinessTenantMapping
-	if rf, ok := ret.Get(0).(func([]model.BusinessTenantMappingInput) []model.BusinessTenantMapping); ok {
-		r0 = rf(tenantInputs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.BusinessTenantMapping)
-		}
-	}
-
-	return r0
-}
-
-// SetLabel provides a mock function with given fields: ctx, labelInput
-func (_m *TenantService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
-	ret := _m.Called(ctx, labelInput)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
-		r0 = rf(ctx, labelInput)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }

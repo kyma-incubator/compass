@@ -291,11 +291,13 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepo := testCase.TenantMappingRepoFn()
 			uidSvc := uidSvcFn()
-			svc := tenant.NewService(tenantMappingRepo, uidSvc)
+			labelRepo := &automock.LabelRepository{}
+			labelUpsertSvc := &automock.LabelUpsertService{}
+
+			svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
 			// WHEN
-			tenantMappings := svc.MultipleToTenantMapping(tenantInputs)
-			err := svc.CreateManyIfNotExists(ctx, tenantMappings)
+			err := svc.CreateManyIfNotExists(ctx, tenantInputs)
 
 			// THEN
 			if testCase.ExpectedOutput != nil {
@@ -305,8 +307,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			tenantMappingRepo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 		})
 	}
 }

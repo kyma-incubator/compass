@@ -54,10 +54,8 @@ type QueryConfig struct {
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping
-	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMapping) error
+	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
-	SetLabel(ctx context.Context, labelInput *model.LabelInput) error
 }
 
 //go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
@@ -234,11 +232,7 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 		subdomainMapping[eventTenant.ExternalTenant] = eventTenant.Subdomain
 	}
 	if len(tenantsToCreate) > 0 {
-		tenants := s.tenantStorageService.MultipleToTenantMapping(tenantsToCreate)
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenants); err != nil {
-			return errors.Wrap(err, "while storing new tenants")
-		}
-		if err := s.upsertSubdomainLabelsForTenants(ctx, tenants, subdomainMapping); err != nil {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
 	}
@@ -263,8 +257,7 @@ func (s Service) createParents(ctx context.Context, currTenants map[string]strin
 	}
 	parentsToCreate = s.dedupeTenants(parentsToCreate)
 	if len(parentsToCreate) > 0 {
-		tenants := s.tenantStorageService.MultipleToTenantMapping(parentsToCreate)
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenants); err != nil {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
 			return errors.Wrap(err, "while storing new parents")
 		}
 	}
@@ -545,23 +538,6 @@ func (s Service) shouldFullResync(lastFullResyncTimestamp string) (bool, error) 
 	}
 	ts := time.Unix(i/1000, 0)
 	return time.Now().After(ts.Add(s.fullResyncInterval)), nil
-}
-
-func (s Service) upsertSubdomainLabelsForTenants(ctx context.Context, tenants []model.BusinessTenantMapping, subdomainMapping map[string]string) error {
-	for _, t := range tenants {
-		subdomainLabel := &model.LabelInput{
-			ObjectType: model.TenantLabelableObject,
-			ObjectID:   t.ID,
-			Key:        subdomainLabelKey,
-			Value:      subdomainMapping[t.ExternalTenant],
-		}
-
-		if err := s.tenantStorageService.SetLabel(ctx, subdomainLabel); err != nil {
-			return errors.Wrapf(err, "while storing subdomain label for tenant with ID %s", t.ID)
-		}
-	}
-
-	return nil
 }
 
 func convertTimeToUnixMilliSecondString(timestamp time.Time) string {

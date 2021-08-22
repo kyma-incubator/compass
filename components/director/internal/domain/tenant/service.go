@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const subdomainLabelKey = "subdomain"
+
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
 type TenantMappingRepository interface {
 	Create(ctx context.Context, item model.BusinessTenantMapping) error
@@ -113,29 +115,45 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
-func (s *service) CreateManyIfNotExists(ctx context.Context, tenants []model.BusinessTenantMapping) error {
-	err := s.createIfNotExists(ctx, tenants)
-	if err != nil {
+func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
+	if err := s.createIfNotExists(ctx, tenants); err != nil {
 		return errors.Wrap(err, "while creating many")
 	}
 	return nil
 }
 
-func (s *service) createIfNotExists(ctx context.Context, tenants []model.BusinessTenantMapping) error {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+	tenants := s.MultipleToTenantMapping(tenantInputs)
+	subdomains := tenantSubdomains(tenantInputs)
 	for _, tenant := range tenants {
 		exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
 		if err != nil {
-			return errors.Wrap(err, "while checking the existence of tenant")
+			return errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
 		}
 		if exists {
 			continue
 		}
-		err = s.tenantMappingRepo.Create(ctx, tenant)
-		if err != nil {
-			return errors.Wrap(err, "while creating the tenant")
+		if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
+			return errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
+		}
+		if subdomain, ok := subdomains[tenant.ExternalTenant]; ok {
+			if err := s.addSubdomainLabel(ctx, tenant.ID, subdomain); err != nil {
+				return errors.Wrapf(err, "while setting subdomain label for tenant with external ID %s", tenant.ExternalTenant)
+			}
 		}
 	}
 	return nil
+}
+
+func tenantSubdomains(tenants []model.BusinessTenantMappingInput) map[string]string {
+	subdomains := make(map[string]string)
+	for _, t := range tenants {
+		if len(t.Subdomain) > 0 {
+			subdomains[t.ExternalTenant] = t.Subdomain
+		}
+	}
+
+	return subdomains
 }
 
 func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
@@ -175,6 +193,16 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	}
 
 	return labels, nil
+}
+
+func (s *labeledService) addSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
+	label := &model.LabelInput{
+		Key:        subdomainLabelKey,
+		Value:      subdomain,
+		ObjectID:   tenantID,
+		ObjectType: model.TenantLabelableObject,
+	}
+	return s.SetLabel(ctx, label)
 }
 
 func (s *service) ensureTenantExists(ctx context.Context, id string) error {
