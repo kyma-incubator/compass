@@ -56,6 +56,9 @@ data:
       values:
         pilot:
           jwksResolverExtraRootCA: "__CERT__"
+          resources:
+            limits:
+              memory: 2048Mi
         global:
           jwtPolicy: first-party-jwt
           proxy:

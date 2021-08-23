@@ -56,8 +56,6 @@ MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_MI
 $MINIMAL_OVERRIDES_CONTENT
 EOF
 
-trap "rm -f ${MINIMAL_OVERRIDES_FILENAME}" EXIT INT TERM
-
 INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma.yaml
 OVERRIDES_KYMA_FULL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-full-config-local.yaml
 
@@ -68,7 +66,7 @@ FULL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_FULL_
 $FULL_OVERRIDES_CONTENT
 EOF
 
-trap "rm -f ${FULL_OVERRIDES_FILENAME}" EXIT INT TERM
+trap "rm -f ${MINIMAL_OVERRIDES_FILENAME} ${FULL_OVERRIDES_FILENAME}" EXIT INT TERM
 
 if [[ $KYMA_RELEASE == *PR-* ]]; then
   KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_RELEASE}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')

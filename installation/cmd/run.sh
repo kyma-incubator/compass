@@ -96,7 +96,7 @@ function mount_minikube_ca_to_oathkeeper() {
   echo "Mounting minikube CA cert into oathkeeper's container..."
 
   minikube ssh sudo cat /var/lib/minikube/certs/ca.crt > mk-ca.crt
-  trap "rm -f mk-ca.crt" RETURN
+  trap "rm -f mk-ca.crt" RETURN EXIT INT TERM
 
   kubectl create configmap -n kyma-system minikube-ca --from-file mk-ca.crt --dry-run -o yaml | kubectl apply -f -
 

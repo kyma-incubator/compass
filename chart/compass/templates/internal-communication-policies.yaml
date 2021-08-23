@@ -50,6 +50,9 @@ spec:
             hosts:
               - compass.kyma.local
               - compass-mf.kyma.local
+            {{- if eq .Values.global.externalServicesMock.enabled true }}
+              - "compass-external-services-mock.*"
+            {{end}}
     - from: # or anything other if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ["*"]

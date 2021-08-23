@@ -273,7 +273,7 @@ global:
         - "x-broker-api-request-identity"
 
   kubernetes:
-    serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local:443/openid/v1/jwks
+    serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
 
   ingress:
     domainName: "kyma.local"
