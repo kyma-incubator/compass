@@ -5,9 +5,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"net/http"
 	"testing"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/stretchr/testify/require"

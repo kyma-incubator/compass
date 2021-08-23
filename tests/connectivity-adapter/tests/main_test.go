@@ -1,14 +1,15 @@
 package tests
 
 import (
+	"os"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
-	"os"
-	"testing"
 )
 
 var dexGraphQLClient *graphql.Client

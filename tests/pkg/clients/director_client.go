@@ -2,10 +2,11 @@ package clients
 
 import (
 	"context"
-	"github.com/machinebox/graphql"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
