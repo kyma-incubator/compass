@@ -13,7 +13,8 @@ import (
 )
 
 type Config struct {
-	ExternalSvcMockURL string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
+	ExternalSvcMockURL    string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
+	SystemFetcherPageSize int    `envconfig:"SYSTEM_FETCHER_PAGE_SIZE"`
 }
 
 var (

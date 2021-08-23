@@ -396,6 +396,10 @@ global:
       tokenURLPattern: ""
       scopesClaim: ""
       tenantHeaderName: ""
+    paging:
+      pageSize: 200
+      sizeParam: "$top"
+      skipParam: "$skip"
 
   tenantFetchers:
     job1:
