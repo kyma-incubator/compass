@@ -48,12 +48,12 @@ spec:
     - to: # frontend
         - operation:
             hosts:
-              - compass.kyma.local
-              - compass-mf.kyma.local
+              - compass.{{ .Values.global.ingress.domainName }}
+              - compass-mf.{{ .Values.global.ingress.domainName }}
             {{- if eq .Values.global.externalServicesMock.enabled true }}
               - "compass-external-services-mock.*"
             {{end}}
-    - from: # or anything other if the request is authenticated via RequestAuthentication
+    - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ["*"]
 ---
@@ -83,8 +83,14 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: hydra
-  action: ALLOW
+  action: ALLOW # allow only
   rules:
-    - from:
+    - to: # token endpoint
+        - operation:
+            hosts:
+              - oauth2.{{ .Values.global.ingress.domainName }}
+            paths:
+              - /oauth2/token
+    - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ['*']
