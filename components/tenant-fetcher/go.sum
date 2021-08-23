@@ -533,6 +533,7 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20210315172259-e18
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:731AhoiZoq+xZrya3XO48PHWGQwxkkG9lJdaq84rubg=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210623072749-c159dfdd6510/go.mod h1:z1vSKaBY7eBcbaScaqsyzB8n/f9OQGA+vdmKsvFdU3U=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210811095717-11e56601583a/go.mod h1:W7QtrypGMg63Htg+BETGJpbs7arbiwufjlJIfeDN9yw=
+github.com/kyma-incubator/compass/components/connector v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:wlEbOeMHFztxKu4kl3+2u+bg/Tnyt8iGrwnkwRAp3m4=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210222123648-c454983cf74b/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210301143156-3b39f117e7bf/go.mod h1:hJ3bgWfwFhdnxZF7Gcok5Rm1zDT4bHtVGHDeXDBvTfg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
@@ -542,11 +543,14 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210715065550-fa10
 github.com/kyma-incubator/compass/components/director v0.0.0-20210802140320-16701eeb7aeb/go.mod h1:eYS4f6X/crIXZgWc5V+97v1T5B5O5+m++P5U2aO4XSQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f38c361ff5 h1:SnmsInDsyuLHqsEX04z+JenjqESsqJPDTb1NvztDq1Q=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:XgAhkmzZYsX1kxPrHYQLjKyqTSUgetMlBVhod2Fji9I=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210823104705-748ca0a6e5be h1:Y2z870FhiuA5is2VHIVRXMU/cAM1pQlpRfHgKFHmAWc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210823104705-748ca0a6e5be/go.mod h1:jK/Gm+fZ7WaoacDfvD8RoFt/D6rv5aDJuyY/hBg3hy4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210623072749-c159dfdd6510/go.mod h1:g6OQxPDZJSYohkod0QY52zFxZgx4Kxe8MPyjAkUn4Xs=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210811095717-11e56601583a/go.mod h1:EaPVNszb+fzLAcC8KV2CKzyPySkznHXbEgN/BaJxL8o=
+github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:EaPVNszb+fzLAcC8KV2CKzyPySkznHXbEgN/BaJxL8o=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210301144805-1544f7017bea/go.mod h1:K1miIQTocreo5NaWZ/QpP3nYZqojQ6G3sf/NTZfa6dk=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210416142045-25b90bbc9ee6/go.mod h1:jIYjEhHGa/GLLDmfklBJAPXCj3+txwQDy0fBsa8wpaY=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210623065504-84041e076857/go.mod h1:lDbQAgb1u7QWEGvFWQVnkt2XxBcHl/U9QbHcGq9TRkI=
@@ -843,6 +847,7 @@ github.com/tidwall/pretty v1.1.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhV
 github.com/tidwall/sjson v1.1.4/go.mod h1:wXpKXu8CtDjKAZ+3DrKY5ROCorDFahq8l0tey/Lx1fg=
 github.com/tidwall/sjson v1.1.5/go.mod h1:VuJzsZnTowhSxWdOgsAnb886i4AjEyTkk7tNtsL7EYE=
 github.com/tidwall/sjson v1.1.6/go.mod h1:KN3FZ7odvXIHPbJdhNorK/M9lWweVUbXsXXhrJ/kGOA=
+github.com/tidwall/sjson v1.1.7/go.mod h1:w/yG+ezBeTdUxiKs5NcPicO9diP38nk96QBAbIIGeFs=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
