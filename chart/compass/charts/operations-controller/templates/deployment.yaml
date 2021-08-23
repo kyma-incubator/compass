@@ -19,6 +19,14 @@ spec:
         release: {{ .Release.Name }}
         control-plane: controller-manager
     spec:
+      {{ if .Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            # Used for calls to Director
+            - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       containers:
       - args:
@@ -39,7 +47,7 @@ spec:
           - name: SERVER_ENABLE_LEADER_ELECTION
             value: "true"
           - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
-            value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
+            value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
           - name: DIRECTOR_OPERATION_ENDPOINT
             value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.operations.path }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}

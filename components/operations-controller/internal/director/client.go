@@ -48,14 +48,21 @@ type Request struct {
 
 // NewClient constructs a default implementation of the Client interface
 func NewClient(operationEndpoint string, cfg *graphqlbroker.Config, httpClient *http.Client) (*client, error) {
-	graphqlClient, err := graphqlbroker.PrepareGqlClientWithHttpClient(cfg, httpClient)
+	tenantForwardingHTTPClient := &http.Client{
+		Transport: &tenantForwardingTransport{
+			next: httpClient.Transport,
+		},
+		Timeout: httpClient.Timeout,
+	}
+
+	graphqlClient, err := graphqlbroker.PrepareGqlClientWithHttpClient(cfg, tenantForwardingHTTPClient)
 	if err != nil {
 		return nil, err
 	}
 
 	return &client{
 		ApplicationLister: graphqlClient,
-		httpClient:        httpClient,
+		httpClient:        tenantForwardingHTTPClient,
 		operationEndpoint: operationEndpoint,
 	}, nil
 }
@@ -72,13 +79,6 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 		return err
 	}
 
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("tenant", tenantID)
-
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -89,4 +89,18 @@ func (c *client) UpdateOperation(ctx context.Context, request *Request) error {
 	}
 
 	return nil
+}
+
+type tenantForwardingTransport struct {
+	next http.RoundTripper
+}
+
+func (tft *tenantForwardingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	tenantID, err := tenant.LoadFromContext(req.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("tenant", tenantID)
+	return tft.next.RoundTrip(req)
 }

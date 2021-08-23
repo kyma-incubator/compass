@@ -23,7 +23,7 @@ sandbox-test:
 	@../sandbox.sh connectivity-adapter
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-connectivity-adapter-local-0 -c connectivity-adapter-tests -- ./connectivity-adapter.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-connectivity-adapter-local-0 -c connectivity-adapter-tests -- ./connectivity-adapter.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o connectivity-adapter.test
