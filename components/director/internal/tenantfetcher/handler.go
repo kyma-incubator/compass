@@ -99,7 +99,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 		accountTenant.Parent = parentInternalID
 	}
 
-	if err := h.tenantSvc.CreateManyIfNotExists(ctx, []model.BusinessTenantMappingInput{*accountTenant}); err != nil {
+	if err := h.tenantSvc.CreateManyIfNotExists(ctx, *accountTenant); err != nil {
 		if !apperrors.IsNotUniqueError(err) {
 			log.C(ctx).WithError(err).Errorf("Failed to create tenant with external ID %s: %v", externalTenantID, err)
 			http.Error(writer, fmt.Sprintf(tenantCreationFailureMsgFmt, externalTenantID), http.StatusInternalServerError)
@@ -125,20 +125,20 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, _ *http.Request
 }
 
 func (h *handler) tenantInfoFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
-	tenantId := gjson.GetBytes(body, h.config.TenantProviderTenantIdProperty)
-	if len(tenantId.String()) <= 0 {
+	tenantId := gjson.GetBytes(body, h.config.TenantProviderTenantIdProperty).String()
+	if len(tenantId) <= 0 {
 		return nil, fmt.Errorf("mandatory tenant ID property %q is missing from request body", h.config.TenantProviderTenantIdProperty)
 	}
 	subdomain := gjson.GetBytes(body, h.config.TenantProviderSubdomainProperty).String()
 	if len(subdomain) <= 0 {
 		return nil, fmt.Errorf("mandatory subdomain property %q is missing from request body", h.config.TenantProviderSubdomainProperty)
 	}
-	customerId := gjson.GetBytes(body, h.config.TenantProviderCustomerIdProperty)
+	customerId := gjson.GetBytes(body, h.config.TenantProviderCustomerIdProperty).String()
 
 	return &model.BusinessTenantMappingInput{
-		Name:           tenantId.String(),
-		ExternalTenant: tenantId.String(),
-		Parent:         customerId.String(),
+		Name:           tenantId,
+		ExternalTenant: tenantId,
+		Parent:         customerId,
 		Type:           tenantEntity.TypeToStr(tenantEntity.Account),
 		Provider:       h.config.TenantProvider,
 		Subdomain:      subdomain,
@@ -175,7 +175,7 @@ func (h *handler) ensureParentExists(ctx context.Context, parentTenantID, childT
 
 	log.C(ctx).Infof("Creating parent tenant with external ID %s", parentTenantID)
 	tenant := h.customerTenant(parentTenantID)
-	err = h.tenantSvc.CreateManyIfNotExists(ctx, []model.BusinessTenantMappingInput{tenant})
+	err = h.tenantSvc.CreateManyIfNotExists(ctx, tenant)
 	if err != nil && apperrors.IsNotUniqueError(err) {
 		log.C(ctx).Infof("Parent tenant with external ID %s already exists", parentTenantID)
 		return h.tenantSvc.GetInternalTenant(ctx, parentTenantID)

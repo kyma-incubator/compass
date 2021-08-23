@@ -15,12 +15,12 @@ type TenantService struct {
 }
 
 // CreateManyIfNotExists provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantService) CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+func (_m *TenantService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, tenantInputs)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMappingInput) error); ok {
-		r0 = rf(ctx, tenantInputs)
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
+		r0 = rf(ctx, tenantInputs...)
 	} else {
 		r0 = ret.Error(0)
 	}

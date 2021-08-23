@@ -24,9 +24,9 @@ const (
 	JwksKeyIDKey           = "kid"
 )
 
-//go:generate mockery --name=ClaimsParser --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
 type ClaimsValidator interface {
-	Validate(context.Context, claims.Claims) error
+	Validate(claims.Claims) error
 }
 
 type Authenticator struct {
@@ -85,7 +85,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {
+			if err := a.claimsValidator.Validate(*tokenClaims); err != nil {
 				log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
 				switch apperrors.ErrorCode(err) {
 				case apperrors.TenantNotFound:

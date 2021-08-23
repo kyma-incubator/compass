@@ -1,7 +1,6 @@
 package claims
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -19,7 +18,7 @@ func NewScopesValidator(requiredScopes []string) *scopeBasedClaimsValidator {
 	}
 }
 
-func (v *scopeBasedClaimsValidator) Validate(ctx context.Context, claims Claims) error {
+func (v *scopeBasedClaimsValidator) Validate(claims Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

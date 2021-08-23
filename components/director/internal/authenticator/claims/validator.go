@@ -1,8 +1,6 @@
 package claims
 
 import (
-	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
@@ -13,7 +11,7 @@ func NewValidator() *validator {
 	return &validator{}
 }
 
-func (*validator) Validate(ctx context.Context, claims Claims) error {
+func (*validator) Validate(claims Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

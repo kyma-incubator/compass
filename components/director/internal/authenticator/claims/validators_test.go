@@ -1,7 +1,6 @@
 package claims_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -22,28 +21,28 @@ func TestValidator_Validate(t *testing.T) {
 		v := claims.NewValidator()
 		c := getClaims(tenantID, extTenantID, scopes)
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.NoError(t, err)
 	})
 	t.Run("Succeeds when no scopes are present", func(t *testing.T) {
 		v := claims.NewValidator()
 		c := getClaims(tenantID, extTenantID, "")
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.NoError(t, err)
 	})
 	t.Run("Succeeds when both internal and external tenant IDs are missing", func(t *testing.T) {
 		v := claims.NewValidator()
 		c := getClaims("", "", scopes)
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.NoError(t, err)
 	})
 	t.Run("Fails when internal tenant ID is missing", func(t *testing.T) {
 		v := claims.NewValidator()
 		c := getClaims("", extTenantID, "")
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Tenant not found")
 	})
@@ -52,7 +51,7 @@ func TestValidator_Validate(t *testing.T) {
 		c := getClaims(tenantID, extTenantID, scopes)
 		c.ExpiresAt = 1
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "while validating claims")
 	})
@@ -63,7 +62,7 @@ func TestScopesValidator_Validate(t *testing.T) {
 		v := claims.NewScopesValidator([]string{"application:read"})
 		c := getClaims(tenantID, extTenantID, scopes)
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.NoError(t, err)
 	})
 	t.Run("Fails when no scopes are present", func(t *testing.T) {
@@ -71,7 +70,7 @@ func TestScopesValidator_Validate(t *testing.T) {
 		v := claims.NewScopesValidator(requiredScopes)
 		c := getClaims(tenantID, extTenantID, "")
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), fmt.Sprintf("Not all required scopes %q were found in claim with scopes %q", requiredScopes, c.Scopes))
 	})
@@ -81,7 +80,7 @@ func TestScopesValidator_Validate(t *testing.T) {
 		c := getClaims(tenantID, extTenantID, scopes)
 		c.ExpiresAt = 1
 
-		err := v.Validate(context.TODO(), c)
+		err := v.Validate(c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "while validating claims")
 	})

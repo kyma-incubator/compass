@@ -58,7 +58,7 @@ func main() {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = tenantSvc.CreateManyIfNotExists(ctx, tenants)
+	err = tenantSvc.CreateManyIfNotExists(ctx, tenants...)
 	exitOnError(err, "error while creating tenants")
 
 	err = tx.Commit()

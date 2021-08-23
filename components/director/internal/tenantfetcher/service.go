@@ -50,11 +50,11 @@ type QueryConfig struct {
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
 
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
@@ -232,7 +232,7 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 		subdomainMapping[eventTenant.ExternalTenant] = eventTenant.Subdomain
 	}
 	if len(tenantsToCreate) > 0 {
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate...); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
 	}
@@ -257,7 +257,7 @@ func (s Service) createParents(ctx context.Context, currTenants map[string]strin
 	}
 	parentsToCreate = s.dedupeTenants(parentsToCreate)
 	if len(parentsToCreate) > 0 {
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate...); err != nil {
 			return errors.Wrap(err, "while storing new parents")
 		}
 	}

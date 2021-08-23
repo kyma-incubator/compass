@@ -47,8 +47,6 @@ type labeledService struct {
 type service struct {
 	uidService        UIDService
 	tenantMappingRepo TenantMappingRepository
-	labelRepo         LabelRepository
-	labelUpsertSvc    LabelUpsertService
 }
 
 func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *service {
@@ -115,33 +113,41 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
-func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
-	if err := s.createIfNotExists(ctx, tenants); err != nil {
-		return errors.Wrap(err, "while creating many")
-	}
-	return nil
-}
-
-func (s *labeledService) createIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
+func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains := tenantSubdomains(tenantInputs)
 	for _, tenant := range tenants {
-		exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
-		if err != nil {
-			return errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
+		subdomain := ""
+		if s, ok := subdomains[tenant.ExternalTenant]; ok {
+			subdomain = s
 		}
-		if exists {
-			continue
-		}
-		if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
-			return errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
-		}
-		if subdomain, ok := subdomains[tenant.ExternalTenant]; ok {
-			if err := s.addSubdomainLabel(ctx, tenant.ID, subdomain); err != nil {
-				return errors.Wrapf(err, "while setting subdomain label for tenant with external ID %s", tenant.ExternalTenant)
-			}
+		if err := s.createIfNotExists(ctx, tenant, subdomain); err != nil {
+			return errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
 	}
+
+	return nil
+}
+
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain string) error {
+	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
+	if err != nil {
+		return errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
+	}
+	if exists {
+		return nil
+	}
+
+	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
+		return errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
+	}
+
+	if len(subdomain) > 0 {
+		if err := s.addSubdomainLabel(ctx, tenant.ID, subdomain); err != nil {
+			return errors.Wrapf(err, "while setting subdomain label for tenant with external ID %s", tenant.ExternalTenant)
+		}
+	}
+
 	return nil
 }
 
@@ -202,7 +208,7 @@ func (s *labeledService) addSubdomainLabel(ctx context.Context, tenantID, subdom
 		ObjectID:   tenantID,
 		ObjectType: model.TenantLabelableObject,
 	}
-	return s.SetLabel(ctx, label)
+	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
 }
 
 func (s *service) ensureTenantExists(ctx context.Context, id string) error {
