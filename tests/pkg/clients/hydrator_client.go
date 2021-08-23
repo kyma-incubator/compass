@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"net/http"
 	"testing"
 
@@ -19,11 +20,11 @@ type HydratorClient struct {
 
 func NewHydratorClient(validatorURL string) *HydratorClient {
 	httpClient := &http.Client{
-		Transport: &http.Transport{
+		Transport: httputil.NewServiceAccountTokenTransport(&http.Transport{ // Needed because hydrators are behind PeerAuthentication
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-		},
+		}),
 	}
 
 	return &HydratorClient{
