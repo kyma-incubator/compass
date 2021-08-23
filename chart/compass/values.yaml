@@ -69,7 +69,7 @@ global:
       version: "PR-1992"
     connectivity_adapter:
       dir:
-      version: "PR-1971"
+      version: "PR-1992"
     pairing_adapter:
       dir:
       version: "PR-1971"

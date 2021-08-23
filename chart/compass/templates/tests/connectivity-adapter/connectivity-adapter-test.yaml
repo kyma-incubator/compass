@@ -25,6 +25,8 @@ spec:
           hostnames:
             - "{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-connectivity-adapter-tests
       containers:
@@ -34,10 +36,8 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "/connectivity-adapter.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
-            - name: APP_CONNECTIVITY_ADAPTER_URL
-              value: {{ .Values.global.tests.connectivityAdapterFQDN }}:{{ .Values.global.connectivity_adapter.port }}
-            - name: APP_DIRECTOR_URL
-              value: {{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/graphql
+            - name: DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_SKIP_SSL_VERIFY
               value: {{ .Values.global.tests.skipTLSVerify | quote }}
             - name: APP_CONNECTIVITY_ADAPTER_URL
@@ -46,4 +46,18 @@ spec:
               value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant | quote }}
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
     restartPolicy: Never

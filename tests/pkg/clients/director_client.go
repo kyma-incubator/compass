@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"github.com/machinebox/graphql"
 	"net/http"
 	"strings"
 	"time"
@@ -14,8 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gqlTools "github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -41,7 +40,6 @@ type Client interface {
 }
 
 type DirectorClient struct {
-	scopes       []string
 	tenant       string
 	graphqulizer graphqlizer.Graphqlizer
 	client       *gcli.Client
@@ -102,36 +100,24 @@ type TenantsResponse struct {
 	Result []*schema.Tenant
 }
 
-func NewDirectorClient(directorURL, directorHealthzURL, tenant string, scopes []string) (Client, error) {
-
-	err := waitUntilDirectorIsReady(directorHealthzURL)
+func NewDirectorClient(gqlClient *graphql.Client, tenant, readyzURL string) (Client, error) {
+	err := waitUntilDirectorIsReady(readyzURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "Director is not ready")
 	}
 
-	internalTenantID, err := getInternalTenantID(directorURL, tenant)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlClient, err := getClient(directorURL, internalTenantID, scopes)
-	if err != nil {
-		return nil, err
-	}
-
 	return &DirectorClient{
-		scopes:       scopes,
 		tenant:       tenant,
 		graphqulizer: graphqlizer.Graphqlizer{},
 		client:       gqlClient,
 	}, nil
 }
 
-func waitUntilDirectorIsReady(directorHealthzURL string) error {
+func waitUntilDirectorIsReady(directorReadyzURL string) error {
 	httpClient := http.Client{}
 
 	return retry.Do(func() error {
-		req, err := http.NewRequest(http.MethodGet, directorHealthzURL, nil)
+		req, err := http.NewRequest(http.MethodGet, directorReadyzURL, nil)
 		if err != nil {
 			logrus.Warningf("Failed to create request while waiting for Director: %s", err)
 			return err
@@ -157,7 +143,6 @@ func waitUntilDirectorIsReady(directorHealthzURL string) error {
 }
 
 func (c *DirectorClient) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {
-
 	appGraphql, err := c.graphqulizer.ApplicationRegisterInputToGQL(in)
 	if err != nil {
 		return "", err
@@ -199,7 +184,6 @@ func (c *DirectorClient) DeleteApplicationLabel(applicationID, key string) error
 }
 
 func (c *DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
-
 	runtimeGraphQL, err := c.graphqulizer.RuntimeInputToGQL(in)
 
 	var result RuntimeResponse
@@ -226,25 +210,20 @@ func (c *DirectorClient) SetRuntimeLabel(runtimeID, key, value string) error {
 }
 
 func (c *DirectorClient) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
+	query := fixtures.FixSetRuntimeLabelRequest(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
+	var response SetLabelResponse
 
-	{
-		query := fixtures.FixSetRuntimeLabelRequest(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
-		var response SetLabelResponse
-
-		err := c.executeWithDefaultRetries(query.Query(), &response)
-		if err != nil {
-			return err
-		}
+	err := c.executeWithDefaultRetries(query.Query(), &response)
+	if err != nil {
+		return err
 	}
 
-	{
-		query := fixtures.FixSetDefaultEventingForApplication(appID, runtimeID)
-		var response SetDefaultAppEventingResponse
+	query = fixtures.FixSetDefaultEventingForApplication(appID, runtimeID)
+	var resp SetDefaultAppEventingResponse
 
-		err := c.executeWithDefaultRetries(query.Query(), &response)
-		if err != nil {
-			return err
-		}
+	err = c.executeWithDefaultRetries(query.Query(), &resp)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -261,37 +240,6 @@ func (c *DirectorClient) GetOneTimeTokenUrl(appID string) (string, string, error
 	}
 
 	return response.Result.LegacyConnectorURL, response.Result.Token, nil
-}
-
-func getInternalTenantID(directorURL string, externalTenantID string) (string, error) {
-
-	query := fixtures.FixTenantsRequest()
-
-	req := gcli.NewRequest(query.Query())
-
-	token, err := getToken(externalTenantID, []string{"tenant:read"})
-	if err != nil {
-		return "", err
-	}
-
-	client := gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, directorURL)
-
-	var response TenantsResponse
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err = client.Run(ctx, req, &response)
-	if err != nil {
-		return "", err
-	}
-
-	for _, tenant := range response.Result {
-		if tenant.ID == externalTenantID {
-			return tenant.InternalID, nil
-		}
-	}
-
-	return "", errors.New("Cannot find test tenant.")
 }
 
 func (c *DirectorClient) executeWithRetries(query string, res interface{}, opts ...retry.Option) error {
@@ -311,25 +259,6 @@ func (c *DirectorClient) executeWithRetries(query string, res interface{}, opts 
 
 func (c *DirectorClient) executeWithDefaultRetries(query string, res interface{}) error {
 	return c.executeWithRetries(query, res, retryOptions(defaultRetryCount)...)
-}
-
-func getClient(url string, tenant string, scopes []string) (*gcli.Client, error) {
-
-	token, err := getToken(tenant, scopes)
-	if err != nil {
-		return nil, err
-	}
-
-	return gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, url), nil
-}
-
-func getToken(tenant string, scopes []string) (string, error) {
-	token, err := jwtbuilder.Build(tenant, scopes, &jwtbuilder.Consumer{ID: consumerID, Type: consumerType})
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
 }
 
 func retryOptions(retryCount uint) []retry.Option {
