@@ -72,28 +72,28 @@ global:
       version: "PR-1992"
     pairing_adapter:
       dir:
-      version: "PR-1971"
+      version: "PR-1979"
     director:
       dir:
       version: "PR-1992"
     gateway:
       dir:
-      version: "PR-1971"
+      version: "PR-1979"
     operations_controller:
       dir:
       version: "PR-1992"
     tenant_fetcher:
       dir:
-      version: "PR-1988"
+      version: "PR-1979"
     ord_service:
       dir:
       version: "PR-36"
     schema_migrator:
       dir:
-      version: "PR-1966"
+      version: "PR-1979"
     system_broker:
       dir:
-      version: "PR-1971"
+      version: "PR-1979"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -101,7 +101,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1985"
+      version: "PR-1979"
     console:
       dir:
       version: "PR-40"
