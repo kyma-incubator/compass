@@ -107,7 +107,7 @@ global:
       version: "PR-40"
     e2e_tests:
       dir:
-      version: "PR-1979"
+      version: "PR-1964"
   isLocalEnv: false
   oauth2:
     host: oauth2
