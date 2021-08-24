@@ -22,7 +22,7 @@ spec:
       headers:
         x-authenticator-name: {{ $authenticatorName }}
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml $.Values.global.oathkeeper.mutators.identificationService | indent 4 }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
   - handler: hydrator
