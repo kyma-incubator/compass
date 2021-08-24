@@ -23,6 +23,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       containers:
         - name: tenant-fetcher-tests
@@ -49,8 +50,8 @@ spec:
               value: "/v1/callback/{tenantId}"
             - name: APP_TENANT_PATH_PARAM
               value: "tenantId"
-            - name: APP_DIRECTOR_URL
-              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
+            - name: DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -92,4 +93,14 @@ spec:
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
       restartPolicy: Never

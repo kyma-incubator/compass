@@ -20,17 +20,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"net/http"
+	"testing"
 )
 
 const (
@@ -44,144 +41,66 @@ type Tenant struct {
 
 func TestOnboardingHandler(t *testing.T) {
 	t.Run("Success with tenant and customerID", func(t *testing.T) {
-		// GIVEN
-		providedTenant := Tenant{
+		tenantWithCustomer := Tenant{
 			TenantId:   uuid.New().String(),
 			CustomerId: uuid.New().String(),
 		}
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		// GIVEN
+		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
+		addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
 
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
-
-		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenants, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
 		require.Equal(t, len(oldTenantState)+2, len(tenants))
-		require.Equal(t, http.StatusOK, response.StatusCode)
-		containsTenantWithTenantID(providedTenant.TenantId, tenants)
-		containsTenantWithTenantID(providedTenant.CustomerId, tenants)
+		containsTenantWithTenantID(tenantWithCustomer.TenantId, tenants)
+		containsTenantWithTenantID(tenantWithCustomer.CustomerId, tenants)
 	})
 
 	t.Run("Success with only tenant", func(t *testing.T) {
-		// GIVEN
-		providedTenant := Tenant{
+		tenant := Tenant{
 			TenantId: uuid.New().String(),
 		}
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		// GIVEN
+		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
+		addTenantExpectStatusCode(t, tenant, http.StatusOK)
 
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
-
-		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenants, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
 		require.Equal(t, len(oldTenantState)+1, len(tenants))
-		require.Equal(t, http.StatusOK, response.StatusCode)
-		containsTenantWithTenantID(providedTenant.TenantId, tenants)
-	})
-
-	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
-		//GIVEN
-		providedTenant := Tenant{
-			TenantId:   uuid.New().String(),
-			CustomerId: uuid.New().String(),
-		}
-
-		//WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
-
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-
-		var response *http.Response
-		for i := 0; i < 10; i++ {
-			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-			httpClient := http.DefaultClient
-			httpClient.Timeout = 15 * time.Second
-
-			response, err = httpClient.Do(request)
-			require.NoError(t, err)
-		}
-
-		// THEN
-		require.Equal(t, http.StatusOK, response.StatusCode)
+		containsTenantWithTenantID(tenant.TenantId, tenants)
 	})
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
-		//GIVEN
-		providedTenant := Tenant{
+		tenantWithCustomer := Tenant{
 			TenantId:   uuid.New().String(),
 			CustomerId: uuid.New().String(),
 		}
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		//GIVEN
+		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		//WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
-
-		var response *http.Response
 		for i := 0; i < 10; i++ {
-			byteTenant, err := json.Marshal(providedTenant)
-			require.NoError(t, err)
-
-			request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-			httpClient := http.DefaultClient
-			httpClient.Timeout = 15 * time.Second
-
-			response, err = httpClient.Do(request)
-			require.NoError(t, err)
+			addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
 		}
 
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenants, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
 		assert.Equal(t, len(oldTenantState)+2, len(tenants))
-		require.Equal(t, http.StatusOK, response.StatusCode)
-		containsTenantWithTenantID(providedTenant.TenantId, tenants)
-		containsTenantWithTenantID(providedTenant.CustomerId, tenants)
+		containsTenantWithTenantID(tenantWithCustomer.TenantId, tenants)
+		containsTenantWithTenantID(tenantWithCustomer.CustomerId, tenants)
 	})
 
 	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
@@ -189,77 +108,59 @@ func TestOnboardingHandler(t *testing.T) {
 			CustomerId: uuid.New().String(),
 		}
 
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
+		addTenantExpectStatusCode(t, providedTenant, http.StatusInternalServerError)
 
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-
-		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
-
-		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenants, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
 		assert.Equal(t, len(oldTenantState), len(tenants))
-		require.Equal(t, http.StatusInternalServerError, response.StatusCode)
 	})
 }
 
 func TestDecommissioningHandler(t *testing.T) {
 	t.Run("Success noop", func(t *testing.T) {
-		// GIVEN
 		providedTenant := Tenant{
 			TenantId: uuid.New().String(),
 		}
 
-		// WHEN
-		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-		url := config.TenantFetcherURL + config.RootAPI + endpoint
+		addTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
-		// Add test tenant
-		byteTenant, err := json.Marshal(providedTenant)
-		require.NoError(t, err)
-		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
-
-		httpClient := http.DefaultClient
-		httpClient.Timeout = 15 * time.Second
-
-		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, response.StatusCode)
-
-		// Initial state
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
-		request, err = http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+		removeTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
-		response, err = httpClient.Do(request)
-		require.NoError(t, err)
-
-		newTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		newTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
 		assert.Equal(t, len(oldTenantState), len(newTenantState))
-		require.Equal(t, http.StatusOK, response.StatusCode)
 	})
+}
+
+func addTenantExpectStatusCode(t *testing.T, providedTenant Tenant, expectedStatusCode int) {
+	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodPut, expectedStatusCode)
+}
+
+func removeTenantExpectStatusCode(t *testing.T, providedTenant Tenant, expectedStatusCode int) {
+	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodDelete, expectedStatusCode)
+}
+
+func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant Tenant, httpMethod string, expectedStatusCode int) {
+	byteTenant, err := json.Marshal(providedTenant)
+	require.NoError(t, err)
+
+	request, err := http.NewRequest(httpMethod, config.TenantFetcherFullURL, bytes.NewBuffer(byteTenant))
+	require.NoError(t, err)
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+
+	response, err := httpClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
 func containsTenantWithTenantID(tenantID string, tenants []*graphql.Tenant) bool {

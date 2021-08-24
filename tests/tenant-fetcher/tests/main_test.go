@@ -1,13 +1,23 @@
 package tests
 
 import (
-	"os"
-	"testing"
-
+	"fmt"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/server"
+	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
+	"net/http"
+	"os"
+	"strings"
+	"testing"
+	"time"
 )
+
+var dexGraphQLClient *graphql.Client
+var httpClient *http.Client
 
 type testConfig struct {
 	TenantFetcherURL          string
@@ -23,9 +33,10 @@ type testConfig struct {
 	DbMaxIdleConnections      string
 	DbMaxOpenConnections      string
 	Tenant                    string
-	DirectorUrl               string
 	SubscriptionCallbackScope string
 	TenantProvider            string
+
+	TenantFetcherFullURL string `envconfig:"-"`
 }
 
 var config testConfig
@@ -35,6 +46,17 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
+
+	dexToken := server.Token()
+	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+
+	httpClient = &http.Client{
+		Timeout:   15 * time.Second,
+		Transport: httputil.NewServiceAccountTokenTransport(http.DefaultTransport),
+	}
+
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
