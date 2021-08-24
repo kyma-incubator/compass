@@ -52,7 +52,7 @@ data:
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
-  director.deployment.allowJWTSigningNone: "true"
+  director.deployment.allowJWTSigningNone: "false"
 ---
 apiVersion: v1
 kind: ConfigMap

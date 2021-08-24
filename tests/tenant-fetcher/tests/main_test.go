@@ -2,6 +2,12 @@ package tests
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
@@ -9,11 +15,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
-	"net/http"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
 
 var dexGraphQLClient *graphql.Client
