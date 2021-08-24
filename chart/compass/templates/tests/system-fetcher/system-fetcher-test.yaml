@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    disable-db-dump: "true"
   namespace: {{ .Values.global.tests.namespace }}
 spec:
   template:
@@ -51,6 +52,8 @@ spec:
               value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: SYSTEM_FETCHER_PAGE_SIZE
+              value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
@@ -39,12 +41,9 @@ func UpdateApplicationWithinTenant(t require.TestingT, ctx context.Context, gqlC
 	return app, err
 }
 
-func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) graphql.ApplicationExt {
+func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) (graphql.ApplicationExt, error) {
 	in := FixSampleApplicationRegisterInputWithName("first", name)
-	app, err := RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
-	require.NoError(t, err)
-	require.NotEmpty(t, app.ID)
-	return app
+	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 }
 
 func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
@@ -83,6 +82,16 @@ func UnregisterApplication(t require.TestingT, ctx context.Context, gqlClient *g
 func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	req := FixAsyncUnregisterApplicationRequest(id)
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
+}
+
+func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt) {
+	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
+		return
+	}
+	deleteRequest := FixUnregisterApplicationRequest(app.ID)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
 func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {

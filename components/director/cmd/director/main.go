@@ -34,6 +34,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -133,6 +134,8 @@ type config struct {
 	DisableAsyncMode bool `envconfig:"default=false"`
 
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
+
+	ReadyConfig healthz.ReadyConfig
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -309,7 +312,9 @@ func main() {
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
-	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
+	schemaRepo := schema.NewRepository()
+	ready := healthz.NewReady(context.WithValue(ctx, "PersistenceCtxKey", transact), transact, cfg.ReadyConfig, schemaRepo)
+	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
 	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
@@ -426,6 +431,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticUsersRepo, staticGroupsRepo, tenantRepo),
 		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
 		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo),
+		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 

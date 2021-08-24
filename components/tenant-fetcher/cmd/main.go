@@ -24,8 +24,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
@@ -64,7 +62,7 @@ func main() {
 	signal.HandleInterrupts(ctx, cancel, term)
 
 	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
+	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
 
 	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
@@ -79,13 +77,10 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
-	exitOnError(err, "Failed to retrieve authenticators config")
-
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	handler, err := initAPIHandler(ctx, cfg, authenticatorsConfig, transact)
+	handler, err := initAPIHandler(ctx, cfg, transact)
 	exitOnError(err, "Failed to init tenant fetcher handlers")
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
@@ -100,7 +95,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Config, transact persistence.Transactioner) (http.Handler, error) {
+func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transactioner) (http.Handler, error) {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -108,7 +103,7 @@ func initAPIHandler(ctx context.Context, cfg config, authCfg []authenticator.Con
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg, transact); err != nil {
+	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, transact); err != nil {
 		return nil, err
 	}
 

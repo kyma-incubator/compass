@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rsa"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -33,17 +32,13 @@ type Authenticator struct {
 	mux                        sync.RWMutex
 	cachedJWKS                 jwk.Set
 	jwksEndpoints              []string
-	zoneId                     string
-	trustedClaimPrefixes       []string
 	subscriptionCallbacksScope string
 	allowJWTSigningNone        bool
 }
 
-func New(jwksEndpoints []string, zoneId, subscriptionCallbacksScope string, trustedClaimPrefixes []string, allowJWTSigningNone bool) *Authenticator {
+func New(jwksEndpoints []string, subscriptionCallbacksScope string, allowJWTSigningNone bool) *Authenticator {
 	return &Authenticator{
 		jwksEndpoints:              jwksEndpoints,
-		zoneId:                     zoneId,
-		trustedClaimPrefixes:       trustedClaimPrefixes,
 		subscriptionCallbacksScope: subscriptionCallbacksScope,
 		allowJWTSigningNone:        allowJWTSigningNone,
 	}
@@ -67,14 +62,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if claims.ZID != a.zoneId {
-				log.C(ctx).Errorf(`Zone id "%s" from user token does not match the trusted zone %s`, claims.ZID, a.zoneId)
-				a.writeAppError(ctx, w, errors.Errorf(`Zone id "%s" from user token is not trusted`, claims.ZID), http.StatusUnauthorized)
-				return
-			}
-
-			scopes := PrefixScopes(a.trustedClaimPrefixes, a.subscriptionCallbacksScope)
-			if !stringsAnyEquals(scopes, strings.Join(claims.Scopes, " ")) {
+			if !stringsAnyEquals(strings.Split(claims.Scopes, " "), a.subscriptionCallbacksScope) {
 				log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
 				a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
 				return
@@ -260,12 +248,4 @@ func stringsAnyEquals(stringSlice []string, str string) bool {
 		}
 	}
 	return false
-}
-
-func PrefixScopes(prefixes []string, callbackScope string) []string {
-	prefixedScopes := make([]string, 0, len(prefixes))
-	for _, scope := range prefixes {
-		prefixedScopes = append(prefixedScopes, fmt.Sprintf("%s%s", scope, callbackScope))
-	}
-	return prefixedScopes
 }

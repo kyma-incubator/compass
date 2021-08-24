@@ -106,9 +106,11 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		rmtInput := fixtures.FixRuntimeInput(fmt.Sprintf("runtime%d", i))
 
-		rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rmtInput)
+		rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rmtInput)
 		rtms[i] = &rtm
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, &rtm)
+		require.NoError(t, err)
+		require.NotEmpty(t, rtm.ID)
 	}
 
 	selectorKey := "KEY"
@@ -367,8 +369,10 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 		Labels: graphql.Labels{selector.Key: selector.Value, "scenarios": []string{defaultValue}},
 	}
 
-	rtm := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rtmInput)
-	defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rtmInput)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantID, &rtm)
+	require.NoError(t, err)
+	require.NotEmpty(t, rtm.ID)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
 		rtmWithScenarios := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)

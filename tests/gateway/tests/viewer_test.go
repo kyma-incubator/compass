@@ -20,10 +20,12 @@ func TestViewerQuery(t *testing.T) {
 
 	t.Run("Test viewer as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
-		intSys := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys)
 
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
 		t.Logf("Registered Integration System with [id=%s]", intSys.ID)
-		defer fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 		t.Log("Request Client Credentials for Integration System")
 		intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
@@ -39,7 +41,7 @@ func TestViewerQuery(t *testing.T) {
 		viewer := graphql.Viewer{}
 		req := fixtures.FixGetViewerRequest()
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &viewer)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, intSys.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeIntegrationSystem, viewer.Type)
@@ -55,9 +57,9 @@ func TestViewerQuery(t *testing.T) {
 
 		t.Log("Register Application with Dex id token")
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")
 		appAuth := fixtures.RequestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, app.ID)
@@ -89,10 +91,12 @@ func TestViewerQuery(t *testing.T) {
 		}
 
 		t.Log("Register Runtime with Dex id token")
-		runtime := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
-		defer fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
 		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
@@ -109,7 +113,7 @@ func TestViewerQuery(t *testing.T) {
 		viewer := graphql.Viewer{}
 		req := fixtures.FixGetViewerRequest()
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &viewer)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, runtime.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)

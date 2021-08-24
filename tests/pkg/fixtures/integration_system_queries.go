@@ -3,6 +3,8 @@ package fixtures
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
@@ -17,20 +19,18 @@ func GetIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gc
 	return &intSys
 }
 
-func RegisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, name string) *graphql.IntegrationSystemExt {
+func RegisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, name string) (*graphql.IntegrationSystemExt, error) {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(input)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	req := FixRegisterIntegrationSystemRequest(in)
 	intSys := &graphql.IntegrationSystemExt{}
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys)
-	return intSys
+	return intSys, err
 }
 
 func UnregisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
@@ -47,6 +47,15 @@ func UnregisterIntegrationSystemWithErr(t require.TestingT, ctx context.Context,
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "The record cannot be deleted because another record refers to it")
+}
+
+func CleanupIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, intSys *graphql.IntegrationSystemExt) {
+	if intSys == nil || intSys.ID == "" {
+		return
+	}
+	req := FixUnregisterIntegrationSystem(intSys.ID)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
 func GetSystemAuthsForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) []*graphql.IntSysSystemAuth {

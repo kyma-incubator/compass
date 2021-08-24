@@ -66,34 +66,34 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1956"
+      version: "PR-1979"
     connectivity_adapter:
       dir:
-      version: "PR-1956"
+      version: "PR-1979"
     pairing_adapter:
       dir:
-      version: "PR-1956"
+      version: "PR-1979"
     director:
       dir:
       version: "PR-1993"
     gateway:
       dir:
-      version: "PR-1956"
+      version: "PR-1979"
     operations_controller:
       dir:
-      version: "PR-1963"
+      version: "PR-1979"
     tenant_fetcher:
       dir:
-      version: "PR-1956"
+      version: "PR-1979"
     ord_service:
       dir:
-      version: "PR-32"
+      version: "PR-36"
     schema_migrator:
       dir:
-      version: "PR-1948"
+      version: "PR-1979"
     system_broker:
       dir:
-      version: "PR-1956"
+      version: "PR-1979"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -101,13 +101,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1905"
+      version: "PR-1979"
     console:
       dir:
-      version: "PR-36"
+      version: "PR-40"
     e2e_tests:
       dir:
-      version: "PR-1961"
+      version: "PR-1979"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -218,6 +218,9 @@ global:
     mtls:
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
+      external:
+        host: compass-gateway-sap-mtls
+        certSecret: compass-gateway-mtls-certs # Use connector's root CA as root CA by default. This should be overridden for productive deployments.
     headers:
       request:
         remove:
@@ -243,6 +246,9 @@ global:
     certificateDataHeader: "Certificate-Data"
 
   istio:
+    externalMtlsGateway:
+      name: "compass-gateway-external-mtls"
+      namespace: "compass-system"
     mtlsGateway:
       name: "compass-gateway-mtls"
       namespace: "compass-system"
@@ -347,7 +353,6 @@ global:
     authentication:
       allowJWTSigningNone: true
       jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
-      identityZone: "id-zone"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
@@ -398,6 +403,10 @@ global:
       tokenURLPattern: ""
       scopesClaim: ""
       tenantHeaderName: ""
+    paging:
+      pageSize: 200
+      sizeParam: "$top"
+      skipParam: "$skip"
 
   tenantFetchers:
     job1:
@@ -450,6 +459,8 @@ global:
       gatewayHost: "compass-gateway-authenticator0"
       trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix."}, {}]'
       attributes: '{"uniqueAttribute": { "key": "key", "value": "val" }, "tenant": { "key": "key" }, "identity": { "key": "key" } }'
+      path: director/graphql
+      upstreamComponent: "compass-gateway"
 
   externalServicesMock:
     enabled: false
@@ -477,12 +488,15 @@ global:
       runAsUser: 2000
       allowPrivilegeEscalation: false
 
+  expectedSchemaVersionUpdateJob:
+    cm:
+      name: "expected-schema-version"
+
   migratorJob:
     nodeSelectorEnabled: false
     pvc:
       name: "compass-director-migrations"
       namespace: "compass-system"
-      regional: false
       migrationsPath: "/compass-migrations"
 
 pairing-adapter:

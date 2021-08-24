@@ -1,8 +1,11 @@
 package revocation
 
 import (
+	"context"
 	"errors"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
 	"github.com/stretchr/testify/assert"
@@ -54,19 +57,21 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 
 	t.Run("should insert value to the list", func(t *testing.T) {
 		// given
+		ctx := context.Background()
+
 		cache := NewCache()
 		someHash := "someHash"
 		configListManagerMock := &mocks.Manager{}
 
-		configListManagerMock.On("Get", configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
+		configListManagerMock.On("Get", ctx, configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
 			&v1.ConfigMap{
 				Data: nil,
 			}, nil)
 
-		configListManagerMock.On("Update", &v1.ConfigMap{
+		configListManagerMock.On("Update", ctx, &v1.ConfigMap{
 			Data: map[string]string{
 				someHash: someHash,
-			}}).Return(&v1.ConfigMap{
+			}}, metav1.UpdateOptions{}).Return(&v1.ConfigMap{
 			Data: map[string]string{
 				someHash: someHash,
 			}}, nil)
@@ -74,7 +79,7 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
-		err := repository.Insert(someHash)
+		err := repository.Insert(ctx, someHash)
 		require.NoError(t, err)
 
 		// then
@@ -83,24 +88,26 @@ func TestRevokedCertificatesRepository(t *testing.T) {
 
 	t.Run("should return error when failed to update config map", func(t *testing.T) {
 		// given
+		ctx := context.Background()
+
 		cache := NewCache()
 		someHash := "someHash"
 		configListManagerMock := &mocks.Manager{}
 
-		configListManagerMock.On("Get", configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
+		configListManagerMock.On("Get", ctx, configMapName, mock.AnythingOfType("v1.GetOptions")).Return(
 			&v1.ConfigMap{
 				Data: nil,
 			}, nil)
 
-		configListManagerMock.On("Update", &v1.ConfigMap{
+		configListManagerMock.On("Update", ctx, &v1.ConfigMap{
 			Data: map[string]string{
 				someHash: someHash,
-			}}).Return(nil, errors.New("some error"))
+			}}, metav1.UpdateOptions{}).Return(nil, errors.New("some error"))
 
 		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
-		err := repository.Insert(someHash)
+		err := repository.Insert(ctx, someHash)
 		require.Error(t, err)
 
 		// then
