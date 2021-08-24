@@ -18,6 +18,8 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+  - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}

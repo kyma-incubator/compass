@@ -3,6 +3,7 @@ package onetimetoken
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -117,12 +118,13 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 }
 
 func (s *service) createToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
-	var err error
 	if oneTimeToken == nil {
-		oneTimeToken, err = s.getNewToken()
+		ott, err := s.getNewToken()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
 		}
+
+		oneTimeToken = ott
 	}
 
 	switch tokenType {
@@ -135,9 +137,17 @@ func (s *service) createToken(ctx context.Context, id string, tokenType model.Sy
 	oneTimeToken.Used = false
 	oneTimeToken.UsedAt = time.Time{}
 
-	if _, err := s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
+	sysAuthID, err := s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{OneTimeToken: oneTimeToken})
+	if err != nil {
 		return nil, errors.Wrap(err, "while creating System Auth")
 	}
+
+	decodedToken, err := base64.URLEncoding.DecodeString(oneTimeToken.Token)
+	if err != nil {
+		return nil, errors.Wrap(err, "while appending System Auth to token")
+	}
+	tokenWithSysAuth := string(decodedToken) + "&" + sysAuthID
+	oneTimeToken.Token = base64.URLEncoding.EncodeToString([]byte(tokenWithSysAuth))
 
 	return oneTimeToken, nil
 }

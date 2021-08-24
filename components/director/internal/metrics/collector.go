@@ -12,6 +12,7 @@ type Collector struct {
 	graphQLRequestDuration *prometheus.HistogramVec
 	hydraRequestTotal      *prometheus.CounterVec
 	hydraRequestDuration   *prometheus.HistogramVec
+	clientTotal            *prometheus.CounterVec
 }
 
 func NewCollector() *Collector {
@@ -40,6 +41,12 @@ func NewCollector() *Collector {
 			Name:      "hydra_request_total",
 			Help:      "Total HTTP Requests to Hydra",
 		}, []string{"code", "method"}),
+		clientTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: Namespace,
+			Subsystem: DirectorSubsystem,
+			Name:      "total_requests_per_client",
+			Help:      "Total requests per client",
+		}, []string{}),
 	}
 }
 
@@ -48,6 +55,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.graphQLRequestDuration.Describe(ch)
 	c.hydraRequestTotal.Describe(ch)
 	c.hydraRequestDuration.Describe(ch)
+	c.clientTotal.Describe(ch)
 }
 
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
@@ -55,6 +63,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.graphQLRequestDuration.Collect(ch)
 	c.hydraRequestTotal.Collect(ch)
 	c.hydraRequestDuration.Collect(ch)
+	c.clientTotal.Collect(ch)
 }
 
 func (c *Collector) GraphQLHandlerWithInstrumentation(handler http.Handler) http.HandlerFunc {
@@ -67,4 +76,8 @@ func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 	client.Transport = promhttp.InstrumentRoundTripperCounter(c.hydraRequestTotal,
 		promhttp.InstrumentRoundTripperDuration(c.hydraRequestDuration, http.DefaultTransport),
 	)
+}
+
+func (c *Collector) InstrumentClientIdentification(clientID string) {
+	c.clientTotal.With(prometheus.Labels{"client_id": clientID}).Inc()
 }
