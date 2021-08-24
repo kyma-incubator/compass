@@ -15,14 +15,14 @@ require (
 	github.com/go-openapi/runtime v0.19.27
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/google/go-cmp v0.5.6
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210816091934-c8f38c361ff5
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210816091934-c8f38c361ff5
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210823104705-748ca0a6e5be
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210823104705-748ca0a6e5be
 	github.com/lestrrat-go/iter v1.0.1
-	github.com/lestrrat-go/jwx v1.2.0
+	github.com/lestrrat-go/jwx v1.2.4
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -34,9 +34,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.8.0
-	github.com/tidwall/sjson v1.1.6
+	github.com/tidwall/sjson v1.1.7
 	github.com/vektah/gqlparser/v2 v2.1.0
-	github.com/vektra/mockery/v2 v2.9.0 // indirect
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/mod v0.4.2
