@@ -93,7 +93,7 @@ global:
       version: "PR-1979"
     system_broker:
       dir:
-      version: "PR-1979"
+      version: "PR-1992"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
