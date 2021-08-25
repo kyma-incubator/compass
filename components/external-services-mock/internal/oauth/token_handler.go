@@ -1,8 +1,10 @@
 package oauth
 
 import (
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -14,12 +16,21 @@ import (
 type handler struct {
 	expectedSecret string
 	expectedID     string
+	signingKey     *rsa.PrivateKey
 }
 
 func NewHandler(expectedSecret, expectedID string) *handler {
 	return &handler{
 		expectedSecret: expectedSecret,
 		expectedID:     expectedID,
+	}
+}
+
+func NewHandlerWithSigningKey(expectedSecret, expectedID string, signingKey *rsa.PrivateKey) *handler {
+	return &handler{
+		expectedSecret: expectedSecret,
+		expectedID:     expectedID,
+		signingKey:     signingKey,
 	}
 }
 
@@ -40,8 +51,31 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
-	token := jwt.New(jwt.SigningMethodNone)
-	output, err := token.SigningString()
+	claims := map[string]interface{}{}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	if len(body) > 0 {
+		err = json.Unmarshal(body, &claims)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "while json unmarshalling the request body"), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	var output string
+	if h.signingKey != nil {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
+		output, err = token.SignedString(h.signingKey)
+	} else {
+		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
+		output, err = token.SigningString()
+	}
+
 	if err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
 		return

@@ -175,7 +175,11 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 	aggregatedErr := errors.New("aggregated error for all issuers")
 
 	for i, issuer := range config.TrustedIssuers {
-		issuerURL := fmt.Sprintf("%s://%s.%s%s", "https", issuerSubdomain, issuer.DomainURL, "/oauth/token")
+		protocol := "https"
+		if len(issuer.Protocol) > 0 {
+			protocol = issuer.Protocol
+		}
+		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
 
 		h.verifiersMutex.RLock()
 		verifier, found := h.verifiers[issuerURL]

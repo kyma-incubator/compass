@@ -1,9 +1,13 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
 
@@ -15,8 +19,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
 
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/oauth"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
@@ -26,7 +28,9 @@ import (
 )
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:8080"`
+	Address  string `envconfig:"default=127.0.0.1:8080"`
+	BaseURL  string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
+	JWKSPath string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
@@ -47,7 +51,11 @@ func main() {
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
-	handler := initHTTP(cfg)
+	handler, err := initHTTP(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Printf("External Services Mock up and running on address: %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, handler)
 	exitOnError(err, "while running up http server")
@@ -60,13 +68,27 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initHTTP(cfg config) http.Handler {
+func initHTTP(cfg config) (http.Handler, error) {
 	logger := logrus.New()
 	router := mux.NewRouter()
 	configChangeSvc := configurationchange.NewService()
 
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, errors.Wrap(err, "while generating rsa key")
+	}
+
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
+	router.HandleFunc("/oauth/token", tokenHandler.Generate)
+
+	openIDConfigHandler := oauth.NewOpenIDConfigHandler(cfg.BaseURL, cfg.JWKSPath)
+	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
+
+	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
+	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
+
 	configChangeHandler := configurationchange.NewConfigurationHandler(configChangeSvc, logger)
-	oauthHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
+	unsignedTokenHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
@@ -74,8 +96,8 @@ func initHTTP(cfg config) http.Handler {
 	configChangeRouter.Use(oauthMiddleware)
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
-	router.HandleFunc("/audit-log/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
-	router.HandleFunc("/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
+	router.HandleFunc("/audit-log/v2/oauth/token", unsignedTokenHandler.Generate).Methods(http.MethodPost)
+	router.HandleFunc("/oauth/token", unsignedTokenHandler.Generate).Methods(http.MethodPost)
 
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
@@ -87,7 +109,7 @@ func initHTTP(cfg config) http.Handler {
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
-	router.HandleFunc("/systemfetcher/oauth/token", oauthHandler.GenerateWithoutCredentials)
+	router.HandleFunc("/systemfetcher/oauth/token", unsignedTokenHandler.GenerateWithoutCredentials)
 
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
 	oauthRouter.Use(oauthMiddleware)
@@ -106,7 +128,7 @@ func initHTTP(cfg config) http.Handler {
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	return router
+	return router, nil
 }
 
 func oauthMiddleware(next http.Handler) http.Handler {

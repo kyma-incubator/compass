@@ -101,7 +101,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1979"
+      version: "PR-1992"
     console:
       dir:
       version: "PR-40"
@@ -450,13 +450,13 @@ global:
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
   authenticators:
-    authenticator0:
+    tenant-fetcher:
       enabled: true
-      gatewayHost: "compass-gateway-authenticator0"
-      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix."}, {}]'
-      attributes: '{"uniqueAttribute": { "key": "key", "value": "val" }, "tenant": { "key": "key" }, "identity": { "key": "key" } }'
-      path: director/graphql
-      upstreamComponent: "compass-gateway"
+      gatewayHost: "compass-gateway"
+      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix.", "protocol": "http"}]'
+      attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+      path: tenants/<.*>
+      upstreamComponent: "compass-tenant-fetcher"
 
   externalServicesMock:
     enabled: false
