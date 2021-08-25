@@ -46,13 +46,7 @@ func GetFromRequest(r *http.Request) string {
 	}
 
 	// Certificates flow
-	certHeaderParser := coathkeeper.NewHeaderParser("Certificate-Data", struct {
-		Country            string
-		Organization       string
-		OrganizationalUnit string
-		Locality           string
-		Province           string
-	}{Country: "", Organization: "", OrganizationalUnit: "", Locality: "", Province: ""})
+	certHeaderParser := coathkeeper.NewHeaderParser("Certificate-Data", "", nil, func(subject string) string { return subject })
 	cn, _, ok := certHeaderParser.GetCertificateData(r)
 	if ok {
 		return cn
