@@ -20,12 +20,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -157,11 +160,43 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant Tenant, http
 
 	request, err := http.NewRequest(httpMethod, config.TenantFetcherFullURL, bytes.NewBuffer(byteTenant))
 	require.NoError(t, err)
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", fetchToken(t)))
 
 	response, err := httpClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
+func fetchToken(t *testing.T) string {
+	claims := map[string]interface{}{
+		"test": "tenant-fetcher",
+		"scope": []string{
+			"prefix.Callback",
+		},
+		"tenant":   "tenant",
+		"identity": "tenant-fetcher-tests",
+		"iss":      config.ExternalServicesMockURL,
+		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
+	}
+
+	data, err := json.Marshal(claims)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPost, config.ExternalServicesMockURL+"/oauth/token", bytes.NewBuffer(data))
+	require.NoError(t, err)
+
+	resp, err := httpClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	token := gjson.GetBytes(body, "access_token")
+	require.True(t, token.Exists())
+
+	return token.String()
 }
 
 func containsTenantWithTenantID(tenantID string, tenants []*graphql.Tenant) bool {

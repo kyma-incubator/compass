@@ -347,7 +347,7 @@ global:
     prefix: /tenants
     port: 3000
     authentication:
-      allowJWTSigningNone: true
+      allowJWTSigningNone: false
       jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
     tenantProvider:
       tenantIdProperty: "tenantId"
@@ -453,7 +453,7 @@ global:
     tenant-fetcher:
       enabled: true
       gatewayHost: "compass-gateway"
-      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix.", "protocol": "http"}]'
+      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
       path: tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"

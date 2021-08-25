@@ -2,10 +2,9 @@ package oauth
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
+	"net/http"
 )
 
 type openIDConfigHandler struct {
@@ -26,12 +25,11 @@ func (h *openIDConfigHandler) Handle(writer http.ResponseWriter, r *http.Request
 		"jwks_uri": h.baseURL + h.jwksPath,
 	}
 
+	writer.Header().Set("Content-Type", "application/json")
+
 	err := json.NewEncoder(writer).Encode(openIDConfig)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
 }

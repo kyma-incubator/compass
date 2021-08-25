@@ -44,12 +44,11 @@ func (h *jwksHandler) Handle(writer http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	writer.Header().Set("Content-Type", "application/json")
+
 	err := json.NewEncoder(writer).Encode(resp)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
 }

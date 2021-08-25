@@ -41,7 +41,9 @@ spec:
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
             - name: APP_TENANT_FETCHER_URL
-              value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}"
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_EXTERNAL_SERVICES_MOCK_URL
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
             - name: APP_TENANT_FETCHER_HEALTHZ_URL
               value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
             - name: APP_ROOT_API

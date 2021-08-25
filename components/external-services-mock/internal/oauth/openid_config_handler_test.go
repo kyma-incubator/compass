@@ -13,7 +13,7 @@ import (
 
 func TestOpenIDConfigHandler(t *testing.T) {
 	//GIVEN
-	baseURL := "http://base"
+	baseURL := "http://base:8080"
 	jwksPath := "/jwks.json"
 
 	expectedConfig := map[string]interface{}{

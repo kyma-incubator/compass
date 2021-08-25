@@ -29,7 +29,7 @@ import (
 
 type config struct {
 	Address  string `envconfig:"default=127.0.0.1:8080"`
-	BaseURL  string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
+	BaseURL  string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local:8080"`
 	JWKSPath string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
@@ -79,7 +79,7 @@ func initHTTP(cfg config) (http.Handler, error) {
 	}
 
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
-	router.HandleFunc("/oauth/token", tokenHandler.Generate)
+	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithoutCredentials)
 
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(cfg.BaseURL, cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)

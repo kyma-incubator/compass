@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
@@ -36,6 +36,7 @@ type testConfig struct {
 	Tenant                    string
 	SubscriptionCallbackScope string
 	TenantProvider            string
+	ExternalServicesMockURL   string
 
 	TenantFetcherFullURL string `envconfig:"-"`
 }
@@ -52,8 +53,10 @@ func TestMain(m *testing.M) {
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	httpClient = &http.Client{
-		Timeout:   15 * time.Second,
-		Transport: httputil.NewServiceAccountTokenTransport(http.DefaultTransport),
+		Timeout: 15 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
 	}
 
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
