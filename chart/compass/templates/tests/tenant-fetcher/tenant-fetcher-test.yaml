@@ -93,6 +93,12 @@ spec:
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: USER_EMAIL
               valueFrom:
                 secretKeyRef:

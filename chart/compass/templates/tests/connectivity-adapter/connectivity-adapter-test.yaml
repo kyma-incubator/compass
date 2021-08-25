@@ -46,6 +46,8 @@ spec:
               value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant | quote }}
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_IS_WITH_TOKEN
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
