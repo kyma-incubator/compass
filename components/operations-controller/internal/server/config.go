@@ -24,6 +24,7 @@ import (
 type Config struct {
 	*server.Config
 	MetricAddress        string `mapstructure:"metric_address" description:"the address the metric endpoint binds to"`
+	HealthAddress        string `mapstructure:"health_address" description:"the address the health endpoint binds to"`
 	EnableLeaderElection bool   `mapstructure:"enable_leader_election" description:"enable leader election for controller manager"`
 }
 

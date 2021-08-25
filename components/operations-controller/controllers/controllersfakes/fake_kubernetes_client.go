@@ -7,17 +7,16 @@ import (
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type FakeKubernetesClient struct {
-	DeleteStub        func(context.Context, runtime.Object, ...client.DeleteOption) error
+	DeleteStub        func(context.Context, client.Object, ...client.DeleteOption) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
 		arg1 context.Context
-		arg2 runtime.Object
+		arg2 client.Object
 		arg3 []client.DeleteOption
 	}
 	deleteReturns struct {
@@ -44,24 +43,23 @@ type FakeKubernetesClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeKubernetesClient) Delete(arg1 context.Context, arg2 runtime.Object, arg3 ...client.DeleteOption) error {
+func (fake *FakeKubernetesClient) Delete(arg1 context.Context, arg2 client.Object, arg3 ...client.DeleteOption) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
 		arg1 context.Context
-		arg2 runtime.Object
+		arg2 client.Object
 		arg3 []client.DeleteOption
 	}{arg1, arg2, arg3})
-	stub := fake.DeleteStub
-	fakeReturns := fake.deleteReturns
 	fake.recordInvocation("Delete", []interface{}{arg1, arg2, arg3})
 	fake.deleteMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2, arg3...)
+	if fake.DeleteStub != nil {
+		return fake.DeleteStub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.deleteReturns
 	return fakeReturns.result1
 }
 
@@ -71,13 +69,13 @@ func (fake *FakeKubernetesClient) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeKubernetesClient) DeleteCalls(stub func(context.Context, runtime.Object, ...client.DeleteOption) error) {
+func (fake *FakeKubernetesClient) DeleteCalls(stub func(context.Context, client.Object, ...client.DeleteOption) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeKubernetesClient) DeleteArgsForCall(i int) (context.Context, runtime.Object, []client.DeleteOption) {
+func (fake *FakeKubernetesClient) DeleteArgsForCall(i int) (context.Context, client.Object, []client.DeleteOption) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]
@@ -114,16 +112,15 @@ func (fake *FakeKubernetesClient) Get(arg1 context.Context, arg2 types.Namespace
 		arg1 context.Context
 		arg2 types.NamespacedName
 	}{arg1, arg2})
-	stub := fake.GetStub
-	fakeReturns := fake.getReturns
 	fake.recordInvocation("Get", []interface{}{arg1, arg2})
 	fake.getMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
+	if fake.GetStub != nil {
+		return fake.GetStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.getReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

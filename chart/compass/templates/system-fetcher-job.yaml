@@ -48,6 +48,12 @@ spec:
                   value: {{ .Values.global.systemFetcher.systemsAPIFilterCriteria | quote }}
                 - name: APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS
                   value: {{ .Values.global.systemFetcher.systemToTemplateMappings | quote }}
+                - name: APP_SYSTEM_INFORMATION_PAGE_SIZE
+                  value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
+                - name: APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM
+                  value: {{ .Values.global.systemFetcher.paging.skipParam | quote }}
+                - name: APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM
+                  value: {{ .Values.global.systemFetcher.paging.sizeParam | quote }}
                 - name: "APP_OAUTH_TENANT_HEADER_NAME"
                   value: "{{ .Values.global.systemFetcher.oauth.tenantHeaderName }}"
                 - name: "APP_OAUTH_SCOPES_CLAIM"

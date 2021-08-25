@@ -74,7 +74,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(testConfig.CA.SecretName, metav1.GetOptions{})
+	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(context.Background(), testConfig.CA.SecretName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}

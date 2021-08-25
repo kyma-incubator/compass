@@ -19,10 +19,13 @@ package tests
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
@@ -37,6 +40,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+const mockSystemFormat = `{
+		"systemNumber": "%d",
+		"displayName": "name%d",
+		"productDescription": "description",
+		"type": "type1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+}`
 
 func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
@@ -63,6 +77,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	}]`)
 
 	setMockSystems(t, mockSystems)
+	defer cleanupMockSystems(t)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
@@ -80,12 +95,12 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
-	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		deleteJob(t, k8sClient, jobName, namespace)
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
-	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -107,6 +122,65 @@ func TestSystemFetcherSuccess(t *testing.T) {
 			},
 		},
 	}
+
+	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	for _, app := range resp.Data {
+		actualApps = append(actualApps, directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  app.Application.Name,
+				Description:           app.Application.Description,
+				ApplicationTemplateID: app.ApplicationTemplateID,
+			},
+		})
+	}
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
+	ctx := context.TODO()
+
+	setMultipleMockSystemsResponses(t)
+	defer cleanupMockSystems(t)
+
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+	jobName := "system-fetcher-test"
+	namespace := "compass-system"
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	defer func() {
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
+	}()
+
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+
+	req := fixtures.FixGetApplicationsRequestWithPagination()
+	var resp directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
+	require.NoError(t, err)
+
+	req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
+	var resp2 directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req2, &resp2)
+	require.NoError(t, err)
+	resp.Data = append(resp.Data, resp2.Data...)
+
+	description := "description"
+	expectedCount := cfg.SystemFetcherPageSize
+	if expectedCount > 1 {
+		expectedCount++
+	}
+	expectedApps := getFixExpectedMockSystems(expectedCount, description)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
@@ -161,6 +235,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	}]`)
 
 	setMockSystems(t, mockSystems)
+	defer cleanupMockSystems(t)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
@@ -178,12 +253,12 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
-	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		deleteJob(t, k8sClient, jobName, namespace)
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
-	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 	description := "description"
 	expectedApps := []directorSchema.ApplicationExt{
@@ -295,12 +370,12 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	namespace := "compass-system"
-	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func(jobName string) {
-		deleteJob(t, k8sClient, jobName, namespace)
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
 	}(jobName)
 
-	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -392,12 +467,12 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), idToDelete)
 
 	jobName = "system-fetcher-test2"
-	createJobByCronJob(ctx, t, k8sClient, "compass-system-fetcher", jobName, namespace)
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
-		deleteJob(t, k8sClient, jobName, namespace)
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
-	waitForJobToSucceed(t, k8sClient, jobName, namespace)
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
 
@@ -438,7 +513,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
-func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+func waitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
 	elapsed := time.After(time.Minute * 15)
 	for {
 		select {
@@ -447,7 +522,7 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 		default:
 		}
 		t.Log("Waiting for job to finish")
-		job, err := k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		require.NoError(t, err)
 		if job.Status.Failed > 0 {
 			t.Fatal("Job has failed. Exiting...")
@@ -459,9 +534,9 @@ func waitForJobToSucceed(t *testing.T, k8sClient *kubernetes.Clientset, jobName,
 	}
 }
 
-func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+func deleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
 	t.Log("Deleting test job")
-	err := k8sClient.BatchV1().Jobs(namespace).Delete(jobName, metav1.NewDeleteOptions(0))
+	err := k8sClient.BatchV1().Jobs(namespace).Delete(ctx, jobName, *metav1.NewDeleteOptions(0))
 	require.NoError(t, err)
 
 	elapsed := time.After(time.Minute * 2)
@@ -472,7 +547,7 @@ func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace
 		default:
 		}
 		t.Log("Waiting for job to be deleted")
-		_, err = k8sClient.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+		_, err = k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
 			break
 		}
@@ -481,8 +556,8 @@ func deleteJob(t *testing.T, k8sClient *kubernetes.Clientset, jobName, namespace
 	t.Log("Test job deleted")
 }
 
-func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
-	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(cronJobName, metav1.GetOptions{})
+func createJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
+	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
 	require.NoError(t, err)
 	t.Log("Got the cronjob")
 
@@ -502,7 +577,7 @@ func createJobByCronJob(ctx context.Context, t *testing.T, k8sClient *kubernetes
 		},
 	}
 	t.Log("Creating test job")
-	_, err = k8sClient.BatchV1().Jobs(namespace).Create(job)
+	_, err = k8sClient.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	require.NoError(t, err)
 	t.Log("Test job created")
 }
@@ -521,4 +596,58 @@ func setMockSystems(t *testing.T, mockSystems []byte) {
 		require.NoError(t, err)
 		t.Fatalf("Failed to set mock systems: %s", string(bytes))
 	}
+}
+
+func setMultipleMockSystemsResponses(t *testing.T) {
+	mockSystems := []byte(getFixMockSystemsJSON(cfg.SystemFetcherPageSize, 0))
+	setMockSystems(t, mockSystems)
+
+	mockSystems2 := []byte(getFixMockSystemsJSON(1, cfg.SystemFetcherPageSize))
+	setMockSystems(t, mockSystems2)
+}
+
+func getFixMockSystemsJSON(count, startingNumber int) string {
+	result := "["
+	for i := 0; i < count; i++ {
+		systemNumber := startingNumber + i
+		result = result + fmt.Sprintf(mockSystemFormat, systemNumber, systemNumber)
+		if i < count-1 {
+			result = result + ","
+		}
+	}
+	return result + "]"
+}
+
+func getFixExpectedMockSystems(count int, description string) []directorSchema.ApplicationExt {
+	result := make([]directorSchema.ApplicationExt, count)
+	for i := 0; i < count; i++ {
+		result[i] = directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:        fmt.Sprintf("name%d", i),
+				Description: &description,
+			},
+		}
+	}
+	return result
+}
+
+func cleanupMockSystems(t *testing.T) {
+	req, err := http.NewRequest(http.MethodDelete, cfg.ExternalSvcMockURL+"/systemfetcher/reset", nil)
+	require.NoError(t, err)
+
+	response, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	if response.StatusCode != http.StatusOK {
+		bytes, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		t.Fatalf("Failed to reset mock systems: %s", string(bytes))
+		return
+	}
+	log.D().Info("Successfully reset mock systems")
 }
