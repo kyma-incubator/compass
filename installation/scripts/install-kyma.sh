@@ -92,3 +92,14 @@ else
   kyma install -c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 fi
 set +o xtrace
+
+# Kyma CLI uses the internal IP for the /etc/hosts override when docker driver is used. However on the host machine this should be localhost
+USED_DRIVER=$(minikube profile list -o json | jq -r ".valid[0].Config.Driver")
+if [[ $USED_DRIVER == "docker" ]]; then
+  MINIKUBE_IP=$(minikube ssh egrep "minikube$" /etc/hosts | cut -f1)
+  if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
+    sudo sed -i "" "s/$MINIKUBE_IP/127.0.0.1/g" /etc/hosts
+  else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
+    sudo sed -i "s/$MINIKUBE_IP/127.0.0.1/g" /etc/hosts
+  fi
+fi
