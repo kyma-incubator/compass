@@ -46,7 +46,7 @@ func NewCollector() *Collector {
 			Subsystem: DirectorSubsystem,
 			Name:      "total_requests_per_client",
 			Help:      "Total requests per client",
-		}, []string{}),
+		}, []string{"client_id"}),
 	}
 }
 
