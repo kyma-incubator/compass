@@ -191,7 +191,9 @@ func fetchToken(t *testing.T) string {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() {
+		require.NoError(t, resp.Body.Close())
+	}()
 
 	token := gjson.GetBytes(body, "access_token")
 	require.True(t, token.Exists())
