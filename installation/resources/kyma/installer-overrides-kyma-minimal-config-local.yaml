@@ -87,3 +87,14 @@ metadata:
 data:
   kcproxy.resources.limits.memory: 40Mi
   kcproxy.resources.requests.memory: 10Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disable-legacy-connectivity-override
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    kyma-project.io/installation: ""
+data:
+  global.disableLegacyConnectivity: "true"
