@@ -13,9 +13,7 @@ type testConfig struct {
 	TenantFetcherURL          string
 	RootAPI                   string
 	HandlerEndpoint           string
-	HandlerRegionalEndpoint   string
 	TenantPathParam           string
-	RegionPathParam           string
 	DbUser                    string
 	DbPassword                string
 	DbHost                    string
