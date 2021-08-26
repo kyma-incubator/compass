@@ -22,8 +22,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -46,8 +46,6 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
-
 var (
 	devLogging       = true
 	scheme           = runtime.NewScheme()

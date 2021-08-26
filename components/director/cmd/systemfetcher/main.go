@@ -199,7 +199,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	graphqlClient := gcli.NewClient(cfg.SystemFetcher.DirectorGraphqlURL, gcli.WithHTTPClient(securedClient))
 	directorClient := &systemfetcher.DirectorGraphClient{
 		Client:        graphqlClient,
-		Authenticator: pkgAuth.NewUnsignedTokenAuthorizationProvider("application:write"),
+		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, directorClient, cfg.SystemFetcher)

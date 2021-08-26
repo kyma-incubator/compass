@@ -304,7 +304,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}"}'
-      internalClaims: '{"scopes": "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read", "tenant": "{{ print (index .Header.Tenant 0) }}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read", "tenant": "{{ print (index .Header.Tenant 0) }}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:

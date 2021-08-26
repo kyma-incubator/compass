@@ -29,7 +29,7 @@ spec:
                   mountPath: /config
               env:
                 - name: APP_DIRECTOR_GRAPHQL_URL
-                  value: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}/director/graphql"
+                  value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
                 - name: APP_DIRECTOR_REQUEST_TIMEOUT
                   value: "{{ .Values.global.systemFetcher.directorRequestTimeout }}"
                 - name: APP_ENABLE_SYSTEM_DELETION

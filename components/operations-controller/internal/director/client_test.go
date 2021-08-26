@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"testing"
 
-	tnt "github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 

@@ -616,6 +616,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210802140320-1670
 github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:XgAhkmzZYsX1kxPrHYQLjKyqTSUgetMlBVhod2Fji9I=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210825143858-d12ac209b4fe h1:W4jcsjVy2oKUanm/my+O36eF6FujAtzBIOGEjzgW6sg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210825143858-d12ac209b4fe/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210826104628-68f99175389f h1:nA2O2FWWsqEOpJzmGbkOc4lBJqJ8BgW2zqocPSAJfmc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210826104628-68f99175389f/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
