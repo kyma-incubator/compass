@@ -1,5 +1,5 @@
 <p align="center">
- <img src="https://raw.githubusercontent.com/kyma-incubator/compass/master/logo.png" width="235">
+ <img src="https://raw.githubusercontent.com/kyma-incubator/compass/main/logo.png" width="235">
 </p>
 
 ## Overview
@@ -25,7 +25,7 @@ For more information about the Compass architecture, technical details, and comp
 
 ## Installation
 
-Install Compass locally or on a cluster. See the [installation document](https://github.com/kyma-incubator/compass/blob/master/docs/compass/04-01-installation.md) for details.
+Install Compass locally or on a cluster. See the [installation document](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md) for details.
 
 ### Dependencies
 

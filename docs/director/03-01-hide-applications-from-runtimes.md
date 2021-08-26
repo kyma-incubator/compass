@@ -4,7 +4,7 @@ It is possible to configure Compass so that it doesn't return Applications label
 
 ## Configuration
 
-To configure the list of selectors used to filter the list of returned Applications, modify the **applicationHideSelectors** parameter in the [`values.yaml`](https://github.com/kyma-incubator/compass/blob/master/chart/compass/charts/director/values.yaml) file. You can modify this list by providing appropriate overrides.
+To configure the list of selectors used to filter the list of returned Applications, modify the **applicationHideSelectors** parameter in the [`values.yaml`](https://github.com/kyma-incubator/compass/blob/main/chart/compass/charts/director/values.yaml) file. You can modify this list by providing appropriate overrides.
 
 The **applicationHideSelectors** parameter is a multiline string with a map that contains the lists of **strings**. Map keys represent label keys, and strings represent label values that are used to filter the returned Applications.
 
