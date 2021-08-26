@@ -96,7 +96,7 @@ kind: Rule
 metadata:
   name: director-operations-internal
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway for internal access
+  # Configuration of oathkeeper for secure endpoint of compass gateway for internal access
   upstream:
     url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.operations.port }}"
   match:
@@ -119,7 +119,7 @@ kind: Rule
 metadata:
   name: compass-gateway-internal
 spec:
-  description: Configuration of oathkeeper for secure endpoint internal communication with compass gateway
+  # Configuration of oathkeeper for secure endpoint internal communication with compass gateway
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:

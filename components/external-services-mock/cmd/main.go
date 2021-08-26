@@ -97,7 +97,6 @@ func initHTTP(cfg config) (http.Handler, error) {
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	router.HandleFunc("/audit-log/v2/oauth/token", unsignedTokenHandler.Generate).Methods(http.MethodPost)
-	router.HandleFunc("/oauth/token", unsignedTokenHandler.Generate).Methods(http.MethodPost)
 
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
