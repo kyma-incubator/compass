@@ -298,8 +298,10 @@ func TestDecommissioningHandler(t *testing.T) {
 }
 
 func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string) {
-	require.Equal(t, subdomain, tenant.Labels["subdomain"])
 	require.Equal(t, tenantID, tenant.ID)
+	if len(subdomain) > 0 {
+		require.Equal(t, subdomain, tenant.Labels["subdomain"])
+	}
 }
 
 func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string) {

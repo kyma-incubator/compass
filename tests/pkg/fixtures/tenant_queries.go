@@ -15,6 +15,14 @@ const (
 	defaultCtxTimeout = 10 * time.Second
 )
 
+type TenantsResponse struct {
+	Result []*graphql.Tenant `json:"result"`
+}
+
+type TenantResponse struct {
+	Result *graphql.Tenant `json:"result"`
+}
+
 func GetTenants(directorURL string, externalTenantID string) ([]*graphql.Tenant, error) {
 	query := FixTenantsRequest().Query()
 	req := gcli.NewRequest(query)
@@ -48,7 +56,7 @@ func GetTenantByExternalID(directorURL string, requestTenant, externalTenantID s
 
 	client := gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, directorURL)
 
-	var response graphql.Tenant
+	var response TenantResponse
 	ctx, cancel := context.WithTimeout(context.Background(), defaultCtxTimeout)
 	defer cancel()
 
@@ -56,5 +64,5 @@ func GetTenantByExternalID(directorURL string, requestTenant, externalTenantID s
 		return nil, err
 	}
 
-	return &response, nil
+	return response.Result, nil
 }

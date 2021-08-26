@@ -67,7 +67,3 @@ func DeleteAutomaticScenarioAssigmentForSelector(t require.TestingT, ctx context
 	require.NoError(t, err)
 	return assignment
 }
-
-type TenantsResponse struct {
-	Result []*graphql.Tenant
-}
