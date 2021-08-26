@@ -53,9 +53,6 @@ func TestOnboardingHandler(t *testing.T) {
 			Subdomain:  defaultSubdomain,
 		}
 
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
-
 		// WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
@@ -72,14 +69,16 @@ func TestOnboardingHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenant, err := fixtures.GetTenantByExternalID(config.DirectorUrl, config.Tenant, providedTenant.TenantId)
+		require.NoError(t, err)
+
+		parent, err := fixtures.GetTenantByExternalID(config.DirectorUrl, config.Tenant, providedTenant.CustomerId)
 		require.NoError(t, err)
 
 		// THEN
-		require.Equal(t, len(oldTenantState)+2, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		assertTenantExists(t, tenants, providedTenant.TenantId, providedTenant.Subdomain)
-		assertTenantExists(t, tenants, providedTenant.CustomerId, "")
+		assertTenant(t, tenant, providedTenant.TenantId, providedTenant.Subdomain)
+		assertTenant(t, parent, providedTenant.CustomerId, "")
 	})
 
 	t.Run("Success with only tenant", func(t *testing.T) {
@@ -89,9 +88,6 @@ func TestOnboardingHandler(t *testing.T) {
 			Subdomain: defaultSubdomain,
 		}
 
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
-
 		// WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 		url := config.TenantFetcherURL + config.RootAPI + endpoint
@@ -108,13 +104,12 @@ func TestOnboardingHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenant, err := fixtures.GetTenantByExternalID(config.DirectorUrl, config.Tenant, providedTenant.TenantId)
 		require.NoError(t, err)
 
 		// THEN
-		require.Equal(t, len(oldTenantState)+1, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		assertTenantExists(t, tenants, providedTenant.TenantId, providedTenant.Subdomain)
+		assertTenant(t, tenant, providedTenant.TenantId, providedTenant.Subdomain)
 	})
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
@@ -186,8 +181,8 @@ func TestOnboardingHandler(t *testing.T) {
 		// THEN
 		assert.Equal(t, len(oldTenantState)+2, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		assertTenantExists(t, tenants, providedTenant.TenantId, providedTenant.Subdomain)
-		assertTenantExists(t, tenants, providedTenant.CustomerId, "")
+		assertTenantExists(t, tenants, providedTenant.TenantId)
+		assertTenantExists(t, tenants, providedTenant.CustomerId)
 	})
 
 	t.Run("Should fail when tenantID is not provided", func(t *testing.T) {
@@ -302,15 +297,17 @@ func TestDecommissioningHandler(t *testing.T) {
 	})
 }
 
-func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID, subdomain string) {
+func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string) {
+	require.Equal(t, subdomain, tenant.Labels["subdomain"])
+	require.Equal(t, tenantID, tenant.ID)
+}
+
+func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string) {
 	for _, tenant := range tenants {
 		if tenant.ID == tenantID {
-			if subdomain != "" {
-				require.Equal(t, subdomain, tenant.Labels["subdomain"])
-			}
 			return
 		}
 	}
 
-	require.Fail(t, fmt.Sprintf("Tenant with ID %q and subdomain %q not found in %v", tenantID, subdomain, tenants))
+	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found in %v", tenantID, tenants))
 }
