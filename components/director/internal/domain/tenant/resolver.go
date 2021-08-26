@@ -16,6 +16,7 @@ import (
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
+	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 }
 
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore
@@ -52,6 +53,27 @@ func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 	gqlTenants := r.conv.MultipleToGraphQL(tenants)
 	return gqlTenants, nil
 
+}
+
+func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tenant, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	t, err := r.srv.GetTenantByExternalID(ctx, externalID)
+	if err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	gqlTenant := r.conv.MultipleToGraphQL([]*model.BusinessTenantMapping{t})
+	return gqlTenant[0], nil
 }
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string) (graphql.Labels, error) {

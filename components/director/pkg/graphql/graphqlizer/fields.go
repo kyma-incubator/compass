@@ -442,6 +442,16 @@ func (fp *GqlFieldsProvider) ForViewer() string {
 		type`
 }
 
+func (fp *GqlFieldsProvider) OmitForTenant(omittedProperties []string) string {
+	return buildProperties(map[string]string{
+		"id":          "id",
+		"internalID":  "internalID",
+		"name":        "name",
+		"initialized": "initialized",
+		"labels":      fmt.Sprintf("labels {%s}", fp.ForLabel()),
+	}, omittedProperties)
+}
+
 func (fp *GqlFieldsProvider) ForTenant() string {
 	return `
 		id

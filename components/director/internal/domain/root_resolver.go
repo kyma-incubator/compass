@@ -708,3 +708,7 @@ type tenantResolver struct {
 func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string) (graphql.Labels, error) {
 	return r.tenant.Labels(ctx, obj, key)
 }
+
+func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
+	return r.tenant.Tenant(ctx, id)
+}

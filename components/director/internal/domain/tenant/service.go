@@ -89,6 +89,10 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 	return s.tenantMappingRepo.List(ctx)
 }
 
+func (s *service) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.GetByExternalTenant(ctx, id)
+}
+
 func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
 	var tenants []model.BusinessTenantMapping
 	tenantIDs := make(map[string]string, len(tenantInputs))

@@ -442,6 +442,7 @@ type ComplexityRoot struct {
 		RuntimeContext                          func(childComplexity int, id string) int
 		RuntimeContexts                         func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		Runtimes                                func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
+		TenantByExternalID                      func(childComplexity int, id string) int
 		Tenants                                 func(childComplexity int) int
 		Viewer                                  func(childComplexity int) int
 	}
@@ -656,6 +657,7 @@ type QueryResolver interface {
 	IntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
 	Viewer(ctx context.Context) (*Viewer, error)
 	Tenants(ctx context.Context) ([]*Tenant, error)
+	TenantByExternalID(ctx context.Context, id string) (*Tenant, error)
 	AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignments(ctx context.Context, first *int, after *PageCursor) (*AutomaticScenarioAssignmentPage, error)
@@ -2935,6 +2937,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.tenantByExternalID":
+		if e.complexity.Query.TenantByExternalID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tenantByExternalID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TenantByExternalID(childComplexity, args["id"].(string)), true
+
 	case "Query.tenants":
 		if e.complexity.Query.Tenants == nil {
 			break
@@ -4555,6 +4569,7 @@ type Query {
 	- [query tenants](examples/query-tenants/query-tenants.graphql)
 	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
+	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -6823,6 +6838,20 @@ func (ec *executionContext) field_Query_runtimes_args(ctx context.Context, rawAr
 		}
 	}
 	args["after"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tenantByExternalID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -18133,6 +18162,68 @@ func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.Co
 	return ec.marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_tenantByExternalID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_tenantByExternalID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TenantByExternalID(rctx, args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.tenants")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Tenant); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Tenant)
+	fc.Result = res
+	return ec.marshalOTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24856,6 +24947,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "tenantByExternalID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tenantByExternalID(ctx, field)
+				return res
+			})
 		case "automaticScenarioAssignmentForScenario":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -28472,6 +28574,17 @@ func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋky
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v Tenant) graphql.Marshaler {
+	return ec._Tenant(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v *Tenant) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Tenant(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {

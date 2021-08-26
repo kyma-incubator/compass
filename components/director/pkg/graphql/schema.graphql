@@ -1161,6 +1161,7 @@ type Query {
 	- [query tenants](examples/query-tenants/query-tenants.graphql)
 	"""
 	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
+	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
