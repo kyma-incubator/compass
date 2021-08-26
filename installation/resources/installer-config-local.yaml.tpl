@@ -50,6 +50,7 @@ data:
   global.systemFetcher.oauth.tokenURLPattern: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/oauth/token"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
+  global.authenticators.tenant-fetcher.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
 ---
