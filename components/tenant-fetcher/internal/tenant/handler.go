@@ -25,7 +25,7 @@ type Config struct {
 	TenantProvider                   string `envconfig:"APP_TENANT_PROVIDER"`
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
+	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	JwksEndpoints             string        `envconfig:"APP_JWKS_ENDPOINTS"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }

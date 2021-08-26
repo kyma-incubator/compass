@@ -117,7 +117,7 @@ type config struct {
 
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone   bool          `envconfig:"default=true"`
+	AllowJWTSigningNone   bool          `envconfig:"default=false"`
 	ClientIDHttpHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`

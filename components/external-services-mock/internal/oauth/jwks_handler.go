@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/lestrrat-go/jwx/jwk"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
 )
@@ -19,34 +21,20 @@ func NewJWKSHandler(key *rsa.PublicKey) *jwksHandler {
 	}
 }
 
-type JWKSResponse struct {
-	Keys []Key
-}
-
-type Key struct {
-	Kty string
-	Alg string
-	Use string
-	Kid string
-	*rsa.PublicKey
-}
-
 func (h *jwksHandler) Handle(writer http.ResponseWriter, r *http.Request) {
-	resp := JWKSResponse{
-		Keys: []Key{
-			{
-				Kty:       "RSA",
-				Alg:       "RS256",
-				Use:       "sig",
-				Kid:       "key-id",
-				PublicKey: h.key,
-			},
-		},
+	jwksKey := jwk.NewRSAPublicKey()
+	err := jwksKey.FromRaw(h.key)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "while parsing key"), http.StatusInternalServerError)
+		return
 	}
+
+	keySet := jwk.NewSet()
+	keySet.Add(jwksKey)
 
 	writer.Header().Set("Content-Type", "application/json")
 
-	err := json.NewEncoder(writer).Encode(resp)
+	err = json.NewEncoder(writer).Encode(keySet)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return

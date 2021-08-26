@@ -347,7 +347,6 @@ global:
     prefix: /tenants
     port: 3000
     authentication:
-      allowJWTSigningNone: false
       jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
     tenantProvider:
       tenantIdProperty: "tenantId"
