@@ -3,7 +3,7 @@ kind: Rule
 metadata:
   name: compass-gateway-oauth
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway
+  # Configuration of oathkeeper for secure endpoint of compass gateway
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
@@ -25,7 +25,7 @@ kind: Rule
 metadata:
   name: compass-gateway-ord-oauth
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass open resource discovery service
+  # Configuration of oathkeeper for secure endpoint of compass open resource discovery service
   upstream:
     url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
   match:
@@ -47,7 +47,7 @@ kind: Rule
 metadata:
   name: compass-gateway-jwt
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway
+  # Configuration of oathkeeper for secure endpoint of compass gateway
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
@@ -71,7 +71,7 @@ kind: Rule
 metadata:
   name: compass-gateway-jwt-runtime
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway for runtime access
+  # Configuration of oathkeeper for secure endpoint of compass gateway for runtime access
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
     stripPath: "/runtime"
@@ -142,7 +142,7 @@ kind: Rule
 metadata:
   name: compass-director-certs
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway
+  # Configuration of oathkeeper for secure endpoint of compass gateway
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
@@ -166,7 +166,7 @@ kind: Rule
 metadata:
   name: compass-system-broker-certs
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass system broker
+  # Configuration of oathkeeper for secure endpoint of compass system broker
   upstream:
     url: "http://compass-system-broker.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.system_broker.port }}"
   match:
@@ -190,7 +190,7 @@ kind: Rule
 metadata:
   name: compass-gateway-director-playground
 spec:
-  description: Configuration of oathkeeper for unsecure endpoint of compass gateway - director playground
+  # Configuration of oathkeeper for unsecure endpoint of compass gateway - director playground
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
@@ -209,7 +209,7 @@ metadata:
   name: compass-connector-one-time-tokens
   namespace: {{ .Release.Namespace }}
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway
+  # Configuration of oathkeeper for secure endpoint of compass gateway
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
@@ -234,7 +234,7 @@ metadata:
   name: compass-connector-certs
   namespace: {{ .Release.Namespace }}
 spec:
-  description: Configuration of oathkeeper for secure endpoint of compass gateway
+  # Configuration of oathkeeper for secure endpoint of compass gateway
   upstream:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
@@ -258,7 +258,7 @@ kind: Rule
 metadata:
   name: compass-gateway-ord-certs
 spec:
-  description: Configuration of oathkeeper for endpoint secured by certificates of compass open resource discovery service
+  # Configuration of oathkeeper for endpoint secured by certificates of compass open resource discovery service
   upstream:
     url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
   match:
@@ -282,7 +282,7 @@ kind: Rule
 metadata:
   name: compass-gateway-ord-external-certs
 spec:
-  description: Configuration of oathkeeper for endpoint secured with certificates issued by external trusted root CA
+  # Configuration of oathkeeper for endpoint secured with certificates issued by external trusted root CA
   upstream:
     url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
   match:

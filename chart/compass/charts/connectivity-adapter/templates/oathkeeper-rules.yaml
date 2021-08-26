@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  description: Configuration of oathkeeper for secure endpoint of connectivity adapter for one time tokens
+  # Configuration of oathkeeper for secure endpoint of connectivity adapter for one time tokens
   upstream:
     url: "http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.port }}"
   match:
@@ -40,7 +40,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  description: Configuration of oathkeeper for secure endpoint of connectivity adapter for mtls
+  # Configuration of oathkeeper for secure endpoint of connectivity adapter for mtls
   upstream:
     url: "http://compass-connectivity-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connectivity_adapter.port }}"
   match:
