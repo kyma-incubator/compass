@@ -1,9 +1,7 @@
 package tests
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	gcli "github.com/machinebox/graphql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -23,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
 )
 
@@ -34,7 +32,7 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
@@ -65,7 +63,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 			Name: appName,
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
@@ -110,7 +108,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			Name: appName,
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{buildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
@@ -143,7 +141,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
 	t.Log(fmt.Sprintf("Registering webhook for application: %s", appName))
-	appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(buildMockedWebhook(testConfig.ExternalServicesMockBaseURL))
+	appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL))
 	require.NoError(t, err)
 
 	registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
@@ -155,10 +153,10 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 }
 
 func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.ApplicationExt, appNearCreationTime time.Time, expectedWebhookID string, gqlClient *gcli.Client) {
-	operationFullPath := buildOperationFullPath(testConfig.ExternalServicesMockBaseURL)
+	operationFullPath := testPkg.BuildOperationFullPath(testConfig.ExternalServicesMockBaseURL)
 
 	t.Log("Unlock the mock application webhook")
-	unlockWebhook(t, operationFullPath)
+	testPkg.UnlockWebhook(t, operationFullPath)
 	require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
 	t.Log("Start async Delete of application")
@@ -201,7 +199,7 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 		require.True(t, time.Now().After(deletedAtTime), "Deleted time is in the future")
 
 		t.Log("Unlock application webhook")
-		unlockWebhook(t, operationFullPath)
+		testPkg.UnlockWebhook(t, operationFullPath)
 		require.True(t, isWebhookOperationInDesiredState(t, operationFullPath, webhook.OperationResponseStatusOK), fmt.Sprintf("Expected state: %s", webhook.OperationResponseStatusOK))
 
 	}
@@ -217,46 +215,6 @@ func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.Applica
 	t.Log("Verify the deleted application do not exists in director")
 	missingApp := fixtures.GetApplication(t, ctx, gqlClient, testConfig.DefaultTestTenant, app.ID)
 	require.Empty(t, missingApp.Name, "Application is not deleted")
-}
-
-func buildMockedWebhook(externalSystemURL string) *graphql.WebhookInput {
-	operationFullPath := buildOperationFullPath(externalSystemURL)
-	deleteFullPath := buildDeleteFullPath(externalSystemURL)
-
-	return &graphql.WebhookInput{
-		Type:           graphql.WebhookTypeUnregisterApplication,
-		Mode:           webhookModePtr(graphql.WebhookModeAsync),
-		URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
-		RetryInterval:  intPtr(5),
-		OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
-		StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
-	}
-}
-
-func buildOperationFullPath(externalSystemURL string) string {
-	return fmt.Sprintf("%s%s", externalSystemURL, "webhook/delete/operation")
-}
-
-func buildDeleteFullPath(externalSystemURL string) string {
-	return fmt.Sprintf("%s%s", externalSystemURL, "webhook/delete")
-}
-
-func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
-	return &mode
-}
-
-func unlockWebhook(t *testing.T, operationFullPath string) {
-	httpClient := http.Client{}
-	requestData := webhook.OperationStatusRequestData{
-		InProgress: false,
-	}
-	jsonRequestData, err := json.Marshal(requestData)
-	require.NoError(t, err)
-	reqPost, err := http.NewRequest(http.MethodPost, operationFullPath, bytes.NewBuffer(jsonRequestData))
-	require.NoError(t, err)
-	respPost, err := httpClient.Do(reqPost)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, respPost.StatusCode)
 }
 
 func isWebhookOperationInDesiredState(t *testing.T, operationFullPath, desiredState string) (isInState bool) {
@@ -281,8 +239,4 @@ func isOperationDeletionCompleted(operation *v1alpha1.Operation) bool {
 		return true
 	}
 	return false
-}
-
-func intPtr(n int) *int {
-	return &n
 }

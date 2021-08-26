@@ -153,7 +153,7 @@ func FixAsyncUnregisterApplicationRequest(id string) *gcli.Request {
 		fmt.Sprintf(`mutation {
 		unregisterApplication(id: "%s" mode: ASYNC) {
 			%s
-		}	
+		}
 	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 

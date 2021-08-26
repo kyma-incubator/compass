@@ -858,6 +858,65 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	}
 }
 
+func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
+	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+
+	appModel1 := fixDetailedModelApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+
+	getQuery := `^SELECT (.+) FROM public\.applications WHERE ` + fixTenantIsolationSubqueryWithArg(1) + ` AND name = \$2 AND system_number = \$3`
+
+	t.Run("Success", func(t *testing.T) {
+		// given
+		rows := sqlmock.NewRows([]string{"id", "system_number", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}).
+			AddRow(appEntity1.ID, appEntity1.SystemNumber, appEntity1.TenantID, appEntity1.Name, appEntity1.Description, appEntity1.StatusCondition, appEntity1.StatusTimestamp, appEntity1.HealthCheckURL, appEntity1.IntegrationSystemID, appEntity1.ProviderName, appEntity1.BaseURL, appEntity1.Labels, appEntity1.Ready, appEntity1.CreatedAt, appEntity1.UpdatedAt, appEntity1.DeletedAt, appEntity1.Error, appEntity1.CorrelationIds)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+
+		sqlMock.ExpectQuery(getQuery).
+			WithArgs(givenTenant(), appEntity1.Name, appEntity1.SystemNumber.String).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		conv := &automock.EntityConverter{}
+		conv.On("FromEntity", appEntity1).Return(appModel1).Once()
+		defer conv.AssertExpectations(t)
+
+		pgRepository := application.NewRepository(conv)
+
+		// when
+		modelApp, err := pgRepository.GetByNameAndSystemNumber(ctx, givenTenant(), appEntity1.Name, appEntity1.SystemNumber.String)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, appEntity1.ID, modelApp.ID)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+
+		sqlMock.ExpectQuery(getQuery).
+			WithArgs(givenTenant(), appEntity1.Name, appEntity1.SystemNumber.String).
+			WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		conv := &automock.EntityConverter{}
+		defer conv.AssertExpectations(t)
+
+		pgRepository := application.NewRepository(conv)
+
+		// when
+		_, err := pgRepository.GetByNameAndSystemNumber(ctx, givenTenant(), appEntity1.Name, appEntity1.SystemNumber.String)
+
+		//then
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+}
+
 func givenError() error {
 	return errors.New("some error")
 }
