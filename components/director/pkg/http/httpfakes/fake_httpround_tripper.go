@@ -5,7 +5,7 @@ import (
 	httpa "net/http"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/http"
 )
 
 type FakeHTTPRoundTripper struct {
