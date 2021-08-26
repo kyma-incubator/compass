@@ -10,7 +10,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210823151554-3f81b3ffaa47
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210825143858-d12ac209b4fe
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
@@ -23,7 +23,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.8.0
 	github.com/vektah/gqlparser/v2 v2.1.0
-	github.com/vektra/mockery/v2 v2.9.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2

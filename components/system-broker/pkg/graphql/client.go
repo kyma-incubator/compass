@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	directorHTTPUtil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	httpdirector "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
@@ -41,10 +41,10 @@ type Client struct {
 	logging   bool
 }
 
-func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httputil.AuthorizationProvider) (*director.GraphQLClient, error) {
-	httpTransport := directorHTTPUtil.NewCorrelationIDTransport(directorHTTPUtil.NewServiceAccountTokenTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(httpCfg))))
+func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httpdirector.AuthorizationProvider) (*director.GraphQLClient, error) {
+	httpTransport := httpdirector.NewCorrelationIDTransport(httpdirector.NewServiceAccountTokenTransport(httpdirector.NewErrorHandlerTransport(httputil.NewHTTPTransport(httpCfg))))
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, providers...)
+	securedTransport := httpdirector.NewSecuredTransport(httpTransport, providers...)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   httpCfg.Timeout,

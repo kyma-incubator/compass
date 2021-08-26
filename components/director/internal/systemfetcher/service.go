@@ -3,13 +3,22 @@ package systemfetcher
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
+)
+
+const (
+	LifecycleAttributeName string = "lifecycleStatus"
+	LifecycleDeleted       string = "DELETED"
+
+	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 )
 
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
@@ -21,6 +30,7 @@ type TenantService interface {
 //go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
 type SystemsService interface {
 	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
+	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
@@ -28,9 +38,18 @@ type SystemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+type DirectorClient interface {
+	DeleteSystemAsync(ctx context.Context, id, tenant string) error
+}
+
 type Config struct {
-	SystemsQueueSize    int `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
-	FetcherParallellism int `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
+	SystemsQueueSize       int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
+	FetcherParallellism    int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
+	DirectorGraphqlURL     string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
+	DirectorRequestTimeout time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
+
+	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 }
 
 type SystemFetcher struct {
@@ -38,17 +57,19 @@ type SystemFetcher struct {
 	tenantService    TenantService
 	systemsService   SystemsService
 	systemsAPIClient SystemsAPIClient
+	directorClient   DirectorClient
 
 	config  Config
 	workers chan struct{}
 }
 
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:      tx,
 		tenantService:    ts,
 		systemsService:   ss,
 		systemsAPIClient: sac,
+		directorClient:   directorClient,
 		workers:          make(chan struct{}, config.FetcherParallellism),
 		config:           config,
 	}
@@ -73,7 +94,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 			wgDB.Done()
 		}()
 		for tenantSystems := range systemsQueue {
-			err = s.saveSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems)
+			err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems)
 			if err != nil {
 				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
 				continue
@@ -135,7 +156,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 	return tenants, nil
 }
 
-func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
+func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
 	log.C(ctx).Infof("Saving %d systems for tenant %s", len(systems), tenantMapping.Name)
 	var appInputs []model.ApplicationRegisterInputWithTemplate
 
@@ -149,6 +170,29 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, system := range systems {
+		if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
+			log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
+			app, err := s.systemsService.GetByNameAndSystemNumber(ctx, system.DisplayName, system.SystemNumber)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
+				continue
+			}
+			if !app.Ready && !app.GetDeletedAt().IsZero() {
+				log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
+				continue
+			}
+			if err := s.directorClient.DeleteSystemAsync(ctx, app.ID, tenantMapping.ID); err != nil {
+				if strings.Contains(err.Error(), ConcurrentDeleteOperationErrMsg) {
+					log.C(ctx).Warnf("Delete operation is in progress for system with id %s", app.ID)
+				} else {
+					log.C(ctx).WithError(err).Errorf("Could not delete system with id %s", app.ID)
+				}
+				continue
+			}
+			log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
+			continue
+		}
+
 		appInput, templateID := s.convertSystemToAppRegisterInput(system)
 		appInputs = append(appInputs, model.ApplicationRegisterInputWithTemplate{
 			ApplicationRegisterInput: appInput,
@@ -156,9 +200,11 @@ func (s *SystemFetcher) saveSystemsForTenant(ctx context.Context, tenantMapping 
 		})
 	}
 
-	err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs)
-	if err != nil {
-		return errors.Wrap(err, "failed to create applications")
+	if len(appInputs) > 0 {
+		err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs)
+		if err != nil {
+			return errors.Wrap(err, "failed to create applications")
+		}
 	}
 
 	err = tx.Commit()

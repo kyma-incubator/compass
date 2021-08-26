@@ -24,8 +24,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
 
