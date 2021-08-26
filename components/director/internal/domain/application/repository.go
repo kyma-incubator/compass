@@ -119,6 +119,17 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.A
 	return appModel, nil
 }
 
+func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error) {
+	var appEnt Entity
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
 func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {

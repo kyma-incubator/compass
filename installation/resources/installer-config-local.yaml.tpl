@@ -44,7 +44,7 @@ data:
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"
   global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
-  global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }]'
+  global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.systemFetcher.oauth.client: "admin"
   global.systemFetcher.oauth.secret: "admin"
   global.systemFetcher.oauth.tokenURLPattern: "http://compass-external-services-mock:8080/systemfetcher/oauth/token"

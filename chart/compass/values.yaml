@@ -101,7 +101,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1979"
+      version: "PR-1950"
     console:
       dir:
       version: "PR-40"
@@ -374,13 +374,17 @@ global:
     name: "system-fetcher"
     schedule: "0 0 * * *"
     manageSecrets: true
+    # enableSystemDeletion - whether systems in deleted state should be deleted from director database
+    enableSystemDeletion: true
     # fetchParallellism - shows how many http calls will be made in parallel to fetch systems
     fetchParallellism: 30
     # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
     queueSize: 100
-    # fetchTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
-    fetchTimeout: "5s"
+    # fetchRequestTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
+    fetchRequestTimeout: "5s"
+    # directorRequestTimeout - graphql requests timeout to director
+    directorRequestTimeout: "30s"
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2

@@ -3,6 +3,7 @@ package webhook
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 )
 
 const (
@@ -12,7 +13,10 @@ const (
 	OperationResponseStatusINProgress = "IN_PROGRESS"
 )
 
-var isInProgress = true
+var (
+	isInProgress = true
+	mutex        = sync.Mutex{}
+)
 
 type OperationStatusRequestData struct {
 	InProgress bool
@@ -29,6 +33,8 @@ func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 			rw.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+		mutex.Lock()
+		defer mutex.Unlock()
 		if isInProgress {
 			rw.WriteHeader(http.StatusLocked)
 		} else {
@@ -52,6 +58,8 @@ func NewWebHookOperationPostHTTPHandler() func(rw http.ResponseWriter, r *http.R
 			return
 		}
 
+		mutex.Lock()
+		defer mutex.Unlock()
 		isInProgress = okReqData.InProgress
 		rw.WriteHeader(http.StatusOK)
 	}
@@ -68,6 +76,8 @@ func NewWebHookOperationGetHTTPHandler() func(rw http.ResponseWriter, r *http.Re
 			Status: OperationResponseStatusOK,
 			Error:  nil,
 		}
+		mutex.Lock()
+		defer mutex.Unlock()
 		if isInProgress {
 			body.Status = OperationResponseStatusINProgress
 		}

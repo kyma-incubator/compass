@@ -23,9 +23,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"

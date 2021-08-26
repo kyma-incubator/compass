@@ -21,10 +21,12 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210823104705-748ca0a6e5be
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210823104705-748ca0a6e5be
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210816091934-c8f38c361ff5
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.4
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/onrik/logrus v0.9.0

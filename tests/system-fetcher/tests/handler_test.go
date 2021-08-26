@@ -33,6 +33,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -82,6 +83,13 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
+
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -139,6 +147,13 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 
 	setMultipleMockSystemsResponses(t)
 	defer cleanupMockSystems(t)
+
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
@@ -234,6 +249,13 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
@@ -298,6 +320,200 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	defer func() {
 		for _, app := range resp.Data {
 			fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func TestSystemFetcherCreateAndDelete(t *testing.T) {
+	ctx := context.TODO()
+
+	mockSystems := []byte(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	}, {
+		"systemNumber": "3",
+		"displayName": "name3",
+		"productDescription": "description",
+		"prop": "val2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	}]`)
+
+	setMockSystems(t, mockSystems)
+
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	appTemplateInput2 := fixtures.FixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+	jobName := "system-fetcher-test"
+	namespace := "compass-system"
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	defer func(jobName string) {
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
+	}(jobName)
+
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+
+	req := fixtures.FixGetApplicationsRequestWithPagination()
+	var resp directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
+	require.NoError(t, err)
+	description := "description"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description,
+				ApplicationTemplateID: &template.ID,
+			},
+		},
+		{
+			Application: directorSchema.Application{
+				Name:        "name2",
+				Description: &description,
+			},
+		},
+		{
+			Application: directorSchema.Application{
+				Name:                  "name3",
+				Description:           &description,
+				ApplicationTemplateID: &template2.ID,
+			},
+		},
+	}
+
+	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	for _, app := range resp.Data {
+		actualApps = append(actualApps, directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  app.Application.Name,
+				Description:           app.Application.Description,
+				ApplicationTemplateID: app.ApplicationTemplateID,
+			},
+		})
+	}
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+
+	mockSystems = []byte(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {
+			"lifecycleStatus": "DELETED"
+		}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	}, {
+		"systemNumber": "3",
+		"displayName": "name3",
+		"productDescription": "description",
+		"prop": "val2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {
+			"lifecycleStatus": "DELETED"
+		}
+	}]`)
+
+	setMockSystems(t, mockSystems)
+
+	t.Log("Unlock the mock application webhook")
+	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
+
+	var idToDelete string
+	for _, app := range resp.Data {
+		if app.Name == "name3" {
+			idToDelete = app.ID
+			break
+		}
+	}
+	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), idToDelete)
+
+	jobName = "system-fetcher-test2"
+	createJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	defer func() {
+		deleteJob(t, ctx, k8sClient, jobName, namespace)
+	}()
+
+	waitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+
+	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
+
+	t.Log("Waiting for asynchronous deletion to take place")
+	time.Sleep(time.Second * 40)
+
+	req = fixtures.FixGetApplicationsRequestWithPagination()
+	var resp2 directorSchema.ApplicationPageExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp2)
+	require.NoError(t, err)
+
+	expectedApps = []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:        "name2",
+				Description: &description,
+			},
+		},
+	}
+
+	actualApps = make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	for _, app := range resp2.Data {
+		actualApps = append(actualApps, directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  app.Application.Name,
+				Description:           app.Application.Description,
+				ApplicationTemplateID: app.ApplicationTemplateID,
+			},
+		})
+	}
+
+	defer func() {
+		for _, app := range resp2.Data {
+			fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
 		}
 	}()
 
