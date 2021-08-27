@@ -2,10 +2,11 @@ package tenant
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -177,20 +178,6 @@ func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessT
 	return nil
 }
 
-func (s *labeledService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
-	tenantID := labelInput.ObjectID
-	labelInput.ObjectType = model.TenantLabelableObject
-
-	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
-		return errors.Wrapf(err, "while ensuring tenant with %s exists", tenantID)
-	}
-	if err := s.labelUpsertSvc.UpsertLabel(ctx, tenantID, labelInput); err != nil {
-		return errors.Wrapf(err, "while creating label for tenant with ID %s", tenantID)
-	}
-
-	return nil
-}
-
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
 	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
 	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
@@ -222,7 +209,7 @@ func (s *service) ensureTenantExists(ctx context.Context, id string) error {
 	}
 
 	if !exists {
-		return fmt.Errorf("tenant with ID %s does not exist", id)
+		return apperrors.NewNotFoundError(resource.Tenant, id)
 	}
 
 	return nil

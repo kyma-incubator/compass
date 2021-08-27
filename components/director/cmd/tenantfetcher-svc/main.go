@@ -33,7 +33,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -186,7 +186,8 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	tenantRepo := tenant.NewRepository(converter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(tenantSvc, transact, cfg)
+	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(provisioner, transact, cfg)
 
 	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
 	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)

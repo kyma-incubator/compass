@@ -70,14 +70,3 @@ func NewLabelForApplication(app Application, key string, value interface{}) *Lab
 		Value:      value,
 	}
 }
-
-func NewLabelForTenant(tenant BusinessTenantMapping, key string, value interface{}) *Label {
-	return &Label{
-		ID:         uuid.New().String(),
-		Tenant:     tenant.ID,
-		ObjectType: TenantLabelableObject,
-		ObjectID:   tenant.ID,
-		Key:        key,
-		Value:      value,
-	}
-}

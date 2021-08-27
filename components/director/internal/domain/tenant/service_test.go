@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
 
@@ -316,6 +317,29 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			ExpectedOutput:   testErr,
 		},
 		{
+			Name:         "Error when subdomain creation fails",
+			tenantInputs: tenantInputsWithSubdomains,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ExistsByExternalTenant", ctx, tenantInputsWithSubdomains[0].ExternalTenant).Return(false, nil)
+				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
+				return tenantMappingRepo
+			},
+			LabelRepoFn: noopLabelRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				label := &model.LabelInput{
+					Key:        "subdomain",
+					Value:      testSubdomain,
+					ObjectID:   testID,
+					ObjectType: model.TenantLabelableObject,
+				}
+				svc.On("UpsertLabel", ctx, testID, label).Return(testErr).Once()
+				return svc
+			},
+			ExpectedOutput: testErr,
+		},
+		{
 			Name:         "Error when creating the tenant",
 			tenantInputs: tenantInputs,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
@@ -493,90 +517,6 @@ func Test_MoveBeforeIndex(t *testing.T) {
 	}
 }
 
-func Test_SetLabel(t *testing.T) {
-	const tenantID = "edc6857b-b0c7-49e6-9f0a-e87a9c2a4eb8"
-
-	ctx := context.TODO()
-	testErr := errors.New("failed to add label to tenant")
-	labelIn := &model.LabelInput{
-		Key:        "tenant-label",
-		Value:      "tenant-label-value",
-		ObjectID:   tenantID,
-		ObjectType: model.TenantLabelableObject,
-	}
-
-	t.Run("Success", func(t *testing.T) {
-		uidSvc := &automock.UIDService{}
-		labelRepo := &automock.LabelRepository{}
-
-		tenantRepo := &automock.TenantMappingRepository{}
-		tenantRepo.On("Exists", ctx, tenantID).Return(true, nil)
-
-		labelUpsertSvc := &automock.LabelUpsertService{}
-		labelUpsertSvc.On("UpsertLabel", ctx, tenantID, labelIn).Return(nil)
-
-		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		err := svc.SetLabel(ctx, labelIn)
-		assert.NoError(t, err)
-	})
-
-	t.Run("Error when tenant existence cannot be ensured", func(t *testing.T) {
-		uidSvc := &automock.UIDService{}
-		labelRepo := &automock.LabelRepository{}
-		labelUpsertSvc := &automock.LabelUpsertService{}
-
-		tenantRepo := &automock.TenantMappingRepository{}
-		tenantRepo.On("Exists", ctx, tenantID).Return(false, testErr)
-
-		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		err := svc.SetLabel(ctx, labelIn)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), fmt.Sprintf("while checking if tenant with ID %s exists", tenantID))
-	})
-
-	t.Run("Error when tenant does not exist", func(t *testing.T) {
-		uidSvc := &automock.UIDService{}
-		labelRepo := &automock.LabelRepository{}
-		labelUpsertSvc := &automock.LabelUpsertService{}
-
-		tenantRepo := &automock.TenantMappingRepository{}
-		tenantRepo.On("Exists", ctx, tenantID).Return(false, nil)
-
-		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		err := svc.SetLabel(ctx, labelIn)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), fmt.Sprintf("tenant with ID %s does not exist", tenantID))
-	})
-
-	t.Run("Error when label upsert fails", func(t *testing.T) {
-		uidSvc := &automock.UIDService{}
-		labelRepo := &automock.LabelRepository{}
-
-		tenantRepo := &automock.TenantMappingRepository{}
-		tenantRepo.On("Exists", ctx, tenantID).Return(true, nil)
-
-		labelUpsertSvc := &automock.LabelUpsertService{}
-		labelUpsertSvc.On("UpsertLabel", ctx, tenantID, labelIn).Return(testErr)
-
-		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
-
-		err := svc.SetLabel(ctx, labelIn)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), fmt.Sprintf("while creating label for tenant with ID %s", tenantID))
-	})
-}
-
 func Test_ListLabels(t *testing.T) {
 	const tenantID = "edc6857b-b0c7-49e6-9f0a-e87a9c2a4eb8"
 
@@ -644,7 +584,7 @@ func Test_ListLabels(t *testing.T) {
 
 		_, err := svc.ListLabels(ctx, tenantID)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), fmt.Sprintf("tenant with ID %s does not exist", tenantID))
+		assert.True(t, apperrors.IsNotFoundError(err))
 	})
 
 	t.Run("Error when fails to list labels from repo", func(t *testing.T) {

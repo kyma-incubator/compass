@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -92,7 +91,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 
 	itemMap, err := r.srv.ListLabels(ctx, obj.InternalID)
 	if err != nil {
-		if strings.Contains(err.Error(), "doesn't exist") {
+		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
 		}
 		return nil, err

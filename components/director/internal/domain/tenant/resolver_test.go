@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -164,7 +165,7 @@ func TestResolver_Labels(t *testing.T) {
 	})
 	t.Run("Succeeds when labels do not exist", func(t *testing.T) {
 		tenantSvc := &automock.BusinessTenantMappingService{}
-		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(nil, errors.New("doesn't exist"))
+		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(nil, apperrors.NewNotFoundError(resource.Tenant, testTenant.InternalID))
 		tenantConv := &automock.BusinessTenantMappingConverter{}
 		persist, transact := txGen.ThatSucceeds()
 
