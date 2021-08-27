@@ -23,6 +23,9 @@ func GetFromRequest(r *http.Request) string {
 		log.C(ctx).WithError(err).Errorf("An error occurred while parsing request: %v", err)
 		return unknownIdentity
 	} else if len(reqData.Body.Subject) > 0 {
+		if email := reqData.Body.Extra["email"]; email != nil {
+			return email.(string)
+		}
 		return reqData.Body.Subject
 	}
 
