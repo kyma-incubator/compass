@@ -32,7 +32,6 @@ type TenantProvisioner interface {
 type HandlerConfig struct {
 	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	RegionPathParam string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
 	TenantProviderConfig
 
