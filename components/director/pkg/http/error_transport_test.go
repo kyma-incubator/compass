@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/http/httpfakes"
 	"github.com/stretchr/testify/require"
-
-	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 )
 
 func TestErrorHandlerTransport_RoundTripReturnsAnErrorOnBadRequest(t *testing.T) {

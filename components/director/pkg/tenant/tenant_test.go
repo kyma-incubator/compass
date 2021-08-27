@@ -21,8 +21,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -27,8 +27,8 @@ import (
 
 	internal_errors "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"

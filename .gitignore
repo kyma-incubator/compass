@@ -57,3 +57,5 @@ components/schema-migrator/seeds/dump.sql
 # Changelog temporary directory
 .changelog/
 docs/investigations/storage/postgres/sql/*.csv
+
+main
