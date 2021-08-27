@@ -24,8 +24,8 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
 	httputilsfakes "github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
 	"github.com/pkg/errors"
 

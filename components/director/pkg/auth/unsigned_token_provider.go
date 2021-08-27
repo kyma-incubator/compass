@@ -20,14 +20,17 @@ import (
 	"context"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/pkg/errors"
 )
 
-const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
+// const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
 
 // UnsignedTokenAuthorizationProvider presents an AuthorizationProvider implementation which fabricates its own unsigned tokens for the Authorization header
-type unsignedTokenAuthorizationProvider struct{}
+type unsignedTokenAuthorizationProvider struct {
+	scopes string
+}
 
 // Claims defines the custom claims which will be placed inside tokens crafted by the unsignedTokenAuthorizationProvider
 type Claims struct {
@@ -37,8 +40,10 @@ type Claims struct {
 }
 
 // NewUnsignedTokenAuthorizationProvider constructs an UnsignedTokenAuthorizationProvider
-func NewUnsignedTokenAuthorizationProvider() *unsignedTokenAuthorizationProvider {
-	return &unsignedTokenAuthorizationProvider{}
+func NewUnsignedTokenAuthorizationProvider(scopes string) *unsignedTokenAuthorizationProvider {
+	return &unsignedTokenAuthorizationProvider{
+		scopes: scopes,
+	}
 }
 
 // Name specifies the name of the AuthorizationProvider
@@ -65,7 +70,7 @@ func (u unsignedTokenAuthorizationProvider) GetAuthorization(ctx context.Context
 
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
 		Tenant: tenantID,
-		Scopes: requiredScopes,
+		Scopes: u.scopes,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)

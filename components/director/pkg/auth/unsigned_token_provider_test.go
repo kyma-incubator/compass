@@ -22,12 +22,14 @@ import (
 	"testing"
 
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/auth"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/stretchr/testify/suite"
 )
+
+var scopes = "entity.operation"
 
 func TestUnsignedTokenAuthorizationProviderTestSuite(t *testing.T) {
 	suite.Run(t, new(UnsignedTokenAuthorizationProviderTestSuite))
@@ -40,12 +42,12 @@ type UnsignedTokenAuthorizationProviderTestSuite struct {
 const tenantID = "b1f5081d-4c67-4eff-90eb-b8ffaf7b590a"
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_New() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 	suite.Require().NotNil(provider)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_Name() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 
 	name := provider.Name()
 
@@ -53,28 +55,28 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAutho
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_Matches() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 
 	matches := provider.Matches(context.TODO())
 	suite.Require().Equal(matches, true)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_DoesNotMatchWhenBasicCredentialsInContext() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 
 	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
 	suite.Require().Equal(matches, false)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_DoesNotMatchWhenOAuthCredentialsInContext() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 
 	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
 	suite.Require().Equal(matches, false)
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_GetAuthorization() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 
 	ctx := tenant.SaveToContext(context.TODO(), tenantID)
 	authorization, err := provider.GetAuthorization(ctx)
@@ -89,12 +91,12 @@ func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAutho
 
 	suite.Require().NoError(err)
 	suite.Require().Equal(tenantID, claims.Tenant)
-	suite.Require().Equal("application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read", claims.Scopes)
+	suite.Require().Equal(scopes, claims.Scopes)
 
 }
 
 func (suite *UnsignedTokenAuthorizationProviderTestSuite) TestUnsignedTokenAuthorizationProvider_GetAuthorizationFailsWhenNoTenantInContext() {
-	provider := auth.NewUnsignedTokenAuthorizationProvider()
+	provider := auth.NewUnsignedTokenAuthorizationProvider(scopes)
 
 	authorization, err := provider.GetAuthorization(context.TODO())
 
