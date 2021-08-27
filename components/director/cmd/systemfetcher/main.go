@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -189,7 +190,13 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
-	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(http.DefaultTransport))
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: cfg.SystemFetcher.DirectorSkipSSLValidation,
+		},
+	}
+
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(tr))
 
 	securedClient := &http.Client{
 		Transport: httpTransport,

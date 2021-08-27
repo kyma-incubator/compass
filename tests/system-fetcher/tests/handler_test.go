@@ -25,6 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/operations-controller/client"
+	"k8s.io/client-go/rest"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -465,10 +468,13 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
 
 	var idToDelete string
+	var idToWaitForDeletion string
 	for _, app := range resp.Data {
 		if app.Name == "name3" {
 			idToDelete = app.ID
-			break
+		}
+		if app.Name == "name1" {
+			idToWaitForDeletion = app.ID
 		}
 	}
 	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), idToDelete)
@@ -484,7 +490,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
 
 	t.Log("Waiting for asynchronous deletion to take place")
-	time.Sleep(time.Second * 40)
+	waitForDeleteOperation(ctx, t, idToWaitForDeletion)
 
 	req = fixtures.FixGetApplicationsRequestWithPagination()
 	var resp2 directorSchema.ApplicationPageExt
@@ -518,6 +524,29 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
+	cfg, err := rest.InClusterConfig()
+	require.NoError(t, err)
+
+	k8sClient, err := client.NewForConfig(cfg)
+	operationsK8sClient := k8sClient.Operations("compass-system")
+	opName := fmt.Sprintf("application-%s", appID)
+
+	require.Eventually(t, func() bool {
+		op, err := operationsK8sClient.Get(ctx, opName, metav1.GetOptions{})
+		if err != nil {
+			t.Logf("Error getting operation %s: %s", opName, err)
+			return false
+		}
+
+		if op.Status.Phase != "Success" {
+			t.Logf("Operation %s is not in Success phase. Current state: %s", opName, op.Status.Phase)
+			return false
+		}
+		return true
+	}, time.Minute*3, time.Second*5, "Waiting for delete operation timed out.")
 }
 
 func waitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {

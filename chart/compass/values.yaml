@@ -396,6 +396,9 @@ global:
     systemsAPIFilterTenantCriteriaPattern: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    http:
+      client:
+        skipSSLValidation: false
     oauth:
       client: ""
       secret: ""

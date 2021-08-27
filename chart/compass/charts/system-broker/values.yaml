@@ -13,5 +13,9 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
 
+http:
+  client:
+    skipSSLValidation: false
+
 metrics:
   port: 5002

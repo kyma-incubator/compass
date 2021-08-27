@@ -101,13 +101,13 @@ function mount_minikube_ca_to_oathkeeper() {
   kubectl create configmap -n kyma-system minikube-ca --from-file mk-ca.crt --dry-run -o yaml | kubectl apply -f -
 
   OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
-  OATHKEEPER_MAESTER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "minikube-ca"},"name": "minikube-ca-volume"}]}}}}'
 
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_MAESTER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/mk-ca.crt'","name": "minikube-ca-volume","subPath": "mk-ca.crt"}]}]}}}}'
+ -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/mk-ca.crt'","name": "minikube-ca-volume","subPath": "mk-ca.crt"}]}]}}}}'
 }
 
 if [[ ${DUMP_DB} ]]; then

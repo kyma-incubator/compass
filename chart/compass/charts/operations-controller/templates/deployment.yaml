@@ -50,6 +50,8 @@ spec:
             value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
           - name: DIRECTOR_OPERATION_ENDPOINT
             value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.operations.path }}"
+          - name: HTTP_CLIENT_SKIP_SSL_VALIDATION
+            value: "{{ .Values.http.client.skipSSLValidation }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: {{ .Chart.Name }}
         ports:

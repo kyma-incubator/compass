@@ -53,6 +53,9 @@ data:
   global.authenticators.tenant-fetcher.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
+  system-broker.http.client.skipSSLValidation: "true"
+  operations-controller.http.client.skipSSLValidation: "true"
+  global.systemFetcher.http.client.skipSSLValidation: "true"
 ---
 apiVersion: v1
 kind: ConfigMap
