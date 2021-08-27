@@ -79,7 +79,7 @@ func initHTTP(cfg config) (http.Handler, error) {
 	}
 
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
-	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithoutCredentials)
+	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(cfg.BaseURL, cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)

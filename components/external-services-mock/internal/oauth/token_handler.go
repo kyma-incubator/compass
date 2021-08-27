@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
@@ -38,7 +40,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
-		httphelpers.WriteError(writer, errors.New("client secret not found in header"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
 		return
 	}
 
@@ -62,8 +64,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	if len(body) > 0 {
 		err = json.Unmarshal(body, &claims)
 		if err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "while json unmarshalling the request body"), http.StatusInternalServerError)
-			return
+			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshalling the request body. Error: %s. Proceeding with empty claims", err)
 		}
 	}
 
