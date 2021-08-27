@@ -27,13 +27,15 @@ import (
 
 func TestGenerateOneTimeToken(t *testing.T) {
 	const (
-		tokenValue          = "abc"
-		connectorURL        = "connector.url"
-		legacyTokenURL      = connectorURL + "?token=" + tokenValue
-		rawEncodedToken     = "eyJ0b2tlbiI6ImFiYyIsImNvbm5lY3RvclVSTCI6ImNvbm5lY3Rvci51cmwifQ=="
-		appID               = "4c86b315-c027-467f-a6fc-b184ca0a80f1"
-		runtimeID           = "31a607c7-695f-4a31-b2d1-777939f84aac"
-		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
+		tokenValue            = "YWJj"
+		sysAuthValue          = "123"
+		tokenValueWithSysAuth = "YWJjJjEyMw=="
+		connectorURL          = "connector.url"
+		legacyTokenURL        = connectorURL + "?token=" + tokenValueWithSysAuth
+		rawEncodedToken       = "eyJ0b2tlbiI6IllXSmpKakV5TXc9PSIsImNvbm5lY3RvclVSTCI6ImNvbm5lY3Rvci51cmwifQ=="
+		appID                 = "4c86b315-c027-467f-a6fc-b184ca0a80f1"
+		runtimeID             = "31a607c7-695f-4a31-b2d1-777939f84aac"
+		integrationSystemID   = "123607c7-695f-4a31-b2d1-777939f84123"
 
 		suggestedTokenHeaderKey = "suggest_token"
 	)
@@ -80,7 +82,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -108,7 +110,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
 			timeService:               directorTime.NewService(),
-			expectedToken:             tokenValue,
+			expectedToken:             tokenValueWithSysAuth,
 		},
 		{
 			description: "Generate Application token, no int system, with suggestion enabled, should succeed",
@@ -117,7 +119,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", contextWithEnabledSuggestion, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -155,7 +157,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", contextWithEnabledSuggestion, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -260,7 +262,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -320,7 +322,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			shouldHaveError: false,
 			objectID:        appID,
 			tokenType:       model.ApplicationReference,
-			expectedToken:   tokenValue,
+			expectedToken:   tokenValueWithSysAuth,
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
 				integrationSystemID: "https://my-integration-service.url",
@@ -334,7 +336,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", contextWithEnabledSuggestion, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -394,7 +396,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			shouldHaveError: false,
 			objectID:        appID,
 			tokenType:       model.ApplicationReference,
-			expectedToken:   tokenValue,
+			expectedToken:   tokenValueWithSysAuth,
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
 				integrationSystemID: "https://my-integration-service.url",
@@ -408,7 +410,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -436,7 +438,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			shouldHaveError:           false,
 			objectID:                  appID,
 			tokenType:                 model.ApplicationReference,
-			expectedToken:             tokenValue,
+			expectedToken:             tokenValueWithSysAuth,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: map[string]string{},
 			timeService:               directorTime.NewService(),
@@ -590,7 +592,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("Create", context.TODO(), model.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
-				})).Return("", nil)
+				})).Return(sysAuthValue, nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
@@ -613,7 +615,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			shouldHaveError:           false,
 			objectID:                  runtimeID,
 			tokenType:                 model.RuntimeReference,
-			expectedToken:             tokenValue,
+			expectedToken:             tokenValueWithSysAuth,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
 			timeService:               directorTime.NewService(),
