@@ -2,11 +2,13 @@ package identification
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strings"
 
 	"github.com/form3tech-oss/jwt-go"
 	coathkeeper "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	doathkeeper "github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
@@ -67,8 +69,14 @@ func GetFromRequest(r *http.Request) string {
 			return unknownIdentity
 		}
 
-		sysAuthID := strings.Split(string(decodedToken), "&")[1]
-		return sysAuthID
+		var tokenPayload model.TokenPayload
+		err = json.Unmarshal(decodedToken, &tokenPayload)
+		if err != nil {
+			log.C(ctx).Error("Failed to unmarshal one-time-token")
+			return unknownIdentity
+		}
+
+		return tokenPayload.SystemAuthID
 	}
 
 	return unknownIdentity

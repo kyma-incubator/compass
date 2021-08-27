@@ -524,8 +524,8 @@ func TestService_GetGlobal(t *testing.T) {
 }
 
 func TestService_GetByToken(t *testing.T) {
-
-	token := "tokenValue"
+	token := "YWJj"
+	tokenWithSysAuth := "eyJ0b2tlbiI6IllXSmoiLCJzeXN0ZW1fYXV0aF9pZCI6IjEyMyJ9"
 	input := map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
 			"Token": token,
@@ -539,7 +539,7 @@ func TestService_GetByToken(t *testing.T) {
 		repo.On("GetByJSONValue", context.Background(), input).Return(&model.SystemAuth{}, nil)
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
-		item, err := svc.GetByToken(context.Background(), token)
+		item, err := svc.GetByToken(context.Background(), tokenWithSysAuth)
 		// THEN
 		assert.Nil(t, err)
 		assert.Equal(t, &model.SystemAuth{}, item)
@@ -552,7 +552,7 @@ func TestService_GetByToken(t *testing.T) {
 		repo.On("GetByJSONValue", context.Background(), input).Return(nil, errors.New("err"))
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
-		item, err := svc.GetByToken(context.Background(), token)
+		item, err := svc.GetByToken(context.Background(), tokenWithSysAuth)
 		// THEN
 		assert.Error(t, err)
 		assert.Nil(t, item)

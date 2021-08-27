@@ -29,10 +29,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	const (
 		tokenValue            = "YWJj"
 		sysAuthValue          = "123"
-		tokenValueWithSysAuth = "YWJjJjEyMw=="
+		tokenValueWithSysAuth = "eyJ0b2tlbiI6IllXSmoiLCJzeXN0ZW1fYXV0aF9pZCI6IjEyMyJ9"
 		connectorURL          = "connector.url"
 		legacyTokenURL        = connectorURL + "?token=" + tokenValueWithSysAuth
-		rawEncodedToken       = "eyJ0b2tlbiI6IllXSmpKakV5TXc9PSIsImNvbm5lY3RvclVSTCI6ImNvbm5lY3Rvci51cmwifQ=="
+		rawEncodedToken       = "eyJ0b2tlbiI6ImV5SjBiMnRsYmlJNklsbFhTbW9pTENKemVYTjBaVzFmWVhWMGFGOXBaQ0k2SWpFeU15SjkiLCJjb25uZWN0b3JVUkwiOiJjb25uZWN0b3IudXJsIn0="
 		appID                 = "4c86b315-c027-467f-a6fc-b184ca0a80f1"
 		runtimeID             = "31a607c7-695f-4a31-b2d1-777939f84aac"
 		integrationSystemID   = "123607c7-695f-4a31-b2d1-777939f84123"

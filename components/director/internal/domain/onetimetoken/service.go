@@ -142,12 +142,12 @@ func (s *service) createToken(ctx context.Context, id string, tokenType model.Sy
 		return nil, errors.Wrap(err, "while creating System Auth")
 	}
 
-	decodedToken, err := base64.URLEncoding.DecodeString(oneTimeToken.Token)
+	tokenPayloadJson, err := json.Marshal(model.TokenPayload{Token: oneTimeToken.Token, SystemAuthID: sysAuthID})
 	if err != nil {
-		return nil, errors.Wrap(err, "while appending System Auth to token")
+		return nil, errors.Wrap(err, "while creating Token Payload")
 	}
-	tokenWithSysAuth := string(decodedToken) + "&" + sysAuthID
-	oneTimeToken.Token = base64.URLEncoding.EncodeToString([]byte(tokenWithSysAuth))
+
+	oneTimeToken.Token = base64.URLEncoding.EncodeToString(tokenPayloadJson)
 
 	return oneTimeToken, nil
 }

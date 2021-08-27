@@ -14,3 +14,8 @@ type OneTimeToken struct {
 	Used         bool
 	UsedAt       time.Time
 }
+
+type TokenPayload struct {
+	Token        string `json:"token"`
+	SystemAuthID string `json:"system_auth_id"`
+}
