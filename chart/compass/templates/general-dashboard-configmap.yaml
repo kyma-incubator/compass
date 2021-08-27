@@ -28,6 +28,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
+      "id": 45,
       "links": [],
       "panels": [
         {
@@ -61,7 +62,7 @@ data:
           "fillGradient": 0,
           "gridPos": {
             "h": 8,
-            "w": 18,
+            "w": 24,
             "x": 0,
             "y": 1
           },

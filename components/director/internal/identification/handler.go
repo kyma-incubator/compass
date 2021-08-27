@@ -30,6 +30,5 @@ func (h *Handler) ServerHTTP(writer http.ResponseWriter, req *http.Request) {
 	log.C(req.Context()).Infof("Request coming from client with ID '%s'", clientID)
 	h.metricsCollector.InstrumentClientIdentification(clientID)
 
-	//TODO: Check if it's necessary to return Oathkeeper AuthSession object or 200 OK is ok
 	writer.WriteHeader(http.StatusOK)
 }
