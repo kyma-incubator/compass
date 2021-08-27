@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	graphqlAPI "github.com/kyma-incubator/compass/components/director/internal/api"
 	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
@@ -216,7 +217,7 @@ func main() {
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey)
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey, claims.NewValidator())
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)

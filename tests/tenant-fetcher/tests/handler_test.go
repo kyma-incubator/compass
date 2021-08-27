@@ -35,11 +35,13 @@ import (
 
 const (
 	tenantPathParamValue = "tenant"
+	defaultSubdomain     = "default-subdomain"
 )
 
 type Tenant struct {
 	TenantId   string `json:"tenantId"`
 	CustomerId string `json:"customerId"`
+	Subdomain  string `json:"subdomain"`
 }
 
 func TestOnboardingHandler(t *testing.T) {
@@ -48,10 +50,8 @@ func TestOnboardingHandler(t *testing.T) {
 		providedTenant := Tenant{
 			TenantId:   uuid.New().String(),
 			CustomerId: uuid.New().String(),
+			Subdomain:  defaultSubdomain,
 		}
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
 
 		// WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
@@ -69,24 +69,24 @@ func TestOnboardingHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenant, err := fixtures.GetTenantByExternalID(config.DirectorUrl, config.Tenant, providedTenant.TenantId)
+		require.NoError(t, err)
+
+		parent, err := fixtures.GetTenantByExternalID(config.DirectorUrl, config.Tenant, providedTenant.CustomerId)
 		require.NoError(t, err)
 
 		// THEN
-		require.Equal(t, len(oldTenantState)+2, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		containsTenantWithTenantID(providedTenant.TenantId, tenants)
-		containsTenantWithTenantID(providedTenant.CustomerId, tenants)
+		assertTenant(t, tenant, providedTenant.TenantId, providedTenant.Subdomain)
+		assertTenant(t, parent, providedTenant.CustomerId, "")
 	})
 
 	t.Run("Success with only tenant", func(t *testing.T) {
 		// GIVEN
 		providedTenant := Tenant{
-			TenantId: uuid.New().String(),
+			TenantId:  uuid.New().String(),
+			Subdomain: defaultSubdomain,
 		}
-
-		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
-		require.NoError(t, err)
 
 		// WHEN
 		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
@@ -104,13 +104,12 @@ func TestOnboardingHandler(t *testing.T) {
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 
-		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		tenant, err := fixtures.GetTenantByExternalID(config.DirectorUrl, config.Tenant, providedTenant.TenantId)
 		require.NoError(t, err)
 
 		// THEN
-		require.Equal(t, len(oldTenantState)+1, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		containsTenantWithTenantID(providedTenant.TenantId, tenants)
+		assertTenant(t, tenant, providedTenant.TenantId, providedTenant.Subdomain)
 	})
 
 	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
@@ -118,6 +117,7 @@ func TestOnboardingHandler(t *testing.T) {
 		providedTenant := Tenant{
 			TenantId:   uuid.New().String(),
 			CustomerId: uuid.New().String(),
+			Subdomain:  defaultSubdomain,
 		}
 
 		//WHEN
@@ -149,6 +149,7 @@ func TestOnboardingHandler(t *testing.T) {
 		providedTenant := Tenant{
 			TenantId:   uuid.New().String(),
 			CustomerId: uuid.New().String(),
+			Subdomain:  defaultSubdomain,
 		}
 
 		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
@@ -180,12 +181,45 @@ func TestOnboardingHandler(t *testing.T) {
 		// THEN
 		assert.Equal(t, len(oldTenantState)+2, len(tenants))
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		containsTenantWithTenantID(providedTenant.TenantId, tenants)
-		containsTenantWithTenantID(providedTenant.CustomerId, tenants)
+		assertTenantExists(t, tenants, providedTenant.TenantId)
+		assertTenantExists(t, tenants, providedTenant.CustomerId)
 	})
 
-	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
+	t.Run("Should fail when tenantID is not provided", func(t *testing.T) {
 		providedTenant := Tenant{
+			CustomerId: uuid.New().String(),
+			Subdomain:  defaultSubdomain,
+		}
+
+		oldTenantState, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
+
+		endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+		url := config.TenantFetcherURL + config.RootAPI + endpoint
+
+		byteTenant, err := json.Marshal(providedTenant)
+		require.NoError(t, err)
+
+		request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+		require.NoError(t, err)
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
+
+		httpClient := http.DefaultClient
+		httpClient.Timeout = 15 * time.Second
+
+		response, err := httpClient.Do(request)
+		require.NoError(t, err)
+
+		tenants, err := fixtures.GetTenants(config.DirectorUrl, config.Tenant)
+		require.NoError(t, err)
+
+		// THEN
+		assert.Equal(t, len(oldTenantState), len(tenants))
+		require.Equal(t, http.StatusBadRequest, response.StatusCode)
+	})
+	t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
+		providedTenant := Tenant{
+			TenantId:   uuid.New().String(),
 			CustomerId: uuid.New().String(),
 		}
 
@@ -213,7 +247,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		// THEN
 		assert.Equal(t, len(oldTenantState), len(tenants))
-		require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+		require.Equal(t, http.StatusBadRequest, response.StatusCode)
 	})
 }
 
@@ -221,7 +255,8 @@ func TestDecommissioningHandler(t *testing.T) {
 	t.Run("Success noop", func(t *testing.T) {
 		// GIVEN
 		providedTenant := Tenant{
-			TenantId: uuid.New().String(),
+			TenantId:  uuid.New().String(),
+			Subdomain: defaultSubdomain,
 		}
 
 		// WHEN
@@ -262,11 +297,19 @@ func TestDecommissioningHandler(t *testing.T) {
 	})
 }
 
-func containsTenantWithTenantID(tenantID string, tenants []*graphql.Tenant) bool {
-	for _, t := range tenants {
-		if t.ID == tenantID {
-			return true
+func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string) {
+	require.Equal(t, tenantID, tenant.ID)
+	if len(subdomain) > 0 {
+		require.Equal(t, subdomain, tenant.Labels["subdomain"])
+	}
+}
+
+func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string) {
+	for _, tenant := range tenants {
+		if tenant.ID == tenantID {
+			return
 		}
 	}
-	return false
+
+	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found in %v", tenantID, tenants))
 }

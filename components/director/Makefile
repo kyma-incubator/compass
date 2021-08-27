@@ -27,10 +27,10 @@ dep-status-local:
 
 build-local:
 	env go build -o bin/director ./cmd/director/main.go
-	env go build -o bin/tenantfetcher ./cmd/tenantfetcher/main.go
+	env go build -o bin/tenantfetcher-job ./cmd/tenantfetcher-job/main.go
+	env go build -o bin/tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go
 
 install-tools:
 	go mod download
 	@echo Installing tools from tools.go
 	cat tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
-

@@ -35,6 +35,7 @@ const (
 	RuntimeLabelableObject        LabelableObject = "Runtime"
 	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
 	ApplicationLabelableObject    LabelableObject = "Application"
+	TenantLabelableObject         LabelableObject = "Tenant"
 )
 
 func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
