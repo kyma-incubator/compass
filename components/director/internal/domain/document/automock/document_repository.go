@@ -110,7 +110,7 @@ func (_m *DocumentRepository) GetForBundle(ctx context.Context, tenant string, i
 	return r0, r1
 }
 
-// ListAllForBundle provides a mock function with given fields: ctx, tenantID, bundleIDs, pageSize, cursor
+// ListByBundleIDs provides a mock function with given fields: ctx, tenantID, bundleIDs, pageSize, cursor
 func (_m *DocumentRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	ret := _m.Called(ctx, tenantID, bundleIDs, pageSize, cursor)
 

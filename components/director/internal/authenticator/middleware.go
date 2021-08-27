@@ -8,24 +8,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lestrrat-go/iter/arrayiter"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/lestrrat-go/iter/arrayiter"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -33,19 +24,26 @@ const (
 	JwksKeyIDKey           = "kid"
 )
 
+//go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
+type ClaimsValidator interface {
+	Validate(claims.Claims) error
+}
+
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
 	cachedJWKS          jwk.Set
 	clientIDHeaderKey   string
 	mux                 sync.RWMutex
+	claimsValidator     ClaimsValidator
 }
 
-func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string) *Authenticator {
+func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
 	return &Authenticator{
 		jwksEndpoint:        jwksEndpoint,
 		allowJWTSigningNone: allowJWTSigningNone,
 		clientIDHeaderKey:   clientIDHeaderKey,
+		claimsValidator:     claimsValidator,
 	}
 }
 
@@ -53,6 +51,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
+
 	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
@@ -62,6 +61,10 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Successfully synchronized JWKS")
 
 	return nil
+}
+
+func (a *Authenticator) SetJWKSEndpoint(url string) {
+	a.jwksEndpoint = url
 }
 
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
@@ -75,21 +78,25 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
+			tokenClaims, err := a.parseClaimsWithRetry(ctx, bearerToken)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims. Error code: %d: %v", http.StatusUnauthorized, err)
+				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
 
-			if claims.Tenant == "" && claims.ExternalTenant != "" {
-				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
-				log.C(ctx).WithError(err).Errorf("Tenant not found. Error code: %d: %v", http.StatusBadRequest, err)
-				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
+			if err := a.claimsValidator.Validate(*tokenClaims); err != nil {
+				log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
+				switch apperrors.ErrorCode(err) {
+				case apperrors.TenantNotFound:
+					apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
+				default:
+					apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
+				}
 				return
 			}
 
-			ctx = a.contextWithClaims(r.Context(), claims)
+			ctx = tokenClaims.ContextWithClaims(ctx)
 
 			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
@@ -101,41 +108,26 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	}
 }
 
-func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (Claims, error) {
-	var claims Claims
-	var err error
-
-	claims, err = a.parseClaims(ctx, bearerToken)
+func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (*claims.Claims, error) {
+	parsedClaims, err := a.parseClaims(ctx, bearerToken)
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
 		if !ok || (validationErr.Inner != rsa.ErrVerification && !apperrors.IsKeyDoesNotExist(validationErr.Inner)) {
-			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
+			return nil, apperrors.NewUnauthorizedError(err.Error())
 		}
 
-		err := a.SynchronizeJWKS(ctx)
+		if err := a.SynchronizeJWKS(ctx); err != nil {
+			return nil, apperrors.InternalErrorFrom(err, "while synchronizing JWKS during parsing token")
+		}
+
+		parsedClaims, err = a.parseClaims(ctx, bearerToken)
 		if err != nil {
-			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKS during parsing token")
+			log.C(ctx).WithError(err).Errorf("Failed to parse claims: %v", err)
+			return nil, apperrors.NewUnauthorizedError(err.Error())
 		}
-
-		claims, err = a.parseClaims(ctx, bearerToken)
-		if err != nil {
-			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
-		}
-
-		return claims, err
 	}
 
-	return claims, nil
-}
-
-func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (Claims, error) {
-	claims := Claims{}
-	_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc(ctx))
-	if err != nil {
-		return Claims{}, err
-	}
-
-	return claims, nil
+	return parsedClaims, nil
 }
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
@@ -148,13 +140,14 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	return reqToken, nil
 }
 
-func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
-	ctxWithTenants := tenant.SaveToContext(ctx, claims.Tenant, claims.ExternalTenant)
-	scopesArray := strings.Split(claims.Scopes, " ")
-	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
-	apiConsumer := consumer.Consumer{ConsumerID: claims.ConsumerID, ConsumerType: claims.ConsumerType, Flow: claims.Flow}
-	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
-	return ctxWithConsumerInfo
+func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*claims.Claims, error) {
+	parsed := claims.Claims{}
+
+	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
+		return nil, err
+	}
+
+	return &parsed, nil
 }
 
 func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (interface{}, error) {

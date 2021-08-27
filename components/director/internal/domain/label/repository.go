@@ -75,7 +75,15 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection
-	if err := r.lister.List(ctx, tenant, &entities, repo.NewEqualCondition(labelableObjectField(objectType), objectID)); err != nil {
+	typeCondition := repo.NewEqualCondition(labelableObjectField(objectType), objectID)
+	conditions := []repo.Condition{typeCondition}
+	if objectType == model.TenantLabelableObject {
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
+	}
+
+	if err := r.lister.List(ctx, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -212,6 +220,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "runtime_id"
 	case model.RuntimeContextLabelableObject:
 		return "runtime_context_id"
+	case model.TenantLabelableObject:
+		return "tenant_id"
 	}
 
 	return ""

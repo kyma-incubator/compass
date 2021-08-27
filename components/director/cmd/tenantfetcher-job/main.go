@@ -87,17 +87,18 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	metricsPusher *metrics.Pusher) *tenantfetcher.Service {
 	uidSvc := uid.NewService()
 
-	tenantStorageConv := tenant.NewConverter()
-	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
-	tenantStorageSvc := tenant.NewService(tenantStorageRepo, uidSvc)
-
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepository := labeldef.NewRepository(labelDefConverter)
-	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	labelConverter := label.NewConverter()
 	labelRepository := label.NewRepository(labelConverter)
 	labelUpsertService := label.NewLabelUpsertService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageConv := tenant.NewConverter()
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelUpsertService)
+
+	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)

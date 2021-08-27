@@ -37,8 +37,13 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tenant_fetcher.dir }}compass-tenant-fetcher:{{ .Values.global.images.tenant_fetcher.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          command:
+            - "/bin/sh"
+          args:
+              - "-c"
+              - "./tenantfetcher-svc; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           ports:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
@@ -54,6 +59,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_LOG_FORMAT
@@ -64,8 +71,8 @@ spec:
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: APP_HANDLER_ENDPOINT
               value: "{{ .Values.server.handlerEndpoint }}"
-            - name: APP_JWKS_ENDPOINTS
-              value: {{ .Values.global.tenantFetcher.authentication.jwksEndpoints | quote }}
+            - name: APP_JWKS_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
             - name: APP_DB_USER
@@ -105,7 +112,7 @@ spec:
             - name: APP_ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.global.tenantFetcher.authentication.allowJWTSigningNone | quote }}
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
-              value: Callback
+              value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

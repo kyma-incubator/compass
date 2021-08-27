@@ -22,11 +22,18 @@ import (
 	"os"
 	"time"
 
+	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
+	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -48,7 +55,7 @@ type config struct {
 
 	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
-	Handler tenant.Config
+	Handler tenantfetcher.HandlerConfig
 
 	Database persistence.DatabaseConfig
 }
@@ -65,6 +72,9 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
 
+	ctx, err = log.Configure(ctx, &cfg.Log)
+	exitOnError(err, "Failed to configure Logger")
+
 	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
 		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
 	}
@@ -77,17 +87,11 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	ctx, err = log.Configure(ctx, &cfg.Log)
-	exitOnError(err, "Failed to configure Logger")
-
-	handler, err := initAPIHandler(ctx, cfg, transact)
-	exitOnError(err, "Failed to init tenant fetcher handlers")
-
+	handler := initAPIHandler(ctx, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
 		<-ctx.Done()
-
 		// Interrupt signal received - shut down the servers
 		shutdownMainSrv()
 	}()
@@ -95,7 +99,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transactioner) (http.Handler, error) {
+func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transactioner) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -103,9 +107,9 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	if err := tenant.RegisterHandler(ctx, router, cfg.Handler, transact); err != nil {
-		return nil, err
-	}
+	configureAuthMiddleware(ctx, router, cfg.Handler)
+
+	registerHandler(ctx, router, cfg.Handler, transact)
 
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
@@ -113,7 +117,7 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	logger.Infof("Registering liveness endpoint...")
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
 
-	return mainRouter, nil
+	return mainRouter
 }
 
 func exitOnError(err error, context string) {
@@ -153,6 +157,43 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	}
 
 	return runFn, shutdownFn
+}
+
+func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
+	middleware := auth.New(cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	router.Use(middleware.Handler())
+
+	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+		if err := middleware.SynchronizeJWKS(ctx); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
+		}
+	})
+	go periodicExecutor.Run(ctx)
+}
+
+func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
+	uidSvc := uid.NewService()
+
+	labelConv := label.NewConverter()
+	labelRepo := label.NewRepository(labelConv)
+	labelDefConv := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConv)
+	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+
+	converter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(converter)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(provisioner, transact, cfg)
+
+	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
+	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)
+
+	log.C(ctx).Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
+	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
