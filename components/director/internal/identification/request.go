@@ -20,7 +20,7 @@ func GetFromRequest(r *http.Request) string {
 	reqDataParser := doathkeeper.NewReqDataParser()
 	reqData, err := reqDataParser.Parse(r)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while parsing request: %v", err)
+		log.C(ctx).Errorf("An error occurred while parsing request to extract identification: %s", err)
 		return unknownIdentity
 	} else if len(reqData.Body.Subject) > 0 {
 		if email := reqData.Body.Extra["email"]; email != nil {
