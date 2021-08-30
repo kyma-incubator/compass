@@ -26,12 +26,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"math/big"
 	"net/http"
 	urlpkg "net/url"
 	"testing"
 	"time"
+
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 

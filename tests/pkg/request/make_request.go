@@ -1,11 +1,12 @@
 package request
 
 import (
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
+
+	"github.com/stretchr/testify/require"
 )
 
 const acceptHeader = "Accept"
