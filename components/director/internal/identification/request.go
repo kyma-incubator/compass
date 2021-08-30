@@ -69,14 +69,13 @@ func GetFromRequest(r *http.Request) string {
 			return unknownIdentity
 		}
 
-		var tokenPayload model.TokenPayload
-		err = json.Unmarshal(decodedToken, &tokenPayload)
-		if err != nil {
+		var tokenData model.TokenData
+		if err := json.Unmarshal(decodedToken, &tokenData); err != nil {
 			log.C(ctx).Error("Failed to unmarshal one-time-token")
 			return unknownIdentity
 		}
 
-		return tokenPayload.SystemAuthID
+		return tokenData.SystemAuthID
 	}
 
 	return unknownIdentity

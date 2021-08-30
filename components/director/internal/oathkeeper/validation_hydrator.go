@@ -2,6 +2,7 @@ package oathkeeper
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -77,9 +78,25 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 		return
 	}
 
+	log.C(ctx).Info("Trying to decode and parse token...")
+
+	decodedToken, err := base64.URLEncoding.DecodeString(connectorToken)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("While decoding token %s", connectorToken)
+		respondWithAuthSession(ctx, w, authSession)
+		return
+	}
+
+	var tokenData model.TokenData
+	if err := json.Unmarshal(decodedToken, &tokenData); err != nil {
+		log.C(ctx).WithError(err).Errorf("while unmarshalling token %s", decodedToken)
+		respondWithAuthSession(ctx, w, authSession)
+		return
+	}
+
 	log.C(ctx).Info("Trying to resolve token...")
 
-	systemAuth, err := vh.tokenService.GetByToken(ctx, connectorToken)
+	systemAuth, err := vh.tokenService.GetByToken(ctx, tokenData.Token)
 	if err != nil {
 		log.C(ctx).Infof("Invalid token provided: %s", err.Error())
 		respondWithAuthSession(ctx, w, authSession)

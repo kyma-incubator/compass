@@ -2,8 +2,6 @@ package systemauth
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -120,20 +118,9 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 }
 
 func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
-	decodedToken, err := base64.URLEncoding.DecodeString(token)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while decoding token %s", token)
-	}
-
-	var tokenPayload model.TokenPayload
-	err = json.Unmarshal(decodedToken, &tokenPayload)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while unmarshalling token %s", decodedToken)
-	}
-
 	return s.repo.GetByJSONValue(ctx, map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
-			"Token": tokenPayload.Token,
+			"Token": token,
 			"Used":  false,
 		},
 	})
