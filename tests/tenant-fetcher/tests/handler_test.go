@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -69,7 +68,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Success with only tenant", func(t *testing.T) {
 		tenant := Tenant{
-			TenantId: uuid.New().String(),
+			TenantId:  uuid.New().String(),
 			Subdomain: defaultSubdomain,
 		}
 
