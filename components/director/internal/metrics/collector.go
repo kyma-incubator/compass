@@ -78,6 +78,6 @@ func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 	)
 }
 
-func (c *Collector) InstrumentClientIdentification(clientID string) {
+func (c *Collector) InstrumentClientID(clientID string) {
 	c.clientTotal.With(prometheus.Labels{"client_id": clientID}).Inc()
 }

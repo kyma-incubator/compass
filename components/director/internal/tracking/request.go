@@ -1,4 +1,4 @@
-package identification
+package tracking
 
 import (
 	"encoding/base64"
@@ -13,8 +13,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// GetFromRequest retrieves identification for a request, i.e. like 'client_id'.
-func GetFromRequest(r *http.Request) string {
+const (
+	emailExtraKey          = "email"
+	authorizationHeaderKey = "Authorization"
+	bearerTokenPrefix      = "Bearer "
+	certificateDataHeader  = "Certificate-Data"
+	subjectClaimKey        = "sub"
+)
+
+// GetClientIDFromRequest extracts client ID from a request.
+func GetClientIDFromRequest(r *http.Request) string {
 	ctx := r.Context()
 	unknownIdentity := "Unknown"
 
@@ -22,19 +30,19 @@ func GetFromRequest(r *http.Request) string {
 	reqDataParser := doathkeeper.NewReqDataParser()
 	reqData, err := reqDataParser.Parse(r)
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while parsing request to extract identification: %s", err)
+		log.C(ctx).Errorf("An error occurred while parsing request to extract client ID: %s", err)
 		return unknownIdentity
 	} else if len(reqData.Body.Subject) > 0 {
-		if email := reqData.Body.Extra["email"]; email != nil {
+		if email := reqData.Body.Extra[emailExtraKey]; email != nil {
 			return email.(string)
 		}
 		return reqData.Body.Subject
 	}
 
 	// JWT flow
-	authorizationHeader := reqData.Header.Get("Authorization")
-	if authorizationHeader != "" && strings.HasPrefix(strings.ToLower(authorizationHeader), "bearer ") {
-		token := strings.TrimSpace(authorizationHeader[len("Bearer "):])
+	authorizationHeader := reqData.Header.Get(authorizationHeaderKey)
+	if authorizationHeader != "" && strings.HasPrefix(strings.ToLower(authorizationHeader), strings.ToLower(bearerTokenPrefix)) {
+		token := strings.TrimSpace(authorizationHeader[len(bearerTokenPrefix):])
 
 		parsedToken, _, err := (&jwt.Parser{}).ParseUnverified(token, jwt.MapClaims{})
 		if err != nil {
@@ -42,8 +50,8 @@ func GetFromRequest(r *http.Request) string {
 			return unknownIdentity
 		}
 
-		if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && len(claims["sub"].(string)) > 0 {
-			return claims["sub"].(string)
+		if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && len(claims[subjectClaimKey].(string)) > 0 {
+			return claims[subjectClaimKey].(string)
 		} else {
 			log.C(ctx).Error("Failed to get subject claim from JWT token: ", err)
 			return unknownIdentity
@@ -51,7 +59,7 @@ func GetFromRequest(r *http.Request) string {
 	}
 
 	// Certificates flow
-	certHeaderParser := coathkeeper.NewHeaderParser("Certificate-Data", "", nil, func(subject string) string { return subject })
+	certHeaderParser := coathkeeper.NewHeaderParser(certificateDataHeader, "", nil, func(subject string) string { return subject })
 	cn, _, ok := certHeaderParser.GetCertificateData(r)
 	if ok {
 		return cn

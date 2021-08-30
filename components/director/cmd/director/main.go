@@ -45,7 +45,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
-	"github.com/kyma-incubator/compass/components/director/internal/identification"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
@@ -55,6 +54,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/director/internal/tracking"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
@@ -100,7 +100,7 @@ type config struct {
 
 	Database                      persistence.DatabaseConfig
 	APIEndpoint                   string `envconfig:"default=/graphql"`
-	IdentificationEndpoint        string `envconfig:"default=/id"`
+	TrackingEndpoint              string `envconfig:"default=/track"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
@@ -263,8 +263,8 @@ func main() {
 
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
-	logger.Infof("Registering Identification endpoint on %s...", cfg.IdentificationEndpoint)
-	mainRouter.HandleFunc(cfg.IdentificationEndpoint, getIdentificationHandlerFunc(metricsCollector))
+	logger.Infof("Registering Tracking endpoint on %s...", cfg.TrackingEndpoint)
+	mainRouter.HandleFunc(cfg.TrackingEndpoint, getTrackingHandlerFunc(metricsCollector))
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
@@ -405,8 +405,8 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func getIdentificationHandlerFunc(metricsCollector *metrics.Collector) http.HandlerFunc {
-	return identification.NewHandler(metricsCollector).ServerHTTP
+func getTrackingHandlerFunc(metricsCollector *metrics.Collector) http.HandlerFunc {
+	return tracking.NewHandler(metricsCollector).ServerHTTP
 }
 
 func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {

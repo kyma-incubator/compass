@@ -324,10 +324,10 @@ global:
             retry:
               give_up_after: 6s
               max_delay: 2000ms
-      identificationService:
+      trackingService:
         config:
           api:
-            url: http://compass-director.compass-system.svc.cluster.local:3000/id
+            url: http://compass-director.compass-system.svc.cluster.local:3000/track
             retry:
               give_up_after: 6s
               max_delay: 2000ms

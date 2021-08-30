@@ -15,7 +15,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
@@ -39,7 +39,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
@@ -65,7 +65,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
@@ -90,7 +90,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.runtimeMappingService | indent 4 }}
   - handler: hydrator
@@ -116,7 +116,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -142,7 +142,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -168,7 +168,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
@@ -188,7 +188,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tokenResolverService | indent 4 }}
   - handler: hydrator
@@ -215,7 +215,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -241,7 +241,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.identificationService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.trackingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator

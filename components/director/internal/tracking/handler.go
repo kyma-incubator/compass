@@ -1,4 +1,4 @@
-package identification
+package tracking
 
 import (
 	"context"
@@ -38,9 +38,9 @@ func (h *Handler) ServerHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	clientID := GetFromRequest(req)
+	clientID := GetClientIDFromRequest(req)
 	log.C(ctx).Infof("Request coming from client with ID '%s'", clientID)
-	h.metricsCollector.InstrumentClientIdentification(clientID)
+	h.metricsCollector.InstrumentClientID(clientID)
 
 	respond(ctx, writer, reqData.Body)
 }
