@@ -16,6 +16,6 @@ type OneTimeToken struct {
 }
 
 type TokenPayload struct {
-	Token        string `json:"token"`
+	Token        string `json:"one_time_token"`
 	SystemAuthID string `json:"system_auth_id"`
 }
