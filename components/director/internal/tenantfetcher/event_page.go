@@ -119,10 +119,16 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
 	}
 
+	subdomain := gjson.Get(jsonPayload, ep.fieldMapping.SubdomainField)
+	if !subdomain.Exists() {
+		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.SubdomainField)
+	}
+
 	return &model.BusinessTenantMappingInput{
 		Name:           nameResult.String(),
 		ExternalTenant: idResult.String(),
 		Parent:         customerIdResult.String(),
+		Subdomain:      subdomain.String(),
 		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       ep.providerName,
 	}, nil

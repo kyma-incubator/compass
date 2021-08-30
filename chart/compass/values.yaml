@@ -90,7 +90,7 @@ global:
       version: "PR-37"
     schema_migrator:
       dir:
-      version: "PR-1979"
+      version: "PR-1964"
     system_broker:
       dir:
       version: "PR-1992"
@@ -346,11 +346,13 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    requiredAuthScope: Callback
     authentication:
       jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
+      subdomainProperty: "subdomain"
       name: "provider"
 
   ordService:
@@ -437,6 +439,7 @@ global:
         idField: "id"
         nameField: "name"
         customerIdField: "customerId"
+        subdomainField: "subdomain"
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"

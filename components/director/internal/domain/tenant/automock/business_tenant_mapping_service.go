@@ -14,6 +14,29 @@ type BusinessTenantMappingService struct {
 	mock.Mock
 }
 
+// GetTenantByExternalID provides a mock function with given fields: ctx, externalID
+func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalID)
+
+	var r0 *model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, externalID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, externalID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx
 func (_m *BusinessTenantMappingService) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx)
@@ -30,6 +53,29 @@ func (_m *BusinessTenantMappingService) List(ctx context.Context) ([]*model.Busi
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListLabels provides a mock function with given fields: ctx, tenantID
+func (_m *BusinessTenantMappingService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, tenantID)
+
+	var r0 map[string]*model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
+		r0 = rf(ctx, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenantID)
 	} else {
 		r1 = ret.Error(1)
 	}

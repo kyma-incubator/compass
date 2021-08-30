@@ -29,6 +29,7 @@ type TenantFieldMapping struct {
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
 	CustomerIDField    string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
+	SubdomainField     string `envconfig:"default=subdomain,APP_MAPPING_FIELD_SUBDOMAIN"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
@@ -49,11 +50,11 @@ type QueryConfig struct {
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
 
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
@@ -95,7 +96,17 @@ type Service struct {
 	fullResyncInterval              time.Duration
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, movRuntime MovedRuntimeByLabelFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantService, runtimeStorageService RuntimeService, labelDefService LabelDefinitionService, movedRuntimeLabelKey string, fullResyncInterval time.Duration) *Service {
+func NewService(queryConfig QueryConfig,
+	transact persistence.Transactioner,
+	kubeClient KubeClient,
+	fieldMapping TenantFieldMapping,
+	movRuntime MovedRuntimeByLabelFieldMapping,
+	providerName string, client EventAPIClient,
+	tenantStorageService TenantService,
+	runtimeStorageService RuntimeService,
+	labelDefService LabelDefinitionService,
+	movedRuntimeLabelKey string,
+	fullResyncInterval time.Duration) *Service {
 	return &Service{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -209,6 +220,7 @@ func (s Service) SyncTenants() error {
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
+	subdomainMapping := make(map[string]string, 0)
 	for _, eventTenant := range eventsTenants {
 		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue
@@ -217,9 +229,10 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 			eventTenant.Parent = currTenants[eventTenant.Parent]
 		}
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
+		subdomainMapping[eventTenant.ExternalTenant] = eventTenant.Subdomain
 	}
 	if len(tenantsToCreate) > 0 {
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate); err != nil {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate...); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
 	}
@@ -244,7 +257,7 @@ func (s Service) createParents(ctx context.Context, currTenants map[string]strin
 	}
 	parentsToCreate = s.dedupeTenants(parentsToCreate)
 	if len(parentsToCreate) > 0 {
-		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate); err != nil {
+		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, parentsToCreate...); err != nil {
 			return errors.Wrap(err, "while storing new parents")
 		}
 	}

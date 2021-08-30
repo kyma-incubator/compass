@@ -166,7 +166,7 @@ func NewRootResolver(
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
@@ -273,6 +273,10 @@ func (r *RootResolver) OneTimeTokenForApplication() graphql.OneTimeTokenForAppli
 
 func (r *RootResolver) OneTimeTokenForRuntime() graphql.OneTimeTokenForRuntimeResolver {
 	return &oneTimeTokenForRuntimeResolver{r}
+}
+
+func (r *RootResolver) Tenant() graphql.TenantResolver {
+	return &tenantResolver{r}
 }
 
 type queryResolver struct {
@@ -695,4 +699,16 @@ func (r *BundleResolver) EventDefinition(ctx context.Context, obj *graphql.Bundl
 }
 func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
 	return r.mpBundle.Document(ctx, obj, id)
+}
+
+type tenantResolver struct {
+	*RootResolver
+}
+
+func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string) (graphql.Labels, error) {
+	return r.tenant.Labels(ctx, obj, key)
+}
+
+func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
+	return r.tenant.Tenant(ctx, id)
 }

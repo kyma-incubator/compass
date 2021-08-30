@@ -18,7 +18,6 @@ package fixtures
 
 import (
 	"context"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -64,25 +63,4 @@ func DeleteAutomaticScenarioAssigmentForSelector(t require.TestingT, ctx context
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
-}
-
-type TenantsResponse struct {
-	Result []*graphql.Tenant
-}
-
-func GetTenants(gqlClient *gcli.Client) ([]*graphql.Tenant, error) {
-	query := FixTenantsRequest().Query()
-
-	req := gcli.NewRequest(query)
-
-	var response TenantsResponse
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err := gqlClient.Run(ctx, req, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return response.Result, nil
 }
