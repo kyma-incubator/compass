@@ -348,7 +348,7 @@ global:
     port: 3000
     requiredAuthScope: Callback
     authentication:
-      jwksEndpoints: '["http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"]'
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
