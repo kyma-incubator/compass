@@ -730,10 +730,11 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 func TestRegenerateOneTimeToken(t *testing.T) {
 	const (
-		systemAuthID       = "sysAuthID"
+		systemAuthID       = "123"
 		connectorURL       = "http://connector.url"
 		legacyConnectorURL = "http://connector.url"
-		token              = "tokenValue"
+		token              = "YWJj"
+		tokenWithSysAuth   = "eyJvbmVfdGltZV90b2tlbiI6IllXSmoiLCJzeXN0ZW1fYXV0aF9pZCI6IjEyMyJ9"
 	)
 
 	ottConfig := onetimetoken.Config{
@@ -824,7 +825,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{ID: systemAuthID}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
@@ -834,7 +835,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
 			&automock.HTTPDoer{}, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
 		expectedToken := model.OneTimeToken{
-			Token:        token,
+			Token:        tokenWithSysAuth,
 			ConnectorURL: connectorURL,
 			Type:         tokens.ApplicationToken,
 			CreatedAt:    now,
@@ -859,14 +860,14 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{ID: systemAuthID, Value: &model.Auth{}}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
 		defer tokenGenerator.AssertExpectations(t)
 		expectedToken := model.OneTimeToken{
-			Token:        token,
+			Token:        tokenWithSysAuth,
 			ConnectorURL: connectorURL,
 			Type:         tokens.ApplicationToken,
 			CreatedAt:    now,
