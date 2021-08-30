@@ -525,7 +525,7 @@ func TestService_GetGlobal(t *testing.T) {
 
 func TestService_GetByToken(t *testing.T) {
 	token := "YWJj"
-	tokenWithSysAuth := "eyJ0b2tlbiI6IllXSmoiLCJzeXN0ZW1fYXV0aF9pZCI6IjEyMyJ9"
+	tokenWithSysAuth := "eyJvbmVfdGltZV90b2tlbiI6IllXSmoiLCJzeXN0ZW1fYXV0aF9pZCI6IjEyMyJ9"
 	input := map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
 			"Token": token,
