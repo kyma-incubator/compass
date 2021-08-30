@@ -114,6 +114,13 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 		return model.OneTimeToken{}, err
 	}
 
+	tokenDataJSON, err := json.Marshal(model.TokenData{Token: oneTimeToken.Token, SystemAuthID: sysAuth.ID})
+	if err != nil {
+		return model.OneTimeToken{}, errors.Wrap(err, "while creating Token Payload")
+	}
+
+	oneTimeToken.Token = base64.URLEncoding.EncodeToString(tokenDataJSON)
+
 	return *oneTimeToken, nil
 }
 
