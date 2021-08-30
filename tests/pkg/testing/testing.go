@@ -29,7 +29,7 @@ func (t *T) Run(name string, f func(t *testing.T)) bool {
 				t.Fatalf("An error occured while parsing skip regex: %s", pattern)
 			}
 			if match {
-				t.Skipf("Skipping test... Reason: test name %s matches skip patterн %s", t.Name(), pattern)
+				t.Skipf("Skipping test... Reason: test name %s matches skip pattern %s", t.Name(), pattern)
 			}
 			f(t)
 		}
