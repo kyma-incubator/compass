@@ -38,7 +38,7 @@ func (h *Handler) ServerHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	clientID := GetClientIDFromRequest(req)
+	clientID := GetClientIDFromRequest(req, reqData)
 	log.C(ctx).Infof("Request coming from client with ID '%s'", clientID)
 	h.metricsCollector.InstrumentClientID(clientID)
 

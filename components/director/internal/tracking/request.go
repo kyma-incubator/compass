@@ -22,17 +22,12 @@ const (
 )
 
 // GetClientIDFromRequest extracts client ID from a request.
-func GetClientIDFromRequest(r *http.Request) string {
+func GetClientIDFromRequest(r *http.Request, reqData doathkeeper.ReqData) string {
 	ctx := r.Context()
 	unknownIdentity := "Unknown"
 
 	// Valid Oathkeeper Subject flow
-	reqDataParser := doathkeeper.NewReqDataParser()
-	reqData, err := reqDataParser.Parse(r)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while parsing request to extract client ID: %s", err)
-		return unknownIdentity
-	} else if len(reqData.Body.Subject) > 0 {
+	if len(reqData.Body.Subject) > 0 {
 		if email := reqData.Body.Extra[emailExtraKey]; email != nil {
 			return email.(string)
 		}
