@@ -19,7 +19,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210823104705-748ca0a6e5be
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e4208095db0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
