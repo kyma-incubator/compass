@@ -33,6 +33,9 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "/connectivity-adapter.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "256Mi"
           env:
             - name: APP_CONNECTIVITY_ADAPTER_URL
               value: {{ .Values.global.tests.connectivityAdapterFQDN }}:{{ .Values.global.connectivity_adapter.port }}
