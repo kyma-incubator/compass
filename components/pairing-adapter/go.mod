@@ -14,13 +14,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210823104705-748ca0a6e5be
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/onrik/logrus v0.9.0 // indirect
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e4208095db0
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
@@ -43,4 +37,13 @@ require (
 	k8s.io/apimachinery v0.20.2 // indirect
 	k8s.io/klog/v2 v2.4.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
+)
+
+require (
+	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/onrik/logrus v0.9.0 // indirect
 )

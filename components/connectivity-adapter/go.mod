@@ -22,7 +22,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210823104705-748ca0a6e5be
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210831121533-7e4208095db0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e4208095db0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect

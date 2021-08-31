@@ -39,7 +39,7 @@ require (
 	github.com/goccy/go-json v0.7.4 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.6
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0
@@ -52,14 +52,9 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/josharian/intern v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210823104705-748ca0a6e5be
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210823104705-748ca0a6e5be
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210816091934-c8f38c361ff5
-	github.com/lestrrat-go/backoff/v2 v2.0.7 // indirect
-	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
-	github.com/lestrrat-go/httpcc v1.0.0 // indirect
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831121533-7e4208095db0
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.4
 	github.com/lestrrat-go/option v1.0.0 // indirect
@@ -87,7 +82,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/cast v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
@@ -105,15 +100,15 @@ require (
 	golang.org/x/mod v0.4.2
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
-	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
-	golang.org/x/tools v0.1.0 // indirect
+	golang.org/x/tools v0.1.2 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -129,4 +124,13 @@ require (
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
+	github.com/json-iterator/go v1.1.11 // indirect
+	github.com/lestrrat-go/backoff/v2 v2.0.7 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
+	github.com/lestrrat-go/httpcc v1.0.0 // indirect
+	github.com/russross/blackfriday/v2 v2.0.1 // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
+	github.com/urfave/cli v1.22.1 // indirect
 )

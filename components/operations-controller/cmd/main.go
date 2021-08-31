@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	directorhttputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
@@ -150,7 +151,7 @@ func fatalOnError(err error) {
 }
 
 func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
-	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransport(cfg))
+	httpTransport := directorhttputil.NewCorrelationIDTransport(httputil.NewHTTPTransport(cfg))
 
 	unsecuredClient := &http.Client{
 		Transport: httpTransport,
@@ -161,7 +162,7 @@ func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
 	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
+	securedTransport := directorhttputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.Timeout,

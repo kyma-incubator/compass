@@ -13,11 +13,10 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/go-logr/logr v0.4.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/gnostic v0.5.1 // indirect
@@ -26,13 +25,13 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210816091934-c8f38c361ff5
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210823104705-748ca0a6e5be
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210830063103-f57abbe4cd3f
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210816091934-c8f38c361ff5
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210816091934-c8f38c361ff5
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210823104705-748ca0a6e5be
+	github.com/json-iterator/go v1.1.11 // indirect
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210831121533-7e4208095db0
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
@@ -47,7 +46,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/cast v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.8.0
@@ -58,15 +57,15 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
-	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
+	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
