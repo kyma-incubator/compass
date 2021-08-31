@@ -18,9 +18,10 @@ type Entity struct {
 type Type string
 
 const (
-	Unknown  Type = "unknown"
-	Account  Type = "account"
-	Customer Type = "customer"
+	Unknown    Type = "unknown"
+	Customer   Type = "customer"
+	Account    Type = "account"
+	Subaccount Type = "subaccount"
 )
 
 type Status string
@@ -47,6 +48,8 @@ func StrToType(value string) Type {
 		return Account
 	case string(Customer):
 		return Customer
+	case string(Subaccount):
+		return Subaccount
 	default:
 		return Unknown
 	}
@@ -58,6 +61,8 @@ func TypeToStr(value Type) string {
 		return string(Account)
 	case Customer:
 		return string(Customer)
+	case Subaccount:
+		return string(Subaccount)
 	default:
 		return string(Unknown)
 	}

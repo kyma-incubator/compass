@@ -350,8 +350,14 @@ global:
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
+      subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
+    server:
+      handlerEndpoint: "/v1/callback/{tenantId}"
+      regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
+      tenantPathParam: "tenantId"
+      regionPathParam: "region"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

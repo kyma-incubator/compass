@@ -167,3 +167,127 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 		})
 	}
 }
+
+func TestProvisioner_CreateRegionalTenant(t *testing.T) {
+	//GIVEN
+	region := "eu-1"
+	ctx := context.TODO()
+	regionLabel := &model.LabelInput{
+		Key:        "region",
+		Value:      region,
+		ObjectID:   regionalTenantIntID,
+		ObjectType: model.TenantLabelableObject,
+	}
+	providedRegionalTenant := model.BusinessTenantMappingInput{
+		Name:           regionalTenantExtID,
+		ExternalTenant: regionalTenantExtID,
+		Parent:         tenantExtID,
+		Type:           tenantEntity.TypeToStr(tenantEntity.Subaccount),
+		Provider:       testProviderName,
+		Subdomain:      tenantSubdomain,
+	}
+	regionalTenant := model.BusinessTenantMappingInput{
+		Name:           regionalTenantExtID,
+		ExternalTenant: regionalTenantExtID,
+		Parent:         tenantID,
+		Type:           tenantEntity.TypeToStr(tenantEntity.Subaccount),
+		Provider:       testProviderName,
+		Subdomain:      tenantSubdomain,
+	}
+
+	testCases := []struct {
+		Name                string
+		TenantSvcFn         func() *automock.TenantService
+		Tenant              model.BusinessTenantMappingInput
+		ExpectedErrorOutput string
+	}{
+		{
+			Name: "Succeeds when parent tenant exists",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, tenantExtID).Return(tenantID, nil).Once()
+				tenantSvc.On("CreateManyIfNotExists", ctx, []model.BusinessTenantMappingInput{regionalTenant}).Return(nil).Once()
+				tenantSvc.On("GetInternalTenant", ctx, regionalTenantExtID).Return(regionalTenantIntID, nil).Once()
+				tenantSvc.On("SetLabel", ctx, regionLabel).Return(nil).Once()
+				return tenantSvc
+			},
+			Tenant: providedRegionalTenant,
+		},
+		{
+			Name: "Returns error when parent tenant does not exist",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, tenantExtID).Return("", apperrors.NewNotFoundError(resource.Tenant, parentTenantExtID)).Once()
+				return tenantSvc
+			},
+			Tenant:              providedRegionalTenant,
+			ExpectedErrorOutput: fmt.Sprintf("parent tenant with external ID %s does not exist", tenantExtID),
+		},
+		{
+			Name: "Returns error when getting parent tenant from database fails",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, tenantExtID).Return("", testError).Once()
+				return tenantSvc
+			},
+			Tenant:              providedRegionalTenant,
+			ExpectedErrorOutput: fmt.Sprintf("failed to retrieve internal ID of parent with external ID %s", tenantExtID),
+		},
+		{
+			Name: "Returns error when tenant creation fails",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, tenantExtID).Return(tenantID, nil).Once()
+				tenantSvc.On("CreateManyIfNotExists", ctx, []model.BusinessTenantMappingInput{regionalTenant}).Return(testError).Once()
+				return tenantSvc
+			},
+			Tenant:              providedRegionalTenant,
+			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenantExtID),
+		},
+		{
+			Name: "Returns error when internal tenant ID cannot be retrieved",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, tenantExtID).Return(tenantID, nil).Once()
+				tenantSvc.On("CreateManyIfNotExists", ctx, []model.BusinessTenantMappingInput{regionalTenant}).Return(nil).Once()
+				tenantSvc.On("GetInternalTenant", ctx, regionalTenantExtID).Return("", testError).Once()
+				return tenantSvc
+			},
+			Tenant:              providedRegionalTenant,
+			ExpectedErrorOutput: testError.Error(),
+		},
+		{
+			Name: "Returns error when region label cannot be set",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, tenantExtID).Return(tenantID, nil).Once()
+				tenantSvc.On("CreateManyIfNotExists", ctx, []model.BusinessTenantMappingInput{regionalTenant}).Return(nil).Once()
+				tenantSvc.On("GetInternalTenant", ctx, regionalTenantExtID).Return(regionalTenantIntID, nil).Once()
+				tenantSvc.On("SetLabel", ctx, regionLabel).Return(testError).Once()
+				return tenantSvc
+			},
+			Tenant:              providedRegionalTenant,
+			ExpectedErrorOutput: testError.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			defer tenantSvc.AssertExpectations(t)
+
+			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc)
+
+			//WHEN
+			err := provisioner.ProvisionRegionalTenant(ctx, testCase.Tenant, region)
+
+			// THEN
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

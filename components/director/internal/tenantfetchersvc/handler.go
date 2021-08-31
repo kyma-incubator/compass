@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -27,11 +28,14 @@ const (
 //go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore
 type TenantProvisioner interface {
 	ProvisionTenant(ctx context.Context, tenant model.BusinessTenantMappingInput) error
+	ProvisionRegionalTenant(ctx context.Context, tenant model.BusinessTenantMappingInput, region string) error
 }
 
 type HandlerConfig struct {
-	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
-	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	HandlerEndpoint         string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
+	RegionalHandlerEndpoint string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	TenantPathParam         string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	RegionPathParam         string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
 	TenantProviderConfig
 
@@ -42,10 +46,11 @@ type HandlerConfig struct {
 }
 
 type TenantProviderConfig struct {
-	TenantIdProperty   string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
-	CustomerIdProperty string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
-	SubdomainProperty  string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
-	TenantProvider     string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
+	TenantIdProperty         string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	SubaccountTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
+	CustomerIdProperty       string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	SubdomainProperty        string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
+	TenantProvider           string `envconfig:"APP_TENANT_PROVIDER"`
 }
 
 type handler struct {
@@ -71,14 +76,14 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Failed to read tenant information from request body", http.StatusInternalServerError)
 		return
 	}
-	accountTenant, err := h.tenantInfoFromBody(body)
+	accountTenant, err := h.tenantFromBody(body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to extract tenant information from request body: %v", err)
 		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.provisionTenant(ctx, *accountTenant); err != nil {
+	if err := h.provisionTenant(ctx, *accountTenant, ""); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s: %v", accountTenant.ExternalTenant, err)
 		http.Error(writer, fmt.Sprintf(tenantCreationFailureMsgFmt, accountTenant.ExternalTenant), http.StatusInternalServerError)
 		return
@@ -109,14 +114,67 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Reque
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) tenantInfoFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
+func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Request) {
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	region, ok := vars[h.config.RegionPathParam]
+	if !ok {
+		log.C(ctx).Errorf("Region path parameter is missing from request")
+		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	body, err := readBody(request)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
+		http.Error(writer, "Failed to read tenant information from request body", http.StatusInternalServerError)
+		return
+	}
+	regionalTenant, err := h.tenantFromBody(body)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to extract tenant information from request body: %v", err)
+		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.provisionTenant(ctx, *regionalTenant, region); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s: %v", regionalTenant.ExternalTenant, err)
+		http.Error(writer, fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.ExternalTenant), http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "text/plain")
+	writer.WriteHeader(http.StatusOK)
+	if _, err := writer.Write([]byte(compassURL)); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for tenant request creation for tenant %s: %v", regionalTenant.ExternalTenant, err)
+	}
+}
+
+func (h *handler) DeleteRegionalByExternalID(writer http.ResponseWriter, _ *http.Request) {
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (h *handler) tenantFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIdProperty:   true,
-		h.config.SubdomainProperty:  true,
-		h.config.CustomerIdProperty: false,
+		h.config.TenantIdProperty:         true,
+		h.config.SubdomainProperty:        true,
+		h.config.SubaccountTenantIdProperty: false,
+		h.config.CustomerIdProperty:       false,
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if prop, ok := properties[h.config.SubaccountTenantIdProperty]; ok && len(prop) > 0 {
+		return &model.BusinessTenantMappingInput{
+			Name:           properties[h.config.SubaccountTenantIdProperty],
+			ExternalTenant: properties[h.config.SubaccountTenantIdProperty],
+			Parent:         properties[h.config.TenantIdProperty],
+			Subdomain:      properties[h.config.SubdomainProperty],
+			Type:           tenantEntity.TypeToStr(tenantEntity.Subaccount),
+			Provider:       h.config.TenantProvider,
+		}, nil
 	}
 
 	return &model.BusinessTenantMappingInput{
@@ -129,7 +187,7 @@ func (h *handler) tenantInfoFromBody(body []byte) (*model.BusinessTenantMappingI
 	}, nil
 }
 
-func (h *handler) provisionTenant(ctx context.Context, tenant model.BusinessTenantMappingInput) error {
+func (h *handler) provisionTenant(ctx context.Context, tenant model.BusinessTenantMappingInput, region string) error {
 	externalTenantID := tenant.ExternalTenant
 	tx, err := h.transact.Begin()
 	if err != nil {
@@ -138,7 +196,13 @@ func (h *handler) provisionTenant(ctx context.Context, tenant model.BusinessTena
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	if err := h.provisioner.ProvisionTenant(ctx, tenant); err != nil && !apperrors.IsNotUniqueError(err) {
+
+	if len(region) > 0 {
+		err = h.provisioner.ProvisionRegionalTenant(ctx, tenant, region)
+	} else {
+		err = h.provisioner.ProvisionTenant(ctx, tenant)
+	}
+	if err != nil && !apperrors.IsNotUniqueError(err) {
 		return errors.Wrapf(err, "while provisioning tenant with external ID %s", externalTenantID)
 	}
 
@@ -148,6 +212,7 @@ func (h *handler) provisionTenant(ctx context.Context, tenant model.BusinessTena
 
 	return nil
 }
+
 func getProperties(body []byte, props map[string]bool) (map[string]string, error) {
 	resultProps := map[string]string{}
 	for propName, mandatory := range props {

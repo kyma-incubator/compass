@@ -192,6 +192,20 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	return labels, nil
 }
 
+func (s *labeledService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
+	tenantID := labelInput.ObjectID
+	labelInput.ObjectType = model.TenantLabelableObject
+
+	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
+		return errors.Wrapf(err, "while ensuring tenant with %s exists", tenantID)
+	}
+	if err := s.labelUpsertSvc.UpsertLabel(ctx, tenantID, labelInput); err != nil {
+		return errors.Wrapf(err, "while creating label for tenant with ID %s", tenantID)
+	}
+
+	return nil
+}
+
 func (s *labeledService) addSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
 	label := &model.LabelInput{
 		Key:        subdomainLabelKey,

@@ -14,6 +14,20 @@ type TenantProvisioner struct {
 	mock.Mock
 }
 
+// ProvisionRegionalTenant provides a mock function with given fields: ctx, tenant, region
+func (_m *TenantProvisioner) ProvisionRegionalTenant(ctx context.Context, tenant model.BusinessTenantMappingInput, region string) error {
+	ret := _m.Called(ctx, tenant, region)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMappingInput, string) error); ok {
+		r0 = rf(ctx, tenant, region)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ProvisionTenant provides a mock function with given fields: ctx, tenant
 func (_m *TenantProvisioner) ProvisionTenant(ctx context.Context, tenant model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, tenant)
