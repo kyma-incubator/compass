@@ -547,6 +547,7 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20210623064717-63c
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210623072749-c159dfdd6510/go.mod h1:z1vSKaBY7eBcbaScaqsyzB8n/f9OQGA+vdmKsvFdU3U=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210811095717-11e56601583a/go.mod h1:W7QtrypGMg63Htg+BETGJpbs7arbiwufjlJIfeDN9yw=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:wlEbOeMHFztxKu4kl3+2u+bg/Tnyt8iGrwnkwRAp3m4=
+github.com/kyma-incubator/compass/components/connector v0.0.0-20210823104705-748ca0a6e5be/go.mod h1:NvbU4MPFBv6S3fxyrGBicBL3n1N+t+Y87L4/MggYJlU=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210222123648-c454983cf74b/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210301143156-3b39f117e7bf/go.mod h1:hJ3bgWfwFhdnxZF7Gcok5Rm1zDT4bHtVGHDeXDBvTfg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210330105728-6ca6d1a07081/go.mod h1:4u8ypBtJh66WYOouCuKpMJ70XCK29F4JoyKD/Mp6o1M=
@@ -565,6 +566,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f3
 github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:XgAhkmzZYsX1kxPrHYQLjKyqTSUgetMlBVhod2Fji9I=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210823104705-748ca0a6e5be h1:Y2z870FhiuA5is2VHIVRXMU/cAM1pQlpRfHgKFHmAWc=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210823104705-748ca0a6e5be/go.mod h1:jK/Gm+fZ7WaoacDfvD8RoFt/D6rv5aDJuyY/hBg3hy4=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210831105733-c49b027c21d3 h1:x3O9rTXNyEluhTzY11IO+mNyGMRo71mpfKwrfZi5YTY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210831105733-c49b027c21d3/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
@@ -572,9 +575,11 @@ github.com/kyma-incubator/compass/components/operations-controller v0.0.0-202106
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210623072749-c159dfdd6510/go.mod h1:g6OQxPDZJSYohkod0QY52zFxZgx4Kxe8MPyjAkUn4Xs=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210811095717-11e56601583a/go.mod h1:EaPVNszb+fzLAcC8KV2CKzyPySkznHXbEgN/BaJxL8o=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:EaPVNszb+fzLAcC8KV2CKzyPySkznHXbEgN/BaJxL8o=
+github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210823104705-748ca0a6e5be/go.mod h1:2uzpB48DamvxVoXZvv3757mGcjo/auFPBxWfYx6SwNU=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210301144805-1544f7017bea/go.mod h1:K1miIQTocreo5NaWZ/QpP3nYZqojQ6G3sf/NTZfa6dk=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210416142045-25b90bbc9ee6/go.mod h1:jIYjEhHGa/GLLDmfklBJAPXCj3+txwQDy0fBsa8wpaY=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210623065504-84041e076857/go.mod h1:lDbQAgb1u7QWEGvFWQVnkt2XxBcHl/U9QbHcGq9TRkI=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:/FgryoVfdF9WsWiJRyGbRxCv7vOFMWjumYEB4lZYkVs=
 github.com/lestrrat-go/backoff/v2 v2.0.7/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0/go.mod h1:TNgH//0vYSs8VXDCfkZLgIrVTTXQELZffUV0tz3MtdQ=
 github.com/lestrrat-go/codegen v1.0.0/go.mod h1:JhJw6OQAuPEfVKUCLItpaVLumDGWQznd1VaXrBk9TdM=
@@ -941,6 +946,7 @@ go.uber.org/zap v1.8.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
 go.uber.org/zap v1.13.0/go.mod h1:zwrFLgMcdUuIBviXEYEH1YKNaOBnKXsx2IPda5bBwHM=
 go.uber.org/zap v1.15.0/go.mod h1:Mb2vm2krFEG5DV0W9qcHBYFtp/Wku1cvYaqPsS/WYfc=
+go.uber.org/zap v1.16.0/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20181029021203-45a5f77698d3/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=

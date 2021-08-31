@@ -8,8 +8,8 @@ require (
 	github.com/goccy/go-json v0.7.7 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210826111731-8d2dec9935fd
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210823104705-748ca0a6e5be
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210831105733-c49b027c21d3
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210831121533-7e4208095db0
 	github.com/lestrrat-go/jwx v1.2.6
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1

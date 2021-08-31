@@ -608,6 +608,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210825143858-d12a
 github.com/kyma-incubator/compass/components/director v0.0.0-20210825143858-d12ac209b4fe/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210826104628-68f99175389f h1:nA2O2FWWsqEOpJzmGbkOc4lBJqJ8BgW2zqocPSAJfmc=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210826104628-68f99175389f/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210831105733-c49b027c21d3 h1:x3O9rTXNyEluhTzY11IO+mNyGMRo71mpfKwrfZi5YTY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210831105733-c49b027c21d3/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
@@ -621,6 +623,8 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210623065504
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:/FgryoVfdF9WsWiJRyGbRxCv7vOFMWjumYEB4lZYkVs=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210823104705-748ca0a6e5be h1:lIwpa8vpr4efkrx7hZ3/eRGFBPqyc45favSHJlSjIn8=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210823104705-748ca0a6e5be/go.mod h1:k1Yt22h9rlebskEpkzsh9l1HYX6aJzF0qA62Ht8e7Jk=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831105733-c49b027c21d3 h1:Qb7cMcGT6mol/gU9/epkpAGQMi+Sj27+zyhcBN94cbU=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831105733-c49b027c21d3/go.mod h1:L3C+92grxoP0m5UWgy9uFKkj1DyG0Oo5gPTPUumAwE0=
 github.com/lestrrat-go/backoff/v2 v2.0.7/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0/go.mod h1:TNgH//0vYSs8VXDCfkZLgIrVTTXQELZffUV0tz3MtdQ=
 github.com/lestrrat-go/codegen v1.0.0/go.mod h1:JhJw6OQAuPEfVKUCLItpaVLumDGWQznd1VaXrBk9TdM=
