@@ -1,5 +1,5 @@
-// +build ignore
-// +build tools
+//go:build ignore && tools
+// +build ignore,tools
 
 package main
 
