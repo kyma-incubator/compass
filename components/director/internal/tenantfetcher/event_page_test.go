@@ -148,11 +148,14 @@ func Test_getTenantMappings(t *testing.T) {
 	nameField := "name"
 	name := "test-name"
 	discriminatorField := "discriminator"
+	subdomainField := "subdomain"
+	subdomain := "test-subdomain"
 	providerName := "test-provider"
 
 	expectedTenantMapping := model.BusinessTenantMappingInput{
 		ExternalTenant: id,
 		Name:           name,
+		Subdomain:      subdomain,
 		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       providerName,
 	}
@@ -167,10 +170,11 @@ func Test_getTenantMappings(t *testing.T) {
 		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format",
 			fieldMapping: TenantFieldMapping{
-				NameField:    nameField,
-				IDField:      idField,
-				EventsField:  "events",
-				DetailsField: "details",
+				NameField:      nameField,
+				IDField:        idField,
+				SubdomainField: subdomainField,
+				EventsField:    "events",
+				DetailsField:   "details",
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -183,6 +187,7 @@ func Test_getTenantMappings(t *testing.T) {
 				{
 					{idField, id},
 					{nameField, name},
+					{subdomainField, subdomain},
 				},
 			},
 		},
@@ -193,6 +198,7 @@ func Test_getTenantMappings(t *testing.T) {
 				IDField:            idField,
 				EventsField:        "events",
 				DetailsField:       "details",
+				SubdomainField:     "subdomain",
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
 			},
@@ -208,6 +214,7 @@ func Test_getTenantMappings(t *testing.T) {
 					{idField, id},
 					{nameField, name},
 					{discriminatorField, "discriminator-value"},
+					{subdomainField, subdomain},
 				},
 			},
 		},

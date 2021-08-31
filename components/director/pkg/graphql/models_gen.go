@@ -568,13 +568,6 @@ type TemplateValueInput struct {
 	Value       string `json:"value"`
 }
 
-type Tenant struct {
-	ID          string  `json:"id"`
-	InternalID  string  `json:"internalID"`
-	Name        *string `json:"name"`
-	Initialized *bool   `json:"initialized"`
-}
-
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
-
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -47,10 +47,9 @@ const (
 )
 
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
-
 	t.Run("Success", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey)
+		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey, claims.NewValidator())
 		//when
 		err := auth.SynchronizeJWKS(context.TODO())
 
@@ -60,7 +59,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
 		//given
-		authFake := authenticator.New(fakeJWKSURL, true, ClientIDHeaderKey)
+		authFake := authenticator.New(fakeJWKSURL, true, ClientIDHeaderKey, nil)
 
 		//when
 		err := authFake.SynchronizeJWKS(context.TODO())
@@ -169,7 +168,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey)
+		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewValidator())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -198,7 +197,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
+		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claims.NewValidator())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -225,7 +224,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey)
+		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claims.NewValidator())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -252,7 +251,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey)
+		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewValidator())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -412,6 +411,39 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assertGraphqlResponse(t, expected, response)
 	})
 
+	t.Run("Error - after successful parsing claims there are no scopes", func(t *testing.T) {
+		//given
+		requiredScopes := []string{"wanted-scope"}
+		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewScopesValidator(requiredScopes))
+		err := auth.SynchronizeJWKS(context.TODO())
+		require.NoError(t, err)
+		middleware := auth.Handler()
+		handler := testHandler(t, "", scopes)
+
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, "", scopes, key, &keyID, true)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse(fmt.Sprintf("Unauthorized [reason=Not all required scopes %q were found in claim with scopes %q]", requiredScopes, scopes), apperrors.Unauthorized)
+		assertGraphqlResponse(t, expected, response)
+	})
+
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
@@ -445,7 +477,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodNone, authenticator.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims.Claims{
 		Tenant:       tenant,
 		Scopes:       scopes,
 		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
@@ -459,7 +491,7 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 }
 
 func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims.Claims{
 		Tenant:         tnt,
 		ExternalTenant: "externalTenantName",
 		Scopes:         scopes,
@@ -482,7 +514,7 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key j
 }
 
 func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Handler) http.Handler {
-	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey)
+	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey, claims.NewValidator())
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 	return auth.Handler()

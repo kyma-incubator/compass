@@ -76,6 +76,24 @@ func (c *notNullCondition) GetQueryArgs() ([]interface{}, bool) {
 	return nil, false
 }
 
+func NewNullCondition(field string) Condition {
+	return &nullCondition{
+		field: field,
+	}
+}
+
+type nullCondition struct {
+	field string
+}
+
+func (c *nullCondition) GetQueryPart() string {
+	return fmt.Sprintf("%s IS NULL", c.field)
+}
+
+func (c *nullCondition) GetQueryArgs() ([]interface{}, bool) {
+	return nil, false
+}
+
 func NewInConditionForSubQuery(field, subQuery string, args []interface{}) Condition {
 	return &inCondition{
 		field:       field,

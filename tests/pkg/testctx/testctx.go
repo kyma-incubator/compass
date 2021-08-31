@@ -2,17 +2,14 @@ package testctx
 
 import (
 	"context"
-	"log"
 	"net/url"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/vrischmann/envconfig"
-
 	gqlizer "github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go"
@@ -23,15 +20,10 @@ import (
 
 var Tc *TestContext
 
-type ScopesConfig struct {
-	Scopes string `envconfig:"default=runtime:write application:write tenant:read label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage automatic_scenario_assignment:read automatic_scenario_assignment:write"`
-}
-
 // TestContext contains dependencies that help executing tests
 type TestContext struct {
 	Graphqlizer       gqlizer.Graphqlizer
 	GQLFieldsProvider gqlizer.GqlFieldsProvider
-	CurrentScopes     []string
 }
 
 func init() {
@@ -43,17 +35,9 @@ func init() {
 }
 
 func NewTestContext() (*TestContext, error) {
-	cfg := ScopesConfig{}
-	if err := envconfig.InitWithPrefix(&cfg, "ALL"); err != nil {
-		log.Fatal(err)
-	}
-
-	currentScopes := strings.Split(cfg.Scopes, " ")
-
 	return &TestContext{
 		Graphqlizer:       gqlizer.Graphqlizer{},
 		GQLFieldsProvider: gqlizer.GqlFieldsProvider{},
-		CurrentScopes:     currentScopes,
 	}, nil
 }
 

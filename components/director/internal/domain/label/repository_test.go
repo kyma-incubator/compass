@@ -560,6 +560,48 @@ func TestRepository_ListForObject(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
+	t.Run("Success - Label for Tenant", func(t *testing.T) {
+		// GIVEN
+		objType := model.TenantLabelableObject
+		objID := "foo"
+		tnt := "tenant"
+
+		inputItems := []label.Entity{
+			{ID: "1", TenantID: tnt, Key: "foo", Value: "test1"},
+			{ID: "2", TenantID: tnt, Key: "bar", Value: "test2"},
+		}
+		expected := map[string]*model.Label{
+			"foo": {ID: "1", Tenant: tnt, Key: "foo", Value: "test1", ObjectType: objType, ObjectID: objID},
+			"bar": {ID: "2", Tenant: tnt, Key: "bar", Value: "test2", ObjectType: objType, ObjectID: objID},
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		for _, entity := range inputItems {
+			mockConverter.On("FromEntity", entity).Return(*expected[entity.Key], nil).Once()
+		}
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value FROM public.labels WHERE %s AND tenant_id = $2 AND app_id IS NULL AND runtime_context_id IS NULL AND runtime_id IS NULL`, fixUnescapedTenantIsolationSubquery()))
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id", "runtime_context_id"}).
+			AddRow("1", tnt, "foo", "test1", nil, nil, nil).
+			AddRow("2", tnt, "bar", "test2", nil, nil, nil)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(tnt, sql.NullString{Valid: true, String: objID}).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		// WHEN
+		actual, err := labelRepo.ListForObject(ctx, tnt, objType, objID)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
 	t.Run("Error - Doesn't exist", func(t *testing.T) {
 		// GIVEN
 		objType := model.ApplicationLabelableObject

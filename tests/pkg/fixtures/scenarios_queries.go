@@ -18,16 +18,10 @@ package fixtures
 
 import (
 	"context"
-	"time"
-
-	gqlTools "github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,32 +63,4 @@ func DeleteAutomaticScenarioAssigmentForSelector(t require.TestingT, ctx context
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
-}
-
-type TenantsResponse struct {
-	Result []*graphql.Tenant
-}
-
-func GetTenants(directorURL string, externalTenantID string) ([]*graphql.Tenant, error) {
-	query := FixTenantsRequest().Query()
-
-	req := gcli.NewRequest(query)
-
-	token, err := jwtbuilder.Build(externalTenantID, []string{"tenant:read"}, &jwtbuilder.Consumer{})
-	if err != nil {
-		return nil, err
-	}
-
-	client := gqlTools.NewAuthorizedGraphQLClientWithCustomURL(token, directorURL)
-
-	var response TenantsResponse
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err = client.Run(ctx, req, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return response.Result, nil
 }

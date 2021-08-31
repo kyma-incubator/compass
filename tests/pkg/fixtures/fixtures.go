@@ -113,5 +113,14 @@ func FixTenantsRequest() *gcli.Request {
 				result: tenants {
 						%s
 					}
-				}`, testctx.Tc.GQLFieldsProvider.ForTenant()))
+				}`, testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels"})))
+}
+
+func FixTenantRequest(externalID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: tenantByExternalID(id: "%s") {
+						%s
+					}
+				}`, externalID, testctx.Tc.GQLFieldsProvider.ForTenant()))
 }

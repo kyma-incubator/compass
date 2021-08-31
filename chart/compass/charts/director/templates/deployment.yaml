@@ -131,8 +131,6 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
-            - name: APP_ALLOW_JWT_SIGNING_NONE
-              value: {{ .Values.deployment.allowJWTSigningNone | quote }}
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ .Values.global.director.clientIDHeaderKey }}
             - name: APP_OAUTH20_URL

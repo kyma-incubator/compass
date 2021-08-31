@@ -12,7 +12,7 @@ type envConfig struct {
 	Domain        string `envconfig:"default=kyma.local"`
 	UserEmail     string
 	UserPassword  string
-	ClientTimeout time.Duration `envconfig:"default=10s"` //Don't forget the unit!
+	ClientTimeout time.Duration `envconfig:"default=30s"` //Don't forget the unit!
 }
 
 type Config struct {

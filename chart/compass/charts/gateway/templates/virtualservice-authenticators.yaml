@@ -20,7 +20,7 @@ spec:
   http:
     - match:
       - uri:
-          regex: /.*
+          regex: '{{ $config.path }}'
       route:
         - destination:
             host: {{ $.Values.global.oathkeeper.host }}

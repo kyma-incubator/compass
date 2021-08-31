@@ -44,7 +44,7 @@ func DefaultConfig() *Config {
 		DialTimeout:           time.Second * 10,
 		ExpectContinueTimeout: time.Second * 2,
 		MaxIdleConns:          90,
-		SkipSSLValidation:     true,
+		SkipSSLValidation:     false,
 		ForwardHeaders:        []string{},
 	}
 }

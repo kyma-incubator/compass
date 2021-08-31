@@ -23,6 +23,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       containers:
         - name: tenant-fetcher-tests
@@ -30,17 +31,24 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "256Mi"
           env:
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
-            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+            - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER
               value: "test-provider"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
             - name: APP_TENANT_FETCHER_URL
-              value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}"
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_EXTERNAL_SERVICES_MOCK_URL
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
             - name: APP_TENANT_FETCHER_HEALTHZ_URL
               value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
             - name: APP_ROOT_API
@@ -49,8 +57,8 @@ spec:
               value: "/v1/callback/{tenantId}"
             - name: APP_TENANT_PATH_PARAM
               value: "tenantId"
-            - name: APP_DIRECTOR_URL
-              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
+            - name: DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -91,5 +99,21 @@ spec:
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
-              value: Callback
+              value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_IS_WITH_TOKEN
+              value: "{{.Values.global.tests.token.server.enabled}}"
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: email
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user
+                  key: password
       restartPolicy: Never
