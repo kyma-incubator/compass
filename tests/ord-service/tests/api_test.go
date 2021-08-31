@@ -32,6 +32,8 @@ import (
 	"testing"
 	"time"
 
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -54,7 +56,9 @@ const (
 	subTenantID    = "123e4567-e89b-12d3-a456-426614174001"
 )
 
-func TestORDService(t *testing.T) {
+func TestORDService(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+
 	ctx := context.Background()
 
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
@@ -620,15 +624,15 @@ func makeRequest(t *testing.T, httpClient *http.Client, url string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
 
-func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
+func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
 
-func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
+func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, url string, expectedHTTPStatus int) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
 }
 
-func integrationSystemClient(t *testing.T, ctx context.Context, base *http.Client, intSystemCredentials *directorSchema.IntSysSystemAuth) *http.Client {
+func integrationSystemClient(t require.TestingT, ctx context.Context, base *http.Client, intSystemCredentials *directorSchema.IntSysSystemAuth) *http.Client {
 	oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
 
@@ -647,7 +651,7 @@ func integrationSystemClient(t *testing.T, ctx context.Context, base *http.Clien
 
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
-func extIssuerCertClient(t *testing.T) *http.Client {
+func extIssuerCertClient(t require.TestingT) *http.Client {
 	// Parse the CA cert
 	pemBlock, _ := pem.Decode(testConfig.CA.Certificate)
 	require.NotNil(t, pemBlock)
