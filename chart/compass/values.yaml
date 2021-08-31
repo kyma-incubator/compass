@@ -107,7 +107,7 @@ global:
       version: "PR-40"
     e2e_tests:
       dir:
-      version: "PR-1964"
+      version: "PR-1997"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -467,6 +467,8 @@ global:
     auditlog: false
 
   tests:
+    ordService:
+      skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local
