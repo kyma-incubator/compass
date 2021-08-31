@@ -21,7 +21,7 @@ sandbox-test:
 	@../sandbox.sh ord-aggregator
 
 run:
-	 @kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-ord-aggregator-local-0 -c ord-aggregator-tests -- ./ord-aggregator.test -test.run $(testName)
+	 @kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-ord-aggregator-local-0 -c ord-aggregator-tests -- ./ord-aggregator.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o ord-aggregator.test

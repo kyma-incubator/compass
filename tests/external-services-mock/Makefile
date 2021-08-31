@@ -25,7 +25,7 @@ sandbox-test:
 	@../sandbox.sh external-services-mock
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-external-services-mock-local-0 -c external-services-mock-tests -- ./external-services-mock.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-external-services-mock-local-0 -c external-services-mock-tests -- ./external-services-mock.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o external-services-mock.test

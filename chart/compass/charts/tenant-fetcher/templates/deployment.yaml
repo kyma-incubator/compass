@@ -109,8 +109,6 @@ spec:
               value: "{{.Values.database.dbPool.maxOpenConnections}}"
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.database.dbPool.maxIdleConnections}}"
-            - name: APP_ALLOW_JWT_SIGNING_NONE
-              value: {{ .Values.global.tenantFetcher.authentication.allowJWTSigningNone | quote }}
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
           livenessProbe:

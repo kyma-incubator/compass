@@ -9,7 +9,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
@@ -48,14 +47,7 @@ func TestConnector(t *testing.T) {
 		},
 	}
 
-	cfg := config.ConnectivityAdapterTestConfig{}
-	config.ReadConfig(&cfg)
-
-	client, err := clients.NewDirectorClient(
-		cfg.DirectorUrl,
-		cfg.DirectorHealthzUrl,
-		cfg.Tenant,
-		[]string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
+	client, err := clients.NewDirectorClient(dexGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
 	require.NoError(t, err)
 
 	appID, err := client.CreateApplication(appInput)
@@ -72,13 +64,13 @@ func TestConnector(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	err = client.SetDefaultEventing(runtimeID, appID, cfg.EventsBaseURL)
+	err = client.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
-		certificateGenerationSuite(t, client, appID, cfg)
-		certificateRotationSuite(t, client, appID, cfg)
-		certificateRevocationSuite(t, client, appID, cfg.Tenant, cfg.SkipSslVerify)
+		certificateGenerationSuite(t, client, appID)
+		certificateRotationSuite(t, client, appID)
+		certificateRevocationSuite(t, client, appID)
 
 		for _, shouldNormalizeEventURL := range []bool{true, false} {
 			err := client.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
@@ -93,15 +85,15 @@ func TestConnector(t *testing.T) {
 				}
 				require.NoError(t, err)
 
-				appMgmInfoEndpointSuite(t, client, appID, cfg, TestApp, appNameLabelExists, shouldNormalizeEventURL)
-				appCsrInfoEndpointSuite(t, client, appID, cfg, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+				appMgmInfoEndpointSuite(t, client, appID, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+				appCsrInfoEndpointSuite(t, client, appID, TestApp, appNameLabelExists, shouldNormalizeEventURL)
 			}
 		}
 	})
 }
 
-func certificateGenerationSuite(t *testing.T, directorClient clients.Client, appID string, config config.ConnectivityAdapterTestConfig) {
-	client := clients.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+func certificateGenerationSuite(t *testing.T, directorClient clients.Client, appID string) {
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
 
 	clientKey := certs.CreateKey(t)
 
@@ -278,12 +270,12 @@ func certificateGenerationSuite(t *testing.T, directorClient clients.Client, app
 
 }
 
-func appCsrInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID string, config config.ConnectivityAdapterTestConfig, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
+func appCsrInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID string, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
-		client := clients.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
-		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
-		expectedEventsURL := config.EventsBaseURL
+		client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+		expectedMetadataURL := testConfig.ConnectivityAdapterMtlsUrl
+		expectedEventsURL := testConfig.EventsBaseURL
 
 		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
 		if appNameLabelExists {
@@ -315,15 +307,15 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 	})
 }
 
-func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID string, config config.ConnectivityAdapterTestConfig, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
-	client := clients.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID string, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
 
 	clientKey := certs.CreateKey(t)
 
 	t.Run("should use default values to build management info", func(t *testing.T) {
 		// given
-		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
-		expectedEventsURL := config.EventsBaseURL
+		expectedMetadataURL := testConfig.ConnectivityAdapterMtlsUrl
+		expectedEventsURL := testConfig.EventsBaseURL
 
 		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
 		if appNameLabelExists {
@@ -346,7 +338,7 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		client, err := clients.NewSecuredClient(config.SkipSslVerify, clientKey, crtChainBytes, config.Tenant)
+		client, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		// when
@@ -374,8 +366,8 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 	})
 }
 
-func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID string, config config.ConnectivityAdapterTestConfig) {
-	client := clients.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID string) {
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
 	clientKey := certs.CreateKey(t)
 
 	t.Run("should renew client certificate", func(t *testing.T) {
@@ -386,7 +378,7 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 		require.NotEmpty(t, infoResponse.Certificate)
 
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		client, err := clients.NewSecuredClient(config.SkipSslVerify, clientKey, crtChainBytes, config.Tenant)
+		client, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -404,7 +396,7 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 		require.Nil(t, errorResponse)
 
 		crtChainBytesRenewed := certs.DecodeBase64Cert(t, certificateResponse.CRTChain)
-		clientWithRenewedCert, err := clients.NewSecuredClient(config.SkipSslVerify, clientKey, crtChainBytesRenewed, config.Tenant)
+		clientWithRenewedCert, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytesRenewed, testConfig.Tenant)
 		require.NoError(t, err)
 
 		_, errorResponse = clientWithRenewedCert.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -412,8 +404,8 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 	})
 }
 
-func certificateRevocationSuite(t *testing.T, directorClient clients.Client, appID, tenant string, skipVerify bool) {
-	client := clients.NewConnectorClient(directorClient, appID, tenant, skipVerify)
+func certificateRevocationSuite(t *testing.T, directorClient clients.Client, appID string) {
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
 
 	clientKey := certs.CreateKey(t)
 
@@ -427,7 +419,7 @@ func certificateRevocationSuite(t *testing.T, directorClient clients.Client, app
 
 		// when
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		client, err := clients.NewSecuredClient(skipVerify, clientKey, crtChainBytes, tenant)
+		client, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
