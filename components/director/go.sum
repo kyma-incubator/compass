@@ -811,6 +811,8 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210816091934
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210823104705-748ca0a6e5be/go.mod h1:k1Yt22h9rlebskEpkzsh9l1HYX6aJzF0qA62Ht8e7Jk=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831105733-c49b027c21d3 h1:Qb7cMcGT6mol/gU9/epkpAGQMi+Sj27+zyhcBN94cbU=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831105733-c49b027c21d3/go.mod h1:L3C+92grxoP0m5UWgy9uFKkj1DyG0Oo5gPTPUumAwE0=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831121533-7e4208095db0 h1:jPFmVBO1yMHP/8Pg4WuJxZ6PVUY/aTNfMO8E71jyvlM=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831121533-7e4208095db0/go.mod h1:U5T8L3kXmT6db2OAaYS2cBrwK/Lv39WEavF1wD20Yeo=
 github.com/lestrrat-go/backoff/v2 v2.0.7 h1:i2SeK33aOFJlUNJZzf2IpXRBvqBBnaGXfY5Xaop/GsE=
 github.com/lestrrat-go/backoff/v2 v2.0.7/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0 h1:XzdxDbuQTz0RZZEmdU7cnQxUtFUzgCSPq8RCz4BxIi4=
