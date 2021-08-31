@@ -44,7 +44,15 @@ const (
 )
 
 var (
-	testError = errors.New("test error")
+	testError          = errors.New("test error")
+	validHandlerConfig = tenantfetchersvc.HandlerConfig{
+		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
+			TenantProvider:     testProviderName,
+			TenantIdProperty:   tenantProviderTenantIdProperty,
+			CustomerIdProperty: tenantProviderCustomerIdProperty,
+			SubdomainProperty:  tenantProviderSubdomainProperty,
+		},
+	}
 )
 
 type tenantCreationRequest struct {
@@ -95,14 +103,6 @@ func TestService_Create(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	validHandlerConfig := tenantfetchersvc.HandlerConfig{
-		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
-			TenantProvider:     testProviderName,
-			TenantIdProperty:   tenantProviderTenantIdProperty,
-			CustomerIdProperty: tenantProviderCustomerIdProperty,
-			SubdomainProperty:  tenantProviderSubdomainProperty,
-		},
-	}
 	customerTenant := model.BusinessTenantMappingInput{
 		Name:           parentTenantExtID,
 		ExternalTenant: parentTenantExtID,
@@ -460,22 +460,36 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	target := "http://example.com/foo"
-	requestBody, err := json.Marshal(tenantCreationRequest{
-		TenantID:   tenantExtID,
-		CustomerID: parentTenantExtID,
-		Subdomain:  tenantSubdomain,
-	})
-	assert.NoError(t, err)
 
-	t.Run("DeleteByExternalID handler is noop", func(t *testing.T) {
+	t.Run("Succeeds", func(t *testing.T) {
+		requestBody, err := json.Marshal(tenantCreationRequest{
+			TenantID:   tenantExtID,
+			CustomerID: parentTenantExtID,
+			Subdomain:  tenantSubdomain,
+		})
+		assert.NoError(t, err)
+
 		_, transact := txGen.ThatDoesntStartTransaction()
 		provisioner := &automock.TenantProvisioner{}
 		defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-		config := tenantfetchersvc.HandlerConfig{}
-
-		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, config)
+		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
+		w := httptest.NewRecorder()
+
+		//WHEN
+		handler.DeleteByExternalID(w, req)
+		// THEN
+		resp := w.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+	t.Run("Succeeds when tenant cannot be read from body", func(t *testing.T) {
+		_, transact := txGen.ThatDoesntStartTransaction()
+		provisioner := &automock.TenantProvisioner{}
+		defer mock.AssertExpectationsForObjects(t, transact, provisioner)
+
+		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
+		req := httptest.NewRequest(http.MethodDelete, target, errReader(0))
 		w := httptest.NewRecorder()
 
 		//WHEN
@@ -485,33 +499,23 @@ func TestService_Delete(t *testing.T) {
 		resp := w.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
-}
+	t.Run("Succeeds when tenant is missing from body", func(t *testing.T) {
+		requestBody, err := json.Marshal(tenantCreationRequest{
+			CustomerID: parentTenantExtID,
+			Subdomain:  tenantSubdomain,
+		})
+		assert.NoError(t, err)
 
-func TestService_DeleteRegional(t *testing.T) {
-	//GIVEN
-	testErr := errors.New("test error")
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-	target := "http://example.com/foo"
-	requestBody, err := json.Marshal(tenantCreationRequest{
-		TenantID:   tenantExtID,
-		CustomerID: parentTenantExtID,
-		Subdomain:  tenantSubdomain,
-	})
-	assert.NoError(t, err)
-
-	t.Run("DeleteRegionalByExternalID handler is noop", func(t *testing.T) {
 		_, transact := txGen.ThatDoesntStartTransaction()
 		provisioner := &automock.TenantProvisioner{}
 		defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-		config := tenantfetchersvc.HandlerConfig{}
-
-		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, config)
+		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
 		w := httptest.NewRecorder()
 
 		//WHEN
-		handler.DeleteRegionalByExternalID(w, req)
+		handler.DeleteByExternalID(w, req)
 
 		// THEN
 		resp := w.Result()

@@ -199,7 +199,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.CreateRegional).Methods(http.MethodPut)
 
 	log.C(ctx).Infof("Registering Regional Tenant Decommissioning endpoint on %s...", cfg.RegionalHandlerEndpoint)
-	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.DeleteRegionalByExternalID).Methods(http.MethodDelete)
+	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

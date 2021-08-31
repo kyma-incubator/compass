@@ -151,10 +151,6 @@ func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Reque
 	}
 }
 
-func (h *handler) DeleteRegionalByExternalID(writer http.ResponseWriter, _ *http.Request) {
-	writer.WriteHeader(http.StatusOK)
-}
-
 func (h *handler) tenantFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
 	properties, err := getProperties(body, map[string]bool{
 		h.config.TenantIdProperty:           true,
