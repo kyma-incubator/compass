@@ -138,9 +138,6 @@ global:
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
 
-    tests:
-      scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
-
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     secretName: "compass-gateway-auditlog-secret"
@@ -210,6 +207,8 @@ global:
     tls:
       host: compass-gateway
       secure:
+        internal:
+          host: compass-gateway-internal
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
@@ -267,6 +266,9 @@ global:
         - "x-vcap-request-id"
         - "x-broker-api-request-identity"
 
+  kubernetes:
+    serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
+
   ingress:
     domainName: "kyma.local"
 
@@ -299,6 +301,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read", "tenant": "{{ print (index .Header.Tenant 0) }}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -342,7 +345,6 @@ global:
     port: 3000
     requiredAuthScope: Callback
     authentication:
-      allowJWTSigningNone: true
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
@@ -393,6 +395,9 @@ global:
     systemsAPIFilterTenantCriteriaPattern: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    http:
+      client:
+        skipSSLValidation: false
     oauth:
       client: ""
       secret: ""
@@ -451,13 +456,13 @@ global:
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
   authenticators:
-    authenticator0:
-      enabled: true
-      gatewayHost: "compass-gateway-authenticator0"
-      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix."}, {}]'
-      attributes: '{"uniqueAttribute": { "key": "key", "value": "val" }, "tenant": { "key": "key" }, "identity": { "key": "key" } }'
-      path: director/graphql
-      upstreamComponent: "compass-gateway"
+    tenant-fetcher:
+      enabled: false
+      gatewayHost: "compass-gateway"
+      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+      attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+      path: tenants/<.*>
+      upstreamComponent: "compass-tenant-fetcher"
 
   externalServicesMock:
     enabled: false

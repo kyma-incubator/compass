@@ -10,9 +10,12 @@ deployment:
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false
-  allowJWTSigningNone: true # To run integration tests, it has to be enabled
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
+
+http:
+  client:
+    skipSSLValidation: false
 
 metrics:
   port: 5002

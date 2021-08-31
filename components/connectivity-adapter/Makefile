@@ -1,4 +1,4 @@
-APP_NAME = connectivity-adapter
+APP_NAME = compass-connectivity-adapter
 APP_PATH = components/connectivity-adapter
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20210804-d3a9d497
@@ -12,8 +12,11 @@ errcheck-local:
 test-local:
 	GO111MODULE=on go test ./...
 
-resolve-local: ;
+resolve-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-ensure-local: ;
+ensure-local:
+	@echo ${SKIP_STEP_MESSAGE}
 
-dep-status-local: ;
+dep-status-local:
+	@echo ${SKIP_STEP_MESSAGE}

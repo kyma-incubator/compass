@@ -21,12 +21,16 @@ import (
 	"net/http"
 	"testing"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
+
+const tenant = "tenant"
 
 func TestClient_UpdateStatus_WhenNewRequestWithContextFails_ShouldReturnError(t *testing.T) {
 	client, err := director.NewClient("", &graphql.Config{}, &http.Client{})
@@ -45,7 +49,9 @@ func TestClient_UpdateStatus_WhenClientDoFails_ShouldReturnError(t *testing.T) {
 	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
 	require.NoError(t, err)
 
-	err = client.UpdateOperation(context.Background(), &director.Request{})
+	ctx := tnt.SaveToContext(context.Background(), tenant)
+
+	err = client.UpdateOperation(ctx, &director.Request{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedErr.Error())
@@ -61,7 +67,9 @@ func TestClient_UpdateStatus_WhenResponseStatusCodeIsNotOK_ShouldReturnError(t *
 	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
 	require.NoError(t, err)
 
-	err = client.UpdateOperation(context.Background(), &director.Request{})
+	ctx := tnt.SaveToContext(context.Background(), tenant)
+
+	err = client.UpdateOperation(ctx, &director.Request{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unexpected status code")
@@ -77,7 +85,9 @@ func TestClient_UpdateStatus_WhenRequestIsSuccessful_ShouldNotReturnError(t *tes
 	client, err := director.NewClient("", &graphql.Config{}, &httpClient)
 	require.NoError(t, err)
 
-	err = client.UpdateOperation(context.Background(), &director.Request{})
+	ctx := tnt.SaveToContext(context.Background(), tenant)
+
+	err = client.UpdateOperation(ctx, &director.Request{})
 	require.NoError(t, err)
 }
 

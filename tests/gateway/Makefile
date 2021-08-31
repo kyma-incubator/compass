@@ -25,7 +25,7 @@ sandbox-test:
 	@../sandbox.sh gateway
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-gateway-local-0 -c gateway-tests -- ./gateway.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-gateway-local-0 -c gateway-tests -- ./gateway.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o gateway.test

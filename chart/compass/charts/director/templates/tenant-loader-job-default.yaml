@@ -4,7 +4,7 @@ kind: Job
 metadata:
     name: {{ template "fullname" . }}-tenant-loader-default
     labels:
-        app: {{ .Chart.Name }}
+        app: {{ .Chart.Name }}-tenant-loader
         release: {{ .Release.Name }}
     annotations:
         "helm.sh/hook": post-install

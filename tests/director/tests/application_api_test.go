@@ -57,8 +57,6 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	require.NoError(t, err)
 
-	t.Log("SCOPES: ", testctx.Tc.CurrentScopes)
-
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)

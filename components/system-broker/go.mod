@@ -37,7 +37,7 @@ require (
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/klauspost/compress v1.11.13 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210825143858-d12ac209b4fe
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210826104628-68f99175389f
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect

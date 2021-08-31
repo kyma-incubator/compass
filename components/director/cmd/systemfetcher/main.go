@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -189,7 +190,13 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
-	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(http.DefaultTransport))
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: cfg.SystemFetcher.DirectorSkipSSLValidation,
+		},
+	}
+
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(tr))
 
 	securedClient := &http.Client{
 		Transport: httpTransport,
@@ -199,7 +206,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	graphqlClient := gcli.NewClient(cfg.SystemFetcher.DirectorGraphqlURL, gcli.WithHTTPClient(securedClient))
 	directorClient := &systemfetcher.DirectorGraphClient{
 		Client:        graphqlClient,
-		Authenticator: pkgAuth.NewUnsignedTokenAuthorizationProvider("application:write"),
+		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, directorClient, cfg.SystemFetcher)

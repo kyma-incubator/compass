@@ -31,6 +31,7 @@ type Config struct {
 }
 
 type TrustedIssuer struct {
+	Protocol    string `json:"protocol"`
 	DomainURL   string `json:"domain_url"`
 	ScopePrefix string `json:"scope_prefix"`
 }
