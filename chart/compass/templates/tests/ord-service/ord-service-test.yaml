@@ -103,6 +103,8 @@ spec:
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.ordService.skipPattern }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

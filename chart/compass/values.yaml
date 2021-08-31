@@ -472,6 +472,8 @@ global:
     auditlog: false
 
   tests:
+    ordService:
+      skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local
