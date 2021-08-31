@@ -46,8 +46,6 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-const requiredScopes = "application:read application.webhooks:read application_template.webhooks:read webhooks.auth:read"
-
 var (
 	devLogging       = true
 	scheme           = runtime.NewScheme()
@@ -161,9 +159,9 @@ func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
 
 	basicProvider := auth.NewBasicAuthorizationProvider()
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	unsignedTokenProvider := auth.NewUnsignedTokenAuthorizationProvider(requiredScopes)
+	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, unsignedTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.Timeout,

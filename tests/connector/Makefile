@@ -25,7 +25,7 @@ sandbox-test:
 	@../sandbox.sh connector
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-connector-local-0 -c connector-tests -- ./connector.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-connector-local-0 -c connector-tests -- ./connector.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o connector.test
