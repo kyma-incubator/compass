@@ -33,12 +33,13 @@ import (
 )
 
 type config struct {
-	DefaultTestTenant             string
-	DirectorURL                   string
-	ORDServiceURL                 string
-	AggregatorSchedule            string
-	ExternalServicesMockBaseURL   string
-	ORDServiceDefaultResponseType string
+	DefaultTestTenant               string
+	DirectorURL                     string
+	ORDServiceURL                   string
+	AggregatorSchedule              string
+	ExternalServicesMockBaseURL     string
+	ExternalServicesMockAbsoluteURL string
+	ORDServiceDefaultResponseType   string
 }
 
 var (

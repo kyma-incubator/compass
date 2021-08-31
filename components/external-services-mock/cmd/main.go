@@ -83,6 +83,8 @@ func initHTTP(cfg config) http.Handler {
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig)
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
 
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig)
+
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
