@@ -21,7 +21,7 @@ sandbox-test:
 	@../sandbox.sh tenant-fetcher
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-tenant-fetcher-local-0 -c tenant-fetcher-tests -- ./tenant-fetcher.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-tenant-fetcher-local-0 -c tenant-fetcher-tests -- ./tenant-fetcher.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o tenant-fetcher.test

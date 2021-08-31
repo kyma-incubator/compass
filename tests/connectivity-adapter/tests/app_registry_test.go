@@ -19,12 +19,10 @@ package tests
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/config"
-
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/stretchr/testify/require"
 )
@@ -49,14 +47,7 @@ func TestAppRegistry(t *testing.T) {
 		},
 	}
 
-	cfg := config.ConnectivityAdapterTestConfig{}
-	config.ReadConfig(&cfg)
-
-	directorClient, err := clients.NewDirectorClient(
-		cfg.DirectorUrl,
-		cfg.DirectorHealthzUrl,
-		cfg.Tenant,
-		[]string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
+	directorClient, err := clients.NewDirectorClient(dexGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
 	require.NoError(t, err)
 
 	appID, err := directorClient.CreateApplication(appInput)
@@ -73,11 +64,11 @@ func TestAppRegistry(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	err = directorClient.SetDefaultEventing(runtimeID, appID, cfg.EventsBaseURL)
+	err = directorClient.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("App Registry Service flow for Application", func(t *testing.T) {
-		client := clients.NewConnectorClient(directorClient, appID, cfg.Tenant, cfg.SkipSslVerify)
+		client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
 		clientKey := certs.CreateKey(t)
 
 		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
@@ -86,7 +77,7 @@ func TestAppRegistry(t *testing.T) {
 		require.NotEmpty(t, infoResponse.Certificate)
 
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		adapterClient, err := clients.NewSecuredClient(cfg.SkipSslVerify, clientKey, crtChainBytes, cfg.Tenant)
+		adapterClient, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := adapterClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)

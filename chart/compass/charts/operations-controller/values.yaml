@@ -6,3 +6,7 @@ metrics:
 
 health:
   port: 3002
+
+http:
+  client:
+    skipSSLValidation: false
