@@ -13,7 +13,9 @@ type testConfig struct {
 	TenantFetcherURL          string
 	RootAPI                   string
 	HandlerEndpoint           string
+	HandlerRegionalEndpoint   string
 	TenantPathParam           string
+	RegionPathParam           string
 	DbUser                    string
 	DbPassword                string
 	DbHost                    string
@@ -25,7 +27,14 @@ type testConfig struct {
 	Tenant                    string
 	DirectorUrl               string
 	SubscriptionCallbackScope string
-	TenantProvider            string
+	TenantProviderConfig
+}
+
+type TenantProviderConfig struct {
+	TenantIdProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	SubaccountTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
+	CustomerIdProperty         string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	SubdomainProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 }
 
 var config testConfig
