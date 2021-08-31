@@ -46,11 +46,11 @@ type HandlerConfig struct {
 }
 
 type TenantProviderConfig struct {
-	TenantIdProperty         string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	TenantIdProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
 	SubaccountTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
-	CustomerIdProperty       string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
-	SubdomainProperty        string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
-	TenantProvider           string `envconfig:"APP_TENANT_PROVIDER"`
+	CustomerIdProperty         string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	SubdomainProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
+	TenantProvider             string `envconfig:"APP_TENANT_PROVIDER"`
 }
 
 type handler struct {
@@ -157,10 +157,10 @@ func (h *handler) DeleteRegionalByExternalID(writer http.ResponseWriter, _ *http
 
 func (h *handler) tenantFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIdProperty:         true,
-		h.config.SubdomainProperty:        true,
+		h.config.TenantIdProperty:           true,
+		h.config.SubdomainProperty:          true,
 		h.config.SubaccountTenantIdProperty: false,
-		h.config.CustomerIdProperty:       false,
+		h.config.CustomerIdProperty:         false,
 	})
 	if err != nil {
 		return nil, err
