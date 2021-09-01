@@ -57,6 +57,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
               value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
+            - name: HTTP_CLIENT_SKIP_SSL_VALIDATION
+              value: "{{ .Values.http.client.skipSSLValidation }}"
             - name: HTTP_CLIENT_FORWARD_HEADERS
               value: "{{ .Values.global.system_broker.tokenProviderFromHeader.forwardHeaders }}"
             - name: ORD_SERVICE_URL

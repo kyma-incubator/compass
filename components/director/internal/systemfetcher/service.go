@@ -44,10 +44,11 @@ type DirectorClient interface {
 }
 
 type Config struct {
-	SystemsQueueSize       int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
-	FetcherParallellism    int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
-	DirectorGraphqlURL     string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
-	DirectorRequestTimeout time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
+	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
+	FetcherParallellism       int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
+	DirectorGraphqlURL        string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
+	DirectorRequestTimeout    time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
+	DirectorSkipSSLValidation bool          `envconfig:"default=false,APP_DIRECTOR_SKIP_SSL_VALIDATION"`
 
 	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 }

@@ -51,7 +51,7 @@ func (u tokenAuthorizationProvider) Matches(ctx context.Context) bool {
 	return credentials.Type() == OAuthCredentialType
 }
 
-// GetAuthorizationToken crafts an OAuth Bearer token to inject as part of the executing request
+// GetAuthorization crafts an OAuth Bearer token to inject as part of the executing request
 func (u tokenAuthorizationProvider) GetAuthorization(ctx context.Context) (string, error) {
 	credentials, err := LoadFromContext(ctx)
 	if err != nil {

@@ -30,7 +30,7 @@ const (
 )
 
 // Create Key generates rsa.PrivateKey
-func CreateKey(t *testing.T) *rsa.PrivateKey {
+func CreateKey(t require.TestingT) *rsa.PrivateKey {
 	key, err := GenerateKey()
 	require.NoError(t, err)
 

@@ -74,7 +74,7 @@ func (c *Collector) GraphQLHandlerWithInstrumentation(handler http.Handler) http
 
 func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 	client.Transport = promhttp.InstrumentRoundTripperCounter(c.hydraRequestTotal,
-		promhttp.InstrumentRoundTripperDuration(c.hydraRequestDuration, http.DefaultTransport),
+		promhttp.InstrumentRoundTripperDuration(c.hydraRequestDuration, client.Transport),
 	)
 }
 

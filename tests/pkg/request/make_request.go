@@ -5,14 +5,13 @@ import (
 	"net/http"
 	urlpkg "net/url"
 	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 const acceptHeader = "Accept"
 
-func MakeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client, url string, headers map[string][]string, expectedHTTPStatus int, ordServiceDefaultResponseType string) string {
+func MakeRequestWithHeadersAndStatusExpect(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string, expectedHTTPStatus int, ordServiceDefaultResponseType string) string {
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 

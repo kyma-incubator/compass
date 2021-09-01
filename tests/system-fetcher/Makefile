@@ -1,6 +1,6 @@
 APP_NAME = system-fetcher-tests
 APP_PATH = tests/system-fetcher
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20210804-d3a9d497
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export GO111MODULE = on
@@ -21,7 +21,7 @@ sandbox-test:
 	@../sandbox.sh system-fetcher
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-system-fetcher-local-0 -c system-fetcher-tests -- ./system-fetcher.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-system-fetcher-local-0 -c system-fetcher-tests -- ./system-fetcher.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o system-fetcher.test

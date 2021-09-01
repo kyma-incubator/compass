@@ -1,6 +1,6 @@
 APP_NAME = system-broker-tests
 APP_PATH = tests/system-broker
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20210804-d3a9d497
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
@@ -19,7 +19,7 @@ sandbox-test:
 	@../sandbox.sh system-broker
 
 run:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-system-broker-local-0 -c system-broker-tests -- ./system-broker.test -test.run $(testName)
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-system-broker-local-0 -c system-broker-tests -- ./system-broker.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
 	env GOOS=linux GOARCH=arm go test -c ./tests -o system-broker.test

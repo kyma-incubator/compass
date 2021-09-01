@@ -41,18 +41,21 @@ data:
   global.externalServicesMock.enabled: "true"
   global.externalServicesMock.auditlog: "true"
   global.systemFetcher.enabled: "true"
-  global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock:8080/systemfetcher/systems"
+  global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"
   global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.systemFetcher.oauth.client: "admin"
   global.systemFetcher.oauth.secret: "admin"
-  global.systemFetcher.oauth.tokenURLPattern: "http://compass-external-services-mock:8080/systemfetcher/oauth/token"
+  global.systemFetcher.oauth.tokenURLPattern: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/oauth/token"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
+  global.authenticators.tenant-fetcher.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
-  director.deployment.allowJWTSigningNone: "true"
+  system-broker.http.client.skipSSLValidation: "true"
+  operations-controller.http.client.skipSSLValidation: "true"
+  global.systemFetcher.http.client.skipSSLValidation: "true"
 ---
 apiVersion: v1
 kind: ConfigMap

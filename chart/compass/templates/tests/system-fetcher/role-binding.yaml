@@ -24,6 +24,9 @@ rules:
   resources: ["cronjobs"]
   resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.systemFetcher.name }}"]
   verbs: ["get"]
+- apiGroups: ["operations.compass"]
+  resources: ["operations"]
+  verbs: ["get"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
