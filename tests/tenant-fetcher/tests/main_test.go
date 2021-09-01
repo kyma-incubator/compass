@@ -71,9 +71,9 @@ func TestMain(m *testing.M) {
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
 
-	regionalEndpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-	regionalEndpoint = strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.RegionPathParam), regionPathParamValue, 1)
-	config.TenantFetcherFullRegionalURL = config.TenantFetcherFullRegionalURL + config.RootAPI + regionalEndpoint
+	regionalEndpoint := strings.Replace(config.HandlerRegionalEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", config.RegionPathParam), regionPathParamValue, 1)
+	config.TenantFetcherFullRegionalURL = config.TenantFetcherURL + config.RootAPI + regionalEndpoint
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

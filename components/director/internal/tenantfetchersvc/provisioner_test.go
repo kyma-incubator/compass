@@ -34,6 +34,14 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 		Provider:       testProviderName,
 		Subdomain:      tenantSubdomain,
 	}
+	providedSubaccountTenant := model.BusinessTenantMappingInput{
+		Name:           regionalTenantExtID,
+		ExternalTenant: regionalTenantExtID,
+		Parent:         tenantExtID,
+		Type:           tenantEntity.TypeToStr(tenantEntity.Subaccount),
+		Provider:       testProviderName,
+		Subdomain:      tenantSubdomain,
+	}
 	accountTenant := model.BusinessTenantMappingInput{
 		Name:           tenantExtID,
 		ExternalTenant: tenantExtID,
@@ -144,6 +152,14 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 			},
 			Tenant:              providedAccountTenant,
 			ExpectedErrorOutput: fmt.Sprintf("failed to retrieve internal ID of parent with external ID %s", parentTenantExtID),
+		},
+		{
+			Name: "Returns error when tenant is of type subaccount",
+			TenantSvcFn: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
+			Tenant:              providedSubaccountTenant,
+			ExpectedErrorOutput: fmt.Sprintf("tenant with ID %s is of type subaccount and supports only regional provisioning", regionalTenantExtID),
 		},
 	}
 

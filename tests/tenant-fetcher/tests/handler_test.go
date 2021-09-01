@@ -143,6 +143,28 @@ func TestOnboardingHandler(t *testing.T) {
 		// THEN
 		assert.Equal(t, len(oldTenantState), len(tenants))
 	})
+
+	t.Run("Should fail with subaccount tenant", func(t *testing.T) {
+		// GIVEN
+		parentTenant := Tenant{
+			TenantID:  uuid.New().String(),
+			Subdomain: defaultSubdomain,
+		}
+		childTenant := Tenant{
+			SubaccountID: uuid.New().String(),
+			TenantID:     parentTenant.TenantID,
+			Subdomain:    defaultSubdomain,
+		}
+
+		addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+
+		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+		require.NoError(t, err)
+		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+
+		// THEN
+		addTenantExpectStatusCode(t, childTenant, http.StatusInternalServerError)
+	})
 }
 
 func TestDecommissioningHandler(t *testing.T) {
@@ -167,120 +189,164 @@ func TestDecommissioningHandler(t *testing.T) {
 	})
 }
 
-func TestSubaccountCreation(t *testing.T) {
-	t.Run("Success with subaccount tenant and parent account tenant", func(t *testing.T) {
-		// GIVEN
-		parentTenant := Tenant{
+func TestRegionalOnboardingHandler(t *testing.T) {
+	t.Run("Regional account tenant creation", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			// GIVEN
+			providedTenant := Tenant{
+				TenantID:  uuid.New().String(),
+				Subdomain: defaultSubdomain,
+			}
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+
+			// THEN
+			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain)
+			require.Equal(t, regionPathParamValue, tenant.Labels["region"])
+		})
+	})
+
+	t.Run("Regional subaccount tenant creation", func(t *testing.T) {
+		t.Run("Success with subaccount tenant and parent account tenant", func(t *testing.T) {
+			// GIVEN
+			parentTenant := Tenant{
+				TenantID:  uuid.New().String(),
+				Subdomain: defaultSubdomain,
+			}
+			childTenant := Tenant{
+				SubaccountID: uuid.New().String(),
+				TenantID:     parentTenant.TenantID,
+				Subdomain:    defaultSubdomain,
+			}
+
+			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+
+			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
+
+			// THEN
+			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
+			require.NoError(t, err)
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			require.Equal(t, regionPathParamValue, tenant.Labels["region"])
+		})
+
+		t.Run("Should not fail when tenant already exists", func(t *testing.T) {
+			// GIVEN
+			parentTenantId := uuid.New().String()
+			parentTenant := Tenant{
+				TenantID:  parentTenantId,
+				Subdomain: defaultSubaccountSubdomain,
+			}
+			childTenant := Tenant{
+				TenantID:     parentTenantId,
+				CustomerID:   uuid.New().String(),
+				SubaccountID: uuid.New().String(),
+				Subdomain:    defaultSubaccountSubdomain,
+			}
+			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+
+			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+
+			// WHEN
+			for i := 0; i < 10; i++ {
+				addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
+			}
+
+			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
+			require.NoError(t, err)
+
+			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+
+			// THEN
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			assert.Equal(t, len(oldTenantState)+2, len(tenants))
+		})
+
+		t.Run("Should fail when parent tenant does not exist", func(t *testing.T) {
+			// GIVEN
+			providedTenant := Tenant{
+				TenantID:     uuid.New().String(),
+				CustomerID:   uuid.New().String(),
+				SubaccountID: uuid.New().String(),
+				Subdomain:    defaultSubaccountSubdomain,
+			}
+
+			// THEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusInternalServerError)
+		})
+
+		t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := Tenant{
+				CustomerID:   uuid.New().String(),
+				SubaccountID: uuid.New().String(),
+				Subdomain:    defaultSubaccountSubdomain,
+			}
+			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, len(oldTenantState), len(tenants))
+		})
+
+		t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := Tenant{
+				TenantID:     uuid.New().String(),
+				SubaccountID: uuid.New().String(),
+				CustomerID:   uuid.New().String(),
+			}
+			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, len(oldTenantState), len(tenants))
+		})
+	})
+}
+
+func TestRegionalDecommissioningHandler(t *testing.T) {
+	t.Run("Success noop", func(t *testing.T) {
+		providedTenant := Tenant{
 			TenantID:  uuid.New().String(),
 			Subdomain: defaultSubdomain,
 		}
-		childTenant := Tenant{
-			SubaccountID: uuid.New().String(),
-			TenantID:     parentTenant.TenantID,
-			Subdomain:    defaultSubdomain,
-		}
 
-		addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+		addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
-		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
-		require.NoError(t, err)
-		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
-
-		// WHEN
-		addTenantExpectStatusCode(t, childTenant, http.StatusOK)
-
-		// THEN
-		tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
-		require.NoError(t, err)
-		assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
-	})
-
-	t.Run("Should not fail when tenant already exists", func(t *testing.T) {
-		// GIVEN
-		parentTenantId := uuid.New().String()
-		parentTenant := Tenant{
-			TenantID:  parentTenantId,
-			Subdomain: defaultSubaccountSubdomain,
-		}
-		childTenant := Tenant{
-			TenantID:     parentTenantId,
-			CustomerID:   uuid.New().String(),
-			SubaccountID: uuid.New().String(),
-			Subdomain:    defaultSubaccountSubdomain,
-		}
 		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
-		addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
-		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
-		require.NoError(t, err)
-		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+		removeTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
-		// WHEN
-		for i := 0; i < 10; i++ {
-			addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
-		}
-
-		tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
-		require.NoError(t, err)
-
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
+		newTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
-		assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
-		assert.Equal(t, len(oldTenantState)+2, len(tenants))
-	})
-
-	t.Run("Should fail when parent tenant does not exist", func(t *testing.T) {
-		// GIVEN
-		providedTenant := Tenant{
-			TenantID:     uuid.New().String(),
-			CustomerID:   uuid.New().String(),
-			SubaccountID: uuid.New().String(),
-			Subdomain:    defaultSubaccountSubdomain,
-		}
-
-		// THEN
-		addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusInternalServerError)
-	})
-
-	t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
-		// GIVEN
-		providedTenant := Tenant{
-			CustomerID:   uuid.New().String(),
-			SubaccountID: uuid.New().String(),
-			Subdomain:    defaultSubaccountSubdomain,
-		}
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
-		require.NoError(t, err)
-
-		// WHEN
-		addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-		// THEN
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
-		require.NoError(t, err)
-		assert.Equal(t, len(oldTenantState), len(tenants))
-	})
-
-	t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
-		// GIVEN
-		providedTenant := Tenant{
-			TenantID:     uuid.New().String(),
-			SubaccountID: uuid.New().String(),
-			CustomerID:   uuid.New().String(),
-		}
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
-		require.NoError(t, err)
-
-		// WHEN
-		addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-		// THEN
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
-		require.NoError(t, err)
-		assert.Equal(t, len(oldTenantState), len(tenants))
+		assert.Equal(t, len(oldTenantState), len(newTenantState))
 	})
 }
 

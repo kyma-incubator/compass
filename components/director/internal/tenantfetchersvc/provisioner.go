@@ -32,6 +32,10 @@ func NewTenantProvisioner(tenantSvc TenantService) *provisioner {
 }
 
 func (p *provisioner) ProvisionTenant(ctx context.Context, tenant model.BusinessTenantMappingInput) error {
+	if tenant.Type == tenantEntity.TypeToStr(tenantEntity.Subaccount) {
+		return fmt.Errorf("tenant with ID %s is of type %s and supports only regional provisioning", tenant.ExternalTenant, tenant.Type)
+	}
+
 	return p.createTenant(ctx, tenant)
 }
 
