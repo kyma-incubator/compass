@@ -92,7 +92,7 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 }
 
 func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig, error) {
-	configURL, err := setConfigURL(url)
+	configURL, err := buildWellKnownEndpoint(url)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig,
 	return &config, nil
 }
 
-func setConfigURL(u string) (string, error) {
+func buildWellKnownEndpoint(u string) (string, error) {
 	parsedURL, err := url.ParseRequestURI(u)
 	if err != nil {
 		return "", errors.New("error while parsing input webhook url")
@@ -140,9 +140,6 @@ func stripRelativePathFromURL(u string) (string, error) {
 		return "", errors.New("error while parsing input webhook url")
 	}
 
-	if parsedURL.Path != "" {
-		return parsedURL.Scheme + "://" + parsedURL.Host, nil
-	} else {
-		return u, nil
-	}
+	parsedURL.Path = ""
+	return parsedURL.String(), nil
 }
