@@ -75,7 +75,7 @@ global:
       version: "PR-1996"
     director:
       dir:
-      version: "PR-1996"
+      version: "PR-1999"
     gateway:
       dir:
       version: "PR-1996"
@@ -98,13 +98,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1996"
+      version: "PR-1999"
     console:
       dir:
       version: "PR-40"
     e2e_tests:
       dir:
-      version: "PR-1996"
+      version: "PR-1999"
   isLocalEnv: false
   oauth2:
     host: oauth2
