@@ -315,15 +315,15 @@ func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url str
 	)
 
 	if len(tenant.TenantID) > 0 {
-		body, err = sjson.Set(body, config.TenantIdProperty, tenant.TenantID)
+		body, err = sjson.Set(body, config.TenantIDProperty, tenant.TenantID)
 		require.NoError(t, err)
 	}
 	if len(tenant.SubaccountID) > 0 {
-		body, err = sjson.Set(body, config.SubaccountTenantIdProperty, tenant.SubaccountID)
+		body, err = sjson.Set(body, config.SubaccountTenantIDProperty, tenant.SubaccountID)
 		require.NoError(t, err)
 	}
 	if len(tenant.CustomerID) > 0 {
-		body, err = sjson.Set(body, config.CustomerIdProperty, tenant.CustomerID)
+		body, err = sjson.Set(body, config.CustomerIDProperty, tenant.CustomerID)
 		require.NoError(t, err)
 	}
 	if len(tenant.Subdomain) > 0 {
