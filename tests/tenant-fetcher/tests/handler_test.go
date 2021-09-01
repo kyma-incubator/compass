@@ -396,8 +396,7 @@ func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url str
 		body, err = sjson.Set(body, config.SubdomainProperty, tenant.Subdomain)
 		require.NoError(t, err)
 	}
-
-	require.NoError(t, err)
+	
 	request, err := http.NewRequest(httpMethod, url, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", fetchToken(t)))
