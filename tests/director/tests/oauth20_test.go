@@ -1,4 +1,5 @@
-//+build !ignore_external_dependencies
+//go:build !ignore_external_dependencies
+// +build !ignore_external_dependencies
 
 package tests
 
