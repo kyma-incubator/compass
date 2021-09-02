@@ -340,7 +340,7 @@ func TestRegionalDecommissioningHandler(t *testing.T) {
 		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
 
-		removeTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+		removeRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
 		newTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 		require.NoError(t, err)
@@ -349,6 +349,30 @@ func TestRegionalDecommissioningHandler(t *testing.T) {
 		assert.Equal(t, len(oldTenantState), len(newTenantState))
 	})
 }
+
+func TestGetDependenciesHandler(t *testing.T) {
+	t.Run("Returns empty body", func(t *testing.T) {
+		// GIVEN
+		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
+		require.NoError(t, err)
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", fetchToken(t)))
+
+		// WHEN
+		response, err := httpClient.Do(request)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, response.StatusCode)
+
+		responseBody, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		responseBodyJson := make(map[string]interface{}, 0)
+
+		// THEN
+		err = json.Unmarshal(responseBody, &responseBodyJson)
+		require.NoError(t, err)
+		require.Empty(t, responseBodyJson)
+	})
+}
+
 
 func addTenantExpectStatusCode(t *testing.T, providedTenant Tenant, expectedStatusCode int) {
 	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodPut, config.TenantFetcherFullURL, expectedStatusCode)

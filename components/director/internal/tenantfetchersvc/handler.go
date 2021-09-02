@@ -34,6 +34,7 @@ type TenantProvisioner interface {
 type HandlerConfig struct {
 	HandlerEndpoint         string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	RegionalHandlerEndpoint string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint    string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
 	TenantPathParam         string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 	RegionPathParam         string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
@@ -70,7 +71,7 @@ func NewTenantsHTTPHandler(provisioner TenantProvisioner, transact persistence.T
 func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	body, err := readBody(request)
+	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
 		http.Error(writer, "Failed to read tenant information from request body", http.StatusInternalServerError)
@@ -98,7 +99,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	body, err := readBody(req)
+	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from delete request body: %v", err)
 		writer.WriteHeader(http.StatusOK)
@@ -125,7 +126,7 @@ func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	body, err := readBody(request)
+	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
 		http.Error(writer, "Failed to read tenant information from request body", http.StatusInternalServerError)
@@ -149,6 +150,14 @@ func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Reque
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write response body for tenant request creation for tenant %s: %v", regionalTenant.ExternalTenant, err)
 	}
+}
+
+func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request) {
+	if _, err := writer.Write([]byte("{}")); err != nil {
+		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
+		return
+	}
+	writer.Header().Set("Content-Type", "application/json")
 }
 
 func (h *handler) tenantFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
@@ -220,21 +229,4 @@ func getProperties(body []byte, props map[string]bool) (map[string]string, error
 	}
 
 	return resultProps, nil
-}
-
-func readBody(r *http.Request) ([]byte, error) {
-	ctx := r.Context()
-
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err := r.Body.Close(); err != nil {
-			log.C(ctx).WithError(err).Errorf("Unable to close request body: %v", err)
-		}
-	}()
-
-	return buf, nil
 }

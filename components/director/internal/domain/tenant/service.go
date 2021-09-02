@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -194,10 +195,12 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 
 func (s *labeledService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
 	tenantID := labelInput.ObjectID
-	labelInput.ObjectType = model.TenantLabelableObject
+	if labelInput.ObjectType != model.TenantLabelableObject {
+		return fmt.Errorf("cannot set tenant label to tenant %s when label object type is not %q", tenantID, labelInput.ObjectType)
+	}
 
 	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
-		return errors.Wrapf(err, "while ensuring tenant with %s exists", tenantID)
+		return err
 	}
 	if err := s.labelUpsertSvc.UpsertLabel(ctx, tenantID, labelInput); err != nil {
 		return errors.Wrapf(err, "while creating label for tenant with ID %s", tenantID)

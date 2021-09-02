@@ -637,6 +637,28 @@ func Test_SetLabel(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("Error when label object type is not Tenant", func(t *testing.T) {
+		uidSvc := &automock.UIDService{}
+		labelRepo := &automock.LabelRepository{}
+		labelUpsertSvc := &automock.LabelUpsertService{}
+		tenantRepo := &automock.TenantMappingRepository{}
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+		labelType := model.ApplicationLabelableObject
+		label := &model.LabelInput{
+			Key:        labelIn.ObjectID,
+			Value:      labelIn.Value,
+			ObjectID:   tenantID,
+			ObjectType: labelType,
+		}
+		err := svc.SetLabel(ctx, label)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), fmt.Sprintf("cannot set tenant label to tenant %s when label object type is not %q", tenantID, labelType))
+	})
+
 	t.Run("Error when tenant existence cannot be ensured", func(t *testing.T) {
 		uidSvc := &automock.UIDService{}
 		labelRepo := &automock.LabelRepository{}

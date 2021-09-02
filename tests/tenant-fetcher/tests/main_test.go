@@ -24,7 +24,8 @@ type testConfig struct {
 	TenantFetcherURL          string
 	RootAPI                   string
 	HandlerEndpoint           string
-	HandlerRegionalEndpoint   string
+	RegionalHandlerEndpoint   string
+	DependenciesEndpoint      string
 	TenantPathParam           string
 	RegionPathParam           string
 	DbUser                    string
@@ -38,9 +39,10 @@ type testConfig struct {
 	Tenant                    string
 	SubscriptionCallbackScope string
 	TenantProviderConfig
-	ExternalServicesMockURL      string
-	TenantFetcherFullURL         string `envconfig:"-"`
-	TenantFetcherFullRegionalURL string `envconfig:"-"`
+	ExternalServicesMockURL          string
+	TenantFetcherFullURL             string `envconfig:"-"`
+	TenantFetcherFullRegionalURL     string `envconfig:"-"`
+	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 }
 
 type TenantProviderConfig struct {
@@ -71,9 +73,11 @@ func TestMain(m *testing.M) {
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
 
-	regionalEndpoint := strings.Replace(config.HandlerRegionalEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+	regionalEndpoint := strings.Replace(config.RegionalHandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", config.RegionPathParam), regionPathParamValue, 1)
 	config.TenantFetcherFullRegionalURL = config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+
+	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

@@ -355,6 +355,7 @@ global:
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
+      dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
 
