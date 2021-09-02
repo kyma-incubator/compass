@@ -373,7 +373,6 @@ func TestGetDependenciesHandler(t *testing.T) {
 	})
 }
 
-
 func addTenantExpectStatusCode(t *testing.T, providedTenant Tenant, expectedStatusCode int) {
 	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodPut, config.TenantFetcherFullURL, expectedStatusCode)
 }
