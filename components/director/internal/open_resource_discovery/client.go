@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -35,16 +36,21 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 		return nil, err
 	}
 
+	baseUrl, err := stripRelativePathFromURL(url)
+	if err != nil {
+		return nil, err
+	}
+
 	docs := make([]*Document, 0, 0)
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", url+docDetails.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseUrl+docDetails.URL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+docDetails.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseUrl+docDetails.URL, strategy)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+docDetails.URL)
+			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseUrl+docDetails.URL)
 		}
 
 		docs = append(docs, doc)
@@ -86,7 +92,12 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 }
 
 func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig, error) {
-	resp, err := c.Get(url + WellKnownEndpoint)
+	configURL, err := buildWellKnownEndpoint(url)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Get(configURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 	}
@@ -108,4 +119,27 @@ func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig,
 	}
 
 	return &config, nil
+}
+
+func buildWellKnownEndpoint(u string) (string, error) {
+	parsedURL, err := url.ParseRequestURI(u)
+	if err != nil {
+		return "", errors.New("error while parsing input webhook url")
+	}
+
+	if parsedURL.Path != "" {
+		return parsedURL.String(), nil
+	} else {
+		return parsedURL.String() + WellKnownEndpoint, nil
+	}
+}
+
+func stripRelativePathFromURL(u string) (string, error) {
+	parsedURL, err := url.ParseRequestURI(u)
+	if err != nil {
+		return "", errors.New("error while parsing input webhook url")
+	}
+
+	parsedURL.Path = ""
+	return parsedURL.String(), nil
 }
