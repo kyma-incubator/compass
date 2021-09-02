@@ -653,7 +653,7 @@ func TestORDService(stdT *testing.T) {
 		outputApp := directorSchema.ApplicationExt{}
 		//WHEN
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, defaultTestTenant, outputApp.ID)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTestTenant, &outputApp)
 		require.NoError(t, err)
 
 		getSystemInstanceURL := fmt.Sprintf("%s/systemInstances(%s)?$format=json", testConfig.ORDServiceURL, outputApp.ID)
