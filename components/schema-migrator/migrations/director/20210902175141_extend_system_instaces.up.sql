@@ -9,8 +9,8 @@ SELECT DISTINCT t_apps.tenant_id, apps.id, apps.name, apps.description, apps.sta
                 apps.updated_at, apps.deleted_at, apps.error, apps.app_template_id, apps.correlation_ids,
                 apps.system_number, tmpl.name as product_type
 FROM applications AS apps
-LEFT JOIN app_templates AS tmpl ON apps.app_template_id = tmpl.id
-INNER JOIN (
+         LEFT JOIN app_templates AS tmpl ON apps.app_template_id = tmpl.id
+         INNER JOIN (
 --  select GAs
     SELECT a1.id, a1.tenant_id FROM applications AS a1
     UNION ALL

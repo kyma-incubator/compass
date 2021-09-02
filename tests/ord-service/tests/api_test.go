@@ -327,6 +327,16 @@ func TestORDService(stdT *testing.T) {
 					panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 				}
 
+				apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.%d.apiProtocol", i)).String()
+				switch apiProtocol {
+				case "odata-v2":
+					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
+				case "rest":
+					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
+				default:
+					t.Log(fmt.Sprintf("API Protocol for API %s is %s. It does not match a predefined spec type.", name, apiProtocol))
+				}
+
 				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
 				require.Equal(t, 1, len(specs))
 
