@@ -5,8 +5,8 @@ SELECT DISTINCT t_apps.tenant_id, apis.id, apis.app_id, apis.name, apis.descript
                 apis.version_value, apis.version_deprecated, apis.version_deprecated_since, apis.version_for_removal,
                 apis.ord_id, apis.short_description, apis.system_instance_aware,
                 CASE
-                    WHEN specs.api_spec_type::text = 'ODATA' THEN 'odata-v2'::api_protocol
-                    WHEN specs.api_spec_type::text = 'OPEN_API' THEN 'rest'::api_protocol
+                    WHEN apis.api_protocol IS NULL AND specs.api_spec_type::text = 'ODATA' THEN 'odata-v2'::api_protocol
+                    WHEN apis.api_protocol IS NULL AND specs.api_spec_type::text = 'OPEN_API' THEN 'rest'::api_protocol
                     ELSE apis.api_protocol
                     END                                            AS api_protocol,
                 apis.tags, apis.countries, apis.links, apis.api_resource_links, apis.release_status, apis.sunset_date,
