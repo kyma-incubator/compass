@@ -1,5 +1,7 @@
 BEGIN;
 
+DROP VIEW tenants_apps;
+
 CREATE OR REPLACE VIEW tenants_apps  AS
 SELECT DISTINCT t_apps.tenant_id, apps.id, apps.name, apps.description, apps.status_condition,
                 apps.status_timestamp, apps.healthcheck_url, apps.integration_system_id,
