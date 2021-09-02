@@ -49,7 +49,21 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 		AdditionalQueryParams:           params,
 		AdditionalQueryParamsSerialized: paramsSerialized,
 		RequestAuth:                     c.requestAuthToGraphQL(in.RequestAuth),
+		OneTimeToken:                    c.oneTimeTokenToGraphQL(in.OneTimeToken),
 	}, nil
+}
+
+func (c *converter) oneTimeTokenToGraphQL(tokenData *model.OneTimeToken) *graphql.OneTimeTokenForApplication {
+	if tokenData == nil {
+		return nil
+	}
+
+	return &graphql.OneTimeTokenForApplication{
+		TokenWithURL: graphql.TokenWithURL{
+			Token:        tokenData.Token,
+			ConnectorURL: tokenData.ConnectorURL,
+		},
+	}
 }
 
 func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error) {

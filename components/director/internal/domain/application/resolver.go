@@ -2,6 +2,11 @@ package application
 
 import (
 	"context"
+	"fmt"
+	connectivity_adapter "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"strings"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -121,6 +126,10 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
+
+	oneTimeTokenCfg onetimetoken.Config
+
+	timeService directorTime.Service
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -133,7 +142,9 @@ func NewResolver(transact persistence.Transactioner,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
-	bndlConverter BundleConverter) *Resolver {
+	bndlConverter BundleConverter,
+	oneTimeTokenCfg onetimetoken.Config,
+	timeService directorTime.Service) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -146,6 +157,8 @@ func NewResolver(transact persistence.Transactioner,
 		eventingSvc:      eventingSvc,
 		bndlSvc:          bndlSvc,
 		bndlConv:         bndlConverter,
+		oneTimeTokenCfg:  oneTimeTokenCfg,
+		timeService:      timeService,
 	}
 }
 
@@ -501,11 +514,19 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 
 	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
+		if shouldSkip := r.checkApplicationOneTimeTokenIsInvalid(sa.Value, r.oneTimeTokenCfg); shouldSkip {
+			continue
+		}
+
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
 		if err != nil {
 			return nil, err
 		}
 
+		if sa.Value.OneTimeToken.Type == tokens.ApplicationToken {
+			connectorLegacyURL := fmt.Sprintf("%s%s%s", r.oneTimeTokenCfg.LegacyConnectorURL, connectivity_adapter.TokenFormat, sa.Value.OneTimeToken.Token)
+			c.(*graphql.AppSystemAuth).Auth.OneTimeToken.LegacyConnectorURL = connectorLegacyURL
+		}
 		out = append(out, c.(*graphql.AppSystemAuth))
 	}
 
@@ -513,8 +534,20 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	if err != nil {
 		return nil, err
 	}
-
 	return out, nil
+}
+
+func (r *Resolver) checkApplicationOneTimeTokenIsInvalid(auth *model.Auth, config onetimetoken.Config) bool {
+	if auth == nil || auth.OneTimeToken == nil || auth.OneTimeToken.Type != tokens.ApplicationToken || auth.OneTimeToken.Used {
+		return true
+	}
+
+	isExpired := auth.OneTimeToken.CreatedAt.Add(config.ApplicationExpiration).Before(r.timeService.Now())
+	if isExpired {
+		return true
+	}
+
+	return false
 }
 
 func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
