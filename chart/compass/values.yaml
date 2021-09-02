@@ -87,7 +87,7 @@ global:
       version: "PR-40"
     schema_migrator:
       dir:
-      version: "PR-2003"
+      version: "PR-2004"
     system_broker:
       dir:
       version: "PR-2003"
@@ -104,7 +104,7 @@ global:
       version: "PR-41"
     e2e_tests:
       dir:
-      version: "PR-2003"
+      version: "PR-2004"
   isLocalEnv: false
   oauth2:
     host: oauth2
