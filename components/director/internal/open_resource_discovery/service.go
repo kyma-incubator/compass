@@ -114,7 +114,10 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
-			baseURL = *wh.URL
+			baseURL, err = stripRelativePathFromURL(*wh.URL)
+			if err != nil {
+				log.C(ctx).WithError(err).Error(err)
+			}
 			break
 		}
 	}
