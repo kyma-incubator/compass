@@ -10,7 +10,7 @@ type OneTimeTokenForApplication struct {
 	LegacyConnectorURL string `json:"legacyConnectorURL"`
 }
 
-func (t *OneTimeTokenForApplication) IsOneTimeToken() {}
+func (OneTimeTokenForApplication) IsOneTimeToken() {}
 
 type OneTimeTokenForRuntime struct {
 	TokenWithURL

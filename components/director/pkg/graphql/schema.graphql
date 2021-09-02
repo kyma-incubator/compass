@@ -742,6 +742,7 @@ type Auth {
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
+	oneTimeToken: OneTimeTokenForApplication
 }
 
 type AutomaticScenarioAssignment {

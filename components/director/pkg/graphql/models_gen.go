@@ -149,12 +149,13 @@ type ApplicationUpdateInput struct {
 }
 
 type Auth struct {
-	Credential                      CredentialData         `json:"credential"`
-	AdditionalHeaders               HttpHeaders            `json:"additionalHeaders"`
-	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
-	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
-	RequestAuth                     *CredentialRequestAuth `json:"requestAuth"`
+	Credential                      CredentialData              `json:"credential"`
+	AdditionalHeaders               HttpHeaders                 `json:"additionalHeaders"`
+	AdditionalHeadersSerialized     *HttpHeadersSerialized      `json:"additionalHeadersSerialized"`
+	AdditionalQueryParams           QueryParams                 `json:"additionalQueryParams"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized"`
+	RequestAuth                     *CredentialRequestAuth      `json:"requestAuth"`
+	OneTimeToken                    *OneTimeTokenForApplication `json:"oneTimeToken"`
 }
 
 type AuthInput struct {
