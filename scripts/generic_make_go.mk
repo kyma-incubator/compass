@@ -138,6 +138,10 @@ check-fmt-local:
 fmt-local:
 	go fmt $$($(DIRS_TO_CHECK))
 
+format-local: imports-local fmt-local
+
+verify-local: test-local check-imports-local check-fmt-local errcheck-local
+
 errcheck-local:
 	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 

@@ -89,6 +89,8 @@ spec:
                 value: {{ $config.endpoints.movedRuntimeByLabel }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
+              - name: APP_TENANT_PROVIDER
+                value: {{ $config.tenantsRegion }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:

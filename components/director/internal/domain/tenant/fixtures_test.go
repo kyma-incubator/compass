@@ -18,6 +18,7 @@ const (
 	testID            = "foo"
 	testName          = "bar"
 	testSubdomain     = "subdomain"
+	testRegion        = "eu-1"
 	testProvider      = "Compass"
 	initializedColumn = "initialized"
 )
@@ -99,11 +100,12 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.Parent, ent.Type, ent.ProviderName, ent.Status}
 }
 
-func newModelBusinessTenantMappingInput(name, subdomain string) model.BusinessTenantMappingInput {
+func newModelBusinessTenantMappingInput(name, subdomain, region string) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: testExternal,
 		Subdomain:      subdomain,
+		Region:         region,
 		Parent:         "",
 		Type:           string(tenant.Account),
 		Provider:       testProvider,

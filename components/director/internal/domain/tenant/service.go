@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -11,7 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-const subdomainLabelKey = "subdomain"
+const (
+	SubdomainLabelKey = "subdomain"
+	RegionLabelKey    = "region"
+)
 
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
 type TenantMappingRepository interface {
@@ -21,7 +23,6 @@ type TenantMappingRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
-	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
@@ -121,13 +122,17 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
-	subdomains := tenantSubdomains(tenantInputs)
+	subdomains, regions := tenantLocality(tenantInputs)
 	for _, tenant := range tenants {
 		subdomain := ""
+		region := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
 			subdomain = s
 		}
-		if err := s.createIfNotExists(ctx, tenant, subdomain); err != nil {
+		if r, ok := regions[tenant.ExternalTenant]; ok {
+			region = r
+		}
+		if err := s.createIfNotExists(ctx, tenant, subdomain, region); err != nil {
 			return errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
 	}
@@ -135,37 +140,50 @@ func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs
 	return nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain string) error {
-	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
-	if err != nil {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string) error {
+	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		return errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
 	}
-	if exists {
-		return nil
+	if tenantFromDB != nil {
+		log.C(ctx).Infof("Tenant with external ID %s already exists", tenantFromDB.ExternalTenant)
+		return s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
 	}
 
-	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
+	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil && !apperrors.IsNotUniqueError(err) {
 		return errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
 	}
 
+	return s.upsertLabels(ctx, tenant.ID, subdomain, region)
+}
+
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {
 	if len(subdomain) > 0 {
-		if err := s.addSubdomainLabel(ctx, tenant.ID, subdomain); err != nil {
-			return errors.Wrapf(err, "while setting subdomain label for tenant with external ID %s", tenant.ExternalTenant)
+		if err := s.upsertSubdomainLabel(ctx, tenantID, subdomain); err != nil {
+			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
 		}
 	}
-
+	if len(region) > 0 {
+		if err := s.upsertRegionLabel(ctx, tenantID, region); err != nil {
+			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
+		}
+	}
 	return nil
 }
 
-func tenantSubdomains(tenants []model.BusinessTenantMappingInput) map[string]string {
+func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]string, map[string]string) {
 	subdomains := make(map[string]string)
+	regions := make(map[string]string)
 	for _, t := range tenants {
 		if len(t.Subdomain) > 0 {
 			subdomains[t.ExternalTenant] = t.Subdomain
 		}
+		if len(t.Region) > 0 {
+			regions[t.ExternalTenant] = t.Region
+		}
 	}
 
-	return subdomains
+	return subdomains, regions
 }
 
 func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
@@ -193,26 +211,20 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	return labels, nil
 }
 
-func (s *labeledService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
-	tenantID := labelInput.ObjectID
-	if labelInput.ObjectType != model.TenantLabelableObject {
-		return fmt.Errorf("cannot set tenant label to tenant %s when label object type is not %q", tenantID, labelInput.ObjectType)
+func (s *labeledService) upsertSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
+	label := &model.LabelInput{
+		Key:        SubdomainLabelKey,
+		Value:      subdomain,
+		ObjectID:   tenantID,
+		ObjectType: model.TenantLabelableObject,
 	}
-
-	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
-		return err
-	}
-	if err := s.labelUpsertSvc.UpsertLabel(ctx, tenantID, labelInput); err != nil {
-		return errors.Wrapf(err, "while creating label for tenant with ID %s", tenantID)
-	}
-
-	return nil
+	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
 }
 
-func (s *labeledService) addSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
+func (s *labeledService) upsertRegionLabel(ctx context.Context, tenantID, region string) error {
 	label := &model.LabelInput{
-		Key:        subdomainLabelKey,
-		Value:      subdomain,
+		Key:        RegionLabelKey,
+		Value:      region,
 		ObjectID:   tenantID,
 		ObjectType: model.TenantLabelableObject,
 	}

@@ -210,7 +210,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Regional subaccount tenant creation", func(t *testing.T) {
-		t.Run("Success with subaccount tenant and parent account tenant", func(t *testing.T) {
+		t.Run("Success when parent account tenant is pre-existing", func(t *testing.T) {
 			// GIVEN
 			parentTenant := Tenant{
 				TenantID:  uuid.New().String(),
@@ -219,10 +219,10 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			childTenant := Tenant{
 				SubaccountID: uuid.New().String(),
 				TenantID:     parentTenant.TenantID,
-				Subdomain:    defaultSubdomain,
+				Subdomain:    defaultSubaccountSubdomain,
 			}
 
-			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 
 			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
@@ -236,6 +236,40 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			require.NoError(t, err)
 			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			require.Equal(t, regionPathParamValue, tenant.Labels["region"])
+
+			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
+			require.Equal(t, regionPathParamValue, parentTenantAfterInsert.Labels["region"])
+		})
+
+		t.Run("Success when parent account tenant does not exist", func(t *testing.T) {
+			// GIVEN
+			providedTenant := Tenant{
+				TenantID:     uuid.New().String(),
+				CustomerID:   uuid.New().String(),
+				SubaccountID: uuid.New().String(),
+				Subdomain:    defaultSubaccountSubdomain,
+			}
+
+			// THEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+
+			// THEN
+			childTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenant.SubaccountID)
+			require.NoError(t, err)
+			assertTenant(t, childTenant, providedTenant.SubaccountID, providedTenant.Subdomain)
+			require.Equal(t, regionPathParamValue, childTenant.Labels["region"])
+
+			parentTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parentTenant, providedTenant.TenantID, "")
+			require.Empty(t, parentTenant.Labels)
+
+			customerTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenant.CustomerID)
+			require.NoError(t, err)
+			assertTenant(t, customerTenant, providedTenant.CustomerID, "")
+			require.Empty(t, customerTenant.Labels)
 		})
 
 		t.Run("Should not fail when tenant already exists", func(t *testing.T) {
@@ -273,19 +307,6 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			assert.Equal(t, len(oldTenantState)+2, len(tenants))
-		})
-
-		t.Run("Should fail when parent tenant does not exist", func(t *testing.T) {
-			// GIVEN
-			providedTenant := Tenant{
-				TenantID:     uuid.New().String(),
-				CustomerID:   uuid.New().String(),
-				SubaccountID: uuid.New().String(),
-				Subdomain:    defaultSubaccountSubdomain,
-			}
-
-			// THEN
-			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusInternalServerError)
 		})
 
 		t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
@@ -392,9 +413,18 @@ func removeRegionalTenantExpectStatusCode(t *testing.T, providedTenant Tenant, e
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant Tenant, httpMethod, url string, expectedStatusCode int) {
 	request := createTenantRequest(t, providedTenant, httpMethod, url)
 
+	t.Log(fmt.Sprintf("Provisioning tenant with ID %s", actualTenantID(providedTenant)))
 	response, err := httpClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
+func actualTenantID(tenant Tenant) string {
+	if len(tenant.SubaccountID) > 0 {
+		return tenant.SubaccountID
+	}
+
+	return tenant.TenantID
 }
 
 func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url string) *http.Request {

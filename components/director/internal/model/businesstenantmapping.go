@@ -28,6 +28,7 @@ type BusinessTenantMappingInput struct {
 	ExternalTenant string `json:"id"`
 	Parent         string `json:"parent"`
 	Subdomain      string `json:"subdomain"`
+	Region         string `json:"region"`
 	Type           string `json:"type"`
 	Provider       string
 }
