@@ -535,7 +535,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 			return nil, err
 		}
 
-		if sa.Value.OneTimeToken.Type == tokens.ApplicationToken {
+		if sa.Value.OneTimeToken != nil && sa.Value.OneTimeToken.Type == tokens.ApplicationToken {
 			oneTimeTokenForApplication, err := r.oneTimeTokenConv.ToGraphQLForApplication(*sa.Value.OneTimeToken)
 			if err != nil {
 				return nil, errors.Wrap(err, "while converting one-time token to graphql")
@@ -554,7 +554,11 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 }
 
 func (r *Resolver) checkApplicationOneTimeTokenIsInvalid(auth *model.Auth, config onetimetoken.Config) bool {
-	if auth == nil || auth.OneTimeToken == nil || auth.OneTimeToken.Type != tokens.ApplicationToken || auth.OneTimeToken.Used {
+	if auth == nil || auth.OneTimeToken == nil {
+		return false
+	}
+
+	if auth.OneTimeToken.Type != tokens.ApplicationToken || auth.OneTimeToken.Used {
 		return true
 	}
 

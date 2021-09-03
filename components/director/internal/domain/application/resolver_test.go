@@ -1411,7 +1411,7 @@ func TestResolver_Auths(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name:            "Returns not used and not expired token",
+			Name:            "Returns one not used and not expired token",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
