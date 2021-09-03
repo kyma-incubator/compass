@@ -23,8 +23,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+type contextKey string
+
 const (
-	CredentialsCtxKey = "CredentialsCtxKey"
+	CredentialsCtxKey contextKey = "CredentialsCtxKey"
 
 	BasicCredentialType CredentialType = "BasicCredentials"
 	OAuthCredentialType CredentialType = "OAuthCredentials"

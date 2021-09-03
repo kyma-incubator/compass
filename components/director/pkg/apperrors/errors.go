@@ -363,7 +363,7 @@ func IsCannotUpdateObjectInManyBundlesError(err error) bool {
 
 func sortMapKey(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
-	for k, _ := range m {
+	for k := range m {
 		keys = append(keys, k)
 	}
 

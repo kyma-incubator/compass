@@ -92,7 +92,7 @@ func buildCountQuery(tableName string, idColumn string, conditions Conditions, g
 			isGroupByParam = true
 		}
 	}
-	if isGroupByParam == false {
+	if !isGroupByParam {
 		return "", nil, errors.New("id column is not in group by params")
 	}
 

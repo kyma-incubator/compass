@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	specificationsTable string = `public.specifications`
-	apiDefIDColumn             = "api_def_id"
-	eventAPIDefIDColumn        = "event_def_id"
-	pageSize                   = 1
-	cursor                     = ""
+	specificationsTable = `public.specifications`
+	apiDefIDColumn      = "api_def_id"
+	eventAPIDefIDColumn = "event_def_id"
+	pageSize            = 1
+	cursor              = ""
 )
 
 var (

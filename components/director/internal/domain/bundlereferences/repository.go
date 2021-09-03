@@ -134,7 +134,7 @@ func (r *repository) Update(ctx context.Context, item *model.BundleReference) er
 
 	updater := r.updater.Clone()
 
-	idColumns := make([]string, 0, 0)
+	idColumns := make([]string, 0)
 	if item.BundleID == nil {
 		idColumns = append(idColumns, fieldName)
 		updater.SetUpdatableColumns(updatableColumnsWithoutBundleID)

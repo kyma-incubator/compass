@@ -2,7 +2,6 @@ package model_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -47,7 +46,7 @@ func TestPackageInput_ToPackage(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 
 			// when
 			result := testCase.Input.ToPackage(id, tenant, appID, 0)

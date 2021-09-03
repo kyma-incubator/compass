@@ -186,7 +186,7 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 }
 
 func (s *service) ensureSameSelector(in []*model.AutomaticScenarioAssignment) (model.LabelSelector, error) {
-	if in == nil || len(in) == 0 || in[0] == nil {
+	if len(in) == 0 || in[0] == nil {
 		return model.LabelSelector{}, apperrors.NewInternalError("expected at least one item in Assignments slice")
 	}
 

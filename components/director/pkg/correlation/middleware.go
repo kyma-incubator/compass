@@ -25,10 +25,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	HeadersContextKey  = "CorrelationHeaders"
-	RequestIDHeaderKey = "x-request-id"
-)
+type contextKey string
+
+const HeadersContextKey contextKey = "CorrelationHeaders"
+const RequestIDHeaderKey = "x-request-id"
 
 // headerKeys are the expected headers that are used for distributed tracing.
 var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}

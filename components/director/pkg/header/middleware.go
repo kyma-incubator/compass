@@ -21,7 +21,9 @@ import (
 	"net/http"
 )
 
-const ContextKey = "HeadersCtx"
+type contextKey string
+
+const ContextKey contextKey = "HeadersCtx"
 
 //AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
 func AttachHeadersToContext() func(next http.Handler) http.Handler {

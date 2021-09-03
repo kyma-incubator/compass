@@ -25,9 +25,6 @@ const (
 	bearerPrefix = "Bearer "
 
 	claimsIssuerKey = "iss"
-	claimsNameKey   = "name"
-	claimsGroupsKey = "groups"
-	claimsEmailKey  = "email"
 	jwksKeyIDKey    = "kid"
 	jwksURIKey      = "jwks_uri"
 

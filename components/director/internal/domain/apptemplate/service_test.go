@@ -40,7 +40,7 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 	appTemplateInputMatcher := func(webhooks []*model.Webhook) bool {
-		return webhooks != nil && len(webhooks) == 1 && *webhooks[0].ApplicationTemplateID == testID && webhooks[0].Type == model.WebhookTypeConfigurationChanged && *webhooks[0].URL == "foourl"
+		return len(webhooks) == 1 && *webhooks[0].ApplicationTemplateID == testID && webhooks[0].Type == model.WebhookTypeConfigurationChanged && *webhooks[0].URL == "foourl"
 	}
 
 	testCases := []struct {

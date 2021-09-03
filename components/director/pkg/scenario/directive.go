@@ -107,7 +107,7 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	resCtx := graphql.GetResolverContext(ctx)
+	resCtx := graphql.GetFieldContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Could not get idField: %s from request context", idField))

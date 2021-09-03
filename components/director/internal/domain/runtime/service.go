@@ -457,9 +457,8 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 			return errors.Wrap(err, "while merging scenarios from input and assignments")
 		}
 
-		for _, scenario := range scenarios {
-			finalScenarios = append(finalScenarios, scenario)
-		}
+		finalScenarios = append(finalScenarios, scenarios...)
+
 	} else {
 		oldScenariosLabel, err := getScenariosLabel(currentRuntimeLabels)
 		if err != nil {

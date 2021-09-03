@@ -409,14 +409,14 @@ func modelPtrsToWebhooks(in []*model.Webhook) []model.Webhook {
 		return nil
 	}
 	webhookPtrs := []model.Webhook{}
-	for i, _ := range in {
+	for i := range in {
 		webhookPtrs = append(webhookPtrs, *in[i])
 	}
 	return webhookPtrs
 }
 
 func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
-	for i, _ := range in {
+	for i := range in {
 		webhookPtrs = append(webhookPtrs, *in[i])
 	}
 	return

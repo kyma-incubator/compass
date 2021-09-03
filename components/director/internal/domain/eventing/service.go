@@ -364,7 +364,7 @@ func (s *service) deleteLabelFromRuntime(ctx context.Context, tenantID, labelKey
 func (s *service) getOldestRuntime(ctx context.Context, tenantID string, appID uuid.UUID) (*model.Runtime, bool, error) {
 	runtimeScenariosFilter, hasScenarios, err := s.getScenariosFilter(ctx, tenantID, appID)
 	if err != nil {
-		return nil, false, errors.Wrap(err, fmt.Sprintf("while getting application scenarios"))
+		return nil, false, errors.Wrap(err, "while getting application scenarios")
 	}
 
 	if !hasScenarios {

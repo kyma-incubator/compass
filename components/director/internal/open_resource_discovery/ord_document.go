@@ -65,13 +65,13 @@ func (docs Documents) Validate(webhookURL string, apisFromDB map[string]*model.A
 		}
 	}
 
-	packageIDs := make(map[string]bool, 0)
-	packagePolicyLevels := make(map[string]string, 0)
-	bundleIDs := make(map[string]bool, 0)
-	productIDs := make(map[string]bool, 0)
-	apiIDs := make(map[string]bool, 0)
-	eventIDs := make(map[string]bool, 0)
-	vendorIDs := make(map[string]bool, 0)
+	packageIDs := make(map[string]bool)
+	packagePolicyLevels := make(map[string]string)
+	bundleIDs := make(map[string]bool)
+	productIDs := make(map[string]bool)
+	apiIDs := make(map[string]bool)
+	eventIDs := make(map[string]bool)
+	vendorIDs := make(map[string]bool)
 
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
@@ -270,7 +270,7 @@ func (docs Documents) Sanitize(baseURL string) error {
 	}
 
 	// Package properties inheritance
-	packages := make(map[string]*model.PackageInput, 0)
+	packages := make(map[string]*model.PackageInput)
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			packages[pkg.OrdID] = pkg
@@ -410,7 +410,7 @@ func deduplicate(s []string) []string {
 func rewriteRelativeURIsInJsonArray(j json.RawMessage, baseURL string) (json.RawMessage, error) {
 	parsedJson := gjson.ParseBytes(j)
 
-	items := make([]interface{}, 0, 0)
+	items := make([]interface{}, 0)
 	for _, crrURI := range parsedJson.Array() {
 		if !isAbsoluteURL(crrURI.String()) {
 			rewrittenURI := baseURL + crrURI.String()
@@ -440,7 +440,7 @@ func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, bas
 func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
 	parsedJson := gjson.ParseBytes(j)
 	if parsedJson.IsArray() {
-		items := make([]interface{}, 0, 0)
+		items := make([]interface{}, 0)
 		for _, jsonElement := range parsedJson.Array() {
 			rewrittenElement, err := rewriteRelativeURIsInJson(json.RawMessage(jsonElement.Raw), baseURL, jsonPath)
 			if err != nil {

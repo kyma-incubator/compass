@@ -375,7 +375,7 @@ func fixGQLAuth() *graphql.Auth {
 }
 
 func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
-	descSQL := sql.NullString{desc, true}
+	descSQL := sql.NullString{String: desc, Valid: true}
 	schemaSQL := sql.NullString{
 		String: inputSchemaString(),
 		Valid:  true,

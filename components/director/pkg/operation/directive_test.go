@@ -659,17 +659,6 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedScheduler.AssertExpectations(t)
 
 		webhookType := whTypeApplicationRegister
-		webhooks := []*model.Webhook{
-			{ID: webhookID1, Type: model.WebhookType(webhookType)},
-			{ID: webhookID2, Type: model.WebhookType(webhookType)},
-			{ID: webhookID3, Type: model.WebhookType(webhookType)},
-		}
-		expectedWebhookIDs := make([]string, 0)
-		for _, currWebhook := range webhooks {
-			if graphql.WebhookType(currWebhook.Type) == webhookType {
-				expectedWebhookIDs = append(expectedWebhookIDs, currWebhook.ID)
-			}
-		}
 
 		testCases := []struct {
 			Name               string
@@ -724,7 +713,7 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operationType, op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
-				headers := make(map[string]string, 0)
+				headers := make(map[string]string)
 				for key, value := range mockedHeaders {
 					headers[key] = value[0]
 				}
@@ -838,7 +827,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, operation.OperationTypeCreate, op.OperationType)
 		require.Equal(t, operationCategory, op.OperationCategory)
 
-		headers := make(map[string]string, 0)
+		headers := make(map[string]string)
 		for key, value := range mockedHeaders {
 			headers[key] = value[0]
 		}
@@ -914,7 +903,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, operation.OperationTypeCreate, op.OperationType)
 		require.Equal(t, operationCategory, op.OperationCategory)
 
-		headers := make(map[string]string, 0)
+		headers := make(map[string]string)
 		for key, value := range mockedHeaders {
 			headers[key] = value[0]
 		}
@@ -987,7 +976,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, operation.OperationTypeUpdate, op.OperationType)
 		require.Equal(t, operationCategory, op.OperationCategory)
 
-		headers := make(map[string]string, 0)
+		headers := make(map[string]string)
 		for key, value := range mockedHeaders {
 			headers[key] = value[0]
 		}
@@ -1063,7 +1052,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, operation.OperationTypeDelete, op.OperationType)
 		require.Equal(t, operationCategory, op.OperationCategory)
 
-		headers := make(map[string]string, 0)
+		headers := make(map[string]string)
 		for key, value := range mockedHeaders {
 			headers[key] = value[0]
 		}
@@ -1139,7 +1128,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, operation.OperationTypeDelete, op.OperationType)
 		require.Equal(t, operationCategory, op.OperationCategory)
 
-		headers := make(map[string]string, 0)
+		headers := make(map[string]string)
 		for key, value := range mockedHeaders {
 			headers[key] = value[0]
 		}

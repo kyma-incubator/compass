@@ -90,7 +90,9 @@ func TestExist(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
-		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
 		ctx = persistence.SaveToContext(ctx, db)
 
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
@@ -182,7 +184,9 @@ func TestExistGlobal(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
-		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
 		ctx = persistence.SaveToContext(ctx, db)
 
 		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})

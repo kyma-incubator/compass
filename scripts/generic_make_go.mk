@@ -144,6 +144,9 @@ errcheck-local:
 vet-local:
 	go vet $$($(DIRS_TO_CHECK))
 
+lint-local:
+	golangci-lint run
+
 generate-local:
 	go generate ./...
 

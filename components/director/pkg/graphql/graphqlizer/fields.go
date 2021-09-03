@@ -335,7 +335,7 @@ func (fp *GqlFieldsProvider) ForDocument() string {
 }
 
 func (fp *GqlFieldsProvider) ForAuth() string {
-	return fmt.Sprintf(`credential {
+	return `credential {
 				... on BasicCredentialData {
 					username
 					password
@@ -368,7 +368,7 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 				additionalQueryParams
 			}
 			}
-		`)
+		`
 }
 
 func (fp *GqlFieldsProvider) ForLabel() string {

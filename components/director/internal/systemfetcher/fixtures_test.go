@@ -3,8 +3,6 @@ package systemfetcher_test
 import (
 	"database/sql"
 	"database/sql/driver"
-	"errors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -15,16 +13,11 @@ import (
 
 const (
 	testExternal      = "external"
-	testID            = "foo"
-	testName          = "bar"
-	testPageSize      = 3
-	testCursor        = ""
 	testProvider      = "Compass"
 	initializedColumn = "initialized"
 )
 
 var (
-	testError        = errors.New("test error")
 	testTableColumns = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
 )
 

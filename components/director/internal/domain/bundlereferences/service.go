@@ -82,12 +82,12 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 		return err
 	}
 
-	bundleReference, err := s.repo.GetByID(ctx, objectType, tnt, objectID, bundleID)
+	_, err = s.repo.GetByID(ctx, objectType, tnt, objectID, bundleID)
 	if err != nil {
 		return err
 	}
 
-	bundleReference, err = in.ToBundleReference(tnt, objectType, bundleID, objectID)
+	bundleReference, err := in.ToBundleReference(tnt, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}

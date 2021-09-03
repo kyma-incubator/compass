@@ -220,7 +220,7 @@ func (s Service) SyncTenants() error {
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
-	subdomainMapping := make(map[string]string, 0)
+	subdomainMapping := make(map[string]string)
 	for _, eventTenant := range eventsTenants {
 		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue

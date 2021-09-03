@@ -2,7 +2,6 @@ package bundlereferences_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -61,7 +60,7 @@ func TestService_GetForBundle(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo)
@@ -120,7 +119,7 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo)
@@ -190,7 +189,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo)
@@ -280,7 +279,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo)
@@ -333,7 +332,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo)
@@ -431,7 +430,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo)

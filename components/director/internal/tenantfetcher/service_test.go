@@ -141,10 +141,6 @@ func TestService_SyncTenants(t *testing.T) {
 		"timestamp": "1",
 	}
 
-	multiTenantEvents := append(tenantEvents, tenantEvents...)
-	multiTenantEvents = append(multiTenantEvents, tenantEvents...)
-	multiBusinessTenants := append(businessTenants, businessTenants...)
-	multiBusinessTenants = append(multiBusinessTenants, businessTenants...)
 	emptySlice := []model.BusinessTenantMappingInput{}
 
 	testErr := errors.New("test error")

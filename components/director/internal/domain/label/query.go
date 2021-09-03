@@ -84,7 +84,7 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 		}
 
 		queryBuilder.WriteString(stmtPrefix)
-		if stmtPrefixArgs != nil && len(stmtPrefixArgs) > 0 {
+		if len(stmtPrefixArgs) > 0 {
 			args = append(args, stmtPrefixArgs...)
 		}
 

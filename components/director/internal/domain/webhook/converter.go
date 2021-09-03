@@ -237,10 +237,3 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 
 	return auth, nil
 }
-
-func nullableInt(n *int) int {
-	if n != nil {
-		return *n
-	}
-	return 0
-}

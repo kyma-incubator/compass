@@ -27,8 +27,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
 	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 	someString := "any"
-	var someSchema interface{}
-	someSchema = someString
+	var someSchema interface{} = someString
 
 	in := model.LabelDefinition{
 		ID:     labelDefID,
@@ -96,8 +95,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
 	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 	someString := "any"
-	var someSchema interface{}
-	someSchema = someString
+	var someSchema interface{} = someString
 
 	in := model.LabelDefinition{
 		ID:     labelDefID,

@@ -60,8 +60,7 @@ func TestToGraphQL(t *testing.T) {
 		anySchema := map[string]interface{}{
 			"schema": interface{}("schema"),
 		}
-		var schema interface{}
-		schema = anySchema
+		var schema interface{} = anySchema
 		actual, err := sut.ToGraphQL(model.LabelDefinition{
 			Key:    "some-key",
 			Schema: &schema,

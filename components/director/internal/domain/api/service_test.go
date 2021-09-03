@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -652,7 +651,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
@@ -909,7 +908,7 @@ func TestService_Update(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
@@ -1123,7 +1122,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
@@ -1196,7 +1195,7 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
@@ -1263,7 +1262,7 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 

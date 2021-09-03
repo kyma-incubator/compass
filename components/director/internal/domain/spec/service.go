@@ -139,7 +139,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		return err
 	}
 
-	spec, err := s.repo.GetByID(ctx, tnt, id)
+	_, err = s.repo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
-	spec, err = in.ToSpec(id, tnt, objectType, objectID)
+	spec, err := in.ToSpec(id, tnt, objectType, objectID)
 	if err != nil {
 		return err
 	}

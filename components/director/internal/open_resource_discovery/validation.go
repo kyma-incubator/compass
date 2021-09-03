@@ -349,7 +349,7 @@ func validateProductInput(product *model.ProductInput) error {
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required,
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
-			validation.When(regexp.MustCompile("^(sap)((\\.)([a-zA-Z0-9._\\-])+)*$").MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
+			validation.When(regexp.MustCompile(`^(sap)((\.)([a-zA-Z0-9._\-])+)*$`).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
 		),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
 		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
@@ -551,7 +551,7 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 		return nil
 	}
 
-	resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
+	resourceDefinitionTypes := make(map[model.APISpecType]bool)
 
 	for _, rd := range resourceDefinitions {
 		resourceDefinitionType := rd.Type
@@ -711,11 +711,7 @@ func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 
 func isResourceHashMissing(hash *string) bool {
 	hashStr := str.PtrStrToStr(hash)
-	if hashStr == "" {
-		return true
-	}
-
-	return false
+	return hashStr == ""
 }
 
 func noNewLines(s string) bool {
@@ -893,7 +889,7 @@ func validateCustomType(el gjson.Result) error {
 	if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
 		return errors.New("if customType is provided, type should be set to 'custom'")
 	}
-	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile("^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$")))
+	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(`^([a-z0-9.]+):([a-zA-Z0-9._\-]+):v([0-9]+)$`)))
 }
 
 func validateCustomDescription(el gjson.Result) error {
@@ -1021,7 +1017,7 @@ func isValidDate(date *string) validation.RuleFunc {
 
 func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc {
 	return func(value interface{}) error {
-		if partOfConsumptionBundles != nil && len(partOfConsumptionBundles) > 0 {
+		if len(partOfConsumptionBundles) > 0 {
 			return errors.New("api without entry points can not be part of consumption bundle")
 		}
 		return nil

@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyEventDef = "dataloadersEventDef"
+const loadersKeyEventDef contextKey = "dataloadersEventDef"
 
 type EventDefLoaders struct {
 	EventDefById EventDefLoader

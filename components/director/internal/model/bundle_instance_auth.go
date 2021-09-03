@@ -29,15 +29,12 @@ func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatus
 	case BundleInstanceAuthStatusConditionSucceeded:
 		reason = "CredentialsProvided"
 		message = "Credentials were provided."
-		break
 	case BundleInstanceAuthStatusConditionPending:
 		reason = "CredentialsNotProvided"
 		message = "Credentials were not yet provided."
-		break
 	case BundleInstanceAuthStatusConditionUnused:
 		reason = "PendingDeletion"
 		message = "Credentials for given Bundle Instance Auth are ready for being deleted by Application or Integration System."
-		break
 	default:
 		return errors.Errorf("invalid status condition: %s", condition)
 	}

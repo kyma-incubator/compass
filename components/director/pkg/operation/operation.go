@@ -29,9 +29,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+type contextKey string
+
 const (
-	OpCtxKey  = "OperationCtx"
-	OpModeKey = "OperationModeCtx"
+	OpCtxKey  contextKey = "OperationCtx"
+	OpModeKey contextKey = "OperationModeCtx"
 )
 
 // OperationStatus denotes the different statuses that an Operation can be in

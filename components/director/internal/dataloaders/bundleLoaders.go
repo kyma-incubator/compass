@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyBundle = "dataloadersBundle"
+const loadersKeyBundle contextKey = "dataloadersBundle"
 
 type BundleLoaders struct {
 	BundleById BundleLoader

@@ -74,7 +74,7 @@ func (m *middleware) InterceptField(ctx context.Context, next gqlgen.Resolver) (
 
 	var id string
 	for _, arg := range fieldCtx.Field.Field.Arguments {
-		if arg.Value.Definition.Name == "ID" && arg.Value.Definition.BuiltIn == true { // The argument is of graphql's built-in ID type
+		if arg.Value.Definition.Name == "ID" && arg.Value.Definition.BuiltIn { // The argument is of graphql's built-in ID type
 			if len(arg.Value.Raw) > 0 { // The ID argument is populated
 				if len(id) > 0 { // We already found an ID argument that is populated. More than one ID arguments provided is not supported for now.
 					return nil, errors.New("More than one argument with type ID is provided for the mutation")

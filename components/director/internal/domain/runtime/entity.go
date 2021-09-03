@@ -7,8 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-type runtimeStatusCondition string
-
 // Runtime struct represents database entity for Runtime
 type Runtime struct {
 	ID                string         `db:"id"`

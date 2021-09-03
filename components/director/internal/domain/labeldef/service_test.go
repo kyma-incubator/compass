@@ -850,8 +850,7 @@ func fixBasicSchema(t *testing.T) *interface{} {
 
 	err := json.Unmarshal([]byte(*sch), &obj)
 	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
+	var objTemp interface{} = obj
 	return &objTemp
 }
 
@@ -873,8 +872,7 @@ func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, re
 
 	err := json.Unmarshal([]byte(sch), &obj)
 	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
+	var objTemp interface{} = obj
 	return &objTemp
 }
 

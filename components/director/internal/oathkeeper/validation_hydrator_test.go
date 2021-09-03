@@ -63,7 +63,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		// THEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, string(w.Body.Bytes()), "unexpected error occured while resolving one time token")
+		assert.Contains(t, w.Body.String(), "unexpected error occured while resolving one time token")
 	})
 
 	t.Run("should fail when session cannot be decoded", func(t *testing.T) {
@@ -80,7 +80,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, string(w.Body.Bytes()), "failed to decode Authentication Session from body")
+		assert.Contains(t, w.Body.String(), "failed to decode Authentication Session from body")
 	})
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {

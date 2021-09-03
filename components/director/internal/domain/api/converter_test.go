@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -99,7 +98,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//give
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
@@ -241,7 +240,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//give
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
@@ -329,7 +328,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//given
 			versionConverter := testCase.VersionConverter()
 			specCovnerter := testCase.SpecConverter()

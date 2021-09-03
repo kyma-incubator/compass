@@ -6,7 +6,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
-const ConsumerKey = "consumer"
+type contextKey string
+
+const ConsumerKey contextKey = "consumer"
 
 var NoConsumerError = apperrors.NewInternalError("cannot read consumer from context")
 

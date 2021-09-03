@@ -71,7 +71,7 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 	}
 
 	uidService := uid.NewService()
-	webhooks := make([]Webhook, 0, 0)
+	webhooks := make([]Webhook, 0)
 	for _, webhookInput := range a.Webhooks {
 		webhook := webhookInput.ToApplicationTemplateWebhook(uidService.Generate(), nil, id)
 		webhooks = append(webhooks, *webhook)

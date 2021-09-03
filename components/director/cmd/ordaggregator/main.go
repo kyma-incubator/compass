@@ -56,6 +56,7 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	exitOnError(err, "Error while configuring logger")
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 

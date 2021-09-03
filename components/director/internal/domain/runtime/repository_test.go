@@ -378,7 +378,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 			defer sqlMock.AssertExpectations(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 			pgRepository := runtime.NewRepository(mockConverter)
-			expectedQuery := fmt.Sprintf(pageableQuery)
+			expectedQuery := pageableQuery
 
 			sqlMock.ExpectQuery(expectedQuery).
 				WithArgs(tenantID).

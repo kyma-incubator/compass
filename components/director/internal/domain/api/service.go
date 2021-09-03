@@ -299,27 +299,23 @@ func (s *service) updateBundleReferences(ctx context.Context, apiID *string, def
 }
 
 func (s *service) createBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForCreation map[string]string) error {
-	if defaultTargetURLPerBundleForCreation != nil {
-		for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForCreation {
-			bundleRefInput := &model.BundleReferenceInput{
-				APIDefaultTargetURL: &defaultTargetURL,
-			}
-			err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
-			if err != nil {
-				return err
-			}
+	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForCreation {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: &defaultTargetURL,
+		}
+		err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 func (s *service) deleteBundleIDs(ctx context.Context, apiID *string, bundleIDsForDeletion []string) error {
-	if bundleIDsForDeletion != nil {
-		for _, bundleID := range bundleIDsForDeletion {
-			err := s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleAPIReference, apiID, &bundleID)
-			if err != nil {
-				return err
-			}
+	for _, bundleID := range bundleIDsForDeletion {
+		err := s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleAPIReference, apiID, &bundleID)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

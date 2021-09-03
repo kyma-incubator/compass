@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyFetchRequestDocument = "dataloadersFetchRequestDocument"
+const loadersKeyFetchRequestDocument contextKey = "dataloadersFetchRequestDocument"
 
 type LoadersFetchRequestDocument struct {
 	FetchRequestDocumentById FetchRequestDocumentLoader

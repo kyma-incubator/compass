@@ -69,7 +69,7 @@ func NewDirective(transact persistence.Transactioner, webhookFetcherFunc Webhook
 
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType *graphql.WebhookType, idField *string) (res interface{}, err error) {
-	resCtx := gqlgen.GetResolverContext(ctx)
+	resCtx := gqlgen.GetFieldContext(ctx)
 	mode, err := getOperationMode(resCtx)
 	if err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	return resp, nil
 }
 
-func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationType, resCtx *gqlgen.ResolverContext, idField *string) error {
+func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationType, resCtx *gqlgen.FieldContext, idField *string) error {
 	if op == graphql.OperationTypeCreate {
 		return nil
 	}
@@ -216,6 +216,10 @@ func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationTy
 }
 
 func (d *directive) prepareRequestObject(ctx context.Context, err error, res interface{}) (string, error) {
+	if err != nil {
+		return "", err
+	}
+
 	tenantID, err := d.tenantLoaderFunc(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to retrieve tenant from request")
@@ -231,7 +235,7 @@ func (d *directive) prepareRequestObject(ctx context.Context, err error, res int
 		return "", errors.New("failed to retrieve request headers")
 	}
 
-	headers := make(map[string]string, 0)
+	headers := make(map[string]string)
 	for key, value := range reqHeaders {
 		headers[key] = value[0]
 	}
@@ -251,6 +255,10 @@ func (d *directive) prepareRequestObject(ctx context.Context, err error, res int
 }
 
 func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation *Operation, webhookType graphql.WebhookType) ([]string, error) {
+	if err != nil {
+		return nil, err
+	}
+
 	webhooks, err := d.webhookFetcherFunc(ctx, operation.ResourceID)
 	if err != nil {
 		return nil, err
@@ -270,7 +278,7 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 	return webhookIDs, nil
 }
 
-func getOperationMode(resCtx *gqlgen.ResolverContext) (*graphql.OperationMode, error) {
+func getOperationMode(resCtx *gqlgen.FieldContext) (*graphql.OperationMode, error) {
 	var mode graphql.OperationMode
 	if _, found := resCtx.Args[ModeParam]; !found {
 		mode = graphql.OperationModeSync

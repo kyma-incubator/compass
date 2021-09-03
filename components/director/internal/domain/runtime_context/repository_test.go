@@ -406,7 +406,7 @@ func TestPgRepository_Exist(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectQuery(fmt.Sprintf(fmt.Sprintf(`^SELECT 1 FROM public.runtime_contexts WHERE %s AND id = \$2$`, fixTenantIsolationSubquery()))).
+	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM public.runtime_contexts WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
 		WithArgs(tenantID, runtimeCtxID).
 		WillReturnRows(testdb.RowWhenObjectExist())
 

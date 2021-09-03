@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyDocument = "dataloadersDocument"
+const loadersKeyDocument contextKey = "dataloadersDocument"
 
 type DocumentLoaders struct {
 	DocumentById DocumentLoader

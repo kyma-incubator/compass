@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyFetchRequestApiDef = "dataloadersFetchRequestApiDef"
+const loadersKeyFetchRequestApiDef contextKey = "dataloadersFetchRequestApiDef"
 
 type LoadersFetchRequestApiDef struct {
 	FetchRequestApiDefById FetchRequestApiDefLoader

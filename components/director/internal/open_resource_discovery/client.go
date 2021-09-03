@@ -41,7 +41,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 		return nil, err
 	}
 
-	docs := make([]*Document, 0, 0)
+	docs := make([]*Document, 0)
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
@@ -66,11 +66,11 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 		return nil, err
 	}
 
+	defer closeBody(ctx, resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
 	}
-
-	defer closeBody(ctx, resp.Body)
 
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -102,11 +102,12 @@ func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig,
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 	}
 
+	defer closeBody(ctx, resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
 	}
 
-	defer closeBody(ctx, resp.Body)
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

@@ -3,7 +3,6 @@ package mp_bundle_test
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -182,7 +181,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//given
 			authConverter := testCase.AuthConverterFn()
 
@@ -312,7 +311,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//given
 			apiConverter := testCase.APIConverterFn()
 			eventConverter := testCase.EventAPIConverterFn()
@@ -410,7 +409,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//given
 			authConverter := testCase.AuthConverterFn()
 

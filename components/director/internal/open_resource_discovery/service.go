@@ -158,13 +158,13 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	vendorsInput := make([]*model.VendorInput, 0, 0)
-	productsInput := make([]*model.ProductInput, 0, 0)
-	packagesInput := make([]*model.PackageInput, 0, 0)
-	bundlesInput := make([]*model.BundleCreateInput, 0, 0)
-	apisInput := make([]*model.APIDefinitionInput, 0, 0)
-	eventsInput := make([]*model.EventDefinitionInput, 0, 0)
-	tombstonesInput := make([]*model.TombstoneInput, 0, 0)
+	vendorsInput := make([]*model.VendorInput, 0)
+	productsInput := make([]*model.ProductInput, 0)
+	packagesInput := make([]*model.PackageInput, 0)
+	bundlesInput := make([]*model.BundleCreateInput, 0)
+	apisInput := make([]*model.APIDefinitionInput, 0)
+	eventsInput := make([]*model.EventDefinitionInput, 0)
+	tombstonesInput := make([]*model.TombstoneInput, 0)
 	for _, doc := range documents {
 		vendorsInput = append(vendorsInput, doc.Vendors...)
 		productsInput = append(productsInput, doc.Products...)
@@ -601,7 +601,7 @@ func (s *Service) fetchPackagesFromDB(ctx context.Context, appID string) (map[st
 		return nil, errors.Wrapf(err, "while listing packages for app with id %s", appID)
 	}
 
-	packageDataFromDB := make(map[string]*model.Package, 0)
+	packageDataFromDB := make(map[string]*model.Package)
 
 	for _, pkg := range packagesFromDB {
 		packageDataFromDB[pkg.OrdID] = pkg
@@ -616,7 +616,7 @@ func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[st
 		return nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
 	}
 
-	eventDataFromDB := make(map[string]*model.EventDefinition, 0)
+	eventDataFromDB := make(map[string]*model.EventDefinition)
 
 	for _, event := range eventsFromDB {
 		eventOrdID := str.PtrStrToStr(event.OrdID)

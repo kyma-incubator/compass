@@ -10,7 +10,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyApiDef = "dataloadersApiDef"
+type contextKey string
+
+const loadersKeyApiDef contextKey = "dataloadersApiDef"
 
 type ApiDefLoaders struct {
 	ApiDefById ApiDefLoader

@@ -242,7 +242,7 @@ func (s *service) fetchScenariosFromAssignments(ctx context.Context, tenantID st
 	}
 
 	var out []string
-	for k, _ := range m {
+	for k := range m {
 		out = append(out, k)
 	}
 	return out, nil
