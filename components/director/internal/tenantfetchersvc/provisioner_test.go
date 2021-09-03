@@ -49,6 +49,15 @@ var (
 	subaccountTenant = model.BusinessTenantMappingInput{
 		Name:           subaccountTenantExtID,
 		ExternalTenant: subaccountTenantExtID,
+		Parent:         tenantID,
+		Type:           tenantEntity.TypeToStr(tenantEntity.Subaccount),
+		Provider:       testProviderName,
+		Subdomain:      tenantSubdomain,
+		Region:         tenantRegion,
+	}
+	subaccountTenantWithExternalParentID = model.BusinessTenantMappingInput{
+		Name:           subaccountTenantExtID,
+		ExternalTenant: subaccountTenantExtID,
 		Parent:         tenantExtID,
 		Type:           tenantEntity.TypeToStr(tenantEntity.Subaccount),
 		Provider:       testProviderName,
@@ -106,13 +115,14 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, accountTenant}
 				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, customerTenant.ExternalTenant).Return("", nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
 				return tenantSvc
 			},
 			Request: requestWithAccountTenant,
 		},
 		{
-			Name: "Succeeds to create account tenant with no parent",
+			Name: "Succeeds to create account tenant with no parent provided",
 			TenantSvcFn: func() *automock.TenantService {
 				expectedTenants := []model.BusinessTenantMappingInput{accountTenantWithoutParent}
 				tenantSvc := &automock.TenantService{}
@@ -122,10 +132,32 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 			Request: requestWithAccountTenantWithoutParent,
 		},
 		{
+			Name: "Succeeds to create account tenant when parent tenant does not exist",
+			TenantSvcFn: func() *automock.TenantService {
+				expectedTenants := []model.BusinessTenantMappingInput{accountTenant}
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, customerTenant.ExternalTenant).Return(parentTenantIntID, nil).Once()
+				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
+				return tenantSvc
+			},
+			Request: requestWithAccountTenant,
+		},
+		{
+			Name: "Returns error when parent customer tenant existence check fails",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, customerTenant.ExternalTenant).Return("", testError).Once()
+				return tenantSvc
+			},
+			Request: requestWithAccountTenant,
+			ExpectedErrorOutput: "while checking if parent of type customer already exists",
+		},
+		{
 			Name: "Returns error when tenant creation fails",
 			TenantSvcFn: func() *automock.TenantService {
 				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, accountTenant}
 				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, customerTenant.ExternalTenant).Return("", nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(testError).Once()
 				return tenantSvc
 			},
@@ -174,20 +206,44 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 		ExpectedErrorOutput string
 	}{
 		{
-			Name: "Succeeds when parent tenant exists",
+			Name: "Succeeds when parent account tenant already exists",
 			TenantSvcFn: func() *automock.TenantService {
-				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, subaccountTenant, parentAccountTenant}
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenant}
 				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, accountTenant.ExternalTenant).Return(tenantID, nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
 				return tenantSvc
 			},
 			Request: requestWithSubaccountTenant,
 		},
 		{
+			Name: "Succeeds when parent account tenant does not exists",
+			TenantSvcFn: func() *automock.TenantService {
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenantWithExternalParentID, customerTenant, parentAccountTenant}
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, accountTenant.ExternalTenant).Return("", nil).Once()
+				tenantSvc.On("GetInternalTenant", ctx, customerTenant.ExternalTenant).Return("", nil).Once()
+				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
+				return tenantSvc
+			},
+			Request: requestWithSubaccountTenant,
+		},
+		{
+			Name: "Returns error when parent account tenant existence check fails",
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, accountTenant.ExternalTenant).Return("", testError).Once()
+				return tenantSvc
+			},
+			Request: requestWithSubaccountTenant,
+			ExpectedErrorOutput: "while checking if parent of type account already exists",
+		},
+		{
 			Name: "Returns error when tenant creation fails",
 			TenantSvcFn: func() *automock.TenantService {
-				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, subaccountTenant, parentAccountTenant}
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenant}
 				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, accountTenant.ExternalTenant).Return(tenantID, nil).Once()
 				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(testError).Once()
 				return tenantSvc
 			},
