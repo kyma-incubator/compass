@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
-	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"strings"
+	"time"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -109,8 +109,14 @@ type BundleConverter interface {
 	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
 type TokenConverter interface {
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
+}
+
+//go:generate mockery --name=TimeService --output=automock --outpkg=automock --case=underscore
+type TimeService interface {
+	Now() time.Time
 }
 
 type Resolver struct {
@@ -132,7 +138,7 @@ type Resolver struct {
 
 	oneTimeTokenCfg onetimetoken.Config
 
-	timeService directorTime.Service
+	timeService TimeService
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -148,7 +154,7 @@ func NewResolver(transact persistence.Transactioner,
 	bndlConverter BundleConverter,
 	oneTimeTokenConv TokenConverter,
 	oneTimeTokenCfg onetimetoken.Config,
-	timeService directorTime.Service) *Resolver {
+	timeService TimeService) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,

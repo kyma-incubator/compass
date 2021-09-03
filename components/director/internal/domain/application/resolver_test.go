@@ -2,9 +2,11 @@ package application_test
 
 import (
 	"context"
-	"testing"
-
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
+	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -123,7 +125,7 @@ func TestResolver_RegisterApplication(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -233,7 +235,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -465,7 +467,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
-			resolver := application.NewResolver(transact, svc, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, eventingSvc, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, eventingSvc, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -564,7 +566,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -658,7 +660,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -792,7 +794,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			applicationConverter := testCase.AppConverterFn()
 			persistTx, transact := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 
 			//WHEN
 			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, &first, &gqlAfter)
@@ -888,7 +890,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transactioner := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -905,7 +907,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 
 		// when
 		result, err := resolver.SetApplicationLabel(context.TODO(), "", "", "")
@@ -1017,7 +1019,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transactioner := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -1172,7 +1174,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)
 
-			resolver := application.NewResolver(mockTransactioner, nil, svc, nil, nil, nil, converter, nil, nil, nil, nil)
+			resolver := application.NewResolver(mockTransactioner, nil, svc, nil, nil, nil, converter, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 
 			// when
 			result, err := resolver.Webhooks(context.TODO(), app)
@@ -1288,7 +1290,7 @@ func TestResolver_Labels(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlApp, testCase.InputKey)
@@ -1307,18 +1309,47 @@ func TestResolver_Labels(t *testing.T) {
 func TestResolver_Auths(t *testing.T) {
 	// given
 	id := "foo"
+	auth := model.Auth{
+		Credential: model.CredentialData{},
+		OneTimeToken: &model.OneTimeToken{
+			Token:     "sometoken",
+			Type:      tokens.ApplicationToken,
+			CreatedAt: time.Now(),
+			Used:      false,
+		},
+	}
+	authUsed := model.Auth{
+		Credential: model.CredentialData{},
+		OneTimeToken: &model.OneTimeToken{
+			Token:     "sometoken",
+			Type:      tokens.ApplicationToken,
+			CreatedAt: time.Now(),
+			Used:      true,
+		},
+	}
+	gqlAuth := graphql.OneTimeTokenForApplication{
+		TokenWithURL: graphql.TokenWithURL{
+			Token:        auth.OneTimeToken.Token,
+			ConnectorURL: auth.OneTimeToken.ConnectorURL,
+		},
+		LegacyConnectorURL: legacyConnectorURL,
+	}
 	testError := errors.New("error")
 	gqlApp := fixGQLApplication(id, "name", "desc")
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	sysAuthModels := []model.SystemAuth{{ID: "id1", AppID: &id}, {ID: "id2", AppID: &id}}
-	sysAuthGQL := []*graphql.AppSystemAuth{{ID: "id1"}, {ID: "id2"}}
-
+	sysAuthModels := []model.SystemAuth{{ID: "id1", AppID: &id, Value: &auth}, {ID: "id2", AppID: &id, Value: &auth}}
+	sysAuthModelsWithUsedToken := []model.SystemAuth{{ID: "id1", AppID: &id, Value: &authUsed}, {ID: "id2", AppID: &id, Value: &auth}}
+	sysAuthGQL := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{}}, {ID: "id2", Auth: &graphql.Auth{}}}
+	sysAuthExpected := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{OneTimeToken: &gqlAuth}}, {ID: "id2", Auth: &graphql.Auth{OneTimeToken: &gqlAuth}}}
+	var emptySysAuth []*graphql.AppSystemAuth
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.SystemAuthService
 		SysAuthConvFn   func() *automock.SystemAuthConverter
+		TimeServiceFn   func() *automock.TimeService
+		TokenConvFn     func() *automock.TokenConverter
 		InputApp        *graphql.Application
 		ExpectedResult  []*graphql.AppSystemAuth
 		ExpectedErr     error
@@ -1337,8 +1368,72 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv.On("ToGraphQL", &sysAuthModels[1]).Return(sysAuthGQL[1], nil).Once()
 				return sysAuthConv
 			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(time.Now())
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				conv.On("ToGraphQLForApplication", *auth.OneTimeToken).Return(gqlAuth, nil)
+				return conv
+			},
 			InputApp:       gqlApp,
-			ExpectedResult: sysAuthGQL,
+			ExpectedResult: sysAuthExpected,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns nothing when tokens have expired",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				return svc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.AssertNotCalled(t, "ToGraphQL")
+				return sysAuthConv
+			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(time.Now().Add(12 * time.Hour))
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				conv.AssertNotCalled(t, "ToGraphQLForApplication")
+				return conv
+			},
+			InputApp:       gqlApp,
+			ExpectedResult: emptySysAuth,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns not used and not expired token",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModelsWithUsedToken, nil).Once()
+				return svc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &sysAuthModelsWithUsedToken[1]).Return(sysAuthGQL[1], nil).Once()
+				return sysAuthConv
+			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(time.Now()).Once()
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				conv.On("ToGraphQLForApplication", *auth.OneTimeToken).Return(gqlAuth, nil).Once()
+				return conv
+			},
+			InputApp:       gqlApp,
+			ExpectedResult: []*graphql.AppSystemAuth{sysAuthExpected[1]},
 			ExpectedErr:    nil,
 		},
 		{
@@ -1348,6 +1443,16 @@ func TestResolver_Auths(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
 				return svc
+			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(time.Now())
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				conv.On("ToGraphQLForApplication", *auth.OneTimeToken).Return(gqlAuth, nil)
+				return conv
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
@@ -1371,6 +1476,14 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv := &automock.SystemAuthConverter{}
 				return sysAuthConv
 			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				return conv
+			},
 			InputApp:       gqlApp,
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -1388,6 +1501,15 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv.On("ToGraphQL", &sysAuthModels[0]).Return(nil, testError).Once()
 				return sysAuthConv
 			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(time.Now())
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				return conv
+			},
 			InputApp:       gqlApp,
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -1403,6 +1525,14 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv := &automock.SystemAuthConverter{}
 				return sysAuthConv
 			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				return conv
+			},
 			InputApp:       gqlApp,
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -1414,8 +1544,10 @@ func TestResolver_Auths(t *testing.T) {
 			svc := testCase.ServiceFn()
 			persist, transact := testCase.TransactionerFn()
 			conv := testCase.SysAuthConvFn()
+			timeSvc := testCase.TimeServiceFn()
+			oneTimeTokenConv := testCase.TokenConvFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, conv, nil, nil, nil)
+			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, conv, nil, nil, nil, oneTimeTokenConv, onetimetoken.Config{LegacyConnectorURL: legacyConnectorURL, ApplicationExpiration: time.Minute * 5}, timeSvc)
 
 			// when
 			result, err := resolver.Auths(context.TODO(), testCase.InputApp)
@@ -1428,11 +1560,13 @@ func TestResolver_Auths(t *testing.T) {
 			conv.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			persist.AssertExpectations(t)
+			timeSvc.AssertExpectations(t)
+			oneTimeTokenConv.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error when application is nil", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 		//WHEN
 		_, err := resolver.Auths(context.TODO(), nil)
 		//THEN
@@ -1526,7 +1660,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			eventingSvc := testCase.EventingSvcFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, converter, nil, nil, eventingSvc, nil, nil)
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, converter, nil, nil, eventingSvc, nil, nil, nil, onetimetoken.Config{}, nil)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlApp)
@@ -1546,7 +1680,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		//GIVEN
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 
 		//WHEN
 		_, err := resolver.EventingConfiguration(context.TODO(), &graphql.Application{})
@@ -1558,7 +1692,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)
@@ -1701,7 +1835,7 @@ func TestResolver_Bundles(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter)
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, onetimetoken.Config{}, nil)
 			firstAppParams := dataloader.ParamBundle{ID: firstAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			secondAppParams := dataloader.ParamBundle{ID: secondAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamBundle{firstAppParams, secondAppParams}
@@ -1721,7 +1855,7 @@ func TestResolver_Bundles(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no Applications", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 		//when
 		_, err := resolver.BundlesDataLoader([]dataloader.ParamBundle{})
 		//then
@@ -1733,7 +1867,7 @@ func TestResolver_Bundles(t *testing.T) {
 		firstAppParams := dataloader.ParamBundle{ID: firstAppID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamBundle{firstAppParams}
 
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 		//when
 		_, err := resolver.BundlesDataLoader(keys)
 		//then
@@ -1879,7 +2013,7 @@ func TestResolver_Bundle(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter)
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, onetimetoken.Config{}, nil)
 
 			// when
 			result, err := resolver.Bundle(context.TODO(), testCase.Application, testCase.InputID)
@@ -1896,7 +2030,7 @@ func TestResolver_Bundle(t *testing.T) {
 	}
 
 	t.Run("Returns error when application is nil", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, onetimetoken.Config{}, nil)
 		//when
 		_, err := resolver.Bundle(context.TODO(), nil, "")
 		//then

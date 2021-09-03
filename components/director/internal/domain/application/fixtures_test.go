@@ -23,10 +23,11 @@ import (
 )
 
 var (
-	testURL        = "https://foo.bar"
-	intSysID       = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
-	providerName   = "provider name"
-	fixedTimestamp = time.Now()
+	testURL            = "https://foo.bar"
+	intSysID           = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
+	providerName       = "provider name"
+	fixedTimestamp     = time.Now()
+	legacyConnectorURL = "url.com"
 )
 
 func stringPtr(s string) *string {
