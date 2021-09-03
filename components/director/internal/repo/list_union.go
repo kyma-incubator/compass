@@ -12,7 +12,7 @@ import (
 )
 
 type UnionLister interface {
-	//List stores the result into dest and returns the total count of tuples for each id from ids
+	// List stores the result into dest and returns the total count of tuples for each id from ids
 	List(ctx context.Context, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error)
 	SetSelectedColumns(selectedColumns []string)
 	Clone() UnionLister
@@ -109,8 +109,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []Condition, orderBy OrderByParams, limit int, offset int) ([]queryStruct, error) {
 	var queries []queryStruct
 	for _, id := range ids {
-		c := append(conditions, NewEqualCondition(idsColumn, id))
-		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, c, orderBy, limit, offset, false)
+		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, append(conditions, NewEqualCondition(idsColumn, id)), orderBy, limit, offset, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "while building list query")
 		}

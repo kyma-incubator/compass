@@ -18,8 +18,7 @@ func Validate(validatable Validatable) error {
 		typeName = split[0]
 	}
 
-	err := validatable.Validate()
-	if err != nil {
+	if err := validatable.Validate(); err != nil {
 		switch value := err.(type) {
 		case validation.Errors:
 			return apperrors.NewInvalidDataErrorWithFields(value, typeName)

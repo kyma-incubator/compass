@@ -2233,7 +2233,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: errors.New("Object not found").Error(),
 		},
 		{
-			Name:              "Returns error ensuring Integration System existance failed",
+			Name:              "Returns error ensuring Integration System existence failed",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}

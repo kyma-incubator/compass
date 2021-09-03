@@ -187,8 +187,8 @@ func (c *converter) graphqliseApplicationCreateInput(jsonAppInput string) (strin
 	if err != nil {
 		return "", errors.Wrap(err, "while graphqlising application create input")
 	}
-	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
-	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
+	gqlAppInput = strings.ReplaceAll(gqlAppInput, "\t", "")
+	gqlAppInput = strings.ReplaceAll(gqlAppInput, "\n", "")
 	return gqlAppInput, nil
 }
 

@@ -46,7 +46,7 @@ func NewService(repo DocumentRepository, fetchRequestRepo FetchRequestRepository
 		repo:             repo,
 		fetchRequestRepo: fetchRequestRepo,
 		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		timestampGen:     timestamp.DefaultGenerator,
 	}
 }
 

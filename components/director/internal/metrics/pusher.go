@@ -56,8 +56,7 @@ func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc strin
 
 func (p *Pusher) Push() {
 	log.D().WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
-	err := p.pusher.Add()
-	if err != nil {
+	if err := p.pusher.Add(); err != nil {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
 		log.D().WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
 	}

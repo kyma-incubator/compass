@@ -545,7 +545,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while commiting the transaction")
+		return nil, errors.Wrap(err, "while committing the transaction")
 	}
 
 	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil

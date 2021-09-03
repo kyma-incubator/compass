@@ -55,7 +55,7 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		assert.Nil(t, token)
 	})
 
-	t.Run("fails when transaction cannot be commited", func(t *testing.T) {
+	t.Run("fails when transaction cannot be committed", func(t *testing.T) {
 		// GIVEN
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error during commit")).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)

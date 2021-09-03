@@ -16,9 +16,7 @@ func (d OrderedDefinitionList) Len() int {
 }
 
 func (d OrderedDefinitionList) Swap(i, j int) {
-	tmp := d[i]
-	d[i] = d[j]
-	d[j] = tmp
+	d[i], d[j] = d[j], d[i]
 }
 
 func (d OrderedDefinitionList) Less(i, j int) bool {

@@ -134,8 +134,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	def.ID = s.uidService.Generate()
 
-	err := s.repo.Upsert(ctx, def)
-	if err != nil {
+	if err := s.repo.Upsert(ctx, def); err != nil {
 		return errors.Wrapf(err, "while upserting Label Definition with id %s and key %s", def.ID, def.Key)
 	}
 	log.C(ctx).Debugf("Successfully upserted Label Definition with id %s and key %s", def.ID, def.Key)

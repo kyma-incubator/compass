@@ -8,8 +8,7 @@ import (
 )
 
 func Close(ctx context.Context, closer io.Closer) {
-	err := closer.Close()
-	if err != nil {
+	if err := closer.Close(); err != nil {
 		log.C(ctx).WithError(err).Warnf("Warning: failed to close")
 	}
 }

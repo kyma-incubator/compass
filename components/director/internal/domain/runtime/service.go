@@ -478,7 +478,7 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		finalScenarios = s.scenarioAssignmentEngine.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
 	}
 
-	//TODO compare finalScenarios and oldScenariosLabel to determine when to delete scenarios label
+	// TODO compare finalScenarios and oldScenariosLabel to determine when to delete scenarios label
 	if len(finalScenarios) == 0 {
 		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
 		if err != nil {

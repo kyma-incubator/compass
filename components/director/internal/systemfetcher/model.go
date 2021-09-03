@@ -9,7 +9,7 @@ import (
 var (
 	// Mappings global static configuration which is set after reading the configuration during startup, should only be used for the unmarshaling of system data
 	// Template mappings describe what properties and their values should be in order to map to a certain application template ID
-	// If there are multiple keys and values, all of them should match in order for the mapping to be succesful
+	// If there are multiple keys and values, all of them should match in order for the mapping to be successful
 	Mappings []TemplateMapping
 )
 

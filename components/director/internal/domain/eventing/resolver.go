@@ -65,7 +65,7 @@ func (r *Resolver) SetEventingForApplication(ctx context.Context, appID string, 
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while commiting the transaction")
+		return nil, errors.Wrap(err, "while committing the transaction")
 	}
 
 	return ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
@@ -96,7 +96,7 @@ func (r *Resolver) UnsetEventingForApplication(ctx context.Context, appID string
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while commiting the transaction")
+		return nil, errors.Wrap(err, "while committing the transaction")
 	}
 
 	return ApplicationEventingConfigurationToGraphQL(eventingCfg), nil

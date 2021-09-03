@@ -40,7 +40,7 @@ func CorrelationIDForRequest(request *http.Request) string {
 	return HeadersForRequest(request)[RequestIDHeaderKey]
 }
 
-//AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
+// AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
 func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

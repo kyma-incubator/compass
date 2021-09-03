@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
 
 	"github.com/99designs/gqlgen/codegen/config"
@@ -36,7 +38,7 @@ func (p *scopesDecoratorPlugin) Name() string {
 }
 
 func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
+	log.D().Info("[%s] Mutate Configuration\n", p.Name())
 	if err := cfg.Init(); err != nil {
 		return err
 	}
@@ -67,8 +69,7 @@ func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 }
 
 func (p *scopesDecoratorPlugin) ensureDirective(f *ast.FieldDefinition, opType GraphqlOperationType) {
-	d := p.getDirective(f)
-	if d == nil {
+	if d := p.getDirective(f); d == nil {
 		f.Directives = append(f.Directives, &ast.Directive{
 			Name:      directiveName,
 			Arguments: p.getDirectiveArguments(opType, f.Name),

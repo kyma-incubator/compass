@@ -66,7 +66,7 @@ func NewService(repo APIRepository, uidService UIDService, specService SpecServi
 		uidService:             uidService,
 		specService:            specService,
 		bundleReferenceService: bundleReferenceService,
-		timestampGen:           timestamp.DefaultGenerator(),
+		timestampGen:           timestamp.DefaultGenerator,
 	}
 }
 

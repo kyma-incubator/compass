@@ -1234,7 +1234,7 @@ func TestRepository_GetRuntimesIDsWhereLabelsMatchSelector(t *testing.T) {
 		dbMock.AssertExpectations(t)
 	})
 
-	t.Run("Return error when no persistance in context", func(t *testing.T) {
+	t.Run("Return error when no persistence in context", func(t *testing.T) {
 		labelRepo := label.NewRepository(nil)
 		//WHEN
 		_, err := labelRepo.GetRuntimesIDsByStringLabel(context.TODO(), tenantID, selectorKey, selectorValue)

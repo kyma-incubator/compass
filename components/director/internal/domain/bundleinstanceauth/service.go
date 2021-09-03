@@ -41,7 +41,7 @@ func NewService(repo Repository, uidService UIDService) *service {
 	return &service{
 		repo:         repo,
 		uidService:   uidService,
-		timestampGen: timestamp.DefaultGenerator(),
+		timestampGen: timestamp.DefaultGenerator,
 	}
 }
 

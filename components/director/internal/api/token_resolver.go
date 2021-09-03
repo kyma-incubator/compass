@@ -50,7 +50,7 @@ func (r *tokenResolver) GenerateCSRToken(ctx context.Context, authID string) (*i
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while commiting transaction")
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
 	log.C(ctx).Infof("One-time token generated successfully for CSR with authID %s", authID)

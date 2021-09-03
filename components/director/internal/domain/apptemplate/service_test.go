@@ -67,7 +67,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: testID,
 		},
 		{
-			Name:  "Success for Applicaiton Template with webhooks",
+			Name:  "Success for Application Template with webhooks",
 			Input: appTemplateInputWithWebhooks,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}

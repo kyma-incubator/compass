@@ -44,9 +44,11 @@ const (
 )
 
 const (
+	custom string = "custom"
+
 	PolicyLevelSap        string = "sap:core:v1"
 	PolicyLevelSapPartner string = "sap:partner:v1"
-	PolicyLevelCustom     string = "custom"
+	PolicyLevelCustom            = custom
 
 	ReleaseStatusBeta       string = "beta"
 	ReleaseStatusActive     string = "active"
@@ -66,7 +68,7 @@ const (
 	ApiImplementationStandardDocumentApi   string = "sap:ord-document-api:v1"
 	ApiImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
 	ApiImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
-	ApiImplementationStandardCustom        string = "custom"
+	ApiImplementationStandardCustom               = custom
 
 	SapTitle      = "SAP SE"
 	SapVendor     = "sap:vendor:SAP:"
@@ -204,7 +206,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 				"type": {
 					validation.Required,
-					validation.In("custom"),
+					validation.In(custom),
 				},
 				"callbackUrl": {
 					is.RequestURI,
@@ -506,7 +508,7 @@ func validatePackageLinks(value interface{}) error {
 			is.RequestURI,
 		},
 	}, func(el gjson.Result) error {
-		if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+		if el.Get("customType").Exists() && el.Get("type").String() != custom {
 			return errors.New("if customType is provided, type should be set to 'custom'")
 		}
 		return nil
@@ -524,7 +526,7 @@ func validateAPILinks(value interface{}) error {
 			is.RequestURI,
 		},
 	}, func(el gjson.Result) error {
-		if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+		if el.Get("customType").Exists() && el.Get("type").String() != custom {
 			return errors.New("if customType is provided, type should be set to 'custom'")
 		}
 		return nil
@@ -886,14 +888,14 @@ func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validat
 }
 
 func validateCustomType(el gjson.Result) error {
-	if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+	if el.Get("customType").Exists() && el.Get("type").String() != custom {
 		return errors.New("if customType is provided, type should be set to 'custom'")
 	}
 	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(`^([a-z0-9.]+):([a-zA-Z0-9._\-]+):v([0-9]+)$`)))
 }
 
 func validateCustomDescription(el gjson.Result) error {
-	if el.Get("customDescription").Exists() && el.Get("type").String() != "custom" {
+	if el.Get("customDescription").Exists() && el.Get("type").String() != custom {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
 	return nil

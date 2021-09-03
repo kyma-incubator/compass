@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//RequestLogger returns middleware that setups request scoped logging
+// RequestLogger returns middleware that setups request scoped logging
 func RequestLogger() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

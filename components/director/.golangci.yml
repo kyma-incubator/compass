@@ -78,6 +78,31 @@ linters:
     # - bodyclose
     # - cyclop
     # - dupl
+    # - errname
+    # - errorlint
+    # - exhaustive
+    # - exhaustivestruct
+    # - funlen
+    # - gci
+    # - gochecknoglobals
+    # - gochecknoinits
+    # - gocognit
+    # - gocyclo
+    # - godot
+    # - godox
+    # - goerr113
+    # - gofmt
+    # - gofumpt
+    # - goheader
+    # - goimports
+    # - golint
+    # - gomnd
+    # - gomoddirectives
+    # - gomodguard
+    # - gosec
+    # - interfacer
+    # - lll
+    # - maligned
   enable:
 #    - deadcode
 #    - errcheck
@@ -86,12 +111,22 @@ linters:
 #    - staticcheck
 #    - structcheck
 #    - typecheck
-#    - unused
+#    - unusedpkg/apperrors/errors.go:45:
 #    - varcheck
 #    - asciicheck
 #    - depguard
 #    - dogsled
-    - durationcheck
+#    - durationcheck
+#    - exportloopref
+#    - forbidigo
+#    - forcetypeassert
+#    - goconst
+#    - gocritic
+#    - goprintffuncname
+#    - ifshort
+#    - importas
+#    - makezero
+#    - misspell
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
 
@@ -111,13 +146,20 @@ issues:
       linters:
         - deadcode
         - unused
+        - goconst
+        - gocritic
+        - gosec
 
     - path: _test\.go
       text: "SA1029"
       linters:
         - staticcheck
 
-  #    # Exclude known linters from partially hard-vendored code,
+    - linters:
+        - gocritic
+      text: "ifElseChain|appendAssign"
+
+#    # Exclude known linters from partially hard-vendored code,
 #    # which is impossible to exclude via "nolint" comments.
 #    - path: internal/hmac/
 #      text: "weak cryptographic primitive"

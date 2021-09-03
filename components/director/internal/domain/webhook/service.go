@@ -79,7 +79,7 @@ func (s *service) ListForApplicationTemplate(ctx context.Context, applicationTem
 func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	application, err := s.appRepo.GetGlobalByID(ctx, applicationID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Applicaiton with ID %s", applicationID)
+		return nil, errors.Wrapf(err, "while getting Application with ID %s", applicationID)
 	}
 
 	return s.retrieveWebhooks(ctx, application)
@@ -152,7 +152,7 @@ func (s *service) retrieveWebhooks(ctx context.Context, application *model.Appli
 	for i, webhook := range appTemplateWebhooks {
 		webhooksMap[webhook.Type] = appTemplateWebhooks[i]
 	}
-	//Override values derived from template
+	// Override values derived from template
 	for i, webhook := range appWebhooks {
 		webhooksMap[webhook.Type] = appWebhooks[i]
 	}

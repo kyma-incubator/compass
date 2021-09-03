@@ -76,8 +76,7 @@ func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 }
 
 func (db *db) rollback(ctx context.Context, tx PersistenceTx) {
-	err := tx.Rollback()
-	if err == nil {
+	if err := tx.Rollback(); err == nil {
 		log.C(ctx).Warn("Transaction rolled back")
 	} else if err != sql.ErrTxDone {
 		log.C(ctx).Warn(err)
@@ -93,8 +92,7 @@ func (db *Transaction) Commit() error {
 	if db.committed {
 		return apperrors.NewInternalError("transaction already committed")
 	}
-	err := db.Tx.Commit()
-	if err != nil {
+	if err := db.Tx.Commit(); err != nil {
 		return errors.Wrap(err, "while committing transaction")
 	}
 	db.committed = true

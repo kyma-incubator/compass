@@ -22,7 +22,7 @@ type repository struct {
 }
 
 func NewRepository() *repository {
-	return &repository{timestampGen: timestamp.DefaultGenerator()}
+	return &repository{timestampGen: timestamp.DefaultGenerator}
 }
 
 func (r *repository) UpdateStatus(ctx context.Context, id string, object WithStatusObject) error {

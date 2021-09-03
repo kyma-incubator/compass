@@ -253,7 +253,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
-	currentTimestamp := timestamp.DefaultGenerator()
+	currentTimestamp := timestamp.DefaultGenerator
 	for _, auth := range bundleInstanceAuths {
 		if auth.Status.Condition != model.BundleInstanceAuthStatusConditionUnused {
 			if err := auth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionUnused, currentTimestamp()); err != nil {
@@ -497,7 +497,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while commiting the transaction")
+		return nil, errors.Wrap(err, "while committing the transaction")
 	}
 
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil

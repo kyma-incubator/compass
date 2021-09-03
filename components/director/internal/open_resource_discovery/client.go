@@ -85,8 +85,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 }
 
 func closeBody(ctx context.Context, body io.ReadCloser) {
-	err := body.Close()
-	if err != nil {
+	if err := body.Close(); err != nil {
 		log.C(ctx).WithError(err).Warnf("Got error on closing response body")
 	}
 }
@@ -107,7 +106,6 @@ func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig,
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
 	}
-
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
@@ -40,7 +42,7 @@ func (p *descriptionsDecoratorPlugin) Name() string {
 }
 
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
+	log.D().Info("[%s] Mutate Configuration\n", p.Name())
 
 	if err := cfg.Init(); err != nil {
 		return err
@@ -83,7 +85,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
-		fmt.Printf("no examples under %s directory, skipping adding description", p.examplesDirectory)
+		log.D().Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
 		return nil
 	}
 	for _, dir := range dirs {
@@ -103,8 +105,8 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 			f.Description = fmt.Sprintf("%s\n\n%s", f.Description, ExamplePrefix)
 		}
 		for _, file := range files {
-			withoutExt := strings.Replace(file.Name(), ".graphql", "", -1)
-			withoutDash := strings.Replace(withoutExt, "-", " ", -1)
+			withoutExt := strings.ReplaceAll(file.Name(), ".graphql", "")
+			withoutDash := strings.ReplaceAll(withoutExt, "-", " ")
 			f.Description = addExample(f.Description, withoutDash, dir.Name(), file.Name())
 		}
 

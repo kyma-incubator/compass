@@ -152,7 +152,7 @@ func getProperties(body []byte, props map[string]bool) (map[string]string, error
 	resultProps := map[string]string{}
 	for propName, mandatory := range props {
 		result := gjson.GetBytes(body, propName).String()
-		if mandatory && len(result) <= 0 {
+		if mandatory && len(result) == 0 {
 			return nil, fmt.Errorf("mandatory property %q is missing from request body", propName)
 		}
 		resultProps[propName] = result

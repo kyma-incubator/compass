@@ -184,7 +184,7 @@ func (s Service) SyncTenants() error {
 		}
 	}
 
-	//Order of event processing matters
+	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
 		if err := s.createParents(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing parents")

@@ -52,7 +52,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 	tx, err := vh.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to open db transaction: %v", err)
-		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occurred while resolving one time token"))
 		return
 	}
 	defer vh.transact.RollbackUnlessCommitted(ctx, tx)
@@ -119,7 +119,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to commit db transaction: %v", err)
-		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occurred while resolving one time token"))
 		return
 	}
 

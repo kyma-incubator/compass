@@ -539,7 +539,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 		persist.AssertExpectations(t)
 	})
 
-	t.Run("error when convertion to graphql failed", func(t *testing.T) {
+	t.Run("error when conversion to graphql failed", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatDoesntExpectCommit()
 

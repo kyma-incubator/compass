@@ -126,7 +126,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		scenariosService:   scenariosService,
 		bndlService:        bndlService,
 		uidService:         uidService,
-		timestampGen:       timestamp.DefaultGenerator(),
+		timestampGen:       timestamp.DefaultGenerator,
 	}
 }
 

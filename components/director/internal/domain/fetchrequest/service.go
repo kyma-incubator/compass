@@ -35,7 +35,7 @@ func NewService(repo FetchRequestRepository, client *http.Client) *service {
 	return &service{
 		repo:         repo,
 		client:       client,
-		timestampGen: timestamp.DefaultGenerator(),
+		timestampGen: timestamp.DefaultGenerator,
 	}
 }
 
@@ -43,8 +43,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	var data *string
 	data, fr.Status = s.fetchSpec(ctx, fr)
 
-	err := s.repo.Update(ctx, fr)
-	if err != nil {
+	if err := s.repo.Update(ctx, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
 		return nil
 	}
