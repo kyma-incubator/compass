@@ -89,7 +89,7 @@ spec:
                 value: {{ $config.endpoints.movedRuntimeByLabel }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
-              - name: APP_TENANT_PROVIDER
+              - name: APP_TENANTS_REGION
                 value: {{ $config.tenantsRegion }}
               - name: APP_CLIENT_ID
                 valueFrom:

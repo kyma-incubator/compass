@@ -123,7 +123,7 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains, regions := tenantLocality(tenantInputs)
-	for _, tenant := range tenants {
+	for tenantIdx, tenant := range tenants {
 		subdomain := ""
 		region := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
@@ -132,29 +132,44 @@ func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs
 		if r, ok := regions[tenant.ExternalTenant]; ok {
 			region = r
 		}
-		if err := s.createIfNotExists(ctx, tenant, subdomain, region); err != nil {
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region)
+		if err != nil {
 			return errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
+		}
+		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
+		if tenantID != tenant.ID {
+			for i := tenantIdx; i < len(tenants); i++ {
+				if tenants[i].Parent == tenant.ID {
+					tenants[i].Parent = tenantID
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string) error {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string) (string, error) {
+	tenantID := tenant.ID
 	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
 	if err != nil && !apperrors.IsNotFoundError(err) {
-		return errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
+		return "", errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
 	}
 	if tenantFromDB != nil {
-		log.C(ctx).Infof("Tenant with external ID %s already exists", tenantFromDB.ExternalTenant)
-		return s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
+		return tenantFromDB.ID, s.upsertLabels(ctx, tenant.ID, subdomain, region)
 	}
 
 	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil && !apperrors.IsNotUniqueError(err) {
-		return errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
+		return "", errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
+	} else if apperrors.IsNotUniqueError(err) {
+		tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting internal ID of tenant %s", tenant.ExternalTenant)
+		}
+		tenantID = tenantFromDB.ID
 	}
 
-	return s.upsertLabels(ctx, tenant.ID, subdomain, region)
+	return tenantID, s.upsertLabels(ctx, tenant.ID, subdomain, region)
 }
 
 func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {

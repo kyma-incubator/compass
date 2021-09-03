@@ -14,13 +14,16 @@ import (
 )
 
 const (
-	testExternal      = "external"
-	testID            = "foo"
-	testName          = "bar"
-	testSubdomain     = "subdomain"
-	testRegion        = "eu-1"
-	testProvider      = "Compass"
-	initializedColumn = "initialized"
+	testExternal                  = "external"
+	testID                        = "foo"
+	testName                      = "bar"
+	testParentID                  = "parent"
+	testInternalParentID          = "internal-parent"
+	testTemporaryInternalParentID = "internal-parent-temp"
+	testSubdomain                 = "subdomain"
+	testRegion                    = "eu-1"
+	testProvider                  = "Compass"
+	initializedColumn             = "initialized"
 )
 
 var (
@@ -29,12 +32,16 @@ var (
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
+	return newModelBusinessTenantMappingWithType(id, name, "", tenant.Account)
+}
+
+func newModelBusinessTenantMappingWithType(id, name, parent string, tenantType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
 		ExternalTenant: testExternal,
-		Parent:         "",
-		Type:           tenant.Account,
+		Parent:         parent,
+		Type:           tenantType,
 		Provider:       testProvider,
 		Status:         tenant.Active,
 	}
@@ -101,13 +108,17 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 }
 
 func newModelBusinessTenantMappingInput(name, subdomain, region string) model.BusinessTenantMappingInput {
+	return newModelBusinessTenantMappingInputWithType(testExternal, name, "", subdomain, region, tenant.Account)
+}
+
+func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomain, region string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
-		ExternalTenant: testExternal,
+		ExternalTenant: tenantID,
 		Subdomain:      subdomain,
 		Region:         region,
-		Parent:         "",
-		Type:           string(tenant.Account),
+		Parent:         parent,
+		Type:           tenant.TypeToStr(tenantType),
 		Provider:       testProvider,
 	}
 }

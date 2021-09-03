@@ -101,11 +101,11 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Reque
 }
 
 func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
 	if _, err := writer.Write([]byte("{}")); err != nil {
 		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
 }
 
 func (h *handler) handleTenantCreationRequest(writer http.ResponseWriter, request *http.Request, region string) {
@@ -123,7 +123,7 @@ func (h *handler) handleTenantCreationRequest(writer http.ResponseWriter, reques
 		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
-	mainTenantID := getMainTenantID(provisioningReq)
+	mainTenantID := provisioningReq.MainTenantID()
 	if err := h.provisionTenants(ctx, provisioningReq, region); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s: %v", mainTenantID, err)
 		http.Error(writer, fmt.Sprintf(tenantCreationFailureMsgFmt, mainTenantID), http.StatusInternalServerError)
@@ -155,14 +155,6 @@ func (h *handler) getProvisioningRequest(body []byte, region string) (*TenantPro
 		Subdomain:          properties[h.config.SubdomainProperty],
 		Region:             region,
 	}, nil
-}
-
-func getMainTenantID(request *TenantProvisioningRequest) string {
-	if len(request.SubaccountTenantID) > 0 {
-		return request.SubaccountTenantID
-	}
-
-	return request.AccountTenantID
 }
 
 func (h *handler) provisionTenants(ctx context.Context, request *TenantProvisioningRequest, region string) error {

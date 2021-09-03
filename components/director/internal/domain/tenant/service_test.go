@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -245,6 +246,9 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		newModelBusinessTenantMappingInput("test2", "", "").WithExternalTenant("external2")}
 	tenantInputsWithRegions := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", testRegion),
 		newModelBusinessTenantMappingInput("test2", "", testRegion).WithExternalTenant("external2")}
+	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", tenantEntity.Account),
+		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", tenantEntity.Customer)}
+
 	tenantModels := []model.BusinessTenantMapping{*newModelBusinessTenantMapping(testID, "test1"),
 		newModelBusinessTenantMapping(testID, "test2").WithExternalTenant("external2")}
 
@@ -266,6 +270,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		TenantMappingRepoFn func() *automock.TenantMappingRepository
 		LabelRepoFn         func() *automock.LabelRepository
 		LabelUpsertSvcFn    func() *automock.LabelUpsertService
+		UIDSvcFn            func() *automock.UIDService
 		ExpectedOutput      error
 	}{
 		{
@@ -277,6 +282,33 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantModels[1].ExternalTenant).Return(&tenantModels[1], nil)
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
+			},
+			UIDSvcFn:         uidSvcFn,
+			LabelRepoFn:      noopLabelRepo,
+			LabelUpsertSvcFn: noopLabelUpsertSvc,
+			ExpectedOutput:   nil,
+		},
+		{
+			Name:         "Success when parent tenant exists with another ID",
+			tenantInputs: tenantModelInputsWithParent,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				parent := tenantModelInputsWithParent[1]
+				modifiedTenant := tenantModelInputsWithParent[0]
+				modifiedTenant.Parent = testInternalParentID
+
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, parent.ExternalTenant).Return(nil, nil).Once()
+				tenantMappingRepo.On("Create", ctx, *parent.ToBusinessTenantMapping(testTemporaryInternalParentID)).Return(apperrors.NewNotUniqueError(resource.Tenant)).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, parent.ExternalTenant).Return(parent.ToBusinessTenantMapping(testInternalParentID), nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, modifiedTenant.ExternalTenant).Return(nil, nil).Once()
+				tenantMappingRepo.On("Create", ctx, *modifiedTenant.ToBusinessTenantMapping(testID)).Return(nil).Once()
+				return tenantMappingRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(testID).Once()
+				uidSvc.On("Generate").Return(testTemporaryInternalParentID).Once()
+				return uidSvc
 			},
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
@@ -292,6 +324,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
+			UIDSvcFn:    uidSvcFn,
 			LabelRepoFn: noopLabelRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -316,6 +349,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
+			UIDSvcFn:    uidSvcFn,
 			LabelRepoFn: noopLabelRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -345,9 +379,34 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(nil, testErr)
 				return tenantMappingRepo
 			},
+			UIDSvcFn:         uidSvcFn,
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedOutput:   testErr,
+		},
+		{
+			Name:         "Error when parent tenant exists with another ID and ID cannot be retrieved",
+			tenantInputs: tenantModelInputsWithParent,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				parent := tenantModelInputsWithParent[1]
+				modifiedTenant := tenantModelInputsWithParent[0]
+				modifiedTenant.Parent = testInternalParentID
+
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, parent.ExternalTenant).Return(nil, nil).Once()
+				tenantMappingRepo.On("Create", ctx, *parent.ToBusinessTenantMapping(testTemporaryInternalParentID)).Return(apperrors.NewNotUniqueError(resource.Tenant)).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, parent.ExternalTenant).Return(nil, testError).Once()
+				return tenantMappingRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(testID).Once()
+				uidSvc.On("Generate").Return(testTemporaryInternalParentID).Once()
+				return uidSvc
+			},
+			LabelRepoFn:      noopLabelRepo,
+			LabelUpsertSvcFn: noopLabelUpsertSvc,
+			ExpectedOutput:   fmt.Errorf("while getting internal ID of tenant %s", testParentID),
 		},
 		{
 			Name:         "Error when subdomain label setting fails",
@@ -358,6 +417,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
+			UIDSvcFn:    uidSvcFn,
 			LabelRepoFn: noopLabelRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -381,6 +441,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
+			UIDSvcFn:    uidSvcFn,
 			LabelRepoFn: noopLabelRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -404,6 +465,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(testErr).Once()
 				return tenantMappingRepo
 			},
+			UIDSvcFn:         uidSvcFn,
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedOutput:   testErr,
@@ -412,10 +474,11 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			uidSvc := uidSvcFn()
+			uidSvc := testCase.UIDSvcFn()
 			tenantMappingRepo := testCase.TenantMappingRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelUpsertSvc := testCase.LabelUpsertSvcFn()
+			defer mock.AssertExpectationsForObjects(t, tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
 			svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
@@ -429,8 +492,6 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-
-			mock.AssertExpectationsForObjects(t, tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 		})
 	}
 }
@@ -472,38 +533,38 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 					ID:             "0",
 					Name:           "acc1",
 					ExternalTenant: "0",
-					Status:         tenant2.Active,
-					Type:           tenant2.Unknown,
+					Status:         tenantEntity.Active,
+					Type:           tenantEntity.Unknown,
 				},
 				{
 					ID:             "4",
 					Name:           "x1",
 					ExternalTenant: "4",
-					Status:         tenant2.Active,
-					Type:           tenant2.Unknown,
+					Status:         tenantEntity.Active,
+					Type:           tenantEntity.Unknown,
 				},
 				{
 					ID:             "2",
 					Name:           "customer1",
 					ExternalTenant: "2",
 					Parent:         "4",
-					Status:         tenant2.Active,
-					Type:           tenant2.Unknown,
+					Status:         tenantEntity.Active,
+					Type:           tenantEntity.Unknown,
 				},
 				{
 					ID:             "1",
 					Name:           "acc2",
 					ExternalTenant: "1",
 					Parent:         "2",
-					Status:         tenant2.Active,
-					Type:           tenant2.Unknown,
+					Status:         tenantEntity.Active,
+					Type:           tenantEntity.Unknown,
 				},
 				{
 					ID:             "3",
 					Name:           "acc3",
 					ExternalTenant: "3",
-					Status:         tenant2.Active,
-					Type:           tenant2.Unknown,
+					Status:         tenantEntity.Active,
+					Type:           tenantEntity.Unknown,
 				},
 			},
 		},
@@ -660,6 +721,61 @@ func Test_ListLabels(t *testing.T) {
 		_, err := svc.ListLabels(ctx, tenantID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), fmt.Sprintf("whilie listing labels for tenant with ID %s", tenantID))
+	})
+}
+
+func Test_GetTenantByExternalID(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		expected := &model.BusinessTenantMapping{
+			ID:             testID,
+			Name:           testName,
+			ExternalTenant: testExternal,
+			Status:         tenantEntity.Active,
+			Type:           tenantEntity.Account,
+		}
+
+		uidSvc := &automock.UIDService{}
+		labelUpsertSvc := &automock.LabelUpsertService{}
+		labelRepo := &automock.LabelRepository{}
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("GetByExternalTenant", ctx, testID).Return(expected, nil)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+		// WHEN
+		actual, err := svc.GetTenantByExternalID(ctx, testID)
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("Returns error when retrieval from DB fails", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		uidSvc := &automock.UIDService{}
+		labelUpsertSvc := &automock.LabelUpsertService{}
+		labelRepo := &automock.LabelRepository{}
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("GetByExternalTenant", ctx, testID).Return(nil, testError)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+
+		// WHEN
+		actual, err := svc.GetTenantByExternalID(ctx, testID)
+
+		// THEN
+		assert.Error(t, err)
+		assert.Nil(t, actual)
+		assert.Equal(t, testError, err)
 	})
 }
 

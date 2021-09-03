@@ -227,6 +227,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			require.Equal(t, regionPathParamValue, parent.Labels["region"])
 
 			// WHEN
 			addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
