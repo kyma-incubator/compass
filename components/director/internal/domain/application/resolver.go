@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
-	connectivity_adapter "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
@@ -111,6 +109,10 @@ type BundleConverter interface {
 	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
+type TokenConverter interface {
+	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -126,6 +128,7 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
+	oneTimeTokenConv TokenConverter
 
 	oneTimeTokenCfg onetimetoken.Config
 
@@ -143,6 +146,7 @@ func NewResolver(transact persistence.Transactioner,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
 	bndlConverter BundleConverter,
+	oneTimeTokenConv TokenConverter,
 	oneTimeTokenCfg onetimetoken.Config,
 	timeService directorTime.Service) *Resolver {
 	return &Resolver{
@@ -157,6 +161,7 @@ func NewResolver(transact persistence.Transactioner,
 		eventingSvc:      eventingSvc,
 		bndlSvc:          bndlSvc,
 		bndlConv:         bndlConverter,
+		oneTimeTokenConv: oneTimeTokenConv,
 		oneTimeTokenCfg:  oneTimeTokenCfg,
 		timeService:      timeService,
 	}
@@ -524,8 +529,12 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		}
 
 		if sa.Value.OneTimeToken.Type == tokens.ApplicationToken {
-			connectorLegacyURL := fmt.Sprintf("%s%s%s", r.oneTimeTokenCfg.LegacyConnectorURL, connectivity_adapter.TokenFormat, sa.Value.OneTimeToken.Token)
-			c.(*graphql.AppSystemAuth).Auth.OneTimeToken.LegacyConnectorURL = connectorLegacyURL
+			oneTimeTokenForApplication, err := r.oneTimeTokenConv.ToGraphQLForApplication(*sa.Value.OneTimeToken)
+			if err != nil {
+				return nil, errors.Wrap(err, "while converting one-time token to graphql")
+			}
+
+			c.(*graphql.AppSystemAuth).Auth.OneTimeToken = &oneTimeTokenForApplication
 		}
 		out = append(out, c.(*graphql.AppSystemAuth))
 	}
