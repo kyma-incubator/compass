@@ -21,7 +21,7 @@ RUN CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapte
     CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
     CGO_ENABLED=0 go test -c ./director/bench -o director.bench
 
-FROM alpine:3.14
+FROM alpine:3.14.2
 
 RUN apk add --no-cache curl
 

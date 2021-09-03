@@ -32,6 +32,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
@@ -323,6 +325,16 @@ func TestORDService(stdT *testing.T) {
 					require.False(t, *expectedAPI.Version.Deprecated)
 				default:
 					panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
+				}
+
+				apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.%d.apiProtocol", i)).String()
+				switch apiProtocol {
+				case "odata-v2":
+					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
+				case "rest":
+					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
+				default:
+					t.Log(fmt.Sprintf("API Protocol for API %s is %s. It does not match a predefined spec type.", name, apiProtocol))
 				}
 
 				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
@@ -617,6 +629,57 @@ func TestORDService(stdT *testing.T) {
 		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
+	})
+
+	t.Run("Additional non-ORD details about system instances are exposed", func(t *testing.T) {
+		expectedProductType := "productType"
+		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
+		placeholderKey := "new-placeholder"
+		appTmplInput.ApplicationInput.Description = ptr.String("test {{new-placeholder}}")
+		appTmplInput.Placeholders = []*directorSchema.PlaceholderDefinitionInput{
+			{
+				Name:        placeholderKey,
+				Description: ptr.String("description"),
+			},
+		}
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, defaultTestTenant, appTmplInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, defaultTestTenant, &appTmpl)
+		require.NoError(t, err)
+
+		appFromTmpl := directorSchema.ApplicationFromTemplateInput{
+			TemplateName: expectedProductType, Values: []*directorSchema.TemplateValueInput{
+				{
+					Placeholder: placeholderKey,
+					Value:       "new-value",
+				},
+			},
+		}
+
+		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+		require.NoError(t, err)
+
+		createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+		outputApp := directorSchema.ApplicationExt{}
+		//WHEN
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTestTenant, &outputApp)
+		require.NoError(t, err)
+
+		getSystemInstanceURL := fmt.Sprintf("%s/systemInstances(%s)?$format=json", testConfig.ORDServiceURL, outputApp.ID)
+
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, getSystemInstanceURL, map[string][]string{tenantHeader: {defaultTestTenant}})
+
+		require.Equal(t, outputApp.Name, gjson.Get(respBody, "title").String())
+
+		t.Run("systemNumber is exposed", func(t *testing.T) {
+			require.True(t, gjson.Get(respBody, "systemNumber").Exists())
+		})
+
+		t.Run("productType is exposed", func(t *testing.T) {
+			require.True(t, gjson.Get(respBody, "productType").Exists())
+			require.Equal(t, expectedProductType, gjson.Get(respBody, "productType").String())
+		})
 	})
 }
 
