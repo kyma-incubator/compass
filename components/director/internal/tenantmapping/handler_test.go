@@ -77,7 +77,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.UserObjectContextProvider: userMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", username, "JWT", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -151,7 +154,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", username, "JWT", mock.Anything)
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -227,7 +233,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.AuthenticatorObjectContextProvider: userMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", identityUsername, "JWT", mock.Anything)
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -292,7 +301,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.UserObjectContextProvider: userMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", username, "JWT", mock.Anything)
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -340,7 +352,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), "OAuth2", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -390,7 +405,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), "Certificate", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -438,7 +456,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.CertServiceObjectContextProvider: certServiceMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, "Certificate", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -487,7 +508,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), "OneTimeToken", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -504,7 +528,7 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		handler := tenantmapping.NewHandler(nil, nil, nil, nil)
+		handler := tenantmapping.NewHandler(nil, nil, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -522,7 +546,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, errors.New("some error")).Once()
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -572,7 +596,10 @@ func TestHandler(t *testing.T) {
 			tenantmapping.UserObjectContextProvider: userMockContextProvider,
 		}
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", username, "JWT", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -604,7 +631,10 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatFailsOnBegin()
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil)
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", "test", "JWT", mock.Anything)
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, clientInstrumenter)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -626,7 +656,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, nil).Once()
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
