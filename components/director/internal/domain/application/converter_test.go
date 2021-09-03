@@ -367,7 +367,7 @@ func assertApplicationDefinition(t *testing.T, appModel *model.Application, enti
 		assert.Equal(t, appModel.Status.Condition, model.ApplicationStatusCondition(entity.StatusCondition))
 		assert.Equal(t, appModel.Status.Timestamp, entity.StatusTimestamp)
 	} else {
-		assert.Equal(t, string(model.ApplicationStatusConditionInitial), string(entity.StatusCondition))
+		assert.Equal(t, string(model.ApplicationStatusConditionInitial), entity.StatusCondition)
 	}
 
 	testdb.AssertSqlNullStringEqualTo(t, entity.Description, appModel.Description)

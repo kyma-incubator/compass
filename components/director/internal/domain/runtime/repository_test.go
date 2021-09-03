@@ -625,5 +625,5 @@ func TestPgRepository_UpdateTenantID_ShouldUpdateTenant(t *testing.T) {
 }
 
 func convertIntToBase64String(number int) string {
-	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
+	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))
 }

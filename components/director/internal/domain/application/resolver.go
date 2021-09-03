@@ -562,20 +562,17 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.
 	}
 
 	ctx := keys[0].Ctx
-	first := keys[0].First
-	after := keys[0].After
-
 	applicationIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
 		applicationIDs = append(applicationIDs, key.ID)
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
-	if first == nil {
+	if keys[0].First == nil {
 		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
@@ -588,7 +585,7 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	bndlPages, err := r.bndlSvc.ListByApplicationIDs(ctx, applicationIDs, *first, cursor)
+	bndlPages, err := r.bndlSvc.ListByApplicationIDs(ctx, applicationIDs, *keys[0].First, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}

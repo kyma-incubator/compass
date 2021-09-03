@@ -107,34 +107,51 @@ linters:
     # - nlreturn
     # - noctx
     # - paralleltest
+    # - revive TODO: check if can enable
+    # - scopelint
+    # - stylecheck TODO: check if can enable
+    # - tagliatelle
+    # - testpackage TODO: enbale
+    # - thelper
+    # - unparam TODO: enbale
+    # - whitespace TODO: enable
+    # - wrapcheck TODO: check if can enable
+    # - wsl TODO: check if can enable
   enable:
-#    - deadcode
-#    - errcheck
-#    - gosimple
-#    - govet
-#    - staticcheck
-#    - structcheck
-#    - typecheck
-#    - unusedpkg/apperrors/errors.go:45:
-#    - varcheck
-#    - asciicheck
-#    - depguard
-#    - dogsled
-#    - durationcheck
-#    - exportloopref
-#    - forbidigo
-#    - forcetypeassert
-#    - goconst
-#    - gocritic
-#    - goprintffuncname
-#    - ifshort
-#    - importas
-#    - makezero
-#    - misspell
-#    - nakedret
-#    - nilerr
-#    - nolintlint
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    - asciicheck
+    - depguard
+    - dogsled
+    - durationcheck
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - goconst
+    - gocritic
+    - goprintffuncname
+    - ifshort
+    - importas
+    - makezero
+    - misspell
+    - nakedret
+    - nilerr
+    - nolintlint
     - prealloc
+    - predeclared
+    - promlinter
+    - rowserrcheck
+    - sqlclosecheck
+    - tparallel
+    - unconvert
+    - wastedassign
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
 

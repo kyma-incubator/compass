@@ -102,9 +102,9 @@ func (rd *EventResourceDefinition) Validate() error {
 }
 
 func (a *EventResourceDefinition) ToSpec() *SpecInput {
-	specType := EventSpecType(a.Type)
+	specType := a.Type
 	return &SpecInput{
-		Format:     SpecFormat(a.MediaType),
+		Format:     a.MediaType,
 		EventType:  &specType,
 		CustomType: &a.CustomType,
 		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequest Auths once ORD defines them

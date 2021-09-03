@@ -28,7 +28,7 @@ func (p *Provider) Load() error {
 		return errors.Wrapf(err, "while reading file %s", p.fileName)
 	}
 	out := map[string]interface{}{}
-	if err := yaml.Unmarshal([]byte(b), &out); err != nil {
+	if err := yaml.Unmarshal(b, &out); err != nil {
 		return errors.Wrap(err, "while unmarshalling YAML")
 	}
 	p.cachedConfig = out
