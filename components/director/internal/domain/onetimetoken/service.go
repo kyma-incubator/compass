@@ -3,7 +3,6 @@ package onetimetoken
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -114,12 +113,6 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 		return model.OneTimeToken{}, err
 	}
 
-	tokenWithSysAuthID, err := s.enrichTokenWithSystemAuthID(oneTimeToken.Token, sysAuth.ID)
-	if err != nil {
-		return model.OneTimeToken{}, errors.Wrap(err, "while enriching token")
-	}
-	oneTimeToken.Token = tokenWithSysAuthID
-
 	return *oneTimeToken, nil
 }
 
@@ -143,16 +136,9 @@ func (s *service) createToken(ctx context.Context, id string, tokenType model.Sy
 	oneTimeToken.Used = false
 	oneTimeToken.UsedAt = time.Time{}
 
-	sysAuthID, err := s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{OneTimeToken: oneTimeToken})
-	if err != nil {
+	if _, err := s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
 		return nil, errors.Wrap(err, "while creating System Auth")
 	}
-
-	tokenWithSysAuthID, err := s.enrichTokenWithSystemAuthID(oneTimeToken.Token, sysAuthID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while enriching token")
-	}
-	oneTimeToken.Token = tokenWithSysAuthID
 
 	return oneTimeToken, nil
 }
@@ -303,13 +289,4 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 	}
 
 	return *rawEnc
-}
-
-func (s *service) enrichTokenWithSystemAuthID(token, sysAuthID string) (string, error) {
-	tokenDataJSON, err := json.Marshal(model.TokenData{Token: token, SystemAuthID: sysAuthID})
-	if err != nil {
-		return "", errors.Wrap(err, "while creating Token Payload")
-	}
-
-	return base64.URLEncoding.EncodeToString(tokenDataJSON), nil
 }

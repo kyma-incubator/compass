@@ -6,15 +6,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/sirupsen/logrus"
-
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -49,18 +47,21 @@ type Handler struct {
 	reqDataParser          ReqDataParser
 	transact               persistence.Transactioner
 	objectContextProviders map[string]ObjectContextProvider
+	metricsCollector       *metrics.Collector
 }
 
 func NewHandler(
 	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	objectContextProviders map[string]ObjectContextProvider) *Handler {
+	objectContextProviders map[string]ObjectContextProvider,
+	metricsCollector *metrics.Collector) *Handler {
 	return &Handler{
 		authenticators:         authenticators,
 		reqDataParser:          reqDataParser,
 		transact:               transact,
 		objectContextProviders: objectContextProviders,
+		metricsCollector:       metricsCollector,
 	}
 }
 
@@ -87,6 +88,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		respond(ctx, writer, reqData.Body)
 		return
 	}
+
+	flowDetails := authDetails.CertIssuer
+	if authDetails.Authenticator != nil {
+		flowDetails = authDetails.Authenticator.Name
+	}
+	h.metricsCollector.InstrumentClient(authDetails.AuthID, string(authDetails.AuthFlow), flowDetails)
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"authID":        authDetails.AuthID,

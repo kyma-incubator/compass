@@ -54,7 +54,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/director/internal/tracking"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
@@ -100,7 +99,6 @@ type config struct {
 
 	Database                      persistence.DatabaseConfig
 	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TrackingEndpoint              string `envconfig:"default=/track"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
@@ -269,11 +267,8 @@ func main() {
 
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
-	logger.Infof("Registering Tracking endpoint on %s...", cfg.TrackingEndpoint)
-	mainRouter.HandleFunc(cfg.TrackingEndpoint, getTrackingHandlerFunc(metricsCollector))
-
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
@@ -411,11 +406,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func getTrackingHandlerFunc(metricsCollector *metrics.Collector) http.HandlerFunc {
-	return tracking.NewHandler(metricsCollector).ServerHTTP
-}
-
-func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -442,7 +433,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
+	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {

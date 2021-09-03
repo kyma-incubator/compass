@@ -46,7 +46,7 @@ func NewCollector() *Collector {
 			Subsystem: DirectorSubsystem,
 			Name:      "total_requests_per_client",
 			Help:      "Total requests per client",
-		}, []string{"client_id"}),
+		}, []string{"client_id", "auth_flow", "details"}),
 	}
 }
 
@@ -78,6 +78,10 @@ func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 	)
 }
 
-func (c *Collector) InstrumentClientID(clientID string) {
-	c.clientTotal.With(prometheus.Labels{"client_id": clientID}).Inc()
+func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
+	c.clientTotal.With(prometheus.Labels{
+		"client_id": clientID,
+		"auth_flow": authFlow,
+		"details":   details,
+	}).Inc()
 }
