@@ -2,11 +2,12 @@ package application_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
-	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 

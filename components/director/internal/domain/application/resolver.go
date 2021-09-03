@@ -2,10 +2,11 @@ package application
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
-	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
