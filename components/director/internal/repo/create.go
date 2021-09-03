@@ -46,7 +46,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		return err
 	}
 
-	var values []string
+	values := make([]string, 0, len(c.columns))
 	for _, c := range c.columns {
 		values = append(values, fmt.Sprintf(":%s", c))
 	}

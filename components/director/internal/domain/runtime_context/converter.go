@@ -24,7 +24,7 @@ func (c *converter) ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext 
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext {
-	var runtimeContexts []*graphql.RuntimeContext
+	runtimeContexts := make([]*graphql.RuntimeContext, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

@@ -107,7 +107,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 		return nil, err
 	}
 
-	var labels []*model.Label
+	labels := make([]*model.Label, 0, len(entities))
 
 	for _, entity := range entities {
 		m, err := r.conv.FromEntity(entity)
@@ -150,7 +150,7 @@ func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, 
 		return nil, err
 	}
 
-	var matchedRtmsIDs []string
+	matchedRtmsIDs := make([]string, 0, len(entities))
 	for _, entity := range entities {
 		matchedRtmsIDs = append(matchedRtmsIDs, entity.RuntimeID.String)
 	}
@@ -173,7 +173,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
-	var labelModels []model.Label
+	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
 
 		labelModel, err := r.conv.FromEntity(label)
@@ -200,7 +200,7 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 		return nil, err
 	}
 
-	var labelModels []model.Label
+	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
 
 		labelModel, err := r.conv.FromEntity(label)

@@ -135,7 +135,7 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 		return nil, err
 	}
 
-	var items []*model.RuntimeContext
+	items := make([]*model.RuntimeContext, 0, len(runtimeCtxsCollection))
 
 	for _, runtimeCtxEnt := range runtimeCtxsCollection {
 		items = append(items, runtimeCtxEnt.ToModel())

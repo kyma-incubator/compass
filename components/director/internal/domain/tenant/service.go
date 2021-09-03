@@ -95,7 +95,7 @@ func (s *service) GetTenantByExternalID(ctx context.Context, id string) (*model.
 }
 
 func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
-	var tenants []model.BusinessTenantMapping
+	tenants := make([]model.BusinessTenantMapping, 0, len(tenantInputs))
 	tenantIDs := make(map[string]string, len(tenantInputs))
 	for _, tenant := range tenantInputs {
 		id := s.uidService.Generate()

@@ -25,7 +25,7 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 
 	var clob *graphql.CLOB
 	if in.Data != nil {
-		tmp := graphql.CLOB([]byte(*in.Data))
+		tmp := graphql.CLOB(*in.Data)
 		clob = &tmp
 	}
 
@@ -49,7 +49,7 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Document) []*graphql.Document {
-	var documents []*graphql.Document
+	documents := make([]*graphql.Document, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -89,7 +89,7 @@ func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) (*model.Document
 }
 
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error) {
-	var inputs []*model.DocumentInput
+	inputs := make([]*model.DocumentInput, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

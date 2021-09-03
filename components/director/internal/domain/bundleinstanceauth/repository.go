@@ -152,7 +152,7 @@ func (r *repository) Delete(ctx context.Context, tenantID string, id string) err
 }
 
 func (r *repository) multipleFromEntities(entities Collection) ([]*model.BundleInstanceAuth, error) {
-	var items []*model.BundleInstanceAuth
+	items := make([]*model.BundleInstanceAuth, 0, len(entities))
 	for _, ent := range entities {
 		m, err := r.conv.FromEntity(ent)
 		if err != nil {

@@ -175,7 +175,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		return nil, err
 	}
 
-	var items []*model.Application
+	items := make([]*model.Application, 0, len(appsCollection))
 
 	for _, appEnt := range appsCollection {
 		m := r.conv.FromEntity(&appEnt)
@@ -196,7 +196,7 @@ func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor stri
 		return nil, err
 	}
 
-	var items []*model.Application
+	items := make([]*model.Application, 0, len(appsCollection))
 
 	for _, appEnt := range appsCollection {
 		m := r.conv.FromEntity(&appEnt)
@@ -212,7 +212,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 	var appsCollection EntityCollection
 
 	// Scenarios query part
-	var scenariosFilters []*labelfilter.LabelFilter
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
 		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
@@ -251,7 +251,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		return nil, err
 	}
 
-	var items []*model.Application
+	items := make([]*model.Application, 0, len(appsCollection))
 
 	for _, appEnt := range appsCollection {
 		m := r.conv.FromEntity(&appEnt)
@@ -305,7 +305,7 @@ func (r *pgRepository) updateSingle(ctx context.Context, model *model.Applicatio
 }
 
 func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model.Application, error) {
-	var items []*model.Application
+	items := make([]*model.Application, 0, len(entities))
 	for _, ent := range entities {
 		m := r.conv.FromEntity(&ent)
 		items = append(items, m)

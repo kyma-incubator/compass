@@ -240,7 +240,7 @@ func (s *service) fetchScenariosFromAssignments(ctx context.Context, tenantID st
 		cursor = page.PageInfo.EndCursor
 	}
 
-	var out []string
+	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)
 	}

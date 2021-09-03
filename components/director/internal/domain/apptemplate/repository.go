@@ -98,7 +98,7 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (mod
 		return model.ApplicationTemplatePage{}, err
 	}
 
-	var items []*model.ApplicationTemplate
+	items := make([]*model.ApplicationTemplate, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
 		isModel, err := r.conv.FromEntity(&entity)

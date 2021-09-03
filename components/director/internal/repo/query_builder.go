@@ -168,7 +168,7 @@ func writeEnumeratedConditions(builder *strings.Builder, conditions Conditions) 
 		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
-	var conditionsToJoin []string
+	conditionsToJoin := make([]string, 0, len(conditions))
 	for _, cond := range conditions {
 		conditionsToJoin = append(conditionsToJoin, cond.GetQueryPart())
 	}

@@ -65,7 +65,7 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error) {
-	var webhooks []*graphql.Webhook
+	webhooks := make([]*graphql.Webhook, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -115,7 +115,7 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 }
 
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error) {
-	var inputs []*model.WebhookInput
+	inputs := make([]*model.WebhookInput, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

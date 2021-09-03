@@ -65,7 +65,7 @@ func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector
 		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
 	}
 
-	var items []*model.AutomaticScenarioAssignment
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(out))
 
 	for _, v := range out {
 		item := r.conv.FromEntity(v)
@@ -98,7 +98,7 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 		return nil, err
 	}
 
-	var items []*model.AutomaticScenarioAssignment
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(collection))
 
 	for _, ent := range collection {
 		m := r.conv.FromEntity(ent)

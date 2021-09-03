@@ -96,7 +96,7 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 		return nil, err
 	}
 
-	var out []*model.Webhook
+	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
 		w, err := r.conv.FromEntity(ent)
 		if err != nil {
@@ -119,7 +119,7 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 		return nil, err
 	}
 
-	var out []*model.Webhook
+	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
 		w, err := r.conv.FromEntity(ent)
 		if err != nil {

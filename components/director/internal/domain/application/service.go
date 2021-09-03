@@ -465,7 +465,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 
 func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationRegisterInput, tenant string, applicationID string) error {
 	var err error
-	var webhooks []*model.Webhook
+	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), &tenant, applicationID))
 	}
@@ -668,7 +668,7 @@ func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string
 		return nil, errors.Wrapf(err, "while getting runtimes")
 	}
 
-	var runtimesNames []string
+	runtimesNames := make([]string, 0, len(runtimes))
 	for _, r := range runtimes {
 		runtimesNames = append(runtimesNames, r.Name)
 	}

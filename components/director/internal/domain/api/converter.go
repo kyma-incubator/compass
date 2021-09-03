@@ -77,7 +77,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
-	var apis []*graphql.APIDefinition
+	apis := make([]*graphql.APIDefinition, 0, len(in))
 	for i, a := range in {
 		if a == nil {
 			continue
@@ -95,8 +95,8 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 }
 
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error) {
-	var apiDefs []*model.APIDefinitionInput
-	var specs []*model.SpecInput
+	apiDefs := make([]*model.APIDefinitionInput, 0, len(in))
+	specs := make([]*model.SpecInput, 0, len(in))
 
 	for _, item := range in {
 		api, spec, err := c.InputFromGraphQL(item)

@@ -103,7 +103,7 @@ func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefi
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing Label Definitions")
 	}
-	var out []model.LabelDefinition
+	out := make([]model.LabelDefinition, 0, len(dest))
 	for _, entity := range dest {
 		ld, err := r.conv.FromEntity(entity)
 		if err != nil {

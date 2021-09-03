@@ -23,7 +23,7 @@ func SliceToMap(in []string) map[string]struct{} {
 }
 
 func MapToSlice(set map[string]struct{}) []string {
-	var items []string
+	items := make([]string, 0, len(set))
 	for key := range set {
 		items = append(items, key)
 	}
@@ -44,7 +44,7 @@ func Cast(i interface{}) (string, error) {
 }
 
 func PrefixStrings(in []string, prefix string) []string {
-	var prefixedFieldNames []string
+	prefixedFieldNames := make([]string, 0, len(in))
 	for _, column := range in {
 		prefixedFieldNames = append(prefixedFieldNames, fmt.Sprintf("%s%s", prefix, column))
 	}

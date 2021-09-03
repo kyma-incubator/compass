@@ -60,7 +60,7 @@ func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
 }
 
 func (c *converter) MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment {
-	var gqlAssignments []*graphql.AutomaticScenarioAssignment
+	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
 
 	for _, v := range assignments {
 		assignment := c.ToGraphQL(*v)

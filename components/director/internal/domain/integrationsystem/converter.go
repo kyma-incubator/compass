@@ -24,7 +24,7 @@ func (c *converter) ToGraphQL(in *model.IntegrationSystem) *graphql.IntegrationS
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.IntegrationSystem) []*graphql.IntegrationSystem {
-	var intSys []*graphql.IntegrationSystem
+	intSys := make([]*graphql.IntegrationSystem, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

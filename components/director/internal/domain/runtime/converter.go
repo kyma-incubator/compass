@@ -28,7 +28,7 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
-	var runtimes []*graphql.Runtime
+	runtimes := make([]*graphql.Runtime, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -111,7 +111,7 @@ func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *
 }
 
 func (c *converter) MultipleFromEntities(entities RuntimeCollection) []*model.Runtime {
-	var items []*model.Runtime
+	items := make([]*model.Runtime, 0, len(entities))
 	for _, ent := range entities {
 		model := ent.ToModel()
 

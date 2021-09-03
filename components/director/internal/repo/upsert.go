@@ -44,12 +44,12 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 		return err
 	}
 
-	var values []string
+	values := make([]string, 0, len(u.insertColumns))
 	for _, c := range u.insertColumns {
 		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
-	var update []string
+	update := make([]string, 0, len(u.updateColumns))
 	for _, c := range u.updateColumns {
 		update = append(update, fmt.Sprintf("%[1]s=EXCLUDED.%[1]s", c))
 	}

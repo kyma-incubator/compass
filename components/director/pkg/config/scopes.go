@@ -36,7 +36,7 @@ func (p *Provider) getValues(valueType, path string, singeValueExpected bool) ([
 		return nil, fmt.Errorf(errorMessageFormat, valueType, val)
 	}
 
-	var scopes []string
+	scopes := make([]string, 0, len(manyVals))
 	for _, val := range manyVals {
 		strVal, ok := val.(string)
 		if !ok {

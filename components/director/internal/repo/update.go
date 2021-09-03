@@ -96,7 +96,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return err
 	}
 
-	var fieldsToSet []string
+	fieldsToSet := make([]string, 0, len(u.updatableColumns))
 	for _, c := range u.updatableColumns {
 		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))
 	}

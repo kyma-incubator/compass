@@ -101,7 +101,7 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 		return nil, err
 	}
 
-	var items []*model.Spec
+	items := make([]*model.Spec, 0, len(specCollection))
 
 	for _, specEnt := range specCollection {
 		m, err := r.conv.FromEntity(specEnt)

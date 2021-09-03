@@ -134,7 +134,7 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error) {
-	var bundles []*graphql.Bundle
+	bundles := make([]*graphql.Bundle, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -184,7 +184,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 }
 
 func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error) {
-	var bundles []*model.BundleCreateInput
+	bundles := make([]*model.BundleCreateInput, 0, len(in))
 	for _, item := range in {
 		if item == nil {
 			continue

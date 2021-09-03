@@ -15,7 +15,7 @@ func FromGraphQL(in *graphql.LabelFilter) *LabelFilter {
 }
 
 func MultipleFromGraphQL(in []*graphql.LabelFilter) []*LabelFilter {
-	var filters []*LabelFilter
+	filters := make([]*LabelFilter, 0, len(in))
 
 	for _, f := range in {
 		filters = append(filters, FromGraphQL(f))

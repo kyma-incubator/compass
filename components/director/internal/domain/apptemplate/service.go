@@ -60,7 +60,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
 
-	var webhooks []*model.Webhook
+	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToApplicationTemplateWebhook(s.uidService.Generate(), nil, appTemplateID))
 	}

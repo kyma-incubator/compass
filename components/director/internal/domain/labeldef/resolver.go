@@ -104,7 +104,7 @@ func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefini
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	var out []*graphql.LabelDefinition
+	out := make([]*graphql.LabelDefinition, 0, len(defs))
 	for _, def := range defs {
 		c, err := r.conv.ToGraphQL(def)
 		if err != nil {

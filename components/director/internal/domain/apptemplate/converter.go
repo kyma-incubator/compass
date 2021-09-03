@@ -60,7 +60,7 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error) {
-	var appTemplates []*graphql.ApplicationTemplate
+	appTemplates := make([]*graphql.ApplicationTemplate, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -120,7 +120,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 }
 
 func (c *converter) ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput {
-	var values []*model.ApplicationTemplateValueInput
+	values := make([]*model.ApplicationTemplateValueInput, 0, len(in.Values))
 	for _, value := range in.Values {
 		valueInput := model.ApplicationTemplateValueInput{
 			Placeholder: value.Placeholder,
@@ -222,7 +222,7 @@ func (c *converter) placeholdersModelToJSON(in []model.ApplicationTemplatePlaceh
 }
 
 func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionInput) []model.ApplicationTemplatePlaceholder {
-	var placeholders []model.ApplicationTemplatePlaceholder
+	placeholders := make([]model.ApplicationTemplatePlaceholder, 0, len(in))
 	for _, p := range in {
 		np := model.ApplicationTemplatePlaceholder{
 			Name:        p.Name,
@@ -234,7 +234,7 @@ func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionI
 }
 
 func (c *converter) placeholdersToGraphql(in []model.ApplicationTemplatePlaceholder) []*graphql.PlaceholderDefinition {
-	var placeholders []*graphql.PlaceholderDefinition
+	placeholders := make([]*graphql.PlaceholderDefinition, 0, len(in))
 	for _, p := range in {
 		np := graphql.PlaceholderDefinition{
 			Name:        p.Name,

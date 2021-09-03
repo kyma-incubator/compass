@@ -65,7 +65,7 @@ func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (m
 		return model.IntegrationSystemPage{}, err
 	}
 
-	var items []*model.IntegrationSystem
+	items := make([]*model.IntegrationSystem, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
 		isModel := r.conv.FromEntity(&entity)

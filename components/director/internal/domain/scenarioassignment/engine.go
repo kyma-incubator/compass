@@ -234,7 +234,7 @@ func (e *engine) updateScenario(ctx context.Context, tenantID string, label mode
 }
 
 func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
-	var scenariosString []string
+	scenariosString := make([]string, 0, len(scenarios))
 	for _, scenario := range scenarios {
 		item, ok := scenario.(string)
 		if !ok {

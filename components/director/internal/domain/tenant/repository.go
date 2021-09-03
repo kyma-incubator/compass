@@ -119,7 +119,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	var items []*model.BusinessTenantMapping
+	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
 		tmModel := r.conv.FromEntity(&entity)

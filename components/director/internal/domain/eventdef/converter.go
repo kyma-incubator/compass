@@ -71,7 +71,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 		return nil, errors.New("different events and specs count provided")
 	}
 
-	var events []*graphql.EventDefinition
+	events := make([]*graphql.EventDefinition, 0, len(in))
 	for i, e := range in {
 		if e == nil {
 			continue
@@ -89,8 +89,8 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 }
 
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error) {
-	var eventDefs []*model.EventDefinitionInput
-	var specs []*model.SpecInput
+	eventDefs := make([]*model.EventDefinitionInput, 0, len(in))
+	specs := make([]*model.SpecInput, 0, len(in))
 
 	for _, item := range in {
 		event, spec, err := c.InputFromGraphQL(item)

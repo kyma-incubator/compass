@@ -49,7 +49,7 @@ func (c *converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInst
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error) {
-	var bundleInstanceAuths []*graphql.BundleInstanceAuth
+	bundleInstanceAuths := make([]*graphql.BundleInstanceAuth, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

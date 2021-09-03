@@ -77,7 +77,7 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
 	var queryBuilder strings.Builder
 
-	var args []interface{}
+	args := make([]interface{}, 0, len(filter))
 	for idx, lblFilter := range filter {
 		if idx > 0 || isSubQuery {
 			queryBuilder.WriteString(fmt.Sprintf(` %s `, setCombination))

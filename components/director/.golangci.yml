@@ -103,6 +103,10 @@ linters:
     # - interfacer
     # - lll
     # - maligned
+    # - nestif
+    # - nlreturn
+    # - noctx
+    # - paralleltest
   enable:
 #    - deadcode
 #    - errcheck
@@ -127,6 +131,10 @@ linters:
 #    - importas
 #    - makezero
 #    - misspell
+#    - nakedret
+#    - nilerr
+#    - nolintlint
+    - prealloc
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
 

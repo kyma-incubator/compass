@@ -160,8 +160,7 @@ func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions re
 }
 
 func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAuth, error) {
-
-	var items []model.SystemAuth
+	items := make([]model.SystemAuth, 0, len(entities))
 
 	for _, ent := range entities {
 		m, err := r.conv.FromEntity(ent)

@@ -78,7 +78,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		return nil, err
 	}
 
-	var stmts []string
+	stmts := make([]string, 0, len(queries))
 	for _, q := range queries {
 		stmts = append(stmts, q.statement)
 	}
@@ -107,7 +107,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 }
 
 func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []Condition, orderBy OrderByParams, limit int, offset int) ([]queryStruct, error) {
-	var queries []queryStruct
+	queries := make([]queryStruct, 0, len(ids))
 	for _, id := range ids {
 		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, append(conditions, NewEqualCondition(idsColumn, id)), orderBy, limit, offset, false)
 		if err != nil {

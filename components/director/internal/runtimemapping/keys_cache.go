@@ -78,7 +78,7 @@ func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 }
 
 func (c *jwksCache) Cleanup(ctx context.Context) {
-	var expiredKeys []string
+	expiredKeys := make([]string, 0, len(c.cache))
 	c.flag.RLock()
 	for keyID := range c.cache {
 		if !c.cache[keyID].IsExpired() {

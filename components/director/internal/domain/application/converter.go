@@ -117,7 +117,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Application {
-	var applications []*graphql.Application
+	applications := make([]*graphql.Application, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

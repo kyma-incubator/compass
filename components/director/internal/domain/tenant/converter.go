@@ -59,7 +59,7 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {
-	var tenants []*graphql.Tenant
+	tenants := make([]*graphql.Tenant, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

@@ -461,7 +461,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 		return nil, err
 	}
 
-	var out []*graphql.RuntimeSystemAuth
+	out := make([]*graphql.RuntimeSystemAuth, 0, len(sysAuths))
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
 		if err != nil {

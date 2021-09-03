@@ -117,8 +117,8 @@ func (c *inCondition) GetQueryArgs() ([]interface{}, bool) {
 }
 
 func NewInConditionForStringValues(field string, values []string) Condition {
-	var parenthesisParams []string
-	var args []interface{}
+	parenthesisParams := make([]string, 0, len(values))
+	args := make([]interface{}, 0, len(values))
 	for _, value := range values {
 		parenthesisParams = append(parenthesisParams, "?")
 		args = append(args, value)
