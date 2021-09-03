@@ -149,7 +149,7 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 				tenantSvc.On("GetInternalTenant", ctx, customerTenant.ExternalTenant).Return("", testError).Once()
 				return tenantSvc
 			},
-			Request: requestWithAccountTenant,
+			Request:             requestWithAccountTenant,
 			ExpectedErrorOutput: "while checking if parent of type customer already exists",
 		},
 		{
@@ -235,7 +235,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 				tenantSvc.On("GetInternalTenant", ctx, accountTenant.ExternalTenant).Return("", testError).Once()
 				return tenantSvc
 			},
-			Request: requestWithSubaccountTenant,
+			Request:             requestWithSubaccountTenant,
 			ExpectedErrorOutput: "while checking if parent of type account already exists",
 		},
 		{
