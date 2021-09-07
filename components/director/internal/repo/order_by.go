@@ -1,6 +1,5 @@
 package repo
 
-// OrderByDir missing godoc
 // OrderByDir is a type encapsulating the ORDER BY direction
 type OrderByDir string
 
@@ -11,7 +10,6 @@ const (
 	DescOrderBy OrderByDir = "DESC"
 )
 
-// OrderBy missing godoc
 // OrderBy type that wraps the information about the ordering column and direction
 type OrderBy struct {
 	Field string
@@ -34,10 +32,8 @@ func NewDescOrderBy(field string) OrderBy {
 	}
 }
 
-// OrderByParams missing godoc
 // OrderByParams is a wrapping type for slice of OrderBy types
 type OrderByParams []OrderBy
 
-// NoOrderBy missing godoc
 // NoOrderBy represents default ordering (no order specified)
 var NoOrderBy = OrderByParams{}

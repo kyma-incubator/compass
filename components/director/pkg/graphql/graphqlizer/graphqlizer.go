@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Graphqlizer missing godoc
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
 type Graphqlizer struct{}
 

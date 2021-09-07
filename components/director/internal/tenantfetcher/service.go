@@ -43,7 +43,6 @@ type MovedRuntimeByLabelFieldMapping struct {
 	TargetTenant string `envconfig:"default=targetTenant,APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD"`
 }
 
-// QueryConfig missing godoc
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
 	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`

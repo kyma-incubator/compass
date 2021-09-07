@@ -38,7 +38,6 @@ const (
 	OpModeKey contextKey = "OperationModeCtx"
 )
 
-// OperationStatus missing godoc
 // OperationStatus denotes the different statuses that an Operation can be in
 type OperationStatus string
 
@@ -63,7 +62,6 @@ const (
 	OperationTypeDelete OperationType = "Delete"
 )
 
-// OperationResponse missing godoc
 // OperationResponse defines the expected response format for the Operations API
 type OperationResponse struct {
 	*Operation
@@ -71,7 +69,6 @@ type OperationResponse struct {
 	Error  *string         `json:"error,omitempty"`
 }
 
-// Operation missing godoc
 // Operation represents a GraphQL mutation which has associated HTTP requests (Webhooks) that need to be executed
 // for the request to be completed fully. Objects of type Operation are meant to be constructed, enriched throughout
 // the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through

@@ -9,9 +9,7 @@ import (
 type key int
 
 // ClientUserContextKey missing godoc
-const (
-	ClientUserContextKey key = iota
-)
+const ClientUserContextKey key = iota
 
 // LoadFromContext missing godoc
 func LoadFromContext(ctx context.Context) (string, error) {

@@ -53,7 +53,6 @@ const (
 	ExternalIssuer = "certificate-service"
 )
 
-// AuthDetails missing godoc
 // AuthDetails contains information about the currently authenticated client - AuthID, AuthFlow and Authenticator to use for further processing
 type AuthDetails struct {
 	AuthID        string
@@ -63,7 +62,6 @@ type AuthDetails struct {
 	ScopePrefix   string
 }
 
-// AuthFlow missing godoc
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
 type AuthFlow string
 
@@ -87,7 +85,6 @@ func (f AuthFlow) IsJWTFlow() bool {
 	return f == JWTAuthFlow
 }
 
-// ReqBody missing godoc
 // ReqBody represents parsed request input to the handler
 type ReqBody struct {
 	Subject string                 `json:"subject"`
@@ -95,7 +92,6 @@ type ReqBody struct {
 	Header  http.Header            `json:"header"`
 }
 
-// ReqData missing godoc
 // ReqData represents incomming request with parsed body and its header
 type ReqData struct {
 	Body   ReqBody

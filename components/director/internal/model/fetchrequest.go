@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// FetchRequest missing godoc
 // FetchRequest compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	ID         string

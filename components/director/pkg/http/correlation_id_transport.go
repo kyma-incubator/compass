@@ -30,7 +30,6 @@ func NewCorrelationIDTransport(roundTripper HTTPRoundTripper) *CorrelationIDTran
 	}
 }
 
-// CorrelationIDTransport missing godoc
 // CorrelationIDTransport is a transport that attaches all correlation ID headers to the ongoing request context.
 type CorrelationIDTransport struct {
 	roundTripper HTTPRoundTripper

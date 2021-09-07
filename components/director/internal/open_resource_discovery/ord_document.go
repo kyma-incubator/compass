@@ -11,9 +11,7 @@ import (
 )
 
 // WellKnownEndpoint missing godoc
-const (
-	WellKnownEndpoint = "/.well-known/open-resource-discovery"
-)
+const WellKnownEndpoint = "/.well-known/open-resource-discovery"
 
 // WellKnownConfig missing godoc
 type WellKnownConfig struct {

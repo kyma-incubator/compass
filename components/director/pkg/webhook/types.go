@@ -34,13 +34,11 @@ var allowedMethods = []string{"GET", "POST", "PUT", "DELETE"}
 // Mode missing godoc
 type Mode string
 
-// Resource missing godoc
 // Resource is used to identify entities which can be part of a webhook's request data
 type Resource interface {
 	Sentinel()
 }
 
-// RequestObject missing godoc
 // RequestObject struct contains parts of request that might be needed for later processing of a Webhook request
 type RequestObject struct {
 	Application Resource
@@ -48,7 +46,6 @@ type RequestObject struct {
 	Headers     map[string]string
 }
 
-// ResponseObject missing godoc
 // ResponseObject struct contains parts of response that might be needed for later processing of Webhook response
 type ResponseObject struct {
 	Body    map[string]string
@@ -61,7 +58,6 @@ type URL struct {
 	Path   *string `json:"path"`
 }
 
-// Response missing godoc
 // Response defines the schema for Webhook output templates
 type Response struct {
 	Location          *string `json:"location"`
@@ -70,7 +66,6 @@ type Response struct {
 	Error             *string `json:"error"`
 }
 
-// ResponseStatus missing godoc
 // ResponseStatus defines the schema for Webhook status templates when dealing with async webhooks
 type ResponseStatus struct {
 	Status                     *string `json:"status"`

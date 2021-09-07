@@ -9,9 +9,7 @@ import (
 type key int
 
 // TenantContextKey missing godoc
-const (
-	TenantContextKey key = iota
-)
+const TenantContextKey key = iota
 
 // TenantCtx missing godoc
 type TenantCtx struct {

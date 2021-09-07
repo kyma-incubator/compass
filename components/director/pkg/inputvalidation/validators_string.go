@@ -8,9 +8,7 @@ import (
 )
 
 // DNSName missing godoc
-var (
-	DNSName = &dnsNameRule{}
-)
+var DNSName = &dnsNameRule{}
 
 type dnsNameRule struct{}
 

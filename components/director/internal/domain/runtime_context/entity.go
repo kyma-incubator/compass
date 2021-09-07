@@ -4,7 +4,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// RuntimeContext missing godoc
 // RuntimeContext struct represents database entity for RuntimeContext
 type RuntimeContext struct {
 	ID        string `db:"id"`

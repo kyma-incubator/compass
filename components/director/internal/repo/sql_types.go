@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// Entity missing godoc
 // Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
 	GetReady() bool

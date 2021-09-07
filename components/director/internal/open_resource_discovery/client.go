@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Client missing godoc
 // Client represents ORD documents client
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 type Client interface {

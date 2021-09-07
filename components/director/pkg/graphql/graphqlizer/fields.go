@@ -5,11 +5,9 @@ import (
 	"strings"
 )
 
-// GqlFieldsProvider missing godoc
 // GqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given type
 type GqlFieldsProvider struct{}
 
-// FieldCtx missing godoc
 // FieldCtx is a map of optional fields that can be passed to FieldsProvider
 // Map keys should be in following format: `type.field` eg. `APIDefinition.auth`
 type FieldCtx map[string]string

@@ -38,7 +38,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// OperationRequest missing godoc
 // OperationRequest is the expected request body when updating certain operation status
 type OperationRequest struct {
 	OperationType OperationType `json:"operation_type,omitempty"`
@@ -47,11 +46,9 @@ type OperationRequest struct {
 	Error         string        `json:"error"`
 }
 
-// ResourceUpdaterFunc missing godoc
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
 type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error
 
-// ResourceDeleterFunc missing godoc
 // ResourceDeleterFunc defines a function which deletes a particular resource by ID
 type ResourceDeleterFunc func(ctx context.Context, id string) error
 

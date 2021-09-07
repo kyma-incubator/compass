@@ -22,8 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-// Entity missing godoc
-// Entity denotes an model-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
+// Entity denotes a model-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
 	GetID() string
 	GetType() resource.Type

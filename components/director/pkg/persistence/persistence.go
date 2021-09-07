@@ -16,7 +16,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// RetryCount missing godoc
 // RetryCount is a number of retries when trying to open the database
 const RetryCount int = 50
 

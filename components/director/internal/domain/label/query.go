@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// SetCombination missing godoc
 // SetCombination type defines possible result set combination for querying
 type SetCombination string
 

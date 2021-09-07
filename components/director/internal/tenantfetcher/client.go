@@ -50,11 +50,9 @@ type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
 }
 
-// QueryParams missing godoc
 // QueryParams describes the key and the corresponding value for query parameters when requesting the service
 type QueryParams map[string]string
 
-// Client missing godoc
 // Client implements the communication with the service
 type Client struct {
 	httpClient    *http.Client

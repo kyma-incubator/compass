@@ -40,11 +40,9 @@ const ResourceIDParam = "resource_id"
 // ResourceTypeParam missing godoc
 const ResourceTypeParam = "resource_type"
 
-// ResourceFetcherFunc missing godoc
 // ResourceFetcherFunc defines a function which fetches a particular resource by tenant and resource ID
 type ResourceFetcherFunc func(ctx context.Context, tenantID, resourceID string) (model.Entity, error)
 
-// TenantLoaderFunc missing godoc
 // TenantLoaderFunc defines a function which fetches the tenant for a particular request
 type TenantLoaderFunc func(ctx context.Context) (string, error)
 

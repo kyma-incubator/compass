@@ -30,7 +30,6 @@ const (
 	errorSourceFieldUnavailable = "check component log field"
 )
 
-// ErrorLocationHook missing godoc
 // ErrorLocationHook provides an implementation of the sirupsen/logrus/Hook interface.
 // Attaches error location information to log entries if an error is being logged and it has stack-trace information
 // (i.e. if it originates from or is wrapped by github.com/pkg/errors).

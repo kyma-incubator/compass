@@ -73,7 +73,6 @@ const (
 	BundleInstanceAuthStatusConditionUnused BundleInstanceAuthStatusCondition = "UNUSED"
 )
 
-// BundleInstanceAuthRequestInput missing godoc
 // BundleInstanceAuthRequestInput type for requestBundleInstanceAuthCreation
 type BundleInstanceAuthRequestInput struct {
 	ID          *string
@@ -96,7 +95,6 @@ func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tena
 	}
 }
 
-// BundleInstanceAuthSetInput missing godoc
 // BundleInstanceAuthSetInput type for setBundleInstanceAuth
 type BundleInstanceAuthSetInput struct {
 	Auth   *AuthInput
