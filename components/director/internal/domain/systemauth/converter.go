@@ -61,7 +61,6 @@ func (c *converter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error) 
 	default:
 		return nil, errors.New("invalid object type")
 	}
-
 }
 
 func (c *converter) ToEntity(in model.SystemAuth) (Entity, error) {

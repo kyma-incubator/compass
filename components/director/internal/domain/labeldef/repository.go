@@ -41,7 +41,6 @@ type repository struct {
 }
 
 func NewRepository(conv EntityConverter) *repository {
-
 	return &repository{conv: conv,
 		creator:      repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
 		getter:       repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),

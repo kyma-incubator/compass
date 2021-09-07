@@ -107,7 +107,6 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionModel := versionConv.FromEntity(versionEntity)
 		//THEN
 		require.Nil(t, versionModel)
-
 	})
 }
 func TestConverter_ToEntity(t *testing.T) {

@@ -20,7 +20,6 @@ import (
 )
 
 func TestServiceCreate(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
@@ -64,7 +63,6 @@ func TestServiceCreate(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while storing Label Definition: some error")
 	})
-
 }
 
 func TestServiceGet(t *testing.T) {

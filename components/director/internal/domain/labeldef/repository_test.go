@@ -265,7 +265,6 @@ func TestRepositoryGetByKey(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Object not found")
 		assert.Nil(t, actual)
-
 	})
 	t.Run("returns error when conversion fails", func(t *testing.T) {
 		// GIVEN
@@ -398,7 +397,6 @@ func TestRepositoryList(t *testing.T) {
 		_, err := sut.List(ctx, "tenant")
 		// THEN
 		require.EqualError(t, err, "while converting Label Definition [key=key1]: conversion error")
-
 	})
 	t.Run("returns error if if select fails", func(t *testing.T) {
 		// GIVEN
@@ -454,7 +452,6 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.False(t, actual)
-
 	})
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN

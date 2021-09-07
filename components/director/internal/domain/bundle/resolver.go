@@ -597,7 +597,6 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		for _, event := range eventPage.Data {
 			eventSpecs = append(eventSpecs, eventAPIDefIDtoSpec[event.ID])
 			eventBundleRefs = append(eventBundleRefs, eventAPIDefIDtoRef[event.ID])
-
 		}
 
 		gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventPage.Data, eventSpecs, eventBundleRefs)

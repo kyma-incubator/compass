@@ -94,7 +94,6 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 }
 
 func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error {
-
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
 		return err

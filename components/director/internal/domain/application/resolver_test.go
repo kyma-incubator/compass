@@ -1903,7 +1903,6 @@ func TestResolver_Bundle(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})
-
 }
 
 func fixOAuths() []model.SystemAuth {

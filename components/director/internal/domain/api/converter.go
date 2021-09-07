@@ -131,7 +131,6 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 }
 
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
-
 	return model.APIDefinition{
 		ApplicationID:                           entity.ApplicationID,
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),

@@ -2402,7 +2402,6 @@ func TestService_UpdateTenantID(t *testing.T) {
 			scenariosService.AssertExpectations(t)
 			scenarioAssignmentEngine.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
-
 		})
 	}
 
@@ -2483,7 +2482,6 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			scenariosService.AssertExpectations(t)
 			scenarioAssignmentEngine.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
-
 		})
 	}
 

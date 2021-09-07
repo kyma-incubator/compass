@@ -60,7 +60,6 @@ var (
 )
 
 func TestHandleOperation(t *testing.T) {
-
 	t.Run("missing operation mode param causes internal server error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()

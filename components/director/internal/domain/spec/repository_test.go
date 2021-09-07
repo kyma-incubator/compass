@@ -68,7 +68,6 @@ func TestRepository_GetByID(t *testing.T) {
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
-
 }
 
 func TestRepository_Create(t *testing.T) {

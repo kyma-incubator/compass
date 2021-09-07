@@ -29,7 +29,6 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, errors.New("error")
 	}
 	return response, nil
-
 }
 
 func NewTestClient(fn RoundTripFunc) *http.Client {
@@ -280,7 +279,6 @@ func TestService_HandleSpec(t *testing.T) {
 
 			assert.Equal(t, testCase.ExpectedStatus, testCase.InputFr.Status)
 			assert.Equal(t, testCase.ExpectedResult, result)
-
 		})
 	}
 }

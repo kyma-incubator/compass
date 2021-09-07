@@ -99,7 +99,6 @@ func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels m
 		for _, sa := range scenarioAssignments {
 			scenariosSet[sa.ScenarioName] = struct{}{}
 		}
-
 	}
 
 	scenarios := make([]string, 0)
@@ -134,7 +133,6 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 		for _, scenario := range scenariosFromInputInterfaceSlice {
 			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
 		}
-
 	}
 
 	scenarios := make([]interface{}, 0)

@@ -83,7 +83,6 @@ func TestExist(t *testing.T) {
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-
 	})
 
 	t.Run("context properly canceled", func(t *testing.T) {
@@ -177,7 +176,6 @@ func TestExistGlobal(t *testing.T) {
 		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-
 	})
 
 	t.Run("context properly canceled", func(t *testing.T) {

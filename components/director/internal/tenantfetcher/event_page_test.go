@@ -306,7 +306,6 @@ func Test_getTenantMappings(t *testing.T) {
 			test.assertTenantMappingFunc(t, tenantMappings)
 		})
 	}
-
 }
 
 type Pair struct {

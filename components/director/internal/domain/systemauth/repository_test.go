@@ -176,7 +176,6 @@ func TestRepository_GetByID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, actual)
 		assert.Equal(t, saModel, actual)
-
 	})
 
 	t.Run("Error - Converter", func(t *testing.T) {
@@ -252,7 +251,6 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, actual)
 		assert.Equal(t, saModel, actual)
-
 	})
 
 	t.Run("Error - Converter", func(t *testing.T) {
@@ -691,7 +689,6 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-
 	sysAuthID := "foo"
 	objID := "bar"
 	modelAuth := fixModelAuth()
@@ -779,7 +776,6 @@ func TestRepository_Update(t *testing.T) {
 }
 
 func TestRepository_GetByJSONValue(t *testing.T) {
-
 	t.Run("error when GetGlobal fails", func(t *testing.T) {
 		// GIVEN
 		value := make(map[string]interface{})

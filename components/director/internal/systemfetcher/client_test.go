@@ -118,7 +118,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
 		require.Len(t, systems, 10)
-
 	})
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {

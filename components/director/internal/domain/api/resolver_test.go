@@ -498,7 +498,6 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				return &automock.APIConverter{}
-
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}

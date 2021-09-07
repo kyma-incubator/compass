@@ -458,7 +458,6 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		}
 
 		finalScenarios = append(finalScenarios, scenarios...)
-
 	} else {
 		oldScenariosLabel, err := getScenariosLabel(currentRuntimeLabels)
 		if err != nil {

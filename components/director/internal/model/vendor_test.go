@@ -49,7 +49,6 @@ func TestVendorInput_ToVendor(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToVendor(id, tenant, appID)
 

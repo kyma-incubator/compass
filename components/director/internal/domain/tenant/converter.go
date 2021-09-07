@@ -55,7 +55,6 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 		Name:        str.Ptr(in.Name),
 		Initialized: in.Initialized,
 	}
-
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {

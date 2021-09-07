@@ -54,7 +54,6 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, tenant, 0)
 

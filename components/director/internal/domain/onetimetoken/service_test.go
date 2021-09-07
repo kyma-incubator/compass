@@ -687,7 +687,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.description, func(t *testing.T) {
-
 			// GIVEN
 			systemAuthSvc := test.systemAuthSvc()
 			appSvc := test.appSvc()

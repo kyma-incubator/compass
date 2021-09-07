@@ -32,7 +32,6 @@ func TestMutateConfig(t *testing.T) {
 		expected, err := ioutil.ReadFile("testdata/expected.graphql")
 		require.NoError(t, err)
 		assert.Equal(t, string(expected), string(actual))
-
 	})
 
 	t.Run("No examples directory", func(t *testing.T) {

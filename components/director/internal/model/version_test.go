@@ -43,7 +43,6 @@ func TestVersionInput_ToVersion(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToVersion()
 

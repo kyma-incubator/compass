@@ -47,7 +47,6 @@ func TestPackageInput_ToPackage(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToPackage(id, tenant, appID, 0)
 

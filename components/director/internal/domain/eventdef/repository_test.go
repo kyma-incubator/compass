@@ -45,7 +45,6 @@ func TestPgRepository_GetByID(t *testing.T) {
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
-
 }
 
 func TestPgRepository_ListByApplicationID(t *testing.T) {

@@ -175,7 +175,6 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 
 	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-
 		labelModel, err := r.conv.FromEntity(label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")
@@ -202,7 +201,6 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 
 	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-
 		labelModel, err := r.conv.FromEntity(label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")

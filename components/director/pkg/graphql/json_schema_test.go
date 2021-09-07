@@ -99,7 +99,6 @@ func TestJSON_MarshalSchema(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.Expected, json)
-
 		})
 	}
 }

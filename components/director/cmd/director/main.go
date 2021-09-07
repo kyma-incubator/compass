@@ -395,7 +395,6 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 			exitOnError(err, "Error from Reloader watch")
 		}
 		log.C(ctx).Infof("Successfully reloaded configuration file.")
-
 	}).Run(ctx)
 
 	return provider

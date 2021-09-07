@@ -227,7 +227,6 @@ func TestPgRepository_List(t *testing.T) {
 			assert.Equal(t, runtimeCtx2ID, modelRuntimePage.Data[1].ID)
 			assert.Equal(t, runtimeID, modelRuntimePage.Data[1].RuntimeID)
 			assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
-
 		})
 	}
 

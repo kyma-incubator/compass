@@ -736,7 +736,6 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 }
 
 func TestUpdateLabelDefinition(t *testing.T) {
-
 	tnt := "tenant"
 	externalTnt := "external-tenant"
 	gqlLabelDefinitionInput := graphql.LabelDefinitionInput{

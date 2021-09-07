@@ -111,9 +111,8 @@ linters:
     # - tagliatelle
     # - testpackage TODO: enable
     # - thelper
-    # - whitespace TODO: enable
     # - wrapcheck
-    # - wsl TODO: check if can enable
+    # - wsl
   enable:
     - deadcode
     - errcheck

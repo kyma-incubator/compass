@@ -50,7 +50,6 @@ func TestProductInput_ToProduct(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToProduct(id, tenant, appID)
 

@@ -50,7 +50,6 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToEventDefinitionWithinBundle(id, appID, bndlID, tenant, 0)
 

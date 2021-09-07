@@ -35,7 +35,6 @@ import (
 )
 
 func TestUpdateOperationHandler(t *testing.T) {
-
 	t.Run("when request method is not PUT it should return method not allowed", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)

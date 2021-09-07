@@ -156,7 +156,6 @@ func TestFromEntityWhenSchemaProvided(t *testing.T) {
 	err = json.Unmarshal(b, &exSchema)
 	require.NoError(t, err)
 	assert.Equal(t, ExampleSchema{ID: "xxx", Title: "title"}, exSchema)
-
 }
 
 type ExampleSchema struct {

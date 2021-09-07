@@ -31,7 +31,6 @@ type Resolver struct {
 }
 
 func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -51,7 +50,6 @@ func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 
 	gqlTenants := r.conv.MultipleToGraphQL(tenants)
 	return gqlTenants, nil
-
 }
 
 func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tenant, error) {

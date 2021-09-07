@@ -44,7 +44,6 @@ const (
 )
 
 func TestServeHTTP(t *testing.T) {
-
 	t.Run("when tenant is missing it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req := fixEmptyRequest(t, context.Background(), string(resource.Application), resourceID)
@@ -351,7 +350,6 @@ func TestServeHTTP(t *testing.T) {
 			})
 		}
 	})
-
 }
 
 func fixEmptyRequest(t *testing.T, ctx context.Context, resourceType string, resourceID string) *http.Request {

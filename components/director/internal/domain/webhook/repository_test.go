@@ -124,7 +124,6 @@ func TestRepositoryGetByID(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
-
 }
 
 func TestRepositoryCreate(t *testing.T) {
@@ -643,7 +642,6 @@ func givenID() string {
 
 func anotherID() string {
 	return "dddddddd-dddd-dddd-dddd-dddddddddddd"
-
 }
 
 func givenTenant() string {

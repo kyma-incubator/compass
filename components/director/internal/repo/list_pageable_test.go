@@ -104,7 +104,6 @@ func TestListPageable(t *testing.T) {
 		assert.Len(t, second, 1)
 		assert.True(t, actualSecondPage.HasNextPage)
 		assert.NotEmpty(t, actualSecondPage.EndCursor)
-
 	})
 
 	t.Run("returns page without conditions", func(t *testing.T) {
@@ -300,7 +299,6 @@ func TestListPageableGlobal(t *testing.T) {
 		assert.Len(t, second, 1)
 		assert.True(t, actualSecondPage.HasNextPage)
 		assert.NotEmpty(t, actualSecondPage.EndCursor)
-
 	})
 
 	t.Run("returns page without conditions", func(t *testing.T) {

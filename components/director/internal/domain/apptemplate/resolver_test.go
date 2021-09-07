@@ -685,7 +685,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), expectedError.Error())
 	})
-
 }
 
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {

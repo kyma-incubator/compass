@@ -92,7 +92,7 @@ endef
 #
 #   verify:: errcheck
 #
-verify:: test check-imports check-fmt errcheck
+verify:: test check-imports check-fmt errcheck lint
 format:: imports fmt
 
 release: verify build-image push-image
