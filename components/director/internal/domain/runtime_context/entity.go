@@ -13,7 +13,7 @@ type RuntimeContext struct {
 	Value     string `db:"value"`
 }
 
-// EntityFromRuntimeModel converts RuntimeContext model to RuntimeContext entity
+// EntityFromRuntimeContextModel converts RuntimeContext model to RuntimeContext entity
 func EntityFromRuntimeContextModel(model *model.RuntimeContext) *RuntimeContext {
 	return &RuntimeContext{
 		ID:        model.ID,
@@ -24,7 +24,7 @@ func EntityFromRuntimeContextModel(model *model.RuntimeContext) *RuntimeContext 
 	}
 }
 
-// GraphQLToModel converts RuntimeContext entity to RuntimeContext model
+// ToModel converts RuntimeContext entity to RuntimeContext model
 func (e RuntimeContext) ToModel() *model.RuntimeContext {
 	return &model.RuntimeContext{
 		ID:        e.ID,

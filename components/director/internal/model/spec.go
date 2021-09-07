@@ -32,6 +32,7 @@ const (
 	SpecFormatXML  SpecFormat = "XML"
 
 	// ORD Formats
+
 	SpecFormatApplicationJSON SpecFormat = "application/json"
 	SpecFormatTextYAML        SpecFormat = "text/yaml"
 	SpecFormatApplicationXML  SpecFormat = "application/xml"
@@ -46,6 +47,7 @@ const (
 	APISpecTypeOpenAPI APISpecType = "OPEN_API"
 
 	// ORD Formats
+
 	APISpecTypeOpenAPIV2   APISpecType = "openapi-v2"
 	APISpecTypeOpenAPIV3   APISpecType = "openapi-v3"
 	APISpecTypeRaml        APISpecType = "raml-v1"
@@ -63,6 +65,7 @@ const (
 	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
 
 	// ORD Formats
+
 	EventSpecTypeAsyncAPIV2 EventSpecType = "asyncapi-v2"
 	EventSpecTypeCustom     EventSpecType = "custom"
 )

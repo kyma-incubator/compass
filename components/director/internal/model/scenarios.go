@@ -17,7 +17,7 @@ var (
 			"maxLength": 128,
 		},
 	}
-	// This schema is used to validate ScenariosSchema (allows only modifications to enum field)
+	// SchemaForScenariosSchema is used to validate ScenariosSchema (allows only modifications to enum field)
 	SchemaForScenariosSchema = map[string]interface{}{
 		"type":                 "object",
 		"additionalProperties": false,

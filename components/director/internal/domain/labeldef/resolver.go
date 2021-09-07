@@ -29,7 +29,6 @@ func NewResolver(transactioner persistence.Transactioner, srv Service, conv Mode
 	}
 }
 
-// dependencies
 //go:generate mockery --name=ModelConverter --output=automock --outpkg=automock --case=underscore
 type ModelConverter interface {
 	// TODO: Use model.LabelDefinitionInput

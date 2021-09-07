@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-//  Compass performs fetch to validate if request is correct and stores a copy
+// FetchRequest compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	ID         string
 	Tenant     string

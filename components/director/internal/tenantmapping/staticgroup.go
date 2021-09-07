@@ -64,7 +64,7 @@ func (r *staticGroupRepository) Get(ctx context.Context, groupnames []string) St
 	return result
 }
 
-// getGroupScopes get all scopes from group array, without duplicates
+// GetGroupScopes get all scopes from group array, without duplicates
 func (groups StaticGroups) GetGroupScopes() string {
 	scopeMap := make(map[string]bool)
 	filteredScopes := []string{}

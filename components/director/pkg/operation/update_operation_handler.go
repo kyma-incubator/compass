@@ -49,7 +49,7 @@ type OperationRequest struct {
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
 type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorMsg *string, appStatusCondition model.ApplicationStatusCondition) error
 
-// ResourceFetcherFunc defines a function which deletes a particular resource by ID
+// ResourceDeleterFunc defines a function which deletes a particular resource by ID
 type ResourceDeleterFunc func(ctx context.Context, id string) error
 
 type updateOperationHandler struct {

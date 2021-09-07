@@ -65,7 +65,7 @@ const (
 	BundleInstanceAuthStatusConditionUnused    BundleInstanceAuthStatusCondition = "UNUSED"
 )
 
-// Input type for requestBundleInstanceAuthCreation
+// BundleInstanceAuthRequestInput type for requestBundleInstanceAuthCreation
 type BundleInstanceAuthRequestInput struct {
 	ID          *string
 	Context     *string
@@ -86,7 +86,7 @@ func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tena
 	}
 }
 
-// Input type for setBundleInstanceAuth
+// BundleInstanceAuthSetInput type for setBundleInstanceAuth
 type BundleInstanceAuthSetInput struct {
 	Auth   *AuthInput
 	Status *BundleInstanceAuthStatusInput

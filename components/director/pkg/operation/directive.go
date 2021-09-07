@@ -43,7 +43,7 @@ import (
 
 const ModeParam = "mode"
 
-// ResourceFetcherFunc defines a function which fetches the webhooks for a specific resource ID
+// WebhookFetcherFunc defines a function which fetches the webhooks for a specific resource ID
 type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.Webhook, error)
 
 type directive struct {
