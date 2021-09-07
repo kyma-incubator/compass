@@ -108,13 +108,11 @@ linters:
     # - noctx
     # - paralleltest
     # - scopelint
-    # - stylecheck TODO: check if can enable
     # - tagliatelle
-    # - testpackage TODO: enbale
+    # - testpackage TODO: enable
     # - thelper
-    # - unparam TODO: enbale
     # - whitespace TODO: enable
-    # - wrapcheck TODO: check if can enable
+    # - wrapcheck
     # - wsl TODO: check if can enable
   enable:
     - deadcode
@@ -152,6 +150,9 @@ linters:
     - unconvert
     - wastedassign
     - revive
+    - stylecheck
+    - unparam
+    - whitespace
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
 
@@ -173,6 +174,7 @@ issues:
         - goconst
         - gocritic
         - gosec
+        - unparam
 
     - path: _test\.go
       text: "SA1029"
@@ -191,6 +193,10 @@ issues:
     - linters:
         - revive
       text: "unexported-return|exported|error-naming"
+
+    - linters:
+        - stylecheck
+      text: "ST1012"
 
 #    # Exclude known linters from partially hard-vendored code,
 #    # which is impossible to exclude via "nolint" comments.

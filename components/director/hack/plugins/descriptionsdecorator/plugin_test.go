@@ -13,7 +13,6 @@ import (
 )
 
 func TestMutateConfig(t *testing.T) {
-
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		cfg, err := config.LoadConfig("testdata/config.yaml")
@@ -35,6 +34,7 @@ func TestMutateConfig(t *testing.T) {
 		assert.Equal(t, string(expected), string(actual))
 
 	})
+
 	t.Run("No examples directory", func(t *testing.T) {
 		// GIVEN
 		cfg, err := config.LoadConfig("testdata/config.yaml")
@@ -48,15 +48,15 @@ func TestMutateConfig(t *testing.T) {
 			require.NoError(t, err)
 		}(t)
 		require.Nil(t, err)
-
 	})
+
 	t.Run("No config file", func(t *testing.T) {
 		// GIVEN
 		_, err := config.LoadConfig("testdata/no_config.yaml")
 		testerr := errors.New("unable to read config: open testdata/no_config.yaml: no such file or directory")
 		assert.EqualError(t, err, testerr.Error())
-
 	})
+
 	t.Run("Wrong schema in config file", func(t *testing.T) {
 		// GIVEN
 		cfg, err := config.LoadConfig("testdata/wrong_config.yaml")
@@ -70,6 +70,5 @@ func TestMutateConfig(t *testing.T) {
 			require.NoError(t, err)
 		}(t)
 		assert.Nil(t, err)
-
 	})
 }

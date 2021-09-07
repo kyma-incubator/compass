@@ -88,10 +88,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		args = append(args, q.args...)
 	}
 
-	query, err := buildUnionQuery(stmts)
-	if err != nil {
-		return nil, err
-	}
+	query := buildUnionQuery(stmts)
 
 	err = persist.SelectContext(ctx, dest, query, args...)
 	if err != nil {

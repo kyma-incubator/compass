@@ -76,7 +76,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Error reading request body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while reading request body")
-				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
+				writeAppError(ctx, w, appErr)
 				return
 			}
 
@@ -128,7 +128,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 				if err != nil {
 					log.C(ctx).WithError(err).Errorf("Error determining request consumer: %v", err)
 					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
-					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
+					writeAppError(ctx, w, appErr)
 					return
 				}
 
@@ -159,7 +159,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Error reading response body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while reading response body")
-				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
+				writeAppError(ctx, w, appErr)
 				return
 			}
 
@@ -191,7 +191,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			if _, err := w.Write([]byte(body)); err != nil {
 				log.C(ctx).WithError(err).Errorf("Error writing response body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while writing response body")
-				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
+				writeAppError(ctx, w, appErr)
 				return
 			}
 		})
@@ -229,13 +229,13 @@ func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo
 	return nil
 }
 
-func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
+func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error) {
 	errCode := apperrors.ErrorCode(appErr)
 	if errCode == apperrors.UnknownError || errCode == apperrors.InternalError {
 		errCode = apperrors.InternalError
 	}
 
-	w.WriteHeader(statusCode)
+	w.WriteHeader(http.StatusInternalServerError)
 	w.Header().Set("Content-Type", "application/json")
 	resp := gqlgen.Response{Errors: []*gqlerror.Error{{
 		Message:    appErr.Error(),

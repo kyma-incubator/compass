@@ -59,7 +59,7 @@ func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicati
 		return nil
 	}
 
-	webhook := i.toGenericWebhook(id, tenant)
+	webhook := i.toGenericWebhook(id)
 	webhook.ApplicationID = &applicationID
 	webhook.TenantID = tenant
 	return webhook
@@ -70,12 +70,12 @@ func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, a
 		return nil
 	}
 
-	webhook := i.toGenericWebhook(id, tenant)
+	webhook := i.toGenericWebhook(id)
 	webhook.ApplicationTemplateID = &appTemplateID
 	return webhook
 }
 
-func (i *WebhookInput) toGenericWebhook(id string, tenant *string) *Webhook {
+func (i *WebhookInput) toGenericWebhook(id string) *Webhook {
 	return &Webhook{
 		ID:               id,
 		CorrelationIDKey: i.CorrelationIDKey,

@@ -34,7 +34,6 @@ func (p *Provider) Load() error {
 	p.cachedConfig = out
 
 	return nil
-
 }
 
 func (p *Provider) getValueForJSONPath(path string) (interface{}, error) {

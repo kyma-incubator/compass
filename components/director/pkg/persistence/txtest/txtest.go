@@ -9,7 +9,6 @@ import (
 )
 
 func PersistenceContextThatExpectsCommit() *automock.PersistenceTx {
-
 	persistTx := &automock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Once()
 	return persistTx

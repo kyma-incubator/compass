@@ -213,7 +213,7 @@ func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, delete
 		return nil, err
 	}
 	if ld == nil {
-		return nil, fmt.Errorf("Label Definition with key %s not found", key)
+		return nil, fmt.Errorf("labelDefinition with key %s not found", key)
 	}
 
 	err = r.srv.Delete(ctx, tnt, key, *deleteRelatedLabels)

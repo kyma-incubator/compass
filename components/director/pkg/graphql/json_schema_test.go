@@ -142,7 +142,7 @@ func TestJSON_UnmarshalSchema(t *testing.T) {
 }
 
 func interfacePtr(input interface{}) *interface{} {
-	var tmp interface{} = input
+	var tmp = input
 	return &tmp
 }
 

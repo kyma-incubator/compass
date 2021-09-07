@@ -48,7 +48,6 @@ func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) 
 	}
 
 	for k, v := range value {
-
 		val, ok := v.([]interface{})
 		if !ok {
 			return nil, errors.Errorf("given value `%T` must be a string array", v)

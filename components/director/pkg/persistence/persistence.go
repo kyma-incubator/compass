@@ -149,7 +149,6 @@ func waitForPersistance(ctx context.Context, conf DatabaseConfig, retryCount int
 		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)
 		sqlxDB.SetConnMaxLifetime(conf.ConnMaxLifetime)
 		return &db{sqlDB: sqlxDB}, sqlxDB.Close, nil
-
 	}
 
 	return nil, nil, err

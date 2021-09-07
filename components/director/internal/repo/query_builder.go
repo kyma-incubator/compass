@@ -69,9 +69,9 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 	return stmtBuilder.String(), allArgs, nil
 }
 
-func buildUnionQuery(queries []string) (string, error) {
+func buildUnionQuery(queries []string) string {
 	if len(queries) == 0 {
-		return "", nil
+		return ""
 	}
 
 	for i := range queries {
@@ -82,7 +82,7 @@ func buildUnionQuery(queries []string) (string, error) {
 	var stmtBuilder strings.Builder
 	stmtBuilder.WriteString(unionQuery)
 
-	return getQueryFromBuilder(stmtBuilder), nil
+	return getQueryFromBuilder(stmtBuilder)
 }
 
 func buildCountQuery(tableName string, idColumn string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {

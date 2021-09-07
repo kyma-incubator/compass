@@ -58,7 +58,7 @@ func (f *formatter) writeString(s string) {
 	}
 }
 
-func (f *formatter) writeIndent() *formatter {
+func (f *formatter) writeIndent() *formatter { //nolint:unparam
 	if f.lineHead {
 		f.writeString(strings.Repeat("\t", f.indent))
 	}

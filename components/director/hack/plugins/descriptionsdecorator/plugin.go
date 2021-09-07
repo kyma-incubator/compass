@@ -108,7 +108,6 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 			withoutDash := strings.ReplaceAll(withoutExt, "-", " ")
 			f.Description = addExample(f.Description, withoutDash, dir.Name(), file.Name())
 		}
-
 	}
 	return nil
 }
@@ -132,7 +131,6 @@ func sanitizeName(name string, opType GraphqlOperationType) string {
 		return strings.ToLower(fmt.Sprintf("query-%s", name))
 	}
 	return strings.ToLower(name)
-
 }
 
 func deletePrevious(description string) string {

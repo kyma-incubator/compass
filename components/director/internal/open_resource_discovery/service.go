@@ -440,10 +440,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	}
 
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be deleted - those that are stored in db but not present in the input anymore
-	bundleIDsForDeletion, err := extractBundleReferencesForDeletion(allBundleIDsForAPI, defaultTargetURLPerBundle)
-	if err != nil {
-		return err
-	}
+	bundleIDsForDeletion := extractBundleReferencesForDeletion(allBundleIDsForAPI, defaultTargetURLPerBundle)
 
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
@@ -739,7 +736,7 @@ func extractAllBundleReferencesForCreation(defaultTargetURLPerBundle map[string]
 	return defaultTargetURLPerBundleForCreation
 }
 
-func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTargetURLPerBundle map[string]string) ([]string, error) {
+func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTargetURLPerBundle map[string]string) []string {
 	bundleIDsToBeDeleted := make([]string, 0)
 
 	for _, bndlID := range allBundleIDsForAPI {
@@ -748,7 +745,7 @@ func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTarg
 		}
 	}
 
-	return bundleIDsToBeDeleted, nil
+	return bundleIDsToBeDeleted
 }
 
 func assignSAPVendor(documents Documents) {

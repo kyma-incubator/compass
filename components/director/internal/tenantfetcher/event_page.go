@@ -35,7 +35,7 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 	return tenantDetails
 }
 
-func (ep eventsPage) getMovedRuntimes() ([]model.MovedRuntimeByLabelMappingInput, error) {
+func (ep eventsPage) getMovedRuntimes() []model.MovedRuntimeByLabelMappingInput {
 	eds := ep.getEventsDetails()
 	mappings := make([]model.MovedRuntimeByLabelMappingInput, 0, len(eds))
 	for _, detail := range eds {
@@ -48,10 +48,10 @@ func (ep eventsPage) getMovedRuntimes() ([]model.MovedRuntimeByLabelMappingInput
 		mappings = append(mappings, *mapping)
 	}
 
-	return mappings, nil
+	return mappings
 }
 
-func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+func (ep eventsPage) getTenantMappings(eventsType EventsType) []model.BusinessTenantMappingInput {
 	eds := ep.getEventsDetails()
 	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
 	for _, detail := range eds {
@@ -64,7 +64,7 @@ func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessT
 		tenants = append(tenants, *mapping)
 	}
 
-	return tenants, nil
+	return tenants
 }
 
 func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRuntimeByLabelMappingInput, error) {

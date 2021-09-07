@@ -9,7 +9,6 @@ import (
 )
 
 func Validate(validatable Validatable) error {
-
 	var typeName string
 	split := strings.Split(fmt.Sprintf("%T", validatable), ".")
 	if len(split) > 1 {

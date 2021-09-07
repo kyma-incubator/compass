@@ -19,5 +19,4 @@ func ToViewer(cons consumer.Consumer) (*graphql.Viewer, error) {
 	}
 
 	return nil, apperrors.NewInternalError("viewer does not exist")
-
 }

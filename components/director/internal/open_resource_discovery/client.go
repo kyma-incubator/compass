@@ -59,7 +59,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 	return docs, nil
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy AccessStrategyType) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, _ AccessStrategyType) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q", documentURL)
 	resp, err := c.Get(documentURL)
 	if err != nil {

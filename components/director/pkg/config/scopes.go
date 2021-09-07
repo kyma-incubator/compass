@@ -43,7 +43,6 @@ func (p *Provider) getValues(valueType, path string, singeValueExpected bool) ([
 			return nil, fmt.Errorf("unexpected %T value in a string list", val)
 		}
 		scopes = append(scopes, strVal)
-
 	}
 	return scopes, nil
 }

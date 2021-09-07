@@ -81,7 +81,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 		log.C(ctx).Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
 	}
 
-	err = s.validateLabelInputValue(ctx, tenant, labelInput, labelDef)
+	err = s.validateLabelInputValue(labelInput, labelDef)
 	if err != nil {
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
@@ -97,7 +97,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant string, labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
+func (s *labelUpsertService) validateLabelInputValue(labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
 	if labelDef == nil || labelDef.Schema == nil {
 		// nothing to validate
 		return nil

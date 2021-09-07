@@ -241,7 +241,6 @@ func TestService_Create(t *testing.T) {
 			}
 
 			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
-
 		})
 	}
 }

@@ -82,7 +82,6 @@ func (i *indicator) Configure(cfg IndicatorConfig) {
 
 // Run starts the periodic indicator checks
 func (i *indicator) Run(ctx context.Context) {
-
 	go func() {
 		<-time.After(i.initialDelay)
 

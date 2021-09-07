@@ -272,7 +272,6 @@ func (fp *GqlFieldsProvider) OmitForEventDefinition(omittedProperties []string) 
 		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForEventSpec(specOmittedProperties)),
 		"version":     fmt.Sprintf("version {%s}", fp.OmitForVersion(versionOmittedProperties)),
 	}, omittedProperties)
-
 }
 
 func (fp *GqlFieldsProvider) ForEventDefinition() string {

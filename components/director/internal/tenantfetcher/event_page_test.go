@@ -135,8 +135,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 				payload: []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 
-			runtimes, err := page.getMovedRuntimes()
-			test.errorFunc(t, err)
+			runtimes := page.getMovedRuntimes()
 			test.assertRuntimesFunc(t, runtimes)
 		})
 	}
@@ -303,8 +302,7 @@ func Test_getTenantMappings(t *testing.T) {
 				providerName: providerName,
 				payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
-			tenantMappings, err := page.getTenantMappings(CreatedEventsType)
-			test.errorFunc(t, err)
+			tenantMappings := page.getTenantMappings(CreatedEventsType)
 			test.assertTenantMappingFunc(t, tenantMappings)
 		})
 	}

@@ -278,9 +278,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
-
-	exitOnError(err, "Error while configuring runtime mapping handler")
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
@@ -328,7 +326,7 @@ func main() {
 	logger.Infof("Registering health endpoint...")
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
-	health.RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).Start()
+	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
@@ -440,7 +438,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -477,7 +475,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 		transact,
 		tokenVerifier,
 		runtimeSvc,
-		tenantSvc).ServeHTTP, nil
+		tenantSvc).ServeHTTP
 }
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {

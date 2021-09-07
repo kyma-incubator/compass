@@ -55,7 +55,6 @@ func ErrorCode(err error) ErrorType {
 		return customErr.errorCode
 	}
 	return UnknownError
-
 }
 
 func NewNotNullViolationError(resourceType resource.Type) error {

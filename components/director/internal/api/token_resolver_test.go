@@ -19,7 +19,6 @@ import (
 )
 
 func TestTokenResolver_GenerateCSRToken(t *testing.T) {
-
 	const (
 		authID     = "authID"
 		tokenValue = "tokenValue"
@@ -86,5 +85,4 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, tokenValue, token.Token)
 	})
-
 }

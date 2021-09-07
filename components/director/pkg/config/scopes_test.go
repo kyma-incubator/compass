@@ -63,7 +63,6 @@ func TestProvider_GetRequiredScopes(t *testing.T) {
 		_, err := sut.GetRequiredScopes("graphql.query")
 		// THEN
 		require.EqualError(t, err, "unexpected scopes definition, should be string or list of strings, but was map[string]interface {}")
-
 	})
 
 	t.Run("returns error if path points to list with invalid types", func(t *testing.T) {
@@ -71,7 +70,6 @@ func TestProvider_GetRequiredScopes(t *testing.T) {
 		_, err := sut.GetRequiredScopes("graphql.mutation.updateApplication")
 		// THEN
 		require.EqualError(t, err, "unexpected float64 value in a string list")
-
 	})
 }
 

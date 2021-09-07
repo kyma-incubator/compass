@@ -397,10 +397,7 @@ func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]mo
 	tenants := make([]model.BusinessTenantMappingInput, 0)
 
 	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
-		mappings, err := page.getTenantMappings(eventsType)
-		if err != nil {
-			return err
-		}
+		mappings := page.getTenantMappings(eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
 	})
@@ -416,10 +413,7 @@ func (s Service) fetchMovedRuntimes(eventsType EventsType, fromTimestamp string)
 	allMappings := make([]model.MovedRuntimeByLabelMappingInput, 0)
 
 	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
-		mappings, err := page.getMovedRuntimes()
-		if err != nil {
-			return err
-		}
+		mappings := page.getMovedRuntimes()
 		allMappings = append(allMappings, mappings...)
 		return nil
 	})

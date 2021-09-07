@@ -65,5 +65,4 @@ func (d OrderedDefinitionList) typeMapping(kind ast.DefinitionKind) int {
 	default:
 		return 0
 	}
-
 }

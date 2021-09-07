@@ -144,7 +144,7 @@ func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 
 func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
 	if key == model.ScenariosKey {
-		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
+		return fmt.Errorf("labelDefinition with key %s can not be deleted", model.ScenariosKey)
 	}
 
 	ld, err := s.Get(ctx, tenant, key)
@@ -152,7 +152,7 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 		return errors.Wrap(err, "while getting Label Definition")
 	}
 	if ld == nil {
-		return fmt.Errorf("Label Definition with key %s not found", key)
+		return fmt.Errorf("labelDefinition with key %s not found", key)
 	}
 
 	if deleteRelatedLabels {

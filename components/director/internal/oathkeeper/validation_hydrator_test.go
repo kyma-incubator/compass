@@ -30,9 +30,7 @@ const (
 )
 
 func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
-
 	createAuthRequestWithTokenHeader := func(t *testing.T, session string, tokenValue string) *http.Request {
-
 		marshalledSession, err := json.Marshal(session)
 		require.NoError(t, err)
 		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))

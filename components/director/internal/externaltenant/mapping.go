@@ -14,7 +14,6 @@ import (
 )
 
 func MapTenants(tenantsDirectoryPath string) ([]model.BusinessTenantMappingInput, error) {
-
 	files, err := ioutil.ReadDir(tenantsDirectoryPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while reading directory with tenant files [%s]", tenantsDirectoryPath)

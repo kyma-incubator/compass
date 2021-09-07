@@ -26,7 +26,7 @@ func (tg *tokenGenerator) NewToken() (string, error) {
 func generateRandomBytes(number int) ([]byte, error) {
 	bytes := make([]byte, number)
 	if _, err := rand.Read(bytes); err != nil {
-		return nil, fmt.Errorf("Failed to generate random bytes: %s", err)
+		return nil, fmt.Errorf("failed to generate random bytes: %s", err)
 	}
 
 	return bytes, nil
