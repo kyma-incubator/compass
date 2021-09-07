@@ -33,7 +33,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -65,7 +65,7 @@ type RootResolver struct {
 	eventing           *eventing.Resolver
 	doc                *document.Resolver
 	runtime            *runtime.Resolver
-	runtimeContext     *runtime_context.Resolver
+	runtimeContext     *runtimectx.Resolver
 	healthCheck        *healthcheck.Resolver
 	webhook            *webhook.Resolver
 	labelDef           *labeldef.Resolver
@@ -105,7 +105,7 @@ func NewRootResolver(
 
 	authConverter := auth.NewConverter()
 	runtimeConverter := runtime.NewConverter()
-	runtimeContextConverter := runtime_context.NewConverter()
+	runtimeContextConverter := runtimectx.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
@@ -128,7 +128,7 @@ func NewRootResolver(
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
-	runtimeContextRepo := runtime_context.NewRepository()
+	runtimeContextRepo := runtimectx.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -162,7 +162,7 @@ func NewRootResolver(
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, featuresConfig.ProtectedLabelPattern)
-	runtimeCtxSvc := runtime_context.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
+	runtimeCtxSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
@@ -185,7 +185,7 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc),
-		runtimeContext:     runtime_context.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
+		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),

@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
@@ -91,7 +91,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	intSysConverter := integrationsystem.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	pkgConverter := mp_package.NewConverter()
+	pkgConverter := ordpackage.NewConverter()
 	productConverter := product.NewConverter()
 	vendorConverter := ordvendor.NewConverter()
 	tombstoneConverter := tombstone.NewConverter()
@@ -110,7 +110,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
-	pkgRepo := mp_package.NewRepository(pkgConverter)
+	pkgRepo := ordpackage.NewRepository(pkgConverter)
 	productRepo := product.NewRepository(productConverter)
 	vendorRepo := ordvendor.NewRepository(vendorConverter)
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
@@ -128,7 +128,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	packageSvc := mp_package.NewService(pkgRepo, uidSvc)
+	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)

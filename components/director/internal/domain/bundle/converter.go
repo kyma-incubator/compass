@@ -1,4 +1,4 @@
-package mp_bundle
+package bundle
 
 import (
 	"database/sql"

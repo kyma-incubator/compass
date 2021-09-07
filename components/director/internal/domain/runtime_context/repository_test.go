@@ -1,4 +1,4 @@
-package runtime_context_test
+package runtimectx_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -44,7 +44,7 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeContextModelForRuntimeContextEn
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	modelRuntimeCtx, err := pgRepository.GetByID(ctx, tenantID, runtimeContextID)
@@ -74,7 +74,7 @@ func TestPgRepository_GetByFiltersAndID_WithoutAdditionalFiltersShouldReturnRunt
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	modelRuntimeCtx, err := pgRepository.GetByFiltersAndID(ctx, tenantID, runtimeContextID, nil)
@@ -105,7 +105,7 @@ func TestPgRepository_GetByFiltersAndID_WithAdditionalFiltersShouldReturnRuntime
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
@@ -137,7 +137,7 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeContextModelForRunti
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
@@ -200,7 +200,7 @@ func TestPgRepository_List(t *testing.T) {
 			sqlxDB, sqlMock := testdb.MockDatabase(t)
 			defer sqlMock.AssertExpectations(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-			pgRepository := runtime_context.NewRepository()
+			pgRepository := runtimectx.NewRepository()
 			expectedQuery := fmt.Sprintf(pageableQuery, fixTenantIsolationSubquery(), testCase.ExpectedLimit, testCase.ExpectedOffset)
 
 			sqlMock.ExpectQuery(expectedQuery).
@@ -291,7 +291,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	}
 	filter := []*labelfilter.LabelFilter{&labelFilterFoo}
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	modelRuntimePage, err := pgRepository.List(ctx, runtimeID, tenantID, filter, rowSize, "")
@@ -334,7 +334,7 @@ func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	err := pgRepository.Create(ctx, modelRuntimeCtx)
@@ -366,7 +366,7 @@ func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	err := pgRepository.Update(ctx, modelRuntimeCtx)
@@ -389,7 +389,7 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	err := pgRepository.Delete(ctx, tenantID, runtimeCtxID)
@@ -412,7 +412,7 @@ func TestPgRepository_Exist(t *testing.T) {
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime_context.NewRepository()
+	pgRepository := runtimectx.NewRepository()
 
 	// when
 	ex, err := pgRepository.Exists(ctx, tenantID, runtimeCtxID)

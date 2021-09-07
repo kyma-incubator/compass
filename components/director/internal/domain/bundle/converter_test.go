@@ -1,4 +1,4 @@
-package mp_bundle_test
+package bundle_test
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/stretchr/testify/require"
 
@@ -32,7 +32,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		bndlModel.Error = &testErrMsg
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
-		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
+		conv := bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		entity, err := conv.ToEntity(bndlModel)
 		//THEN
@@ -58,7 +58,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 			BaseEntity:                     &model.BaseEntity{ID: bundleID},
 		}
 
-		expectedEntity := &mp_bundle.Entity{
+		expectedEntity := &bundle.Entity{
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
@@ -70,7 +70,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
-		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
+		conv := bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		entity, err := conv.ToEntity(bndlModel)
 		//THEN
@@ -91,7 +91,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			Valid:  true,
 		}
 		authConv := auth.NewConverter()
-		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
+		conv := bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
@@ -103,7 +103,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		name := "foo"
-		entity := &mp_bundle.Entity{
+		entity := &bundle.Entity{
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
@@ -122,7 +122,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			BaseEntity:                     &model.BaseEntity{ID: bundleID},
 		}
 		authConv := auth.NewConverter()
-		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
+		conv := bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
@@ -186,7 +186,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
-			converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
+			converter := bundle.NewConverter(authConverter, nil, nil, nil)
 			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -231,7 +231,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
+	converter := bundle.NewConverter(authConverter, nil, nil, nil)
 	res, err := converter.MultipleToGraphQL(input)
 
 	// then
@@ -319,7 +319,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
-			converter := mp_bundle.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
+			converter := bundle.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
 			res, err := converter.CreateInputFromGraphQL(testCase.Input)
 
 			// then
@@ -361,7 +361,7 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	authConv.On("InputFromGraphQL", gqlBndl1.DefaultInstanceAuth).Return(modBndl1.DefaultInstanceAuth, nil).Once()
 	authConv.On("InputFromGraphQL", gqlBndl2.DefaultInstanceAuth).Return(modBndl2.DefaultInstanceAuth, nil).Once()
 
-	converter := mp_bundle.NewConverter(authConv, apiConv, eventConv, docConv)
+	converter := bundle.NewConverter(authConv, apiConv, eventConv, docConv)
 
 	// when
 	res, err := converter.MultipleCreateInputFromGraphQL(input)
@@ -414,7 +414,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
-			converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
+			converter := bundle.NewConverter(authConverter, nil, nil, nil)
 			res, err := converter.UpdateInputFromGraphQL(*testCase.Input)
 
 			// then

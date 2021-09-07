@@ -1,4 +1,4 @@
-package scopes_sync
+package scopes
 
 import (
 	"context"

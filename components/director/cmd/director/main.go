@@ -31,7 +31,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -513,7 +513,7 @@ func bundleInstanceAuthRepo() bundleinstanceauth.Repository {
 	return bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 }
 
-func bundleRepo() mp_bundle.BundleRepository {
+func bundleRepo() bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -522,7 +522,7 @@ func bundleRepo() mp_bundle.BundleRepository {
 	docConverter := document.NewConverter(frConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 
-	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+	return bundle.NewRepository(bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
 
 func applicationRepo() application.ApplicationRepository {
@@ -537,7 +537,7 @@ func applicationRepo() application.ApplicationRepository {
 	docConverter := document.NewConverter(frConverter)
 
 	webhookConverter := webhook.NewConverter(authConverter)
-	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 
@@ -598,7 +598,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
-	packageConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	packageConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, packageConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
@@ -609,7 +609,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-	bundleRepo := mp_bundle.NewRepository(packageConverter)
+	bundleRepo := bundle.NewRepository(packageConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -622,7 +622,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
+	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := directorTime.NewService()
 	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHttpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)

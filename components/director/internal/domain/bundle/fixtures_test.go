@@ -1,4 +1,4 @@
-package mp_bundle_test
+package bundle_test
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -374,7 +374,7 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
+func fixEntityBundle(id, name, desc string) *bundle.Entity {
 	descSQL := sql.NullString{String: desc, Valid: true}
 	schemaSQL := sql.NullString{
 		String: inputSchemaString(),
@@ -385,7 +385,7 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 		Valid:  true,
 	}
 
-	return &mp_bundle.Entity{
+	return &bundle.Entity{
 		TenantID:                      tenantID,
 		ApplicationID:                 appID,
 		Name:                          name,

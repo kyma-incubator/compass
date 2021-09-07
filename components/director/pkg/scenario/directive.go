@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -41,7 +41,7 @@ type directive struct {
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, bundleRepo mp_bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
+func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, bundleRepo bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
 	getApplicationIDByBundleFunc := func(ctx context.Context, tenantID, bundleID string) (string, error) {
 		bndl, err := bundleRepo.GetByID(ctx, tenantID, bundleID)
 		if err != nil {

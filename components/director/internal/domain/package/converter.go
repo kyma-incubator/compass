@@ -1,4 +1,4 @@
-package mp_package
+package ordpackage
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"

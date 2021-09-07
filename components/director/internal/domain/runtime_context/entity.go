@@ -1,4 +1,4 @@
-package runtime_context
+package runtimectx
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"

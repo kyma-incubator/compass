@@ -107,7 +107,6 @@ linters:
     # - nlreturn
     # - noctx
     # - paralleltest
-    # - revive TODO: check if can enable
     # - scopelint
     # - stylecheck TODO: check if can enable
     # - tagliatelle

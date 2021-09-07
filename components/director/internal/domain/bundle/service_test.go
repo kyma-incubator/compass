@@ -1,10 +1,10 @@
-package mp_bundle_test
+package bundle_test
 
 import (
 	"context"
 	"testing"
 
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -246,7 +246,7 @@ func TestService_Create(t *testing.T) {
 			apiSvc := testCase.APIServiceFn()
 			eventSvc := testCase.EventServiceFn()
 			documentSvc := testCase.DocumentServiceFn()
-			svc := mp_bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
+			svc := bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
@@ -263,7 +263,7 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", model.BundleCreateInput{})
 		// THEN
@@ -353,7 +353,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -370,7 +370,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.BundleUpdateInput{})
 		// THEN
@@ -422,7 +422,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -439,7 +439,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -484,7 +484,7 @@ func TestService_Exist(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			bndlRepo := testCase.RepoFn()
-			svc := mp_bundle.NewService(bndlRepo, nil, nil, nil, nil)
+			svc := bundle.NewService(bndlRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exist(ctx, id)
@@ -503,7 +503,7 @@ func TestService_Exist(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -560,7 +560,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			bndl, err := svc.Get(ctx, testCase.InputID)
@@ -578,7 +578,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -639,7 +639,7 @@ func TestService_GetForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
@@ -657,7 +657,7 @@ func TestService_GetForApplication(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -714,7 +714,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListByApplicationIDNoPaging(ctx, appID)
@@ -732,7 +732,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationIDNoPaging(context.TODO(), "")
 		// THEN
@@ -840,7 +840,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			bndls, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
@@ -858,7 +858,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationIDs(context.TODO(), nil, 5, "")
 		// THEN
