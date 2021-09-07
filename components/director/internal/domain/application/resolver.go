@@ -554,11 +554,11 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 }
 
 func (r *Resolver) checkApplicationOneTimeTokenIsInvalid(auth *model.Auth, config onetimetoken.Config) bool {
-	if auth == nil || auth.OneTimeToken == nil {
+	if auth == nil || auth.OneTimeToken == nil || auth.OneTimeToken.Type != tokens.ApplicationToken {
 		return false
 	}
 
-	if auth.OneTimeToken.Type != tokens.ApplicationToken || auth.OneTimeToken.Used {
+	if auth.OneTimeToken.Used {
 		return true
 	}
 
