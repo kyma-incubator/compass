@@ -107,7 +107,7 @@ docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
+MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen lint
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
