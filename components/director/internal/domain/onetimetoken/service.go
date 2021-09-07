@@ -267,7 +267,7 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 
 	if label, ok := appLabels["legacy"]; ok {
 		if isLegacy, ok := (label.Value).(bool); ok && isLegacy {
-			suggestedToken, err := legacyConnectorUrlWithToken(s.legacyConnectorURL, oneTimeToken.Token)
+			suggestedToken, err := legacyConnectorURLWithToken(s.legacyConnectorURL, oneTimeToken.Token)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to obtain legacy connector URL with token for application with ID %s, will use the actual token: %v", app.ID, err)
 				return oneTimeToken.Token

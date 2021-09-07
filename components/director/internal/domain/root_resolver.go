@@ -89,7 +89,7 @@ func NewRootResolver(
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
-	httpClient, internalHttpClient *http.Client,
+	httpClient, internalHTTPClient *http.Client,
 	tokenLength int,
 	hydraURL *url.URL,
 ) *RootResolver {
@@ -173,7 +173,7 @@ func NewRootResolver(
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := time.NewService()
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHttpClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
@@ -205,8 +205,8 @@ func (r *RootResolver) BundlesDataloader(ids []dataloader.ParamBundle) ([]*graph
 	return r.app.BundlesDataLoader(ids)
 }
 
-func (r *RootResolver) ApiDefinitionsDataloader(ids []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
-	return r.mpBundle.ApiDefinitionsDataLoader(ids)
+func (r *RootResolver) APIDefinitionsDataloader(ids []dataloader.ParamAPIDef) ([]*graphql.APIDefinitionPage, []error) {
+	return r.mpBundle.APIDefinitionsDataLoader(ids)
 }
 
 func (r *RootResolver) EventDefinitionsDataloader(ids []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
@@ -217,8 +217,8 @@ func (r *RootResolver) DocumentsDataloader(ids []dataloader.ParamDocument) ([]*g
 	return r.mpBundle.DocumentsDataLoader(ids)
 }
 
-func (r *RootResolver) FetchRequestApiDefDataloader(ids []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
-	return r.api.FetchRequestApiDefDataLoader(ids)
+func (r *RootResolver) FetchRequestAPIDefDataloader(ids []dataloader.ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error) {
+	return r.api.FetchRequestAPIDefDataLoader(ids)
 }
 
 func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {

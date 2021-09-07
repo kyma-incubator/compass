@@ -161,9 +161,9 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.Name, func(t *testing.T) {
-			testHttpClient := NewTestClient(test.RoundTripFunc)
+			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			client := ord.NewClient(testHttpClient)
+			client := ord.NewClient(testHTTPClient)
 			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), baseURL)
 
 			if test.ExpectedErr != nil {

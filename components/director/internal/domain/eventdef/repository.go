@@ -236,11 +236,11 @@ func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, ev
 		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
-	eventsByApiDefID := map[string]*model.EventDefinition{}
+	eventsByAPIDefID := map[string]*model.EventDefinition{}
 	for _, eventEnt := range eventCollectionCollection {
 		m := r.conv.FromEntity(eventEnt)
-		eventsByApiDefID[eventEnt.ID] = &m
+		eventsByAPIDefID[eventEnt.ID] = &m
 	}
 
-	return refsByBundleID, eventsByApiDefID
+	return refsByBundleID, eventsByAPIDefID
 }

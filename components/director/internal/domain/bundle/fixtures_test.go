@@ -268,8 +268,8 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
-			{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
+			{Name: "api1", TargetURLs: api.ConvertTargetURLToJSONArray("foo.bar")},
+			{Name: "api2", TargetURLs: api.ConvertTargetURLToJSONArray("foo.bar2")},
 		},
 		APISpecs: []*model.SpecInput{
 			{Data: &specData1},
@@ -358,7 +358,7 @@ func fixGQLAuth() *graphql.Auth {
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalHeaders:     graphql.HTTPHeaders{"test": {"foo", "bar"}},
 		AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -367,7 +367,7 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalHeaders:     graphql.HTTPHeaders{"test": {"foo", "bar"}},
 				AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},

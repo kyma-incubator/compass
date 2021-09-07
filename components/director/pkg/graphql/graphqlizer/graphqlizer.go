@@ -224,7 +224,7 @@ func (g *Graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
 	return g.marshal(in), nil
 }
 
-func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
+func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HTTPHeaders) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- range $k,$v := . }}
 			{{$k}}: [
@@ -296,7 +296,7 @@ func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (st
 		group: "{{.Group}}",
 		{{- end }}
 		{{- if .Spec }}
-		spec: {{- ApiSpecInputToGQL .Spec }},
+		spec: {{- APISpecInputToGQL .Spec }},
 		{{- end }}
 		{{- if .Version }}
 		version: {{- VersionInputToGQL .Version }},
@@ -336,7 +336,7 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 	}`)
 }
 
-func (g *Graphqlizer) ApiSpecInputToGQL(in graphql.APISpecInput) (string, error) {
+func (g *Graphqlizer) APISpecInputToGQL(in graphql.APISpecInput) (string, error) {
 	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data}}
@@ -574,7 +574,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["WebhookInputToGQL"] = g.WebhookInputToGQL
 	fm["APIDefinitionInputToGQL"] = g.APIDefinitionInputToGQL
 	fm["EventDefinitionInputToGQL"] = g.EventDefinitionInputToGQL
-	fm["ApiSpecInputToGQL"] = g.ApiSpecInputToGQL
+	fm["APISpecInputToGQL"] = g.APISpecInputToGQL
 	fm["VersionInputToGQL"] = g.VersionInputToGQL
 	fm["HTTPHeadersToGQL"] = g.HTTPHeadersToGQL
 	fm["QueryParamsToGQL"] = g.QueryParamsToGQL
@@ -610,13 +610,13 @@ func quoteCLOB(in *graphql.CLOB) *graphql.CLOB {
 	return (*graphql.CLOB)(&quoted)
 }
 
-func quoteHTTPHeadersSerialized(in *graphql.HttpHeadersSerialized) *graphql.HttpHeadersSerialized {
+func quoteHTTPHeadersSerialized(in *graphql.HTTPHeadersSerialized) *graphql.HTTPHeadersSerialized {
 	if in == nil {
 		return nil
 	}
 
 	quoted := strconv.Quote(string(*in))
-	return (*graphql.HttpHeadersSerialized)(&quoted)
+	return (*graphql.HTTPHeadersSerialized)(&quoted)
 }
 
 func quoteQueryParamsSerialized(in *graphql.QueryParamsSerialized) *graphql.QueryParamsSerialized {

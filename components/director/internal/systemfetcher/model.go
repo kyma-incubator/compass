@@ -20,7 +20,7 @@ type TemplateMapping struct {
 	SourceValue []string
 }
 
-type AdditionalUrls map[string]string
+type AdditionalURLs map[string]string
 
 type AdditionalAttributes map[string]string
 
@@ -30,7 +30,7 @@ type SystemBase struct {
 	ProductDescription     string               `json:"productDescription"`
 	BaseURL                string               `json:"baseUrl"`
 	InfrastructureProvider string               `json:"infrastructureProvider"`
-	AdditionalUrls         AdditionalUrls       `json:"additionalUrls"`
+	AdditionalURLs         AdditionalURLs       `json:"additionalUrls"`
 	AdditionalAttributes   AdditionalAttributes `json:"additionalAttributes"`
 }
 

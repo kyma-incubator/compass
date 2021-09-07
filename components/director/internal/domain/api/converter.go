@@ -124,7 +124,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	return &model.APIDefinitionInput{
 		Name:         in.Name,
 		Description:  in.Description,
-		TargetURLs:   ConvertTargetUrlToJsonArray(in.TargetURL),
+		TargetURLs:   ConvertTargetURLToJSONArray(in.TargetURL),
 		Group:        in.Group,
 		VersionInput: c.version.InputFromGraphQL(in.Version),
 	}, spec, nil
@@ -143,7 +143,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		OrdID:                                   repo.StringPtrFromNullableString(entity.OrdID),
 		ShortDescription:                        repo.StringPtrFromNullableString(entity.ShortDescription),
 		SystemInstanceAware:                     repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
-		ApiProtocol:                             repo.StringPtrFromNullableString(entity.ApiProtocol),
+		APIProtocol:                             repo.StringPtrFromNullableString(entity.APIProtocol),
 		Tags:                                    repo.JSONRawMessageFromNullableString(entity.Tags),
 		Countries:                               repo.JSONRawMessageFromNullableString(entity.Countries),
 		Links:                                   repo.JSONRawMessageFromNullableString(entity.Links),
@@ -187,7 +187,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		OrdID:                                   repo.NewNullableString(apiModel.OrdID),
 		ShortDescription:                        repo.NewNullableString(apiModel.ShortDescription),
 		SystemInstanceAware:                     repo.NewNullableBool(apiModel.SystemInstanceAware),
-		ApiProtocol:                             repo.NewNullableString(apiModel.ApiProtocol),
+		APIProtocol:                             repo.NewNullableString(apiModel.APIProtocol),
 		Tags:                                    repo.NewNullableStringFromJSONRawMessage(apiModel.Tags),
 		Countries:                               repo.NewNullableStringFromJSONRawMessage(apiModel.Countries),
 		Links:                                   repo.NewNullableStringFromJSONRawMessage(apiModel.Links),
@@ -236,18 +236,18 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 	return &t
 }
 
-func ExtractTargetUrlFromJsonArray(jsonTargetUrl json.RawMessage) string {
-	strTargetUrl := string(jsonTargetUrl)
-	strTargetUrl = strings.TrimPrefix(strTargetUrl, `["`)
-	strTargetUrl = strings.TrimSuffix(strTargetUrl, `"]`)
+func ExtractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
+	strTargetURL := string(jsonTargetURL)
+	strTargetURL = strings.TrimPrefix(strTargetURL, `["`)
+	strTargetURL = strings.TrimSuffix(strTargetURL, `"]`)
 
-	return strTargetUrl
+	return strTargetURL
 }
 
-func ConvertTargetUrlToJsonArray(targetUrl string) json.RawMessage {
-	if targetUrl == "" {
+func ConvertTargetURLToJSONArray(targetURL string) json.RawMessage {
+	if targetURL == "" {
 		return nil
 	}
 
-	return json.RawMessage(`["` + targetUrl + `"]`)
+	return json.RawMessage(`["` + targetURL + `"]`)
 }

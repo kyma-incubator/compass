@@ -14,8 +14,8 @@ var (
 		"too": {"tar", "taz"},
 	}
 	authMapSerialized     = "{\"foo\":[\"bar\",\"baz\"],\"too\":[\"tar\",\"taz\"]}"
-	authHeaders           = graphql.HttpHeaders(authMap)
-	authHeadersSerialized = graphql.HttpHeadersSerialized(authMapSerialized)
+	authHeaders           = graphql.HTTPHeaders(authMap)
+	authHeadersSerialized = graphql.HTTPHeadersSerialized(authMapSerialized)
 	authParams            = graphql.QueryParams(authMap)
 	authParamsSerialized  = graphql.QueryParamsSerialized(authMapSerialized)
 )

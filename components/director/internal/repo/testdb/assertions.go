@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func AssertSqlNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
+func AssertSQLNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	if text != nil {
 		sqlStr := sql.NullString{}
 		err := sqlStr.Scan(*text)
@@ -19,7 +19,7 @@ func AssertSqlNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	}
 }
 
-func AssertSqlNullBool(t *testing.T, in sql.NullBool, boolean *bool) {
+func AssertSQLNullBool(t *testing.T, in sql.NullBool, boolean *bool) {
 	if boolean != nil {
 		require.True(t, in.Valid)
 		assert.Equal(t, *boolean, in.Bool)

@@ -2,7 +2,6 @@ package scenario
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -110,12 +109,12 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 	resCtx := graphql.GetFieldContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Could not get idField: %s from request context", idField))
+		return nil, errors.Errorf("Could not get idField: %s from request context", idField)
 	}
 
 	appProviderFunc, ok := d.applicationProviders[applicationProvider]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Could not get app provider func: %s from provider list", applicationProvider))
+		return nil, errors.Errorf("Could not get app provider func: %s from provider list", applicationProvider)
 	}
 
 	tx, err := d.transact.Begin()

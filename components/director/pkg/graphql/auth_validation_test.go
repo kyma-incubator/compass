@@ -53,12 +53,12 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         graphql.HttpHeaders
+		Value         graphql.HTTPHeaders
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},
@@ -71,21 +71,21 @@ func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 		},
 		{
 			Name: "Invalid - empty key",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				inputvalidationtest.EmptyString: {"test"},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				"test": nil,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				"test": {inputvalidationtest.EmptyString},
 			},
 			ExpectedValid: false,
@@ -556,12 +556,12 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         graphql.HttpHeaders
+		Value         graphql.HTTPHeaders
 		ExpectedValid bool
 	}{
 		{
 			Name: "ExpectedValid",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},
@@ -574,21 +574,21 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 		},
 		{
 			Name: "Invalid - empty key",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				inputvalidationtest.EmptyString: {"test"},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				"test": nil,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
-			Value: graphql.HttpHeaders{
+			Value: graphql.HTTPHeaders{
 				"test": {inputvalidationtest.EmptyString},
 			},
 			ExpectedValid: false,

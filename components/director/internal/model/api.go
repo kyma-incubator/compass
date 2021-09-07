@@ -26,7 +26,7 @@ type APIDefinition struct {
 	OrdID                                   *string
 	ShortDescription                        *string
 	SystemInstanceAware                     *bool
-	ApiProtocol                             *string
+	APIProtocol                             *string
 	Tags                                    json.RawMessage
 	Countries                               json.RawMessage
 	Links                                   json.RawMessage
@@ -50,7 +50,7 @@ type APIDefinition struct {
 	*BaseEntity
 }
 
-func (_ *APIDefinition) GetType() resource.Type {
+func (*APIDefinition) GetType() resource.Type {
 	return resource.API
 }
 
@@ -64,7 +64,7 @@ type APIDefinitionInput struct {
 	OrdID                                   *string                       `json:"ordId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
-	ApiProtocol                             *string                       `json:"apiProtocol"`
+	APIProtocol                             *string                       `json:"apiProtocol"`
 	Tags                                    json.RawMessage               `json:"tags"`
 	Countries                               json.RawMessage               `json:"countries"`
 	Links                                   json.RawMessage               `json:"links"`
@@ -115,13 +115,13 @@ func (rd *APIResourceDefinition) Validate() error {
 	)
 }
 
-func (a *APIResourceDefinition) ToSpec() *SpecInput {
+func (rd *APIResourceDefinition) ToSpec() *SpecInput {
 	return &SpecInput{
-		Format:     a.MediaType,
-		APIType:    &a.Type,
-		CustomType: &a.CustomType,
+		Format:     rd.MediaType,
+		APIType:    &rd.Type,
+		CustomType: &rd.CustomType,
 		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequestAuths once ORD defines them
-			URL:  a.URL,
+			URL:  rd.URL,
 			Auth: nil, // Currently only open AccessStrategy is defined by ORD, which means no auth
 		},
 	}
@@ -179,7 +179,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		OrdID:               a.OrdID,
 		ShortDescription:    a.ShortDescription,
 		SystemInstanceAware: a.SystemInstanceAware,
-		ApiProtocol:         a.ApiProtocol,
+		APIProtocol:         a.APIProtocol,
 		Tags:                a.Tags,
 		Countries:           a.Countries,
 		Links:               a.Links,

@@ -154,7 +154,7 @@ func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemp
 	}
 }
 
-func fixGQLAppTemplateInputInvalidAppInputUrlTemplateMethod(name string) *graphql.ApplicationTemplateInput {
+func fixGQLAppTemplateInputInvalidAppInputURLTemplateMethod(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescriptionWithPlaceholder
 
 	return &graphql.ApplicationTemplateInput{

@@ -23,7 +23,7 @@ func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTime
 }
 
 func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error) {
-	urlWithToken, err := legacyConnectorUrlWithToken(c.legacyConnectorURL, model.Token)
+	urlWithToken, err := legacyConnectorURLWithToken(c.legacyConnectorURL, model.Token)
 	if err != nil {
 		return graphql.OneTimeTokenForApplication{}, err
 	}

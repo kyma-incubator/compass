@@ -2,7 +2,6 @@ package bundle
 
 import (
 	"context"
-	"fmt"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -384,11 +383,11 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 }
 
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	param := dataloader.ParamApiDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.ApiDefFor(ctx).ApiDefByID.Load(param)
+	param := dataloader.ParamAPIDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.APIDefFor(ctx).APIDefByID.Load(param)
 }
 
-func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
+func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*graphql.APIDefinitionPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
@@ -450,7 +449,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		apiDefIDtoSpec[spec.ObjectID] = spec
 	}
 
-	gqlApiDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
+	gqlAPIDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
 	for i, apisPage := range apiDefPages {
 		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
@@ -463,12 +462,12 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 			apiBundleRefs = append(apiBundleRefs, br)
 		}
 
-		gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
+		gqlAPIs, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
 		if err != nil {
 			return nil, []error{errors.Wrapf(err, "while converting api definitions")}
 		}
 
-		gqlApiDefs = append(gqlApiDefs, &graphql.APIDefinitionPage{Data: gqlApis, TotalCount: apisPage.TotalCount, PageInfo: &graphql.PageInfo{
+		gqlAPIDefs = append(gqlAPIDefs, &graphql.APIDefinitionPage{Data: gqlAPIs, TotalCount: apisPage.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
 			HasNextPage: apisPage.PageInfo.HasNextPage,
@@ -481,7 +480,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 	}
 
 	log.C(ctx).Infof("Successfully fetched api definitions for bundles %v", bundleIDs)
-	return gqlApiDefs, nil
+	return gqlAPIDefs, nil
 }
 
 func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.EventDefinition, error) {
@@ -716,5 +715,5 @@ func getBundleReferenceForAPI(apiID string, bundleReferences []*model.BundleRefe
 			return br, nil
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("could not find BundleReference for API with id %s", apiID))
+	return nil, errors.Errorf("could not find BundleReference for API with id %s", apiID)
 }

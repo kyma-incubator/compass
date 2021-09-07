@@ -87,7 +87,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 		return nil, err
 	}
 
-	refsByBundleID, apiDefsByApiDefID := r.groupEntitiesByID(bundleRefs, apiDefCollection)
+	refsByBundleID, apiDefsByAPIDefID := r.groupEntitiesByID(bundleRefs, apiDefCollection)
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
@@ -96,8 +96,8 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 
 	apiDefPages := make([]*model.APIDefinitionPage, 0, len(bundleIDs))
 	for _, bundleID := range bundleIDs {
-		ids := getApiDefIDsForBundle(refsByBundleID[bundleID])
-		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefID)
+		ids := getAPIDefIDsForBundle(refsByBundleID[bundleID])
+		apiDefs := getAPIDefsForBundle(ids, apiDefsByAPIDefID)
 
 		hasNextPage := false
 		endCursor := ""
@@ -210,7 +210,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
 }
 
-func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
+func getAPIDefIDsForBundle(refs []*model.BundleReference) []string {
 	result := make([]string, 0, len(refs))
 	for _, ref := range refs {
 		result = append(result, *ref.ObjectID)
@@ -218,7 +218,7 @@ func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
 	return result
 }
 
-func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
+func getAPIDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
 	result := make([]*model.APIDefinition, 0, len(ids))
 	if len(defs) > 0 {
 		for _, id := range ids {
@@ -234,11 +234,11 @@ func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, ap
 		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
-	apiDefsByApiDefID := map[string]*model.APIDefinition{}
+	apiDefsByAPIDefID := map[string]*model.APIDefinition{}
 	for _, apiDefEnt := range apiDefCollection {
 		m := r.conv.FromEntity(apiDefEnt)
-		apiDefsByApiDefID[apiDefEnt.ID] = &m
+		apiDefsByAPIDefID[apiDefEnt.ID] = &m
 	}
 
-	return refsByBundleID, apiDefsByApiDefID
+	return refsByBundleID, apiDefsByAPIDefID
 }

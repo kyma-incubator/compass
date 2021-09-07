@@ -296,7 +296,7 @@ func TestResolver_API(t *testing.T) {
 	}
 }
 
-func TestResolver_Apis(t *testing.T) {
+func TestResolver_APIs(t *testing.T) {
 	// given
 	testErr := errors.New("test error")
 	group := "group"
@@ -312,7 +312,7 @@ func TestResolver_Apis(t *testing.T) {
 	firstSpecID := "specID"
 	secondSpecID := "specID2"
 
-	// model ApiDefs
+	// model APIDefs
 	apiDefFirstBundle := fixModelAPIDefinition(firstAPIID, "Foo", "Lorem Ipsum", group)
 	apiDefSecondBundle := fixModelAPIDefinition(secondAPIID, "Bar", "Lorem Ipsum", group)
 
@@ -323,26 +323,26 @@ func TestResolver_Apis(t *testing.T) {
 	apiDefPageSecondBundle := fixAPIDefinitionPage(apiDefsSecondBundle)
 	apiDefPages := []*model.APIDefinitionPage{apiDefPageFirstBundle, apiDefPageSecondBundle}
 
-	// GQL ApiDefs
-	gqlApiDefFirstBundle := fixGQLAPIDefinition(firstAPIID, firstBundleID, name, desc, group)
-	gqlApiDefSecondBundle := fixGQLAPIDefinition(secondAPIID, secondBundleID, name, desc, group)
+	// GQL APIDefs
+	gqlAPIDefFirstBundle := fixGQLAPIDefinition(firstAPIID, firstBundleID, name, desc, group)
+	gqlAPIDefSecondBundle := fixGQLAPIDefinition(secondAPIID, secondBundleID, name, desc, group)
 
-	gqlApiDefsFirstBundle := []*graphql.APIDefinition{gqlApiDefFirstBundle}
-	gqlApiDefsSecondBundle := []*graphql.APIDefinition{gqlApiDefSecondBundle}
+	gqlAPIDefsFirstBundle := []*graphql.APIDefinition{gqlAPIDefFirstBundle}
+	gqlAPIDefsSecondBundle := []*graphql.APIDefinition{gqlAPIDefSecondBundle}
 
-	gqlApiDefPageFirstBundle := fixGQLAPIDefinitionPage(gqlApiDefsFirstBundle)
-	gqlApiDefPageSecondBundle := fixGQLAPIDefinitionPage(gqlApiDefsSecondBundle)
-	gqlApiDefPages := []*graphql.APIDefinitionPage{gqlApiDefPageFirstBundle, gqlApiDefPageSecondBundle}
+	gqlAPIDefPageFirstBundle := fixGQLAPIDefinitionPage(gqlAPIDefsFirstBundle)
+	gqlAPIDefPageSecondBundle := fixGQLAPIDefinitionPage(gqlAPIDefsSecondBundle)
+	gqlAPIDefPages := []*graphql.APIDefinitionPage{gqlAPIDefPageFirstBundle, gqlAPIDefPageSecondBundle}
 
 	// API BundleReferences
-	numberOfApisInFirstBundle := 1
-	numberOfApisInSecondBundle := 1
+	numberOfAPIsInFirstBundle := 1
+	numberOfAPIsInSecondBundle := 1
 	apiDefFirstBundleReference := fixModelAPIBundleReference(firstBundleID, firstAPIID)
 	apiDefSecondBundleReference := fixModelAPIBundleReference(secondBundleID, secondAPIID)
 	bundleRefsFirstAPI := []*model.BundleReference{apiDefFirstBundleReference}
 	bundleRefsSecondAPI := []*model.BundleReference{apiDefSecondBundleReference}
 	bundleRefs := []*model.BundleReference{apiDefFirstBundleReference, apiDefSecondBundleReference}
-	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+	totalCounts := map[string]int{firstBundleID: numberOfAPIsInFirstBundle, secondBundleID: numberOfAPIsInSecondBundle}
 
 	// API Specs
 	apiDefFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.APISpecReference, ObjectID: firstAPIID}
@@ -387,11 +387,11 @@ func TestResolver_Apis(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlApiDefsFirstBundle, nil).Once()
-				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlApiDefsSecondBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlAPIDefsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlAPIDefsSecondBundle, nil).Once()
 				return conv
 			},
-			ExpectedResult: gqlApiDefPages,
+			ExpectedResult: gqlAPIDefPages,
 			ExpectedErr:    nil,
 		},
 		{
@@ -550,8 +550,8 @@ func TestResolver_Apis(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlApiDefsFirstBundle, nil).Once()
-				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlApiDefsSecondBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlAPIDefsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlAPIDefsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -568,12 +568,12 @@ func TestResolver_Apis(t *testing.T) {
 			specService := testCase.SpecServiceFn()
 			bundleRefService := testCase.BundleReferenceFn()
 
-			firstBundleParams := dataloader.ParamApiDef{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
-			secondBundleParams := dataloader.ParamApiDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
-			keys := []dataloader.ParamApiDef{firstBundleParams, secondBundleParams}
+			firstBundleParams := dataloader.ParamAPIDef{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			secondBundleParams := dataloader.ParamAPIDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
+			keys := []dataloader.ParamAPIDef{firstBundleParams, secondBundleParams}
 			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, svc, nil, nil, nil, nil, converter, nil, nil, specService)
 			// when
-			result, err := resolver.ApiDefinitionsDataLoader(keys)
+			result, err := resolver.APIDefinitionsDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -596,19 +596,19 @@ func TestResolver_Apis(t *testing.T) {
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.ApiDefinitionsDataLoader([]dataloader.ParamApiDef{})
+		_, err := resolver.APIDefinitionsDataLoader([]dataloader.ParamAPIDef{})
 		//then
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
 	})
 
 	t.Run("Returns error when start cursor is nil", func(t *testing.T) {
-		params := dataloader.ParamApiDef{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
-		keys := []dataloader.ParamApiDef{params}
+		params := dataloader.ParamAPIDef{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
+		keys := []dataloader.ParamAPIDef{params}
 
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.ApiDefinitionsDataLoader(keys)
+		_, err := resolver.APIDefinitionsDataLoader(keys)
 		//then
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
@@ -1793,7 +1793,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.BundleService
-		ApiDefFn        func() *automock.APIService
+		APIDefFn        func() *automock.APIService
 		EventDefFn      func() *automock.EventService
 		ConverterFn     func() *automock.BundleConverter
 		ExpectedBundle  *graphql.Bundle
@@ -1808,7 +1808,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return apiSvc
@@ -1833,7 +1833,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc := &automock.BundleService{}
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				return apiSvc
 			},
@@ -1856,7 +1856,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				return apiSvc
 			},
@@ -1879,7 +1879,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
 				return apiSvc
@@ -1903,7 +1903,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return apiSvc
@@ -1929,7 +1929,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return apiSvc
@@ -1955,7 +1955,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return apiSvc
@@ -1982,7 +1982,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
 			},
-			ApiDefFn: func() *automock.APIService {
+			APIDefFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("DeleteAllByBundleID", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return apiSvc
@@ -2007,7 +2007,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			// given
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
-			apiSvc := testCase.ApiDefFn()
+			apiSvc := testCase.APIDefFn()
 			eventSvc := testCase.EventDefFn()
 			converter := testCase.ConverterFn()
 

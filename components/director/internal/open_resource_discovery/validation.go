@@ -34,7 +34,7 @@ const (
 	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
 	StringArrayElementRegex           = "^[a-zA-Z0-9-_.\\/ ]*$"
 	CountryRegex                      = "^[A-Z]{2}$"
-	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	APIOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	EventOrdIDRegex                   = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	CorrelationIDsRegex               = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
 	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
@@ -54,21 +54,21 @@ const (
 	ReleaseStatusActive     string = "active"
 	ReleaseStatusDeprecated string = "deprecated"
 
-	ApiProtocolODataV2      string = "odata-v2"
-	ApiProtocolODataV4      string = "odata-v4"
-	ApiProtocolSoapInbound  string = "soap-inbound"
-	ApiProtocolSoapOutbound string = "soap-outbound"
-	ApiProtocolRest         string = "rest"
-	ApiProtocolSapRfc       string = "sap-rfc"
+	APIProtocolODataV2      string = "odata-v2"
+	APIProtocolODataV4      string = "odata-v4"
+	APIProtocolSoapInbound  string = "soap-inbound"
+	APIProtocolSoapOutbound string = "soap-outbound"
+	APIProtocolRest         string = "rest"
+	APIProtocolSapRfc       string = "sap-rfc"
 
-	ApiVisibilityPublic   string = "public"
-	ApiVisibilityPrivate  string = "private"
-	ApiVisibilityInternal string = "internal"
+	APIVisibilityPublic   string = "public"
+	APIVisibilityPrivate  string = "private"
+	APIVisibilityInternal string = "internal"
 
-	ApiImplementationStandardDocumentApi   string = "sap:ord-document-api:v1"
-	ApiImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
-	ApiImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
-	ApiImplementationStandardCustom               = custom
+	APIImplementationStandardDocumentAPI   string = "sap:ord-document-api:v1"
+	APIImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
+	APIImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
+	APIImplementationStandardCustom               = custom
 
 	SapTitle      = "SAP SE"
 	SapVendor     = "sap:vendor:SAP:"
@@ -218,7 +218,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 
 func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	return validation.ValidateStruct(api,
-		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
+		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
 		validation.Field(&api.Description, validation.Required),
@@ -226,8 +226,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRfc)),
-		validation.Field(&api.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc)),
+		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -265,14 +265,14 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
 		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ApiOrdIDRegex))
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In(ApiImplementationStandardDocumentApi, ApiImplementationStandardServiceBroker, ApiImplementationStandardCsnExposure, ApiImplementationStandardCustom)),
-		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
-		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required).Else(validation.Empty)),
+		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardCustom)),
+		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
@@ -292,7 +292,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
 		})),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
+		validation.Field(&event.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -541,10 +541,10 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	pkgOrdID := str.PtrStrToStr(api.OrdPackageID)
 	policyLevel := packagePolicyLevels[pkgOrdID]
 	apiVisibility := str.PtrStrToStr(api.Visibility)
-	apiProtocol := str.PtrStrToStr(api.ApiProtocol)
+	apiProtocol := str.PtrStrToStr(api.APIProtocol)
 	resourceDefinitions := api.ResourceDefinitions
 
-	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == ApiVisibilityPrivate)
+	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == APIVisibilityPrivate)
 	if len(resourceDefinitions) == 0 && isResourceDefinitionMandatory {
 		return errors.New("when api resource visibility is public or internal, resource definitions must be provided")
 	}
@@ -562,22 +562,22 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 
 	isPolicyCoreOrPartner := policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner
 	wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
-	if isPolicyCoreOrPartner && (apiProtocol == ApiProtocolSoapInbound || apiProtocol == ApiProtocolSoapOutbound) && !wsdlTypeExists {
+	if isPolicyCoreOrPartner && (apiProtocol == APIProtocolSoapInbound || apiProtocol == APIProtocolSoapOutbound) && !wsdlTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
 	}
 
 	edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
 	openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
-	if isPolicyCoreOrPartner && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
-		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+	if isPolicyCoreOrPartner && (apiProtocol == APIProtocolODataV2 || apiProtocol == APIProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
+		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions")
 	}
 
-	if isPolicyCoreOrPartner && apiProtocol == ApiProtocolRest && !openAPITypeExists {
+	if isPolicyCoreOrPartner && apiProtocol == APIProtocolRest && !openAPITypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='rest' it is mandatory to provide either OpenAPI 3 or OpenAPI 2 definitions")
 	}
 
 	rfcMetadataTypeExists := resourceDefinitionTypes[model.APISpecTypeRfcMetadata]
-	if isPolicyCoreOrPartner && apiProtocol == ApiProtocolSapRfc && !rfcMetadataTypeExists {
+	if isPolicyCoreOrPartner && apiProtocol == APIProtocolSapRfc && !rfcMetadataTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='sap-rfc' it is mandatory to provide SAP RFC definitions")
 	}
 
@@ -593,7 +593,7 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 	policyLevel := packagePolicyLevels[pkgOrdID]
 	apiVisibility := str.PtrStrToStr(event.Visibility)
 
-	if policyLevel == PolicyLevelSap && apiVisibility == ApiVisibilityPrivate {
+	if policyLevel == PolicyLevelSap && apiVisibility == APIVisibilityPrivate {
 		return nil
 	}
 
@@ -998,9 +998,8 @@ func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
 	for _, val := range entryPoints {
 		if seen[val] {
 			return true
-		} else {
-			seen[val] = true
 		}
+		seen[val] = true
 	}
 	return false
 }
@@ -1031,7 +1030,7 @@ func validateExtensibleField(value interface{}, ordPackageID *string, packagePol
 	policyLevel := packagePolicyLevels[pkgOrdID]
 
 	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
-		return errors.New(fmt.Sprintf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner))
+		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
 	}
 
 	return validateJSONObjects(value, map[string][]validation.Rule{

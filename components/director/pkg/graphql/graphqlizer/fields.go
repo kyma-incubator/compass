@@ -168,7 +168,7 @@ func (fp *GqlFieldsProvider) OmitForAPIDefinition(omittedProperties []string) st
 		"id":          "id",
 		"name":        "name",
 		"description": "description",
-		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForApiSpec(specOmittedProperties)),
+		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForAPISpec(specOmittedProperties)),
 		"targetURL":   "targetURL",
 		"group":       "group",
 		"version":     fmt.Sprintf("version {%s}", fp.OmitForVersion(versionOmittedProperties)),
@@ -183,7 +183,7 @@ func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 		spec {%s}
 		targetURL
 		group
-		version {%s}`, fp.ForApiSpec(), fp.ForVersion()),
+		version {%s}`, fp.ForAPISpec(), fp.ForVersion()),
 		ctx, []string{"APIDefinition.auth"})
 }
 
@@ -193,7 +193,7 @@ func (fp *GqlFieldsProvider) ForSystemAuth() string {
 		auth {%s}`, fp.ForAuth())
 }
 
-func (fp *GqlFieldsProvider) OmitForApiSpec(omittedProperties []string) string {
+func (fp *GqlFieldsProvider) OmitForAPISpec(omittedProperties []string) string {
 	frOmittedProperties := extractOmitFor(omittedProperties, "fetchRequest")
 
 	return buildProperties(map[string]string{
@@ -205,7 +205,7 @@ func (fp *GqlFieldsProvider) OmitForApiSpec(omittedProperties []string) string {
 	}, omittedProperties)
 }
 
-func (fp *GqlFieldsProvider) ForApiSpec() string {
+func (fp *GqlFieldsProvider) ForAPISpec() string {
 	return fmt.Sprintf(`
 		id
 		data

@@ -137,7 +137,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		firstSpecID := "111111111-1111-1111-1111-111111111111"
 		firstSpecEntity := fixAPISpecEntityWithID(firstSpecID)
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
-		secondApiDefEntity := fixAPISpecEntityWithID(secondSpecID)
+		secondAPIDefEntity := fixAPISpecEntityWithID(secondSpecID)
 
 		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications 
 		WHERE %s AND api_def_id = \$2
@@ -155,7 +155,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.Converter{}
 		convMock.On("FromEntity", firstSpecEntity).Return(*fixModelAPISpecWithID(firstSpecID), nil)
-		convMock.On("FromEntity", secondApiDefEntity).Return(*fixModelAPISpecWithID(secondSpecID), nil)
+		convMock.On("FromEntity", secondAPIDefEntity).Return(*fixModelAPISpecWithID(secondSpecID), nil)
 		pgRepository := spec.NewRepository(convMock)
 		// WHEN
 		modelSpec, err := pgRepository.ListByReferenceObjectID(ctx, tenant, model.APISpecReference, apiID)
@@ -172,7 +172,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		firstSpecID := "111111111-1111-1111-1111-111111111111"
 		firstSpecEntity := fixEventSpecEntityWithID(firstSpecID)
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
-		secondApiDefEntity := fixEventSpecEntityWithID(secondSpecID)
+		secondAPIDefEntity := fixEventSpecEntityWithID(secondSpecID)
 
 		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications 
 		WHERE %s AND event_def_id = \$2
@@ -190,7 +190,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.Converter{}
 		convMock.On("FromEntity", firstSpecEntity).Return(*fixModelEventSpecWithID(firstSpecID), nil)
-		convMock.On("FromEntity", secondApiDefEntity).Return(*fixModelEventSpecWithID(secondSpecID), nil)
+		convMock.On("FromEntity", secondAPIDefEntity).Return(*fixModelEventSpecWithID(secondSpecID), nil)
 		pgRepository := spec.NewRepository(convMock)
 		// WHEN
 		modelSpec, err := pgRepository.ListByReferenceObjectID(ctx, tenant, model.EventSpecReference, eventID)

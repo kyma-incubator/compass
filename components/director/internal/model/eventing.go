@@ -14,14 +14,14 @@ type RuntimeEventingConfiguration struct {
 }
 
 func NewRuntimeEventingConfiguration(rawEventURL string) (*RuntimeEventingConfiguration, error) {
-	validUrl, err := url.Parse(rawEventURL)
+	validURL, err := url.Parse(rawEventURL)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RuntimeEventingConfiguration{
 		EventingConfiguration: EventingConfiguration{
-			DefaultURL: *validUrl,
+			DefaultURL: *validURL,
 		},
 	}, nil
 }

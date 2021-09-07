@@ -143,7 +143,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (TokenData, authenticator.Coordinates, error) {
 	authorizationHeader := reqData.Header.Get("Authorization")
 	if authorizationHeader == "" || !strings.HasPrefix(strings.ToLower(authorizationHeader), "bearer ") {
-		return nil, authenticator.Coordinates{}, errors.New(fmt.Sprintf("unexpected or empty authorization header with length %d", len(authorizationHeader)))
+		return nil, authenticator.Coordinates{}, errors.Errorf("unexpected or empty authorization header with length %d", len(authorizationHeader))
 	}
 
 	token := strings.TrimSpace(authorizationHeader[len("Bearer "):])

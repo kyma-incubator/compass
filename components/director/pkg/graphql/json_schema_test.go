@@ -107,7 +107,7 @@ func TestJSON_MarshalSchema(t *testing.T) {
 func TestJSON_UnmarshalSchema(t *testing.T) {
 	t.Run("Success nil JSON", func(t *testing.T) {
 		//GIVEN
-		var json *JSONSchema = nil
+		var json *JSONSchema
 		var expected *interface{}
 		//WHEN
 		output, err := json.Unmarshal()

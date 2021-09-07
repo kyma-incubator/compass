@@ -42,7 +42,7 @@ type EventDefinition struct {
 	*BaseEntity
 }
 
-func (_ *EventDefinition) GetType() resource.Type {
+func (*EventDefinition) GetType() resource.Type {
 	return resource.EventDefinition
 }
 
@@ -101,14 +101,14 @@ func (rd *EventResourceDefinition) Validate() error {
 	)
 }
 
-func (a *EventResourceDefinition) ToSpec() *SpecInput {
-	specType := a.Type
+func (rd *EventResourceDefinition) ToSpec() *SpecInput {
+	specType := rd.Type
 	return &SpecInput{
-		Format:     a.MediaType,
+		Format:     rd.MediaType,
 		EventType:  &specType,
-		CustomType: &a.CustomType,
+		CustomType: &rd.CustomType,
 		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequest Auths once ORD defines them
-			URL:  a.URL,
+			URL:  rd.URL,
 			Auth: nil, // Currently only open AccessStrategy is defined by ORD, which means no auth
 		},
 	}

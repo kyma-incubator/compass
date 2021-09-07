@@ -16,26 +16,26 @@ type Error struct {
 	parentErr error
 }
 
-func (err Error) Error() string {
+func (e Error) Error() string {
 	builder := strings.Builder{}
-	builder.WriteString(err.Message)
+	builder.WriteString(e.Message)
 
 	var i = 0
-	if len(err.arguments) != 0 {
+	if len(e.arguments) != 0 {
 		builder.WriteString(" [")
-		keys := sortMapKey(err.arguments)
+		keys := sortMapKey(e.arguments)
 		for _, key := range keys {
-			builder.WriteString(fmt.Sprintf("%s=%s", key, err.arguments[key]))
+			builder.WriteString(fmt.Sprintf("%s=%s", key, e.arguments[key]))
 			i++
-			if len(err.arguments) != i {
+			if len(e.arguments) != i {
 				builder.WriteString("; ")
 			}
 		}
 		builder.WriteString("]")
 	}
-	if err.errorCode == InternalError && err.parentErr != nil {
+	if e.errorCode == InternalError && e.parentErr != nil {
 		builder.WriteString(": ")
-		builder.WriteString(err.parentErr.Error())
+		builder.WriteString(e.parentErr.Error())
 	}
 
 	return builder.String()
@@ -44,9 +44,8 @@ func (err Error) Error() string {
 func (e Error) Is(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return e.errorCode == customErr.errorCode
-	} else {
-		return false
 	}
+	return false
 }
 
 func ErrorCode(err error) ErrorType {
@@ -304,25 +303,22 @@ func NewCannotUpdateObjectInManyBundles() error {
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == valueNotFoundInConfigMsg
-	} else {
-		return false
 	}
+	return false
 }
 
 func IsKeyDoesNotExist(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == KeyDoesNotExistMsg
-	} else {
-		return false
 	}
+	return false
 }
 
 func IsCannotReadTenant(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == InternalError && customErr.Message == CannotReadTenantMsg
-	} else {
-		return false
 	}
+	return false
 }
 
 func IsNewInvalidOperationError(err error) bool {

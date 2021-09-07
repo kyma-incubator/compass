@@ -18,7 +18,7 @@ type Document struct {
 	*BaseEntity
 }
 
-func (_ *Document) GetType() resource.Type {
+func (*Document) GetType() resource.Type {
 	return resource.Document
 }
 

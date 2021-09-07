@@ -26,7 +26,7 @@ type Application struct {
 	*BaseEntity
 }
 
-func (_ *Application) GetType() resource.Type {
+func (*Application) GetType() resource.Type {
 	return resource.Application
 }
 

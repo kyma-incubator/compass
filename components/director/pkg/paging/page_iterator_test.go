@@ -78,9 +78,8 @@ func TestPageIterator(t *testing.T) {
 				require.NoError(t, err)
 				if skipValue == 0 {
 					return uint64(pageSize), nil
-				} else {
-					return 0, testErr
 				}
+				return 0, testErr
 			},
 			expectedError: testErr,
 		},

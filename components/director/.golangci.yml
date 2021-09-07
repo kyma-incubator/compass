@@ -179,13 +179,18 @@ issues:
       linters:
         - staticcheck
 
+    - path: _test\.go
+      text: "error-strings|context-keys-type|context-as-argument"
+      linters:
+        - revive
+
     - linters:
         - gocritic
       text: "ifElseChain|appendAssign"
 
     - linters:
         - revive
-      text: "unexported-return|exported"
+      text: "unexported-return|exported|error-naming"
 
 #    # Exclude known linters from partially hard-vendored code,
 #    # which is impossible to exclude via "nolint" comments.

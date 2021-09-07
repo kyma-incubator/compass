@@ -15,7 +15,7 @@ import (
 
 const (
 	invalidOpenResourceDiscovery = "invalidOpenResourceDiscovery"
-	invalidUrl                   = "invalidUrl"
+	invalidURL                   = "invalidURL"
 	invalidOrdID                 = "invalidOrdId"
 	invalidDescriptionLength     = 256
 	invalidVersion               = "invalidVersion"
@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	invalidJson = `[
+	invalidJSON = `[
         {
           foo: bar,
         }
@@ -214,7 +214,7 @@ var (
         }
       ]`
 
-	invalidApiResourceLinksDueToMissingType = `[
+	invalidAPIResourceLinksDueToMissingType = `[
         {
           "url": "https://example.com/shell/discover"
         },
@@ -223,25 +223,25 @@ var (
           "url": "%s/shell/discover/relative"
         }
       ]`
-	invalidApiResourceLinksDueToWrongType = `[
+	invalidAPIResourceLinksDueToWrongType = `[
         {
           "type": "wrongType",
           "url": "https://example.com/shell/discover"
         }
       ]`
-	invalidApiResourceLinksDueToMissingCustomValueOfType = `[
+	invalidAPIResourceLinksDueToMissingCustomValueOfType = `[
         {
           "type": "console",
           "customType": "foo",
           "url": "https://example.com/shell/discover"
         }
       ]`
-	invalidApiResourceLinksDueToMissingURL = `[
+	invalidAPIResourceLinksDueToMissingURL = `[
         {
           "type": "console"
         }
       ]`
-	invalidApiResourceLinksDueToWrongURL = `[
+	invalidAPIResourceLinksDueToWrongURL = `[
         {
           "type": "console",
           "url": "wrongURL"
@@ -316,14 +316,14 @@ var (
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
 	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
 
-	invalidExtensibleDueToInvalidJson                                = `{invalid}`
+	invalidExtensibleDueToInvalidJSON                                = `{invalid}`
 	invalidExtensibleDueToInvalidSupportedType                       = `{"supported":true}`
 	invalidExtensibleDueToNoSupportedProperty                        = `{"description":"Please find the extensibility documentation"}`
 	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
 	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty = `{"supported":"automatic"}`
 	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty    = `{"supported":"manual"}`
 
-	invalidSuccessorsDueToInvalidApiRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
+	invalidSuccessorsDueToInvalidAPIRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
 	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 )
 
@@ -345,7 +345,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "Invalid `correlationIds` field when it is invalid JSON for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.CorrelationIDs = json.RawMessage(invalidJson)
+				doc.DescribedSystemInstance.CorrelationIDs = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -393,7 +393,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidJson)
+				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -516,7 +516,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `baseUrl` of describedSystemInstance Document field",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.BaseURL = str.Ptr(invalidUrl)
+				doc.DescribedSystemInstance.BaseURL = str.Ptr(invalidURL)
 
 				return []*ord.Document{doc}
 			},
@@ -724,7 +724,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `PackageLinks` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PackageLinks = json.RawMessage(invalidJson)
+				doc.Packages[0].PackageLinks = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -765,7 +765,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `links` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].Links = json.RawMessage(invalidJson)
+				doc.Packages[0].Links = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -855,7 +855,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `partOfProducts` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PartOfProducts = json.RawMessage(invalidJson)
+				doc.Packages[0].PartOfProducts = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -887,7 +887,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `tags` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].Tags = json.RawMessage(invalidJson)
+				doc.Packages[0].Tags = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -919,7 +919,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].Labels = json.RawMessage(invalidJson)
+				doc.Packages[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -975,7 +975,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `countries` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].Countries = json.RawMessage(invalidJson)
+				doc.Packages[0].Countries = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1016,7 +1016,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `lineOfBusiness` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].LineOfBusiness = json.RawMessage(invalidJson)
+				doc.Packages[0].LineOfBusiness = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1085,7 +1085,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `industry` field when it is invalid JSON for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].Industry = json.RawMessage(invalidJson)
+				doc.Packages[0].Industry = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1299,7 +1299,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Invalid `Links` field when it is invalid JSON for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidJson)
+				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1325,7 +1325,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidJson)
+				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1413,7 +1413,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Invalid `CredentialExchangeStrategies` field when it is invalid JSON for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidJson)
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1657,7 +1657,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `apiProtocol` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ApiProtocol = nil
+				doc.APIResources[0].APIProtocol = nil
 
 				return []*ord.Document{doc}
 			},
@@ -1665,7 +1665,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `apiProtocol` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ApiProtocol = str.Ptr("wrongApiProtocol")
+				doc.APIResources[0].APIProtocol = str.Ptr("wrongAPIProtocol")
 
 				return []*ord.Document{doc}
 			},
@@ -1705,7 +1705,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `partOfProducts` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].PartOfProducts = json.RawMessage(invalidJson)
+				doc.APIResources[0].PartOfProducts = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1737,7 +1737,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `tags` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Tags = json.RawMessage(invalidJson)
+				doc.APIResources[0].Tags = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1777,7 +1777,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `countries` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Countries = json.RawMessage(invalidJson)
+				doc.APIResources[0].Countries = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1817,7 +1817,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `lineOfBusiness` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].LineOfBusiness = json.RawMessage(invalidJson)
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1886,7 +1886,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `industry` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Industry = json.RawMessage(invalidJson)
+				doc.APIResources[0].Industry = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -1956,7 +1956,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions = nil
-				doc.APIResources[0].Visibility = str.Ptr(ord.ApiVisibilityPrivate)
+				doc.APIResources[0].Visibility = str.Ptr(ord.APIVisibilityPrivate)
 				doc.Packages[0].PolicyLevel = policyLevel
 
 				return []*ord.Document{doc}
@@ -2095,7 +2095,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `url` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].URL = invalidUrl
+				doc.APIResources[0].ResourceDefinitions[0].URL = invalidURL
 
 				return []*ord.Document{doc}
 			},
@@ -2145,7 +2145,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToMissingType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingType)
 
 				return []*ord.Document{doc}
 			},
@@ -2153,7 +2153,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToWrongType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToWrongType)
 
 				return []*ord.Document{doc}
 			},
@@ -2161,7 +2161,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customType` when field `type` is not `custom` for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToMissingCustomValueOfType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingCustomValueOfType)
 
 				return []*ord.Document{doc}
 			},
@@ -2169,7 +2169,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToMissingURL)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingURL)
 
 				return []*ord.Document{doc}
 			},
@@ -2177,7 +2177,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidApiResourceLinksDueToWrongURL)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToWrongURL)
 
 				return []*ord.Document{doc}
 			},
@@ -2185,7 +2185,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `apiResourceLink` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidJson)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2233,7 +2233,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `links` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Links = json.RawMessage(invalidJson)
+				doc.APIResources[0].Links = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2299,7 +2299,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `successors` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidJson)
+				doc.APIResources[0].Successors = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2307,7 +2307,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `successors` when values do not match the regex for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidApiRegex)
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidAPIRegex)
 
 				return []*ord.Document{doc}
 			},
@@ -2371,7 +2371,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `changeLogEntries` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidJson)
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2429,7 +2429,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `entryPoints` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].TargetURLs = json.RawMessage(invalidJson)
+				doc.APIResources[0].TargetURLs = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2461,7 +2461,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Labels = json.RawMessage(invalidJson)
+				doc.APIResources[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2602,7 +2602,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `defaultEntryPoint` field in `PartOfConsumptionBundles` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = invalidUrl
+				doc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL = invalidURL
 
 				return []*ord.Document{doc}
 			},
@@ -2662,7 +2662,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `Extensible` field due to invalid json",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJson)
+				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -2711,8 +2711,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapInbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapInbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2728,8 +2728,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapInbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapInbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
@@ -2746,8 +2746,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapOutbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapOutbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapOutbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeWsdlV1
@@ -2763,7 +2763,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSapRfc
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 
@@ -2776,7 +2776,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSapRfc
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
 
@@ -2788,8 +2788,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapInbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapInbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2804,8 +2804,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapInbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapInbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2819,8 +2819,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapOutbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapOutbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapOutbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2835,8 +2835,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSoapOutbound
-				*doc.APIResources[1].ApiProtocol = ord.ApiProtocolSoapOutbound
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapOutbound
+				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2850,7 +2850,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolODataV2
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2864,7 +2864,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolODataV2
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2877,7 +2877,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolODataV4
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2891,7 +2891,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolODataV4
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2904,7 +2904,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolRest
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2918,7 +2918,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolRest
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2931,7 +2931,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSapRfc
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -2945,7 +2945,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
-				*doc.APIResources[0].ApiProtocol = ord.ApiProtocolSapRfc
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
@@ -3234,7 +3234,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `changeLogEntries` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].ChangeLogEntries = json.RawMessage(invalidJson)
+				doc.EventResources[0].ChangeLogEntries = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3314,7 +3314,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `links` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Links = json.RawMessage(invalidJson)
+				doc.EventResources[0].Links = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3354,7 +3354,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `partOfProducts` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].PartOfProducts = json.RawMessage(invalidJson)
+				doc.EventResources[0].PartOfProducts = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3379,7 +3379,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions = nil
-				doc.EventResources[0].Visibility = str.Ptr(ord.ApiVisibilityPrivate)
+				doc.EventResources[0].Visibility = str.Ptr(ord.APIVisibilityPrivate)
 				doc.Packages[0].PolicyLevel = policyLevel
 
 				return []*ord.Document{doc}
@@ -3454,7 +3454,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid field `url` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].ResourceDefinitions[0].URL = invalidUrl
+				doc.EventResources[0].ResourceDefinitions[0].URL = invalidURL
 
 				return []*ord.Document{doc}
 			},
@@ -3512,7 +3512,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `tags` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Tags = json.RawMessage(invalidJson)
+				doc.EventResources[0].Tags = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3544,7 +3544,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Labels = json.RawMessage(invalidJson)
+				doc.EventResources[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3592,7 +3592,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `countries` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Countries = json.RawMessage(invalidJson)
+				doc.EventResources[0].Countries = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3632,7 +3632,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `lineOfBusiness` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].LineOfBusiness = json.RawMessage(invalidJson)
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3701,7 +3701,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `industry` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Industry = json.RawMessage(invalidJson)
+				doc.EventResources[0].Industry = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3804,7 +3804,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid json field `successors` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidJson)
+				doc.EventResources[0].Successors = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -3891,7 +3891,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `Extensible` field due to invalid json",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJson)
+				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -4116,7 +4116,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Products[0].CorrelationIDs = json.RawMessage(invalidJson)
+				doc.Products[0].CorrelationIDs = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -4148,7 +4148,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Products[0].Labels = json.RawMessage(invalidJson)
+				doc.Products[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -4246,7 +4246,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Products[0].Labels = json.RawMessage(invalidJson)
+				doc.Products[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -4286,7 +4286,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			Name: "Invalid JSON object `Partners` field for Vendor",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Vendors[0].Partners = json.RawMessage(invalidJson)
+				doc.Vendors[0].Partners = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},

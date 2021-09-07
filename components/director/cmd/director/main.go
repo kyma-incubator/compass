@@ -119,7 +119,7 @@ type config struct {
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone   bool          `envconfig:"default=false"`
-	ClientIDHttpHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
+	ClientIDHTTPHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
 
@@ -186,7 +186,7 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
-	internalHttpClient := &http.Client{
+	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
@@ -206,7 +206,7 @@ func main() {
 		cfg.Features,
 		metricsCollector,
 		httpClient,
-		internalHttpClient,
+		internalHTTPClient,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)
@@ -225,7 +225,7 @@ func main() {
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey, claims.NewValidator())
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claims.NewValidator())
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -253,10 +253,10 @@ func main() {
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
-	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerAPIDef(rootResolver.APIDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerDocument(rootResolver.DocumentsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
-	gqlAPIRouter.Use(dataloader.HandlerFetchRequestApiDef(rootResolver.FetchRequestApiDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestAPIDef(rootResolver.FetchRequestAPIDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 
@@ -278,7 +278,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
 
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
@@ -310,7 +310,7 @@ func main() {
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, internalHttpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, internalHTTPClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
 	timeService := directorTime.NewService()
@@ -440,7 +440,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -577,7 +577,7 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 	return handlerWithTimeout, nil
 }
 
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHttpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -625,7 +625,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := directorTime.NewService()
-	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHttpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
+	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
 }
 
 func systemAuthSvc() oathkeeper.Service {

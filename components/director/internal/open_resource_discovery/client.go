@@ -36,7 +36,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 		return nil, err
 	}
 
-	baseUrl, err := stripRelativePathFromURL(url)
+	baseURL, err := stripRelativePathFromURL(url)
 	if err != nil {
 		return nil, err
 	}
@@ -45,12 +45,12 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseUrl+docDetails.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseURL+docDetails.URL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseUrl+docDetails.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseURL+docDetails.URL, strategy)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseUrl+docDetails.URL)
+			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseURL+docDetails.URL)
 		}
 
 		docs = append(docs, doc)
@@ -128,9 +128,8 @@ func buildWellKnownEndpoint(u string) (string, error) {
 
 	if parsedURL.Path != "" {
 		return parsedURL.String(), nil
-	} else {
-		return parsedURL.String() + WellKnownEndpoint, nil
 	}
+	return parsedURL.String() + WellKnownEndpoint, nil
 }
 
 func stripRelativePathFromURL(u string) (string, error) {

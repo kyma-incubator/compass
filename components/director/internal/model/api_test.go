@@ -29,14 +29,14 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 			Input: &model.APIDefinitionInput{
 				Name:        name,
 				Description: &desc,
-				TargetURLs:  api.ConvertTargetUrlToJsonArray(targetURL),
+				TargetURLs:  api.ConvertTargetURLToJSONArray(targetURL),
 				Group:       &group,
 			},
 			Expected: &model.APIDefinition{
 				ApplicationID: appID,
 				Name:          name,
 				Description:   &desc,
-				TargetURLs:    api.ConvertTargetUrlToJsonArray(targetURL),
+				TargetURLs:    api.ConvertTargetURLToJSONArray(targetURL),
 				Group:         &group,
 				Tenant:        tenant,
 				BaseEntity: &model.BaseEntity{

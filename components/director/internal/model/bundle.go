@@ -22,7 +22,7 @@ type Bundle struct {
 	*BaseEntity
 }
 
-func (_ *Bundle) GetType() resource.Type {
+func (*Bundle) GetType() resource.Type {
 	return resource.Bundle
 }
 

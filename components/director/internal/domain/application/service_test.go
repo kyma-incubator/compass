@@ -3654,7 +3654,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
 	Webhooks             []*model.Webhook
-	Apis                 []*model.APIDefinition
+	APIs                 []*model.APIDefinition
 	EventAPIs            []*model.EventDefinition
 	Documents            []*model.Document
 }

@@ -35,11 +35,11 @@ func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (stri
 	if err != nil {
 		if errors.IsNotFound(err) {
 			k8sOp := toK8SOperation(op)
-			if createdOperation, err := s.kcli.Create(ctx, k8sOp); err != nil {
+			createdOperation, err := s.kcli.Create(ctx, k8sOp)
+			if err != nil {
 				return "", err
-			} else {
-				return string(createdOperation.UID), nil
 			}
+			return string(createdOperation.UID), nil
 		}
 		return "", err
 	}

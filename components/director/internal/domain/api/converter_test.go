@@ -127,7 +127,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	api1, spec1, bundleRef1 := fixFullAPIDefinitionModel("test1")
 	api2, spec2, bundleRef2 := fixFullAPIDefinitionModel("test2")
 
-	inputApis := []*model.APIDefinition{
+	inputAPIs := []*model.APIDefinition{
 		&api1, &api2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
@@ -148,7 +148,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	versionConverter := &automock.VersionConverter{}
 	specConverter := &automock.SpecConverter{}
 
-	for i, api := range inputApis {
+	for i, api := range inputAPIs {
 		if api == nil {
 			continue
 		}
@@ -158,7 +158,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	// when
 	converter := api.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs, inputBundleRefs)
+	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then

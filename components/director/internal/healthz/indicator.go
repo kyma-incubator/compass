@@ -96,7 +96,7 @@ func (i *indicator) Run(ctx context.Context) {
 			if currentStatus.Error() != nil {
 				// escape overflow
 				if i.failureCount < math.MaxInt32 {
-					i.failureCount += 1
+					i.failureCount++
 				}
 				log.C(ctx).Warnf("Threshold for indicator %s is %d, current failure count is : %d, current error is: %s, details are: %s",
 					i.Name(),

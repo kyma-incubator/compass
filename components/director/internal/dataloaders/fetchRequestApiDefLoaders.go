@@ -1,4 +1,4 @@
-//go:generate go run github.com/vektah/dataloaden FetchRequestApiDefLoader ParamFetchRequestApiDef *github.com/kyma-incubator/compass/components/director/pkg/graphql.FetchRequest
+//go:generate go run github.com/vektah/dataloaden FetchRequestAPIDefLoader ParamFetchRequestAPIDef *github.com/kyma-incubator/compass/components/director/pkg/graphql.FetchRequest
 
 package dataloader
 
@@ -10,22 +10,22 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyFetchRequestApiDef contextKey = "dataloadersFetchRequestApiDef"
+const loadersKeyFetchRequestAPIDef contextKey = "dataloadersFetchRequestAPIDef"
 
-type LoadersFetchRequestApiDef struct {
-	FetchRequestApiDefByID FetchRequestApiDefLoader
+type LoadersFetchRequestAPIDef struct {
+	FetchRequestAPIDefByID FetchRequestAPIDefLoader
 }
 
-type ParamFetchRequestApiDef struct {
+type ParamFetchRequestAPIDef struct {
 	ID  string
 	Ctx context.Context
 }
 
-func HandlerFetchRequestApiDef(fetchFunc func(keys []ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
+func HandlerFetchRequestAPIDef(fetchFunc func(keys []ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestApiDef, &LoadersFetchRequestApiDef{
-				FetchRequestApiDefByID: FetchRequestApiDefLoader{
+			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestAPIDef, &LoadersFetchRequestAPIDef{
+				FetchRequestAPIDefByID: FetchRequestAPIDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,
@@ -37,6 +37,6 @@ func HandlerFetchRequestApiDef(fetchFunc func(keys []ParamFetchRequestApiDef) ([
 	}
 }
 
-func ForFetchRequestApiDef(ctx context.Context) *LoadersFetchRequestApiDef {
-	return ctx.Value(loadersKeyFetchRequestApiDef).(*LoadersFetchRequestApiDef)
+func ForFetchRequestAPIDef(ctx context.Context) *LoadersFetchRequestAPIDef {
+	return ctx.Value(loadersKeyFetchRequestAPIDef).(*LoadersFetchRequestAPIDef)
 }

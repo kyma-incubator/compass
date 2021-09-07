@@ -132,7 +132,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 					SourceTenant: sourceTenantField,
 					TargetTenant: targetTenantField,
 				},
-				payload: []byte(fixTenantEventsResponse(eventsToJsonArray(events...), len(test.detailsPairs), 1)),
+				payload: []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 
 			runtimes, err := page.getMovedRuntimes()
@@ -301,7 +301,7 @@ func Test_getTenantMappings(t *testing.T) {
 			page := eventsPage{
 				fieldMapping: test.fieldMapping,
 				providerName: providerName,
-				payload:      []byte(fixTenantEventsResponse(eventsToJsonArray(events...), len(test.detailsPairs), 1)),
+				payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 			tenantMappings, err := page.getTenantMappings(CreatedEventsType)
 			test.errorFunc(t, err)
@@ -350,6 +350,6 @@ func fixTenantEventsResponse(events []byte, total, pages int) TenantEventsRespon
 	}`, string(events), total, pages))
 }
 
-func eventsToJsonArray(events ...[]byte) []byte {
+func eventsToJSONArray(events ...[]byte) []byte {
 	return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 }

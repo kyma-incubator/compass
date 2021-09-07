@@ -40,11 +40,11 @@ var fourSystemsResp = `[{
 		}]`
 
 func TestFetchSystemsForTenant(t *testing.T) {
-	systemsJson, err := json.Marshal(fixSystems())
+	systemsJSON, err := json.Marshal(fixSystems())
 	require.NoError(t, err)
 
-	mock, url := fixHttpClient(t)
-	mock.bodiesToReturn = [][]byte{systemsJson}
+	mock, url := fixHTTPClient(t)
+	mock.bodiesToReturn = [][]byte{systemsJSON}
 	mock.expectedFilterCriteria = "filter1"
 	mock.expectedTenantFilterCriteria = "ffff and tenant eq 'tenant1'"
 
@@ -199,7 +199,7 @@ type mockData struct {
 	pageCount                    int
 }
 
-func fixHttpClient(t *testing.T) (*mockData, string) {
+func fixHTTPClient(t *testing.T) (*mockData, string) {
 	mux := http.NewServeMux()
 	requests := []string{}
 

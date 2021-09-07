@@ -225,11 +225,11 @@ func (c *converter) marshalDefaultInstanceAuth(defaultInstanceAuth *model.Auth) 
 	return str.Ptr(string(output)), nil
 }
 
-func (c *converter) unmarshalDefaultInstanceAuth(defaultInstanceAuthSql sql.NullString) (*model.Auth, error) {
+func (c *converter) unmarshalDefaultInstanceAuth(defaultInstanceAuthSQL sql.NullString) (*model.Auth, error) {
 	var defaultInstanceAuth *model.Auth
-	if defaultInstanceAuthSql.Valid && defaultInstanceAuthSql.String != "" {
+	if defaultInstanceAuthSQL.Valid && defaultInstanceAuthSQL.String != "" {
 		defaultInstanceAuth = &model.Auth{}
-		err := json.Unmarshal([]byte(defaultInstanceAuthSql.String), defaultInstanceAuth)
+		err := json.Unmarshal([]byte(defaultInstanceAuthSQL.String), defaultInstanceAuth)
 		if err != nil {
 			return nil, errors.Wrap(err, "while unmarshalling default instance auth")
 		}

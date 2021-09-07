@@ -1,4 +1,4 @@
-//go:generate go run github.com/vektah/dataloaden ApiDefLoader ParamApiDef *github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionPage
+//go:generate go run github.com/vektah/dataloaden APIDefLoader ParamAPIDef *github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionPage
 
 package dataloader
 
@@ -12,24 +12,24 @@ import (
 
 type contextKey string
 
-const loadersKeyApiDef contextKey = "dataloadersApiDef"
+const loadersKeyAPIDef contextKey = "dataloadersAPIDef"
 
-type ApiDefLoaders struct {
-	ApiDefByID ApiDefLoader
+type APIDefLoaders struct {
+	APIDefByID APIDefLoader
 }
 
-type ParamApiDef struct {
+type ParamAPIDef struct {
 	ID    string
 	Ctx   context.Context
 	First *int
 	After *graphql.PageCursor
 }
 
-func HandlerApiDef(fetchFunc func(keys []ParamApiDef) ([]*graphql.APIDefinitionPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
+func HandlerAPIDef(fetchFunc func(keys []ParamAPIDef) ([]*graphql.APIDefinitionPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), loadersKeyApiDef, &ApiDefLoaders{
-				ApiDefByID: ApiDefLoader{
+			ctx := context.WithValue(r.Context(), loadersKeyAPIDef, &APIDefLoaders{
+				APIDefByID: APIDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,
@@ -41,6 +41,6 @@ func HandlerApiDef(fetchFunc func(keys []ParamApiDef) ([]*graphql.APIDefinitionP
 	}
 }
 
-func ApiDefFor(ctx context.Context) *ApiDefLoaders {
-	return ctx.Value(loadersKeyApiDef).(*ApiDefLoaders)
+func APIDefFor(ctx context.Context) *APIDefLoaders {
+	return ctx.Value(loadersKeyAPIDef).(*APIDefLoaders)
 }

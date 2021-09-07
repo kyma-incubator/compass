@@ -267,13 +267,13 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	params := dataloader.ParamFetchRequestApiDef{ID: obj.ID, Ctx: ctx}
-	return dataloader.ForFetchRequestApiDef(ctx).FetchRequestApiDefByID.Load(params)
+	params := dataloader.ParamFetchRequestAPIDef{ID: obj.ID, Ctx: ctx}
+	return dataloader.ForFetchRequestAPIDef(ctx).FetchRequestAPIDefByID.Load(params)
 }
 
-func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
+func (r *Resolver) FetchRequestAPIDefDataLoader(keys []dataloader.ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
-		return nil, []error{apperrors.NewInternalError("No ApiDef specs found")}
+		return nil, []error{apperrors.NewInternalError("No APIDef specs found")}
 	}
 
 	ctx := keys[0].Ctx

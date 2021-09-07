@@ -110,7 +110,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	resourceUpdaterFunc := h.resourceUpdaterFuncs[operation.ResourceType]
-	opError, err := stringifiedJsonError(operation.Error)
+	opError, err := stringifiedJSONError(operation.Error)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while marshalling operation error: %s", err.Error())
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to marshal error"), http.StatusInternalServerError)
@@ -174,7 +174,7 @@ func operationRequestFromBody(ctx context.Context, request *http.Request) (*Oper
 	return &operation, nil
 }
 
-func stringifiedJsonError(errorMsg string) (*string, error) {
+func stringifiedJSONError(errorMsg string) (*string, error) {
 	if len(errorMsg) == 0 {
 		return nil, nil
 	}

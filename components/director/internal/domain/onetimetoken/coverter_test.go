@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	validConnectorURL                string = "http://connector.domain.local"
-	validLegacyConnectorURL          string = "http://legacy-connector.domain.local"
-	validLegacyConnectorURLWithQuery string = "http://legacy-connector.domain.local?abc=1"
-	invalidURL                       string = ":123:invalid-url"
-	token                            string = "token123"
+	validConnectorURL                = "http://connector.domain.local"
+	validLegacyConnectorURL          = "http://legacy-connector.domain.local"
+	validLegacyConnectorURLWithQuery = "http://legacy-connector.domain.local?abc=1"
+	invalidURL                       = ":123:invalid-url"
+	token                            = "token123"
 )
 
 func TestConverter_ToGraphQLForRuntime(t *testing.T) {

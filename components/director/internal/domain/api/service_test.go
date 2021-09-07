@@ -178,23 +178,23 @@ func TestService_ListByBundleIDs(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	firstApiDefID := "foo"
-	secondApiDefID := "foo2"
+	firstAPIDefID := "foo"
+	secondAPIDefID := "foo2"
 	firstBundleID := "bar"
 	secondBundleID := "bar2"
 	name := "foo"
 	targetURL := "https://test.com"
-	numberOfApisInFirstBundle := 1
-	numberOfApisInSecondBundle := 1
+	numberOfAPIsInFirstBundle := 1
+	numberOfAPIsInSecondBundle := 1
 	bundleIDs := []string{firstBundleID, secondBundleID}
 
-	apiDefFirstBundle := fixAPIDefinitionModel(firstApiDefID, name, targetURL)
-	apiDefSecondBundle := fixAPIDefinitionModel(secondApiDefID, name, targetURL)
+	apiDefFirstBundle := fixAPIDefinitionModel(firstAPIDefID, name, targetURL)
+	apiDefSecondBundle := fixAPIDefinitionModel(secondAPIDefID, name, targetURL)
 
-	apiDefFirstBundleReference := fixModelBundleReference(firstBundleID, firstApiDefID)
-	apiDefSecondBundleReference := fixModelBundleReference(secondBundleID, secondApiDefID)
+	apiDefFirstBundleReference := fixModelBundleReference(firstBundleID, firstAPIDefID)
+	apiDefSecondBundleReference := fixModelBundleReference(secondBundleID, secondAPIDefID)
 	bundleRefs := []*model.BundleReference{apiDefFirstBundleReference, apiDefSecondBundleReference}
-	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+	totalCounts := map[string]int{firstBundleID: numberOfAPIsInFirstBundle, secondBundleID: numberOfAPIsInSecondBundle}
 
 	apiDefsFirstBundle := []*model.APIDefinition{apiDefFirstBundle}
 	apiDefsSecondBundle := []*model.APIDefinition{apiDefSecondBundle}
@@ -427,8 +427,8 @@ func TestService_Create(t *testing.T) {
 	bundleID2 := "bndlid2"
 	packageID := packageID
 	name := "Foo"
-	targetUrl := "https://test-url.com"
-	targetUrl2 := "https://test2-url.com"
+	targetURL := "https://test-url.com"
+	targetURL2 := "https://test2-url.com"
 
 	timestamp := time.Now()
 	frURL := "foo.bar"
@@ -437,7 +437,7 @@ func TestService_Create(t *testing.T) {
 
 	modelInput := model.APIDefinitionInput{
 		Name:         name,
-		TargetURLs:   api.ConvertTargetUrlToJsonArray(targetUrl),
+		TargetURLs:   api.ConvertTargetURLToJSONArray(targetURL),
 		VersionInput: &model.VersionInput{},
 	}
 
@@ -461,7 +461,7 @@ func TestService_Create(t *testing.T) {
 		ApplicationID: appID,
 		Tenant:        tenantID,
 		Name:          name,
-		TargetURLs:    api.ConvertTargetUrlToJsonArray(targetUrl),
+		TargetURLs:    api.ConvertTargetURLToJSONArray(targetURL),
 		Version:       &model.Version{},
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
@@ -470,14 +470,14 @@ func TestService_Create(t *testing.T) {
 	}
 
 	bundleReferenceInput := &model.BundleReferenceInput{
-		APIDefaultTargetURL: str.Ptr(api.ExtractTargetUrlFromJsonArray(modelAPIDefinition.TargetURLs)),
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelAPIDefinition.TargetURLs)),
 	}
 	secondBundleReferenceInput := &model.BundleReferenceInput{
-		APIDefaultTargetURL: &targetUrl2,
+		APIDefaultTargetURL: &targetURL2,
 	}
 
-	singleDefaultTargetURLPerBundle := map[string]string{bundleID: targetUrl}
-	defaultTargetURLPerBundle := map[string]string{bundleID: targetUrl, bundleID2: targetUrl2}
+	singleDefaultTargetURLPerBundle := map[string]string{bundleID: targetURL}
+	defaultTargetURLPerBundle := map[string]string{bundleID: targetURL, bundleID2: targetURL2}
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -700,7 +700,7 @@ func TestService_Update(t *testing.T) {
 
 	modelInput := model.APIDefinitionInput{
 		Name:         "Foo",
-		TargetURLs:   api.ConvertTargetUrlToJsonArray("https://test-url.com"),
+		TargetURLs:   api.ConvertTargetURLToJSONArray("https://test-url.com"),
 		VersionInput: &model.VersionInput{},
 	}
 
@@ -725,12 +725,12 @@ func TestService_Update(t *testing.T) {
 
 	apiDefinitionModel := &model.APIDefinition{
 		Name:       "Bar",
-		TargetURLs: api.ConvertTargetUrlToJsonArray("https://test-url-updated.com"),
+		TargetURLs: api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
 		Version:    &model.Version{},
 	}
 
 	bundleReferenceInput := &model.BundleReferenceInput{
-		APIDefaultTargetURL: str.Ptr(api.ExtractTargetUrlFromJsonArray(modelInput.TargetURLs)),
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelInput.TargetURLs)),
 	}
 
 	ctx := context.TODO()
@@ -959,7 +959,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 
 	modelInput := model.APIDefinitionInput{
 		Name:         "Foo",
-		TargetURLs:   api.ConvertTargetUrlToJsonArray(firstTargetURL),
+		TargetURLs:   api.ConvertTargetURLToJSONArray(firstTargetURL),
 		VersionInput: &model.VersionInput{},
 	}
 
@@ -984,12 +984,12 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 
 	apiDefinitionModel := &model.APIDefinition{
 		Name:       "Bar",
-		TargetURLs: api.ConvertTargetUrlToJsonArray("https://test-url-updated.com"),
+		TargetURLs: api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
 		Version:    &model.Version{},
 	}
 
 	bundleReferenceInput := &model.BundleReferenceInput{
-		APIDefaultTargetURL: str.Ptr(api.ExtractTargetUrlFromJsonArray(modelInput.TargetURLs)),
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelInput.TargetURLs)),
 	}
 	secondBundleReferenceInput := &model.BundleReferenceInput{
 		APIDefaultTargetURL: str.Ptr(secondTargetURL),

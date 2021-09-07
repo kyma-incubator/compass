@@ -155,7 +155,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 
 	if defaultTargetURLPerBundle == nil {
 		bundleRefInput := &model.BundleReferenceInput{
-			APIDefaultTargetURL: str.Ptr(ExtractTargetUrlFromJsonArray(in.TargetURLs)),
+			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
 		}
 		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID)
 		if err != nil {
@@ -200,7 +200,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 
 	if defaultTargetURLPerBundleForUpdate == nil {
 		bundleRefInput := &model.BundleReferenceInput{
-			APIDefaultTargetURL: str.Ptr(ExtractTargetUrlFromJsonArray(in.TargetURLs)),
+			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
 		}
 		err = s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, nil)
 		if err != nil {

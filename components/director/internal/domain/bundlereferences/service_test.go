@@ -354,24 +354,24 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 func TestService_ListByBundleIDs(t *testing.T) {
 	testErr := errors.New("test err")
 
-	firstApiDefID := "apiID"
-	secondApiDefID := "apiID2"
+	firstAPIDefID := "apiID"
+	secondAPIDefID := "apiID2"
 	firstBundleID := "bundleID"
 	secondBundleID := "bundleID2"
 	bundleIDs := []string{firstBundleID, secondBundleID}
 
-	firstApiDefBundleRef := fixAPIBundleReferenceModel()
-	firstApiDefBundleRef.BundleID = str.Ptr(firstBundleID)
-	firstApiDefBundleRef.ObjectID = str.Ptr(firstApiDefID)
+	firstAPIDefBundleRef := fixAPIBundleReferenceModel()
+	firstAPIDefBundleRef.BundleID = str.Ptr(firstBundleID)
+	firstAPIDefBundleRef.ObjectID = str.Ptr(firstAPIDefID)
 
-	secondApiDefBundleRef := fixAPIBundleReferenceModel()
-	secondApiDefBundleRef.BundleID = str.Ptr(secondBundleID)
-	secondApiDefBundleRef.ObjectID = str.Ptr(secondApiDefID)
-	bundleRefs := []*model.BundleReference{&firstApiDefBundleRef, &secondApiDefBundleRef}
+	secondAPIDefBundleRef := fixAPIBundleReferenceModel()
+	secondAPIDefBundleRef.BundleID = str.Ptr(secondBundleID)
+	secondAPIDefBundleRef.ObjectID = str.Ptr(secondAPIDefID)
+	bundleRefs := []*model.BundleReference{&firstAPIDefBundleRef, &secondAPIDefBundleRef}
 
-	numberOfApisInFirstBundle := 1
-	numberOfApisInSecondBundle := 1
-	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+	numberOfAPIsInFirstBundle := 1
+	numberOfAPIsInSecondBundle := 1
+	totalCounts := map[string]int{firstBundleID: numberOfAPIsInFirstBundle, secondBundleID: numberOfAPIsInSecondBundle}
 
 	after := "test"
 

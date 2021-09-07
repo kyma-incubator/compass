@@ -9,10 +9,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// FetchRequestApiDefLoaderConfig captures the config to create a new FetchRequestApiDefLoader
-type FetchRequestApiDefLoaderConfig struct {
+// FetchRequestAPIDefLoaderConfig captures the config to create a new FetchRequestAPIDefLoader
+type FetchRequestAPIDefLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error)
+	Fetch func(keys []ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -21,19 +21,19 @@ type FetchRequestApiDefLoaderConfig struct {
 	MaxBatch int
 }
 
-// NewFetchRequestApiDefLoader creates a new FetchRequestApiDefLoader given a fetch, wait, and maxBatch
-func NewFetchRequestApiDefLoader(config FetchRequestApiDefLoaderConfig) *FetchRequestApiDefLoader {
-	return &FetchRequestApiDefLoader{
+// NewFetchRequestAPIDefLoader creates a new FetchRequestAPIDefLoader given a fetch, wait, and maxBatch
+func NewFetchRequestAPIDefLoader(config FetchRequestAPIDefLoaderConfig) *FetchRequestAPIDefLoader {
+	return &FetchRequestAPIDefLoader{
 		fetch:    config.Fetch,
 		wait:     config.Wait,
 		maxBatch: config.MaxBatch,
 	}
 }
 
-// FetchRequestApiDefLoader batches and caches requests
-type FetchRequestApiDefLoader struct {
+// FetchRequestAPIDefLoader batches and caches requests
+type FetchRequestAPIDefLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error)
+	fetch func(keys []ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,18 +44,18 @@ type FetchRequestApiDefLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[ParamFetchRequestApiDef]*graphql.FetchRequest
+	cache map[ParamFetchRequestAPIDef]*graphql.FetchRequest
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *fetchRequestApiDefLoaderBatch
+	batch *fetchRequestAPIDefLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type fetchRequestApiDefLoaderBatch struct {
-	keys    []ParamFetchRequestApiDef
+type fetchRequestAPIDefLoaderBatch struct {
+	keys    []ParamFetchRequestAPIDef
 	data    []*graphql.FetchRequest
 	error   []error
 	closing bool
@@ -63,14 +63,14 @@ type fetchRequestApiDefLoaderBatch struct {
 }
 
 // Load a FetchRequest by key, batching and caching will be applied automatically
-func (l *FetchRequestApiDefLoader) Load(key ParamFetchRequestApiDef) (*graphql.FetchRequest, error) {
+func (l *FetchRequestAPIDefLoader) Load(key ParamFetchRequestAPIDef) (*graphql.FetchRequest, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a FetchRequest.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *FetchRequestApiDefLoader) LoadThunk(key ParamFetchRequestApiDef) func() (*graphql.FetchRequest, error) {
+func (l *FetchRequestAPIDefLoader) LoadThunk(key ParamFetchRequestAPIDef) func() (*graphql.FetchRequest, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
@@ -79,7 +79,7 @@ func (l *FetchRequestApiDefLoader) LoadThunk(key ParamFetchRequestApiDef) func()
 		}
 	}
 	if l.batch == nil {
-		l.batch = &fetchRequestApiDefLoaderBatch{done: make(chan struct{})}
+		l.batch = &fetchRequestAPIDefLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -113,7 +113,7 @@ func (l *FetchRequestApiDefLoader) LoadThunk(key ParamFetchRequestApiDef) func()
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *FetchRequestApiDefLoader) LoadAll(keys []ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
+func (l *FetchRequestAPIDefLoader) LoadAll(keys []ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error) {
 	results := make([]func() (*graphql.FetchRequest, error), len(keys))
 
 	for i, key := range keys {
@@ -131,7 +131,7 @@ func (l *FetchRequestApiDefLoader) LoadAll(keys []ParamFetchRequestApiDef) ([]*g
 // LoadAllThunk returns a function that when called will block waiting for a FetchRequests.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *FetchRequestApiDefLoader) LoadAllThunk(keys []ParamFetchRequestApiDef) func() ([]*graphql.FetchRequest, []error) {
+func (l *FetchRequestAPIDefLoader) LoadAllThunk(keys []ParamFetchRequestAPIDef) func() ([]*graphql.FetchRequest, []error) {
 	results := make([]func() (*graphql.FetchRequest, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
@@ -149,7 +149,7 @@ func (l *FetchRequestApiDefLoader) LoadAllThunk(keys []ParamFetchRequestApiDef) 
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *FetchRequestApiDefLoader) Prime(key ParamFetchRequestApiDef, value *graphql.FetchRequest) bool {
+func (l *FetchRequestAPIDefLoader) Prime(key ParamFetchRequestAPIDef, value *graphql.FetchRequest) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -163,22 +163,22 @@ func (l *FetchRequestApiDefLoader) Prime(key ParamFetchRequestApiDef, value *gra
 }
 
 // Clear the value at key from the cache, if it exists
-func (l *FetchRequestApiDefLoader) Clear(key ParamFetchRequestApiDef) {
+func (l *FetchRequestAPIDefLoader) Clear(key ParamFetchRequestAPIDef) {
 	l.mu.Lock()
 	delete(l.cache, key)
 	l.mu.Unlock()
 }
 
-func (l *FetchRequestApiDefLoader) unsafeSet(key ParamFetchRequestApiDef, value *graphql.FetchRequest) {
+func (l *FetchRequestAPIDefLoader) unsafeSet(key ParamFetchRequestAPIDef, value *graphql.FetchRequest) {
 	if l.cache == nil {
-		l.cache = map[ParamFetchRequestApiDef]*graphql.FetchRequest{}
+		l.cache = map[ParamFetchRequestAPIDef]*graphql.FetchRequest{}
 	}
 	l.cache[key] = value
 }
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *fetchRequestApiDefLoaderBatch) keyIndex(l *FetchRequestApiDefLoader, key ParamFetchRequestApiDef) int {
+func (b *fetchRequestAPIDefLoaderBatch) keyIndex(l *FetchRequestAPIDefLoader, key ParamFetchRequestAPIDef) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -202,7 +202,7 @@ func (b *fetchRequestApiDefLoaderBatch) keyIndex(l *FetchRequestApiDefLoader, ke
 	return pos
 }
 
-func (b *fetchRequestApiDefLoaderBatch) startTimer(l *FetchRequestApiDefLoader) {
+func (b *fetchRequestAPIDefLoaderBatch) startTimer(l *FetchRequestAPIDefLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -218,7 +218,7 @@ func (b *fetchRequestApiDefLoaderBatch) startTimer(l *FetchRequestApiDefLoader) 
 	b.end(l)
 }
 
-func (b *fetchRequestApiDefLoaderBatch) end(l *FetchRequestApiDefLoader) {
+func (b *fetchRequestAPIDefLoaderBatch) end(l *FetchRequestAPIDefLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }
