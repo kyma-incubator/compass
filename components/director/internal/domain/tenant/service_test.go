@@ -248,6 +248,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		newModelBusinessTenantMappingInput("test2", "", testRegion).WithExternalTenant("external2")}
 	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", tenantEntity.Account),
 		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", tenantEntity.Customer)}
+	tenantWithSubdomainAndRegion := newModelBusinessTenantMappingInput("test1", testSubdomain, testRegion)
 
 	tenantModels := []model.BusinessTenantMapping{*newModelBusinessTenantMapping(testID, "test1"),
 		newModelBusinessTenantMapping(testID, "test2").WithExternalTenant("external2")}
@@ -287,6 +288,36 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedOutput:   nil,
+		},
+		{
+			Name:         "Success when tenant already exists and only labels should be updated",
+			tenantInputs: []model.BusinessTenantMappingInput{tenantWithSubdomainAndRegion},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantWithSubdomainAndRegion.ExternalTenant).Return(tenantWithSubdomainAndRegion.ToBusinessTenantMapping(testParentID), nil)
+				return tenantMappingRepo
+			},
+			UIDSvcFn:    uidSvcFn,
+			LabelRepoFn: noopLabelRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				regionLabel := &model.LabelInput{
+					Key:        "region",
+					Value:      testRegion,
+					ObjectID:   testParentID,
+					ObjectType: model.TenantLabelableObject,
+				}
+				subdomainLabel := &model.LabelInput{
+					Key:        "subdomain",
+					Value:      testSubdomain,
+					ObjectID:   testParentID,
+					ObjectType: model.TenantLabelableObject,
+				}
+				svc.On("UpsertLabel", ctx, testParentID, subdomainLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, testParentID, regionLabel).Return(nil).Once()
+				return svc
+			},
+			ExpectedOutput: nil,
 		},
 		{
 			Name:         "Success when parent tenant exists with another ID",

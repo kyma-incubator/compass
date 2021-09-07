@@ -156,7 +156,7 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 		return "", errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
 	}
 	if tenantFromDB != nil {
-		return tenantFromDB.ID, s.upsertLabels(ctx, tenant.ID, subdomain, region)
+		return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
 	}
 
 	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil && !apperrors.IsNotUniqueError(err) {

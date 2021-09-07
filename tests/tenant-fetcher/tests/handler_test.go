@@ -282,7 +282,6 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			}
 			childTenant := Tenant{
 				TenantID:     parentTenantId,
-				CustomerID:   uuid.New().String(),
 				SubaccountID: uuid.New().String(),
 				Subdomain:    defaultSubaccountSubdomain,
 			}
