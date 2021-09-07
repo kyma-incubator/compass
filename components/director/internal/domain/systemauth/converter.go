@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -21,12 +22,14 @@ type converter struct {
 	authConverter AuthConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{
 		authConverter: authConverter,
 	}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error) {
 	if in == nil {
 		return nil, nil
@@ -63,6 +66,7 @@ func (c *converter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error) 
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.SystemAuth) (Entity, error) {
 	value := sql.NullString{}
 	if in.Value != nil {
@@ -84,6 +88,7 @@ func (c *converter) ToEntity(in model.SystemAuth) (Entity, error) {
 	}, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.SystemAuth, error) {
 	var value *model.Auth
 	if in.Value.Valid {

@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// Error missing godoc
 type Error struct {
 	errorCode ErrorType
 	Message   string
@@ -16,6 +17,7 @@ type Error struct {
 	parentErr error
 }
 
+// Error missing godoc
 func (e Error) Error() string {
 	builder := strings.Builder{}
 	builder.WriteString(e.Message)
@@ -41,6 +43,7 @@ func (e Error) Error() string {
 	return builder.String()
 }
 
+// Is missing godoc
 func (e Error) Is(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return e.errorCode == customErr.errorCode
@@ -48,6 +51,7 @@ func (e Error) Is(err error) bool {
 	return false
 }
 
+// ErrorCode missing godoc
 func ErrorCode(err error) ErrorType {
 	var customErr Error
 	found := errors.As(err, &customErr)
@@ -57,6 +61,7 @@ func ErrorCode(err error) ErrorType {
 	return UnknownError
 }
 
+// NewNotNullViolationError missing godoc
 func NewNotNullViolationError(resourceType resource.Type) error {
 	return Error{
 		errorCode: EmptyData,
@@ -65,6 +70,7 @@ func NewNotNullViolationError(resourceType resource.Type) error {
 	}
 }
 
+// NewCheckViolationError missing godoc
 func NewCheckViolationError(resourceType resource.Type) error {
 	return Error{
 		errorCode: InconsistentData,
@@ -73,6 +79,7 @@ func NewCheckViolationError(resourceType resource.Type) error {
 	}
 }
 
+// NewOperationTimeoutError missing godoc
 func NewOperationTimeoutError() error {
 	return Error{
 		errorCode: OperationTimeout,
@@ -80,6 +87,7 @@ func NewOperationTimeoutError() error {
 	}
 }
 
+// NewNotUniqueError missing godoc
 func NewNotUniqueError(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotUnique,
@@ -88,6 +96,7 @@ func NewNotUniqueError(resourceType resource.Type) error {
 	}
 }
 
+// NewNotUniqueNameError missing godoc
 func NewNotUniqueNameError(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotUniqueName,
@@ -96,6 +105,7 @@ func NewNotUniqueNameError(resourceType resource.Type) error {
 	}
 }
 
+// NewNotFoundError missing godoc
 func NewNotFoundError(resourceType resource.Type, objectID string) error {
 	return Error{
 		errorCode: NotFound,
@@ -105,6 +115,7 @@ func NewNotFoundError(resourceType resource.Type, objectID string) error {
 	}
 }
 
+// NewNotFoundErrorWithMessage missing godoc
 func NewNotFoundErrorWithMessage(resourceType resource.Type, objectID string, message string) error {
 	return Error{
 		errorCode: NotFound,
@@ -114,6 +125,7 @@ func NewNotFoundErrorWithMessage(resourceType resource.Type, objectID string, me
 	}
 }
 
+// NewNotFoundErrorWithType missing godoc
 func NewNotFoundErrorWithType(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotFound,
@@ -123,6 +135,7 @@ func NewNotFoundErrorWithType(resourceType resource.Type) error {
 	}
 }
 
+// NewInvalidDataError missing godoc
 func NewInvalidDataError(msg string, args ...interface{}) error {
 	return Error{
 		errorCode: InvalidData,
@@ -131,6 +144,7 @@ func NewInvalidDataError(msg string, args ...interface{}) error {
 	}
 }
 
+// NewInvalidDataErrorWithFields missing godoc
 func NewInvalidDataErrorWithFields(fields map[string]error, objType string) error {
 	if len(fields) == 0 {
 		return nil
@@ -148,6 +162,7 @@ func NewInvalidDataErrorWithFields(fields map[string]error, objType string) erro
 	return err
 }
 
+// NewInternalError missing godoc
 func NewInternalError(msg string, args ...interface{}) error {
 	errMsg := fmt.Sprintf(msg, args...)
 	return Error{
@@ -157,6 +172,7 @@ func NewInternalError(msg string, args ...interface{}) error {
 	}
 }
 
+// InternalErrorFrom missing godoc
 func InternalErrorFrom(err error, msg string, args ...interface{}) error {
 	errMsg := fmt.Sprintf(msg, args...)
 	return Error{
@@ -167,6 +183,7 @@ func InternalErrorFrom(err error, msg string, args ...interface{}) error {
 	}
 }
 
+// NewTenantNotFoundError missing godoc
 func NewTenantNotFoundError(externalTenant string) error {
 	return Error{
 		errorCode: TenantNotFound,
@@ -175,6 +192,7 @@ func NewTenantNotFoundError(externalTenant string) error {
 	}
 }
 
+// NewTenantRequiredError missing godoc
 func NewTenantRequiredError() error {
 	return Error{
 		errorCode: TenantRequired,
@@ -183,6 +201,7 @@ func NewTenantRequiredError() error {
 	}
 }
 
+// NewInvalidOperationError missing godoc
 func NewInvalidOperationError(reason string) error {
 	return Error{
 		errorCode: InvalidOperation,
@@ -191,6 +210,7 @@ func NewInvalidOperationError(reason string) error {
 	}
 }
 
+// NewForeignKeyInvalidOperationError missing godoc
 func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, resourceType resource.Type) error {
 	var reason string
 	switch sqlOperation {
@@ -209,6 +229,7 @@ func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, reso
 
 const valueNotFoundInConfigMsg = "value under specified path not found in configuration"
 
+// NewValueNotFoundInConfigurationError missing godoc
 func NewValueNotFoundInConfigurationError() error {
 	return Error{
 		errorCode: NotFound,
@@ -217,6 +238,7 @@ func NewValueNotFoundInConfigurationError() error {
 	}
 }
 
+// NewNoScopesInContextError missing godoc
 func NewNoScopesInContextError() error {
 	return Error{
 		errorCode: NotFound,
@@ -225,6 +247,7 @@ func NewNoScopesInContextError() error {
 	}
 }
 
+// NewRequiredScopesNotDefinedError missing godoc
 func NewRequiredScopesNotDefinedError() error {
 	return Error{
 		errorCode: InsufficientScopes,
@@ -233,6 +256,7 @@ func NewRequiredScopesNotDefinedError() error {
 	}
 }
 
+// NewKeyDoesNotExistError missing godoc
 func NewKeyDoesNotExistError(key string) error {
 	return Error{
 		errorCode: NotFound,
@@ -241,6 +265,7 @@ func NewKeyDoesNotExistError(key string) error {
 	}
 }
 
+// NewInsufficientScopesError missing godoc
 func NewInsufficientScopesError(requiredScopes, actualScopes []string) error {
 	return Error{
 		errorCode: InsufficientScopes,
@@ -251,6 +276,7 @@ func NewInsufficientScopesError(requiredScopes, actualScopes []string) error {
 	}
 }
 
+// NewCannotReadTenantError missing godoc
 func NewCannotReadTenantError() error {
 	return Error{
 		errorCode: InternalError,
@@ -259,6 +285,7 @@ func NewCannotReadTenantError() error {
 	}
 }
 
+// NewCannotReadClientUserError missing godoc
 func NewCannotReadClientUserError() error {
 	return Error{
 		errorCode: InternalError,
@@ -267,6 +294,7 @@ func NewCannotReadClientUserError() error {
 	}
 }
 
+// NewUnauthorizedError missing godoc
 func NewUnauthorizedError(msg string) error {
 	return Error{
 		errorCode: Unauthorized,
@@ -275,6 +303,7 @@ func NewUnauthorizedError(msg string) error {
 	}
 }
 
+// NewConcurrentOperationInProgressError missing godoc
 func NewConcurrentOperationInProgressError(msg string) error {
 	return Error{
 		errorCode: ConcurrentOperation,
@@ -283,6 +312,7 @@ func NewConcurrentOperationInProgressError(msg string) error {
 	}
 }
 
+// NewInvalidStatusCondition missing godoc
 func NewInvalidStatusCondition(resourceType resource.Type) error {
 	return Error{
 		errorCode: InvalidStatusCondition,
@@ -291,6 +321,7 @@ func NewInvalidStatusCondition(resourceType resource.Type) error {
 	}
 }
 
+// NewCannotUpdateObjectInManyBundles missing godoc
 func NewCannotUpdateObjectInManyBundles() error {
 	return Error{
 		errorCode: CannotUpdateObjectInManyBundles,
@@ -299,6 +330,7 @@ func NewCannotUpdateObjectInManyBundles() error {
 	}
 }
 
+// IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == valueNotFoundInConfigMsg
@@ -306,6 +338,7 @@ func IsValueNotFoundInConfiguration(err error) bool {
 	return false
 }
 
+// IsKeyDoesNotExist missing godoc
 func IsKeyDoesNotExist(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound && customErr.Message == KeyDoesNotExistMsg
@@ -313,6 +346,7 @@ func IsKeyDoesNotExist(err error) bool {
 	return false
 }
 
+// IsCannotReadTenant missing godoc
 func IsCannotReadTenant(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == InternalError && customErr.Message == CannotReadTenantMsg
@@ -320,38 +354,47 @@ func IsCannotReadTenant(err error) bool {
 	return false
 }
 
+// IsNewInvalidOperationError missing godoc
 func IsNewInvalidOperationError(err error) bool {
 	return ErrorCode(err) == InvalidOperation
 }
 
+// IsNotFoundError missing godoc
 func IsNotFoundError(err error) bool {
 	return ErrorCode(err) == NotFound
 }
 
+// IsTenantRequired missing godoc
 func IsTenantRequired(err error) bool {
 	return ErrorCode(err) == TenantRequired
 }
 
+// IsTenantNotFoundError missing godoc
 func IsTenantNotFoundError(err error) bool {
 	return ErrorCode(err) == TenantNotFound
 }
 
+// IsNotUniqueError missing godoc
 func IsNotUniqueError(err error) bool {
 	return ErrorCode(err) == NotUnique
 }
 
+// IsNewNotNullViolationError missing godoc
 func IsNewNotNullViolationError(err error) bool {
 	return ErrorCode(err) == EmptyData
 }
 
+// IsNewCheckViolationError missing godoc
 func IsNewCheckViolationError(err error) bool {
 	return ErrorCode(err) == InconsistentData
 }
 
+// IsInvalidStatusCondition missing godoc
 func IsInvalidStatusCondition(err error) bool {
 	return ErrorCode(err) == InvalidStatusCondition
 }
 
+// IsCannotUpdateObjectInManyBundlesError missing godoc
 func IsCannotUpdateObjectInManyBundlesError(err error) bool {
 	return ErrorCode(err) == CannotUpdateObjectInManyBundles
 }

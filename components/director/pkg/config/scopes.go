@@ -6,10 +6,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// GetRequiredScopes missing godoc
 func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
 	return p.getValues("scopes", path, true)
 }
 
+// GetRequiredGrantTypes missing godoc
 func (p *Provider) GetRequiredGrantTypes(path string) ([]string, error) {
 	return p.getValues("grant_types", path, false)
 }

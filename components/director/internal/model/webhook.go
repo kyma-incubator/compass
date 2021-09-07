@@ -1,5 +1,6 @@
 package model
 
+// Webhook missing godoc
 type Webhook struct {
 	ID                    string
 	TenantID              *string
@@ -21,6 +22,7 @@ type Webhook struct {
 	StatusTemplate        *string
 }
 
+// WebhookInput missing godoc
 type WebhookInput struct {
 	CorrelationIDKey *string
 	Type             WebhookType
@@ -36,24 +38,34 @@ type WebhookInput struct {
 	StatusTemplate   *string
 }
 
+// WebhookType missing godoc
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged  WebhookType = "CONFIGURATION_CHANGED"
-	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
-	WebhookTypeDeleteApplication     WebhookType = "UNREGISTER_APPLICATION"
+	// WebhookTypeConfigurationChanged missing godoc
+	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
+	// WebhookTypeRegisterApplication missing godoc
+	WebhookTypeRegisterApplication WebhookType = "REGISTER_APPLICATION"
+	// WebhookTypeDeleteApplication missing godoc
+	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
+	// WebhookTypeOpenResourceDiscovery missing godoc
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
 )
 
+// WebhookMode missing godoc
 type WebhookMode string
 
 const (
-	WebhookModeSync  WebhookMode = "SYNC"
+	// WebhookModeSync missing godoc
+	WebhookModeSync WebhookMode = "SYNC"
+	// WebhookModeAsync missing godoc
 	WebhookModeAsync WebhookMode = "ASYNC"
 )
 
+// WebhookConverterFunc missing godoc
 type WebhookConverterFunc func(i *WebhookInput, id string, tenant *string, resourceID string) *Webhook
 
+// ToApplicationWebhook missing godoc
 func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicationID string) *Webhook {
 	if i == nil {
 		return nil
@@ -65,6 +77,7 @@ func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicati
 	return webhook
 }
 
+// ToApplicationTemplateWebhook missing godoc
 func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, appTemplateID string) *Webhook {
 	if i == nil {
 		return nil

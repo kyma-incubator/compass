@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewSystemAuthContextProvider missing godoc
 func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *systemAuthContextProvider {
 	return &systemAuthContextProvider{
 		systemAuthSvc: systemAuthSvc,
@@ -31,6 +32,7 @@ type systemAuthContextProvider struct {
 	tenantRepo    TenantRepository
 }
 
+// GetObjectContext missing godoc
 func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {

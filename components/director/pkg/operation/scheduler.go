@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// DisabledScheduler missing godoc
 // DisabledScheduler defines a Scheduler implementation that can be used when asynchronous operations are disabled
 type DisabledScheduler struct{}
 

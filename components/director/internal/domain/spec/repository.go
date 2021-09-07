@@ -26,6 +26,7 @@ var (
 	tenantColumn          = "tenant_id"
 )
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.Spec) Entity
@@ -43,6 +44,7 @@ type repository struct {
 	conv         Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		creator: repo.NewCreator(resource.Specification, specificationsTable, specificationsColumns),
@@ -61,6 +63,7 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
+// GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error) {
 	var specEntity Entity
 	err := r.getter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &specEntity)
@@ -76,6 +79,7 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*
 	return &specModel, nil
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item *model.Spec) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
@@ -86,6 +90,7 @@ func (r *repository) Create(ctx context.Context, item *model.Spec) error {
 	return r.creator.Create(ctx, entity)
 }
 
+// ListByReferenceObjectID missing godoc
 func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -115,6 +120,7 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 	return items, nil
 }
 
+// ListByReferenceObjectIDs missing godoc
 func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error) {
 	objectFieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -143,10 +149,12 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 	return specifications, nil
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// DeleteByReferenceObjectID missing godoc
 func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -156,6 +164,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, item *model.Spec) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -166,6 +175,7 @@ func (r *repository) Update(ctx context.Context, item *model.Spec) error {
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
@@ -181,8 +191,10 @@ func (r *repository) referenceObjectFieldName(objectType model.SpecReferenceObje
 	return "", apperrors.NewInternalError("Invalid type of the Specification reference object")
 }
 
+// SpecCollection missing godoc
 type SpecCollection []Entity
 
+// Len missing godoc
 func (r SpecCollection) Len() int {
 	return len(r)
 }

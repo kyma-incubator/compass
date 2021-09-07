@@ -7,10 +7,12 @@ import (
 
 type converter struct{}
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.IntegrationSystem) *graphql.IntegrationSystem {
 	if in == nil {
 		return nil
@@ -23,6 +25,7 @@ func (c *converter) ToGraphQL(in *model.IntegrationSystem) *graphql.IntegrationS
 	}
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.IntegrationSystem) []*graphql.IntegrationSystem {
 	intSys := make([]*graphql.IntegrationSystem, 0, len(in))
 	for _, r := range in {
@@ -36,6 +39,7 @@ func (c *converter) MultipleToGraphQL(in []*model.IntegrationSystem) []*graphql.
 	return intSys
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in graphql.IntegrationSystemInput) model.IntegrationSystemInput {
 	return model.IntegrationSystemInput{
 		Name:        in.Name,
@@ -43,6 +47,7 @@ func (c *converter) InputFromGraphQL(in graphql.IntegrationSystemInput) model.In
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.IntegrationSystem) *Entity {
 	if in == nil {
 		return nil
@@ -54,6 +59,7 @@ func (c *converter) ToEntity(in *model.IntegrationSystem) *Entity {
 	}
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in *Entity) *model.IntegrationSystem {
 	if in == nil {
 		return nil

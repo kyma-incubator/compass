@@ -12,15 +12,18 @@ import (
 
 const loadersKeyFetchRequestAPIDef contextKey = "dataloadersFetchRequestAPIDef"
 
+// LoadersFetchRequestAPIDef missing godoc
 type LoadersFetchRequestAPIDef struct {
 	FetchRequestAPIDefByID FetchRequestAPIDefLoader
 }
 
+// ParamFetchRequestAPIDef missing godoc
 type ParamFetchRequestAPIDef struct {
 	ID  string
 	Ctx context.Context
 }
 
+// HandlerFetchRequestAPIDef missing godoc
 func HandlerFetchRequestAPIDef(fetchFunc func(keys []ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +40,7 @@ func HandlerFetchRequestAPIDef(fetchFunc func(keys []ParamFetchRequestAPIDef) ([
 	}
 }
 
+// ForFetchRequestAPIDef missing godoc
 func ForFetchRequestAPIDef(ctx context.Context) *LoadersFetchRequestAPIDef {
 	return ctx.Value(loadersKeyFetchRequestAPIDef).(*LoadersFetchRequestAPIDef)
 }

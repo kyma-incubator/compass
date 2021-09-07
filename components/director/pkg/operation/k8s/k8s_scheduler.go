@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// K8SClient missing godoc
 //go:generate mockery --name=K8SClient --output=automock --outpkg=automock --case=underscore
 type K8SClient interface {
 	Create(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)
@@ -19,16 +20,19 @@ type K8SClient interface {
 	Update(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)
 }
 
+// Scheduler missing godoc
 type Scheduler struct {
 	kcli K8SClient
 }
 
+// NewScheduler missing godoc
 func NewScheduler(kcli K8SClient) *Scheduler {
 	return &Scheduler{
 		kcli: kcli,
 	}
 }
 
+// Schedule missing godoc
 func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (string, error) {
 	operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
 	getOp, err := s.kcli.Get(ctx, operationName, metav1.GetOptions{})

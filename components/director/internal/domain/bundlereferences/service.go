@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// BundleReferenceRepository missing godoc
 //go:generate mockery --name=BundleReferenceRepository --output=automock --outpkg=automock --case=underscore
 type BundleReferenceRepository interface {
 	Create(ctx context.Context, item *model.BundleReference) error
@@ -23,12 +24,14 @@ type service struct {
 	repo BundleReferenceRepository
 }
 
+// NewService missing godoc
 func NewService(repo BundleReferenceRepository) *service {
 	return &service{
 		repo: repo,
 	}
 }
 
+// GetForBundle missing godoc
 func (s *service) GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -43,6 +46,7 @@ func (s *service) GetForBundle(ctx context.Context, objectType model.BundleRefer
 	return bundleRef, nil
 }
 
+// GetBundleIDsForObject missing godoc
 func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) ([]string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -57,6 +61,7 @@ func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.Bu
 	return ids, nil
 }
 
+// CreateByReferenceObjectID missing godoc
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -76,6 +81,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.Bundle
 	return nil
 }
 
+// UpdateByReferenceObjectID missing godoc
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -100,6 +106,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 	return nil
 }
 
+// DeleteByReferenceObjectID missing godoc
 func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -109,6 +116,7 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType mode
 	return s.repo.DeleteByReferenceObjectID(ctx, tnt, *bundleID, objectType, *objectID)
 }
 
+// ListByBundleIDs missing godoc
 func (s *service) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

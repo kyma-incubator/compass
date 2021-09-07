@@ -8,10 +8,12 @@ import (
 
 type key int
 
+// ClientUserContextKey missing godoc
 const (
 	ClientUserContextKey key = iota
 )
 
+// LoadFromContext missing godoc
 func LoadFromContext(ctx context.Context) (string, error) {
 	clientID, ok := ctx.Value(ClientUserContextKey).(string)
 
@@ -22,6 +24,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	return clientID, nil
 }
 
+// SaveToContext missing godoc
 func SaveToContext(ctx context.Context, clientID string) context.Context {
 	return context.WithValue(ctx, ClientUserContextKey, clientID)
 }

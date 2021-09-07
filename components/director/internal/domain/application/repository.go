@@ -28,6 +28,7 @@ var (
 	tenantColumn       = "tenant_id"
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Application) (*Entity, error)
@@ -48,6 +49,7 @@ type pgRepository struct {
 	conv                  EntityConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
@@ -64,10 +66,12 @@ func NewRepository(conv EntityConverter) *pgRepository {
 	}
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	opMode := operation.ModeFromCtx(ctx)
 	if opMode == graphql.OperationModeAsync {
@@ -88,6 +92,7 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// DeleteGlobal missing godoc
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	opMode := operation.ModeFromCtx(ctx)
 	if opMode == graphql.OperationModeAsync {
@@ -108,6 +113,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
@@ -119,6 +125,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.A
 	return appModel, nil
 }
 
+// GetByNameAndSystemNumber missing godoc
 func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
@@ -130,6 +137,7 @@ func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, nam
 	return appModel, nil
 }
 
+// GetGlobalByID missing godoc
 func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
@@ -141,6 +149,7 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 	return appModel, nil
 }
 
+// ListAll missing godoc
 func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
 	var entities EntityCollection
 
@@ -153,6 +162,7 @@ func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.A
 	return r.multipleFromEntities(entities)
 }
 
+// List missing godoc
 func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 	tenantID, err := uuid.Parse(tenant)
@@ -187,6 +197,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		PageInfo:   page}, nil
 }
 
+// ListGlobal missing godoc
 func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
@@ -208,6 +219,7 @@ func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor stri
 		PageInfo:   page}, nil
 }
 
+// ListByScenarios missing godoc
 func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
@@ -263,6 +275,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		PageInfo:   page}, nil
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -278,10 +291,12 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 	return r.creator.Create(ctx, appEnt)
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
 	return r.updateSingle(ctx, model, false)
 }
 
+// TechnicalUpdate missing godoc
 func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
 	return r.updateSingle(ctx, model, true)
 }

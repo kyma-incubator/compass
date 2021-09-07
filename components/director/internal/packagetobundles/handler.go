@@ -44,16 +44,19 @@ import (
 
 const usesBundlesLabel = "useBundles"
 
+// LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+// Handler missing godoc
 type Handler struct {
 	transact           persistence.Transactioner
 	labelUpsertService LabelUpsertService
 }
 
+// NewHandler missing godoc
 func NewHandler(transact persistence.Transactioner) *Handler {
 	labelRepo := label.NewRepository(label.NewConverter())
 	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
@@ -67,6 +70,7 @@ func NewHandler(transact persistence.Transactioner) *Handler {
 	}
 }
 
+// Handler missing godoc
 func (h *Handler) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

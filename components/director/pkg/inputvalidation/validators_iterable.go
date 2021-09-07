@@ -41,6 +41,7 @@ func Each(rules ...validation.Rule) *eachRule {
 	return &r
 }
 
+// Validate missing godoc
 // Loops through the given iterable and calls the Ozzo Validate() method for each value.
 func (r eachRule) Validate(value interface{}) error {
 	errs := validation.Errors{}

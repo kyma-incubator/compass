@@ -8,11 +8,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// Unique missing godoc
 func Unique(in []string) []string {
 	set := SliceToMap(in)
 	return MapToSlice(set)
 }
 
+// SliceToMap missing godoc
 func SliceToMap(in []string) map[string]struct{} {
 	set := make(map[string]struct{})
 	for _, i := range in {
@@ -22,6 +24,7 @@ func SliceToMap(in []string) map[string]struct{} {
 	return set
 }
 
+// MapToSlice missing godoc
 func MapToSlice(set map[string]struct{}) []string {
 	items := make([]string, 0, len(set))
 	for key := range set {
@@ -31,10 +34,12 @@ func MapToSlice(set map[string]struct{}) []string {
 	return items
 }
 
+// Ptr missing godoc
 func Ptr(s string) *string {
 	return &s
 }
 
+// Cast missing godoc
 func Cast(i interface{}) (string, error) {
 	if s, ok := i.(string); ok {
 		return s, nil
@@ -43,6 +48,7 @@ func Cast(i interface{}) (string, error) {
 	return "", apperrors.NewInternalError("unable to cast the value to a string type")
 }
 
+// PrefixStrings missing godoc
 func PrefixStrings(in []string, prefix string) []string {
 	prefixedFieldNames := make([]string, 0, len(in))
 	for _, column := range in {
@@ -52,10 +58,12 @@ func PrefixStrings(in []string, prefix string) []string {
 	return prefixedFieldNames
 }
 
+// Title missing godoc
 func Title(s string) string {
 	return strings.Title(strings.ToLower(s))
 }
 
+// PtrStrToStr missing godoc
 func PtrStrToStr(s *string) string {
 	if s == nil {
 		return ""
@@ -63,6 +71,7 @@ func PtrStrToStr(s *string) string {
 	return *s
 }
 
+// Matches missing godoc
 func Matches(actual []string, required []string) bool {
 	actMap := make(map[string]interface{})
 
@@ -78,6 +87,7 @@ func Matches(actual []string, required []string) bool {
 	return true
 }
 
+// NewNullString missing godoc
 func NewNullString(s string) sql.NullString {
 	return sql.NullString{
 		String: s,

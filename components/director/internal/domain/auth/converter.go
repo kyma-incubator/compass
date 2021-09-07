@@ -9,10 +9,12 @@ import (
 type converter struct {
 }
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	if in == nil {
 		return nil, nil
@@ -52,6 +54,7 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	}, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error) {
 	if in == nil {
 		return nil, nil

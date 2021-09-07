@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// EventDefinition missing godoc
 type EventDefinition struct {
 	Tenant              string
 	ApplicationID       string
@@ -42,18 +43,22 @@ type EventDefinition struct {
 	*BaseEntity
 }
 
+// GetType missing godoc
 func (*EventDefinition) GetType() resource.Type {
 	return resource.EventDefinition
 }
 
+// EventDefinitionPage missing godoc
 type EventDefinitionPage struct {
 	Data       []*EventDefinition
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// IsPageable missing godoc
 func (EventDefinitionPage) IsPageable() {}
 
+// EventDefinitionInput missing godoc
 type EventDefinitionInput struct {
 	OrdPackageID             *string                       `json:"partOfPackage"`
 	Name                     string                        `json:"title"`
@@ -82,6 +87,7 @@ type EventDefinitionInput struct {
 	*VersionInput `hash:"ignore"`
 }
 
+// EventResourceDefinition missing godoc
 type EventResourceDefinition struct { // This is the place from where the specification for this API is fetched
 	Type           EventSpecType    `json:"type"`
 	CustomType     string           `json:"customType"`
@@ -90,7 +96,9 @@ type EventResourceDefinition struct { // This is the place from where the specif
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
 }
 
+// Validate missing godoc
 func (rd *EventResourceDefinition) Validate() error {
+	// CustomTypeRegex missing godoc
 	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
 		validation.Field(&rd.Type, validation.Required, validation.In(EventSpecTypeAsyncAPIV2, EventSpecTypeCustom), validation.When(rd.CustomType != "", validation.In(EventSpecTypeCustom))),
@@ -101,6 +109,7 @@ func (rd *EventResourceDefinition) Validate() error {
 	)
 }
 
+// ToSpec missing godoc
 func (rd *EventResourceDefinition) ToSpec() *SpecInput {
 	specType := rd.Type
 	return &SpecInput{
@@ -114,10 +123,12 @@ func (rd *EventResourceDefinition) ToSpec() *SpecInput {
 	}
 }
 
+// ToEventDefinitionWithinBundle missing godoc
 func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string, eventHash uint64) *EventDefinition {
 	return e.ToEventDefinition(id, appID, nil, tenant, eventHash)
 }
 
+// ToEventDefinition missing godoc
 func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, tenant string, eventHash uint64) *EventDefinition {
 	if e == nil {
 		return nil

@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
+// Entity missing godoc
 type Entity struct {
 	TenantID                      string         `db:"tenant_id"`
 	ApplicationID                 string         `db:"app_id"`

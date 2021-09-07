@@ -13,6 +13,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
+// UUIDService missing godoc
 type UUIDService interface {
 	Generate() string
 }
@@ -21,10 +22,12 @@ type presenter struct {
 	uuidService UUIDService
 }
 
+// NewPresenter missing godoc
 func NewPresenter(service UUIDService) *presenter {
 	return &presenter{uuidService: service}
 }
 
+// Do missing godoc
 func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 	customErr := apperrors.Error{}
 	errID := p.uuidService.Generate()

@@ -24,6 +24,7 @@ import (
 // defaultNormalizationPrefix is a fixed string used as prefix during default normalization
 const defaultNormalizationPrefix = "mp-"
 
+// DefaultNormalizator missing godoc
 type DefaultNormalizator struct{}
 
 // Normalize is the default normalization function used as normalization function;

@@ -10,8 +10,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
 
+// HTTPHeaders missing godoc
 type HTTPHeaders map[string][]string
 
+// UnmarshalGQL missing godoc
 func (y *HTTPHeaders) UnmarshalGQL(v interface{}) error {
 	headers, err := scalar.ConvertToMapStringStringArray(v)
 	if err != nil {
@@ -23,6 +25,7 @@ func (y *HTTPHeaders) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 
+// MarshalGQL missing godoc
 func (y HTTPHeaders) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
@@ -31,8 +34,10 @@ func (y HTTPHeaders) MarshalGQL(w io.Writer) {
 	}
 }
 
+// HTTPHeadersSerialized missing godoc
 type HTTPHeadersSerialized string
 
+// Unmarshal missing godoc
 func (y *HTTPHeadersSerialized) Unmarshal() (map[string][]string, error) {
 	var data map[string][]string
 	if y == nil {
@@ -47,6 +52,7 @@ func (y *HTTPHeadersSerialized) Unmarshal() (map[string][]string, error) {
 	return data, nil
 }
 
+// NewHTTPHeadersSerialized missing godoc
 func NewHTTPHeadersSerialized(h map[string][]string) (HTTPHeadersSerialized, error) {
 	data, err := json.Marshal(h)
 	if err != nil {

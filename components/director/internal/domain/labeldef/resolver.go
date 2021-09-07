@@ -15,12 +15,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Resolver missing godoc
 type Resolver struct {
 	conv          ModelConverter
 	srv           Service
 	transactioner persistence.Transactioner
 }
 
+// NewResolver missing godoc
 func NewResolver(transactioner persistence.Transactioner, srv Service, conv ModelConverter) *Resolver {
 	return &Resolver{
 		conv:          conv,
@@ -29,6 +31,7 @@ func NewResolver(transactioner persistence.Transactioner, srv Service, conv Mode
 	}
 }
 
+// ModelConverter missing godoc
 //go:generate mockery --name=ModelConverter --output=automock --outpkg=automock --case=underscore
 type ModelConverter interface {
 	// TODO: Use model.LabelDefinitionInput
@@ -36,6 +39,7 @@ type ModelConverter interface {
 	ToGraphQL(definition model.LabelDefinition) (graphql.LabelDefinition, error)
 }
 
+// Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
@@ -45,6 +49,7 @@ type Service interface {
 	Update(ctx context.Context, ld model.LabelDefinition) error
 }
 
+// CreateLabelDefinition missing godoc
 func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -81,6 +86,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	return &out, nil
 }
 
+// LabelDefinitions missing godoc
 func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -115,6 +121,7 @@ func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefini
 	return out, nil
 }
 
+// LabelDefinition missing godoc
 func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -148,6 +155,7 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	return &c, nil
 }
 
+// UpdateLabelDefinition missing godoc
 func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -189,6 +197,7 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	return &out, nil
 }
 
+// DeleteLabelDefinition missing godoc
 func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

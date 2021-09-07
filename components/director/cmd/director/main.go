@@ -551,6 +551,7 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
+// PrepareInternalGraphQLServer missing godoc
 func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	gqlInternalCfg := internalschema.Config{
 		Resolvers: &graphqlAPI.InternalResolver{
@@ -633,6 +634,7 @@ func systemAuthSvc() oathkeeper.Service {
 	return systemauth.NewService(systemAuthRepo, uidSvc)
 }
 
+// PrepareHydratorHandler missing godoc
 func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, timeService, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
 

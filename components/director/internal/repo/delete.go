@@ -16,11 +16,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Deleter missing godoc
 type Deleter interface {
 	DeleteOne(ctx context.Context, tenant string, conditions Conditions) error
 	DeleteMany(ctx context.Context, tenant string, conditions Conditions) error
 }
 
+// DeleterGlobal missing godoc
 type DeleterGlobal interface {
 	DeleteOneGlobal(ctx context.Context, conditions Conditions) error
 	DeleteManyGlobal(ctx context.Context, conditions Conditions) error
@@ -32,14 +34,17 @@ type universalDeleter struct {
 	tenantColumn *string
 }
 
+// NewDeleter missing godoc
 func NewDeleter(resourceType resource.Type, tableName string, tenantColumn string) Deleter {
 	return &universalDeleter{resourceType: resourceType, tableName: tableName, tenantColumn: &tenantColumn}
 }
 
+// NewDeleterGlobal missing godoc
 func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGlobal {
 	return &universalDeleter{tableName: tableName, resourceType: resourceType}
 }
 
+// DeleteOne missing godoc
 func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditions Conditions) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -48,6 +53,7 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditi
 	return g.unsafeDelete(ctx, conditions, true)
 }
 
+// DeleteMany missing godoc
 func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, conditions Conditions) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -56,10 +62,12 @@ func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, condit
 	return g.unsafeDelete(ctx, conditions, false)
 }
 
+// DeleteOneGlobal missing godoc
 func (g *universalDeleter) DeleteOneGlobal(ctx context.Context, conditions Conditions) error {
 	return g.unsafeDelete(ctx, conditions, true)
 }
 
+// DeleteManyGlobal missing godoc
 func (g *universalDeleter) DeleteManyGlobal(ctx context.Context, conditions Conditions) error {
 	return g.unsafeDelete(ctx, conditions, false)
 }

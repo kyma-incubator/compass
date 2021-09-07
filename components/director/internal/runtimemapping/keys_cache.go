@@ -20,6 +20,7 @@ type jwkCacheEntry struct {
 	expireAt time.Time
 }
 
+// IsExpired missing godoc
 func (e jwkCacheEntry) IsExpired() bool {
 	return time.Now().After(e.expireAt)
 }
@@ -31,6 +32,7 @@ type jwksCache struct {
 	flag      sync.RWMutex
 }
 
+// NewJWKsCache missing godoc
 func NewJWKsCache(fetch KeyGetter, expPeriod time.Duration) *jwksCache {
 	return &jwksCache{
 		fetch:     fetch,
@@ -39,6 +41,7 @@ func NewJWKsCache(fetch KeyGetter, expPeriod time.Duration) *jwksCache {
 	}
 }
 
+// GetKey missing godoc
 func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, error) {
 	if token == nil {
 		return nil, apperrors.NewUnauthorizedError("token cannot be nil")
@@ -77,6 +80,7 @@ func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 	return cachedKey.key, nil
 }
 
+// Cleanup missing godoc
 func (c *jwksCache) Cleanup(ctx context.Context) {
 	expiredKeys := make([]string, 0, len(c.cache))
 	c.flag.RLock()

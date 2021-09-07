@@ -13,6 +13,7 @@ var (
 	Mappings []TemplateMapping
 )
 
+// TemplateMapping missing godoc
 type TemplateMapping struct {
 	Name        string
 	ID          string
@@ -20,10 +21,13 @@ type TemplateMapping struct {
 	SourceValue []string
 }
 
+// AdditionalURLs missing godoc
 type AdditionalURLs map[string]string
 
+// AdditionalAttributes missing godoc
 type AdditionalAttributes map[string]string
 
+// SystemBase missing godoc
 type SystemBase struct {
 	SystemNumber           string               `json:"systemNumber"`
 	DisplayName            string               `json:"displayName"`
@@ -34,11 +38,13 @@ type SystemBase struct {
 	AdditionalAttributes   AdditionalAttributes `json:"additionalAttributes"`
 }
 
+// System missing godoc
 type System struct {
 	SystemBase
 	TemplateID string `json:"-"`
 }
 
+// UnmarshalJSON missing godoc
 func (s *System) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s.SystemBase); err != nil {
 		return err

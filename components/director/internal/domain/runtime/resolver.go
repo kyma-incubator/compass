@@ -26,16 +26,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// EventingService missing godoc
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
 type EventingService interface {
 	GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error)
 }
 
+// OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
+// RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Create(ctx context.Context, in model.RuntimeInput) (string, error)
@@ -49,12 +52,14 @@ type RuntimeService interface {
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
+// ScenarioAssignmentService missing godoc
 //go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
+// RuntimeConverter missing godoc
 //go:generate mockery --name=RuntimeConverter --output=automock --outpkg=automock --case=underscore
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
@@ -62,22 +67,26 @@ type RuntimeConverter interface {
 	InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 }
 
+// SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
+// BundleInstanceAuthService missing godoc
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
 	runtimeService            RuntimeService
@@ -90,6 +99,7 @@ type Resolver struct {
 	bundleInstanceAuthSvc     BundleInstanceAuthService
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
@@ -104,6 +114,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 	}
 }
 
+// Runtimes missing godoc
 // TODO: Proper error handling
 func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
@@ -148,6 +159,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	}, nil
 }
 
+// Runtime missing godoc
 func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -173,6 +185,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	return r.converter.ToGraphQL(runtime), nil
 }
 
+// RegisterRuntime missing godoc
 func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
@@ -203,6 +216,8 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 
 	return gqlRuntime, nil
 }
+
+// UpdateRuntime missing godoc
 func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
@@ -234,6 +249,7 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 	return gqlRuntime, nil
 }
 
+// DeleteRuntime missing godoc
 func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -293,6 +309,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	return deletedRuntime, nil
 }
 
+// GetLabel missing godoc
 func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (*graphql.Labels, error) {
 	if runtimeID == "" {
 		return nil, apperrors.NewInternalError("Runtime cannot be empty")
@@ -329,6 +346,7 @@ func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (
 	return &gqlLabels, nil
 }
 
+// SetRuntimeLabel missing godoc
 func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
 	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
 	gqlLabel := graphql.LabelInput{Key: key, Value: value}
@@ -370,6 +388,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 	}, nil
 }
 
+// DeleteRuntimeLabel missing godoc
 func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -400,6 +419,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	}, nil
 }
 
+// Labels missing godoc
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime cannot be empty")
@@ -438,6 +458,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	return gqlLabels, nil
 }
 
+// Auths missing godoc
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.RuntimeSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime cannot be empty")
@@ -473,6 +494,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 	return out, nil
 }
 
+// EventingConfiguration missing godoc
 func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime cannot be empty")

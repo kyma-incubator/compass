@@ -11,11 +11,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TokenResolver missing godoc
 type TokenResolver interface {
 	GenerateCSRToken(ctx context.Context, authID string) (*internalschema.Token, error)
 	IsHealthy(ctx context.Context) (bool, error)
 }
 
+// TokenService missing godoc
 //go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
 	RegenerateOneTimeToken(ctx context.Context, authID string, token tokens.TokenType) (model.OneTimeToken, error)
@@ -26,6 +28,7 @@ type tokenResolver struct {
 	tokenService TokenService
 }
 
+// NewTokenResolver missing godoc
 func NewTokenResolver(transact persistence.Transactioner, tokenService TokenService) TokenResolver {
 	return &tokenResolver{
 		tokenService: tokenService,
@@ -33,6 +36,7 @@ func NewTokenResolver(transact persistence.Transactioner, tokenService TokenServ
 	}
 }
 
+// GenerateCSRToken missing godoc
 func (r *tokenResolver) GenerateCSRToken(ctx context.Context, authID string) (*internalschema.Token, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -57,6 +61,7 @@ func (r *tokenResolver) GenerateCSRToken(ctx context.Context, authID string) (*i
 	return &internalschema.Token{Token: token.Token}, nil
 }
 
+// IsHealthy missing godoc
 func (r *tokenResolver) IsHealthy(_ context.Context) (bool, error) {
 	return true, nil
 }

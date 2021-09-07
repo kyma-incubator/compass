@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 )
 
+// Claims missing godoc
 type Claims struct {
 	Tenant         string                `json:"tenant"`
 	ExternalTenant string                `json:"externalTenant"`
@@ -22,6 +23,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+// ContextWithClaims missing godoc
 func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant, c.ExternalTenant)
 	scopesArray := strings.Split(c.Scopes, " ")

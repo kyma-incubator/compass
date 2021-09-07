@@ -22,6 +22,7 @@ var (
 	tenantColumn        = "tenant_id"
 )
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.FetchRequest) (Entity, error)
@@ -37,6 +38,7 @@ type repository struct {
 	conv         Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		creator:      repo.NewCreator(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
@@ -48,6 +50,7 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
@@ -61,6 +64,7 @@ func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error
 	return r.creator.Create(ctx, entity)
 }
 
+// GetByReferenceObjectID missing godoc
 func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -80,10 +84,12 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 	return &frModel, nil
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// DeleteByReferenceObjectID missing godoc
 func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -93,6 +99,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error {
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
@@ -101,6 +108,7 @@ func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// ListByReferenceObjectIDs missing godoc
 func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -152,8 +160,10 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
 }
 
+// FetchRequestsCollection missing godoc
 type FetchRequestsCollection []Entity
 
+// Len missing godoc
 func (r FetchRequestsCollection) Len() int {
 	return len(r)
 }

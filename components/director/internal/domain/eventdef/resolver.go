@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// EventDefService missing godoc
 //go:generate mockery --name=EventDefService --output=automock --outpkg=automock --case=underscore
 type EventDefService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
@@ -26,6 +27,7 @@ type EventDefService interface {
 	ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error)
 }
 
+// EventDefConverter missing godoc
 //go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore
 type EventDefConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
@@ -34,16 +36,19 @@ type EventDefConverter interface {
 	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error)
 }
 
+// FetchRequestConverter missing godoc
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 }
 
+// BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact      persistence.Transactioner
 	svc           EventDefService
@@ -55,6 +60,7 @@ type Resolver struct {
 	specService   SpecService
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter EventDefConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
@@ -68,6 +74,7 @@ func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSv
 	}
 }
 
+// AddEventDefinitionToBundle missing godoc
 func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -126,6 +133,7 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 	return gqlEvent, nil
 }
 
+// UpdateEventDefinition missing godoc
 func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -176,6 +184,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 	return gqlEvent, nil
 }
 
+// DeleteEventDefinition missing godoc
 func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -221,6 +230,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 	return gqlEvent, nil
 }
 
+// RefetchEventDefinitionSpec missing godoc
 func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*graphql.EventSpec, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -260,11 +270,13 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 	return converted, nil
 }
 
+// FetchRequest missing godoc
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	params := dataloader.ParamFetchRequestEventDef{ID: obj.ID, Ctx: ctx}
 	return dataloader.ForFetchRequestEventDef(ctx).FetchRequestEventDefByID.Load(params)
 }
 
+// FetchRequestEventDefDataLoader missing godoc
 func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No EventDef specs found")}

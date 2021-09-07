@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// APIRepository missing godoc
 //go:generate mockery --name=APIRepository --output=automock --outpkg=automock --case=underscore
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
@@ -27,11 +28,13 @@ type APIRepository interface {
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// SpecService missing godoc
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -43,6 +46,7 @@ type SpecService interface {
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
+// BundleReferenceService missing godoc
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
@@ -60,6 +64,7 @@ type service struct {
 	timestampGen           timestamp.Generator
 }
 
+// NewService missing godoc
 func NewService(repo APIRepository, uidService UIDService, specService SpecService, bundleReferenceService BundleReferenceService) *service {
 	return &service{
 		repo:                   repo,
@@ -70,6 +75,7 @@ func NewService(repo APIRepository, uidService UIDService, specService SpecServi
 	}
 }
 
+// ListByBundleIDs missing godoc
 func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -88,6 +94,7 @@ func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageS
 	return s.repo.ListByBundleIDs(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
 }
 
+// ListByApplicationID missing godoc
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -97,6 +104,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.repo.ListByApplicationID(ctx, tnt, appID)
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -111,6 +119,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
+// GetForBundle missing godoc
 func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -125,10 +134,12 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
+// CreateInBundle missing godoc
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
 	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -176,10 +187,12 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	return id, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
 	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0)
 }
 
+// UpdateInManyBundles missing godoc
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -240,6 +253,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -254,6 +268,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// DeleteAllByBundleID missing godoc
 func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -268,6 +283,7 @@ func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) erro
 	return nil
 }
 
+// ListFetchRequests missing godoc
 func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

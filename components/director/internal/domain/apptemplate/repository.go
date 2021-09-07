@@ -20,6 +20,7 @@ var (
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.ApplicationTemplate) (*Entity, error)
@@ -36,6 +37,7 @@ type repository struct {
 	conv                  EntityConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:               repo.NewCreator(resource.ApplicationTemplate, tableName, tableColumns),
@@ -48,6 +50,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item model.ApplicationTemplate) error {
 	log.C(ctx).Debugf("Converting Application Template with id %s to entity", item.ID)
 	entity, err := r.conv.ToEntity(&item)
@@ -59,6 +62,7 @@ func (r *repository) Create(ctx context.Context, item model.ApplicationTemplate)
 	return r.creator.Create(ctx, entity)
 }
 
+// Get missing godoc
 func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -73,6 +77,7 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	return result, nil
 }
 
+// GetByName missing godoc
 func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, repo.NoOrderBy, &entity); err != nil {
@@ -87,10 +92,12 @@ func (r *repository) GetByName(ctx context.Context, name string) (*model.Applica
 	return result, nil
 }
 
+// Exists missing godoc
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// List missing godoc
 func (r *repository) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	var entityCollection EntityCollection
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
@@ -115,6 +122,7 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (mod
 	}, nil
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate) error {
 	entity, err := r.conv.ToEntity(&model)
 	if err != nil {
@@ -124,6 +132,7 @@ func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }

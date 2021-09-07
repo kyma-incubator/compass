@@ -14,13 +14,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// MutationObject missing godoc
 const MutationObject = "Mutation"
 
+// TenantIndexRepository missing godoc
 //go:generate mockery --name=TenantIndexRepository --output=automock --outpkg=automock --case=underscore
 type TenantIndexRepository interface {
 	GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceID string) (string, error)
 }
 
+// TenantRepository missing godoc
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)

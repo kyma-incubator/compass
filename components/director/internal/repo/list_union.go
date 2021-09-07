@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// UnionLister missing godoc
 type UnionLister interface {
 	// List stores the result into dest and returns the total count of tuples for each id from ids
 	List(ctx context.Context, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error)
@@ -25,6 +26,7 @@ type unionLister struct {
 	resourceType    resource.Type
 }
 
+// NewUnionLister missing godoc
 func NewUnionLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) UnionLister {
 	return &unionLister{
 		tableName:       tableName,
@@ -34,10 +36,12 @@ func NewUnionLister(resourceType resource.Type, tableName string, tenantColumn s
 	}
 }
 
+// SetSelectedColumns missing godoc
 func (l *unionLister) SetSelectedColumns(selectedColumns []string) {
 	l.selectedColumns = strings.Join(selectedColumns, ", ")
 }
 
+// Clone missing godoc
 func (l *unionLister) Clone() UnionLister {
 	var clonedLister unionLister
 
@@ -49,6 +53,7 @@ func (l *unionLister) Clone() UnionLister {
 	return &clonedLister
 }
 
+// List missing godoc
 func (l *unionLister) List(ctx context.Context, tenant string, ids []string, idscolumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
 	if tenant == "" {
 		return nil, apperrors.NewTenantRequiredError()

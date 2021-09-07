@@ -23,6 +23,7 @@ import (
 
 type contextKey string
 
+// ContextKey missing godoc
 const ContextKey contextKey = "HeadersCtx"
 
 // AttachHeadersToContext returns middleware that attaches all headers used for tracing in the current request.

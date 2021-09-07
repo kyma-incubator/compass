@@ -9,15 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	GetVersion(ctx context.Context) (string, error)
 }
 
+// ReadyConfig missing godoc
 type ReadyConfig struct {
 	SchemaMigrationVersion string `envconfig:"APP_SCHEMA_MIGRATION_VERSION"`
 }
 
+// Ready missing godoc
 type Ready struct {
 	transactioner    persistence.Transactioner
 	schemaCompatible bool
@@ -25,6 +28,7 @@ type Ready struct {
 	repo             Repository
 }
 
+// NewReady missing godoc
 func NewReady(transactioner persistence.Transactioner, cfg ReadyConfig, repository Repository) *Ready {
 	return &Ready{
 		transactioner:    transactioner,

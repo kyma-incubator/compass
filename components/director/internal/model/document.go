@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// Document missing godoc
 type Document struct {
 	BundleID    string
 	Tenant      string
@@ -18,10 +19,12 @@ type Document struct {
 	*BaseEntity
 }
 
+// GetType missing godoc
 func (*Document) GetType() resource.Type {
 	return resource.Document
 }
 
+// DocumentInput missing godoc
 type DocumentInput struct {
 	Title        string
 	DisplayName  string
@@ -32,18 +35,22 @@ type DocumentInput struct {
 	FetchRequest *FetchRequestInput
 }
 
+// DocumentFormat missing godoc
 type DocumentFormat string
 
+// DocumentFormatMarkdown missing godoc
 const (
 	DocumentFormatMarkdown DocumentFormat = "MARKDOWN"
 )
 
+// DocumentPage missing godoc
 type DocumentPage struct {
 	Data       []*Document
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// ToDocumentWithinBundle missing godoc
 func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID string) *Document {
 	if d == nil {
 		return nil

@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// Validate missing godoc
 func Validate(validatable Validatable) error {
 	var typeName string
 	split := strings.Split(fmt.Sprintf("%T", validatable), ".")

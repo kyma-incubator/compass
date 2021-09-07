@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// QueryBuilder missing godoc
 type QueryBuilder interface {
 	BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
 }
@@ -24,6 +25,7 @@ type universalQueryBuilder struct {
 	resourceType    resource.Type
 }
 
+// NewQueryBuilder missing godoc
 func NewQueryBuilder(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
@@ -33,6 +35,7 @@ func NewQueryBuilder(resourceType resource.Type, tableName string, tenantColumn 
 	}
 }
 
+// BuildQuery missing godoc
 func (b *universalQueryBuilder) BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
@@ -229,6 +232,7 @@ func writeOrderByPart(builder *strings.Builder, orderByParams OrderByParams) err
 	return nil
 }
 
+// GroupByParams missing godoc
 type GroupByParams []string
 
 func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) error {

@@ -24,6 +24,7 @@ import (
 
 type contextKey string
 
+// ContextKey missing godoc
 const ContextKey contextKey = "TenantCtxKey"
 
 // LoadFromContext retrieves the tenantID from the provided context or returns error if missing

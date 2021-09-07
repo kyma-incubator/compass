@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewUserContextProvider missing godoc
 func NewUserContextProvider(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *userContextProvider {
 	return &userContextProvider{
 		staticUserRepo:  staticUserRepo,
@@ -29,6 +30,7 @@ type userContextProvider struct {
 	tenantRepo      TenantRepository
 }
 
+// GetObjectContext missing godoc
 func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser *StaticUser

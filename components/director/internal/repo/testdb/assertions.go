@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// AssertSQLNullStringEqualTo missing godoc
 func AssertSQLNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	if text != nil {
 		sqlStr := sql.NullString{}
@@ -19,6 +20,7 @@ func AssertSQLNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	}
 }
 
+// AssertSQLNullBool missing godoc
 func AssertSQLNullBool(t *testing.T, in sql.NullBool, boolean *bool) {
 	if boolean != nil {
 		require.True(t, in.Valid)

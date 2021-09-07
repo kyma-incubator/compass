@@ -33,6 +33,7 @@ const (
 
 type repoCreatorFunc func(ctx context.Context, application *model.Application) error
 
+// ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -50,6 +51,7 @@ type ApplicationRepository interface {
 	DeleteGlobal(ctx context.Context, id string) error
 }
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -58,39 +60,46 @@ type LabelRepository interface {
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
+// WebhookRepository missing godoc
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, items []*model.Webhook) error
 }
 
+// RuntimeRepository missing godoc
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
+// IntegrationSystemRepository missing godoc
 //go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
+// LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+// ScenariosService missing godoc
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// ApplicationHideCfgProvider missing godoc
 //go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
@@ -113,6 +122,7 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
+// NewService missing godoc
 func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
 	return &service{
 		appNameNormalizer:  appNameNormalizer,
@@ -130,6 +140,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 	}
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -143,6 +154,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
+// ListGlobal missing godoc
 func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
@@ -151,6 +163,7 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
 }
 
+// ListByRuntimeID missing godoc
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 
@@ -208,6 +221,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor, hidingSelectors)
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -222,6 +236,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 	return app, nil
 }
 
+// GetByNameAndSystemNumber missing godoc
 func (s *service) GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -236,6 +251,7 @@ func (s *service) GetByNameAndSystemNumber(ctx context.Context, name, systemNumb
 	return app, nil
 }
 
+// Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -250,6 +266,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
 		err = s.appRepo.Create(ctx, application)
@@ -262,6 +279,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
+// CreateFromTemplate missing godoc
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateID
@@ -275,6 +293,7 @@ func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRe
 	return s.genericCreate(ctx, in, creator)
 }
 
+// CreateManyIfNotExistsWithEventualTemplate missing godoc
 func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error {
 	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
 	if err != nil {
@@ -298,6 +317,7 @@ func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context,
 	return nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
@@ -338,6 +358,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -374,6 +395,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// SetLabel missing godoc
 func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -396,6 +418,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	return nil
 }
 
+// GetLabel missing godoc
 func (s *service) GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -418,6 +441,7 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 	return label, nil
 }
 
+// ListLabels missing godoc
 func (s *service) ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -441,6 +465,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	return labels, nil
 }
 
+// DeleteLabel missing godoc
 func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

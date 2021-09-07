@@ -1,5 +1,6 @@
 package graphql
 
+// Runtime missing godoc
 type Runtime struct {
 	ID                    string                        `json:"id"`
 	Name                  string                        `json:"name"`
@@ -9,13 +10,13 @@ type Runtime struct {
 	EventingConfiguration *RuntimeEventingConfiguration `json:"eventingConfiguration"`
 }
 
-// Extended types used by external API
-
+// RuntimePageExt is an extended types used by external API
 type RuntimePageExt struct {
 	RuntimePage
 	Data []*RuntimeExt `json:"data"`
 }
 
+// RuntimeExt missing godoc
 type RuntimeExt struct {
 	Runtime
 	Labels Labels `json:"labels"`

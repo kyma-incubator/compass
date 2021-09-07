@@ -10,19 +10,23 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+// WellKnownEndpoint missing godoc
 const (
 	WellKnownEndpoint = "/.well-known/open-resource-discovery"
 )
 
+// WellKnownConfig missing godoc
 type WellKnownConfig struct {
 	Schema                  string                  `json:"$schema"`
 	OpenResourceDiscoveryV1 OpenResourceDiscoveryV1 `json:"openResourceDiscoveryV1"`
 }
 
+// OpenResourceDiscoveryV1 missing godoc
 type OpenResourceDiscoveryV1 struct {
 	Documents []DocumentDetails `json:"documents"`
 }
 
+// DocumentDetails missing godoc
 type DocumentDetails struct {
 	URL string `json:"url"`
 	// TODO: Currently we cannot differentiate between system instance types reliably, therefore we cannot make use of the systemInstanceAware optimization (store it once per system type and reuse it for each system instance of that type).
@@ -32,6 +36,7 @@ type DocumentDetails struct {
 	AccessStrategies    AccessStrategies `json:"accessStrategies"`
 }
 
+// Document missing godoc
 type Document struct {
 	Schema                string `json:"$schema"`
 	OpenResourceDiscovery string `json:"openResourceDiscovery"`
@@ -50,6 +55,7 @@ type Document struct {
 	Vendors            []*model.VendorInput          `json:"vendors"`
 }
 
+// Documents missing godoc
 type Documents []*Document
 
 // Validate validates all the documents for a system instance

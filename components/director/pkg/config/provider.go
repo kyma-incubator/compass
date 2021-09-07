@@ -11,17 +11,20 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewProvider missing godoc
 func NewProvider(fileName string) *Provider {
 	return &Provider{
 		fileName: fileName,
 	}
 }
 
+// Provider missing godoc
 type Provider struct {
 	fileName     string
 	cachedConfig map[string]interface{}
 }
 
+// Load missing godoc
 func (p *Provider) Load() error {
 	b, err := ioutil.ReadFile(p.fileName)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// BundleInstanceAuth missing godoc
 type BundleInstanceAuth struct {
 	ID               string
 	BundleID         string
@@ -18,6 +19,7 @@ type BundleInstanceAuth struct {
 	Status           *BundleInstanceAuthStatus
 }
 
+// SetDefaultStatus missing godoc
 func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatusCondition, timestamp time.Time) error {
 	if a == nil {
 		return nil
@@ -49,6 +51,7 @@ func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatus
 	return nil
 }
 
+// BundleInstanceAuthStatus missing godoc
 type BundleInstanceAuthStatus struct {
 	Condition BundleInstanceAuthStatusCondition
 	Timestamp time.Time
@@ -56,15 +59,21 @@ type BundleInstanceAuthStatus struct {
 	Reason    string
 }
 
+// BundleInstanceAuthStatusCondition missing godoc
 type BundleInstanceAuthStatusCondition string
 
 const (
-	BundleInstanceAuthStatusConditionPending   BundleInstanceAuthStatusCondition = "PENDING"
+	// BundleInstanceAuthStatusConditionPending missing godoc
+	BundleInstanceAuthStatusConditionPending BundleInstanceAuthStatusCondition = "PENDING"
+	// BundleInstanceAuthStatusConditionSucceeded missing godoc
 	BundleInstanceAuthStatusConditionSucceeded BundleInstanceAuthStatusCondition = "SUCCEEDED"
-	BundleInstanceAuthStatusConditionFailed    BundleInstanceAuthStatusCondition = "FAILED"
-	BundleInstanceAuthStatusConditionUnused    BundleInstanceAuthStatusCondition = "UNUSED"
+	// BundleInstanceAuthStatusConditionFailed missing godoc
+	BundleInstanceAuthStatusConditionFailed BundleInstanceAuthStatusCondition = "FAILED"
+	// BundleInstanceAuthStatusConditionUnused missing godoc
+	BundleInstanceAuthStatusConditionUnused BundleInstanceAuthStatusCondition = "UNUSED"
 )
 
+// BundleInstanceAuthRequestInput missing godoc
 // BundleInstanceAuthRequestInput type for requestBundleInstanceAuthCreation
 type BundleInstanceAuthRequestInput struct {
 	ID          *string
@@ -72,6 +81,7 @@ type BundleInstanceAuthRequestInput struct {
 	InputParams *string
 }
 
+// ToBundleInstanceAuth missing godoc
 func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID *string, runtimeContextID *string) BundleInstanceAuth {
 	return BundleInstanceAuth{
 		ID:               id,
@@ -86,18 +96,21 @@ func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tena
 	}
 }
 
+// BundleInstanceAuthSetInput missing godoc
 // BundleInstanceAuthSetInput type for setBundleInstanceAuth
 type BundleInstanceAuthSetInput struct {
 	Auth   *AuthInput
 	Status *BundleInstanceAuthStatusInput
 }
 
+// BundleInstanceAuthStatusInput missing godoc
 type BundleInstanceAuthStatusInput struct {
 	Condition BundleInstanceAuthSetStatusConditionInput
 	Message   string
 	Reason    string
 }
 
+// ToBundleInstanceAuthStatus missing godoc
 func (si *BundleInstanceAuthStatusInput) ToBundleInstanceAuthStatus(timestamp time.Time) *BundleInstanceAuthStatus {
 	if si == nil {
 		return nil
@@ -111,9 +124,12 @@ func (si *BundleInstanceAuthStatusInput) ToBundleInstanceAuthStatus(timestamp ti
 	}
 }
 
+// BundleInstanceAuthSetStatusConditionInput missing godoc
 type BundleInstanceAuthSetStatusConditionInput string
 
 const (
+	// BundleInstanceAuthSetStatusConditionInputSucceeded missing godoc
 	BundleInstanceAuthSetStatusConditionInputSucceeded BundleInstanceAuthSetStatusConditionInput = "SUCCEEDED"
-	BundleInstanceAuthSetStatusConditionInputFailed    BundleInstanceAuthSetStatusConditionInput = "FAILED"
+	// BundleInstanceAuthSetStatusConditionInputFailed missing godoc
+	BundleInstanceAuthSetStatusConditionInputFailed BundleInstanceAuthSetStatusConditionInput = "FAILED"
 )

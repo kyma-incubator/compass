@@ -25,11 +25,15 @@ import (
 )
 
 const (
-	GetApplicationID                     = "GetApplicationID"
-	GetApplicationIDByBundle             = "GetApplicationIDByBundle"
+	// GetApplicationID missing godoc
+	GetApplicationID = "GetApplicationID"
+	// GetApplicationIDByBundle missing godoc
+	GetApplicationIDByBundle = "GetApplicationIDByBundle"
+	// GetApplicationIDByBundleInstanceAuth missing godoc
 	GetApplicationIDByBundleInstanceAuth = "GetApplicationIDByBundleInstanceAuth"
 )
 
+// ErrMissingScenario missing godoc
 var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
 
 type directive struct {

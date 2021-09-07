@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// Indicator missing godoc
 //go:generate mockery --name=Indicator --output=automock --outpkg=automock --case=underscore
 type Indicator interface {
 	Name() string
@@ -17,12 +18,14 @@ type Indicator interface {
 	Status() Status
 }
 
+// Status missing godoc
 //go:generate mockery --name=Status --output=automock --outpkg=automock --case=underscore
 type Status interface {
 	Error() error
 	Details() string
 }
 
+// IndicatorFunc missing godoc
 type IndicatorFunc func(ctx context.Context) Status
 
 // Implements Status interface

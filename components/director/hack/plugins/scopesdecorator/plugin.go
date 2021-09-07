@@ -13,18 +13,25 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// GraphqlOperationType missing godoc
 type GraphqlOperationType string
 
 const (
-	directiveArgumentPrefix                      = "graphql"
-	Query                   GraphqlOperationType = "query"
-	Mutation                GraphqlOperationType = "mutation"
-	directiveName                                = "hasScopes"
-	directiveArg                                 = "path"
+	// Query missing godoc
+	Query GraphqlOperationType = "query"
+	// Mutation missing godoc
+	Mutation GraphqlOperationType = "mutation"
+)
+
+const (
+	directiveArgumentPrefix = "graphql"
+	directiveName           = "hasScopes"
+	directiveArg            = "path"
 )
 
 var _ plugin.ConfigMutator = &scopesDecoratorPlugin{}
 
+// NewPlugin missing godoc
 func NewPlugin(schemaFileName string) *scopesDecoratorPlugin {
 	return &scopesDecoratorPlugin{schemaFileName: schemaFileName}
 }
@@ -33,10 +40,12 @@ type scopesDecoratorPlugin struct {
 	schemaFileName string
 }
 
+// Name missing godoc
 func (p *scopesDecoratorPlugin) Name() string {
 	return "scopes_decorator"
 }
 
+// MutateConfig missing godoc
 func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 	log.D().Infof("[%s] Mutate Configuration\n", p.Name())
 	if err := cfg.Init(); err != nil {

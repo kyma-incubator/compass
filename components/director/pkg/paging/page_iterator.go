@@ -10,11 +10,13 @@ import (
 
 const queryPairFormat = "%s=%s"
 
+// FetchPageFunc missing godoc
 // FetchPageFunc is responsible for executing an HTTP request to the url which the PageIterator provided.
 // If the results need to be further processed, they should be saved in a closure.
 // The function returns the number of the results fetched and an error if any occurred during the request execution.
 type FetchPageFunc func(string) (uint64, error)
 
+// PageIterator missing godoc
 // PageIterator is responsible for executing multiple HTTP requests until all results
 // of a pageable API are fetched
 type PageIterator struct {

@@ -26,27 +26,34 @@ import (
 type contextKey string
 
 const (
+	// CredentialsCtxKey missing godoc
 	CredentialsCtxKey contextKey = "CredentialsCtxKey"
 
+	// BasicCredentialType missing godoc
 	BasicCredentialType CredentialType = "BasicCredentials"
+	// OAuthCredentialType missing godoc
 	OAuthCredentialType CredentialType = "OAuthCredentials"
 )
 
+// CredentialType missing godoc
 // CredentialType specifies a dedicated string type to differentiate every Credentials type
 type CredentialType string
 
+// Credentials missing godoc
 // Credentials denotes an authentication credentials type
 type Credentials interface {
 	Get() interface{}
 	Type() CredentialType
 }
 
+// BasicCredentials missing godoc
 // BasicCredentials implements the Credentials interface for the Basic Authentication flow
 type BasicCredentials struct {
 	Username string
 	Password string
 }
 
+// OAuthCredentials missing godoc
 // OAuthCredentials implements the Credentials interface for the OAuth flow
 type OAuthCredentials struct {
 	ClientID     string

@@ -9,10 +9,12 @@ type converter struct {
 	legacyConnectorURL string
 }
 
+// NewConverter missing godoc
 func NewConverter(legacyConnectorURL string) *converter {
 	return &converter{legacyConnectorURL}
 }
 
+// ToGraphQLForRuntime missing godoc
 func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime {
 	return graphql.OneTimeTokenForRuntime{
 		TokenWithURL: graphql.TokenWithURL{
@@ -22,6 +24,7 @@ func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTime
 	}
 }
 
+// ToGraphQLForApplication missing godoc
 func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error) {
 	urlWithToken, err := legacyConnectorURLWithToken(c.legacyConnectorURL, model.Token)
 	if err != nil {

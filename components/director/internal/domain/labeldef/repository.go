@@ -17,6 +17,7 @@ const (
 	schemaColumn = "schema"
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in model.LabelDefinition) (Entity, error)
@@ -40,6 +41,7 @@ type repository struct {
 	upserter     repo.Upserter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{conv: conv,
 		creator:      repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
@@ -52,6 +54,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, def model.LabelDefinition) error {
 	entity, err := r.conv.ToEntity(def)
 	if err != nil {
@@ -65,6 +68,7 @@ func (r *repository) Create(ctx context.Context, def model.LabelDefinition) erro
 	return nil
 }
 
+// Upsert missing godoc
 func (r *repository) Upsert(ctx context.Context, label model.LabelDefinition) error {
 	labelEntity, err := r.conv.ToEntity(label)
 	if err != nil {
@@ -74,6 +78,7 @@ func (r *repository) Upsert(ctx context.Context, label model.LabelDefinition) er
 	return r.upserter.Upsert(ctx, labelEntity)
 }
 
+// GetByKey missing godoc
 func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	dest := Entity{}
@@ -90,11 +95,13 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*
 	return &out, nil
 }
 
+// Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenant string, key string) (bool, error) {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	return r.existQuerier.Exists(ctx, tenant, conds)
 }
 
+// List missing godoc
 func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	var dest EntityCollection
 
@@ -113,6 +120,7 @@ func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefi
 	return out, nil
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, def model.LabelDefinition) error {
 	entity, err := r.conv.ToEntity(def)
 	if err != nil {
@@ -121,6 +129,7 @@ func (r *repository) Update(ctx context.Context, def model.LabelDefinition) erro
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// DeleteByKey missing godoc
 func (r *repository) DeleteByKey(ctx context.Context, tenant, key string) error {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	return r.deleter.DeleteOne(ctx, tenant, conds)

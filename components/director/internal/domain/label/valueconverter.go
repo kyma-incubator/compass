@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// ValueToStringsSlice missing godoc
 func ValueToStringsSlice(value interface{}) ([]string, error) {
 	_value, ok := value.([]interface{})
 	if !ok {

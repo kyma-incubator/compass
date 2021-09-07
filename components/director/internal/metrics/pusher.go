@@ -15,12 +15,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 )
 
+// Pusher missing godoc
 type Pusher struct {
 	eventingRequestTotal *prometheus.GaugeVec
 	pusher               *push.Pusher
 	instanceID           uuid.UUID
 }
 
+// NewPusher missing godoc
 func NewPusher(endpoint string, timeout time.Duration) *Pusher {
 	eventingRequestTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: Namespace,
@@ -45,6 +47,7 @@ func NewPusher(endpoint string, timeout time.Duration) *Pusher {
 	}
 }
 
+// RecordEventingRequest missing godoc
 func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc string) {
 	log.D().WithFields(logrus.Fields{
 		InstanceIDKeyName: p.instanceID,
@@ -54,6 +57,7 @@ func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc strin
 	p.eventingRequestTotal.WithLabelValues(method, strconv.Itoa(statusCode), desc).Inc()
 }
 
+// Push missing godoc
 func (p *Pusher) Push() {
 	log.D().WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
 	if err := p.pusher.Add(); err != nil {

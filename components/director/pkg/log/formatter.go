@@ -20,6 +20,7 @@ type kibanaEntry struct {
 
 // MarshalJSON marshals the kibana entry by inlining the logrus fields instead of being nested in the "Fields" tag
 func (k kibanaEntry) MarshalJSON() ([]byte, error) {
+	// Entry missing godoc
 	type Entry kibanaEntry
 	bytes, err := json.Marshal(Entry(k))
 	if err != nil {
@@ -42,6 +43,7 @@ func (k kibanaEntry) MarshalJSON() ([]byte, error) {
 	return json.Marshal(result)
 }
 
+// KibanaFormatter missing godoc
 // KibanaFormatter is a logrus formatter that formats an entry for Kibana
 type KibanaFormatter struct {
 }

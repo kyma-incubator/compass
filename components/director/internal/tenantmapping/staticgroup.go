@@ -12,13 +12,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// StaticGroup missing godoc
 type StaticGroup struct {
 	GroupName string   `json:"groupname"`
 	Scopes    []string `json:"scopes"`
 }
 
+// StaticGroups missing godoc
 type StaticGroups []StaticGroup
 
+// StaticGroupRepository missing godoc
 //go:generate mockery --name=StaticGroupRepository --output=automock --outpkg=automock --case=underscore
 type StaticGroupRepository interface {
 	Get(ctx context.Context, groupnames []string) StaticGroups
@@ -28,6 +31,7 @@ type staticGroupRepository struct {
 	data map[string]StaticGroup
 }
 
+// NewStaticGroupRepository missing godoc
 func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	staticGroupsBytes, err := ioutil.ReadFile(srcPath)
 	if err != nil {
@@ -50,6 +54,7 @@ func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	}, nil
 }
 
+// Get missing godoc
 func (r *staticGroupRepository) Get(ctx context.Context, groupnames []string) StaticGroups {
 	result := []StaticGroup{}
 

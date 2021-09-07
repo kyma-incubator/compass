@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// VersionConverter missing godoc
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -18,6 +19,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
+// SpecConverter missing godoc
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, error)
@@ -29,10 +31,12 @@ type converter struct {
 	sc SpecConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(vc VersionConverter, sc SpecConverter) *converter {
 	return &converter{vc: vc, sc: sc}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.EventDefinition, error) {
 	if in == nil {
 		return nil, nil
@@ -66,6 +70,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
 	if len(in) != len(specs) {
 		return nil, errors.New("different events and specs count provided")
@@ -88,6 +93,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 	return events, nil
 }
 
+// MultipleInputFromGraphQL missing godoc
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error) {
 	eventDefs := make([]*model.EventDefinitionInput, 0, len(in))
 	specs := make([]*model.SpecInput, 0, len(in))
@@ -105,6 +111,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput)
 	return eventDefs, specs, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error) {
 	if in == nil {
 		return nil, nil, nil
@@ -123,6 +130,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 	}, spec, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	return model.EventDefinition{
 		ApplicationID:       entity.ApplicationID,
@@ -161,6 +169,7 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
 	return Entity{
 		TenantID:            eventModel.Tenant,

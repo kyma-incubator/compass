@@ -23,6 +23,7 @@ var (
 	tableColumns     = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in model.BundleInstanceAuth) (Entity, error)
@@ -38,6 +39,7 @@ type repository struct {
 	conv         EntityConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:      repo.NewCreator(resource.BundleInstanceAuth, tableName, tableColumns),
@@ -49,6 +51,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item *model.BundleInstanceAuth) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -68,6 +71,7 @@ func (r *repository) Create(ctx context.Context, item *model.BundleInstanceAuth)
 	return nil
 }
 
+// GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -82,6 +86,7 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*
 	return &itemModel, nil
 }
 
+// GetForBundle missing godoc
 func (r *repository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.BundleInstanceAuth, error) {
 	var ent Entity
 
@@ -101,6 +106,7 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 	return &bndlModel, nil
 }
 
+// ListByBundleID missing godoc
 func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundleID string) ([]*model.BundleInstanceAuth, error) {
 	var entities Collection
 
@@ -117,6 +123,7 @@ func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundle
 	return r.multipleFromEntities(entities)
 }
 
+// ListByRuntimeID missing godoc
 func (r *repository) ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error) {
 	var entities Collection
 
@@ -133,6 +140,7 @@ func (r *repository) ListByRuntimeID(ctx context.Context, tenantID string, runti
 	return r.multipleFromEntities(entities)
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, item *model.BundleInstanceAuth) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -147,6 +155,7 @@ func (r *repository) Update(ctx context.Context, item *model.BundleInstanceAuth)
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }

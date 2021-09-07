@@ -18,19 +18,24 @@ type update struct {
 	repo     StatusUpdateRepository
 }
 
+// StatusUpdateRepository missing godoc
 //go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
 	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)
 }
 
+// WithStatusObject missing godoc
 type WithStatusObject string
 
 const (
+	// Applications missing godoc
 	Applications WithStatusObject = "applications"
-	Runtimes     WithStatusObject = "runtimes"
+	// Runtimes missing godoc
+	Runtimes WithStatusObject = "runtimes"
 )
 
+// New missing godoc
 func New(transact persistence.Transactioner, repo StatusUpdateRepository) *update {
 	return &update{
 		transact: transact,
@@ -38,6 +43,7 @@ func New(transact persistence.Transactioner, repo StatusUpdateRepository) *updat
 	}
 }
 
+// Handler missing godoc
 func (u *update) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

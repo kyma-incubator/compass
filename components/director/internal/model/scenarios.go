@@ -1,12 +1,15 @@
 package model
 
+// ScenariosKey missing godoc
 const (
 	ScenariosKey = "scenarios"
 )
 
 var (
+	// ScenariosDefaultValue missing godoc
 	ScenariosDefaultValue = []interface{}{"DEFAULT"}
-	ScenariosSchema       = map[string]interface{}{
+	// ScenariosSchema missing godoc
+	ScenariosSchema = map[string]interface{}{
 		"type":        "array",
 		"minItems":    1,
 		"uniqueItems": true,

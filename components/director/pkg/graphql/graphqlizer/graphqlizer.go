@@ -12,9 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Graphqlizer missing godoc
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
 type Graphqlizer struct{}
 
+// ApplicationRegisterInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -51,6 +53,7 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 	}`)
 }
 
+// ApplicationUpdateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .ProviderName }}
@@ -71,6 +74,7 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 	}`)
 }
 
+// ApplicationTemplateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -94,6 +98,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 	}`)
 }
 
+// ApplicationTemplateUpdateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.ApplicationTemplateUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -111,6 +116,7 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 	}`)
 }
 
+// DocumentInputToGQL missing godoc
 func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
 	return g.genericToGQL(in, `{
 		title: "{{.Title}}",
@@ -129,6 +135,7 @@ func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, err
 }`)
 }
 
+// FetchRequestInputToGQL missing godoc
 func (g *Graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (string, error) {
 	return g.genericToGQL(in, `{
 		url: "{{.URL}}",
@@ -144,6 +151,7 @@ func (g *Graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (str
 	}`)
 }
 
+// CredentialRequestAuthInputToGQL missing godoc
 func (g *Graphqlizer) CredentialRequestAuthInputToGQL(in *graphql.CredentialRequestAuthInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Csrf }}
@@ -152,6 +160,7 @@ func (g *Graphqlizer) CredentialRequestAuthInputToGQL(in *graphql.CredentialRequ
 	}`)
 }
 
+// CredentialDataInputToGQL missing godoc
 func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) (string, error) {
 	return g.genericToGQL(in, ` {
 			{{- if .Basic }}
@@ -170,6 +179,7 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 	}`)
 }
 
+// CSRFTokenCredentialRequestAuthInputToGQL missing godoc
 func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
 	in.AdditionalHeadersSerialized = quoteHTTPHeadersSerialized(in.AdditionalHeadersSerialized)
 	in.AdditionalQueryParamsSerialized = quoteQueryParamsSerialized(in.AdditionalQueryParamsSerialized)
@@ -194,6 +204,7 @@ func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFT
 	}`)
 }
 
+// AuthInputToGQL missing godoc
 func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 	in.AdditionalHeadersSerialized = quoteHTTPHeadersSerialized(in.AdditionalHeadersSerialized)
 	in.AdditionalQueryParamsSerialized = quoteQueryParamsSerialized(in.AdditionalQueryParamsSerialized)
@@ -220,10 +231,12 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 	}`)
 }
 
+// LabelsToGQL missing godoc
 func (g *Graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
 	return g.marshal(in), nil
 }
 
+// HTTPHeadersToGQL missing godoc
 func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HTTPHeaders) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- range $k,$v := . }}
@@ -235,6 +248,7 @@ func (g *Graphqlizer) HTTPHeadersToGQL(in graphql.HTTPHeaders) (string, error) {
 	}`)
 }
 
+// QueryParamsToGQL missing godoc
 func (g *Graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- range $k,$v := . }}
@@ -246,6 +260,7 @@ func (g *Graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 	}`)
 }
 
+// WebhookInputToGQL missing godoc
 func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
 	return g.genericToGQL(in, `{
 		type: {{.Type}},
@@ -285,6 +300,7 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 	}`)
 }
 
+// APIDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name}}",
@@ -304,6 +320,7 @@ func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (st
 	}`)
 }
 
+// EventDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -322,6 +339,7 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 	}`)
 }
 
+// EventAPISpecInputToGQL missing godoc
 func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
 	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
@@ -336,6 +354,7 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 	}`)
 }
 
+// APISpecInputToGQL missing godoc
 func (g *Graphqlizer) APISpecInputToGQL(in graphql.APISpecInput) (string, error) {
 	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
@@ -350,6 +369,7 @@ func (g *Graphqlizer) APISpecInputToGQL(in graphql.APISpecInput) (string, error)
 	}`)
 }
 
+// VersionInputToGQL missing godoc
 func (g *Graphqlizer) VersionInputToGQL(in graphql.VersionInput) (string, error) {
 	return g.genericToGQL(in, `{
 		value: "{{.Value}}",
@@ -365,6 +385,7 @@ func (g *Graphqlizer) VersionInputToGQL(in graphql.VersionInput) (string, error)
 	}`)
 }
 
+// RuntimeInputToGQL missing godoc
 func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -380,6 +401,7 @@ func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error)
 	}`)
 }
 
+// LabelDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
 		key: "{{.Key}}",
@@ -389,6 +411,7 @@ func (g *Graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput)
 	}`)
 }
 
+// LabelFilterToGQL missing godoc
 func (g *Graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 	return g.genericToGQL(in, `{
 		key: "{{.Key}}",
@@ -398,6 +421,7 @@ func (g *Graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 	}`)
 }
 
+// IntegrationSystemInputToGQL missing godoc
 func (g *Graphqlizer) IntegrationSystemInputToGQL(in graphql.IntegrationSystemInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -407,6 +431,7 @@ func (g *Graphqlizer) IntegrationSystemInputToGQL(in graphql.IntegrationSystemIn
 	}`)
 }
 
+// PlaceholderDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
@@ -416,6 +441,7 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 	}`)
 }
 
+// TemplateValueInputToGQL missing godoc
 func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (string, error) {
 	return g.genericToGQL(in, `{
 		placeholder: "{{.Placeholder}}"
@@ -423,6 +449,7 @@ func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (st
 	}`)
 }
 
+// ApplicationFromTemplateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		templateName: "{{.TemplateName}}"
@@ -435,6 +462,7 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 	}`)
 }
 
+// BundleCreateInputToGQL missing godoc
 func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name }}"
@@ -468,6 +496,7 @@ func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (stri
 	}`)
 }
 
+// BundleUpdateInputToGQL missing godoc
 func (g *Graphqlizer) BundleUpdateInputToGQL(in graphql.BundleUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name }}"
@@ -483,6 +512,7 @@ func (g *Graphqlizer) BundleUpdateInputToGQL(in graphql.BundleUpdateInput) (stri
 	}`)
 }
 
+// BundleInstanceAuthStatusInputToGQL missing godoc
 func (g *Graphqlizer) BundleInstanceAuthStatusInputToGQL(in graphql.BundleInstanceAuthStatusInput) (string, error) {
 	return g.genericToGQL(in, `{
 		condition: {{ .Condition }}
@@ -495,6 +525,7 @@ func (g *Graphqlizer) BundleInstanceAuthStatusInputToGQL(in graphql.BundleInstan
 	}`)
 }
 
+// BundleInstanceAuthRequestInputToGQL missing godoc
 func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInstanceAuthRequestInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .ID }}
@@ -509,6 +540,7 @@ func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInsta
 	}`)
 }
 
+// BundleInstanceAuthSetInputToGQL missing godoc
 func (g *Graphqlizer) BundleInstanceAuthSetInputToGQL(in graphql.BundleInstanceAuthSetInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Auth }}
@@ -520,6 +552,7 @@ func (g *Graphqlizer) BundleInstanceAuthSetInputToGQL(in graphql.BundleInstanceA
 	}`)
 }
 
+// LabelSelectorInputToGQL missing godoc
 func (g *Graphqlizer) LabelSelectorInputToGQL(in graphql.LabelSelectorInput) (string, error) {
 	return g.genericToGQL(in, `{
 		key: "{{ .Key }}"
@@ -527,6 +560,7 @@ func (g *Graphqlizer) LabelSelectorInputToGQL(in graphql.LabelSelectorInput) (st
 	}`)
 }
 
+// AutomaticScenarioAssignmentSetInputToGQL missing godoc
 func (g *Graphqlizer) AutomaticScenarioAssignmentSetInputToGQL(in graphql.AutomaticScenarioAssignmentSetInput) (string, error) {
 	return g.genericToGQL(in, `{
 		scenarioName: "{{ .ScenarioName }}"

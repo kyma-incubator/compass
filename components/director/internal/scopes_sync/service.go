@@ -14,15 +14,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SyncService missing godoc
 type SyncService interface {
 	SynchronizeClientScopes(context.Context) error
 }
 
+// SystemAuthRepo missing godoc
 //go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore
 type SystemAuthRepo interface {
 	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error)
 }
 
+// OAuthService missing godoc
 //go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore
 type OAuthService interface {
 	ListClients() ([]*models.OAuth2Client, error)
@@ -36,6 +39,7 @@ type service struct {
 	repo       SystemAuthRepo
 }
 
+// NewService missing godoc
 func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, repo SystemAuthRepo) SyncService {
 	return &service{
 		oAuth20Svc: oAuth20Svc,
@@ -44,6 +48,7 @@ func NewService(oAuth20Svc OAuthService, transact persistence.Transactioner, rep
 	}
 }
 
+// SynchronizeClientScopes missing godoc
 func (s *service) SynchronizeClientScopes(ctx context.Context) error {
 	hydraClients, err := s.listHydraClients()
 	if err != nil {

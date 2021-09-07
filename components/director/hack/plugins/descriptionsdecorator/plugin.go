@@ -17,17 +17,23 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// GraphqlOperationType missing godoc
 type GraphqlOperationType string
 
 const (
-	Query          GraphqlOperationType = "query"
-	Mutation       GraphqlOperationType = "mutation"
-	UnsanitizedAPI                      = "A-P-I"
-	ExamplePrefix                       = "**Examples**"
+	// Query missing godoc
+	Query GraphqlOperationType = "query"
+	// Mutation missing godoc
+	Mutation GraphqlOperationType = "mutation"
+	// UnsanitizedAPI missing godoc
+	UnsanitizedAPI = "A-P-I"
+	// ExamplePrefix missing godoc
+	ExamplePrefix = "**Examples**"
 )
 
 var _ plugin.ConfigMutator = &descriptionsDecoratorPlugin{}
 
+// NewPlugin missing godoc
 func NewPlugin(schemaFileName string, examplesDirectory string) *descriptionsDecoratorPlugin {
 	return &descriptionsDecoratorPlugin{schemaFileName: schemaFileName, examplesDirectory: examplesDirectory}
 }
@@ -37,10 +43,12 @@ type descriptionsDecoratorPlugin struct {
 	examplesDirectory string
 }
 
+// Name missing godoc
 func (p *descriptionsDecoratorPlugin) Name() string {
 	return "descriptions_decorator"
 }
 
+// MutateConfig missing godoc
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 	log.D().Infof("[%s] Mutate Configuration\n", p.Name())
 

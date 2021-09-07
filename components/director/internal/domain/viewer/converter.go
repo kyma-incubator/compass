@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// ToViewer missing godoc
 func ToViewer(cons consumer.Consumer) (*graphql.Viewer, error) {
 	switch cons.ConsumerType {
 	case consumer.Runtime:

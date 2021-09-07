@@ -8,17 +8,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+// PersistenceContextThatExpectsCommit missing godoc
 func PersistenceContextThatExpectsCommit() *automock.PersistenceTx {
 	persistTx := &automock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Once()
 	return persistTx
 }
 
+// PersistenceContextThatDoesntExpectCommit missing godoc
 func PersistenceContextThatDoesntExpectCommit() *automock.PersistenceTx {
 	persistTx := &automock.PersistenceTx{}
 	return persistTx
 }
 
+// TransactionerThatSucceeds missing godoc
 func TransactionerThatSucceeds(persistTx *automock.PersistenceTx) *automock.Transactioner {
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
@@ -26,6 +29,7 @@ func TransactionerThatSucceeds(persistTx *automock.PersistenceTx) *automock.Tran
 	return transact
 }
 
+// CtxWithDBMatcher missing godoc
 func CtxWithDBMatcher() interface{} {
 	return mock.MatchedBy(func(ctx context.Context) bool {
 		persistenceOp, err := persistence.FromCtx(ctx)
@@ -37,14 +41,17 @@ type txCtxGenerator struct {
 	returnedError error
 }
 
+// NewTransactionContextGenerator missing godoc
 func NewTransactionContextGenerator(potentialError error) *txCtxGenerator {
 	return &txCtxGenerator{returnedError: potentialError}
 }
 
+// ThatSucceeds missing godoc
 func (g txCtxGenerator) ThatSucceeds() (*automock.PersistenceTx, *automock.Transactioner) {
 	return g.ThatSucceedsMultipleTimes(1)
 }
 
+// ThatSucceedsMultipleTimes missing godoc
 func (g txCtxGenerator) ThatSucceedsMultipleTimes(times int) (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Times(times)
@@ -56,6 +63,7 @@ func (g txCtxGenerator) ThatSucceedsMultipleTimes(times int) (*automock.Persiste
 	return persistTx, transact
 }
 
+// ThatDoesntExpectCommit missing godoc
 func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
 
@@ -66,6 +74,7 @@ func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *auto
 	return persistTx, transact
 }
 
+// ThatFailsOnCommit missing godoc
 func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
 	persistTx.On("Commit").Return(g.returnedError).Once()
@@ -77,6 +86,7 @@ func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.
 	return persistTx, transact
 }
 
+// ThatFailsOnBegin missing godoc
 func (g txCtxGenerator) ThatFailsOnBegin() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
 
@@ -86,6 +96,7 @@ func (g txCtxGenerator) ThatFailsOnBegin() (*automock.PersistenceTx, *automock.T
 	return persistTx, transact
 }
 
+// ThatDoesntStartTransaction missing godoc
 func (g txCtxGenerator) ThatDoesntStartTransaction() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
 	transact := &automock.Transactioner{}

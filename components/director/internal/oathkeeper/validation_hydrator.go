@@ -16,10 +16,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ValidationHydrator missing godoc
 type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 }
 
+// Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
@@ -35,6 +37,7 @@ type validationHydrator struct {
 	timeService            directorTime.Service
 }
 
+// NewValidationHydrator missing godoc
 func NewValidationHydrator(tokenService Service, transact persistence.Transactioner, timeService directorTime.Service, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration time.Duration) ValidationHydrator {
 	return &validationHydrator{
 		csrTokenExpiration:     csrTokenExpiration,
@@ -46,6 +49,7 @@ func NewValidationHydrator(tokenService Service, transact persistence.Transactio
 	}
 }
 
+// ResolveConnectorTokenHeader missing godoc
 func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

@@ -41,8 +41,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
+// ModeParam missing godoc
 const ModeParam = "mode"
 
+// WebhookFetcherFunc missing godoc
 // WebhookFetcherFunc defines a function which fetches the webhooks for a specific resource ID
 type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.Webhook, error)
 

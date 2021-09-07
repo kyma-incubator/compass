@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// WebhookRepository missing godoc
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error)
@@ -24,16 +25,19 @@ type WebhookRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// OwningResource missing godoc
 type OwningResource string
 
 type service struct {
@@ -42,6 +46,7 @@ type service struct {
 	uidSvc      UIDService
 }
 
+// NewService missing godoc
 func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UIDService) *service {
 	return &service{
 		webhookRepo: repo,
@@ -50,6 +55,7 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 	}
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (webhook *model.Webhook, err error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil || tnt == "" {
@@ -64,6 +70,7 @@ func (s *service) Get(ctx context.Context, id string) (webhook *model.Webhook, e
 	return
 }
 
+// ListForApplication missing godoc
 func (s *service) ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -72,10 +79,12 @@ func (s *service) ListForApplication(ctx context.Context, applicationID string) 
 	return s.webhookRepo.ListByApplicationID(ctx, tnt, applicationID)
 }
 
+// ListForApplicationTemplate missing godoc
 func (s *service) ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	return s.webhookRepo.ListByApplicationTemplateID(ctx, applicationTemplateID)
 }
 
+// ListAllApplicationWebhooks missing godoc
 func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	application, err := s.appRepo.GetGlobalByID(ctx, applicationID)
 	if err != nil {
@@ -85,6 +94,7 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 	return s.retrieveWebhooks(ctx, application)
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if apperrors.IsTenantRequired(err) {
@@ -103,6 +113,7 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 	return webhook.ID, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) error {
 	webhook, err := s.Get(ctx, id)
 	if err != nil {
@@ -125,6 +136,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	webhook, err := s.Get(ctx, id)
 	if err != nil {

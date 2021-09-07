@@ -21,6 +21,7 @@ import (
  * limitations under the License.
  */
 
+// JWTKeyIterator missing godoc
 type JWTKeyIterator struct {
 	AlgorithmCriteria func(string) bool
 	IDCriteria        func(string) bool
@@ -28,6 +29,7 @@ type JWTKeyIterator struct {
 	AllKeys           []interface{}
 }
 
+// Visit missing godoc
 func (keyIterator *JWTKeyIterator) Visit(_ int, value interface{}) error {
 	key, ok := value.(jwk.Key)
 	if !ok {

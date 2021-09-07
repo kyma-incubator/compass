@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// APIDefinition missing godoc
 type APIDefinition struct {
 	ApplicationID                           string
 	PackageID                               *string
@@ -50,10 +51,12 @@ type APIDefinition struct {
 	*BaseEntity
 }
 
+// GetType missing godoc
 func (*APIDefinition) GetType() resource.Type {
 	return resource.API
 }
 
+// APIDefinitionInput missing godoc
 type APIDefinitionInput struct {
 	OrdPackageID                            *string                       `json:"partOfPackage"`
 	Tenant                                  string                        `json:",omitempty"`
@@ -89,6 +92,7 @@ type APIDefinitionInput struct {
 	*VersionInput `hash:"ignore"`
 }
 
+// APIResourceDefinition missing godoc
 type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched
 	Type           APISpecType      `json:"type"`
 	CustomType     string           `json:"customType"`
@@ -97,7 +101,9 @@ type APIResourceDefinition struct { // This is the place from where the specific
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
 }
 
+// Validate missing godoc
 func (rd *APIResourceDefinition) Validate() error {
+	// CustomTypeRegex missing godoc
 	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
 		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
@@ -115,6 +121,7 @@ func (rd *APIResourceDefinition) Validate() error {
 	)
 }
 
+// ToSpec missing godoc
 func (rd *APIResourceDefinition) ToSpec() *SpecInput {
 	return &SpecInput{
 		Format:     rd.MediaType,
@@ -127,12 +134,14 @@ func (rd *APIResourceDefinition) ToSpec() *SpecInput {
 	}
 }
 
+// AccessStrategy missing godoc
 type AccessStrategy struct {
 	Type              string `json:"type"`
 	CustomType        string `json:"customType"`
 	CustomDescription string `json:"customDescription"`
 }
 
+// Validate missing godoc
 func (as AccessStrategy) Validate() error {
 	return validation.ValidateStruct(&as,
 		validation.Field(&as.Type, validation.Required, validation.In("open", "custom")),
@@ -141,23 +150,28 @@ func (as AccessStrategy) Validate() error {
 	)
 }
 
+// ConsumptionBundleReference missing godoc
 type ConsumptionBundleReference struct {
 	BundleOrdID      string `json:"ordId"`
 	DefaultTargetURL string `json:"defaultEntryPoint"`
 }
 
+// APIDefinitionPage missing godoc
 type APIDefinitionPage struct {
 	Data       []*APIDefinition
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// IsPageable missing godoc
 func (APIDefinitionPage) IsPageable() {}
 
+// ToAPIDefinitionWithinBundle missing godoc
 func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, tenant string, apiHash uint64) *APIDefinition {
 	return a.ToAPIDefinition(id, appID, nil, tenant, apiHash)
 }
 
+// ToAPIDefinition missing godoc
 func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, tenant string, apiHash uint64) *APIDefinition {
 	if a == nil {
 		return nil

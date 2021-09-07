@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RuntimeContextRepository missing godoc
 //go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -24,6 +25,7 @@ type RuntimeContextRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 }
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -32,12 +34,14 @@ type LabelRepository interface {
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
+// LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -51,6 +55,7 @@ type service struct {
 	uidService         UIDService
 }
 
+// NewService missing godoc
 func NewService(repo RuntimeContextRepository,
 	labelRepo LabelRepository,
 	labelUpsertService LabelUpsertService,
@@ -63,6 +68,7 @@ func NewService(repo RuntimeContextRepository,
 	}
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -76,6 +82,7 @@ func (s *service) List(ctx context.Context, runtimeID string, filter []*labelfil
 	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.RuntimeContext, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -90,6 +97,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.RuntimeContext, er
 	return runtimeCtx, nil
 }
 
+// Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -104,6 +112,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (string, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -141,6 +150,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 	return id, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeContextInput) error {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -185,6 +195,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -201,6 +212,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// ListLabels missing godoc
 func (s *service) ListLabels(ctx context.Context, runtimeCtxID string) (map[string]*model.Label, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

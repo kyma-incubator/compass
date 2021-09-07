@@ -5,12 +5,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
 type converter struct{}
 
+// FromInputGraphQL missing godoc
 func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment {
 	out := model.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
@@ -22,6 +24,7 @@ func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetIn
 	return out
 }
 
+// LabelSelectorFromInput missing godoc
 func (c *converter) LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector {
 	return model.LabelSelector{
 		Key:   in.Key,
@@ -29,6 +32,7 @@ func (c *converter) LabelSelectorFromInput(in graphql.LabelSelectorInput) model.
 	}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment {
 	return graphql.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
@@ -39,6 +43,7 @@ func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment) graphql.Auto
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 	return Entity{
 		TenantID:      in.Tenant,
@@ -48,6 +53,7 @@ func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 	}
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
 		ScenarioName: in.Scenario,
@@ -59,6 +65,7 @@ func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
 	}
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment {
 	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
 

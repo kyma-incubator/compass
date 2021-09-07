@@ -2,6 +2,7 @@ package webhook
 
 import "database/sql"
 
+// Entity missing godoc
 type Entity struct {
 	ID                    string         `db:"id"`
 	TenantID              sql.NullString `db:"tenant_id"`
@@ -23,8 +24,10 @@ type Entity struct {
 	StatusTemplate        sql.NullString `db:"status_template"`
 }
 
+// Collection missing godoc
 type Collection []Entity
 
+// Len missing godoc
 func (c Collection) Len() int {
 	return len(c)
 }

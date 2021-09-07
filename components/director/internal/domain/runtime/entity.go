@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// Runtime missing godoc
 // Runtime struct represents database entity for Runtime
 type Runtime struct {
 	ID                string         `db:"id"`

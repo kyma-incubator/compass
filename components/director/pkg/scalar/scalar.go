@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// WriteMarshalled missing godoc
 func WriteMarshalled(in interface{}, w io.Writer) error {
 	bytes, err := json.Marshal(in)
 	if err != nil {
@@ -22,6 +23,7 @@ func WriteMarshalled(in interface{}, w io.Writer) error {
 	return nil
 }
 
+// ConvertToString missing godoc
 func ConvertToString(in interface{}) (string, error) {
 	if in == nil {
 		return "", apperrors.NewInvalidDataError("input should not be nil")
@@ -35,6 +37,7 @@ func ConvertToString(in interface{}) (string, error) {
 	return value, nil
 }
 
+// ConvertToMapStringStringArray missing godoc
 func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) {
 	if in == nil {
 		return nil, apperrors.NewInvalidDataError("input should not be nil")

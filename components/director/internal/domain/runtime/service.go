@@ -17,8 +17,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// IsNormalizedLabel missing godoc
 const IsNormalizedLabel = "isNormalized"
 
+// RuntimeRepository missing godoc
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -31,6 +33,7 @@ type RuntimeRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 }
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -40,18 +43,21 @@ type LabelRepository interface {
 	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
 }
 
+// LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+// ScenariosService missing godoc
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
+// ScenarioAssignmentEngine missing godoc
 //go:generate mockery --name=ScenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentEngine interface {
 	GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error)
@@ -59,6 +65,7 @@ type ScenarioAssignmentEngine interface {
 	MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{}
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -76,6 +83,7 @@ type service struct {
 	protectedLabelPattern string
 }
 
+// NewService missing godoc
 func NewService(repo RuntimeRepository,
 	labelRepo LabelRepository,
 	scenariosService ScenariosService,
@@ -94,6 +102,7 @@ func NewService(repo RuntimeRepository,
 	}
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -107,6 +116,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -121,6 +131,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	return runtime, nil
 }
 
+// GetByTokenIssuer missing godoc
 func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error) {
 	const (
 		consoleURLLabelKey = "runtime_consoleUrl"
@@ -141,6 +152,7 @@ func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.R
 	return runtime, nil
 }
 
+// GetByFiltersGlobal missing godoc
 func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	runtimes, err := s.repo.GetByFiltersGlobal(ctx, filters)
 	if err != nil {
@@ -149,6 +161,7 @@ func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter
 	return runtimes, nil
 }
 
+// Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -163,6 +176,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -214,6 +228,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	return id, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -273,6 +288,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -289,6 +305,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// SetLabel missing godoc
 func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -334,6 +351,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	return nil
 }
 
+// GetLabel missing godoc
 func (s *service) GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -356,6 +374,7 @@ func (s *service) GetLabel(ctx context.Context, runtimeID string, key string) (*
 	return label, nil
 }
 
+// ListLabels missing godoc
 func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -379,6 +398,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
+// UpdateTenantID missing godoc
 func (s *service) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
 	if err := s.repo.UpdateTenantID(ctx, runtimeID, newTenantID); err != nil {
 		return errors.Wrapf(err, "while updating tenant_id for runtime with ID %s", runtimeID)
@@ -386,6 +406,7 @@ func (s *service) UpdateTenantID(ctx context.Context, runtimeID, newTenantID str
 	return nil
 }
 
+// DeleteLabel missing godoc
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

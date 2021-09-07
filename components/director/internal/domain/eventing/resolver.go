@@ -10,23 +10,27 @@ import (
 	"github.com/pkg/errors"
 )
 
+// EventingService missing godoc
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
 type EventingService interface {
 	SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error)
 	UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact    persistence.Transactioner
 	eventingSvc EventingService
 	appSvc      ApplicationService
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, eventingSvc EventingService, appSvc ApplicationService) *Resolver {
 	return &Resolver{
 		transact:    transact,
@@ -35,6 +39,7 @@ func NewResolver(transact persistence.Transactioner, eventingSvc EventingService
 	}
 }
 
+// SetEventingForApplication missing godoc
 func (r *Resolver) SetEventingForApplication(ctx context.Context, appID string, runtime string) (*graphql.ApplicationEventingConfiguration, error) {
 	appUUID, err := uuid.Parse(appID)
 	if err != nil {
@@ -71,6 +76,7 @@ func (r *Resolver) SetEventingForApplication(ctx context.Context, appID string, 
 	return ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
+// UnsetEventingForApplication missing godoc
 func (r *Resolver) UnsetEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
 	appUUID, err := uuid.Parse(appID)
 	if err != nil {

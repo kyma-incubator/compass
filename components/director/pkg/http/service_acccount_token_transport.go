@@ -7,7 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DefaultServiceAccountTokenPath missing godoc
 const DefaultServiceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+// InternalAuthorizationHeader missing godoc
 const InternalAuthorizationHeader = "X-Authorization"
 
 // NewServiceAccountTokenTransport constructs an serviceAccountTokenTransport

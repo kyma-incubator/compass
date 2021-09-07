@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Config missing godoc
 type Config struct {
 	Level                  string `envconfig:"APP_LOG_LEVEL,default=info"`
 	Format                 string `envconfig:"APP_LOG_FORMAT,default=text"`

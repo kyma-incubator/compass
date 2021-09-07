@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -28,6 +29,7 @@ type converter struct {
 	document DocumentConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(auth AuthConverter, api APIConverter, event EventConverter, document DocumentConverter) *converter {
 	return &converter{
 		auth:     auth,
@@ -37,6 +39,7 @@ func NewConverter(auth AuthConverter, api APIConverter, event EventConverter, do
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	if in == nil {
 		return nil, nil
@@ -72,6 +75,7 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	return output, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	if entity == nil {
 		return nil, apperrors.NewInternalError("the Bundle entity is nil")
@@ -107,6 +111,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	return output, nil
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 	if in == nil {
 		return nil, apperrors.NewInternalError("the model Bundle is nil")
@@ -133,6 +138,7 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error) {
 	bundles := make([]*graphql.Bundle, 0, len(in))
 	for _, r := range in {
@@ -149,6 +155,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, er
 	return bundles, nil
 }
 
+// CreateInputFromGraphQL missing godoc
 func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
@@ -183,6 +190,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 	}, nil
 }
 
+// MultipleCreateInputFromGraphQL missing godoc
 func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error) {
 	bundles := make([]*model.BundleCreateInput, 0, len(in))
 	for _, item := range in {
@@ -199,6 +207,7 @@ func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInp
 	return bundles, nil
 }
 
+// UpdateInputFromGraphQL missing godoc
 func (c *converter) UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {

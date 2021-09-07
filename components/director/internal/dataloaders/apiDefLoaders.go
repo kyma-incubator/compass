@@ -14,10 +14,12 @@ type contextKey string
 
 const loadersKeyAPIDef contextKey = "dataloadersAPIDef"
 
+// APIDefLoaders missing godoc
 type APIDefLoaders struct {
 	APIDefByID APIDefLoader
 }
 
+// ParamAPIDef missing godoc
 type ParamAPIDef struct {
 	ID    string
 	Ctx   context.Context
@@ -25,6 +27,7 @@ type ParamAPIDef struct {
 	After *graphql.PageCursor
 }
 
+// HandlerAPIDef missing godoc
 func HandlerAPIDef(fetchFunc func(keys []ParamAPIDef) ([]*graphql.APIDefinitionPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +44,7 @@ func HandlerAPIDef(fetchFunc func(keys []ParamAPIDef) ([]*graphql.APIDefinitionP
 	}
 }
 
+// APIDefFor missing godoc
 func APIDefFor(ctx context.Context) *APIDefLoaders {
 	return ctx.Value(loadersKeyAPIDef).(*APIDefLoaders)
 }

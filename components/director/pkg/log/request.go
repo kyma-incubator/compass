@@ -65,6 +65,7 @@ func RequestLogger() func(next http.Handler) http.Handler {
 	}
 }
 
+// LoggerWithCorrelationID missing godoc
 func LoggerWithCorrelationID(r *http.Request) *logrus.Entry {
 	ctx := r.Context()
 	entry := C(ctx)

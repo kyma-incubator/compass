@@ -20,12 +20,16 @@ import (
 )
 
 const (
-	isNormalizedLabel            = "isNormalized"
-	RuntimeEventingURLLabel      = "runtime_eventServiceUrl"
-	EmptyEventingURL             = ""
+	isNormalizedLabel = "isNormalized"
+	// RuntimeEventingURLLabel missing godoc
+	RuntimeEventingURLLabel = "runtime_eventServiceUrl"
+	// EmptyEventingURL missing godoc
+	EmptyEventingURL = ""
+	// RuntimeDefaultEventingLabelf missing godoc
 	RuntimeDefaultEventingLabelf = "%s_defaultEventing"
 )
 
+// RuntimeRepository missing godoc
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
 type RuntimeRepository interface {
 	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
@@ -33,6 +37,7 @@ type RuntimeRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 }
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
@@ -47,6 +52,7 @@ type service struct {
 	labelRepo         LabelRepository
 }
 
+// NewService missing godoc
 func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
 	return &service{
 		appNameNormalizer: appNameNormalizer,
@@ -55,6 +61,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRe
 	}
 }
 
+// CleanupAfterUnregisteringApplication missing godoc
 func (s *service) CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -70,6 +77,7 @@ func (s *service) CleanupAfterUnregisteringApplication(ctx context.Context, appI
 	return model.NewEmptyApplicationEventingConfig()
 }
 
+// SetForApplication missing godoc
 func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -117,6 +125,7 @@ func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, ap
 	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
+// UnsetForApplication missing godoc
 func (s *service) UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -160,6 +169,7 @@ func (s *service) UnsetForApplication(ctx context.Context, app model.Application
 	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
+// GetForApplication missing godoc
 func (s *service) GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -227,6 +237,7 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
+// GetForRuntime missing godoc
 func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -413,6 +424,7 @@ func (s *service) setRuntimeForAppEventing(ctx context.Context, runtime model.Ru
 	return nil
 }
 
+// BuildQueryForScenarios missing godoc
 func BuildQueryForScenarios(scenarios []string) string {
 	var queryBuilder strings.Builder
 	for idx, scenario := range scenarios {

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Entity missing godoc
 // Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
 	GetReady() bool
@@ -24,6 +25,7 @@ type Entity interface {
 	SetError(err sql.NullString)
 }
 
+// BaseEntity missing godoc
 type BaseEntity struct {
 	ID        string         `db:"id"`
 	Ready     bool           `db:"ready"`
@@ -33,14 +35,17 @@ type BaseEntity struct {
 	Error     sql.NullString `db:"error"`
 }
 
+// GetReady missing godoc
 func (e *BaseEntity) GetReady() bool {
 	return e.Ready
 }
 
+// SetReady missing godoc
 func (e *BaseEntity) SetReady(ready bool) {
 	e.Ready = ready
 }
 
+// GetCreatedAt missing godoc
 func (e *BaseEntity) GetCreatedAt() time.Time {
 	if e.CreatedAt == nil {
 		return time.Time{}
@@ -48,10 +53,12 @@ func (e *BaseEntity) GetCreatedAt() time.Time {
 	return *e.CreatedAt
 }
 
+// SetCreatedAt missing godoc
 func (e *BaseEntity) SetCreatedAt(t time.Time) {
 	e.CreatedAt = &t
 }
 
+// GetUpdatedAt missing godoc
 func (e *BaseEntity) GetUpdatedAt() time.Time {
 	if e.UpdatedAt == nil {
 		return time.Time{}
@@ -59,10 +66,12 @@ func (e *BaseEntity) GetUpdatedAt() time.Time {
 	return *e.UpdatedAt
 }
 
+// SetUpdatedAt missing godoc
 func (e *BaseEntity) SetUpdatedAt(t time.Time) {
 	e.UpdatedAt = &t
 }
 
+// GetDeletedAt missing godoc
 func (e *BaseEntity) GetDeletedAt() time.Time {
 	if e.DeletedAt == nil {
 		return time.Time{}
@@ -70,18 +79,22 @@ func (e *BaseEntity) GetDeletedAt() time.Time {
 	return *e.DeletedAt
 }
 
+// SetDeletedAt missing godoc
 func (e *BaseEntity) SetDeletedAt(t time.Time) {
 	e.DeletedAt = &t
 }
 
+// GetError missing godoc
 func (e *BaseEntity) GetError() sql.NullString {
 	return e.Error
 }
 
+// SetError missing godoc
 func (e *BaseEntity) SetError(err sql.NullString) {
 	e.Error = err
 }
 
+// NewNullableString missing godoc
 func NewNullableString(text *string) sql.NullString {
 	nullString := sql.NullString{}
 	if text != nil {
@@ -92,6 +105,7 @@ func NewNullableString(text *string) sql.NullString {
 	return nullString
 }
 
+// NewNullableInt missing godoc
 func NewNullableInt(i *int) sql.NullInt32 {
 	nullInt := sql.NullInt32{}
 	if i != nil {
@@ -102,6 +116,7 @@ func NewNullableInt(i *int) sql.NullInt32 {
 	return nullInt
 }
 
+// NewValidNullableString missing godoc
 func NewValidNullableString(text string) sql.NullString {
 	if text == "" {
 		return sql.NullString{}
@@ -113,6 +128,7 @@ func NewValidNullableString(text string) sql.NullString {
 	}
 }
 
+// NewNullableStringFromJSONRawMessage missing godoc
 func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
 	nullString := sql.NullString{}
 	if json != nil {
@@ -122,6 +138,7 @@ func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
 	return nullString
 }
 
+// NewNullableBool missing godoc
 func NewNullableBool(boolean *bool) sql.NullBool {
 	var sqlBool sql.NullBool
 	if boolean != nil {
@@ -131,6 +148,7 @@ func NewNullableBool(boolean *bool) sql.NullBool {
 	return sqlBool
 }
 
+// NewValidNullableBool missing godoc
 func NewValidNullableBool(boolean bool) sql.NullBool {
 	return sql.NullBool{
 		Valid: true,
@@ -138,6 +156,7 @@ func NewValidNullableBool(boolean bool) sql.NullBool {
 	}
 }
 
+// StringPtrFromNullableString missing godoc
 func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {
 		return &sqlString.String
@@ -146,6 +165,7 @@ func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	return nil
 }
 
+// JSONRawMessageFromNullableString missing godoc
 func JSONRawMessageFromNullableString(sqlString sql.NullString) json.RawMessage {
 	if sqlString.Valid {
 		return json.RawMessage(sqlString.String)
@@ -153,6 +173,7 @@ func JSONRawMessageFromNullableString(sqlString sql.NullString) json.RawMessage 
 	return nil
 }
 
+// IntPtrFromNullableInt missing godoc
 func IntPtrFromNullableInt(i sql.NullInt32) *int {
 	if i.Valid {
 		val := int(i.Int32)
@@ -162,6 +183,7 @@ func IntPtrFromNullableInt(i sql.NullInt32) *int {
 	return nil
 }
 
+// BoolPtrFromNullableBool missing godoc
 func BoolPtrFromNullableBool(sqlBool sql.NullBool) *bool {
 	if sqlBool.Valid {
 		return &sqlBool.Bool

@@ -8,13 +8,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Resolver missing godoc
 type Resolver struct {
 }
 
+// NewViewerResolver missing godoc
 func NewViewerResolver() *Resolver {
 	return &Resolver{}
 }
 
+// Viewer missing godoc
 func (r *Resolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 	cons, err := consumer.LoadFromContext(ctx)
 	if err != nil {

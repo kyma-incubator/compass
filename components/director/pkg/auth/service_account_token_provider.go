@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DefaultServiceAccountTokenPath missing godoc
 const DefaultServiceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 // serviceAccountTokenAuthorizationProvider presents an AuthorizationProvider implementation which uses K8S Service Account tokens for the Authorization header

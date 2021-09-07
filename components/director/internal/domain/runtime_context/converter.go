@@ -7,10 +7,12 @@ import (
 
 type converter struct{}
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext {
 	if in == nil {
 		return nil
@@ -23,6 +25,7 @@ func (c *converter) ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext 
 	}
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext {
 	runtimeContexts := make([]*graphql.RuntimeContext, 0, len(in))
 	for _, r := range in {
@@ -36,6 +39,7 @@ func (c *converter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.Run
 	return runtimeContexts
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in graphql.RuntimeContextInput, runtimeID string) model.RuntimeContextInput {
 	var labels map[string]interface{}
 	if in.Labels != nil {

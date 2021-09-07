@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// Upserter missing godoc
 type Upserter interface {
 	Upsert(ctx context.Context, dbEntity interface{}) error
 }
@@ -24,6 +25,7 @@ type universalUpserter struct {
 	updateColumns      []string
 }
 
+// NewUpserter missing godoc
 func NewUpserter(resourceType resource.Type, tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) Upserter {
 	return &universalUpserter{
 		resourceType:       resourceType,
@@ -34,6 +36,7 @@ func NewUpserter(resourceType resource.Type, tableName string, insertColumns []s
 	}
 }
 
+// Upsert missing godoc
 func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")

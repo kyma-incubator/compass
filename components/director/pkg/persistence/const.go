@@ -18,5 +18,6 @@ const (
 	CheckViolation pq.ErrorCode = "23514"
 	// ConstraintViolation is the class of errors that happens when any constraint is violated
 	ConstraintViolation pq.ErrorClass = "23"
-	NoData              pq.ErrorClass = "02"
+	// NoData missing godoc
+	NoData pq.ErrorClass = "02"
 )

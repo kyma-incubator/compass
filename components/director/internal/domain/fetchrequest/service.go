@@ -26,11 +26,13 @@ type service struct {
 	timestampGen timestamp.Generator
 }
 
+// FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
+// NewService missing godoc
 func NewService(repo FetchRequestRepository, client *http.Client) *service {
 	return &service{
 		repo:         repo,
@@ -39,6 +41,7 @@ func NewService(repo FetchRequestRepository, client *http.Client) *service {
 	}
 }
 
+// HandleSpec missing godoc
 func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *string {
 	var data *string
 	data, fr.Status = s.fetchSpec(ctx, fr)
@@ -156,6 +159,7 @@ func (s *service) requestWithoutCredentials(fr *model.FetchRequest) (*http.Respo
 	return s.client.Do(req)
 }
 
+// FixStatus missing godoc
 func FixStatus(condition model.FetchRequestStatusCondition, message *string, timestamp time.Time) *model.FetchRequestStatus {
 	return &model.FetchRequestStatus{
 		Condition: condition,

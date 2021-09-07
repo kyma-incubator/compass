@@ -32,27 +32,38 @@ import (
 type contextKey string
 
 const (
-	OpCtxKey  contextKey = "OperationCtx"
+	// OpCtxKey missing godoc
+	OpCtxKey contextKey = "OperationCtx"
+	// OpModeKey missing godoc
 	OpModeKey contextKey = "OperationModeCtx"
 )
 
+// OperationStatus missing godoc
 // OperationStatus denotes the different statuses that an Operation can be in
 type OperationStatus string
 
 const (
-	OperationStatusSucceeded  OperationStatus = "SUCCEEDED"
-	OperationStatusFailed     OperationStatus = "FAILED"
+	// OperationStatusSucceeded missing godoc
+	OperationStatusSucceeded OperationStatus = "SUCCEEDED"
+	// OperationStatusFailed missing godoc
+	OperationStatusFailed OperationStatus = "FAILED"
+	// OperationStatusInProgress missing godoc
 	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
 )
 
+// OperationType missing godoc
 type OperationType string
 
 const (
+	// OperationTypeCreate missing godoc
 	OperationTypeCreate OperationType = "Create"
+	// OperationTypeUpdate missing godoc
 	OperationTypeUpdate OperationType = "Update"
+	// OperationTypeDelete missing godoc
 	OperationTypeDelete OperationType = "Delete"
 )
 
+// OperationResponse missing godoc
 // OperationResponse defines the expected response format for the Operations API
 type OperationResponse struct {
 	*Operation
@@ -60,6 +71,7 @@ type OperationResponse struct {
 	Error  *string         `json:"error,omitempty"`
 }
 
+// Operation missing godoc
 // Operation represents a GraphQL mutation which has associated HTTP requests (Webhooks) that need to be executed
 // for the request to be completed fully. Objects of type Operation are meant to be constructed, enriched throughout
 // the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through

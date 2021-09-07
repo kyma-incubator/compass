@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// Collector missing godoc
 type Collector struct {
 	graphQLRequestTotal    *prometheus.CounterVec
 	graphQLRequestDuration *prometheus.HistogramVec
@@ -14,6 +15,7 @@ type Collector struct {
 	hydraRequestDuration   *prometheus.HistogramVec
 }
 
+// NewCollector missing godoc
 func NewCollector() *Collector {
 	return &Collector{
 		graphQLRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -43,6 +45,7 @@ func NewCollector() *Collector {
 	}
 }
 
+// Describe missing godoc
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.graphQLRequestTotal.Describe(ch)
 	c.graphQLRequestDuration.Describe(ch)
@@ -50,6 +53,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.hydraRequestDuration.Describe(ch)
 }
 
+// Collect missing godoc
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.graphQLRequestTotal.Collect(ch)
 	c.graphQLRequestDuration.Collect(ch)
@@ -57,12 +61,14 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.hydraRequestDuration.Collect(ch)
 }
 
+// GraphQLHandlerWithInstrumentation missing godoc
 func (c *Collector) GraphQLHandlerWithInstrumentation(handler http.Handler) http.HandlerFunc {
 	return promhttp.InstrumentHandlerCounter(c.graphQLRequestTotal,
 		promhttp.InstrumentHandlerDuration(c.graphQLRequestDuration, handler),
 	)
 }
 
+// InstrumentOAuth20HTTPClient missing godoc
 func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 	client.Transport = promhttp.InstrumentRoundTripperCounter(c.hydraRequestTotal,
 		promhttp.InstrumentRoundTripperDuration(c.hydraRequestDuration, client.Transport),

@@ -35,6 +35,7 @@ var (
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
 )
 
+// EventAPIDefinitionConverter missing godoc
 //go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) model.EventDefinition
@@ -52,6 +53,7 @@ type pgRepository struct {
 	conv         EventAPIDefinitionConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter: repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
@@ -65,12 +67,15 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	}
 }
 
+// EventAPIDefCollection missing godoc
 type EventAPIDefCollection []Entity
 
+// Len missing godoc
 func (r EventAPIDefCollection) Len() int {
 	return len(r)
 }
 
+// GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
 	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
@@ -82,11 +87,13 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &eventAPIDefModel, nil
 }
 
+// GetForBundle missing godoc
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct Event will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
 }
 
+// ListByBundleIDs missing godoc
 func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	eventDefIDs := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
@@ -136,6 +143,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return eventDefPages, nil
 }
 
+// ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
 	eventCollection := EventAPIDefCollection{}
 	if err := r.lister.List(ctx, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
@@ -149,6 +157,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return events, nil
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -165,6 +174,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) 
 	return nil
 }
 
+// CreateMany missing godoc
 func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(*item)
@@ -177,6 +187,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventDefin
 	return nil
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -187,14 +198,17 @@ func (r *pgRepository) Update(ctx context.Context, item *model.EventDefinition) 
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
+// Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
+// DeleteAllByBundleID missing godoc
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
 	subqueryConditions := repo.Conditions{
 		repo.NewEqualCondition(bundleColumn, bundleID),

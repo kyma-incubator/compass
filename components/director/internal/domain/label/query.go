@@ -13,12 +13,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// SetCombination missing godoc
 // SetCombination type defines possible result set combination for querying
 type SetCombination string
 
 const (
-	IntersectSet           SetCombination = "INTERSECT"
-	ExceptSet              SetCombination = "EXCEPT"
+	// IntersectSet missing godoc
+	IntersectSet SetCombination = "INTERSECT"
+	// ExceptSet missing godoc
+	ExceptSet SetCombination = "EXCEPT"
+	// UnionSet missing godoc
 	UnionSet               SetCombination = "UNION"
 	scenariosLabelKey      string         = "SCENARIOS"
 	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND`

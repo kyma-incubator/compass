@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// Application missing godoc
 type Application struct {
 	ProviderName          *string
 	Tenant                string
@@ -26,10 +27,12 @@ type Application struct {
 	*BaseEntity
 }
 
+// GetType missing godoc
 func (*Application) GetType() resource.Type {
 	return resource.Application
 }
 
+// SetFromUpdateInput missing godoc
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {
 	if app.Status == nil {
 		app.Status = &ApplicationStatus{}
@@ -59,35 +62,52 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 }
 
+// ApplicationStatus missing godoc
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition
 	Timestamp time.Time
 }
 
+// ApplicationStatusCondition missing godoc
 type ApplicationStatusCondition string
 
 const (
-	ApplicationStatusConditionInitial         ApplicationStatusCondition = "INITIAL"
-	ApplicationStatusConditionManaged         ApplicationStatusCondition = "MANAGED"
-	ApplicationStatusConditionConnected       ApplicationStatusCondition = "CONNECTED"
-	ApplicationStatusConditionFailed          ApplicationStatusCondition = "FAILED"
-	ApplicationStatusConditionCreating        ApplicationStatusCondition = "CREATING"
-	ApplicationStatusConditionCreateFailed    ApplicationStatusCondition = "CREATE_FAILED"
+	// ApplicationStatusConditionInitial missing godoc
+	ApplicationStatusConditionInitial ApplicationStatusCondition = "INITIAL"
+	// ApplicationStatusConditionManaged missing godoc
+	ApplicationStatusConditionManaged ApplicationStatusCondition = "MANAGED"
+	// ApplicationStatusConditionConnected missing godoc
+	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
+	// ApplicationStatusConditionFailed missing godoc
+	ApplicationStatusConditionFailed ApplicationStatusCondition = "FAILED"
+	// ApplicationStatusConditionCreating missing godoc
+	ApplicationStatusConditionCreating ApplicationStatusCondition = "CREATING"
+	// ApplicationStatusConditionCreateFailed missing godoc
+	ApplicationStatusConditionCreateFailed ApplicationStatusCondition = "CREATE_FAILED"
+	// ApplicationStatusConditionCreateSucceeded missing godoc
 	ApplicationStatusConditionCreateSucceeded ApplicationStatusCondition = "CREATE_SUCCEEDED"
-	ApplicationStatusConditionUpdating        ApplicationStatusCondition = "UPDATING"
-	ApplicationStatusConditionUpdateFailed    ApplicationStatusCondition = "UPDATE_FAILED"
+	// ApplicationStatusConditionUpdating missing godoc
+	ApplicationStatusConditionUpdating ApplicationStatusCondition = "UPDATING"
+	// ApplicationStatusConditionUpdateFailed missing godoc
+	ApplicationStatusConditionUpdateFailed ApplicationStatusCondition = "UPDATE_FAILED"
+	// ApplicationStatusConditionUpdateSucceeded missing godoc
 	ApplicationStatusConditionUpdateSucceeded ApplicationStatusCondition = "UPDATE_SUCCEEDED"
-	ApplicationStatusConditionDeleting        ApplicationStatusCondition = "DELETING"
-	ApplicationStatusConditionDeleteFailed    ApplicationStatusCondition = "DELETE_FAILED"
+	// ApplicationStatusConditionDeleting missing godoc
+	ApplicationStatusConditionDeleting ApplicationStatusCondition = "DELETING"
+	// ApplicationStatusConditionDeleteFailed missing godoc
+	ApplicationStatusConditionDeleteFailed ApplicationStatusCondition = "DELETE_FAILED"
+	// ApplicationStatusConditionDeleteSucceeded missing godoc
 	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
 )
 
+// ApplicationPage missing godoc
 type ApplicationPage struct {
 	Data       []*Application
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// ApplicationRegisterInput missing godoc
 type ApplicationRegisterInput struct {
 	Name                string
 	ProviderName        *string
@@ -104,11 +124,13 @@ type ApplicationRegisterInput struct {
 	CorrelationIDs      json.RawMessage
 }
 
+// ApplicationRegisterInputWithTemplate missing godoc
 type ApplicationRegisterInputWithTemplate struct {
 	ApplicationRegisterInput
 	TemplateID string
 }
 
+// ToApplication missing godoc
 func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant string) *Application {
 	if i == nil {
 		return nil
@@ -145,6 +167,7 @@ func getApplicationStatusConditionOrDefault(in *ApplicationStatusCondition) Appl
 	return statusCondition
 }
 
+// ApplicationUpdateInput missing godoc
 type ApplicationUpdateInput struct {
 	ProviderName        *string
 	Description         *string

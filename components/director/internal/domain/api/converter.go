@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// VersionConverter missing godoc
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -23,6 +24,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
+// SpecConverter missing godoc
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
@@ -34,10 +36,12 @@ type converter struct {
 	specConverter SpecConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(version VersionConverter, specConverter SpecConverter) *converter {
 	return &converter{version: version, specConverter: specConverter}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error) {
 	if in == nil {
 		return nil, nil
@@ -72,6 +76,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
 	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
@@ -94,6 +99,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 	return apis, nil
 }
 
+// MultipleInputFromGraphQL missing godoc
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error) {
 	apiDefs := make([]*model.APIDefinitionInput, 0, len(in))
 	specs := make([]*model.SpecInput, 0, len(in))
@@ -111,6 +117,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) (
 	return apiDefs, specs, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error) {
 	if in == nil {
 		return nil, nil, nil
@@ -130,6 +137,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}, spec, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 	return model.APIDefinition{
 		ApplicationID:                           entity.ApplicationID,
@@ -174,6 +182,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 	return &Entity{
 		TenantID:                                apiModel.Tenant,
@@ -235,6 +244,7 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 	return &t
 }
 
+// ExtractTargetURLFromJSONArray missing godoc
 func ExtractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
 	strTargetURL := string(jsonTargetURL)
 	strTargetURL = strings.TrimPrefix(strTargetURL, `["`)
@@ -243,6 +253,7 @@ func ExtractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
 	return strTargetURL
 }
 
+// ConvertTargetURLToJSONArray missing godoc
 func ConvertTargetURLToJSONArray(targetURL string) json.RawMessage {
 	if targetURL == "" {
 		return nil

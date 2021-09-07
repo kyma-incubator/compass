@@ -43,6 +43,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TokenData missing godoc
 // TokenData represents the authentication token
 //go:generate mockery --name=TokenData --output=automock --outpkg=automock --case=underscore
 type TokenData interface {
@@ -50,6 +51,7 @@ type TokenData interface {
 	Claims(v interface{}) error
 }
 
+// TokenVerifier missing godoc
 // TokenVerifier attempts to verify a token and returns it or an error if the verification was not successful
 //go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore
 type TokenVerifier interface {
@@ -57,9 +59,11 @@ type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (TokenData, error)
 }
 
+// TokenVerifierProvider missing godoc
 // TokenVerifierProvider defines different ways by which one can provide a TokenVerifier
 type TokenVerifierProvider func(ctx context.Context, metadata OpenIDMetadata) TokenVerifier
 
+// Handler missing godoc
 // Handler is the base struct definition of the AuthenticationMappingHandler
 type Handler struct {
 	reqDataParser         tenantmapping.ReqDataParser
@@ -70,6 +74,7 @@ type Handler struct {
 	authenticators        []authenticator.Config
 }
 
+// OpenIDMetadata missing godoc
 // OpenIDMetadata contains basic metadata for OIDC provider needed during request authentication
 type OpenIDMetadata struct {
 	Issuer  string `json:"issuer"`
@@ -108,6 +113,7 @@ func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Clie
 	}
 }
 
+// ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)

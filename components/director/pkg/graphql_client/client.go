@@ -9,6 +9,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
+// NewGraphQLClient missing godoc
 func NewGraphQLClient(url string, timeout time.Duration) *gcli.Client {
 	return gcli.NewClient(url, gcli.WithHTTPClient(newAuthorizedHTTPClient(timeout)))
 }

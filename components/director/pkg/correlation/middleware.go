@@ -27,12 +27,16 @@ import (
 
 type contextKey string
 
+// HeadersContextKey missing godoc
 const HeadersContextKey contextKey = "CorrelationHeaders"
+
+// RequestIDHeaderKey missing godoc
 const RequestIDHeaderKey = "x-request-id"
 
 // headerKeys are the expected headers that are used for distributed tracing.
 var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
 
+// Headers missing godoc
 type Headers map[string]string
 
 // CorrelationIDForRequest returns the correlation ID for the current request

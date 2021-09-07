@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -21,12 +22,14 @@ type converter struct {
 	authConverter AuthConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{
 		authConverter: authConverter,
 	}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error) {
 	if in == nil {
 		return nil, nil
@@ -48,6 +51,7 @@ func (c *converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInst
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error) {
 	bundleInstanceAuths := make([]*graphql.BundleInstanceAuth, 0, len(in))
 	for _, r := range in {
@@ -64,6 +68,7 @@ func (c *converter) MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphq
 	return bundleInstanceAuths, nil
 }
 
+// RequestInputFromGraphQL missing godoc
 func (c *converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput {
 	return model.BundleInstanceAuthRequestInput{
 		ID:          in.ID,
@@ -72,6 +77,7 @@ func (c *converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequest
 	}
 }
 
+// SetInputFromGraphQL missing godoc
 func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error) {
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
 	if err != nil {
@@ -93,6 +99,7 @@ func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (
 	return out, nil
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	out := Entity{
 		ID:               in.ID,
@@ -119,6 +126,7 @@ func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	return out, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.BundleInstanceAuth, error) {
 	auth, err := c.authPtrFromNullString(in.AuthValue)
 	if err != nil {
