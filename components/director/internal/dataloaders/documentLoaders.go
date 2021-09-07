@@ -13,7 +13,7 @@ import (
 const loadersKeyDocument contextKey = "dataloadersDocument"
 
 type DocumentLoaders struct {
-	DocumentById DocumentLoader
+	DocumentByID DocumentLoader
 }
 
 type ParamDocument struct {
@@ -27,7 +27,7 @@ func HandlerDocument(fetchFunc func(keys []ParamDocument) ([]*graphql.DocumentPa
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyDocument, &DocumentLoaders{
-				DocumentById: DocumentLoader{
+				DocumentByID: DocumentLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

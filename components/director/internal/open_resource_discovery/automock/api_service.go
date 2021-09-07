@@ -14,20 +14,20 @@ type APIService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, appId, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash
-func (_m *APIService) Create(ctx context.Context, appId string, bundleID *string, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64) (string, error) {
-	ret := _m.Called(ctx, appId, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash)
+// Create provides a mock function with given fields: ctx, appID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash
+func (_m *APIService) Create(ctx context.Context, appID string, bundleID *string, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64) (string, error) {
+	ret := _m.Called(ctx, appID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string, *string, *string, model.APIDefinitionInput, []*model.SpecInput, map[string]string, uint64) string); ok {
-		r0 = rf(ctx, appId, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash)
+		r0 = rf(ctx, appID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *string, *string, model.APIDefinitionInput, []*model.SpecInput, map[string]string, uint64) error); ok {
-		r1 = rf(ctx, appId, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash)
+		r1 = rf(ctx, appID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash)
 	} else {
 		r1 = ret.Error(1)
 	}

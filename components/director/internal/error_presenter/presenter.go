@@ -1,4 +1,4 @@
-package error_presenter
+package errorpresenter
 
 import (
 	"context"

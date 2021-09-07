@@ -20,7 +20,7 @@ type Entity struct {
 	BaseURL               sql.NullString `db:"base_url"`
 	SystemNumber          sql.NullString `db:"system_number"`
 	Labels                sql.NullString `db:"labels"`
-	CorrelationIds        sql.NullString `db:"correlation_ids"`
+	CorrelationIDs        sql.NullString `db:"correlation_ids"`
 	*repo.BaseEntity
 }
 

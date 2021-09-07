@@ -13,7 +13,7 @@ import (
 const loadersKeyFetchRequestEventDef contextKey = "dataloadersFetchRequestEventDef"
 
 type LoadersFetchRequestEventDef struct {
-	FetchRequestEventDefById FetchRequestEventDefLoader
+	FetchRequestEventDefByID FetchRequestEventDefLoader
 }
 
 type ParamFetchRequestEventDef struct {
@@ -25,7 +25,7 @@ func HandlerFetchRequestEventDef(fetchFunc func(keys []ParamFetchRequestEventDef
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestEventDef, &LoadersFetchRequestEventDef{
-				FetchRequestEventDefById: FetchRequestEventDefLoader{
+				FetchRequestEventDefByID: FetchRequestEventDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

@@ -46,7 +46,7 @@ type timeoutLoggingHandler struct {
 }
 
 func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationId(r))
+	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationID(r))
 	r = r.WithContext(ctx)
 
 	timoutRW := &timoutLoggingResponseWriter{

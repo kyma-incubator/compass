@@ -13,7 +13,7 @@ import (
 const loadersKeyFetchRequestDocument contextKey = "dataloadersFetchRequestDocument"
 
 type LoadersFetchRequestDocument struct {
-	FetchRequestDocumentById FetchRequestDocumentLoader
+	FetchRequestDocumentByID FetchRequestDocumentLoader
 }
 
 type ParamFetchRequestDocument struct {
@@ -25,7 +25,7 @@ func HandlerFetchRequestDocument(fetchFunc func(keys []ParamFetchRequestDocument
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestDocument, &LoadersFetchRequestDocument{
-				FetchRequestDocumentById: FetchRequestDocumentLoader{
+				FetchRequestDocumentByID: FetchRequestDocumentLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

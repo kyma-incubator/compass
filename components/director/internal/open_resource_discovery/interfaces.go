@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 import (
 	"context"
@@ -31,7 +31,7 @@ type BundleReferenceService interface {
 
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64) (string, error)
+	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64) (string, error)
 	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)

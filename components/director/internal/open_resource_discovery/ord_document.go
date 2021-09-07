@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 import (
 	"encoding/json"

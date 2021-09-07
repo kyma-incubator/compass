@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 type AccessStrategy struct {
 	Type              AccessStrategyType `json:"type"`

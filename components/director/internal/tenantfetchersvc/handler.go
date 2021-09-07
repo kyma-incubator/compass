@@ -42,8 +42,8 @@ type HandlerConfig struct {
 }
 
 type TenantProviderConfig struct {
-	TenantIdProperty   string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
-	CustomerIdProperty string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
+	TenantIDProperty   string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
+	CustomerIDProperty string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
 	SubdomainProperty  string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
 	TenantProvider     string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 }
@@ -100,10 +100,10 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	if tenantID := gjson.GetBytes(body, h.config.TenantIdProperty).String(); len(tenantID) > 0 {
+	if tenantID := gjson.GetBytes(body, h.config.TenantIDProperty).String(); len(tenantID) > 0 {
 		log.C(ctx).Infof("Received delete request for tenant with external tenant ID %s, returning 200 OK", tenantID)
 	} else {
-		log.C(ctx).Infof("External tenant ID property %q is missing from delete request body", h.config.TenantIdProperty)
+		log.C(ctx).Infof("External tenant ID property %q is missing from delete request body", h.config.TenantIDProperty)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -111,18 +111,18 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Reque
 
 func (h *handler) tenantInfoFromBody(body []byte) (*model.BusinessTenantMappingInput, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIdProperty:   true,
+		h.config.TenantIDProperty:   true,
 		h.config.SubdomainProperty:  true,
-		h.config.CustomerIdProperty: false,
+		h.config.CustomerIDProperty: false,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &model.BusinessTenantMappingInput{
-		Name:           properties[h.config.TenantIdProperty],
-		ExternalTenant: properties[h.config.TenantIdProperty],
-		Parent:         properties[h.config.CustomerIdProperty],
+		Name:           properties[h.config.TenantIDProperty],
+		ExternalTenant: properties[h.config.TenantIDProperty],
+		Parent:         properties[h.config.CustomerIDProperty],
 		Subdomain:      properties[h.config.SubdomainProperty],
 		Type:           tenantEntity.TypeToStr(tenantEntity.Account),
 		Provider:       h.config.TenantProvider,

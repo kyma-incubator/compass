@@ -1,4 +1,4 @@
-package graphql_client
+package graphqlclient
 
 import (
 	"crypto/tls"

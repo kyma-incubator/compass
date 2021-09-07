@@ -1,4 +1,4 @@
-package open_resource_discovery_test
+package ord_test
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
@@ -53,7 +53,7 @@ const (
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
-	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
+	correlationIDs            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
 )
 
@@ -159,11 +159,11 @@ var (
 		packageORDID: fixPackagesWithHash()[0],
 	}
 
-	hashApi1, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
-	hashApi2, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[1])
-	hashEvent1, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[0])
-	hashEvent2, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[1])
-	hashPackage, _ = open_resource_discovery.HashObject(fixORDDocument().Packages[0])
+	hashApi1, _    = ord.HashObject(fixORDDocument().APIResources[0])
+	hashApi2, _    = ord.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _  = ord.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _  = ord.HashObject(fixORDDocument().EventResources[1])
+	hashPackage, _ = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
 )
@@ -178,17 +178,17 @@ func fixResourceHashes() map[string]uint64 {
 	}
 }
 
-func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
-	return &open_resource_discovery.WellKnownConfig{
+func fixWellKnownConfig() *ord.WellKnownConfig {
+	return &ord.WellKnownConfig{
 		Schema: "../spec/v1/generated/Configuration.schema.json",
-		OpenResourceDiscoveryV1: open_resource_discovery.OpenResourceDiscoveryV1{
-			Documents: []open_resource_discovery.DocumentDetails{
+		OpenResourceDiscoveryV1: ord.OpenResourceDiscoveryV1{
+			Documents: []ord.DocumentDetails{
 				{
 					URL:                 ordDocURI,
 					SystemInstanceAware: true,
-					AccessStrategies: []open_resource_discovery.AccessStrategy{
+					AccessStrategies: []ord.AccessStrategy{
 						{
-							Type: open_resource_discovery.OpenAccessStrategy,
+							Type: ord.OpenAccessStrategy,
 						},
 					},
 				},
@@ -197,11 +197,11 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	}
 }
 
-func fixORDDocument() *open_resource_discovery.Document {
+func fixORDDocument() *ord.Document {
 	return fixORDDocumentWithBaseURL("")
 }
 
-func fixSanitizedORDDocument() *open_resource_discovery.Document {
+func fixSanitizedORDDocument() *ord.Document {
 	sanitizedDoc := fixORDDocumentWithBaseURL(baseURL)
 
 	sanitizedDoc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
@@ -231,8 +231,8 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 	return sanitizedDoc
 }
 
-func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
-	return &open_resource_discovery.Document{
+func fixORDDocumentWithBaseURL(baseUrl string) *ord.Document {
+	return &ord.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
@@ -278,7 +278,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription: "lorem ipsum",
 				Vendor:           vendorORDID,
 				Parent:           str.Ptr(product2ORDID),
-				CorrelationIds:   json.RawMessage(correlationIds),
+				CorrelationIDs:   json.RawMessage(correlationIDs),
 				Labels:           json.RawMessage(labels),
 			},
 		},
@@ -585,7 +585,7 @@ func fixProducts() []*model.Product {
 			ShortDescription: "lorem ipsum",
 			Vendor:           vendorORDID,
 			Parent:           str.Ptr(product2ORDID),
-			CorrelationIds:   json.RawMessage(`["foo.bar.baz:123456"]`),
+			CorrelationIDs:   json.RawMessage(`["foo.bar.baz:123456"]`),
 			Labels:           json.RawMessage(labels),
 		},
 	}

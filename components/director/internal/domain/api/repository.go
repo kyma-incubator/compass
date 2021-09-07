@@ -69,15 +69,15 @@ func (r APIDefCollection) Len() int {
 }
 
 func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
-	apiDefIds := make([]string, 0, len(bundleRefs))
+	apiDefIDs := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
-		apiDefIds = append(apiDefIds, *ref.ObjectID)
+		apiDefIDs = append(apiDefIDs, *ref.ObjectID)
 	}
 
 	var conditions repo.Conditions
-	if len(apiDefIds) > 0 {
+	if len(apiDefIDs) > 0 {
 		conditions = repo.Conditions{
-			repo.NewInConditionForStringValues("id", apiDefIds),
+			repo.NewInConditionForStringValues("id", apiDefIDs),
 		}
 	}
 
@@ -87,7 +87,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 		return nil, err
 	}
 
-	refsByBundleId, apiDefsByApiDefId := r.groupEntitiesByID(bundleRefs, apiDefCollection)
+	refsByBundleID, apiDefsByApiDefID := r.groupEntitiesByID(bundleRefs, apiDefCollection)
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
@@ -96,8 +96,8 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 
 	apiDefPages := make([]*model.APIDefinitionPage, 0, len(bundleIDs))
 	for _, bundleID := range bundleIDs {
-		ids := getApiDefIDsForBundle(refsByBundleId[bundleID])
-		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefId)
+		ids := getApiDefIDsForBundle(refsByBundleID[bundleID])
+		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefID)
 
 		hasNextPage := false
 		endCursor := ""
@@ -229,16 +229,16 @@ func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*
 }
 
 func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, apiDefCollection APIDefCollection) (map[string][]*model.BundleReference, map[string]*model.APIDefinition) {
-	refsByBundleId := map[string][]*model.BundleReference{}
+	refsByBundleID := map[string][]*model.BundleReference{}
 	for _, ref := range bundleRefs {
-		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
-	apiDefsByApiDefId := map[string]*model.APIDefinition{}
+	apiDefsByApiDefID := map[string]*model.APIDefinition{}
 	for _, apiDefEnt := range apiDefCollection {
 		m := r.conv.FromEntity(apiDefEnt)
-		apiDefsByApiDefId[apiDefEnt.ID] = &m
+		apiDefsByApiDefID[apiDefEnt.ID] = &m
 	}
 
-	return refsByBundleId, apiDefsByApiDefId
+	return refsByBundleID, apiDefsByApiDefID
 }

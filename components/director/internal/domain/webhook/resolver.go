@@ -80,7 +80,7 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	appTemplateSpecified := applicationID == nil && applicationTemplateID != nil
 
 	if !(appSpecified || appTemplateSpecified) {
-		return nil, apperrors.NewInvalidDataError("exactly one of applicationId and applicationTemplateID should be specified")
+		return nil, apperrors.NewInvalidDataError("exactly one of applicationID and applicationTemplateID should be specified")
 	}
 
 	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)

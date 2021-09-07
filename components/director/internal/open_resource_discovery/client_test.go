@@ -1,4 +1,4 @@
-package open_resource_discovery_test
+package ord_test
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +31,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 	testCases := []struct {
 		Name           string
 		RoundTripFunc  func(req *http.Request) *http.Response
-		ExpectedResult open_resource_discovery.Documents
+		ExpectedResult ord.Documents
 		ExpectedErr    error
 	}{
 		{
@@ -40,7 +40,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				var data []byte
 				var err error
 				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
+				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					data, err = json.Marshal(fixWellKnownConfig())
 					require.NoError(t, err)
 				} else if strings.Contains(req.URL.String(), ordDocURI) {
@@ -54,7 +54,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedResult: open_resource_discovery.Documents{
+			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
 		},
@@ -63,7 +63,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
+				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					statusCode = http.StatusInternalServerError
 				}
 				return &http.Response{
@@ -78,7 +78,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
+				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					statusCode = http.StatusOK
 					data = []byte("test")
 				}
@@ -95,7 +95,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				var data []byte
 				var err error
 				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
+				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					config := fixWellKnownConfig()
 					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = "custom"
 					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "test"
@@ -111,7 +111,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedResult: open_resource_discovery.Documents{},
+			ExpectedResult: ord.Documents{},
 		},
 		{
 			Name: "Error fetching document",
@@ -119,7 +119,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				var data []byte
 				var err error
 				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
+				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					data, err = json.Marshal(fixWellKnownConfig())
 					require.NoError(t, err)
 				} else if strings.Contains(req.URL.String(), ordDocURI) {
@@ -132,7 +132,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedResult: open_resource_discovery.Documents{},
+			ExpectedResult: ord.Documents{},
 			ExpectedErr:    errors.Errorf("error while fetching open resource discovery document %q: status code %d", baseURL+ordDocURI, 500),
 		},
 		{
@@ -141,7 +141,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				var data []byte
 				var err error
 				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), open_resource_discovery.WellKnownEndpoint) {
+				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					data, err = json.Marshal(fixWellKnownConfig())
 					require.NoError(t, err)
 				} else if strings.Contains(req.URL.String(), ordDocURI) {
@@ -154,7 +154,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedResult: open_resource_discovery.Documents{},
+			ExpectedResult: ord.Documents{},
 			ExpectedErr:    errors.New("error unmarshaling document"),
 		},
 	}
@@ -163,7 +163,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHttpClient := NewTestClient(test.RoundTripFunc)
 
-			client := open_resource_discovery.NewClient(testHttpClient)
+			client := ord.NewClient(testHttpClient)
 			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), baseURL)
 
 			if test.ExpectedErr != nil {

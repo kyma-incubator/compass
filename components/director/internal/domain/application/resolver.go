@@ -553,7 +553,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 
 func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
 	param := dataloader.ParamBundle{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.BundleFor(ctx).BundleById.Load(param)
+	return dataloader.BundleFor(ctx).BundleByID.Load(param)
 }
 
 func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.BundlePage, []error) {

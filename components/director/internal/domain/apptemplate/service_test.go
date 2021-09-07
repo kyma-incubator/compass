@@ -61,7 +61,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, []*model.Webhook(nil)).Return(nil).Once()
+				webhookRepo.On("CreateMany", ctx, []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
 			ExpectedOutput: testID,

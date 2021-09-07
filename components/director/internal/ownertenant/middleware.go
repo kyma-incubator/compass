@@ -18,7 +18,7 @@ const MutationObject = "Mutation"
 
 //go:generate mockery --name=TenantIndexRepository --output=automock --outpkg=automock --case=underscore
 type TenantIndexRepository interface {
-	GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceId string) (string, error)
+	GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceID string) (string, error)
 }
 
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore

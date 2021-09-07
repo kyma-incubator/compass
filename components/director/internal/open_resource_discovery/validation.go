@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 import (
 	"encoding/json"
@@ -133,7 +133,7 @@ var descriptionRules = []validation.Rule{
 
 func ValidateSystemInstanceInput(app *model.Application) error {
 	return validation.ValidateStruct(app,
-		validation.Field(&app.CorrelationIds, validation.By(func(value interface{}) error {
+		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
@@ -354,7 +354,7 @@ func validateProductInput(product *model.ProductInput) error {
 			validation.When(regexp.MustCompile(`^(sap)((\.)([a-zA-Z0-9._\-])+)*$`).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
 		),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
-		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
+		validation.Field(&product.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),

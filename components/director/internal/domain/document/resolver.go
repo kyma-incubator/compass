@@ -142,7 +142,7 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
 	params := dataloader.ParamFetchRequestDocument{ID: obj.ID, Ctx: ctx}
-	return dataloader.ForFetchRequestDocument(ctx).FetchRequestDocumentById.Load(params)
+	return dataloader.ForFetchRequestDocument(ctx).FetchRequestDocumentByID.Load(params)
 }
 
 func (r *Resolver) FetchRequestDocumentDataLoader(keys []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {

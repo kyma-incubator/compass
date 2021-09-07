@@ -30,7 +30,7 @@ func RequestLogger() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			entry := LoggerWithCorrelationId(r)
+			entry := LoggerWithCorrelationID(r)
 
 			ctx = ContextWithLogger(ctx, entry)
 			r = r.WithContext(ctx)
@@ -65,7 +65,7 @@ func RequestLogger() func(next http.Handler) http.Handler {
 	}
 }
 
-func LoggerWithCorrelationId(r *http.Request) *logrus.Entry {
+func LoggerWithCorrelationID(r *http.Request) *logrus.Entry {
 	ctx := r.Context()
 	entry := C(ctx)
 	if correlationID := correlation.CorrelationIDForRequest(r); correlationID != "" {

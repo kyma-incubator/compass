@@ -107,7 +107,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx c
 			// TODO: Remove once the whole tenant hierarchy is stored in tenant_mappings table
 			return NewTenantContext(externalTenantID, externalTenantID), scopes, nil
 		}
-		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
+		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
 	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
@@ -159,7 +159,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 			log.C(ctx).Info("Returning tenant context with empty internal tenant ID...")
 			return NewTenantContext(externalTenantID, ""), scopes, nil
 		}
-		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
+		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
 	if tenantMapping.ID != *sysAuth.TenantID {

@@ -13,7 +13,7 @@ import (
 const loadersKeyFetchRequestApiDef contextKey = "dataloadersFetchRequestApiDef"
 
 type LoadersFetchRequestApiDef struct {
-	FetchRequestApiDefById FetchRequestApiDefLoader
+	FetchRequestApiDefByID FetchRequestApiDefLoader
 }
 
 type ParamFetchRequestApiDef struct {
@@ -25,7 +25,7 @@ func HandlerFetchRequestApiDef(fetchFunc func(keys []ParamFetchRequestApiDef) ([
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestApiDef, &LoadersFetchRequestApiDef{
-				FetchRequestApiDefById: FetchRequestApiDefLoader{
+				FetchRequestApiDefByID: FetchRequestApiDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

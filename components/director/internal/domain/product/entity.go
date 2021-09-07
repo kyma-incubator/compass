@@ -13,6 +13,6 @@ type Entity struct {
 	ShortDescription string         `db:"short_description"`
 	Vendor           string         `db:"vendor"`
 	Parent           sql.NullString `db:"parent"`
-	CorrelationIds   sql.NullString `db:"correlation_ids"`
+	CorrelationIDs   sql.NullString `db:"correlation_ids"`
 	Labels           sql.NullString `db:"labels"`
 }

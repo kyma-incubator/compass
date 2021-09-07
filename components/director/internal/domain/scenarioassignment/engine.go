@@ -222,15 +222,14 @@ func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []
 func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
 	if len(scenarios) == 0 {
 		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
-	} else {
-		labelInput := model.LabelInput{
-			Key:        label.Key,
-			Value:      scenarios,
-			ObjectID:   label.ObjectID,
-			ObjectType: label.ObjectType,
-		}
-		return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
 	}
+	labelInput := model.LabelInput{
+		Key:        label.Key,
+		Value:      scenarios,
+		ObjectID:   label.ObjectID,
+		ObjectType: label.ObjectType,
+	}
+	return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
 }
 
 func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {

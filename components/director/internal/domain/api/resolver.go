@@ -268,7 +268,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
 	params := dataloader.ParamFetchRequestApiDef{ID: obj.ID, Ctx: ctx}
-	return dataloader.ForFetchRequestApiDef(ctx).FetchRequestApiDefById.Load(params)
+	return dataloader.ForFetchRequestApiDef(ctx).FetchRequestApiDefByID.Load(params)
 }
 
 func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {

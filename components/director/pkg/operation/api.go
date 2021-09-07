@@ -70,11 +70,11 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	routeVariables := mux.Vars(request)
-	resourceId := routeVariables[ResourceIDParam]
+	resourceID := routeVariables[ResourceIDParam]
 	resourceType := routeVariables[ResourceTypeParam]
 
 	op := &Operation{
-		ResourceID:   resourceId,
+		ResourceID:   resourceID,
 		ResourceType: resource.Type(resourceType),
 	}
 

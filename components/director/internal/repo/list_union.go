@@ -123,7 +123,7 @@ func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []
 }
 
 type idToCount struct {
-	Id    string `db:"id"`
+	ID    string `db:"id"`
 	Count int    `db:"total_count"`
 }
 
@@ -141,7 +141,7 @@ func (l *unionLister) getTotalCount(ctx context.Context, persist persistence.Per
 
 	totalCount := make(map[string]int)
 	for _, c := range counts {
-		totalCount[c.Id] = c.Count
+		totalCount[c.ID] = c.Count
 	}
 
 	return totalCount, nil

@@ -385,7 +385,7 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	param := dataloader.ParamApiDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.ApiDefFor(ctx).ApiDefById.Load(param)
+	return dataloader.ApiDefFor(ctx).ApiDefByID.Load(param)
 }
 
 func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
@@ -393,9 +393,12 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
 
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
 	ctx := keys[0].Ctx
 	first := keys[0].First
-	after := keys[0].After
 
 	bundleIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -403,12 +406,8 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
 	tx, err := r.transact.Begin()
@@ -441,9 +440,9 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{err}
 	}
 
-	refsByBundleId := map[string][]*model.BundleReference{}
+	refsByBundleID := map[string][]*model.BundleReference{}
 	for _, ref := range references {
-		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
 	apiDefIDtoSpec := make(map[string]*model.Spec)
@@ -457,7 +456,7 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
 		for _, api := range apisPage.Data {
 			apiSpecs = append(apiSpecs, apiDefIDtoSpec[api.ID])
-			br, err := getBundleReferenceForAPI(api.ID, refsByBundleId[bundleIDs[i]])
+			br, err := getBundleReferenceForAPI(api.ID, refsByBundleID[bundleIDs[i]])
 			if err != nil {
 				return nil, []error{err}
 			}
@@ -527,7 +526,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	param := dataloader.ParamEventDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.EventDefFor(ctx).EventDefById.Load(param)
+	return dataloader.EventDefFor(ctx).EventDefByID.Load(param)
 }
 
 func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
@@ -535,9 +534,12 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
 
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
 	ctx := keys[0].Ctx
 	first := keys[0].First
-	after := keys[0].After
 
 	bundleIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -545,12 +547,8 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
 	tx, err := r.transact.Begin()
@@ -651,7 +649,7 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Bundle, id string)
 
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Bundle, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	param := dataloader.ParamDocument{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.DocumentFor(ctx).DocumentById.Load(param)
+	return dataloader.DocumentFor(ctx).DocumentByID.Load(param)
 }
 
 func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*graphql.DocumentPage, []error) {
@@ -659,9 +657,12 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
 
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
 	ctx := keys[0].Ctx
 	first := keys[0].First
-	after := keys[0].After
 
 	bundleIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -669,12 +670,8 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
 	tx, err := r.transact.Begin()

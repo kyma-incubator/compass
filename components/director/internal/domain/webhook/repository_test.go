@@ -692,14 +692,14 @@ func givenAuthAsAString(t *testing.T) string {
 
 func givenModel() model.Webhook {
 	appID := givenApplicationID()
-	appTemplateId := givenApplicationTemplateID()
+	appTemplateID := givenApplicationTemplateID()
 	webhookMode := model.WebhookModeSync
 	tenant := givenTenant()
 	return model.Webhook{
 		ID:                    givenID(),
 		TenantID:              &tenant,
 		ApplicationID:         &appID,
-		ApplicationTemplateID: &appTemplateId,
+		ApplicationTemplateID: &appTemplateID,
 		Type:                  model.WebhookTypeConfigurationChanged,
 		URL:                   stringPtr("http://kyma.io"),
 		Mode:                  &webhookMode,

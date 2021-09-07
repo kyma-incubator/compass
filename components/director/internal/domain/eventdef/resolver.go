@@ -23,7 +23,7 @@ type EventDefService interface {
 	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
-	ListFetchRequests(ctx context.Context, eventDefIds []string) ([]*model.FetchRequest, error)
+	ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore
@@ -262,7 +262,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	params := dataloader.ParamFetchRequestEventDef{ID: obj.ID, Ctx: ctx}
-	return dataloader.ForFetchRequestEventDef(ctx).FetchRequestEventDefById.Load(params)
+	return dataloader.ForFetchRequestEventDef(ctx).FetchRequestEventDefByID.Load(params)
 }
 
 func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {

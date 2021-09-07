@@ -13,7 +13,7 @@ import (
 const loadersKeyEventDef contextKey = "dataloadersEventDef"
 
 type EventDefLoaders struct {
-	EventDefById EventDefLoader
+	EventDefByID EventDefLoader
 }
 
 type ParamEventDef struct {
@@ -27,7 +27,7 @@ func HandlerEventDef(fetchFunc func(keys []ParamEventDef) ([]*graphql.EventDefin
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyEventDef, &EventDefLoaders{
-				EventDefById: EventDefLoader{
+				EventDefByID: EventDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

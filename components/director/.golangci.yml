@@ -73,7 +73,7 @@ output:
 
 linters:
   disable-all: true
-  disable:
+#  disable:
     # - ineffassign
     # - bodyclose
     # - cyclop
@@ -152,9 +152,9 @@ linters:
     - tparallel
     - unconvert
     - wastedassign
+    - revive
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
-
 
 issues:
 #  # List of regexps of issue texts to exclude, empty list by default.
@@ -183,6 +183,10 @@ issues:
     - linters:
         - gocritic
       text: "ifElseChain|appendAssign"
+
+    - linters:
+        - revive
+      text: "unexported-return|exported"
 
 #    # Exclude known linters from partially hard-vendored code,
 #    # which is impossible to exclude via "nolint" comments.

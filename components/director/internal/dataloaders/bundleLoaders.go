@@ -13,7 +13,7 @@ import (
 const loadersKeyBundle contextKey = "dataloadersBundle"
 
 type BundleLoaders struct {
-	BundleById BundleLoader
+	BundleByID BundleLoader
 }
 
 type ParamBundle struct {
@@ -27,7 +27,7 @@ func HandlerBundle(fetchFunc func(keys []ParamBundle) ([]*graphql.BundlePage, []
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyBundle, &BundleLoaders{
-				BundleById: BundleLoader{
+				BundleByID: BundleLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

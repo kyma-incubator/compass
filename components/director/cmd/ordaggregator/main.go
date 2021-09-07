@@ -26,7 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
@@ -77,7 +77,7 @@ func main() {
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 }
 
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig features.Config, transact persistence.Transactioner, httpClient *http.Client) *open_resource_discovery.Service {
+func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig features.Config, transact persistence.Transactioner, httpClient *http.Client) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -133,9 +133,9 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 
-	ordClient := open_resource_discovery.NewClient(httpClient)
+	ordClient := ord.NewClient(httpClient)
 
-	return open_resource_discovery.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
+	return ord.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

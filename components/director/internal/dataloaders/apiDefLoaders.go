@@ -15,7 +15,7 @@ type contextKey string
 const loadersKeyApiDef contextKey = "dataloadersApiDef"
 
 type ApiDefLoaders struct {
-	ApiDefById ApiDefLoader
+	ApiDefByID ApiDefLoader
 }
 
 type ParamApiDef struct {
@@ -29,7 +29,7 @@ func HandlerApiDef(fetchFunc func(keys []ParamApiDef) ([]*graphql.APIDefinitionP
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyApiDef, &ApiDefLoaders{
-				ApiDefById: ApiDefLoader{
+				ApiDefByID: ApiDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,

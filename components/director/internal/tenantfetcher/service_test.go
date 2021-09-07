@@ -109,19 +109,19 @@ func TestService_SyncTenants(t *testing.T) {
 
 	emptyEvents := eventsToJsonArray()
 
-	sourceExtAccId := "sourceExternalId"
-	targetExtAccId := "targetExternalId"
+	sourceExtAccID := "sourceExternalId"
+	targetExtAccID := "targetExternalId"
 	targetIntTenant := "targetIntTenant"
 	movedRuntimeLabelKey := "moved_runtime_key"
 	movedRuntimeLabelValue := "sample_runtime_label_value"
 
 	successfullyGettingInternalTenant := func() *automock.TenantService {
 		svc := &automock.TenantService{}
-		svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+		svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return(targetIntTenant, nil).Once()
 		return svc
 	}
 
-	movedRuntimeByLabelEvent := eventsToJsonArray(fixMovedRuntimeByLabelEvent(movedRuntimeLabelValue, sourceExtAccId, targetExtAccId, movedRuntimeFieldMapping))
+	movedRuntimeByLabelEvent := eventsToJsonArray(fixMovedRuntimeByLabelEvent(movedRuntimeLabelValue, sourceExtAccID, targetExtAccID, movedRuntimeFieldMapping))
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
 		"pageSize":  "1",
@@ -183,7 +183,7 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 
 				// moved tenants
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return(targetIntTenant, nil).Once()
 
 				return svc
 			},
@@ -347,7 +347,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return(targetIntTenant, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -898,7 +898,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return("", testErr).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return("", testErr).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {

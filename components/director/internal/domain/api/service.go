@@ -125,18 +125,18 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, appId, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appId, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
+func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
 }
 
-func (s *service) Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64) (string, error) {
+func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinition(id, appId, packageID, tnt, apiHash)
+	api := in.ToAPIDefinition(id, appID, packageID, tnt, apiHash)
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {

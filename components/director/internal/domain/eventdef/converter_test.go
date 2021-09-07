@@ -309,8 +309,8 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		{
 			Name:          "Empty",
 			Input:         []*graphql.EventDefinitionInput{},
-			Expected:      nil,
-			ExpectedSpecs: nil,
+			Expected:      []*model.EventDefinitionInput{},
+			ExpectedSpecs: []*model.SpecInput{},
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -319,7 +319,9 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name: "Nil",
+			Name:          "Nil",
+			Expected:      []*model.EventDefinitionInput{},
+			ExpectedSpecs: []*model.SpecInput{},
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},

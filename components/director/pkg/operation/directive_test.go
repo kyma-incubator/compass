@@ -50,7 +50,7 @@ const (
 )
 
 var (
-	resourceIdField             = "id"
+	resourceIDField             = "id"
 	whTypeApplicationRegister   = graphql.WebhookTypeRegisterApplication
 	whTypeApplicationUnregister = graphql.WebhookTypeUnregisterApplication
 
@@ -77,7 +77,7 @@ func TestHandleOperation(t *testing.T) {
 		directive := operation.NewDirective(nil, nil, nil, nil, nil, nil)
 
 		// WHEN
-		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
 		// THEN
 		require.Error(t, err, fmt.Sprintf("could not get %s parameter", operation.ModeParam))
 	})
@@ -101,7 +101,7 @@ func TestHandleOperation(t *testing.T) {
 		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to initialize database operation")
 		require.Empty(t, res)
@@ -432,7 +432,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
 		// THEN
 		require.Error(t, err, "Unable to prepare webhooks")
 		require.Empty(t, res)
@@ -470,7 +470,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
 		// THEN
 		require.Error(t, err, "Unable to prepare webhooks")
 		require.Empty(t, res)
@@ -783,7 +783,7 @@ func TestHandleOperation(t *testing.T) {
 					Name: operationCategory,
 				},
 			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIDField: resourceID},
 			IsMethod: false,
 		}
 
@@ -810,7 +810,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
 
 		// THEN
 		require.NoError(t, err)
@@ -859,7 +859,7 @@ func TestHandleOperation(t *testing.T) {
 					Name: operationCategory,
 				},
 			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIDField: resourceID},
 			IsMethod: false,
 		}
 
@@ -886,7 +886,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
 
 		// THEN
 		require.NoError(t, err)
@@ -932,7 +932,7 @@ func TestHandleOperation(t *testing.T) {
 					Name: operationCategory,
 				},
 			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIDField: resourceID},
 			IsMethod: false,
 		}
 
@@ -959,7 +959,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeUpdate, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeUpdate, &whTypeApplicationRegister, &resourceIDField)
 
 		// THEN
 		require.NoError(t, err)
@@ -1008,7 +1008,7 @@ func TestHandleOperation(t *testing.T) {
 					Name: operationCategory,
 				},
 			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIDField: resourceID},
 			IsMethod: false,
 		}
 
@@ -1035,7 +1035,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeDelete, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeDelete, &whTypeApplicationRegister, &resourceIDField)
 
 		// THEN
 		require.NoError(t, err)
@@ -1084,7 +1084,7 @@ func TestHandleOperation(t *testing.T) {
 					Name: operationCategory,
 				},
 			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIDField: resourceID},
 			IsMethod: false,
 		}
 
@@ -1111,7 +1111,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeDelete, &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeDelete, &whTypeApplicationRegister, &resourceIDField)
 
 		// THEN
 		require.NoError(t, err)
@@ -1157,7 +1157,7 @@ func TestHandleOperation(t *testing.T) {
 					Name: operationCategory,
 				},
 			},
-			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIdField: resourceID},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode, resourceIDField: resourceID},
 			IsMethod: false,
 		}
 
@@ -1172,7 +1172,7 @@ func TestHandleOperation(t *testing.T) {
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, "invalid", &whTypeApplicationRegister, &resourceIdField)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, "invalid", &whTypeApplicationRegister, &resourceIDField)
 
 		// THEN
 		require.Error(t, err)
@@ -1208,7 +1208,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 			},
 			validationFunc: func(t *testing.T, res interface{}, err error) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), fmt.Sprintf("could not get idField: %q from request context", resourceIdField))
+				require.Contains(t, err.Error(), fmt.Sprintf("could not get idField: %q from request context", resourceIDField))
 				require.Empty(t, res)
 			},
 		},
@@ -1355,7 +1355,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 			}, test.resourceFetcherFunc, mockedEmptyResourceUpdaterFunc, test.tenantLoaderFunc, test.scheduler)
 
 			// WHEN
-			res, err := directive.HandleOperation(ctx, nil, test.resolverFunc, graphql.OperationTypeDelete, nil, &resourceIdField)
+			res, err := directive.HandleOperation(ctx, nil, test.resolverFunc, graphql.OperationTypeDelete, nil, &resourceIDField)
 			// THEN
 			test.validationFunc(t, res, err)
 		})
@@ -1458,7 +1458,7 @@ func mockedError() error {
 func resolverContextArgs(mode graphql.OperationMode, optionalResourceID string) map[string]interface{} {
 	ctxArgs := map[string]interface{}{operation.ModeParam: &mode}
 	if optionalResourceID != "" {
-		ctxArgs[resourceIdField] = resourceID
+		ctxArgs[resourceIDField] = resourceID
 	}
 
 	return ctxArgs

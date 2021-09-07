@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 
@@ -48,14 +48,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
+	errorpresenter "github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
-	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
+	panichandler "github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
@@ -245,8 +245,8 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(panic_recovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
-	presenter := error_presenter.NewPresenter(uid.NewService())
+	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	presenter := errorpresenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
@@ -267,7 +267,7 @@ func main() {
 	gqlServ.Use(operationMiddleware)
 	gqlServ.Use(ownertenantMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
-	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
+	gqlServ.SetRecoverFunc(panichandler.RecoverFn)
 
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 

@@ -102,7 +102,7 @@ func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
-func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIds []string) ([]*model.FetchRequest, error) {
+func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
 		return nil, err
@@ -111,9 +111,9 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 	var fetchRequestCollection FetchRequestsCollection
 
 	var conditions repo.Conditions
-	if len(objectIds) > 0 {
+	if len(objectIDs) > 0 {
 		conditions = repo.Conditions{
-			repo.NewInConditionForStringValues(fieldName, objectIds),
+			repo.NewInConditionForStringValues(fieldName, objectIDs),
 		}
 	}
 	if err := r.lister.List(ctx, tenant, &fetchRequestCollection, conditions...); err != nil {
@@ -134,8 +134,8 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 		}
 	}
 
-	fetchRequests := make([]*model.FetchRequest, 0, len(objectIds))
-	for _, objectID := range objectIds {
+	fetchRequests := make([]*model.FetchRequest, 0, len(objectIDs))
+	for _, objectID := range objectIDs {
 		fetchRequests = append(fetchRequests, fetchRequestsByID[objectID])
 	}
 

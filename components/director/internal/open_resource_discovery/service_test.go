@@ -1,11 +1,11 @@
-package open_resource_discovery_test
+package ord_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -23,19 +23,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	var nilSpecInput *model.SpecInput
 	var nilBundleID *string
 
-	api1PreSanitizedHash, err := open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
+	api1PreSanitizedHash, err := ord.HashObject(fixORDDocument().APIResources[0])
 	require.NoError(t, err)
 
-	api2PreSanitizedHash, err := open_resource_discovery.HashObject(fixORDDocument().APIResources[1])
+	api2PreSanitizedHash, err := ord.HashObject(fixORDDocument().APIResources[1])
 	require.NoError(t, err)
 
-	event1PreSanitizedHash, err := open_resource_discovery.HashObject(fixORDDocument().EventResources[0])
+	event1PreSanitizedHash, err := ord.HashObject(fixORDDocument().EventResources[0])
 	require.NoError(t, err)
 
-	event2PreSanitizedHash, err := open_resource_discovery.HashObject(fixORDDocument().EventResources[1])
+	event2PreSanitizedHash, err := ord.HashObject(fixORDDocument().EventResources[1])
 	require.NoError(t, err)
 
-	packagePreSanitizedHash, err := open_resource_discovery.HashObject(fixORDDocument().Packages[0])
+	packagePreSanitizedHash, err := ord.HashObject(fixORDDocument().Packages[0])
 	require.NoError(t, err)
 
 	secondTransactionNotCommited := func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
@@ -110,17 +110,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulSAPVendorUpdate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		sapVendor := model.VendorInput{
-			OrdID: open_resource_discovery.SapVendor,
-			Title: open_resource_discovery.SapTitle,
+			OrdID: ord.SapVendor,
+			Title: ord.SapTitle,
 		}
 
 		modelVendor := []*model.Vendor{
 			{
 				ID:            vendorID,
-				OrdID:         open_resource_discovery.SapVendor,
+				OrdID:         ord.SapVendor,
 				TenantID:      tenantID,
 				ApplicationID: appID,
-				Title:         open_resource_discovery.SapTitle,
+				Title:         ord.SapTitle,
 			}}
 
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
@@ -141,16 +141,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulSAPVendorCreate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		sapVendor := model.VendorInput{
-			OrdID: open_resource_discovery.SapVendor,
-			Title: open_resource_discovery.SapTitle,
+			OrdID: ord.SapVendor,
+			Title: ord.SapTitle,
 		}
 
 		modelVendor := []*model.Vendor{
 			{
-				OrdID:         open_resource_discovery.SapVendor,
+				OrdID:         ord.SapVendor,
 				TenantID:      tenantID,
 				ApplicationID: appID,
-				Title:         open_resource_discovery.SapTitle,
+				Title:         ord.SapTitle,
 			}}
 
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -315,7 +315,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulClientFetch := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{fixORDDocument()}, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{fixORDDocument()}, nil)
 		return client
 	}
 
@@ -521,7 +521,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors[0].OrdID = "" // invalid document
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 			apiSvcFn:     successfulEmptyAPIList,
@@ -1324,7 +1324,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = packageORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1363,7 +1363,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = event1ORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1401,7 +1401,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = vendorORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1438,7 +1438,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = productORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1475,7 +1475,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = bundleORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1513,7 +1513,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1552,7 +1552,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(open_resource_discovery.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), baseURL).Return(ord.Documents{doc}, nil)
 				return client
 			},
 		},
@@ -1610,7 +1610,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			svc := open_resource_discovery.NewAggregatorService(tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, client)
+			svc := ord.NewAggregatorService(tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
