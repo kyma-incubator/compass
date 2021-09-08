@@ -75,7 +75,7 @@ global:
       version: "PR-2003"
     director:
       dir:
-      version: "PR-2003"
+      version: "PR-2010"
     gateway:
       dir:
       version: "PR-2003"
@@ -84,10 +84,10 @@ global:
       version: "PR-1996"
     ord_service:
       dir:
-      version: "PR-40"
+      version: "PR-41"
     schema_migrator:
       dir:
-      version: "PR-2004"
+      version: "PR-2010"
     system_broker:
       dir:
       version: "PR-2003"
@@ -104,7 +104,7 @@ global:
       version: "PR-41"
     e2e_tests:
       dir:
-      version: "PR-2004"
+      version: "PR-2010"
   isLocalEnv: false
   oauth2:
     host: oauth2
