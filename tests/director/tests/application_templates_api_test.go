@@ -192,12 +192,14 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 		{
 			Name:        placeholderKey,
 			Description: ptr.String("description"),
-		}}
+		},
+	}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, &appTmpl)
+	require.NoError(t, err)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: tmplName, Values: []*graphql.TemplateValueInput{
 		{
