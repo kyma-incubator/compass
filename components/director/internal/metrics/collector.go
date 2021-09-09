@@ -84,6 +84,7 @@ func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 	)
 }
 
+// InstrumentClient instruments a given client caller.
 func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 	c.clientTotal.With(prometheus.Labels{
 		"client_id": clientID,

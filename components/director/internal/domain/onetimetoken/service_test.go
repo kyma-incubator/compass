@@ -856,7 +856,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{ID: systemAuthID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&model.SystemAuth{Value: &model.Auth{}}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
