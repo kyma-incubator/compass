@@ -50,13 +50,14 @@ import (
 )
 
 const (
-	acceptHeader    = "Accept"
-	tenantHeader    = "Tenant"
-	scenarioName    = "formation-filtering"
-	scenariosLabel  = "scenarios"
-	selectorKey     = "global_subaccount_id"
-	subTenantID     = "123e4567-e89b-12d3-a456-426614174001"
-	restAPIProtocol = "rest"
+	acceptHeader       = "Accept"
+	tenantHeader       = "Tenant"
+	scenarioName       = "formation-filtering"
+	scenariosLabel     = "scenarios"
+	selectorKey        = "global_subaccount_id"
+	subTenantID        = "123e4567-e89b-12d3-a456-426614174001"
+	restAPIProtocol    = "rest"
+	odataV2APIProtocol = "odata-v2"
 )
 
 func TestORDService(stdT *testing.T) {
@@ -215,18 +216,20 @@ func TestORDService(stdT *testing.T) {
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	})
 
-	t.Run("Requesting Bundles that do not have only ODATA APIs", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=apis/any(d:d/apiProtocol ne 'odata-v2')&$expand=apis&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
+	t.Run("Requesting filtering of Bundles that do not have only ODATA APIs", func(t *testing.T) {
+		escapedFilterValue := urlpkg.PathEscape("apis/any(d:d/apiProtocol ne 'odata-v2')")
+
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
 
 		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles)-1, len(gjson.Get(respBody, "value").Array()))
-		require.Equal(t, appInputAPIProtocolFiltering.Bundles[1].Name, gjson.Get(respBody, "value.0.title").String())
-		require.Equal(t, *appInputAPIProtocolFiltering.Bundles[1].Description, gjson.Get(respBody, "value.0.description").String())
+		require.Equal(t, appInputAPIProtocolFiltering.Bundles[0].Name, gjson.Get(respBody, "value.0.title").String())
+		require.Equal(t, *appInputAPIProtocolFiltering.Bundles[0].Description, gjson.Get(respBody, "value.0.description").String())
 
 		// validate that among the returned APIs there is one with apiProtocol == rest
-		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles[1].APIDefinitions), len(gjson.Get(respBody, "value.0.apis").Array()))
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value.0.apis").Array()))
 
 		isRestAPIFound := false
-		for i := range appInputAPIProtocolFiltering.Bundles[1].APIDefinitions {
+		for i := range appInputAPIProtocolFiltering.Bundles[0].APIDefinitions {
 			apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.0.apis.%d.apiProtocol", i)).String()
 			require.NotEmpty(t, apiProtocol)
 
@@ -235,6 +238,30 @@ func TestORDService(stdT *testing.T) {
 			}
 		}
 		require.Equal(t, true, isRestAPIFound)
+	})
+
+	t.Run("Requesting filtering of Bundles that have only ODATA APIs", func(t *testing.T) {
+		escapedFilterValue := urlpkg.PathEscape("apis/all(d:d/apiProtocol eq 'odata-v2')")
+
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
+
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles)-1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, appInputAPIProtocolFiltering.Bundles[1].Name, gjson.Get(respBody, "value.0.title").String())
+		require.Equal(t, *appInputAPIProtocolFiltering.Bundles[1].Description, gjson.Get(respBody, "value.0.description").String())
+
+		// validate that among the returned APIs all are with apiProtocol == odata-v2
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles[1].APIDefinitions), len(gjson.Get(respBody, "value.0.apis").Array()))
+
+		areAllAPIsODATA := true
+		for i := range appInputAPIProtocolFiltering.Bundles[1].APIDefinitions {
+			apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.0.apis.%d.apiProtocol", i)).String()
+			require.NotEmpty(t, apiProtocol)
+
+			if apiProtocol != odataV2APIProtocol {
+				areAllAPIsODATA = false
+			}
+		}
+		require.Equal(t, true, areAllAPIsODATA)
 	})
 
 	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model

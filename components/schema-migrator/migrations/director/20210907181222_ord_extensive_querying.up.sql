@@ -3,7 +3,7 @@ BEGIN;
 DROP VIEW tenants_specifications;
 DROP VIEW tenants_apis;
 
---- cast apiProtocol field to varchar
+--- cast apiProtocol field to text
 CREATE OR REPLACE VIEW tenants_apis  AS
 SELECT DISTINCT t_apps.tenant_id, apis.id, apis.app_id, apis.name, apis.description, apis.group_name, apis.default_auth,
                 apis.version_value, apis.version_deprecated, apis.version_deprecated_since, apis.version_for_removal,
