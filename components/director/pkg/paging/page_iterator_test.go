@@ -34,7 +34,7 @@ func TestPageIterator(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name: fmt.Sprintf("Sucessfully fetches all pages for %d pages", pageSize),
+			name: fmt.Sprintf("Successfully fetches all pages for %d pages", pageSize),
 			pagingFunc: func(u string) (uint64, error) {
 				defer func() { i++ }()
 
@@ -78,9 +78,8 @@ func TestPageIterator(t *testing.T) {
 				require.NoError(t, err)
 				if skipValue == 0 {
 					return uint64(pageSize), nil
-				} else {
-					return 0, testErr
 				}
+				return 0, testErr
 			},
 			expectedError: testErr,
 		},

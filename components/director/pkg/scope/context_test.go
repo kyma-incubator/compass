@@ -32,6 +32,7 @@ func TestScopesContext(t *testing.T) {
 		// GIVEN
 		givenScopes := []string{"aaa", "bbb"}
 		ctx := scope.SaveToContext(context.TODO(), givenScopes)
+
 		ctx = context.WithValue(ctx, 0, "some random value")
 		// WHEN
 		actual, err := scope.LoadFromContext(ctx)

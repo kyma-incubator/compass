@@ -1,6 +1,8 @@
 package httputils
 
 const (
+	// ContentTypeApplicationJSON missing godoc
 	ContentTypeApplicationJSON = "application/json"
-	HeaderContentType          = "Content-Type"
+	// HeaderContentType missing godoc
+	HeaderContentType = "Content-Type"
 )

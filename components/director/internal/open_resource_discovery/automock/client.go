@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	open_resource_discovery "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,15 +15,15 @@ type Client struct {
 }
 
 // FetchOpenResourceDiscoveryDocuments provides a mock function with given fields: ctx, url
-func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (open_resource_discovery.Documents, error) {
+func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (ord.Documents, error) {
 	ret := _m.Called(ctx, url)
 
-	var r0 open_resource_discovery.Documents
-	if rf, ok := ret.Get(0).(func(context.Context, string) open_resource_discovery.Documents); ok {
+	var r0 ord.Documents
+	if rf, ok := ret.Get(0).(func(context.Context, string) ord.Documents); ok {
 		r0 = rf(ctx, url)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(open_resource_discovery.Documents)
+			r0 = ret.Get(0).(ord.Documents)
 		}
 	}
 

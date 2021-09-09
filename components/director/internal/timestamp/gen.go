@@ -2,10 +2,10 @@ package timestamp
 
 import "time"
 
+// Generator missing godoc
 type Generator func() time.Time
 
-func DefaultGenerator() func() time.Time {
-	return func() time.Time {
-		return time.Now()
-	}
+// DefaultGenerator missing godoc
+func DefaultGenerator() time.Time {
+	return time.Now()
 }

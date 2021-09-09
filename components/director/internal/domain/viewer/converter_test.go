@@ -49,7 +49,6 @@ func TestToViewer(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			//WHEN
 			viewer, err := viewer.ToViewer(tc.Input)
 			//THEN

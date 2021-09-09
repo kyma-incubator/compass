@@ -2,6 +2,7 @@ package graphql
 
 import "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
+// Application missing godoc
 type Application struct {
 	Name                  string             `json:"name"`
 	ProviderName          *string            `json:"providerName"`
@@ -14,19 +15,21 @@ type Application struct {
 	*BaseEntity
 }
 
+// GetType missing godoc
 func (e *Application) GetType() resource.Type {
 	return resource.Application
 }
 
+// Sentinel missing godoc
 func (e *Application) Sentinel() {}
 
-// Extended types used by external API
-
+// ApplicationPageExt is an extended type used by external API
 type ApplicationPageExt struct {
 	ApplicationPage
 	Data []*ApplicationExt `json:"data"`
 }
 
+// ApplicationExt missing godoc
 type ApplicationExt struct {
 	Application
 	Labels                Labels                           `json:"labels"`

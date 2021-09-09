@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// TokenGenerator missing godoc
 //go:generate mockery --name=TokenGenerator --output=automock --outpkg=automock --case=underscore
 type TokenGenerator interface {
 	NewToken() (string, error)
@@ -15,19 +16,20 @@ type tokenGenerator struct {
 	tokenLength int
 }
 
+// NewTokenGenerator missing godoc
 func NewTokenGenerator(tokenLength int) TokenGenerator {
 	return &tokenGenerator{tokenLength: tokenLength}
 }
 
+// NewToken missing godoc
 func (tg *tokenGenerator) NewToken() (string, error) {
 	return generateRandomString(tg.tokenLength)
 }
 
 func generateRandomBytes(number int) ([]byte, error) {
 	bytes := make([]byte, number)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to generate random bytes: %s", err)
+	if _, err := rand.Read(bytes); err != nil {
+		return nil, fmt.Errorf("failed to generate random bytes: %s", err)
 	}
 
 	return bytes, nil

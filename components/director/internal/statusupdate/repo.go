@@ -21,12 +21,13 @@ type repository struct {
 	timestampGen timestamp.Generator
 }
 
+// NewRepository missing godoc
 func NewRepository() *repository {
-	return &repository{timestampGen: timestamp.DefaultGenerator()}
+	return &repository{timestampGen: timestamp.DefaultGenerator}
 }
 
+// UpdateStatus missing godoc
 func (r *repository) UpdateStatus(ctx context.Context, id string, object WithStatusObject) error {
-
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while loading persistence from context")
@@ -43,8 +44,8 @@ func (r *repository) UpdateStatus(ctx context.Context, id string, object WithSta
 	return nil
 }
 
+// IsConnected missing godoc
 func (r *repository) IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error) {
-
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "while loading persistence from context")
@@ -62,5 +63,4 @@ func (r *repository) IsConnected(ctx context.Context, id string, object WithStat
 	}
 
 	return true, nil
-
 }

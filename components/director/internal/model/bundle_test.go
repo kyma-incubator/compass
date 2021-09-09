@@ -1,7 +1,6 @@
 package model_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -47,8 +46,7 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
-
+		t.Run(testCase.Name, func(t *testing.T) {
 			// when
 			result := testCase.Input.ToBundle(id, appID, tenant)
 

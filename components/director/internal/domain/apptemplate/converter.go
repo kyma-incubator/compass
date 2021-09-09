@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AppConverter missing godoc
 //go:generate mockery --name=AppConverter --output=automock --outpkg=automock --case=underscore
 type AppConverter interface {
 	CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error)
@@ -25,10 +26,12 @@ type converter struct {
 	webhookConverter WebhookConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(appConverter AppConverter, webhookConverter WebhookConverter) *converter {
 	return &converter{appConverter: appConverter, webhookConverter: webhookConverter}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error) {
 	if in == nil {
 		return nil, nil
@@ -59,8 +62,9 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error) {
-	var appTemplates []*graphql.ApplicationTemplate
+	appTemplates := make([]*graphql.ApplicationTemplate, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -76,6 +80,7 @@ func (c *converter) MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graph
 	return appTemplates, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error) {
 	var appCreateInput string
 	var err error
@@ -100,6 +105,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	}, nil
 }
 
+// UpdateInputFromGraphQL missing godoc
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateInput) (model.ApplicationTemplateUpdateInput, error) {
 	var appCreateInput string
 	var err error
@@ -119,8 +125,9 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 	}, nil
 }
 
+// ApplicationFromTemplateInputFromGraphQL missing godoc
 func (c *converter) ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput {
-	var values []*model.ApplicationTemplateValueInput
+	values := make([]*model.ApplicationTemplateValueInput, 0, len(in.Values))
 	for _, value := range in.Values {
 		valueInput := model.ApplicationTemplateValueInput{
 			Placeholder: value.Placeholder,
@@ -135,6 +142,7 @@ func (c *converter) ApplicationFromTemplateInputFromGraphQL(in graphql.Applicati
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 	if in == nil {
 		return nil, nil
@@ -155,6 +163,7 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 	}, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, error) {
 	if entity == nil {
 		return nil, nil
@@ -187,8 +196,8 @@ func (c *converter) graphqliseApplicationCreateInput(jsonAppInput string) (strin
 	if err != nil {
 		return "", errors.Wrap(err, "while graphqlising application create input")
 	}
-	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
-	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
+	gqlAppInput = strings.ReplaceAll(gqlAppInput, "\t", "")
+	gqlAppInput = strings.ReplaceAll(gqlAppInput, "\n", "")
 	return gqlAppInput, nil
 }
 
@@ -222,7 +231,7 @@ func (c *converter) placeholdersModelToJSON(in []model.ApplicationTemplatePlaceh
 }
 
 func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionInput) []model.ApplicationTemplatePlaceholder {
-	var placeholders []model.ApplicationTemplatePlaceholder
+	placeholders := make([]model.ApplicationTemplatePlaceholder, 0, len(in))
 	for _, p := range in {
 		np := model.ApplicationTemplatePlaceholder{
 			Name:        p.Name,
@@ -234,7 +243,7 @@ func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionI
 }
 
 func (c *converter) placeholdersToGraphql(in []model.ApplicationTemplatePlaceholder) []*graphql.PlaceholderDefinition {
-	var placeholders []*graphql.PlaceholderDefinition
+	placeholders := make([]*graphql.PlaceholderDefinition, 0, len(in))
 	for _, p := range in {
 		np := graphql.PlaceholderDefinition{
 			Name:        p.Name,

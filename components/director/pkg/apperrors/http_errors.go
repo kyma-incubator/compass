@@ -10,6 +10,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
+// WriteAppError missing godoc
 func WriteAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
 	errCode := ErrorCode(appErr)
 	if errCode == UnknownError || errCode == InternalError {

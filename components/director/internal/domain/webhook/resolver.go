@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// WebhookService missing godoc
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.Webhook, error)
@@ -25,16 +26,19 @@ type WebhookService interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+// ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
+// WebhookConverter missing godoc
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
@@ -50,6 +54,7 @@ type webhookOwner struct {
 
 type existsFunc func(ctx context.Context, id string) (bool, error)
 
+// Resolver missing godoc
 type Resolver struct {
 	webhookSvc       WebhookService
 	appSvc           ApplicationService
@@ -58,6 +63,7 @@ type Resolver struct {
 	transact         persistence.Transactioner
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		webhookSvc:       webhookSvc,
@@ -68,6 +74,7 @@ func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, 
 	}
 }
 
+// AddWebhook missing godoc
 func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -80,7 +87,7 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	appTemplateSpecified := applicationID == nil && applicationTemplateID != nil
 
 	if !(appSpecified || appTemplateSpecified) {
-		return nil, apperrors.NewInvalidDataError("exactly one of applicationId and applicationTemplateID should be specified")
+		return nil, apperrors.NewInvalidDataError("exactly one of applicationID and applicationTemplateID should be specified")
 	}
 
 	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
@@ -112,6 +119,7 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	return r.webhookConverter.ToGraphQL(webhook)
 }
 
+// UpdateWebhook missing godoc
 func (r *Resolver) UpdateWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -142,6 +150,7 @@ func (r *Resolver) UpdateWebhook(ctx context.Context, webhookID string, in graph
 	return r.webhookConverter.ToGraphQL(webhook)
 }
 
+// DeleteWebhook missing godoc
 func (r *Resolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

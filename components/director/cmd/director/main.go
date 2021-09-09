@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -42,7 +42,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
+	errorpresenter "github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
@@ -50,7 +50,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
-	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
+	panichandler "github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
@@ -69,7 +69,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
-	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
@@ -115,7 +115,7 @@ type config struct {
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone   bool          `envconfig:"default=false"`
-	ClientIDHttpHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
+	ClientIDHTTPHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
 
@@ -182,7 +182,7 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
-	internalHttpClient := &http.Client{
+	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
@@ -202,7 +202,7 @@ func main() {
 		cfg.Features,
 		metricsCollector,
 		httpClient,
-		internalHttpClient,
+		internalHTTPClient,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)
@@ -221,7 +221,7 @@ func main() {
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHttpHeaderKey, claims.NewValidator())
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claims.NewValidator())
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -241,18 +241,18 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(panic_recovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
-	presenter := error_presenter.NewPresenter(uid.NewService())
+	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	presenter := errorpresenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
-	gqlAPIRouter.Use(dataloader.HandlerApiDef(rootResolver.ApiDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerAPIDef(rootResolver.APIDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerDocument(rootResolver.DocumentsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
-	gqlAPIRouter.Use(dataloader.HandlerFetchRequestApiDef(rootResolver.FetchRequestApiDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFetchRequestAPIDef(rootResolver.FetchRequestAPIDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 
@@ -263,7 +263,7 @@ func main() {
 	gqlServ.Use(operationMiddleware)
 	gqlServ.Use(ownertenantMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
-	gqlServ.SetRecoverFunc(panic_handler.RecoverFn)
+	gqlServ.SetRecoverFunc(panichandler.RecoverFn)
 
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
@@ -274,9 +274,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
-
-	exitOnError(err, "Error while configuring runtime mapping handler")
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
@@ -306,7 +304,7 @@ func main() {
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, internalHttpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, internalHTTPClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
 	timeService := directorTime.NewService()
@@ -315,7 +313,7 @@ func main() {
 
 	logger.Infof("Registering readiness endpoint...")
 	schemaRepo := schema.NewRepository()
-	ready := healthz.NewReady(context.WithValue(ctx, "PersistenceCtxKey", transact), transact, cfg.ReadyConfig, schemaRepo)
+	ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
@@ -324,7 +322,7 @@ func main() {
 	logger.Infof("Registering health endpoint...")
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
-	health.RegisterIndicator(healthz.NewIndicator(healthz.DbIndicatorName, healthz.NewDbIndicatorFunc(transact))).Start()
+	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
@@ -393,7 +391,6 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 			exitOnError(err, "Error from Reloader watch")
 		}
 		log.C(ctx).Infof("Successfully reloaded configuration file.")
-
 	}).Run(ctx)
 
 	return provider
@@ -436,7 +433,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -473,7 +470,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		transact,
 		tokenVerifier,
 		runtimeSvc,
-		tenantSvc).ServeHTTP, nil
+		tenantSvc).ServeHTTP
 }
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
@@ -509,7 +506,7 @@ func bundleInstanceAuthRepo() bundleinstanceauth.Repository {
 	return bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 }
 
-func bundleRepo() mp_bundle.BundleRepository {
+func bundleRepo() bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -518,7 +515,7 @@ func bundleRepo() mp_bundle.BundleRepository {
 	docConverter := document.NewConverter(frConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 
-	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+	return bundle.NewRepository(bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
 
 func applicationRepo() application.ApplicationRepository {
@@ -533,7 +530,7 @@ func applicationRepo() application.ApplicationRepository {
 	docConverter := document.NewConverter(frConverter)
 
 	webhookConverter := webhook.NewConverter(authConverter)
-	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 
@@ -550,6 +547,7 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
+// PrepareInternalGraphQLServer missing godoc
 func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	gqlInternalCfg := internalschema.Config{
 		Resolvers: &graphqlAPI.InternalResolver{
@@ -573,7 +571,7 @@ func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenReso
 	return handlerWithTimeout, nil
 }
 
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHttpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -594,7 +592,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
-	packageConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	packageConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, packageConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
@@ -605,7 +603,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-	bundleRepo := mp_bundle.NewRepository(packageConverter)
+	bundleRepo := bundle.NewRepository(packageConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -618,10 +616,10 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
+	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := directorTime.NewService()
-	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHttpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
+	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
 }
 
 func systemAuthSvc() oathkeeper.Service {
@@ -632,6 +630,7 @@ func systemAuthSvc() oathkeeper.Service {
 	return systemauth.NewService(systemAuthRepo, uidSvc)
 }
 
+// PrepareHydratorHandler missing godoc
 func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, timeService, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
 

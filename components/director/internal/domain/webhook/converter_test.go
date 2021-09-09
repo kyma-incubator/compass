@@ -225,7 +225,6 @@ func TestConverter_ToEntity(t *testing.T) {
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
-
 }
 
 func TestConverter_FromEntity(t *testing.T) {

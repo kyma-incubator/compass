@@ -20,7 +20,7 @@ func TestNewDbIndicatorFunc(t *testing.T) {
 		pinger.On("PingContext", ctx).Return(errors.New("db error"))
 
 		// WHEN
-		dbIndFunc := healthz.NewDbIndicatorFunc(pinger)
+		dbIndFunc := healthz.NewDBIndicatorFunc(pinger)
 		status := dbIndFunc(ctx)
 
 		// THEN
@@ -38,7 +38,7 @@ func TestNewDbIndicatorFunc(t *testing.T) {
 		pinger.On("PingContext", ctx).Return(nil)
 
 		// WHEN
-		dbIndFunc := healthz.NewDbIndicatorFunc(pinger)
+		dbIndFunc := healthz.NewDBIndicatorFunc(pinger)
 		status := dbIndFunc(ctx)
 
 		// THEN

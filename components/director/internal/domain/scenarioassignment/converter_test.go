@@ -28,7 +28,6 @@ func TestFromInputGraphql(t *testing.T) {
 				Value: "my-value",
 			},
 		}, actual)
-
 	})
 }
 

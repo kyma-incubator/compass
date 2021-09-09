@@ -14,10 +14,13 @@ import (
 )
 
 const (
-	HeaderContentTypeKey   = "Content-Type"
+	// HeaderContentTypeKey missing godoc
+	HeaderContentTypeKey = "Content-Type"
+	// HeaderContentTypeValue missing godoc
 	HeaderContentTypeValue = "application/json;charset=UTF-8"
 )
 
+// WithTimeout missing godoc
 func WithTimeout(h http.Handler, timeout time.Duration) (http.Handler, error) {
 	msg, err := json.Marshal(apperrors.NewOperationTimeoutError())
 	if err != nil {
@@ -45,8 +48,9 @@ type timeoutLoggingHandler struct {
 	msg     []byte
 }
 
+// ServeHTTP missing godoc
 func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationId(r))
+	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationID(r))
 	r = r.WithContext(ctx)
 
 	timoutRW := &timoutLoggingResponseWriter{
@@ -72,6 +76,7 @@ type timoutLoggingResponseWriter struct {
 	ctx          context.Context
 }
 
+// Write missing godoc
 func (lrw *timoutLoggingResponseWriter) Write(b []byte) (int, error) {
 	if bytes.Equal(lrw.msg, b) && time.Since(lrw.requestStart) > lrw.timeout {
 		log.C(lrw.ctx).Warnf("%s request to %s timed out after %s", lrw.method, lrw.url, lrw.timeout)
@@ -96,6 +101,7 @@ type contentTypeHandler struct {
 	h http.Handler
 }
 
+// ServeHTTP missing godoc
 func (h *contentTypeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 	h.h.ServeHTTP(w, r)

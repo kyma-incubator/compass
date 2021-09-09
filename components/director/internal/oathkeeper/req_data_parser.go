@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewReqDataParser missing godoc
 func NewReqDataParser() *reqDataParser {
 	return &reqDataParser{}
 }

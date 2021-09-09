@@ -1,4 +1,4 @@
-package error_presenter_test
+package errorpresenter_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
+	errorpresenter "github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -26,7 +26,7 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 	errMsg := "testErr"
 	uidSvc := uid.NewService()
 	logger, hook := test.NewNullLogger()
-	presenter := error_presenter.NewPresenter(uidSvc)
+	presenter := errorpresenter.NewPresenter(uidSvc)
 
 	t.Run("Unknown error", func(t *testing.T) {
 		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))

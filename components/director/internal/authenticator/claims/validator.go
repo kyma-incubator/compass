@@ -7,10 +7,12 @@ import (
 
 type validator struct{}
 
+// NewValidator missing godoc
 func NewValidator() *validator {
 	return &validator{}
 }
 
+// Validate missing godoc
 func (*validator) Validate(claims Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")

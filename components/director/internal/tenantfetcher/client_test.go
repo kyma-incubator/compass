@@ -73,7 +73,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		assert.NotEmpty(t, res)
 	})
 
-	t.Run("Error when unkown events type", func(t *testing.T) {
+	t.Run("Error when unknown events type", func(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(-1, queryParams)
 		// THEN

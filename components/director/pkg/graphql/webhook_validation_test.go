@@ -734,7 +734,6 @@ func TestWebhookInput_Validate_MissingOutputTemplateForCertainTypes(t *testing.T
 			}
 		})
 	}
-
 }
 
 func fixValidWebhookInput(url string) graphql.WebhookInput {

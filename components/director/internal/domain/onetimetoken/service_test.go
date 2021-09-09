@@ -290,12 +290,12 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			httpClient: func() onetimetoken.HTTPDoer {
 				respBody := new(bytes.Buffer)
 				respBody.WriteString(fmt.Sprintf(`{"token":"%s"}`, tokenValue))
-				mockHttpClient := &automock.HTTPDoer{}
+				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(respBody),
 				}
-				mockHttpClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
 					if err != nil {
 						return false
@@ -312,7 +312,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 					return urlMatches && appIDMatches && tenantMatches && clientUserMatches
 				})).Return(response, nil)
-				return mockHttpClient
+				return mockHTTPClient
 			},
 			tokenGenerator: func() onetimetoken.TokenGenerator {
 				return &automock.TokenGenerator{}
@@ -364,12 +364,12 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			httpClient: func() onetimetoken.HTTPDoer {
 				respBody := new(bytes.Buffer)
 				respBody.WriteString(fmt.Sprintf(`{"token":"%s"}`, tokenValue))
-				mockHttpClient := &automock.HTTPDoer{}
+				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(respBody),
 				}
-				mockHttpClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
 					if err != nil {
 						return false
@@ -386,7 +386,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 					return urlMatches && appIDMatches && tenantMatches && clientUserMatches
 				})).Return(response, nil)
-				return mockHttpClient
+				return mockHTTPClient
 			},
 			tokenGenerator: func() onetimetoken.TokenGenerator {
 				return &automock.TokenGenerator{}
@@ -475,12 +475,12 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
-				mockHttpClient := &automock.HTTPDoer{}
+				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusInternalServerError,
 					Body:       ioutil.NopCloser(&bytes.Buffer{}),
 				}
-				mockHttpClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
 					if err != nil {
 						return false
@@ -497,7 +497,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 					return urlMatches && appIDMatches && tenantMatches && clientUserMatches
 				})).Return(response, nil).Times(3)
-				return mockHttpClient
+				return mockHTTPClient
 			},
 			tokenGenerator: func() onetimetoken.TokenGenerator {
 				return &automock.TokenGenerator{}
@@ -687,7 +687,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.description, func(t *testing.T) {
-
 			// GIVEN
 			systemAuthSvc := test.systemAuthSvc()
 			appSvc := test.appSvc()

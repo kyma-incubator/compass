@@ -1,4 +1,4 @@
-package mp_bundle
+package bundle
 
 import (
 	"context"
@@ -25,6 +25,7 @@ var (
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Bundle) (*Entity, error)
@@ -42,6 +43,7 @@ type pgRepository struct {
 	conv         EntityConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier: repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
@@ -55,12 +57,15 @@ func NewRepository(conv EntityConverter) *pgRepository {
 	}
 }
 
+// BundleCollection missing godoc
 type BundleCollection []Entity
 
+// Len missing godoc
 func (r BundleCollection) Len() int {
 	return len(r)
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -75,6 +80,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
 	return r.creator.Create(ctx, bndlEnt)
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -89,14 +95,17 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
 	return r.updater.UpdateSingle(ctx, bndlEnt)
 }
 
+// Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
 	var bndlEnt Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
@@ -111,6 +120,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.B
 	return bndlModel, nil
 }
 
+// GetForApplication missing godoc
 func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error) {
 	var ent Entity
 
@@ -130,6 +140,7 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	return bndlModel, nil
 }
 
+// ListByApplicationIDs missing godoc
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	var bundleCollection BundleCollection
 	counts, err := r.unionLister.List(ctx, tenantID, applicationIDs, "app_id", pageSize, cursor, orderByColumns, &bundleCollection)
@@ -173,6 +184,7 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 	return bundlePages, nil
 }
 
+// ListByApplicationIDNoPaging missing godoc
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
 	bundleCollection := BundleCollection{}
 	if err := r.lister.List(ctx, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {

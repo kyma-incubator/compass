@@ -33,10 +33,12 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// Formatter missing godoc
 type Formatter interface {
 	FormatSchema(schema *ast.Schema)
 }
 
+// NewFormatter missing godoc
 func NewFormatter(w io.Writer) Formatter {
 	return &formatter{writer: w}
 }
@@ -58,7 +60,7 @@ func (f *formatter) writeString(s string) {
 	}
 }
 
-func (f *formatter) writeIndent() *formatter {
+func (f *formatter) writeIndent() *formatter { //nolint:unparam
 	if f.lineHead {
 		f.writeString(strings.Repeat("\t", f.indent))
 	}
@@ -68,6 +70,7 @@ func (f *formatter) writeIndent() *formatter {
 	return f
 }
 
+// WriteNewline missing godoc
 func (f *formatter) WriteNewline() *formatter {
 	f.writeString("\n")
 	f.lineHead = true
@@ -76,6 +79,7 @@ func (f *formatter) WriteNewline() *formatter {
 	return f
 }
 
+// WriteWord missing godoc
 func (f *formatter) WriteWord(word string) *formatter {
 	if f.lineHead {
 		f.writeIndent()
@@ -89,6 +93,7 @@ func (f *formatter) WriteWord(word string) *formatter {
 	return f
 }
 
+// WriteString missing godoc
 func (f *formatter) WriteString(s string) *formatter {
 	if f.lineHead {
 		f.writeIndent()
@@ -102,6 +107,7 @@ func (f *formatter) WriteString(s string) *formatter {
 	return f
 }
 
+// WriteDescription missing godoc
 func (f *formatter) WriteDescription(s string) *formatter {
 	if s == "" {
 		return f
@@ -119,26 +125,31 @@ func (f *formatter) WriteDescription(s string) *formatter {
 	return f
 }
 
+// IncrementIndent missing godoc
 func (f *formatter) IncrementIndent() {
 	f.indent++
 }
 
+// DecrementIndent missing godoc
 func (f *formatter) DecrementIndent() {
 	f.indent--
 }
 
+// NoPadding missing godoc
 func (f *formatter) NoPadding() *formatter {
 	f.padNext = false
 
 	return f
 }
 
+// NeedPadding missing godoc
 func (f *formatter) NeedPadding() *formatter {
 	f.padNext = true
 
 	return f
 }
 
+// FormatSchema missing godoc
 func (f *formatter) FormatSchema(schema *ast.Schema) {
 	if schema == nil {
 		return
@@ -194,6 +205,7 @@ func (f *formatter) FormatSchema(schema *ast.Schema) {
 	}
 }
 
+// FormatFieldList missing godoc
 func (f *formatter) FormatFieldList(fieldList ast.FieldList) {
 	if len(fieldList) == 0 {
 		return
@@ -210,6 +222,7 @@ func (f *formatter) FormatFieldList(fieldList ast.FieldList) {
 	f.WriteString("}")
 }
 
+// FormatFieldDefinition missing godoc
 func (f *formatter) FormatFieldDefinition(field *ast.FieldDefinition) {
 	if !f.emitBuiltin && strings.HasPrefix(field.Name, "__") {
 		return
@@ -232,6 +245,7 @@ func (f *formatter) FormatFieldDefinition(field *ast.FieldDefinition) {
 	f.WriteNewline()
 }
 
+// FormatArgumentDefinitionList missing godoc
 func (f *formatter) FormatArgumentDefinitionList(lists ast.ArgumentDefinitionList) {
 	if len(lists) == 0 {
 		return
@@ -248,6 +262,7 @@ func (f *formatter) FormatArgumentDefinitionList(lists ast.ArgumentDefinitionLis
 	f.NoPadding().WriteString(")").NeedPadding()
 }
 
+// FormatArgumentDefinition missing godoc
 func (f *formatter) FormatArgumentDefinition(def *ast.ArgumentDefinition) {
 	f.WriteDescription(def.Description)
 
@@ -262,10 +277,12 @@ func (f *formatter) FormatArgumentDefinition(def *ast.ArgumentDefinition) {
 	f.FormatDirectiveList(def.Directives)
 }
 
+// FormatDirectiveLocation missing godoc
 func (f *formatter) FormatDirectiveLocation(location ast.DirectiveLocation) {
 	f.WriteWord(string(location))
 }
 
+// FormatDirectiveDefinitionList missing godoc
 func (f *formatter) FormatDirectiveDefinitionList(lists ast.DirectiveDefinitionList) {
 	if len(lists) == 0 {
 		return
@@ -276,6 +293,7 @@ func (f *formatter) FormatDirectiveDefinitionList(lists ast.DirectiveDefinitionL
 	}
 }
 
+// FormatDirectiveDefinition missing godoc
 func (f *formatter) FormatDirectiveDefinition(def *ast.DirectiveDefinition) {
 	if !f.emitBuiltin {
 		if def.Position.Src.BuiltIn {
@@ -306,6 +324,7 @@ func (f *formatter) FormatDirectiveDefinition(def *ast.DirectiveDefinition) {
 	f.WriteNewline()
 }
 
+// FormatDefinition missing godoc
 func (f *formatter) FormatDefinition(def *ast.Definition, extend bool) {
 	if !f.emitBuiltin && def.BuiltIn {
 		return
@@ -355,6 +374,7 @@ func (f *formatter) FormatDefinition(def *ast.Definition, extend bool) {
 	f.WriteNewline()
 }
 
+// FormatEnumValueList missing godoc
 func (f *formatter) FormatEnumValueList(lists ast.EnumValueList) {
 	if len(lists) == 0 {
 		return
@@ -371,6 +391,7 @@ func (f *formatter) FormatEnumValueList(lists ast.EnumValueList) {
 	f.WriteString("}")
 }
 
+// FormatEnumValueDefinition missing godoc
 func (f *formatter) FormatEnumValueDefinition(def *ast.EnumValueDefinition) {
 	f.WriteDescription(def.Description)
 
@@ -380,6 +401,7 @@ func (f *formatter) FormatEnumValueDefinition(def *ast.EnumValueDefinition) {
 	f.WriteNewline()
 }
 
+// FormatDirectiveList missing godoc
 func (f *formatter) FormatDirectiveList(lists ast.DirectiveList) {
 	if len(lists) == 0 {
 		return
@@ -390,11 +412,13 @@ func (f *formatter) FormatDirectiveList(lists ast.DirectiveList) {
 	}
 }
 
+// FormatDirective missing godoc
 func (f *formatter) FormatDirective(dir *ast.Directive) {
 	f.WriteString("@").WriteWord(dir.Name)
 	f.FormatArgumentList(dir.Arguments)
 }
 
+// FormatArgumentList missing godoc
 func (f *formatter) FormatArgumentList(lists ast.ArgumentList) {
 	if len(lists) == 0 {
 		return
@@ -410,11 +434,13 @@ func (f *formatter) FormatArgumentList(lists ast.ArgumentList) {
 	f.WriteString(")").NeedPadding()
 }
 
+// FormatArgument missing godoc
 func (f *formatter) FormatArgument(arg *ast.Argument) {
 	f.WriteWord(arg.Name).NoPadding().WriteString(":").NeedPadding()
 	f.WriteString(arg.Value.String())
 }
 
+// FormatSelectionSet missing godoc
 func (f *formatter) FormatSelectionSet(sets ast.SelectionSet) {
 	if len(sets) == 0 {
 		return
@@ -431,6 +457,7 @@ func (f *formatter) FormatSelectionSet(sets ast.SelectionSet) {
 	f.WriteString("}")
 }
 
+// FormatSelection missing godoc
 func (f *formatter) FormatSelection(selection ast.Selection) {
 	switch v := selection.(type) {
 	case *ast.Field:
@@ -449,6 +476,7 @@ func (f *formatter) FormatSelection(selection ast.Selection) {
 	f.WriteNewline()
 }
 
+// FormatField missing godoc
 func (f *formatter) FormatField(field *ast.Field) {
 	if field.Alias != "" && field.Alias != field.Name {
 		f.WriteWord(field.Alias).NoPadding().WriteString(":").NeedPadding()
@@ -466,12 +494,14 @@ func (f *formatter) FormatField(field *ast.Field) {
 	f.FormatSelectionSet(field.SelectionSet)
 }
 
+// FormatFragmentSpread missing godoc
 func (f *formatter) FormatFragmentSpread(spread *ast.FragmentSpread) {
 	f.WriteWord("...").WriteWord(spread.Name)
 
 	f.FormatDirectiveList(spread.Directives)
 }
 
+// FormatInlineFragment missing godoc
 func (f *formatter) FormatInlineFragment(inline *ast.InlineFragment) {
 	f.WriteWord("...")
 	if inline.TypeCondition != "" {
@@ -483,10 +513,12 @@ func (f *formatter) FormatInlineFragment(inline *ast.InlineFragment) {
 	f.FormatSelectionSet(inline.SelectionSet)
 }
 
+// FormatType missing godoc
 func (f *formatter) FormatType(t *ast.Type) {
 	f.WriteWord(t.String())
 }
 
+// FormatValue missing godoc
 func (f *formatter) FormatValue(value *ast.Value) {
 	f.WriteString(value.String())
 }

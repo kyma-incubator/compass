@@ -7,12 +7,12 @@ import (
 	k8svalidation "k8s.io/apimachinery/pkg/api/validation"
 )
 
-var (
-	DNSName = &dnsNameRule{}
-)
+// DNSName missing godoc
+var DNSName = &dnsNameRule{}
 
 type dnsNameRule struct{}
 
+// Validate missing godoc
 func (v *dnsNameRule) Validate(value interface{}) error {
 	s, isNil, err := ensureIsString(value)
 	if err != nil {

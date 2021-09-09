@@ -119,10 +119,8 @@ func TestResolver_Tenants(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
 			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
-
 		})
 	}
-
 }
 
 func TestResolver_Labels(t *testing.T) {

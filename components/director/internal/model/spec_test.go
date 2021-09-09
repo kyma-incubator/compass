@@ -99,7 +99,6 @@ func TestSpecInput_ToSpec(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result, err := testCase.SpecInput.ToSpec(testCase.InputID, tenant, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
 

@@ -9,10 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ScopesGetter missing godoc
 //go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
+
+// ScopesMismatchErrorProvider missing godoc
 type ScopesMismatchErrorProvider interface {
 	Error([]string, []string) error
 }
@@ -22,6 +25,7 @@ type directive struct {
 	errorProvider ScopesMismatchErrorProvider
 }
 
+// NewDirective missing godoc
 func NewDirective(getter ScopesGetter, errorProvider ScopesMismatchErrorProvider) *directive {
 	return &directive{
 		scopesGetter:  getter,
@@ -29,6 +33,7 @@ func NewDirective(getter ScopesGetter, errorProvider ScopesMismatchErrorProvider
 	}
 }
 
+// VerifyScopes missing godoc
 func (d *directive) VerifyScopes(ctx context.Context, _ interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
 	actualScopes, err := LoadFromContext(ctx)
 	if err != nil {

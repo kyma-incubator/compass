@@ -15,27 +15,35 @@ import (
 )
 
 const (
-	UserObjectContextProvider          = "UserObjectContextProvider"
-	SystemAuthObjectContextProvider    = "SystemAuthObjectContextProvider"
+	// UserObjectContextProvider missing godoc
+	UserObjectContextProvider = "UserObjectContextProvider"
+	// SystemAuthObjectContextProvider missing godoc
+	SystemAuthObjectContextProvider = "SystemAuthObjectContextProvider"
+	// AuthenticatorObjectContextProvider missing godoc
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
-	CertServiceObjectContextProvider   = "CertServiceObjectContextProvider"
+	// CertServiceObjectContextProvider missing godoc
+	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
 )
 
+// ScopesGetter missing godoc
 //go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
 
+// ReqDataParser missing godoc
 //go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
+// ObjectContextProvider missing godoc
 //go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore
 type ObjectContextProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
+// TenantRepository missing godoc
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
@@ -46,6 +54,7 @@ type ClientInstrumenter interface {
 	InstrumentClient(clientID string, authFlow string, details string)
 }
 
+// Handler missing godoc
 type Handler struct {
 	authenticators         []authenticator.Config
 	reqDataParser          ReqDataParser
@@ -54,6 +63,7 @@ type Handler struct {
 	clientInstrumenter     ClientInstrumenter
 }
 
+// NewHandler missing godoc
 func NewHandler(
 	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
@@ -69,6 +79,7 @@ func NewHandler(
 	}
 }
 
+// ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 

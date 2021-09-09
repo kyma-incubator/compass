@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-//  Compass performs fetch to validate if request is correct and stores a copy
+// FetchRequest compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	ID         string
 	Tenant     string
@@ -17,35 +17,48 @@ type FetchRequest struct {
 	ObjectID   string
 }
 
+// FetchRequestReferenceObjectType missing godoc
 type FetchRequestReferenceObjectType string
 
 const (
-	SpecFetchRequestReference     FetchRequestReferenceObjectType = "Spec"
+	// SpecFetchRequestReference missing godoc
+	SpecFetchRequestReference FetchRequestReferenceObjectType = "Spec"
+	// DocumentFetchRequestReference missing godoc
 	DocumentFetchRequestReference FetchRequestReferenceObjectType = "Document"
 )
 
+// FetchRequestStatus missing godoc
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition
 	Message   *string
 	Timestamp time.Time
 }
 
+// FetchMode missing godoc
 type FetchMode string
 
 const (
+	// FetchModeSingle missing godoc
 	FetchModeSingle FetchMode = "SINGLE"
+	// FetchModeBundle missing godoc
 	FetchModeBundle FetchMode = "BUNDLE"
-	FetchModeIndex  FetchMode = "INDEX"
+	// FetchModeIndex missing godoc
+	FetchModeIndex FetchMode = "INDEX"
 )
 
+// FetchRequestStatusCondition missing godoc
 type FetchRequestStatusCondition string
 
 const (
-	FetchRequestStatusConditionInitial   FetchRequestStatusCondition = "INITIAL"
+	// FetchRequestStatusConditionInitial missing godoc
+	FetchRequestStatusConditionInitial FetchRequestStatusCondition = "INITIAL"
+	// FetchRequestStatusConditionSucceeded missing godoc
 	FetchRequestStatusConditionSucceeded FetchRequestStatusCondition = "SUCCEEDED"
-	FetchRequestStatusConditionFailed    FetchRequestStatusCondition = "FAILED"
+	// FetchRequestStatusConditionFailed missing godoc
+	FetchRequestStatusConditionFailed FetchRequestStatusCondition = "FAILED"
 )
 
+// FetchRequestInput missing godoc
 type FetchRequestInput struct {
 	URL    string
 	Auth   *AuthInput
@@ -53,6 +66,7 @@ type FetchRequestInput struct {
 	Filter *string
 }
 
+// ToFetchRequest missing godoc
 func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id, tenant string, objectType FetchRequestReferenceObjectType, objectID string) *FetchRequest {
 	if f == nil {
 		return nil

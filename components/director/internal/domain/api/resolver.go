@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// APIService missing godoc
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
@@ -24,11 +25,13 @@ type APIService interface {
 	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 }
 
+// RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
+// APIConverter missing godoc
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
@@ -37,17 +40,20 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
 
+// FetchRequestConverter missing godoc
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
+// BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact      persistence.Transactioner
 	svc           APIService
@@ -60,6 +66,7 @@ type Resolver struct {
 	specConverter SpecConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
@@ -74,6 +81,7 @@ func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc Runt
 	}
 }
 
+// AddAPIDefinitionToBundle missing godoc
 func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -132,6 +140,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 	return gqlAPI, nil
 }
 
+// UpdateAPIDefinition missing godoc
 func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -182,6 +191,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	return gqlAPI, nil
 }
 
+// DeleteAPIDefinition missing godoc
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -227,6 +237,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 	return gqlAPI, nil
 }
 
+// RefetchAPISpec missing godoc
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -266,14 +277,16 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	return converted, nil
 }
 
+// FetchRequest missing godoc
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	params := dataloader.ParamFetchRequestApiDef{ID: obj.ID, Ctx: ctx}
-	return dataloader.ForFetchRequestApiDef(ctx).FetchRequestApiDefById.Load(params)
+	params := dataloader.ParamFetchRequestAPIDef{ID: obj.ID, Ctx: ctx}
+	return dataloader.ForFetchRequestAPIDef(ctx).FetchRequestAPIDefByID.Load(params)
 }
 
-func (r *Resolver) FetchRequestApiDefDataLoader(keys []dataloader.ParamFetchRequestApiDef) ([]*graphql.FetchRequest, []error) {
+// FetchRequestAPIDefDataLoader missing godoc
+func (r *Resolver) FetchRequestAPIDefDataLoader(keys []dataloader.ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
-		return nil, []error{apperrors.NewInternalError("No ApiDef specs found")}
+		return nil, []error{apperrors.NewInternalError("No APIDef specs found")}
 	}
 
 	ctx := keys[0].Ctx

@@ -9,7 +9,6 @@ import (
 )
 
 func TestQueryParams_UnmarshalGQL(t *testing.T) {
-
 	for name, tc := range map[string]struct {
 		input    interface{}
 		err      bool

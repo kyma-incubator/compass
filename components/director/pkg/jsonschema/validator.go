@@ -13,11 +13,13 @@ type validator struct {
 	schema *gojsonschema.Schema
 }
 
+// ValidationResult missing godoc
 type ValidationResult struct {
 	Valid bool
 	Error error
 }
 
+// NewValidatorFromStringSchema missing godoc
 func NewValidatorFromStringSchema(jsonSchema string) (*validator, error) {
 	if jsonSchema == "" {
 		return &validator{schema: nil}, nil
@@ -34,6 +36,7 @@ func NewValidatorFromStringSchema(jsonSchema string) (*validator, error) {
 	}, nil
 }
 
+// NewValidatorFromRawSchema missing godoc
 func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
 	if jsonSchema == nil {
 		return &validator{}, nil
@@ -50,6 +53,7 @@ func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
 	}, nil
 }
 
+// ValidateString missing godoc
 func (v *validator) ValidateString(json string) (ValidationResult, error) {
 	if v.schema == nil {
 		return ValidationResult{
@@ -85,6 +89,7 @@ func (v *validator) ValidateString(json string) (ValidationResult, error) {
 	}, nil
 }
 
+// ValidateRaw missing godoc
 func (v *validator) ValidateRaw(value interface{}) (ValidationResult, error) {
 	if v.schema == nil {
 		return ValidationResult{

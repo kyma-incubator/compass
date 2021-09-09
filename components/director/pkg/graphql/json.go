@@ -11,8 +11,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
 
+// JSON missing godoc
 type JSON string
 
+// UnmarshalGQL missing godoc
 func (j *JSON) UnmarshalGQL(v interface{}) error {
 	val, err := scalar.ConvertToString(v)
 	if err != nil {
@@ -28,6 +30,7 @@ func (j *JSON) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 
+// MarshalGQL missing godoc
 func (j JSON) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(j)))
 	if err != nil {

@@ -34,7 +34,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// ResourceIDParam missing godoc
 const ResourceIDParam = "resource_id"
+
+// ResourceTypeParam missing godoc
 const ResourceTypeParam = "resource_type"
 
 // ResourceFetcherFunc defines a function which fetches a particular resource by tenant and resource ID
@@ -70,11 +73,11 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	routeVariables := mux.Vars(request)
-	resourceId := routeVariables[ResourceIDParam]
+	resourceID := routeVariables[ResourceIDParam]
 	resourceType := routeVariables[ResourceTypeParam]
 
 	op := &Operation{
-		ResourceID:   resourceId,
+		ResourceID:   resourceID,
 		ResourceType: resource.Type(resourceType),
 	}
 

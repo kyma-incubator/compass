@@ -31,6 +31,7 @@ import (
 
 var allowedMethods = []string{"GET", "POST", "PUT", "DELETE"}
 
+// Mode missing godoc
 type Mode string
 
 // Resource is used to identify entities which can be part of a webhook's request data
@@ -51,6 +52,7 @@ type ResponseObject struct {
 	Headers map[string]string
 }
 
+// URL missing godoc
 type URL struct {
 	Method *string `json:"method"`
 	Path   *string `json:"path"`
@@ -74,6 +76,7 @@ type ResponseStatus struct {
 	Error                      *string `json:"error"`
 }
 
+// Validate missing godoc
 func (u *URL) Validate() error {
 	if u.Method == nil {
 		return errors.New("missing URL Template method field")
@@ -95,6 +98,7 @@ func (u *URL) Validate() error {
 	return nil
 }
 
+// Validate missing godoc
 func (r *Response) Validate() error {
 	if r.Location == nil {
 		return errors.New("missing Output Template location field")
@@ -111,6 +115,7 @@ func (r *Response) Validate() error {
 	return nil
 }
 
+// Validate missing godoc
 func (rs *ResponseStatus) Validate() error {
 	if rs.Status == nil {
 		return errors.New("missing Status Template status field")
@@ -139,26 +144,31 @@ func (rs *ResponseStatus) Validate() error {
 	return nil
 }
 
+// ParseURLTemplate missing godoc
 func (rd *RequestObject) ParseURLTemplate(tmpl *string) (*URL, error) {
 	var url URL
 	return &url, parseTemplate(tmpl, *rd, &url)
 }
 
+// ParseInputTemplate missing godoc
 func (rd *RequestObject) ParseInputTemplate(tmpl *string) ([]byte, error) {
 	res := json.RawMessage{}
 	return res, parseTemplate(tmpl, *rd, &res)
 }
 
+// ParseHeadersTemplate missing godoc
 func (rd *RequestObject) ParseHeadersTemplate(tmpl *string) (http.Header, error) {
 	var headers http.Header
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
 
+// ParseOutputTemplate missing godoc
 func (rd *ResponseObject) ParseOutputTemplate(tmpl *string) (*Response, error) {
 	var resp Response
 	return &resp, parseTemplate(tmpl, *rd, &resp)
 }
 
+// ParseStatusTemplate missing godoc
 func (rd *ResponseObject) ParseStatusTemplate(tmpl *string) (*ResponseStatus, error) {
 	var respStatus ResponseStatus
 	return &respStatus, parseTemplate(tmpl, *rd, &respStatus)

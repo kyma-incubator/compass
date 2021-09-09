@@ -8,8 +8,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// Validate missing godoc
 func Validate(validatable Validatable) error {
-
 	var typeName string
 	split := strings.Split(fmt.Sprintf("%T", validatable), ".")
 	if len(split) > 1 {
@@ -18,8 +18,7 @@ func Validate(validatable Validatable) error {
 		typeName = split[0]
 	}
 
-	err := validatable.Validate()
-	if err != nil {
+	if err := validatable.Validate(); err != nil {
 		switch value := err.(type) {
 		case validation.Errors:
 			return apperrors.NewInvalidDataErrorWithFields(value, typeName)

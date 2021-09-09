@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
+// Entity missing godoc
 type Entity struct {
 	TenantID                                string         `db:"tenant_id"`
 	ApplicationID                           string         `db:"app_id"`
@@ -18,7 +19,7 @@ type Entity struct {
 	OrdID                                   sql.NullString `db:"ord_id"`
 	ShortDescription                        sql.NullString `db:"short_description"`
 	SystemInstanceAware                     sql.NullBool   `db:"system_instance_aware"`
-	ApiProtocol                             sql.NullString `db:"api_protocol"`
+	APIProtocol                             sql.NullString `db:"api_protocol"`
 	Tags                                    sql.NullString `db:"tags"`
 	Countries                               sql.NullString `db:"countries"`
 	Links                                   sql.NullString `db:"links"`

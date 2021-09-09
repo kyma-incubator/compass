@@ -24,9 +24,10 @@ import (
 // defaultNormalizationPrefix is a fixed string used as prefix during default normalization
 const defaultNormalizationPrefix = "mp-"
 
+// DefaultNormalizator missing godoc
 type DefaultNormalizator struct{}
 
-// DefaultNormalizer is the default normalization function used as normalization function;
+// Normalize is the default normalization function used as normalization function;
 // It attempts to validate if the input is already normalized so it doesn't apply normalization again.
 func (dn *DefaultNormalizator) Normalize(name string) string {
 	if dn.isNormalized(name) {

@@ -18,7 +18,6 @@ func TestContextEnrichMiddleware_AttachCorrelationIDToContext(t *testing.T) {
 	handler := correlation.AttachCorrelationIDToContext()
 
 	t.Run("when x-request-id header is present it's added as correlation header to the request context and headers", func(t *testing.T) {
-
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			headersFromContext, ok := r.Context().Value(correlation.HeadersContextKey).(correlation.Headers)
 			assert.True(t, ok)

@@ -11,30 +11,32 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewProvider missing godoc
 func NewProvider(fileName string) *Provider {
 	return &Provider{
 		fileName: fileName,
 	}
 }
 
+// Provider missing godoc
 type Provider struct {
 	fileName     string
 	cachedConfig map[string]interface{}
 }
 
+// Load missing godoc
 func (p *Provider) Load() error {
 	b, err := ioutil.ReadFile(p.fileName)
 	if err != nil {
 		return errors.Wrapf(err, "while reading file %s", p.fileName)
 	}
 	out := map[string]interface{}{}
-	if err := yaml.Unmarshal([]byte(b), &out); err != nil {
+	if err := yaml.Unmarshal(b, &out); err != nil {
 		return errors.Wrap(err, "while unmarshalling YAML")
 	}
 	p.cachedConfig = out
 
 	return nil
-
 }
 
 func (p *Provider) getValueForJSONPath(path string) (interface{}, error) {

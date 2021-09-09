@@ -134,7 +134,7 @@ func TestConverter_InputFromGraphQLAPISpec(t *testing.T) {
 			Expected: fixModelAPISpecInputWithFetchRequest(),
 		},
 		{
-			Name:  "Return error when FetchRequest convertion fails",
+			Name:  "Return error when FetchRequest conversion fails",
 			Input: fixGQLAPISpecInputWithFetchRequest(),
 			FetchRequestConvFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
@@ -197,7 +197,7 @@ func TestConverter_InputFromGraphQLEventSpec(t *testing.T) {
 			Expected: fixModelEventSpecInputWithFetchRequest(),
 		},
 		{
-			Name:  "Return error when FetchRequest convertion fails",
+			Name:  "Return error when FetchRequest conversion fails",
 			Input: fixGQLEventSpecInputWithFetchRequest(),
 			FetchRequestConvFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 )
 
+// Entity missing godoc
 type Entity struct {
 	ID               string         `db:"id"`
 	TenantID         string         `db:"tenant_id"`
@@ -13,8 +14,11 @@ type Entity struct {
 	RuntimeContextID sql.NullString `db:"runtime_context_id"`
 	Value            string         `db:"value"`
 }
+
+// Collection missing godoc
 type Collection []Entity
 
+// Len missing godoc
 func (c Collection) Len() int {
 	return len(c)
 }

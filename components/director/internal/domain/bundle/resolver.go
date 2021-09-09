@@ -1,8 +1,7 @@
-package mp_bundle
+package bundle
 
 import (
 	"context"
-	"fmt"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
@@ -26,6 +26,7 @@ type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
+// BundleConverter missing godoc
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
@@ -33,18 +34,21 @@ type BundleConverter interface {
 	UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error)
 }
 
+// BundleInstanceAuthService missing godoc
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.BundleInstanceAuth, error)
 	List(ctx context.Context, id string) ([]*model.BundleInstanceAuth, error)
 }
 
+// BundleInstanceAuthConverter missing godoc
 //go:generate mockery --name=BundleInstanceAuthConverter --output=automock --outpkg=automock --case=underscore
 type BundleInstanceAuthConverter interface {
 	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
 	MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error)
 }
 
+// APIService missing godoc
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
@@ -53,6 +57,7 @@ type APIService interface {
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
+// APIConverter missing godoc
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
@@ -60,6 +65,7 @@ type APIConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
 }
 
+// EventService missing godoc
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
@@ -68,6 +74,7 @@ type EventService interface {
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
+// EventConverter missing godoc
 //go:generate mockery --name=EventConverter --output=automock --outpkg=automock --case=underscore
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
@@ -75,6 +82,7 @@ type EventConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 }
 
+// DocumentService missing godoc
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
@@ -82,6 +90,7 @@ type DocumentService interface {
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 }
 
+// DocumentConverter missing godoc
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
@@ -89,6 +98,7 @@ type DocumentConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error)
 }
 
+// SpecService missing godoc
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -98,12 +108,14 @@ type SpecService interface {
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
+// BundleReferenceService missing godoc
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -123,6 +135,7 @@ type Resolver struct {
 	specService SpecService
 }
 
+// NewResolver missing godoc
 func NewResolver(
 	transact persistence.Transactioner,
 	bundleSvc BundleService,
@@ -154,6 +167,7 @@ func NewResolver(
 	}
 }
 
+// AddBundle missing godoc
 func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleCreateInput) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -194,6 +208,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 	return gqlBundle, nil
 }
 
+// UpdateBundle missing godoc
 func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleUpdateInput) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -234,6 +249,7 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 	return gqlBndl, nil
 }
 
+// DeleteBundle missing godoc
 func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -279,6 +295,7 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 	return deletedBndl, nil
 }
 
+// InstanceAuth missing godoc
 func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.BundleInstanceAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Bundle cannot be empty")
@@ -313,6 +330,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id str
 	return gqlAuth, nil
 }
 
+// InstanceAuths missing godoc
 func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*graphql.BundleInstanceAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Bundle cannot be empty")
@@ -343,6 +361,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*g
 	return gqlAuths, nil
 }
 
+// APIDefinition missing godoc
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -383,19 +402,24 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 	return gqlAPI, nil
 }
 
+// APIDefinitions missing godoc
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	param := dataloader.ParamApiDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.ApiDefFor(ctx).ApiDefById.Load(param)
+	param := dataloader.ParamAPIDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.APIDefFor(ctx).APIDefByID.Load(param)
 }
 
-func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
+// APIDefinitionsDataLoader missing godoc
+func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*graphql.APIDefinitionPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
 
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
 	ctx := keys[0].Ctx
 	first := keys[0].First
-	after := keys[0].After
 
 	bundleIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -403,12 +427,8 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
 	tx, err := r.transact.Begin()
@@ -441,9 +461,9 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		return nil, []error{err}
 	}
 
-	refsByBundleId := map[string][]*model.BundleReference{}
+	refsByBundleID := map[string][]*model.BundleReference{}
 	for _, ref := range references {
-		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
 	apiDefIDtoSpec := make(map[string]*model.Spec)
@@ -451,25 +471,25 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 		apiDefIDtoSpec[spec.ObjectID] = spec
 	}
 
-	gqlApiDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
+	gqlAPIDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
 	for i, apisPage := range apiDefPages {
 		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
 		for _, api := range apisPage.Data {
 			apiSpecs = append(apiSpecs, apiDefIDtoSpec[api.ID])
-			br, err := getBundleReferenceForAPI(api.ID, refsByBundleId[bundleIDs[i]])
+			br, err := getBundleReferenceForAPI(api.ID, refsByBundleID[bundleIDs[i]])
 			if err != nil {
 				return nil, []error{err}
 			}
 			apiBundleRefs = append(apiBundleRefs, br)
 		}
 
-		gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
+		gqlAPIs, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
 		if err != nil {
 			return nil, []error{errors.Wrapf(err, "while converting api definitions")}
 		}
 
-		gqlApiDefs = append(gqlApiDefs, &graphql.APIDefinitionPage{Data: gqlApis, TotalCount: apisPage.TotalCount, PageInfo: &graphql.PageInfo{
+		gqlAPIDefs = append(gqlAPIDefs, &graphql.APIDefinitionPage{Data: gqlAPIs, TotalCount: apisPage.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
 			HasNextPage: apisPage.PageInfo.HasNextPage,
@@ -482,9 +502,10 @@ func (r *Resolver) ApiDefinitionsDataLoader(keys []dataloader.ParamApiDef) ([]*g
 	}
 
 	log.C(ctx).Infof("Successfully fetched api definitions for bundles %v", bundleIDs)
-	return gqlApiDefs, nil
+	return gqlAPIDefs, nil
 }
 
+// EventDefinition missing godoc
 func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -525,19 +546,24 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 	return gqlEvent, nil
 }
 
+// EventDefinitions missing godoc
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	param := dataloader.ParamEventDef{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.EventDefFor(ctx).EventDefById.Load(param)
+	return dataloader.EventDefFor(ctx).EventDefByID.Load(param)
 }
 
+// EventDefinitionsDataLoader missing godoc
 func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
 
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
 	ctx := keys[0].Ctx
 	first := keys[0].First
-	after := keys[0].After
 
 	bundleIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -545,12 +571,8 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
 	tx, err := r.transact.Begin()
@@ -600,7 +622,6 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		for _, event := range eventPage.Data {
 			eventSpecs = append(eventSpecs, eventAPIDefIDtoSpec[event.ID])
 			eventBundleRefs = append(eventBundleRefs, eventAPIDefIDtoRef[event.ID])
-
 		}
 
 		gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventPage.Data, eventSpecs, eventBundleRefs)
@@ -624,6 +645,7 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	return gqlEventDefs, nil
 }
 
+// Document missing godoc
 func (r *Resolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -649,19 +671,24 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Bundle, id string)
 	return r.documentConverter.ToGraphQL(eventAPI), nil
 }
 
+// Documents missing godoc
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Bundle, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	param := dataloader.ParamDocument{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.DocumentFor(ctx).DocumentById.Load(param)
+	return dataloader.DocumentFor(ctx).DocumentByID.Load(param)
 }
 
+// DocumentsDataLoader missing godoc
 func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*graphql.DocumentPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Bundles found")}
 	}
 
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
 	ctx := keys[0].Ctx
 	first := keys[0].First
-	after := keys[0].After
 
 	bundleIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -669,12 +696,8 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	if first == nil {
-		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
 	tx, err := r.transact.Begin()
@@ -719,5 +742,5 @@ func getBundleReferenceForAPI(apiID string, bundleReferences []*model.BundleRefe
 			return br, nil
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("could not find BundleReference for API with id %s", apiID))
+	return nil, errors.Errorf("could not find BundleReference for API with id %s", apiID)
 }

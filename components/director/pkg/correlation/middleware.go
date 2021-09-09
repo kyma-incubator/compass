@@ -25,14 +25,18 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	HeadersContextKey  = "CorrelationHeaders"
-	RequestIDHeaderKey = "x-request-id"
-)
+type contextKey string
+
+// HeadersContextKey missing godoc
+const HeadersContextKey contextKey = "CorrelationHeaders"
+
+// RequestIDHeaderKey missing godoc
+const RequestIDHeaderKey = "x-request-id"
 
 // headerKeys are the expected headers that are used for distributed tracing.
 var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
 
+// Headers missing godoc
 type Headers map[string]string
 
 // CorrelationIDForRequest returns the correlation ID for the current request
@@ -40,7 +44,7 @@ func CorrelationIDForRequest(request *http.Request) string {
 	return HeadersForRequest(request)[RequestIDHeaderKey]
 }
 
-//AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
+// AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
 func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

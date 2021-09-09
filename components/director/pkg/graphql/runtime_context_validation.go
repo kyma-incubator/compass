@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
+// Validate missing godoc
 func (i RuntimeContextInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Key, validation.Required, validation.RuneLength(0, longLongStringLengthLimit), validation.Match(alphanumericUnderscoreRegexp)),

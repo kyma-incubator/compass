@@ -71,7 +71,6 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 		// THEN
 		require.Equal(t, expected, result)
 	})
-
 }
 
 func TestBundleInstanceAuthStatusInput_ToBundleInstanceAuthStatus(t *testing.T) {

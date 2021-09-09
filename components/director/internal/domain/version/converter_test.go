@@ -107,7 +107,6 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionModel := versionConv.FromEntity(versionEntity)
 		//THEN
 		require.Nil(t, versionModel)
-
 	})
 }
 func TestConverter_ToEntity(t *testing.T) {
@@ -131,8 +130,8 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func assertVersion(t *testing.T, entity version.Version, model model.Version) {
-	testdb.AssertSqlNullStringEqualTo(t, entity.Value, &model.Value)
-	testdb.AssertSqlNullStringEqualTo(t, entity.DeprecatedSince, model.DeprecatedSince)
-	testdb.AssertSqlNullBool(t, entity.Deprecated, model.Deprecated)
-	testdb.AssertSqlNullBool(t, entity.ForRemoval, model.ForRemoval)
+	testdb.AssertSQLNullStringEqualTo(t, entity.Value, &model.Value)
+	testdb.AssertSQLNullStringEqualTo(t, entity.DeprecatedSince, model.DeprecatedSince)
+	testdb.AssertSQLNullBool(t, entity.Deprecated, model.Deprecated)
+	testdb.AssertSQLNullBool(t, entity.ForRemoval, model.ForRemoval)
 }

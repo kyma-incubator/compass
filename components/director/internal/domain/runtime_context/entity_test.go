@@ -1,9 +1,9 @@
-package runtime_context_test
+package runtimectx_test
 
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ func TestEntity_EntityFromRuntimeModel(t *testing.T) {
 	}
 
 	// when
-	entityRuntimeCtx := runtime_context.EntityFromRuntimeContextModel(&modelRuntimeCtx)
+	entityRuntimeCtx := runtimectx.EntityFromRuntimeContextModel(&modelRuntimeCtx)
 
 	// then
 	assert.Equal(t, modelRuntimeCtx.ID, entityRuntimeCtx.ID)
@@ -31,7 +31,7 @@ func TestEntity_EntityFromRuntimeModel(t *testing.T) {
 
 func TestEntity_RuntimeContextToModel(t *testing.T) {
 	// given
-	entityRuntimeCtx := runtime_context.RuntimeContext{
+	entityRuntimeCtx := runtimectx.RuntimeContext{
 		ID:        "id",
 		RuntimeID: "runtime_id",
 		TenantID:  "tenant_id",

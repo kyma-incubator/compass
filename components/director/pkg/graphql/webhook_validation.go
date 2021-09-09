@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
+// Validate missing godoc
 func (i WebhookInput) Validate() error {
 	if i.URL == nil && i.URLTemplate == nil {
 		return apperrors.NewInvalidDataError("missing webhook url")

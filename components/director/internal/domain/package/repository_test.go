@@ -1,4 +1,4 @@
-package mp_package_test
+package ordpackage_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -33,7 +33,7 @@ func TestPgRepository_Create(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := automock.EntityConverter{}
 		convMock.On("ToEntity", pkgModel).Return(pkgEntity, nil).Once()
-		pgRepository := mp_package.NewRepository(&convMock)
+		pgRepository := ordpackage.NewRepository(&convMock)
 		//WHEN
 		err := pgRepository.Create(ctx, pkgModel)
 		//THEN
@@ -45,7 +45,7 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when item is nil", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.EntityConverter{}
-		pgRepository := mp_package.NewRepository(&convMock)
+		pgRepository := ordpackage.NewRepository(&convMock)
 		// WHEN
 		err := pgRepository.Create(ctx, nil)
 		// THEN
@@ -71,7 +71,7 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(append(fixPackageUpdateArgs(), tenantID, entity.ID)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := ordpackage.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, pkg)
 		//THEN
@@ -84,7 +84,7 @@ func TestPgRepository_Update(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := ordpackage.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, nil)
 		//THEN
@@ -101,7 +101,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, packageID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EntityConverter{}
-	pgRepository := mp_package.NewRepository(convMock)
+	pgRepository := ordpackage.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.Delete(ctx, tenantID, packageID)
 	//THEN
@@ -118,7 +118,7 @@ func TestPgRepository_Exists(t *testing.T) {
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, packageID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EntityConverter{}
-	pgRepository := mp_package.NewRepository(convMock)
+	pgRepository := ordpackage.NewRepository(convMock)
 	//WHEN
 	found, err := pgRepository.Exists(ctx, tenantID, packageID)
 	//THEN
@@ -146,7 +146,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
 		convMock.On("FromEntity", pkgEntity).Return(&model.Package{ID: packageID, TenantID: tenantID}, nil).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := ordpackage.NewRepository(convMock)
 		// WHEN
 		modelBndl, err := pgRepository.GetByID(ctx, tenantID, packageID)
 		//THEN
@@ -159,7 +159,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := mp_package.NewRepository(nil)
+		repo := ordpackage.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
@@ -191,7 +191,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
 		convMock.On("FromEntity", pkgEntity).Return(&model.Package{}, testError).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := ordpackage.NewRepository(convMock)
 		// WHEN
 		_, err := pgRepository.GetByID(ctx, tenantID, packageID)
 		//THEN
@@ -224,7 +224,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		convMock := &automock.EntityConverter{}
 		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{ID: firstPkgEntity.ID}, nil)
 		convMock.On("FromEntity", secondPkgEntity).Return(&model.Package{ID: secondPkgEntity.ID}, nil)
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := ordpackage.NewRepository(convMock)
 		// WHEN
 		modelPkg, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
 		//THEN

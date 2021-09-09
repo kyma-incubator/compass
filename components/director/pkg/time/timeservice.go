@@ -2,6 +2,7 @@ package time
 
 import "time"
 
+// Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	Now() time.Time
@@ -10,10 +11,12 @@ type Service interface {
 type service struct {
 }
 
+// Now missing godoc
 func (ts *service) Now() time.Time {
 	return time.Now()
 }
 
+// NewService missing godoc
 func NewService() Service {
 	return &service{}
 }

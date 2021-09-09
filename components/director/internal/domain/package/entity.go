@@ -1,9 +1,10 @@
-package mp_package
+package ordpackage
 
 import (
 	"database/sql"
 )
 
+// Entity missing godoc
 type Entity struct {
 	ID                string         `db:"id"`
 	TenantID          string         `db:"tenant_id"`

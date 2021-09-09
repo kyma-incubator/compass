@@ -1,14 +1,20 @@
 package tenantfetcher
 
+// EventsType missing godoc
 type EventsType int
 
 const (
+	// CreatedEventsType missing godoc
 	CreatedEventsType EventsType = iota
+	// DeletedEventsType missing godoc
 	DeletedEventsType
+	// UpdatedEventsType missing godoc
 	UpdatedEventsType
+	// MovedRuntimeByLabelEventsType missing godoc
 	MovedRuntimeByLabelEventsType
 )
 
+// String missing godoc
 func (e EventsType) String() string {
 	switch e {
 	case CreatedEventsType:
@@ -24,4 +30,5 @@ func (e EventsType) String() string {
 	}
 }
 
+// TenantEventsResponse missing godoc
 type TenantEventsResponse []byte

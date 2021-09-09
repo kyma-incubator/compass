@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
@@ -27,6 +28,7 @@ type ApplicationTemplateService interface {
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
+// ApplicationTemplateConverter missing godoc
 //go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
@@ -36,6 +38,7 @@ type ApplicationTemplateConverter interface {
 	ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput
 }
 
+// ApplicationConverter missing godoc
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -43,6 +46,7 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 }
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
@@ -50,17 +54,20 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
+// WebhookService missing godoc
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
+// WebhookConverter missing godoc
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -72,6 +79,7 @@ type Resolver struct {
 	webhookConverter     WebhookConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
@@ -84,6 +92,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 	}
 }
 
+// ApplicationTemplate missing godoc
 func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -114,6 +123,7 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 	return out, nil
 }
 
+// ApplicationTemplates missing godoc
 func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
 	var cursor string
 	if after != nil {
@@ -157,6 +167,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 	}, nil
 }
 
+// CreateApplicationTemplate missing godoc
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -200,6 +211,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	return gqlAppTemplate, nil
 }
 
+// RegisterApplicationFromTemplate missing godoc
 func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -271,6 +283,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	return gqlApp, nil
 }
 
+// UpdateApplicationTemplate missing godoc
 func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -312,6 +325,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	return gqlAppTemplate, nil
 }
 
+// DeleteApplicationTemplate missing godoc
 func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -344,6 +358,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	return deletedAppTemplate, nil
 }
 
+// Webhooks missing godoc
 func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplate) ([]*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

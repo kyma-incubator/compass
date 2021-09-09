@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
@@ -21,12 +22,14 @@ type Repository interface {
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
 
+// ScenariosDefService missing godoc
 //go:generate mockery --name=ScenariosDefService --output=automock --outpkg=automock --case=underscore
 type ScenariosDefService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
+// AssignmentEngine missing godoc
 //go:generate mockery --name=AssignmentEngine --output=automock --outpkg=automock --case=underscore
 type AssignmentEngine interface {
 	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
@@ -34,6 +37,7 @@ type AssignmentEngine interface {
 	RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 }
 
+// NewService missing godoc
 func NewService(repo Repository, scenarioDefSvc ScenariosDefService, engineSvc AssignmentEngine) *service {
 	return &service{
 		repo:            repo,
@@ -48,6 +52,7 @@ type service struct {
 	engineSvc       AssignmentEngine
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -102,6 +107,7 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 	return out, nil
 }
 
+// ListForSelector missing godoc
 func (s *service) ListForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -115,6 +121,7 @@ func (s *service) ListForSelector(ctx context.Context, in model.LabelSelector) (
 	return assignments, nil
 }
 
+// GetForScenarioName missing godoc
 func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -128,6 +135,7 @@ func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (
 	return sa, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -141,6 +149,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.repo.List(ctx, tnt, pageSize, cursor)
 }
 
+// DeleteManyForSameSelector missing godoc
 func (s *service) DeleteManyForSameSelector(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -186,7 +195,7 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 }
 
 func (s *service) ensureSameSelector(in []*model.AutomaticScenarioAssignment) (model.LabelSelector, error) {
-	if in == nil || len(in) == 0 || in[0] == nil {
+	if len(in) == 0 || in[0] == nil {
 		return model.LabelSelector{}, apperrors.NewInternalError("expected at least one item in Assignments slice")
 	}
 

@@ -1,4 +1,4 @@
-package graphql_client
+package graphqlclient
 
 import (
 	"crypto/tls"
@@ -9,8 +9,9 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-func NewGraphQLClient(URL string, timeout time.Duration) *gcli.Client {
-	return gcli.NewClient(URL, gcli.WithHTTPClient(newAuthorizedHTTPClient(timeout)))
+// NewGraphQLClient missing godoc
+func NewGraphQLClient(url string, timeout time.Duration) *gcli.Client {
+	return gcli.NewClient(url, gcli.WithHTTPClient(newAuthorizedHTTPClient(timeout)))
 }
 
 func newAuthorizedHTTPClient(timeout time.Duration) *http.Client {
