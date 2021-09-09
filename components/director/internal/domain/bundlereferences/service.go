@@ -20,6 +20,7 @@ type BundleReferenceRepository interface {
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
