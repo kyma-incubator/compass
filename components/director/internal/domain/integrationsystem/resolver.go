@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
+// IntegrationSystemService missing godoc
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemService interface {
 	Create(ctx context.Context, in model.IntegrationSystemInput) (string, error)
@@ -19,6 +20,7 @@ type IntegrationSystemService interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// IntegrationSystemConverter missing godoc
 //go:generate mockery --name=IntegrationSystemConverter --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemConverter interface {
 	ToGraphQL(in *model.IntegrationSystem) *graphql.IntegrationSystem
@@ -26,20 +28,25 @@ type IntegrationSystemConverter interface {
 	InputFromGraphQL(in graphql.IntegrationSystemInput) model.IntegrationSystemInput
 }
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
+// SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
+// OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
+
+// Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -50,6 +57,7 @@ type Resolver struct {
 	sysAuthConverter SystemAuthConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
@@ -61,6 +69,7 @@ func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystem
 	}
 }
 
+// IntegrationSystem missing godoc
 func (r *Resolver) IntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -86,6 +95,7 @@ func (r *Resolver) IntegrationSystem(ctx context.Context, id string) (*graphql.I
 	return r.intSysConverter.ToGraphQL(is), nil
 }
 
+// IntegrationSystems missing godoc
 func (r *Resolver) IntegrationSystems(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.IntegrationSystemPage, error) {
 	var cursor string
 	if after != nil {
@@ -126,6 +136,7 @@ func (r *Resolver) IntegrationSystems(ctx context.Context, first *int, after *gr
 	}, nil
 }
 
+// RegisterIntegrationSystem missing godoc
 func (r *Resolver) RegisterIntegrationSystem(ctx context.Context, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
 	convertedIn := r.intSysConverter.InputFromGraphQL(in)
 
@@ -157,6 +168,7 @@ func (r *Resolver) RegisterIntegrationSystem(ctx context.Context, in graphql.Int
 	return gqlIntSys, nil
 }
 
+// UpdateIntegrationSystem missing godoc
 func (r *Resolver) UpdateIntegrationSystem(ctx context.Context, id string, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -187,6 +199,7 @@ func (r *Resolver) UpdateIntegrationSystem(ctx context.Context, id string, in gr
 	return gqlIntSys, nil
 }
 
+// UnregisterIntegrationSystem missing godoc
 func (r *Resolver) UnregisterIntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -226,6 +239,7 @@ func (r *Resolver) UnregisterIntegrationSystem(ctx context.Context, id string) (
 	return deletedIntSys, nil
 }
 
+// Auths missing godoc
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.IntSysSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Integration System cannot be empty")
@@ -249,7 +263,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([
 		return nil, err
 	}
 
-	var out []*graphql.IntSysSystemAuth
+	out := make([]*graphql.IntSysSystemAuth, 0, len(sysAuths))
 	for _, sa := range sysAuths {
 		c, err := r.sysAuthConverter.ToGraphQL(&sa)
 		if err != nil {

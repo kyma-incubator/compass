@@ -19,6 +19,7 @@ var (
 	tenantColumn = "tenant_id"
 )
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.SystemAuth) (Entity, error)
@@ -38,6 +39,7 @@ type repository struct {
 	conv Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		creator:            repo.NewCreator(resource.SystemAuth, tableName, tableColumns),
@@ -52,6 +54,7 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
@@ -62,6 +65,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 	return r.creator.Create(ctx, entity)
 }
 
+// GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -76,6 +80,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Sys
 	return &itemModel, nil
 }
 
+// GetByIDGlobal missing godoc
 func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -90,6 +95,7 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Syste
 	return &itemModel, nil
 }
 
+// GetByJSONValue missing godoc
 func (r *repository) GetByJSONValue(ctx context.Context, value map[string]interface{}) (*model.SystemAuth, error) {
 	valueBytes, err := json.Marshal(value)
 	if err != nil {
@@ -108,6 +114,7 @@ func (r *repository) GetByJSONValue(ctx context.Context, value map[string]interf
 	return &itemModel, nil
 }
 
+// ListForObject missing godoc
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
@@ -129,6 +136,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	return r.multipleFromEntities(entities)
 }
 
+// ListForObjectGlobal missing godoc
 func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
@@ -149,6 +157,7 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 	return r.multipleFromEntities(entities)
 }
 
+// ListGlobalWithConditions missing godoc
 func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error) {
 	var entities Collection
 
@@ -160,8 +169,7 @@ func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions re
 }
 
 func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAuth, error) {
-
-	var items []model.SystemAuth
+	items := make([]model.SystemAuth, 0, len(entities))
 
 	for _, ent := range entities {
 		m, err := r.conv.FromEntity(ent)
@@ -175,6 +183,7 @@ func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAu
 	return items, nil
 }
 
+// DeleteAllForObject missing godoc
 func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) error {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
@@ -186,6 +195,7 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
+// DeleteByIDForObject missing godoc
 func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
 
@@ -198,6 +208,7 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string,
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
+// DeleteByIDForObjectGlobal missing godoc
 func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
 
@@ -210,6 +221,7 @@ func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, o
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, item *model.SystemAuth) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")

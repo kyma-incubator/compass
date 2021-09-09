@@ -29,7 +29,6 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, errors.New("error")
 	}
 	return response, nil
-
 }
 
 func NewTestClient(fn RoundTripFunc) *http.Client {
@@ -41,7 +40,7 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 func TestService_HandleSpec(t *testing.T) {
 	const username = "username"
 	const password = "password"
-	const clientId = "clId"
+	const clientID = "clId"
 	const secret = "clSecret"
 	const url = "mocked-url/oauth/token"
 	mockSpec := "spec"
@@ -94,7 +93,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Credential: model.CredentialData{
 				Basic: nil,
 				Oauth: &model.OAuthCredentialData{
-					ClientID:     clientId,
+					ClientID:     clientID,
 					ClientSecret: secret,
 					URL:          url,
 				},
@@ -200,9 +199,9 @@ func TestService_HandleSpec(t *testing.T) {
 			Client: func(t *testing.T) *http.Client {
 				return NewTestClient(func(req *http.Request) *http.Response {
 					if req.URL.String() == url {
-						actualClientId, actualSecret, ok := req.BasicAuth()
+						actualClientID, actualSecret, ok := req.BasicAuth()
 						assert.True(t, ok)
-						assert.Equal(t, clientId, actualClientId)
+						assert.Equal(t, clientID, actualClientID)
 						assert.Equal(t, secret, actualSecret)
 						return &http.Response{
 							StatusCode: http.StatusOK,
@@ -224,14 +223,14 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Fails to fetch oauth token with oauth authentication",
 			Client: func(t *testing.T) *http.Client {
 				return NewTestClient(func(req *http.Request) *http.Response {
-					actualClientId, actualSecret, ok := req.BasicAuth()
+					actualClientID, actualSecret, ok := req.BasicAuth()
 					if ok {
-						assert.Equal(t, clientId, actualClientId)
+						assert.Equal(t, clientID, actualClientID)
 						assert.Equal(t, secret, actualSecret)
 					} else {
 						credentials, err := ioutil.ReadAll(req.Body)
 						assert.NoError(t, err)
-						assert.Contains(t, string(credentials), fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", clientId, secret))
+						assert.Contains(t, string(credentials), fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", clientID, secret))
 					}
 					return &http.Response{
 						StatusCode: http.StatusInternalServerError,
@@ -246,9 +245,9 @@ func TestService_HandleSpec(t *testing.T) {
 			Client: func(t *testing.T) *http.Client {
 				return NewTestClient(func(req *http.Request) *http.Response {
 					if req.URL.String() == url {
-						actualClientId, actualSecret, ok := req.BasicAuth()
+						actualClientID, actualSecret, ok := req.BasicAuth()
 						assert.True(t, ok)
-						assert.Equal(t, clientId, actualClientId)
+						assert.Equal(t, clientID, actualClientID)
 						assert.Equal(t, secret, actualSecret)
 						return &http.Response{
 							StatusCode: http.StatusOK,
@@ -280,7 +279,6 @@ func TestService_HandleSpec(t *testing.T) {
 
 			assert.Equal(t, testCase.ExpectedStatus, testCase.InputFr.Status)
 			assert.Equal(t, testCase.ExpectedResult, result)
-
 		})
 	}
 }

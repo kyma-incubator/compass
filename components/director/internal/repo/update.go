@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Updater missing godoc
 type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
 	SetIDColumns(idColumns []string)
@@ -23,6 +24,7 @@ type Updater interface {
 	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
 }
 
+// UpdaterGlobal missing godoc
 type UpdaterGlobal interface {
 	UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error
 }
@@ -35,6 +37,7 @@ type universalUpdater struct {
 	idColumns        []string
 }
 
+// NewUpdater missing godoc
 func NewUpdater(resourceType resource.Type, tableName string, updatableColumns []string, tenantColumn string, idColumns []string) Updater {
 	return &universalUpdater{
 		resourceType:     resourceType,
@@ -45,6 +48,7 @@ func NewUpdater(resourceType resource.Type, tableName string, updatableColumns [
 	}
 }
 
+// NewUpdaterGlobal missing godoc
 func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableColumns []string, idColumns []string) UpdaterGlobal {
 	return &universalUpdater{
 		resourceType:     resourceType,
@@ -54,22 +58,27 @@ func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableCol
 	}
 }
 
+// SetIDColumns missing godoc
 func (u *universalUpdater) SetIDColumns(idColumns []string) {
 	u.idColumns = idColumns
 }
 
+// SetUpdatableColumns missing godoc
 func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
 	u.updatableColumns = updatableColumns
 }
 
+// UpdateSingle missing godoc
 func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingle(ctx, dbEntity, false, false)
 }
 
+// UpdateSingleGlobal missing godoc
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingle(ctx, dbEntity, true, false)
 }
 
+// Clone missing godoc
 func (u *universalUpdater) Clone() Updater {
 	var clonedUpdater universalUpdater
 
@@ -82,6 +91,7 @@ func (u *universalUpdater) Clone() Updater {
 	return &clonedUpdater
 }
 
+// TechnicalUpdate missing godoc
 func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingle(ctx, dbEntity, false, true)
 }
@@ -96,7 +106,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return err
 	}
 
-	var fieldsToSet []string
+	fieldsToSet := make([]string, 0, len(u.updatableColumns))
 	for _, c := range u.updatableColumns {
 		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))
 	}

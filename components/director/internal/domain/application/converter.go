@@ -21,10 +21,12 @@ type converter struct {
 	bndl BundleConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(webhook WebhookConverter, bndlConverter BundleConverter) *converter {
 	return &converter{webhook: webhook, bndl: bndlConverter}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	if in == nil {
 		return nil, nil
@@ -47,7 +49,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		BaseURL:               repo.NewNullableString(in.BaseURL),
 		SystemNumber:          repo.NewNullableString(in.SystemNumber),
 		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
-		CorrelationIds:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIds),
+		CorrelationIDs:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -59,6 +61,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity *Entity) *model.Application {
 	if entity == nil {
 		return nil
@@ -79,7 +82,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		ApplicationTemplateID: repo.StringPtrFromNullableString(entity.ApplicationTemplateID),
 		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
 		Labels:                repo.JSONRawMessageFromNullableString(entity.Labels),
-		CorrelationIds:        repo.JSONRawMessageFromNullableString(entity.CorrelationIds),
+		CorrelationIDs:        repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -91,6 +94,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 	}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	if in == nil {
 		return nil
@@ -116,8 +120,9 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Application {
-	var applications []*graphql.Application
+	applications := make([]*graphql.Application, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -129,6 +134,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	return applications
 }
 
+// CreateInputFromGraphQL missing godoc
 func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	var labels map[string]interface{}
 	if in.Labels != nil {
@@ -165,6 +171,7 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 	}, nil
 }
 
+// UpdateInputFromGraphQL missing godoc
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
 	var statusCondition *model.ApplicationStatusCondition
 	if in.StatusCondition != nil {
@@ -180,6 +187,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 	}
 }
 
+// CreateInputJSONToGQL missing godoc
 func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
 	var appInput graphql.ApplicationRegisterInput
 	err := json.Unmarshal([]byte(in), &appInput)
@@ -190,6 +198,7 @@ func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegister
 	return appInput, nil
 }
 
+// CreateInputGQLToJSON missing godoc
 func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
 	appInput, err := json.Marshal(in)
 	if err != nil {
@@ -199,6 +208,7 @@ func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (
 	return string(appInput), nil
 }
 
+// GraphQLToModel missing godoc
 func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application {
 	if obj == nil {
 		return nil

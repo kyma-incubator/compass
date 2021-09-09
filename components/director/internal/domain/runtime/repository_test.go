@@ -378,7 +378,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 			defer sqlMock.AssertExpectations(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 			pgRepository := runtime.NewRepository(mockConverter)
-			expectedQuery := fmt.Sprintf(pageableQuery)
+			expectedQuery := pageableQuery
 
 			sqlMock.ExpectQuery(expectedQuery).
 				WithArgs(tenantID).
@@ -625,5 +625,5 @@ func TestPgRepository_UpdateTenantID_ShouldUpdateTenant(t *testing.T) {
 }
 
 func convertIntToBase64String(number int) string {
-	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
+	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))
 }

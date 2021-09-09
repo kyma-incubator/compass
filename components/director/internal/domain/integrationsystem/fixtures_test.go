@@ -139,7 +139,7 @@ func fixGQLAuth() *graphql.Auth {
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalHeaders:     graphql.HTTPHeaders{"test": {"foo", "bar"}},
 		AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -148,7 +148,7 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalHeaders:     graphql.HTTPHeaders{"test": {"foo", "bar"}},
 				AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},

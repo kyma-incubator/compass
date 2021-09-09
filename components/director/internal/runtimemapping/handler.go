@@ -15,26 +15,31 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TokenVerifier missing godoc
 //go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore
 type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (*jwt.MapClaims, error)
 }
 
+// RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
 }
 
+// TenantService missing godoc
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 }
 
+// ReqDataParser missing godoc
 //go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
+// Handler missing godoc
 type Handler struct {
 	reqDataParser ReqDataParser
 	transact      persistence.Transactioner
@@ -43,6 +48,7 @@ type Handler struct {
 	tenantSvc     TenantService
 }
 
+// NewHandler missing godoc
 func NewHandler(
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
@@ -58,6 +64,7 @@ func NewHandler(
 	}
 }
 
+// ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)

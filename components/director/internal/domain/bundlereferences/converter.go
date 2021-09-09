@@ -11,10 +11,12 @@ import (
 
 type converter struct{}
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.BundleReference) Entity {
 	var apiDefID sql.NullString
 	var eventDefID sql.NullString
@@ -38,6 +40,7 @@ func (c *converter) ToEntity(in model.BundleReference) Entity {
 	}
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.BundleReference, error) {
 	objectID, objectType, err := c.objectReferenceFromEntity(in)
 	if err != nil {

@@ -14,10 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SingleGetter missing godoc
 type SingleGetter interface {
 	Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
+// SingleGetterGlobal missing godoc
 type SingleGetterGlobal interface {
 	GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
@@ -29,6 +31,7 @@ type universalSingleGetter struct {
 	selectedColumns string
 }
 
+// NewSingleGetter missing godoc
 func NewSingleGetter(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
 		resourceType:    resourceType,
@@ -38,6 +41,7 @@ func NewSingleGetter(resourceType resource.Type, tableName string, tenantColumn 
 	}
 }
 
+// NewSingleGetterGlobal missing godoc
 func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selectedColumns []string) SingleGetterGlobal {
 	return &universalSingleGetter{
 		resourceType:    resourceType,
@@ -46,6 +50,7 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 	}
 }
 
+// Get missing godoc
 func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -54,6 +59,7 @@ func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditio
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
 
+// GetGlobal missing godoc
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }

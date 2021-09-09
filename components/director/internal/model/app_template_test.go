@@ -74,7 +74,6 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToApplicationTemplate(testID)
 
@@ -118,7 +117,6 @@ func TestApplicationFromTemplateInputValues_FindPlaceholderValue(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result, err := values.FindPlaceholderValue(testCase.Input)
 

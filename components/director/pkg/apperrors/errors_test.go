@@ -191,7 +191,6 @@ func TestErrors_Is(t *testing.T) {
 				assert.Equal(t, testCase.expectedResult, output)
 			})
 		}
-
 	})
 
 	t.Run("Errors not match", func(t *testing.T) {

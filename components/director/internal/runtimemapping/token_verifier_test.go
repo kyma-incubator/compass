@@ -277,7 +277,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 
 func TestTokenVerifier_Verify(t *testing.T) {
 	privateKeys := readJWK(t, "testdata/jwks-private.json")
-	cachePeriod := time.Duration(5 * time.Minute)
+	cachePeriod := 5 * time.Minute
 
 	t.Run("should validate token using cache for keys", func(t *testing.T) {
 		// GIVEN

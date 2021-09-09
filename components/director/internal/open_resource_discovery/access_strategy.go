@@ -1,19 +1,24 @@
-package open_resource_discovery
+package ord
 
+// AccessStrategy missing godoc
 type AccessStrategy struct {
 	Type              AccessStrategyType `json:"type"`
 	CustomType        AccessStrategyType `json:"customType"`
 	CustomDescription string             `json:"customDescription"`
 }
 
+// AccessStrategyType missing godoc
 type AccessStrategyType string
 
+// IsSupported missing godoc
 func (a AccessStrategyType) IsSupported() bool {
 	return supportedAccessStrategies[a]
 }
 
 const (
-	OpenAccessStrategy   AccessStrategyType = "open"
+	// OpenAccessStrategy missing godoc
+	OpenAccessStrategy AccessStrategyType = "open"
+	// CustomAccessStrategy missing godoc
 	CustomAccessStrategy AccessStrategyType = "custom"
 )
 
@@ -21,6 +26,7 @@ var supportedAccessStrategies = map[AccessStrategyType]bool{
 	OpenAccessStrategy: true,
 }
 
+// AccessStrategies missing godoc
 type AccessStrategies []AccessStrategy
 
 // GetSupported returns the first AccessStrategy in the slice that is supported by CMP

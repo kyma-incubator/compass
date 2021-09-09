@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error)
@@ -22,6 +23,7 @@ type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
+// LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
@@ -33,6 +35,7 @@ type engine struct {
 	labelService           LabelUpsertService
 }
 
+// NewEngine missing godoc
 func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
 	return &engine{
 		labelRepo:              labelRepo,
@@ -41,6 +44,7 @@ func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scena
 	}
 }
 
+// EnsureScenarioAssigned missing godoc
 func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	runtimesIDs, err := e.labelRepo.GetRuntimesIDsByStringLabel(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
 	if err != nil {
@@ -59,6 +63,7 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
+// RemoveAssignedScenario missing godoc
 func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
 	if err != nil {
@@ -67,6 +72,7 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
 
+// RemoveAssignedScenarios missing godoc
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
 		err := e.RemoveAssignedScenario(ctx, *asa)
@@ -77,6 +83,7 @@ func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.Automa
 	return nil
 }
 
+// GetScenariosForSelectorLabels missing godoc
 func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -99,7 +106,6 @@ func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels m
 		for _, sa := range scenarioAssignments {
 			scenariosSet[sa.ScenarioName] = struct{}{}
 		}
-
 	}
 
 	scenarios := make([]string, 0)
@@ -109,6 +115,7 @@ func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels m
 	return scenarios, nil
 }
 
+// MergeScenariosFromInputLabelsAndAssignments missing godoc
 func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
 	scenariosSet := make(map[string]struct{})
 
@@ -134,7 +141,6 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 		for _, scenario := range scenariosFromInputInterfaceSlice {
 			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
 		}
-
 	}
 
 	scenarios := make([]interface{}, 0)
@@ -144,6 +150,7 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 	return scenarios, nil
 }
 
+// MergeScenarios missing godoc
 func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{} {
 	scenariosSet := map[interface{}]struct{}{}
 	for _, scenario := range baseScenarios {
@@ -222,19 +229,18 @@ func (e *engine) upsertScenarios(ctx context.Context, tenantID string, labels []
 func (e *engine) updateScenario(ctx context.Context, tenantID string, label model.Label, scenarios []string) error {
 	if len(scenarios) == 0 {
 		return e.labelRepo.Delete(ctx, tenantID, model.RuntimeLabelableObject, label.ObjectID, model.ScenariosKey)
-	} else {
-		labelInput := model.LabelInput{
-			Key:        label.Key,
-			Value:      scenarios,
-			ObjectID:   label.ObjectID,
-			ObjectType: label.ObjectType,
-		}
-		return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
 	}
+	labelInput := model.LabelInput{
+		Key:        label.Key,
+		Value:      scenarios,
+		ObjectID:   label.ObjectID,
+		ObjectType: label.ObjectType,
+	}
+	return e.labelService.UpsertLabel(ctx, tenantID, &labelInput)
 }
 
 func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]string, error) {
-	var scenariosString []string
+	scenariosString := make([]string, 0, len(scenarios))
 	for _, scenario := range scenarios {
 		item, ok := scenario.(string)
 		if !ok {

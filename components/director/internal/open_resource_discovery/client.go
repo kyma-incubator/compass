@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 import (
 	"context"
@@ -36,21 +36,21 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 		return nil, err
 	}
 
-	baseUrl, err := stripRelativePathFromURL(url)
+	baseURL, err := stripRelativePathFromURL(url)
 	if err != nil {
 		return nil, err
 	}
 
-	docs := make([]*Document, 0, 0)
+	docs := make([]*Document, 0)
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseUrl+docDetails.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseURL+docDetails.URL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseUrl+docDetails.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseURL+docDetails.URL, strategy)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseUrl+docDetails.URL)
+			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseURL+docDetails.URL)
 		}
 
 		docs = append(docs, doc)
@@ -59,18 +59,18 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 	return docs, nil
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy AccessStrategyType) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, _ AccessStrategyType) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q", documentURL)
 	resp, err := c.Get(documentURL)
 	if err != nil {
 		return nil, err
 	}
 
+	defer closeBody(ctx, resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
 	}
-
-	defer closeBody(ctx, resp.Body)
 
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -85,8 +85,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 }
 
 func closeBody(ctx context.Context, body io.ReadCloser) {
-	err := body.Close()
-	if err != nil {
+	if err := body.Close(); err != nil {
 		log.C(ctx).WithError(err).Warnf("Got error on closing response body")
 	}
 }
@@ -102,11 +101,11 @@ func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig,
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 	}
 
+	defer closeBody(ctx, resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
 	}
-
-	defer closeBody(ctx, resp.Body)
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -129,9 +128,8 @@ func buildWellKnownEndpoint(u string) (string, error) {
 
 	if parsedURL.Path != "" {
 		return parsedURL.String(), nil
-	} else {
-		return parsedURL.String() + WellKnownEndpoint, nil
 	}
+	return parsedURL.String() + WellKnownEndpoint, nil
 }
 
 func stripRelativePathFromURL(u string) (string, error) {

@@ -14,7 +14,7 @@ import (
 
 func TestCorrelationIDTransport_RoundTrip(t *testing.T) {
 	const (
-		testUrl            = "http://localhost:8080"
+		testURL            = "http://localhost:8080"
 		requestIDHeaderKey = "x-request-id"
 		requestID          = "123"
 	)
@@ -30,7 +30,7 @@ func TestCorrelationIDTransport_RoundTrip(t *testing.T) {
 	})
 
 	t.Run("sets correlation ID when it is present in a header", func(t *testing.T) {
-		request, err := http.NewRequest(http.MethodPost, testUrl, nil)
+		request, err := http.NewRequest(http.MethodPost, testURL, nil)
 		assert.NoError(t, err)
 		request.Header.Set(requestIDHeaderKey, requestID)
 
@@ -42,7 +42,7 @@ func TestCorrelationIDTransport_RoundTrip(t *testing.T) {
 	t.Run("sets correlation ID when it is present in the context", func(t *testing.T) {
 		requestHeaders := correlation.Headers{requestIDHeaderKey: requestID}
 		ctx := context.WithValue(context.TODO(), correlation.HeadersContextKey, requestHeaders)
-		request, err := http.NewRequestWithContext(ctx, http.MethodPost, testUrl, nil)
+		request, err := http.NewRequestWithContext(ctx, http.MethodPost, testURL, nil)
 		assert.NoError(t, err)
 
 		correlationTransport := httputil.NewCorrelationIDTransport(rt)

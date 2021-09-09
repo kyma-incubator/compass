@@ -73,13 +73,13 @@ func (_m *EventDefService) Get(ctx context.Context, id string) (*model.EventDefi
 	return r0, r1
 }
 
-// ListFetchRequests provides a mock function with given fields: ctx, eventDefIds
-func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIds []string) ([]*model.FetchRequest, error) {
-	ret := _m.Called(ctx, eventDefIds)
+// ListFetchRequests provides a mock function with given fields: ctx, eventDefIDs
+func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error) {
+	ret := _m.Called(ctx, eventDefIDs)
 
 	var r0 []*model.FetchRequest
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FetchRequest); ok {
-		r0 = rf(ctx, eventDefIds)
+		r0 = rf(ctx, eventDefIDs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.FetchRequest)
@@ -88,7 +88,7 @@ func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIds []
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = rf(ctx, eventDefIds)
+		r1 = rf(ctx, eventDefIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

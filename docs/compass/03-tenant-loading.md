@@ -11,7 +11,7 @@ There are three default tenants predefined for Compass:
 - `foo`
 - `bar`
 
-The list of default tenants is specified in the **global.tenants** parameter in the [`values.yaml`](https://github.com/kyma-incubator/compass/blob/master/chart/compass/values.yaml) file. You can modify this list by providing appropriate overrides.
+The list of default tenants is specified in the **global.tenants** parameter in the [`values.yaml`](https://github.com/kyma-incubator/compass/blob/main/chart/compass/values.yaml) file. You can modify this list by providing appropriate overrides.
  
 The `compass-director-tenant-loader-default` job that loads the list of default tenants is executed only once after the installation of the Compass chart. It is enabled by default. To disable it, set **global.tenantConfig.useDefaultTenants** to `false`. 
 

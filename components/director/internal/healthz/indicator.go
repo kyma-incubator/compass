@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// Indicator missing godoc
 //go:generate mockery --name=Indicator --output=automock --outpkg=automock --case=underscore
 type Indicator interface {
 	Name() string
@@ -17,12 +18,14 @@ type Indicator interface {
 	Status() Status
 }
 
+// Status missing godoc
 //go:generate mockery --name=Status --output=automock --outpkg=automock --case=underscore
 type Status interface {
 	Error() error
 	Details() string
 }
 
+// IndicatorFunc missing godoc
 type IndicatorFunc func(ctx context.Context) Status
 
 // Implements Status interface
@@ -82,7 +85,6 @@ func (i *indicator) Configure(cfg IndicatorConfig) {
 
 // Run starts the periodic indicator checks
 func (i *indicator) Run(ctx context.Context) {
-
 	go func() {
 		<-time.After(i.initialDelay)
 
@@ -96,7 +98,7 @@ func (i *indicator) Run(ctx context.Context) {
 			if currentStatus.Error() != nil {
 				// escape overflow
 				if i.failureCount < math.MaxInt32 {
-					i.failureCount += 1
+					i.failureCount++
 				}
 				log.C(ctx).Warnf("Threshold for indicator %s is %d, current failure count is : %d, current error is: %s, details are: %s",
 					i.Name(),

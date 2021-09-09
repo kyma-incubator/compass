@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Entity missing godoc
 type Entity struct {
 	ID               string         `db:"id"`
 	BundleID         string         `db:"bundle_id"`
@@ -20,8 +21,10 @@ type Entity struct {
 	StatusReason     string         `db:"status_reason"`
 }
 
+// Collection missing godoc
 type Collection []Entity
 
+// Len missing godoc
 func (c Collection) Len() int {
 	return len(c)
 }

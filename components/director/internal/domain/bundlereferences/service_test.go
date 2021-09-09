@@ -2,7 +2,6 @@ package bundlereferences_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -61,7 +60,7 @@ func TestService_GetForBundle(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
@@ -120,7 +119,7 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
@@ -203,7 +202,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
@@ -294,7 +293,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
@@ -347,7 +346,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
@@ -369,24 +368,24 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 func TestService_ListByBundleIDs(t *testing.T) {
 	testErr := errors.New("test err")
 
-	firstApiDefID := "apiID"
-	secondApiDefID := "apiID2"
+	firstAPIDefID := "apiID"
+	secondAPIDefID := "apiID2"
 	firstBundleID := "bundleID"
 	secondBundleID := "bundleID2"
 	bundleIDs := []string{firstBundleID, secondBundleID}
 
-	firstApiDefBundleRef := fixAPIBundleReferenceModel()
-	firstApiDefBundleRef.BundleID = str.Ptr(firstBundleID)
-	firstApiDefBundleRef.ObjectID = str.Ptr(firstApiDefID)
+	firstAPIDefBundleRef := fixAPIBundleReferenceModel()
+	firstAPIDefBundleRef.BundleID = str.Ptr(firstBundleID)
+	firstAPIDefBundleRef.ObjectID = str.Ptr(firstAPIDefID)
 
-	secondApiDefBundleRef := fixAPIBundleReferenceModel()
-	secondApiDefBundleRef.BundleID = str.Ptr(secondBundleID)
-	secondApiDefBundleRef.ObjectID = str.Ptr(secondApiDefID)
-	bundleRefs := []*model.BundleReference{&firstApiDefBundleRef, &secondApiDefBundleRef}
+	secondAPIDefBundleRef := fixAPIBundleReferenceModel()
+	secondAPIDefBundleRef.BundleID = str.Ptr(secondBundleID)
+	secondAPIDefBundleRef.ObjectID = str.Ptr(secondAPIDefID)
+	bundleRefs := []*model.BundleReference{&firstAPIDefBundleRef, &secondAPIDefBundleRef}
 
-	numberOfApisInFirstBundle := 1
-	numberOfApisInSecondBundle := 1
-	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+	numberOfAPIsInFirstBundle := 1
+	numberOfAPIsInSecondBundle := 1
+	totalCounts := map[string]int{firstBundleID: numberOfAPIsInFirstBundle, secondBundleID: numberOfAPIsInSecondBundle}
 
 	after := "test"
 
@@ -445,7 +444,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)

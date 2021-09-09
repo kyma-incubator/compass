@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DocumentRepository missing godoc
 //go:generate mockery --name=DocumentRepository --output=automock --outpkg=automock --case=underscore
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -22,6 +23,7 @@ type DocumentRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 }
 
+// FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
@@ -29,6 +31,7 @@ type FetchRequestRepository interface {
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -41,15 +44,17 @@ type service struct {
 	timestampGen     timestamp.Generator
 }
 
+// NewService missing godoc
 func NewService(repo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
 	return &service{
 		repo:             repo,
 		fetchRequestRepo: fetchRequestRepo,
 		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		timestampGen:     timestamp.DefaultGenerator,
 	}
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -64,6 +69,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
 	return document, nil
 }
 
+// GetForBundle missing godoc
 func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -78,6 +84,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return document, nil
 }
 
+// CreateInBundle missing godoc
 func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -105,6 +112,7 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	return document.ID, nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -119,6 +127,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// ListByBundleIDs missing godoc
 func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -132,6 +141,7 @@ func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageS
 	return s.repo.ListByBundleIDs(ctx, tnt, bundleIDs, pageSize, cursor)
 }
 
+// ListFetchRequests missing godoc
 func (s *service) ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error) {
 	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

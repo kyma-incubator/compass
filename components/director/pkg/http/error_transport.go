@@ -25,16 +25,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewErrorHandlerTransport missing godoc
 func NewErrorHandlerTransport(roundTripper HTTPRoundTripper) *ErrorHandlerTransport {
 	return &ErrorHandlerTransport{
 		roundTripper: roundTripper,
 	}
 }
 
+// ErrorHandlerTransport missing godoc
 type ErrorHandlerTransport struct {
 	roundTripper HTTPRoundTripper
 }
 
+// RoundTrip missing godoc
 func (c *ErrorHandlerTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	response, err := c.roundTripper.RoundTrip(request)
 	if err != nil {

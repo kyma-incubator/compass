@@ -17,8 +17,11 @@ import (
 type SetCombination string
 
 const (
-	IntersectSet           SetCombination = "INTERSECT"
-	ExceptSet              SetCombination = "EXCEPT"
+	// IntersectSet missing godoc
+	IntersectSet SetCombination = "INTERSECT"
+	// ExceptSet missing godoc
+	ExceptSet SetCombination = "EXCEPT"
+	// UnionSet missing godoc
 	UnionSet               SetCombination = "UNION"
 	scenariosLabelKey      string         = "SCENARIOS"
 	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND`
@@ -77,14 +80,14 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
 	var queryBuilder strings.Builder
 
-	var args []interface{}
+	args := make([]interface{}, 0, len(filter))
 	for idx, lblFilter := range filter {
 		if idx > 0 || isSubQuery {
 			queryBuilder.WriteString(fmt.Sprintf(` %s `, setCombination))
 		}
 
 		queryBuilder.WriteString(stmtPrefix)
-		if stmtPrefixArgs != nil && len(stmtPrefixArgs) > 0 {
+		if len(stmtPrefixArgs) > 0 {
 			args = append(args, stmtPrefixArgs...)
 		}
 

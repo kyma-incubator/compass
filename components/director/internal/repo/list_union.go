@@ -11,8 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// UnionLister missing godoc
 type UnionLister interface {
-	//List stores the result into dest and returns the total count of tuples for each id from ids
+	// List stores the result into dest and returns the total count of tuples for each id from ids
 	List(ctx context.Context, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error)
 	SetSelectedColumns(selectedColumns []string)
 	Clone() UnionLister
@@ -25,6 +26,7 @@ type unionLister struct {
 	resourceType    resource.Type
 }
 
+// NewUnionLister missing godoc
 func NewUnionLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) UnionLister {
 	return &unionLister{
 		tableName:       tableName,
@@ -34,10 +36,12 @@ func NewUnionLister(resourceType resource.Type, tableName string, tenantColumn s
 	}
 }
 
+// SetSelectedColumns missing godoc
 func (l *unionLister) SetSelectedColumns(selectedColumns []string) {
 	l.selectedColumns = strings.Join(selectedColumns, ", ")
 }
 
+// Clone missing godoc
 func (l *unionLister) Clone() UnionLister {
 	var clonedLister unionLister
 
@@ -49,6 +53,7 @@ func (l *unionLister) Clone() UnionLister {
 	return &clonedLister
 }
 
+// List missing godoc
 func (l *unionLister) List(ctx context.Context, tenant string, ids []string, idscolumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
 	if tenant == "" {
 		return nil, apperrors.NewTenantRequiredError()
@@ -78,7 +83,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		return nil, err
 	}
 
-	var stmts []string
+	stmts := make([]string, 0, len(queries))
 	for _, q := range queries {
 		stmts = append(stmts, q.statement)
 	}
@@ -88,10 +93,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		args = append(args, q.args...)
 	}
 
-	query, err := buildUnionQuery(stmts)
-	if err != nil {
-		return nil, err
-	}
+	query := buildUnionQuery(stmts)
 
 	err = persist.SelectContext(ctx, dest, query, args...)
 	if err != nil {
@@ -107,10 +109,9 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 }
 
 func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []Condition, orderBy OrderByParams, limit int, offset int) ([]queryStruct, error) {
-	var queries []queryStruct
+	queries := make([]queryStruct, 0, len(ids))
 	for _, id := range ids {
-		c := append(conditions, NewEqualCondition(idsColumn, id))
-		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, c, orderBy, limit, offset, false)
+		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, append(conditions, NewEqualCondition(idsColumn, id)), orderBy, limit, offset, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "while building list query")
 		}
@@ -124,7 +125,7 @@ func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []
 }
 
 type idToCount struct {
-	Id    string `db:"id"`
+	ID    string `db:"id"`
 	Count int    `db:"total_count"`
 }
 
@@ -142,7 +143,7 @@ func (l *unionLister) getTotalCount(ctx context.Context, persist persistence.Per
 
 	totalCount := make(map[string]int)
 	for _, c := range counts {
-		totalCount[c.Id] = c.Count
+		totalCount[c.ID] = c.Count
 	}
 
 	return totalCount, nil

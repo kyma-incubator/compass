@@ -5,12 +5,12 @@ Compass Director is a multi-tenant service, which means that a single instance o
 
 ## Tenancy in Director
 Director manages the configuration of the following main objects:
-* [Application](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#application)
-* [Runtime](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#kyma-runtime)
-* [LabelDefinition](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-02-labels.md#labeldefinitions)
-* [Automatic Scenario Assigment](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-03-automatic-scenario-assignment.md)
-* [Integration System](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#integration-system)
-* [ApplicationTemplate](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#applicationtemplate)
+* [Application](https://github.com/kyma-incubator/compass/blob/main/docs/compass/02-01-components.md#application)
+* [Runtime](https://github.com/kyma-incubator/compass/blob/main/docs/compass/02-01-components.md#kyma-runtime)
+* [LabelDefinition](https://github.com/kyma-incubator/compass/blob/main/docs/compass/03-02-labels.md#labeldefinitions)
+* [Automatic Scenario Assigment](https://github.com/kyma-incubator/compass/blob/main/docs/compass/03-03-automatic-scenario-assignment.md)
+* [Integration System](https://github.com/kyma-incubator/compass/blob/main/docs/compass/02-01-components.md#integration-system)
+* [ApplicationTemplate](https://github.com/kyma-incubator/compass/blob/main/docs/compass/02-01-components.md#applicationtemplate)
 
 Applications, Runtimes, LabelDefinitions, and Automatic Scenario Assignments and their child resources, such as APIs, are bound to tenants.
 Integration Systems and ApplicationTemplates are not bound to any tenant and can represent multiple tenants.
@@ -23,12 +23,12 @@ A tenant is mainly described by two properties:
 
 Those properties are stored together with the metadata in the `business_tenant_mapping` table in the database.
 
-The Compass Director GraphQL API exposes [tenants query](https://github.com/kyma-incubator/compass/blob/master/components/director/examples/query-tenants/query-tenants.graphql). 
+The Compass Director GraphQL API exposes [tenants query](https://github.com/kyma-incubator/compass/blob/main/components/director/examples/query-tenants/query-tenants.graphql). 
 The query returns a list of all tenants with their external identifier, internal identifier, and additional metadata. 
 ## Creating tenants
-You can create a tenant in Director manually by using the [SQL statement](https://github.com/kyma-incubator/compass/blob/master/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanisms:
-* [Tenant Loader](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantloader) - a one-time job for importing tenants from files during the first Compass installation
-* [Tenant Fetcher](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantfetcher) - a periodic job that synchronizes tenants from an external system
+You can create a tenant in Director manually by using the [SQL statement](https://github.com/kyma-incubator/compass/blob/main/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanisms:
+* [Tenant Loader](https://github.com/kyma-incubator/compass/tree/main/components/director/cmd/tenantloader) - a one-time job for importing tenants from files during the first Compass installation
+* [Tenant Fetcher](https://github.com/kyma-incubator/compass/tree/main/components/director/cmd/tenantfetcher) - a periodic job that synchronizes tenants from an external system
 
 ## Authentication flow
 Information about tenants is used during the authentication and authorization phase in Compass.
@@ -42,4 +42,4 @@ The tenant mapping flow looks as follows:
 
 ![](./assets/tenant-mapping.svg)
 
-Having this information, Director can work as a multi-tenant service. For more information, refer to the document about [security in Compass](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-01-security.md).
+Having this information, Director can work as a multi-tenant service. For more information, refer to the document about [security in Compass](https://github.com/kyma-incubator/compass/blob/main/docs/compass/03-01-security.md).

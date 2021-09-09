@@ -8,12 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
 type converter struct{}
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.Label) (Entity, error) {
 	var valueMarshalled []byte
 	var err error
@@ -57,6 +59,7 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 	}, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.Label, error) {
 	var valueUnmarshalled interface{}
 	if in.Value != "" {

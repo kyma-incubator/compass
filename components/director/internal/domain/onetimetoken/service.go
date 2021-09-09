@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
@@ -27,22 +28,26 @@ type SystemAuthService interface {
 	Update(ctx context.Context, item *model.SystemAuth) error
 }
 
+// ApplicationConverter missing godoc
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 }
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 }
 
+// ExternalTenantsService missing godoc
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore
 type ExternalTenantsService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 }
 
+// HTTPDoer missing godoc
 //go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock --case=underscore
 type HTTPDoer interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -62,6 +67,7 @@ type service struct {
 	timeService               directorTime.Service
 }
 
+// NewTokenService missing godoc
 func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, config Config, intSystemToAdapterMapping map[string]string, timeService directorTime.Service) *service {
 	return &service{
 		connectorURL:              config.ConnectorURL,
@@ -78,6 +84,7 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 	}
 }
 
+// GenerateOneTimeToken missing godoc
 func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	if tokenType == model.ApplicationReference {
 		return s.getAppToken(ctx, id)
@@ -86,6 +93,7 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 	return s.createToken(ctx, id, tokenType, nil)
 }
 
+// RegenerateOneTimeToken missing godoc
 func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, tokenType tokens.TokenType) (model.OneTimeToken, error) {
 	sysAuth, err := s.sysAuthSvc.GetGlobal(ctx, sysAuthID)
 	if err != nil {
@@ -267,7 +275,7 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 
 	if label, ok := appLabels["legacy"]; ok {
 		if isLegacy, ok := (label.Value).(bool); ok && isLegacy {
-			suggestedToken, err := legacyConnectorUrlWithToken(s.legacyConnectorURL, oneTimeToken.Token)
+			suggestedToken, err := legacyConnectorURLWithToken(s.legacyConnectorURL, oneTimeToken.Token)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to obtain legacy connector URL with token for application with ID %s, will use the actual token: %v", app.ID, err)
 				return oneTimeToken.Token

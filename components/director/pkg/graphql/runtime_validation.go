@@ -9,6 +9,7 @@ import (
 
 var runtimeNameRgx = regexp.MustCompile(`^[a-zA-Z0-9-._]+$`)
 
+// Validate missing godoc
 func (i RuntimeInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(1, longStringLengthLimit), validation.Match(runtimeNameRgx)),

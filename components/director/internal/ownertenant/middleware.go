@@ -14,13 +14,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// MutationObject missing godoc
 const MutationObject = "Mutation"
 
+// TenantIndexRepository missing godoc
 //go:generate mockery --name=TenantIndexRepository --output=automock --outpkg=automock --case=underscore
 type TenantIndexRepository interface {
-	GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceId string) (string, error)
+	GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceID string) (string, error)
 }
 
+// TenantRepository missing godoc
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -74,7 +77,7 @@ func (m *middleware) InterceptField(ctx context.Context, next gqlgen.Resolver) (
 
 	var id string
 	for _, arg := range fieldCtx.Field.Field.Arguments {
-		if arg.Value.Definition.Name == "ID" && arg.Value.Definition.BuiltIn == true { // The argument is of graphql's built-in ID type
+		if arg.Value.Definition.Name == "ID" && arg.Value.Definition.BuiltIn { // The argument is of graphql's built-in ID type
 			if len(arg.Value.Raw) > 0 { // The ID argument is populated
 				if len(id) > 0 { // We already found an ID argument that is populated. More than one ID arguments provided is not supported for now.
 					return nil, errors.New("More than one argument with type ID is provided for the mutation")

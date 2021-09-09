@@ -15,10 +15,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ExistQuerier missing godoc
 type ExistQuerier interface {
 	Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error)
 }
 
+// ExistQuerierGlobal missing godoc
 type ExistQuerierGlobal interface {
 	ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error)
 }
@@ -29,14 +31,17 @@ type universalExistQuerier struct {
 	resourceType resource.Type
 }
 
+// NewExistQuerier missing godoc
 func NewExistQuerier(resourceType resource.Type, tableName string, tenantColumn string) ExistQuerier {
 	return &universalExistQuerier{resourceType: resourceType, tableName: tableName, tenantColumn: &tenantColumn}
 }
 
+// NewExistQuerierGlobal missing godoc
 func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQuerierGlobal {
 	return &universalExistQuerier{tableName: tableName, resourceType: resourceType}
 }
 
+// Exists missing godoc
 func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
 	if tenant == "" {
 		return false, apperrors.NewTenantRequiredError()
@@ -45,6 +50,7 @@ func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, condi
 	return g.unsafeExists(ctx, conditions)
 }
 
+// ExistsGlobal missing godoc
 func (g *universalExistQuerier) ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error) {
 	return g.unsafeExists(ctx, conditions)
 }

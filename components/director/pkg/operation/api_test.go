@@ -44,7 +44,6 @@ const (
 )
 
 func TestServeHTTP(t *testing.T) {
-
 	t.Run("when tenant is missing it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req := fixEmptyRequest(t, context.Background(), string(resource.Application), resourceID)
@@ -351,13 +350,12 @@ func TestServeHTTP(t *testing.T) {
 			})
 		}
 	})
-
 }
 
-func fixEmptyRequest(t *testing.T, ctx context.Context, resourceType string, resourceId string) *http.Request {
-	endpointPath := path.Join("/", resourceType, resourceId)
+func fixEmptyRequest(t *testing.T, ctx context.Context, resourceType string, resourceID string) *http.Request {
+	endpointPath := path.Join("/", resourceType, resourceID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointPath, nil)
-	vars := map[string]string{"resource_type": resourceType, "resource_id": resourceId}
+	vars := map[string]string{"resource_type": resourceType, "resource_id": resourceID}
 	req = mux.SetURLVars(req, vars)
 	require.NoError(t, err)
 

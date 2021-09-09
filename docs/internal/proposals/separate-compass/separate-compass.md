@@ -44,7 +44,7 @@ The following section lists all steps needed to implement the Compass separation
 
 - Define fixed Kyma release version in the Compass repo:
 
-  - Define the Kyma release version in the `installation/resources/KYMA_RELEASE` file. The file should only contain the version, for example `master-0a8b78da` or `PR-8679`.
+  - Define the Kyma release version in the `installation/resources/KYMA_RELEASE` file. The file should only contain the version, for example `main-0a8b78da` or `PR-8679`.
 
 - Modify the Kyma Compass GKE Integration pipeline in the Kyma repository:
 
@@ -77,7 +77,7 @@ The following section lists all steps needed to implement the Compass separation
 
 - Modify the API Gateway test:
 
-  - Make Gateway configurable for test API rules (currently there is [a hardcoded `kyma-gateway`](https://github.com/kyma-project/kyma/blob/master/tests/integration/api-gateway/gateway-tests/manifests/no_access_strategy.yaml#L11); this component is used by KEB).
+  - Make Gateway configurable for test API rules (currently there is [a hardcoded `kyma-gateway`](https://github.com/kyma-project/kyma/blob/main/tests/integration/api-gateway/gateway-tests/manifests/no_access_strategy.yaml#L11); this component is used by KEB).
 
 - Modify pipelines for internal Compass environments.
 

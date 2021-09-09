@@ -8,7 +8,7 @@ import (
 // GqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given type
 type GqlFieldsProvider struct{}
 
-// fieldCtx is a map of optional fields that can be passed to FieldsProvider
+// FieldCtx is a map of optional fields that can be passed to FieldsProvider
 // Map keys should be in following format: `type.field` eg. `APIDefinition.auth`
 type FieldCtx map[string]string
 
@@ -57,6 +57,7 @@ func extractOmitFor(omittedProperties []string, propertyName string) []string {
 	return result
 }
 
+// Page missing godoc
 func (fp *GqlFieldsProvider) Page(item string) string {
 	return fmt.Sprintf(`data {
 		%s
@@ -66,6 +67,7 @@ func (fp *GqlFieldsProvider) Page(item string) string {
 	`, item, fp.ForPageInfo())
 }
 
+// OmitForApplication missing godoc
 func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) string {
 	bundlesOmittedProperties := extractOmitFor(omittedProperties, "bundles")
 	webhooksOmittedProperties := extractOmitFor(omittedProperties, "webhooks")
@@ -87,6 +89,7 @@ func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) stri
 	}, omittedProperties)
 }
 
+// ForApplication missing godoc
 func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
 		id
@@ -108,6 +111,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
+// ForApplicationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 	return fmt.Sprintf(`
 		id
@@ -120,6 +124,7 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 
+// OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{
 		"id":               "id",
@@ -139,6 +144,7 @@ func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string 
 	}, omittedProperties)
 }
 
+// ForWebhooks missing godoc
 func (fp *GqlFieldsProvider) ForWebhooks() string {
 	return fmt.Sprintf(
 		`id
@@ -160,6 +166,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		}`, fp.ForAuth())
 }
 
+// OmitForAPIDefinition missing godoc
 func (fp *GqlFieldsProvider) OmitForAPIDefinition(omittedProperties []string) string {
 	specOmittedProperties := extractOmitFor(omittedProperties, "spec")
 	versionOmittedProperties := extractOmitFor(omittedProperties, "version")
@@ -168,13 +175,14 @@ func (fp *GqlFieldsProvider) OmitForAPIDefinition(omittedProperties []string) st
 		"id":          "id",
 		"name":        "name",
 		"description": "description",
-		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForApiSpec(specOmittedProperties)),
+		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForAPISpec(specOmittedProperties)),
 		"targetURL":   "targetURL",
 		"group":       "group",
 		"version":     fmt.Sprintf("version {%s}", fp.OmitForVersion(versionOmittedProperties)),
 	}, omittedProperties)
 }
 
+// ForAPIDefinition missing godoc
 func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
 		id
@@ -183,17 +191,19 @@ func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 		spec {%s}
 		targetURL
 		group
-		version {%s}`, fp.ForApiSpec(), fp.ForVersion()),
+		version {%s}`, fp.ForAPISpec(), fp.ForVersion()),
 		ctx, []string{"APIDefinition.auth"})
 }
 
+// ForSystemAuth missing godoc
 func (fp *GqlFieldsProvider) ForSystemAuth() string {
 	return fmt.Sprintf(`
 		id
 		auth {%s}`, fp.ForAuth())
 }
 
-func (fp *GqlFieldsProvider) OmitForApiSpec(omittedProperties []string) string {
+// OmitForAPISpec missing godoc
+func (fp *GqlFieldsProvider) OmitForAPISpec(omittedProperties []string) string {
 	frOmittedProperties := extractOmitFor(omittedProperties, "fetchRequest")
 
 	return buildProperties(map[string]string{
@@ -205,7 +215,8 @@ func (fp *GqlFieldsProvider) OmitForApiSpec(omittedProperties []string) string {
 	}, omittedProperties)
 }
 
-func (fp *GqlFieldsProvider) ForApiSpec() string {
+// ForAPISpec missing godoc
+func (fp *GqlFieldsProvider) ForAPISpec() string {
 	return fmt.Sprintf(`
 		id
 		data
@@ -214,6 +225,7 @@ func (fp *GqlFieldsProvider) ForApiSpec() string {
 		fetchRequest {%s}`, fp.ForFetchRequest())
 }
 
+// OmitForFetchRequest missing godoc
 func (fp *GqlFieldsProvider) OmitForFetchRequest(omittedProperties []string) string {
 	return buildProperties(map[string]string{
 		"url":    "url",
@@ -224,6 +236,7 @@ func (fp *GqlFieldsProvider) OmitForFetchRequest(omittedProperties []string) str
 	}, omittedProperties)
 }
 
+// ForFetchRequest missing godoc
 func (fp *GqlFieldsProvider) ForFetchRequest() string {
 	return fmt.Sprintf(`
 		url
@@ -233,11 +246,13 @@ func (fp *GqlFieldsProvider) ForFetchRequest() string {
 		status {condition message timestamp}`, fp.ForAuth())
 }
 
+// ForAPIRuntimeAuth missing godoc
 func (fp *GqlFieldsProvider) ForAPIRuntimeAuth() string {
 	return fmt.Sprintf(`runtimeID
 		auth {%s}`, fp.ForAuth())
 }
 
+// OmitForVersion missing godoc
 func (fp *GqlFieldsProvider) OmitForVersion(omittedProperties []string) string {
 	return buildProperties(map[string]string{
 		"value":           "value",
@@ -247,6 +262,7 @@ func (fp *GqlFieldsProvider) OmitForVersion(omittedProperties []string) string {
 	}, omittedProperties)
 }
 
+// ForVersion missing godoc
 func (fp *GqlFieldsProvider) ForVersion() string {
 	return `value
 		deprecated
@@ -254,12 +270,14 @@ func (fp *GqlFieldsProvider) ForVersion() string {
 		forRemoval`
 }
 
+// ForPageInfo missing godoc
 func (fp *GqlFieldsProvider) ForPageInfo() string {
 	return `startCursor
 		endCursor
 		hasNextPage`
 }
 
+// OmitForEventDefinition missing godoc
 func (fp *GqlFieldsProvider) OmitForEventDefinition(omittedProperties []string) string {
 	specOmittedProperties := extractOmitFor(omittedProperties, "spec")
 	versionOmittedProperties := extractOmitFor(omittedProperties, "version")
@@ -272,9 +290,9 @@ func (fp *GqlFieldsProvider) OmitForEventDefinition(omittedProperties []string) 
 		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForEventSpec(specOmittedProperties)),
 		"version":     fmt.Sprintf("version {%s}", fp.OmitForVersion(versionOmittedProperties)),
 	}, omittedProperties)
-
 }
 
+// ForEventDefinition missing godoc
 func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
@@ -286,6 +304,7 @@ func (fp *GqlFieldsProvider) ForEventDefinition() string {
 		`, fp.ForEventSpec(), fp.ForVersion())
 }
 
+// OmitForEventSpec missing godoc
 func (fp *GqlFieldsProvider) OmitForEventSpec(omittedProperties []string) string {
 	frOmittedProperties := extractOmitFor(omittedProperties, "fetchRequest")
 
@@ -298,6 +317,7 @@ func (fp *GqlFieldsProvider) OmitForEventSpec(omittedProperties []string) string
 	}, omittedProperties)
 }
 
+// ForEventSpec missing godoc
 func (fp *GqlFieldsProvider) ForEventSpec() string {
 	return fmt.Sprintf(`
 		id
@@ -307,6 +327,7 @@ func (fp *GqlFieldsProvider) ForEventSpec() string {
 		fetchRequest {%s}`, fp.ForFetchRequest())
 }
 
+// OmitForDocument missing godoc
 func (fp *GqlFieldsProvider) OmitForDocument(omittedProperties []string) string {
 	frOmittedProperties := extractOmitFor(omittedProperties, "fetchRequest")
 
@@ -322,6 +343,7 @@ func (fp *GqlFieldsProvider) OmitForDocument(omittedProperties []string) string 
 	}, omittedProperties)
 }
 
+// ForDocument missing godoc
 func (fp *GqlFieldsProvider) ForDocument() string {
 	return fmt.Sprintf(`
 		id
@@ -334,8 +356,9 @@ func (fp *GqlFieldsProvider) ForDocument() string {
 		fetchRequest {%s}`, fp.ForFetchRequest())
 }
 
+// ForAuth missing godoc
 func (fp *GqlFieldsProvider) ForAuth() string {
-	return fmt.Sprintf(`credential {
+	return `credential {
 				... on BasicCredentialData {
 					username
 					password
@@ -368,14 +391,16 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 				additionalQueryParams
 			}
 			}
-		`)
+		`
 }
 
+// ForLabel missing godoc
 func (fp *GqlFieldsProvider) ForLabel() string {
 	return `key
 			value`
 }
 
+// ForRuntime missing godoc
 func (fp *GqlFieldsProvider) ForRuntime() string {
 	return fmt.Sprintf(`
 		id
@@ -388,18 +413,21 @@ func (fp *GqlFieldsProvider) ForRuntime() string {
 		eventingConfiguration { defaultURL }`, fp.ForSystemAuth())
 }
 
+// ForApplicationLabel missing godoc
 func (fp *GqlFieldsProvider) ForApplicationLabel() string {
 	return `
 		key
 		value`
 }
 
+// ForLabelDefinition missing godoc
 func (fp *GqlFieldsProvider) ForLabelDefinition() string {
 	return `
 		key
 		schema`
 }
 
+// ForOneTimeTokenForApplication missing godoc
 func (fp *GqlFieldsProvider) ForOneTimeTokenForApplication() string {
 	return `
 		token
@@ -409,6 +437,7 @@ func (fp *GqlFieldsProvider) ForOneTimeTokenForApplication() string {
 		legacyConnectorURL`
 }
 
+// ForOneTimeTokenForRuntime missing godoc
 func (fp *GqlFieldsProvider) ForOneTimeTokenForRuntime() string {
 	return `
 		token
@@ -417,6 +446,7 @@ func (fp *GqlFieldsProvider) ForOneTimeTokenForRuntime() string {
 		rawEncoded`
 }
 
+// ForIntegrationSystem missing godoc
 func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 	return fmt.Sprintf(`
 		id
@@ -425,23 +455,27 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 		auths {%s}`, fp.ForSystemAuth())
 }
 
+// ForPlaceholders missing godoc
 func (fp *GqlFieldsProvider) ForPlaceholders() string {
 	return `
 		name
 		description`
 }
 
+// ForEventingConfiguration missing godoc
 func (fp *GqlFieldsProvider) ForEventingConfiguration() string {
 	return `
 		defaultURL`
 }
 
+// ForViewer missing godoc
 func (fp *GqlFieldsProvider) ForViewer() string {
 	return `
 		id
 		type`
 }
 
+// OmitForTenant missing godoc
 func (fp *GqlFieldsProvider) OmitForTenant(omittedProperties []string) string {
 	return buildProperties(map[string]string{
 		"id":          "id",
@@ -452,6 +486,7 @@ func (fp *GqlFieldsProvider) OmitForTenant(omittedProperties []string) string {
 	}, omittedProperties)
 }
 
+// ForTenant missing godoc
 func (fp *GqlFieldsProvider) ForTenant() string {
 	return `
 		id
@@ -461,6 +496,7 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		labels`
 }
 
+// OmitForBundle missing godoc
 func (fp *GqlFieldsProvider) OmitForBundle(omittedProperties []string) string {
 	apiDefOmittedProperties := extractOmitFor(omittedProperties, "apiDefinitions")
 	eventDefOmittedProperties := extractOmitFor(omittedProperties, "eventDefinitions")
@@ -480,6 +516,7 @@ func (fp *GqlFieldsProvider) OmitForBundle(omittedProperties []string) string {
 	}, omittedProperties)
 }
 
+// ForBundle missing godoc
 func (fp *GqlFieldsProvider) ForBundle(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
 		id
@@ -494,6 +531,7 @@ func (fp *GqlFieldsProvider) ForBundle(ctx ...FieldCtx) string {
 		ctx, []string{"Bundle.instanceAuth"})
 }
 
+// OmitForBundleInstanceAuth missing godoc
 func (fp *GqlFieldsProvider) OmitForBundleInstanceAuth(omittedProperties []string) string {
 	statusOmittedProperties := extractOmitFor(omittedProperties, "status")
 
@@ -506,6 +544,7 @@ func (fp *GqlFieldsProvider) OmitForBundleInstanceAuth(omittedProperties []strin
 	}, omittedProperties)
 }
 
+// ForBundleInstanceAuth missing godoc
 func (fp *GqlFieldsProvider) ForBundleInstanceAuth() string {
 	return fmt.Sprintf(`
 		id
@@ -517,6 +556,7 @@ func (fp *GqlFieldsProvider) ForBundleInstanceAuth() string {
 		runtimeContextID`, fp.ForAuth(), fp.ForBundleInstanceAuthStatus())
 }
 
+// OmitForBundleInstanceAuthStatus missing godoc
 func (fp *GqlFieldsProvider) OmitForBundleInstanceAuthStatus(omittedProperties []string) string {
 	return buildProperties(map[string]string{
 		"condition": "condition",
@@ -526,6 +566,7 @@ func (fp *GqlFieldsProvider) OmitForBundleInstanceAuthStatus(omittedProperties [
 	}, omittedProperties)
 }
 
+// ForBundleInstanceAuthStatus missing godoc
 func (fp *GqlFieldsProvider) ForBundleInstanceAuthStatus() string {
 	return `
 		condition
@@ -534,6 +575,7 @@ func (fp *GqlFieldsProvider) ForBundleInstanceAuthStatus() string {
 		reason`
 }
 
+// ForAutomaticScenarioAssignment missing godoc
 func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
 	return fmt.Sprintf(`
 		scenarioName

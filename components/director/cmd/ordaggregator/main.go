@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
@@ -26,7 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
@@ -56,6 +56,7 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	exitOnError(err, "Error while configuring logger")
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
@@ -76,7 +77,7 @@ func main() {
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 }
 
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig features.Config, transact persistence.Transactioner, httpClient *http.Client) *open_resource_discovery.Service {
+func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig features.Config, transact persistence.Transactioner, httpClient *http.Client) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -90,7 +91,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	intSysConverter := integrationsystem.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	pkgConverter := mp_package.NewConverter()
+	pkgConverter := ordpackage.NewConverter()
 	productConverter := product.NewConverter()
 	vendorConverter := ordvendor.NewConverter()
 	tombstoneConverter := tombstone.NewConverter()
@@ -109,7 +110,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
-	pkgRepo := mp_package.NewRepository(pkgConverter)
+	pkgRepo := ordpackage.NewRepository(pkgConverter)
 	productRepo := product.NewRepository(productConverter)
 	vendorRepo := ordvendor.NewRepository(vendorConverter)
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
@@ -127,14 +128,14 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	packageSvc := mp_package.NewService(pkgRepo, uidSvc)
+	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 
-	ordClient := open_resource_discovery.NewClient(httpClient)
+	ordClient := ord.NewClient(httpClient)
 
-	return open_resource_discovery.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
+	return ord.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -146,7 +147,6 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 			exitOnError(err, "Error from Reloader watch")
 		}
 		log.C(ctx).Infof("Successfully reloaded configuration file.")
-
 	}).Run(ctx)
 
 	return provider

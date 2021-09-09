@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment
@@ -20,6 +21,7 @@ type Converter interface {
 	MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment
 }
 
+// Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
@@ -30,6 +32,7 @@ type Service interface {
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, svc Service, converter Converter) *Resolver {
 	return &Resolver{
 		transact:  transact,
@@ -38,12 +41,14 @@ func NewResolver(transact persistence.Transactioner, svc Service, converter Conv
 	}
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact  persistence.Transactioner
 	converter Converter
 	svc       Service
 }
 
+// CreateAutomaticScenarioAssignment missing godoc
 func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -70,6 +75,7 @@ func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in gra
 	return &assignment, nil
 }
 
+// GetAutomaticScenarioAssignmentForScenarioName missing godoc
 func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -94,6 +100,7 @@ func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Con
 	return &assignment, nil
 }
 
+// AutomaticScenarioAssignmentsForSelector missing godoc
 func (r *Resolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -118,6 +125,7 @@ func (r *Resolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, 
 	return gqlAssignments, nil
 }
 
+// AutomaticScenarioAssignments missing godoc
 func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
 	var cursor string
 	if after != nil {
@@ -158,6 +166,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 	}, nil
 }
 
+// DeleteAutomaticScenarioAssignmentsForSelector missing godoc
 func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -187,6 +196,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 	return r.converter.MultipleToGraphQL(assignments), nil
 }
 
+// DeleteAutomaticScenarioAssignmentForScenario missing godoc
 func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

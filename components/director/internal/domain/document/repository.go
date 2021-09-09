@@ -26,6 +26,7 @@ var (
 	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.Document) (*Entity, error)
@@ -43,6 +44,7 @@ type repository struct {
 	conv Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable, tenantColumn),
@@ -55,16 +57,20 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
+// DocumentCollection missing godoc
 type DocumentCollection []Entity
 
+// Len missing godoc
 func (d DocumentCollection) Len() int {
 	return len(d)
 }
 
+// Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Document, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -79,6 +85,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Doc
 	return &docModel, nil
 }
 
+// GetForBundle missing godoc
 func (r *repository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error) {
 	var ent Entity
 
@@ -98,6 +105,7 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 	return &documentModel, nil
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item *model.Document) error {
 	if item == nil {
 		return apperrors.NewInternalError("Document cannot be empty")
@@ -112,6 +120,7 @@ func (r *repository) Create(ctx context.Context, item *model.Document) error {
 	return r.creator.Create(ctx, entity)
 }
 
+// CreateMany missing godoc
 func (r *repository) CreateMany(ctx context.Context, items []*model.Document) error {
 	for _, item := range items {
 		if item == nil {
@@ -126,10 +135,12 @@ func (r *repository) CreateMany(ctx context.Context, items []*model.Document) er
 	return nil
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// ListByBundleIDs missing godoc
 func (r *repository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	var documentCollection DocumentCollection
 	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)

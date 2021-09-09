@@ -14,6 +14,7 @@ import (
 	"github.com/lib/pq"
 )
 
+// MapSQLError missing godoc
 func MapSQLError(ctx context.Context, err error, resourceType resource.Type, sqlOperation resource.SQLOperation, format string, args ...interface{}) error {
 	if err == nil {
 		return nil

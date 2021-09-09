@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AuthorizationProvider missing godoc
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . AuthorizationProvider
 type AuthorizationProvider interface {
 	Name() string
@@ -31,11 +32,13 @@ type AuthorizationProvider interface {
 	GetAuthorization(ctx context.Context) (string, error)
 }
 
+// SecuredTransport missing godoc
 type SecuredTransport struct {
 	roundTripper           HTTPRoundTripper
 	authorizationProviders []AuthorizationProvider
 }
 
+// NewSecuredTransport missing godoc
 func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...AuthorizationProvider) *SecuredTransport {
 	return &SecuredTransport{
 		roundTripper:           roundTripper,
@@ -43,6 +46,7 @@ func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...Authorizati
 	}
 }
 
+// RoundTrip missing godoc
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	logger := log.C(request.Context())
 

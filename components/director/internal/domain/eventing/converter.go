@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// RuntimeEventingConfigurationToGraphQL missing godoc
 func RuntimeEventingConfigurationToGraphQL(in *model.RuntimeEventingConfiguration) *graphql.RuntimeEventingConfiguration {
 	if in == nil {
 		return nil
@@ -15,6 +16,7 @@ func RuntimeEventingConfigurationToGraphQL(in *model.RuntimeEventingConfiguratio
 	}
 }
 
+// ApplicationEventingConfigurationToGraphQL missing godoc
 func ApplicationEventingConfigurationToGraphQL(in *model.ApplicationEventingConfiguration) *graphql.ApplicationEventingConfiguration {
 	if in == nil {
 		return nil

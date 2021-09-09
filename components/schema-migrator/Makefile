@@ -35,6 +35,9 @@ imports:
 check-imports:
 	@echo ${SKIP_CHECK_IMPORTS_MESSAGE}
 
+lint-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 errcheck:
 	@echo ${SKIP_ERROR_CHECK_MESSAGE}
 

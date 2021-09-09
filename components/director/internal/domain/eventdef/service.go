@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// EventAPIRepository missing godoc
 //go:generate mockery --name=EventAPIRepository --output=automock --outpkg=automock --case=underscore
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
@@ -26,11 +27,13 @@ type EventAPIRepository interface {
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// SpecService missing godoc
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -41,6 +44,7 @@ type SpecService interface {
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
+// BundleReferenceService missing godoc
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
@@ -58,16 +62,18 @@ type service struct {
 	timestampGen           timestamp.Generator
 }
 
+// NewService missing godoc
 func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specService SpecService, bundleReferenceService BundleReferenceService) *service {
 	return &service{
 		eventAPIRepo:           eventAPIRepo,
 		uidService:             uidService,
 		specService:            specService,
 		bundleReferenceService: bundleReferenceService,
-		timestampGen:           timestamp.DefaultGenerator(),
+		timestampGen:           timestamp.DefaultGenerator,
 	}
 }
 
+// ListByBundleIDs missing godoc
 func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -86,6 +92,7 @@ func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageS
 	return s.eventAPIRepo.ListByBundleIDs(ctx, tnt, bundleIDs, bundleRefs, counts, pageSize, cursor)
 }
 
+// ListByApplicationID missing godoc
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -95,6 +102,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, appID)
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -109,6 +117,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, e
 	return eventAPI, nil
 }
 
+// GetForBundle missing godoc
 func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -123,10 +132,12 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return eventAPI, nil
 }
 
+// CreateInBundle missing godoc
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
 	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -168,10 +179,12 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	return id, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
 	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, 0)
 }
 
+// UpdateInManyBundles missing godoc
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -190,21 +203,17 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
-	if bundleIDsForCreation != nil {
-		for _, bundleID := range bundleIDsForCreation {
-			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID)
-			if err != nil {
-				return err
-			}
+	for _, bundleID := range bundleIDsForCreation {
+		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID)
+		if err != nil {
+			return err
 		}
 	}
 
-	if bundleIDsForDeletion != nil {
-		for _, bundleID := range bundleIDsForDeletion {
-			err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
-			if err != nil {
-				return err
-			}
+	for _, bundleID := range bundleIDsForDeletion {
+		err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -225,6 +234,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -239,6 +249,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// DeleteAllByBundleID missing godoc
 func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -253,6 +264,7 @@ func (s *service) DeleteAllByBundleID(ctx context.Context, bundleID string) erro
 	return nil
 }
 
+// ListFetchRequests missing godoc
 func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

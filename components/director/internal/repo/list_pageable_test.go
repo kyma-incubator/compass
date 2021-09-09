@@ -104,7 +104,6 @@ func TestListPageable(t *testing.T) {
 		assert.Len(t, second, 1)
 		assert.True(t, actualSecondPage.HasNextPage)
 		assert.NotEmpty(t, actualSecondPage.EndCursor)
-
 	})
 
 	t.Run("returns page without conditions", func(t *testing.T) {
@@ -300,7 +299,6 @@ func TestListPageableGlobal(t *testing.T) {
 		assert.Len(t, second, 1)
 		assert.True(t, actualSecondPage.HasNextPage)
 		assert.NotEmpty(t, actualSecondPage.EndCursor)
-
 	})
 
 	t.Run("returns page without conditions", func(t *testing.T) {
@@ -402,7 +400,9 @@ func TestListPageableGlobal(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
-		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
 		ctx = persistence.SaveToContext(ctx, db)
 		var dest UserCollection
 

@@ -1,4 +1,4 @@
-package mp_bundle_test
+package bundle_test
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -268,8 +268,8 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
-			{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
+			{Name: "api1", TargetURLs: api.ConvertTargetURLToJSONArray("foo.bar")},
+			{Name: "api2", TargetURLs: api.ConvertTargetURLToJSONArray("foo.bar2")},
 		},
 		APISpecs: []*model.SpecInput{
 			{Data: &specData1},
@@ -358,7 +358,7 @@ func fixGQLAuth() *graphql.Auth {
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalHeaders:     graphql.HTTPHeaders{"test": {"foo", "bar"}},
 		AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -367,15 +367,15 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalHeaders:     graphql.HTTPHeaders{"test": {"foo", "bar"}},
 				AdditionalQueryParams: graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},
 	}
 }
 
-func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
-	descSQL := sql.NullString{desc, true}
+func fixEntityBundle(id, name, desc string) *bundle.Entity {
+	descSQL := sql.NullString{String: desc, Valid: true}
 	schemaSQL := sql.NullString{
 		String: inputSchemaString(),
 		Valid:  true,
@@ -385,7 +385,7 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 		Valid:  true,
 	}
 
-	return &mp_bundle.Entity{
+	return &bundle.Entity{
 		TenantID:                      tenantID,
 		ApplicationID:                 appID,
 		Name:                          name,

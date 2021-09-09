@@ -22,6 +22,7 @@ var (
 	scenarioColumn      = "scenario"
 )
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:         repo.NewCreator(resource.AutomaticScenarioAssigment, tableName, columns),
@@ -42,17 +43,20 @@ type repository struct {
 	conv            EntityConverter
 }
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(assignment model.AutomaticScenarioAssignment) Entity
 	FromEntity(assignment Entity) model.AutomaticScenarioAssignment
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAssignment) error {
 	entity := r.conv.ToEntity(model)
 	return r.creator.Create(ctx, entity)
 }
 
+// ListForSelector missing godoc
 func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
 	var out EntityCollection
 
@@ -65,7 +69,7 @@ func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector
 		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
 	}
 
-	var items []*model.AutomaticScenarioAssignment
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(out))
 
 	for _, v := range out {
 		item := r.conv.FromEntity(v)
@@ -75,6 +79,7 @@ func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector
 	return items, nil
 }
 
+// GetForScenarioName missing godoc
 func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 
@@ -91,6 +96,7 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 	return assignmentModel, nil
 }
 
+// List missing godoc
 func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	var collection EntityCollection
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, scenarioColumn, &collection)
@@ -98,7 +104,7 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 		return nil, err
 	}
 
-	var items []*model.AutomaticScenarioAssignment
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(collection))
 
 	for _, ent := range collection {
 		m := r.conv.FromEntity(ent)
@@ -112,6 +118,7 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 	}, nil
 }
 
+// DeleteForSelector missing godoc
 func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(selectorKeyColumn, selector.Key),
@@ -121,6 +128,7 @@ func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, sel
 	return r.deleter.DeleteMany(ctx, tenantID, conditions)
 }
 
+// DeleteForScenarioName missing godoc
 func (r *repository) DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(scenarioColumn, scenarioName),

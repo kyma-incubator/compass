@@ -184,7 +184,6 @@ func TestFullFlow(t *testing.T) {
 		// THEN
 		require.Equal(t, status, healthz.DOWN)
 		AssertHandlerStatusCodeForHealth(t, health, http.StatusInternalServerError, healthz.DOWN)
-
 	})
 
 	t.Run("should configure properly(neither config exist) and return DOWN when all indicators fail", func(t *testing.T) {

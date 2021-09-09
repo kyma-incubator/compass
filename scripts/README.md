@@ -47,7 +47,7 @@ BUILDPACK = BUILDPACK_IMAGE
 SCRIPTS_DIR = Path to generic makefile #e.g. $(realpath $(shell pwd)/../..)/scripts
 include $(SCRIPTS_DIR)/generic_make_go.mk
 ```
-available images are listed in [config.yaml](https://github.com/kyma-project/test-infra/blob/master/templates/config.yaml).
+available images are listed in [config.yaml](https://github.com/kyma-project/test-infra/blob/main/templates/config.yaml).
 
 ## How it works
 By example:

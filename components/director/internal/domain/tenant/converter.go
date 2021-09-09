@@ -9,10 +9,12 @@ import (
 
 type converter struct{}
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 	if in == nil {
 		return nil
@@ -28,6 +30,7 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 	}
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 	if in == nil {
 		return nil
@@ -44,6 +47,7 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 	}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 	if in == nil {
 		return nil
@@ -55,11 +59,11 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 		Name:        str.Ptr(in.Name),
 		Initialized: in.Initialized,
 	}
-
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {
-	var tenants []*graphql.Tenant
+	tenants := make([]*graphql.Tenant, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue

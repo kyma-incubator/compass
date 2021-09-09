@@ -498,7 +498,6 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				return &automock.APIConverter{}
-
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
@@ -1221,13 +1220,13 @@ func TestResolver_FetchRequest(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			firstFRParams := dataloader.ParamFetchRequestApiDef{ID: firstSpecID, Ctx: context.TODO()}
-			secondFRParams := dataloader.ParamFetchRequestApiDef{ID: secondSpecID, Ctx: context.TODO()}
-			keys := []dataloader.ParamFetchRequestApiDef{firstFRParams, secondFRParams}
+			firstFRParams := dataloader.ParamFetchRequestAPIDef{ID: firstSpecID, Ctx: context.TODO()}
+			secondFRParams := dataloader.ParamFetchRequestAPIDef{ID: secondSpecID, Ctx: context.TODO()}
+			keys := []dataloader.ParamFetchRequestAPIDef{firstFRParams, secondFRParams}
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil)
 
 			// when
-			result, err := resolver.FetchRequestApiDefDataLoader(keys)
+			result, err := resolver.FetchRequestAPIDefDataLoader(keys)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1243,19 +1242,19 @@ func TestResolver_FetchRequest(t *testing.T) {
 	t.Run("Returns error when there are no Specs", func(t *testing.T) {
 		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.FetchRequestApiDefDataLoader([]dataloader.ParamFetchRequestApiDef{})
+		_, err := resolver.FetchRequestAPIDefDataLoader([]dataloader.ParamFetchRequestAPIDef{})
 		//then
 		require.Error(t, err[0])
-		assert.EqualError(t, err[0], apperrors.NewInternalError("No ApiDef specs found").Error())
+		assert.EqualError(t, err[0], apperrors.NewInternalError("No APIDef specs found").Error())
 	})
 
 	t.Run("Returns error when Specification ID is empty", func(t *testing.T) {
-		params := dataloader.ParamFetchRequestApiDef{ID: "", Ctx: context.TODO()}
-		keys := []dataloader.ParamFetchRequestApiDef{params}
+		params := dataloader.ParamFetchRequestAPIDef{ID: "", Ctx: context.TODO()}
+		keys := []dataloader.ParamFetchRequestAPIDef{params}
 
 		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//when
-		_, err := resolver.FetchRequestApiDefDataLoader(keys)
+		_, err := resolver.FetchRequestAPIDefDataLoader(keys)
 		//then
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition Spec ID is empty").Error())

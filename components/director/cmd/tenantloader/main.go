@@ -28,6 +28,7 @@ func main() {
 	exitOnError(err, "error while loading app config")
 
 	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	exitOnError(err, "Error while configuring logger")
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "error while establishing the connection to the database")

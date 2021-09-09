@@ -20,15 +20,19 @@ import (
 )
 
 const (
+	// AuthorizationHeaderKey missing godoc
 	AuthorizationHeaderKey = "Authorization"
-	JwksKeyIDKey           = "kid"
+	// JwksKeyIDKey missing godoc
+	JwksKeyIDKey = "kid"
 )
 
+// ClaimsValidator missing godoc
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
 type ClaimsValidator interface {
 	Validate(claims.Claims) error
 }
 
+// Authenticator missing godoc
 type Authenticator struct {
 	jwksEndpoint        string
 	allowJWTSigningNone bool
@@ -38,6 +42,7 @@ type Authenticator struct {
 	claimsValidator     ClaimsValidator
 }
 
+// New missing godoc
 func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
 	return &Authenticator{
 		jwksEndpoint:        jwksEndpoint,
@@ -47,6 +52,7 @@ func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string
 	}
 }
 
+// SynchronizeJWKS missing godoc
 func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
@@ -63,10 +69,12 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	return nil
 }
 
+// SetJWKSEndpoint missing godoc
 func (a *Authenticator) SetJWKSEndpoint(url string) {
 	a.jwksEndpoint = url
 }
 
+// Handler missing godoc
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

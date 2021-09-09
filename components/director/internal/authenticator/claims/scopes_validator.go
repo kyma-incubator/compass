@@ -12,12 +12,14 @@ type scopeBasedClaimsValidator struct {
 	requiredScopes []string
 }
 
+// NewScopesValidator missing godoc
 func NewScopesValidator(requiredScopes []string) *scopeBasedClaimsValidator {
 	return &scopeBasedClaimsValidator{
 		requiredScopes: requiredScopes,
 	}
 }
 
+// Validate missing godoc
 func (v *scopeBasedClaimsValidator) Validate(claims Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")

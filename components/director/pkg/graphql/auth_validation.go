@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
+// Validate missing godoc
 func (i AuthInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.AdditionalHeaders,
@@ -21,6 +22,7 @@ func (i AuthInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i CredentialDataInput) Validate() error {
 	return validation.Errors{
 		"Rule.ExactlyOneNotNil": inputvalidation.ValidateExactlyOneNotNil(
@@ -32,6 +34,7 @@ func (i CredentialDataInput) Validate() error {
 	}.Filter()
 }
 
+// Validate missing godoc
 func (i BasicCredentialDataInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Username, validation.Required),
@@ -39,6 +42,7 @@ func (i BasicCredentialDataInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i OAuthCredentialDataInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.ClientID, validation.Required),
@@ -47,12 +51,14 @@ func (i OAuthCredentialDataInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i CredentialRequestAuthInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Csrf, validation.Required),
 	)
 }
 
+// Validate missing godoc
 func (i CSRFTokenCredentialRequestAuthInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.AdditionalHeaders,

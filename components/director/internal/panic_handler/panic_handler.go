@@ -1,4 +1,4 @@
-package panic_handler
+package panichandler
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// RecoverFn missing godoc
 func RecoverFn(ctx context.Context, err interface{}) error {
 	errText := fmt.Sprintf("%+v", err)
 

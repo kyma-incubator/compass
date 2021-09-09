@@ -17,7 +17,6 @@ import (
 var ctx = context.TODO()
 
 func TestAuthFlow(t *testing.T) {
-
 	t.Run("IsCertFlow returns true when AuthFlow equals to Certificate", func(t *testing.T) {
 		authFlow := CertificateFlow
 
@@ -479,5 +478,4 @@ func TestReqData_GetUserGroups(t *testing.T) {
 
 		require.Equal(t, []string{}, groups)
 	})
-
 }
