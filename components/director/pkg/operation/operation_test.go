@@ -28,7 +28,6 @@ import (
 )
 
 func TestFromContext(t *testing.T) {
-
 	op1 := &operation.Operation{
 		OperationType:     operation.OperationTypeCreate,
 		OperationCategory: "registerApplication",
@@ -107,7 +106,6 @@ func TestSaveToContext(t *testing.T) {
 }
 
 func TestModeFromContext(t *testing.T) {
-
 	testCases := []struct {
 		Name    string
 		Context context.Context

@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// RuntimeContext missing godoc
 type RuntimeContext struct {
 	ID        string
 	RuntimeID string
@@ -12,6 +13,7 @@ type RuntimeContext struct {
 	Value     string
 }
 
+// RuntimeContextInput missing godoc
 type RuntimeContextInput struct {
 	Key       string
 	Value     string
@@ -19,6 +21,7 @@ type RuntimeContextInput struct {
 	Labels    map[string]interface{}
 }
 
+// ToRuntimeContext missing godoc
 func (i *RuntimeContextInput) ToRuntimeContext(id, tenant string) *RuntimeContext {
 	if i == nil {
 		return nil
@@ -33,6 +36,7 @@ func (i *RuntimeContextInput) ToRuntimeContext(id, tenant string) *RuntimeContex
 	}
 }
 
+// RuntimeContextPage missing godoc
 type RuntimeContextPage struct {
 	Data       []*RuntimeContext
 	PageInfo   *pagination.Page

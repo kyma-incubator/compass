@@ -37,7 +37,6 @@ func TestService_Create(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixModel(), actual)
-
 	})
 
 	t.Run("return error when ensuring scenarios for runtimes fails", func(t *testing.T) {
@@ -140,7 +139,6 @@ func TestService_Create(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while getting available scenarios: some error")
 	})
-
 }
 
 func TestService_GetByScenarioName(t *testing.T) {
@@ -157,7 +155,6 @@ func TestService_GetByScenarioName(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixModel(), actual)
-
 	})
 
 	t.Run("error on missing tenant in context", func(t *testing.T) {

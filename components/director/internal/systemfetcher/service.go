@@ -15,34 +15,42 @@ import (
 )
 
 const (
+	// LifecycleAttributeName missing godoc
 	LifecycleAttributeName string = "lifecycleStatus"
-	LifecycleDeleted       string = "DELETED"
+	// LifecycleDeleted missing godoc
+	LifecycleDeleted string = "DELETED"
 
+	// ConcurrentDeleteOperationErrMsg missing godoc
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 )
 
+// TenantService missing godoc
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
+// SystemsService missing godoc
 //go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
 type SystemsService interface {
 	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
+// SystemsAPIClient missing godoc
 //go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
 type SystemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
+// DirectorClient missing godoc
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 type DirectorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
+// Config missing godoc
 type Config struct {
 	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
 	FetcherParallellism       int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
@@ -53,6 +61,7 @@ type Config struct {
 	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 }
 
+// SystemFetcher missing godoc
 type SystemFetcher struct {
 	transaction      persistence.Transactioner
 	tenantService    TenantService
@@ -64,6 +73,7 @@ type SystemFetcher struct {
 	workers chan struct{}
 }
 
+// NewSystemFetcher missing godoc
 func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:      tx,
@@ -81,6 +91,7 @@ type tenantSystems struct {
 	systems []System
 }
 
+// SyncSystems missing godoc
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	tenants, err := s.listTenants(ctx)
 	if err != nil {
@@ -159,7 +170,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 
 func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
 	log.C(ctx).Infof("Saving %d systems for tenant %s", len(systems), tenantMapping.Name)
-	var appInputs []model.ApplicationRegisterInputWithTemplate
+	appInputs := make([]model.ApplicationRegisterInputWithTemplate, 0, len(systems))
 
 	tx, err := s.transaction.Begin()
 	if err != nil {

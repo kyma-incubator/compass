@@ -9,26 +9,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	GetVersion(ctx context.Context) (string, error)
 }
 
+// ReadyConfig missing godoc
 type ReadyConfig struct {
 	SchemaMigrationVersion string `envconfig:"APP_SCHEMA_MIGRATION_VERSION"`
 }
 
+// Ready missing godoc
 type Ready struct {
-	ctx              context.Context
 	transactioner    persistence.Transactioner
 	schemaCompatible bool
 	cfg              ReadyConfig
 	repo             Repository
 }
 
-func NewReady(ctx context.Context, transactioner persistence.Transactioner, cfg ReadyConfig, repository Repository) *Ready {
+// NewReady missing godoc
+func NewReady(transactioner persistence.Transactioner, cfg ReadyConfig, repository Repository) *Ready {
 	return &Ready{
-		ctx:              ctx,
 		transactioner:    transactioner,
 		schemaCompatible: false,
 		cfg:              cfg,
@@ -40,12 +42,12 @@ func NewReady(ctx context.Context, transactioner persistence.Transactioner, cfg 
 // db ping is performed or InternalServerError otherwise
 func NewReadinessHandler(r *Ready) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		if r.schemaCompatible = r.checkSchemaCompatibility(); !r.schemaCompatible {
+		if r.schemaCompatible = r.checkSchemaCompatibility(request.Context()); !r.schemaCompatible {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if err := r.transactioner.PingContext(r.ctx); err != nil {
+		if err := r.transactioner.PingContext(request.Context()); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -54,28 +56,28 @@ func NewReadinessHandler(r *Ready) func(writer http.ResponseWriter, request *htt
 	}
 }
 
-func (r *Ready) checkSchemaCompatibility() bool {
+func (r *Ready) checkSchemaCompatibility(ctx context.Context) bool {
 	if r.schemaCompatible {
 		return true
 	}
 
 	tx, err := r.transactioner.Begin()
 	if err != nil {
-		log.C(r.ctx).Errorf(errors.Wrap(err, "while starting transaction").Error())
+		log.C(ctx).Errorf(errors.Wrap(err, "while starting transaction").Error())
 		return false
 	}
-	defer r.transactioner.RollbackUnlessCommitted(r.ctx, tx)
+	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 
-	r.ctx = persistence.SaveToContext(r.ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
-	schemaVersion, err := r.repo.GetVersion(r.ctx)
+	schemaVersion, err := r.repo.GetVersion(ctx)
 	if err != nil {
-		log.C(r.ctx).Error(err.Error())
+		log.C(ctx).Error(err.Error())
 		return false
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(r.ctx).Error(errors.Wrap(err, "while committing transaction").Error())
+		log.C(ctx).Error(errors.Wrap(err, "while committing transaction").Error())
 		return false
 	}
 

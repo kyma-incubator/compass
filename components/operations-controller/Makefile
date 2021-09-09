@@ -20,6 +20,9 @@ build-local: generate
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
 
+lint-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
 

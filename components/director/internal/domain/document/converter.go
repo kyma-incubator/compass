@@ -14,10 +14,12 @@ type converter struct {
 	frConverter FetchRequestConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(frConverter FetchRequestConverter) *converter {
 	return &converter{frConverter: frConverter}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	if in == nil {
 		return nil
@@ -25,7 +27,7 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 
 	var clob *graphql.CLOB
 	if in.Data != nil {
-		tmp := graphql.CLOB([]byte(*in.Data))
+		tmp := graphql.CLOB(*in.Data)
 		clob = &tmp
 	}
 
@@ -48,8 +50,9 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	}
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.Document) []*graphql.Document {
-	var documents []*graphql.Document
+	documents := make([]*graphql.Document, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -61,6 +64,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Document) []*graphql.Document 
 	return documents
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) (*model.DocumentInput, error) {
 	if in == nil {
 		return nil, nil
@@ -88,8 +92,9 @@ func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) (*model.Document
 	}, nil
 }
 
+// MultipleInputFromGraphQL missing godoc
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error) {
-	var inputs []*model.DocumentInput
+	inputs := make([]*model.DocumentInput, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -106,6 +111,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*mo
 	return inputs, nil
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
@@ -132,6 +138,7 @@ func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 	return out, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.Document, error) {
 	kind := repo.StringPtrFromNullableString(in.Kind)
 	data := repo.StringPtrFromNullableString(in.Data)

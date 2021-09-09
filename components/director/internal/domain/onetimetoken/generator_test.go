@@ -13,7 +13,6 @@ const (
 )
 
 func TestTokenGenerator_NewToken(t *testing.T) {
-
 	t.Run("should generate token", func(t *testing.T) {
 		// given
 		tokenGenerator := NewTokenGenerator(tokenLength)
@@ -29,5 +28,4 @@ func TestTokenGenerator_NewToken(t *testing.T) {
 
 		assert.Equal(t, tokenLength, len(decoded))
 	})
-
 }

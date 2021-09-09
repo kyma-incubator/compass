@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// Bundle missing godoc
 type Bundle struct {
 	TenantID                       string
 	ApplicationID                  string
@@ -22,10 +23,12 @@ type Bundle struct {
 	*BaseEntity
 }
 
-func (_ *Bundle) GetType() resource.Type {
+// GetType missing godoc
+func (*Bundle) GetType() resource.Type {
 	return resource.Bundle
 }
 
+// SetFromUpdateInput missing godoc
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 	bndl.Name = update.Name
 	bndl.Description = update.Description
@@ -38,6 +41,7 @@ func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 	bndl.CredentialExchangeStrategies = update.CredentialExchangeStrategies
 }
 
+// BundleCreateInput missing godoc
 type BundleCreateInput struct {
 	Name                           string                  `json:"title"`
 	Description                    *string                 `json:"description"`
@@ -55,6 +59,7 @@ type BundleCreateInput struct {
 	Documents                      []*DocumentInput        `json:",omitempty"`
 }
 
+// BundleUpdateInput missing godoc
 type BundleUpdateInput struct {
 	Name                           string
 	Description                    *string
@@ -67,14 +72,17 @@ type BundleUpdateInput struct {
 	CredentialExchangeStrategies   json.RawMessage
 }
 
+// BundlePage missing godoc
 type BundlePage struct {
 	Data       []*Bundle
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// IsPageable missing godoc
 func (BundlePage) IsPageable() {}
 
+// ToBundle missing godoc
 func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle {
 	if i == nil {
 		return nil

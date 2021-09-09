@@ -8,6 +8,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
@@ -15,17 +17,23 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// GraphqlOperationType missing godoc
 type GraphqlOperationType string
 
 const (
-	Query          GraphqlOperationType = "query"
-	Mutation       GraphqlOperationType = "mutation"
-	UnsanitizedAPI                      = "A-P-I"
-	ExamplePrefix                       = "**Examples**"
+	// Query missing godoc
+	Query GraphqlOperationType = "query"
+	// Mutation missing godoc
+	Mutation GraphqlOperationType = "mutation"
+	// UnsanitizedAPI missing godoc
+	UnsanitizedAPI = "A-P-I"
+	// ExamplePrefix missing godoc
+	ExamplePrefix = "**Examples**"
 )
 
 var _ plugin.ConfigMutator = &descriptionsDecoratorPlugin{}
 
+// NewPlugin missing godoc
 func NewPlugin(schemaFileName string, examplesDirectory string) *descriptionsDecoratorPlugin {
 	return &descriptionsDecoratorPlugin{schemaFileName: schemaFileName, examplesDirectory: examplesDirectory}
 }
@@ -35,12 +43,14 @@ type descriptionsDecoratorPlugin struct {
 	examplesDirectory string
 }
 
+// Name missing godoc
 func (p *descriptionsDecoratorPlugin) Name() string {
 	return "descriptions_decorator"
 }
 
+// MutateConfig missing godoc
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
+	log.D().Infof("[%s] Mutate Configuration\n", p.Name())
 
 	if err := cfg.Init(); err != nil {
 		return err
@@ -79,12 +89,11 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 }
 
 func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) error {
-
 	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
-		fmt.Printf("no examples under %s directory, skipping adding description", p.examplesDirectory)
-		return nil
+		log.D().Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
+		return nil //nolint:nilerr
 	}
 	for _, dir := range dirs {
 		if !dir.IsDir() {
@@ -103,11 +112,10 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 			f.Description = fmt.Sprintf("%s\n\n%s", f.Description, ExamplePrefix)
 		}
 		for _, file := range files {
-			withoutExt := strings.Replace(file.Name(), ".graphql", "", -1)
-			withoutDash := strings.Replace(withoutExt, "-", " ", -1)
+			withoutExt := strings.ReplaceAll(file.Name(), ".graphql", "")
+			withoutDash := strings.ReplaceAll(withoutExt, "-", " ")
 			f.Description = addExample(f.Description, withoutDash, dir.Name(), file.Name())
 		}
-
 	}
 	return nil
 }
@@ -131,7 +139,6 @@ func sanitizeName(name string, opType GraphqlOperationType) string {
 		return strings.ToLower(fmt.Sprintf("query-%s", name))
 	}
 	return strings.ToLower(name)
-
 }
 
 func deletePrevious(description string) string {

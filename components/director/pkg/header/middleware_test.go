@@ -34,7 +34,6 @@ func TestAttachHeadersToContext(t *testing.T) {
 	handler := header.AttachHeadersToContext()
 
 	t.Run("request headers are persisted in context", func(t *testing.T) {
-
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			headersFromContext, ok := r.Context().Value(header.ContextKey).(http.Header)
 			assert.True(t, ok)
@@ -51,5 +50,4 @@ func TestAttachHeadersToContext(t *testing.T) {
 
 		handler(nextHandler).ServeHTTP(httptest.NewRecorder(), req)
 	})
-
 }

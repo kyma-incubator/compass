@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TenantService missing godoc
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
 type TenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
@@ -21,12 +22,14 @@ type provisioner struct {
 	tenantSvc TenantService
 }
 
+// NewTenantProvisioner missing godoc
 func NewTenantProvisioner(tenantSvc TenantService) *provisioner {
 	return &provisioner{
 		tenantSvc: tenantSvc,
 	}
 }
 
+// ProvisionTenant missing godoc
 func (p *provisioner) ProvisionTenant(ctx context.Context, tenant model.BusinessTenantMappingInput) error {
 	externalTenantID := tenant.ExternalTenant
 	parentExternalID := tenant.Parent

@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// APIDefinition missing godoc
 type APIDefinition struct {
 	ApplicationID                           string
 	PackageID                               *string
@@ -26,7 +27,7 @@ type APIDefinition struct {
 	OrdID                                   *string
 	ShortDescription                        *string
 	SystemInstanceAware                     *bool
-	ApiProtocol                             *string
+	APIProtocol                             *string
 	Tags                                    json.RawMessage
 	Countries                               json.RawMessage
 	Links                                   json.RawMessage
@@ -50,10 +51,12 @@ type APIDefinition struct {
 	*BaseEntity
 }
 
-func (_ *APIDefinition) GetType() resource.Type {
+// GetType missing godoc
+func (*APIDefinition) GetType() resource.Type {
 	return resource.API
 }
 
+// APIDefinitionInput missing godoc
 type APIDefinitionInput struct {
 	OrdPackageID                            *string                       `json:"partOfPackage"`
 	Tenant                                  string                        `json:",omitempty"`
@@ -64,7 +67,7 @@ type APIDefinitionInput struct {
 	OrdID                                   *string                       `json:"ordId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
-	ApiProtocol                             *string                       `json:"apiProtocol"`
+	APIProtocol                             *string                       `json:"apiProtocol"`
 	Tags                                    json.RawMessage               `json:"tags"`
 	Countries                               json.RawMessage               `json:"countries"`
 	Links                                   json.RawMessage               `json:"links"`
@@ -89,6 +92,7 @@ type APIDefinitionInput struct {
 	*VersionInput `hash:"ignore"`
 }
 
+// APIResourceDefinition missing godoc
 type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched
 	Type           APISpecType      `json:"type"`
 	CustomType     string           `json:"customType"`
@@ -97,6 +101,7 @@ type APIResourceDefinition struct { // This is the place from where the specific
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
 }
 
+// Validate missing godoc
 func (rd *APIResourceDefinition) Validate() error {
 	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
@@ -115,24 +120,27 @@ func (rd *APIResourceDefinition) Validate() error {
 	)
 }
 
-func (a *APIResourceDefinition) ToSpec() *SpecInput {
+// ToSpec missing godoc
+func (rd *APIResourceDefinition) ToSpec() *SpecInput {
 	return &SpecInput{
-		Format:     a.MediaType,
-		APIType:    &a.Type,
-		CustomType: &a.CustomType,
+		Format:     rd.MediaType,
+		APIType:    &rd.Type,
+		CustomType: &rd.CustomType,
 		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequestAuths once ORD defines them
-			URL:  a.URL,
+			URL:  rd.URL,
 			Auth: nil, // Currently only open AccessStrategy is defined by ORD, which means no auth
 		},
 	}
 }
 
+// AccessStrategy missing godoc
 type AccessStrategy struct {
 	Type              string `json:"type"`
 	CustomType        string `json:"customType"`
 	CustomDescription string `json:"customDescription"`
 }
 
+// Validate missing godoc
 func (as AccessStrategy) Validate() error {
 	return validation.ValidateStruct(&as,
 		validation.Field(&as.Type, validation.Required, validation.In("open", "custom")),
@@ -141,23 +149,28 @@ func (as AccessStrategy) Validate() error {
 	)
 }
 
+// ConsumptionBundleReference missing godoc
 type ConsumptionBundleReference struct {
 	BundleOrdID      string `json:"ordId"`
 	DefaultTargetURL string `json:"defaultEntryPoint"`
 }
 
+// APIDefinitionPage missing godoc
 type APIDefinitionPage struct {
 	Data       []*APIDefinition
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// IsPageable missing godoc
 func (APIDefinitionPage) IsPageable() {}
 
+// ToAPIDefinitionWithinBundle missing godoc
 func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, tenant string, apiHash uint64) *APIDefinition {
 	return a.ToAPIDefinition(id, appID, nil, tenant, apiHash)
 }
 
+// ToAPIDefinition missing godoc
 func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, tenant string, apiHash uint64) *APIDefinition {
 	if a == nil {
 		return nil
@@ -179,7 +192,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		OrdID:               a.OrdID,
 		ShortDescription:    a.ShortDescription,
 		SystemInstanceAware: a.SystemInstanceAware,
-		ApiProtocol:         a.ApiProtocol,
+		APIProtocol:         a.APIProtocol,
 		Tags:                a.Tags,
 		Countries:           a.Countries,
 		Links:               a.Links,

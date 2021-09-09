@@ -7,6 +7,7 @@ import (
 
 const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
+// DatabaseConfig missing godoc
 type DatabaseConfig struct {
 	User               string        `envconfig:"default=postgres,APP_DB_USER"`
 	Password           string        `envconfig:"default=pgsql@12345,APP_DB_PASSWORD"`
@@ -19,6 +20,7 @@ type DatabaseConfig struct {
 	ConnMaxLifetime    time.Duration `envconfig:"default=30m,APP_DB_CONNECTION_MAX_LIFETIME"`
 }
 
+// GetConnString missing godoc
 func (cfg DatabaseConfig) GetConnString() string {
 	return fmt.Sprintf(connStringf, cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name, cfg.SSLMode)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var cachePeriod time.Duration = time.Duration(5 * time.Minute)
+var cachePeriod = 5 * time.Minute
 
 func TestJWKCacheEntry_Expired(t *testing.T) {
 	t.Run("should return true when entry is cached for more than cachePeriod", func(t *testing.T) {

@@ -111,7 +111,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				return conv
 			},
 			Input:    nil,
-			Expected: nil,
+			Expected: []*graphql.BundleInstanceAuth{},
 		},
 		{
 			Name: "Success",

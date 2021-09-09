@@ -4,6 +4,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
+// Validate missing godoc
 func (i VersionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Value, validation.Required, validation.RuneLength(1, longStringLengthLimit)),

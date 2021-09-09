@@ -438,7 +438,6 @@ func Test_SetForApplication(t *testing.T) {
 		require.EqualError(t, err, expectedError)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
-
 }
 
 func Test_UnsetForApplication(t *testing.T) {

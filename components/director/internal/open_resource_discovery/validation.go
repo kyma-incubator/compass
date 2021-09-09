@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 import (
 	"encoding/json"
@@ -24,56 +24,97 @@ import (
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.
 const (
-	SemVerRegex         = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-	PackageOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	VendorOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
-	ProductOrdIDRegex   = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
-	BundleOrdIDRegex    = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// SemVerRegex missing godoc
+	SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+	// PackageOrdIDRegex missing godoc
+	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// VendorOrdIDRegex missing godoc
+	VendorOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
+	// ProductOrdIDRegex missing godoc
+	ProductOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
+	// BundleOrdIDRegex missing godoc
+	BundleOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// TombstoneOrdIDRegex missing godoc
 	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	SystemInstanceBaseURLRegex        = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
-	StringArrayElementRegex           = "^[a-zA-Z0-9-_.\\/ ]*$"
-	CountryRegex                      = "^[A-Z]{2}$"
-	ApiOrdIDRegex                     = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	EventOrdIDRegex                   = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	CorrelationIDsRegex               = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
-	LabelsKeyRegex                    = "^[a-zA-Z0-9-_.]*$"
+	// SystemInstanceBaseURLRegex missing godoc
+	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
+	// StringArrayElementRegex missing godoc
+	StringArrayElementRegex = "^[a-zA-Z0-9-_.\\/ ]*$"
+	// CountryRegex missing godoc
+	CountryRegex = "^[A-Z]{2}$"
+	// APIOrdIDRegex missing godoc
+	APIOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// EventOrdIDRegex missing godoc
+	EventOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// CorrelationIDsRegex missing godoc
+	CorrelationIDsRegex = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
+	// LabelsKeyRegex missing godoc
+	LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
+	// CustomImplementationStandardRegex missing godoc
 	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	VendorPartnersRegex               = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
-	CustomPolicyLevelRegex            = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	// VendorPartnersRegex missing godoc
+	VendorPartnersRegex = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
+	// CustomPolicyLevelRegex missing godoc
+	CustomPolicyLevelRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 )
 
 const (
-	PolicyLevelSap        string = "sap:core:v1"
-	PolicyLevelSapPartner string = "sap:partner:v1"
-	PolicyLevelCustom     string = "custom"
+	custom string = "custom"
 
-	ReleaseStatusBeta       string = "beta"
-	ReleaseStatusActive     string = "active"
+	// PolicyLevelSap missing godoc
+	PolicyLevelSap string = "sap:core:v1"
+	// PolicyLevelSapPartner missing godoc
+	PolicyLevelSapPartner string = "sap:partner:v1"
+	// PolicyLevelCustom missing godoc
+	PolicyLevelCustom = custom
+
+	// ReleaseStatusBeta missing godoc
+	ReleaseStatusBeta string = "beta"
+	// ReleaseStatusActive missing godoc
+	ReleaseStatusActive string = "active"
+	// ReleaseStatusDeprecated missing godoc
 	ReleaseStatusDeprecated string = "deprecated"
 
-	ApiProtocolODataV2      string = "odata-v2"
-	ApiProtocolODataV4      string = "odata-v4"
-	ApiProtocolSoapInbound  string = "soap-inbound"
-	ApiProtocolSoapOutbound string = "soap-outbound"
-	ApiProtocolRest         string = "rest"
-	ApiProtocolSapRfc       string = "sap-rfc"
+	// APIProtocolODataV2 missing godoc
+	APIProtocolODataV2 string = "odata-v2"
+	// APIProtocolODataV4 missing godoc
+	APIProtocolODataV4 string = "odata-v4"
+	// APIProtocolSoapInbound missing godoc
+	APIProtocolSoapInbound string = "soap-inbound"
+	// APIProtocolSoapOutbound missing godoc
+	APIProtocolSoapOutbound string = "soap-outbound"
+	// APIProtocolRest missing godoc
+	APIProtocolRest string = "rest"
+	// APIProtocolSapRfc missing godoc
+	APIProtocolSapRfc string = "sap-rfc"
 
-	ApiVisibilityPublic   string = "public"
-	ApiVisibilityPrivate  string = "private"
-	ApiVisibilityInternal string = "internal"
+	// APIVisibilityPublic missing godoc
+	APIVisibilityPublic string = "public"
+	// APIVisibilityPrivate missing godoc
+	APIVisibilityPrivate string = "private"
+	// APIVisibilityInternal missing godoc
+	APIVisibilityInternal string = "internal"
 
-	ApiImplementationStandardDocumentApi   string = "sap:ord-document-api:v1"
-	ApiImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
-	ApiImplementationStandardCsnExposure   string = "sap:csn-exposure:v1"
-	ApiImplementationStandardCustom        string = "custom"
+	// APIImplementationStandardDocumentAPI missing godoc
+	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
+	// APIImplementationStandardServiceBroker missing godoc
+	APIImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
+	// APIImplementationStandardCsnExposure missing godoc
+	APIImplementationStandardCsnExposure string = "sap:csn-exposure:v1"
+	// APIImplementationStandardCustom missing godoc
+	APIImplementationStandardCustom = custom
 
-	SapTitle      = "SAP SE"
-	SapVendor     = "sap:vendor:SAP:"
+	// SapTitle missing godoc
+	SapTitle = "SAP SE"
+	// SapVendor missing godoc
+	SapVendor = "sap:vendor:SAP:"
+	// PartnerVendor missing godoc
 	PartnerVendor = "partner:vendor:SAP:"
 )
 
 var (
+	// LineOfBusinesses missing godoc
 	LineOfBusinesses = map[string]bool{
 		"Asset Management":                 true,
 		"Commerce":                         true,
@@ -92,6 +133,7 @@ var (
 		"Plant Operations and Maintenance": true,
 		"Maintenance and Engineering":      true,
 	}
+	// Industries missing godoc
 	Industries = map[string]bool{
 		"Aerospace and Defense": true,
 		"Automotive":            true,
@@ -129,9 +171,10 @@ var descriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
 }
 
+// ValidateSystemInstanceInput missing godoc
 func ValidateSystemInstanceInput(app *model.Application) error {
 	return validation.ValidateStruct(app,
-		validation.Field(&app.CorrelationIds, validation.By(func(value interface{}) error {
+		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
@@ -204,7 +247,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 				"type": {
 					validation.Required,
-					validation.In("custom"),
+					validation.In(custom),
 				},
 				"callbackUrl": {
 					is.RequestURI,
@@ -216,7 +259,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 
 func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	return validation.ValidateStruct(api,
-		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
+		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
 		validation.Field(&api.Description, validation.Required),
@@ -224,8 +267,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.ApiProtocol, validation.Required, validation.In(ApiProtocolODataV2, ApiProtocolODataV4, ApiProtocolSoapInbound, ApiProtocolSoapOutbound, ApiProtocolRest, ApiProtocolSapRfc)),
-		validation.Field(&api.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc)),
+		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -263,14 +306,14 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
 		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ApiOrdIDRegex))
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In(ApiImplementationStandardDocumentApi, ApiImplementationStandardServiceBroker, ApiImplementationStandardCsnExposure, ApiImplementationStandardCustom)),
-		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
-		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == ApiImplementationStandardCustom, validation.Required).Else(validation.Empty)),
+		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardCustom)),
+		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
@@ -290,7 +333,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
 		})),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.Visibility, validation.Required, validation.In(ApiVisibilityPublic, ApiVisibilityInternal, ApiVisibilityPrivate)),
+		validation.Field(&event.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -349,10 +392,10 @@ func validateProductInput(product *model.ProductInput) error {
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required,
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
-			validation.When(regexp.MustCompile("^(sap)((\\.)([a-zA-Z0-9._\\-])+)*$").MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
+			validation.When(regexp.MustCompile(`^(sap)((\.)([a-zA-Z0-9._\-])+)*$`).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
 		),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
-		validation.Field(&product.CorrelationIds, validation.By(func(value interface{}) error {
+		validation.Field(&product.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),
@@ -506,7 +549,7 @@ func validatePackageLinks(value interface{}) error {
 			is.RequestURI,
 		},
 	}, func(el gjson.Result) error {
-		if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+		if el.Get("customType").Exists() && el.Get("type").String() != custom {
 			return errors.New("if customType is provided, type should be set to 'custom'")
 		}
 		return nil
@@ -524,7 +567,7 @@ func validateAPILinks(value interface{}) error {
 			is.RequestURI,
 		},
 	}, func(el gjson.Result) error {
-		if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+		if el.Get("customType").Exists() && el.Get("type").String() != custom {
 			return errors.New("if customType is provided, type should be set to 'custom'")
 		}
 		return nil
@@ -539,10 +582,10 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	pkgOrdID := str.PtrStrToStr(api.OrdPackageID)
 	policyLevel := packagePolicyLevels[pkgOrdID]
 	apiVisibility := str.PtrStrToStr(api.Visibility)
-	apiProtocol := str.PtrStrToStr(api.ApiProtocol)
+	apiProtocol := str.PtrStrToStr(api.APIProtocol)
 	resourceDefinitions := api.ResourceDefinitions
 
-	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == ApiVisibilityPrivate)
+	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == APIVisibilityPrivate)
 	if len(resourceDefinitions) == 0 && isResourceDefinitionMandatory {
 		return errors.New("when api resource visibility is public or internal, resource definitions must be provided")
 	}
@@ -551,7 +594,7 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 		return nil
 	}
 
-	resourceDefinitionTypes := make(map[model.APISpecType]bool, 0)
+	resourceDefinitionTypes := make(map[model.APISpecType]bool)
 
 	for _, rd := range resourceDefinitions {
 		resourceDefinitionType := rd.Type
@@ -560,22 +603,22 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 
 	isPolicyCoreOrPartner := policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner
 	wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
-	if isPolicyCoreOrPartner && (apiProtocol == ApiProtocolSoapInbound || apiProtocol == ApiProtocolSoapOutbound) && !wsdlTypeExists {
+	if isPolicyCoreOrPartner && (apiProtocol == APIProtocolSoapInbound || apiProtocol == APIProtocolSoapOutbound) && !wsdlTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
 	}
 
 	edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
 	openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
-	if isPolicyCoreOrPartner && (apiProtocol == ApiProtocolODataV2 || apiProtocol == ApiProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
-		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions.")
+	if isPolicyCoreOrPartner && (apiProtocol == APIProtocolODataV2 || apiProtocol == APIProtocolODataV4) && !(edmxTypeExists && openAPITypeExists) {
+		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions")
 	}
 
-	if isPolicyCoreOrPartner && apiProtocol == ApiProtocolRest && !openAPITypeExists {
+	if isPolicyCoreOrPartner && apiProtocol == APIProtocolRest && !openAPITypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='rest' it is mandatory to provide either OpenAPI 3 or OpenAPI 2 definitions")
 	}
 
 	rfcMetadataTypeExists := resourceDefinitionTypes[model.APISpecTypeRfcMetadata]
-	if isPolicyCoreOrPartner && apiProtocol == ApiProtocolSapRfc && !rfcMetadataTypeExists {
+	if isPolicyCoreOrPartner && apiProtocol == APIProtocolSapRfc && !rfcMetadataTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='sap-rfc' it is mandatory to provide SAP RFC definitions")
 	}
 
@@ -591,7 +634,7 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 	policyLevel := packagePolicyLevels[pkgOrdID]
 	apiVisibility := str.PtrStrToStr(event.Visibility)
 
-	if policyLevel == PolicyLevelSap && apiVisibility == ApiVisibilityPrivate {
+	if policyLevel == PolicyLevelSap && apiVisibility == APIVisibilityPrivate {
 		return nil
 	}
 
@@ -711,11 +754,7 @@ func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 
 func isResourceHashMissing(hash *string) bool {
 	hashStr := str.PtrStrToStr(hash)
-	if hashStr == "" {
-		return true
-	}
-
-	return false
+	return hashStr == ""
 }
 
 func noNewLines(s string) bool {
@@ -890,14 +929,14 @@ func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validat
 }
 
 func validateCustomType(el gjson.Result) error {
-	if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+	if el.Get("customType").Exists() && el.Get("type").String() != custom {
 		return errors.New("if customType is provided, type should be set to 'custom'")
 	}
-	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile("^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$")))
+	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(`^([a-z0-9.]+):([a-zA-Z0-9._\-]+):v([0-9]+)$`)))
 }
 
 func validateCustomDescription(el gjson.Result) error {
-	if el.Get("customDescription").Exists() && el.Get("type").String() != "custom" {
+	if el.Get("customDescription").Exists() && el.Get("type").String() != custom {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
 	return nil
@@ -1000,9 +1039,8 @@ func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
 	for _, val := range entryPoints {
 		if seen[val] {
 			return true
-		} else {
-			seen[val] = true
 		}
+		seen[val] = true
 	}
 	return false
 }
@@ -1021,7 +1059,7 @@ func isValidDate(date *string) validation.RuleFunc {
 
 func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc {
 	return func(value interface{}) error {
-		if partOfConsumptionBundles != nil && len(partOfConsumptionBundles) > 0 {
+		if len(partOfConsumptionBundles) > 0 {
 			return errors.New("api without entry points can not be part of consumption bundle")
 		}
 		return nil
@@ -1033,7 +1071,7 @@ func validateExtensibleField(value interface{}, ordPackageID *string, packagePol
 	policyLevel := packagePolicyLevels[pkgOrdID]
 
 	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
-		return errors.New(fmt.Sprintf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner))
+		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
 	}
 
 	return validateJSONObjects(value, map[string][]validation.Rule{
@@ -1061,6 +1099,7 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	return nil
 }
 
+// HashObject missing godoc
 func HashObject(obj interface{}) (uint64, error) {
 	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
 	if err != nil {

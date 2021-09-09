@@ -4,6 +4,7 @@ import (
 	"github.com/lib/pq"
 )
 
+// IsConstraintViolation missing godoc
 func IsConstraintViolation(err error) bool {
 	if err == nil {
 		return false

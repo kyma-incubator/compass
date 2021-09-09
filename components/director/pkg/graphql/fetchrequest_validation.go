@@ -5,6 +5,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
+// Validate missing godoc
 func (i FetchRequestInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.URL, validation.Required, is.URL, validation.RuneLength(1, longStringLengthLimit)),

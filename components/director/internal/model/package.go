@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
+// Package missing godoc
 type Package struct {
 	ID                string
 	TenantID          string
@@ -31,6 +32,7 @@ type Package struct {
 	ResourceHash      *string
 }
 
+// PackageInput missing godoc
 type PackageInput struct {
 	OrdID             string          `json:"ordId"`
 	Vendor            *string         `json:"vendor"`
@@ -51,6 +53,7 @@ type PackageInput struct {
 	Industry          json.RawMessage `json:"industry"`
 }
 
+// ToPackage missing godoc
 func (i *PackageInput) ToPackage(id, tenantID, appID string, pkgHash uint64) *Package {
 	if i == nil {
 		return nil
@@ -86,6 +89,7 @@ func (i *PackageInput) ToPackage(id, tenantID, appID string, pkgHash uint64) *Pa
 	}
 }
 
+// SetFromUpdateInput missing godoc
 func (p *Package) SetFromUpdateInput(update PackageInput, pkgHash uint64) {
 	var hash *string
 	if pkgHash != 0 {

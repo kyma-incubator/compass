@@ -31,6 +31,7 @@ func newLoggingResponseWriter(w http.ResponseWriter) *responseWriter {
 	}
 }
 
+// WriteHeader missing godoc
 func (lrw *responseWriter) WriteHeader(code int) {
 	if !lrw.wroteHeader {
 		lrw.statusCode = code

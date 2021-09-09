@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
+// Validate missing godoc
 func (i BundleCreateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
@@ -22,6 +23,7 @@ func (i BundleCreateInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i BundleUpdateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
@@ -31,6 +33,7 @@ func (i BundleUpdateInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i BundleInstanceAuthRequestInput) Validate() error {
 	// Validation of inputParams against JSON schema is done in Service
 	return validation.ValidateStruct(&i,
@@ -40,6 +43,7 @@ func (i BundleInstanceAuthRequestInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i BundleInstanceAuthSetInput) Validate() error {
 	if i.Auth == nil && i.Status == nil {
 		return apperrors.NewInvalidDataError("at least one field (Auth or Status) has to be provided")
@@ -61,6 +65,7 @@ func (i BundleInstanceAuthSetInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i BundleInstanceAuthStatusInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Reason, validation.Required),

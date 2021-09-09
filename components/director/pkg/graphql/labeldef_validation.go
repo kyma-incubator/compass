@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Validate missing godoc
 func (i LabelDefinitionInput) Validate() error {
 	return validation.Errors{
 		"rule.validSchema": i.validateSchema(),

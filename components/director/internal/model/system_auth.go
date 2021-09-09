@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// SystemAuth missing godoc
 type SystemAuth struct {
 	ID                  string
 	TenantID            *string
@@ -13,6 +14,7 @@ type SystemAuth struct {
 	Value               *Auth
 }
 
+// GetReferenceObjectType missing godoc
 func (sa SystemAuth) GetReferenceObjectType() (SystemAuthReferenceObjectType, error) {
 	if sa.AppID != nil {
 		return ApplicationReference, nil
@@ -29,6 +31,7 @@ func (sa SystemAuth) GetReferenceObjectType() (SystemAuthReferenceObjectType, er
 	return "", apperrors.NewInternalError("unknown reference object type")
 }
 
+// GetReferenceObjectID missing godoc
 func (sa SystemAuth) GetReferenceObjectID() (string, error) {
 	if sa.AppID != nil {
 		return *sa.AppID, nil
@@ -45,14 +48,19 @@ func (sa SystemAuth) GetReferenceObjectID() (string, error) {
 	return "", apperrors.NewInternalError("unknown reference object ID")
 }
 
+// SystemAuthReferenceObjectType missing godoc
 type SystemAuthReferenceObjectType string
 
 const (
-	RuntimeReference           SystemAuthReferenceObjectType = "Runtime"
-	ApplicationReference       SystemAuthReferenceObjectType = "Application"
+	// RuntimeReference missing godoc
+	RuntimeReference SystemAuthReferenceObjectType = "Runtime"
+	// ApplicationReference missing godoc
+	ApplicationReference SystemAuthReferenceObjectType = "Application"
+	// IntegrationSystemReference missing godoc
 	IntegrationSystemReference SystemAuthReferenceObjectType = "Integration System"
 )
 
+// IsIntegrationSystemNoTenantFlow missing godoc
 func IsIntegrationSystemNoTenantFlow(err error, objectType SystemAuthReferenceObjectType) bool {
 	return apperrors.IsTenantRequired(err) && objectType == IntegrationSystemReference
 }

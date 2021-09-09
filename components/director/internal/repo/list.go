@@ -13,12 +13,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// Lister missing godoc
 type Lister interface {
 	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() Lister
 }
 
+// ListerGlobal missing godoc
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
 }
@@ -32,6 +34,7 @@ type universalLister struct {
 	orderByParams OrderByParams
 }
 
+// NewLister missing godoc
 func NewLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) Lister {
 	return &universalLister{
 		resourceType:    resourceType,
@@ -42,6 +45,7 @@ func NewLister(resourceType resource.Type, tableName string, tenantColumn string
 	}
 }
 
+// NewListerWithOrderBy missing godoc
 func NewListerWithOrderBy(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string, orderByParams OrderByParams) Lister {
 	return &universalLister{
 		resourceType:    resourceType,
@@ -52,6 +56,7 @@ func NewListerWithOrderBy(resourceType resource.Type, tableName string, tenantCo
 	}
 }
 
+// NewListerGlobal missing godoc
 func NewListerGlobal(resourceType resource.Type, tableName string, selectedColumns []string) ListerGlobal {
 	return &universalLister{
 		resourceType:    resourceType,
@@ -61,6 +66,7 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 	}
 }
 
+// List missing godoc
 func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -69,10 +75,12 @@ func (l *universalLister) List(ctx context.Context, tenant string, dest Collecti
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }
 
+// SetSelectedColumns missing godoc
 func (l *universalLister) SetSelectedColumns(selectedColumns []string) {
 	l.selectedColumns = strings.Join(selectedColumns, ", ")
 }
 
+// Clone missing godoc
 func (l *universalLister) Clone() Lister {
 	var clonedLister universalLister
 
@@ -85,6 +93,7 @@ func (l *universalLister) Clone() Lister {
 	return &clonedLister
 }
 
+// ListGlobal missing godoc
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }

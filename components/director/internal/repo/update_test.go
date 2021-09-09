@@ -75,7 +75,9 @@ func TestUpdateSingle(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
-		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
 		ctx = persistence.SaveToContext(ctx, db)
 
 		err := sut.UpdateSingle(ctx, givenUser)

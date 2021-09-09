@@ -29,7 +29,6 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 }
 
 func TestEntityConverter_FromEntity(t *testing.T) {
-
 	t.Run("Success", func(t *testing.T) {
 		entity := fixEntityVendor()
 		conv := ordvendor.NewConverter()

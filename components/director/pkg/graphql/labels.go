@@ -12,8 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Labels missing godoc
 type Labels map[string]interface{}
 
+// UnmarshalGQL missing godoc
 func (y *Labels) UnmarshalGQL(v interface{}) error {
 	if v == nil {
 		return apperrors.NewInternalError("input should not be nil")
@@ -29,6 +31,7 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 
+// MarshalGQL missing godoc
 func (y Labels) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {

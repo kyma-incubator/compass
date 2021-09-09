@@ -7,8 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-type runtimeStatusCondition string
-
 // Runtime struct represents database entity for Runtime
 type Runtime struct {
 	ID                string         `db:"id"`
@@ -41,7 +39,7 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 	}, nil
 }
 
-// GraphQLToModel converts Runtime entity to Runtime model
+// ToModel converts Runtime entity to Runtime model
 func (e Runtime) ToModel() *model.Runtime {
 	var description *string
 	if e.Description.Valid {

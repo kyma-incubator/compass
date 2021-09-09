@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DefaultServiceAccountTokenPath missing godoc
 const DefaultServiceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 // serviceAccountTokenAuthorizationProvider presents an AuthorizationProvider implementation which uses K8S Service Account tokens for the Authorization header
@@ -50,11 +51,7 @@ func (u serviceAccountTokenAuthorizationProvider) Name() string {
 // Matches contains the logic for matching the AuthorizationProvider
 func (u serviceAccountTokenAuthorizationProvider) Matches(ctx context.Context) bool {
 	_, err := LoadFromContext(ctx)
-	if err != nil {
-		return true
-	}
-
-	return false
+	return err != nil
 }
 
 // GetAuthorization reads pod's service account token from the filesystem

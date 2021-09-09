@@ -2,6 +2,7 @@ package graphql
 
 import "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
+// Bundle missing godoc
 type Bundle struct {
 	Name                           string      `json:"name"`
 	Description                    *string     `json:"description"`
@@ -11,10 +12,12 @@ type Bundle struct {
 	*BaseEntity
 }
 
+// GetType missing godoc
 func (e *Bundle) GetType() resource.Type {
 	return resource.Bundle
 }
 
+// BundleExt missing godoc
 type BundleExt struct {
 	Bundle
 	APIDefinitions   APIDefinitionPageExt      `json:"apiDefinitions"`
@@ -27,6 +30,7 @@ type BundleExt struct {
 	InstanceAuths    []*BundleInstanceAuth     `json:"instanceAuths"`
 }
 
+// BundlePageExt missing godoc
 type BundlePageExt struct {
 	BundlePage
 	Data []*BundleExt `json:"data"`

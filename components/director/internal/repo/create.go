@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
+// Creator missing godoc
 type Creator interface {
 	Create(ctx context.Context, dbEntity interface{}) error
 }
@@ -28,6 +29,7 @@ type universalCreator struct {
 	columns      []string
 }
 
+// NewCreator missing godoc
 func NewCreator(resourceType resource.Type, tableName string, columns []string) Creator {
 	return &universalCreator{
 		resourceType: resourceType,
@@ -36,6 +38,7 @@ func NewCreator(resourceType resource.Type, tableName string, columns []string) 
 	}
 }
 
+// Create missing godoc
 func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -46,7 +49,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		return err
 	}
 
-	var values []string
+	values := make([]string, 0, len(c.columns))
 	for _, c := range c.columns {
 		values = append(values, fmt.Sprintf(":%s", c))
 	}

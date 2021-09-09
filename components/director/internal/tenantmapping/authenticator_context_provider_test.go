@@ -396,6 +396,6 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
-		require.EqualError(t, err, fmt.Sprintf("while getting external tenant mapping [ExternalTenantId=%s]: %s", expectedExternalTenantID, mockErr.Error()))
+		require.EqualError(t, err, fmt.Sprintf("while getting external tenant mapping [ExternalTenantID=%s]: %s", expectedExternalTenantID, mockErr.Error()))
 	})
 }

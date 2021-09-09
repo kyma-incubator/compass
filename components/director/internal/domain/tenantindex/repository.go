@@ -34,14 +34,14 @@ func NewRepository() *repository {
 // GetOwnerTenantByResourceID gets the owner tenant of a resource by ID checking if the calling tenant has access to it.
 // The calling tenant can be of type customer and the resource can be part of any of his child 'account' tenants.
 // This function will return the tenant owning the resource in case the callingTenant has access to it (it is his child tenant) or NotFoundErr otherwise.
-func (r *repository) GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceId string) (string, error) {
+func (r *repository) GetOwnerTenantByResourceID(ctx context.Context, callingTenant, resourceID string) (string, error) {
 	var ownerTenant string
-	err := r.singleGetter.Get(ctx, callingTenant, repo.Conditions{repo.NewEqualCondition(idColumn, resourceId)}, repo.NoOrderBy, &ownerTenant)
+	err := r.singleGetter.Get(ctx, callingTenant, repo.Conditions{repo.NewEqualCondition(idColumn, resourceID)}, repo.NoOrderBy, &ownerTenant)
 	if apperrors.IsNotFoundError(err) {
 		if err := r.materialize(ctx); err != nil { // If the resource is not found in the view we should refresh it as it can be a new resource.
 			return "", errors.Wrap(err, "while materializing view")
 		}
-		err = r.singleGetter.Get(ctx, callingTenant, repo.Conditions{repo.NewEqualCondition(idColumn, resourceId)}, repo.NoOrderBy, &ownerTenant)
+		err = r.singleGetter.Get(ctx, callingTenant, repo.Conditions{repo.NewEqualCondition(idColumn, resourceID)}, repo.NoOrderBy, &ownerTenant)
 	}
 	return ownerTenant, err
 }

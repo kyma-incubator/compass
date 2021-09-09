@@ -6,21 +6,26 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// QueryTypeName missing godoc
 const QueryTypeName = "Query"
+
+// MutationTypeName missing godoc
 const MutationTypeName = "Mutation"
 
+// OrderedDefinitionList missing godoc
 type OrderedDefinitionList []ast.Definition
 
+// Len missing godoc
 func (d OrderedDefinitionList) Len() int {
 	return len(d)
 }
 
+// Swap missing godoc
 func (d OrderedDefinitionList) Swap(i, j int) {
-	tmp := d[i]
-	d[i] = d[j]
-	d[j] = tmp
+	d[i], d[j] = d[j], d[i]
 }
 
+// Less missing godoc
 func (d OrderedDefinitionList) Less(i, j int) bool {
 	first := d[i]
 	second := d[j]
@@ -67,5 +72,4 @@ func (d OrderedDefinitionList) typeMapping(kind ast.DefinitionKind) int {
 	default:
 		return 0
 	}
-
 }

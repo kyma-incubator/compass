@@ -13,11 +13,11 @@ import (
 func TestRequestLoggerGeneratesCorrelationIDWhenNotFoundInHeaders(t *testing.T) {
 	response := httptest.NewRecorder()
 
-	testUrl, err := url.Parse("http://localhost:8080")
+	testURL, err := url.Parse("http://localhost:8080")
 	require.NoError(t, err)
 	request := &http.Request{
 		Method: http.MethodPost,
-		URL:    testUrl,
+		URL:    testURL,
 		Header: map[string][]string{},
 	}
 
@@ -35,11 +35,11 @@ func TestRequestLoggerUseCorrelationIDFromHeaderIfProvided(t *testing.T) {
 	correlationID := "test-correlation-id"
 	response := httptest.NewRecorder()
 
-	testUrl, err := url.Parse("http://localhost:8080")
+	testURL, err := url.Parse("http://localhost:8080")
 	require.NoError(t, err)
 	request := &http.Request{
 		Method: http.MethodPost,
-		URL:    testUrl,
+		URL:    testURL,
 		Header: map[string][]string{},
 	}
 	request.Header.Set("x-request-id", correlationID)

@@ -18,16 +18,17 @@ package authenticator
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // InitFromEnv loads authenticator configurations from environment if any exist
 func InitFromEnv(envPrefix string) ([]Config, error) {
-	authenticators := make(map[string]*Config, 0)
+	authenticators := make(map[string]*Config)
 	attributesPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_ATTRIBUTES$", envPrefix))
 	trustedIssuersPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_TRUSTED_ISSUERS$", envPrefix))
 
@@ -41,7 +42,7 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 			authenticatorName := matches[1]
 			var attributes Attributes
 			if err := json.Unmarshal([]byte(value), &attributes); err != nil {
-				return nil, errors.New(fmt.Sprintf("unable to unmarshal environment variable with key %s and value %s: %s", key, value, err))
+				return nil, errors.Errorf("unable to unmarshal environment variable with key %s and value %s: %s", key, value, err)
 			}
 
 			if authenticator, exists := authenticators[authenticatorName]; exists {
@@ -80,7 +81,7 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 	result := make([]Config, 0, len(authenticators))
 	for _, config := range authenticators {
 		if err := config.Attributes.Validate(); err != nil {
-			return nil, errors.New(fmt.Sprintf("insufficient configuration provided for authenticator %q: %s", config.Name, err.Error()))
+			return nil, errors.Errorf("insufficient configuration provided for authenticator %q: %s", config.Name, err.Error())
 		}
 
 		result = append(result, *config)

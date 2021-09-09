@@ -148,7 +148,6 @@ func TestService_CreateClient(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestService_UpdateClient(t *testing.T) {
@@ -246,7 +245,6 @@ func TestService_UpdateClient(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestService_DeleteClientCredentials(t *testing.T) {
@@ -296,7 +294,6 @@ func TestService_DeleteClientCredentials(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			}
-
 		})
 	}
 }
@@ -398,7 +395,6 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			}
-
 		})
 	}
 }

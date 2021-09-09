@@ -22,7 +22,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
-const ContextKey = "TenantCtxKey"
+type contextKey string
+
+// ContextKey missing godoc
+const ContextKey contextKey = "TenantCtxKey"
 
 // LoadFromContext retrieves the tenantID from the provided context or returns error if missing
 func LoadFromContext(ctx context.Context) (string, error) {

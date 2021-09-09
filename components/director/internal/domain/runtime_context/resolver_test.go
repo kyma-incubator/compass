@@ -1,11 +1,11 @@
-package runtime_context_test
+package runtimectx_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -212,7 +212,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime_context.NewResolver(transact, svc, converter)
+			resolver := runtimectx.NewResolver(transact, svc, converter)
 
 			c := testCase.Consumer
 			if c == nil {
@@ -453,7 +453,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime_context.NewResolver(transact, svc, converter)
+			resolver := runtimectx.NewResolver(transact, svc, converter)
 
 			c := testCase.Consumer
 			if c == nil {
@@ -666,7 +666,7 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime_context.NewResolver(transact, svc, converter)
+			resolver := runtimectx.NewResolver(transact, svc, converter)
 
 			c := testCase.Consumer
 			if c == nil {
@@ -892,7 +892,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime_context.NewResolver(transact, svc, converter)
+			resolver := runtimectx.NewResolver(transact, svc, converter)
 
 			c := testCase.Consumer
 			if c == nil {
@@ -1105,7 +1105,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime_context.NewResolver(transact, svc, converter)
+			resolver := runtimectx.NewResolver(transact, svc, converter)
 
 			c := testCase.Consumer
 			if c == nil {
@@ -1280,7 +1280,7 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime_context.NewResolver(transact, svc, nil)
+			resolver := runtimectx.NewResolver(transact, svc, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlRuntimeContext, testCase.InputKey)

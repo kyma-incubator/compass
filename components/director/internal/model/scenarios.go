@@ -1,12 +1,13 @@
 package model
 
-const (
-	ScenariosKey = "scenarios"
-)
+// ScenariosKey missing godoc
+const ScenariosKey = "scenarios"
 
 var (
+	// ScenariosDefaultValue missing godoc
 	ScenariosDefaultValue = []interface{}{"DEFAULT"}
-	ScenariosSchema       = map[string]interface{}{
+	// ScenariosSchema missing godoc
+	ScenariosSchema = map[string]interface{}{
 		"type":        "array",
 		"minItems":    1,
 		"uniqueItems": true,
@@ -17,7 +18,7 @@ var (
 			"maxLength": 128,
 		},
 	}
-	// This schema is used to validate ScenariosSchema (allows only modifications to enum field)
+	// SchemaForScenariosSchema is used to validate ScenariosSchema (allows only modifications to enum field)
 	SchemaForScenariosSchema = map[string]interface{}{
 		"type":                 "object",
 		"additionalProperties": false,

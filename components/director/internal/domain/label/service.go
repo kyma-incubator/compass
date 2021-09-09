@@ -13,12 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	Upsert(ctx context.Context, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+// LabelDefinitionRepository missing godoc
 //go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore
 type LabelDefinitionRepository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
@@ -26,6 +28,7 @@ type LabelDefinitionRepository interface {
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -37,10 +40,12 @@ type labelUpsertService struct {
 	uidService          UIDService
 }
 
+// NewLabelUpsertService missing godoc
 func NewLabelUpsertService(labelRepo LabelRepository, labelDefinitionRepo LabelDefinitionRepository, uidService UIDService) *labelUpsertService {
 	return &labelUpsertService{labelRepo: labelRepo, labelDefinitionRepo: labelDefinitionRepo, uidService: uidService}
 }
 
+// UpsertMultipleLabels missing godoc
 func (s *labelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error {
 	for key, val := range labels {
 		err := s.UpsertLabel(ctx, tenant, &model.LabelInput{
@@ -57,6 +62,7 @@ func (s *labelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant st
 	return nil
 }
 
+// UpsertLabel missing godoc
 func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
 	var labelDef *model.LabelDefinition
 
@@ -81,7 +87,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 		log.C(ctx).Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
 	}
 
-	err = s.validateLabelInputValue(ctx, tenant, labelInput, labelDef)
+	err = s.validateLabelInputValue(labelInput, labelDef)
 	if err != nil {
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
@@ -97,7 +103,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant string, labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
+func (s *labelUpsertService) validateLabelInputValue(labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
 	if labelDef == nil || labelDef.Schema == nil {
 		// nothing to validate
 		return nil

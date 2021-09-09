@@ -1,5 +1,6 @@
 package model
 
+// Auth missing godoc
 type Auth struct {
 	Credential            CredentialData
 	AdditionalHeaders     map[string][]string
@@ -8,10 +9,12 @@ type Auth struct {
 	OneTimeToken          *OneTimeToken
 }
 
+// CredentialRequestAuth missing godoc
 type CredentialRequestAuth struct {
 	Csrf *CSRFTokenCredentialRequestAuth
 }
 
+// CSRFTokenCredentialRequestAuth missing godoc
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL      string
 	Credential            CredentialData
@@ -19,21 +22,26 @@ type CSRFTokenCredentialRequestAuth struct {
 	AdditionalQueryParams map[string][]string
 }
 
+// CredentialData missing godoc
 type CredentialData struct {
 	Basic *BasicCredentialData
 	Oauth *OAuthCredentialData
 }
 
+// BasicCredentialData missing godoc
 type BasicCredentialData struct {
 	Username string
 	Password string
 }
+
+// OAuthCredentialData missing godoc
 type OAuthCredentialData struct {
 	ClientID     string
 	ClientSecret string
 	URL          string
 }
 
+// AuthInput missing godoc
 type AuthInput struct {
 	Credential            *CredentialDataInput
 	AdditionalHeaders     map[string][]string
@@ -42,6 +50,7 @@ type AuthInput struct {
 	OneTimeToken          *OneTimeToken
 }
 
+// ToAuth missing godoc
 func (i *AuthInput) ToAuth() *Auth {
 	if i == nil {
 		return nil
@@ -66,11 +75,13 @@ func (i *AuthInput) ToAuth() *Auth {
 	}
 }
 
+// CredentialDataInput missing godoc
 type CredentialDataInput struct {
 	Basic *BasicCredentialDataInput
 	Oauth *OAuthCredentialDataInput
 }
 
+// ToCredentialData missing godoc
 func (i *CredentialDataInput) ToCredentialData() *CredentialData {
 	if i == nil {
 		return nil
@@ -93,11 +104,13 @@ func (i *CredentialDataInput) ToCredentialData() *CredentialData {
 	}
 }
 
+// BasicCredentialDataInput missing godoc
 type BasicCredentialDataInput struct {
 	Username string
 	Password string
 }
 
+// ToBasicCredentialData missing godoc
 func (i *BasicCredentialDataInput) ToBasicCredentialData() *BasicCredentialData {
 	if i == nil {
 		return nil
@@ -109,12 +122,14 @@ func (i *BasicCredentialDataInput) ToBasicCredentialData() *BasicCredentialData 
 	}
 }
 
+// OAuthCredentialDataInput missing godoc
 type OAuthCredentialDataInput struct {
 	ClientID     string
 	ClientSecret string
 	URL          string
 }
 
+// ToOAuthCredentialData missing godoc
 func (i *OAuthCredentialDataInput) ToOAuthCredentialData() *OAuthCredentialData {
 	if i == nil {
 		return nil
@@ -127,10 +142,12 @@ func (i *OAuthCredentialDataInput) ToOAuthCredentialData() *OAuthCredentialData 
 	}
 }
 
+// CredentialRequestAuthInput missing godoc
 type CredentialRequestAuthInput struct {
 	Csrf *CSRFTokenCredentialRequestAuthInput
 }
 
+// ToCredentialRequestAuth missing godoc
 func (i *CredentialRequestAuthInput) ToCredentialRequestAuth() *CredentialRequestAuth {
 	if i == nil {
 		return nil
@@ -146,6 +163,7 @@ func (i *CredentialRequestAuthInput) ToCredentialRequestAuth() *CredentialReques
 	}
 }
 
+// CSRFTokenCredentialRequestAuthInput missing godoc
 type CSRFTokenCredentialRequestAuthInput struct {
 	TokenEndpointURL      string
 	Credential            *CredentialDataInput
@@ -153,6 +171,7 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	AdditionalQueryParams map[string][]string
 }
 
+// ToCSRFTokenCredentialRequestAuth missing godoc
 func (i *CSRFTokenCredentialRequestAuthInput) ToCSRFTokenCredentialRequestAuth() *CSRFTokenCredentialRequestAuth {
 	if i == nil {
 		return nil

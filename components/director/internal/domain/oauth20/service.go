@@ -18,17 +18,20 @@ const (
 	clientCredentialGrantTypesPrefix = "clientCredentialsRegistrationGrantTypes"
 )
 
+// ClientDetailsConfigProvider missing godoc
 //go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore
 type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
 	GetRequiredGrantTypes(path string) ([]string, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// OryHydraService missing godoc
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore
 type OryHydraService interface {
 	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams) (*admin.ListOAuth2ClientsOK, error)
@@ -37,6 +40,7 @@ type OryHydraService interface {
 	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams) (*admin.DeleteOAuth2ClientNoContent, error)
 }
 
+// ClientDetails missing godoc
 type ClientDetails struct {
 	Scopes     []string
 	GrantTypes []string
@@ -49,6 +53,7 @@ type service struct {
 	hydraCLi                  OryHydraService
 }
 
+// NewService missing godoc
 func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
@@ -58,6 +63,7 @@ func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDServ
 	}
 }
 
+// CreateClientCredentials missing godoc
 func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
@@ -80,6 +86,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 	return credentialData, nil
 }
 
+// UpdateClient missing godoc
 func (s *service) UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
@@ -94,6 +101,7 @@ func (s *service) UpdateClient(ctx context.Context, clientID string, objectType 
 	return nil
 }
 
+// DeleteClientCredentials missing godoc
 func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) error {
 	log.C(ctx).Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
 
@@ -106,6 +114,7 @@ func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) 
 	return nil
 }
 
+// DeleteMultipleClientCredentials missing godoc
 func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
 	for _, auth := range auths {
 		if auth.Value == nil {
@@ -122,6 +131,7 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []m
 	return nil
 }
 
+// ListClients missing godoc
 func (s *service) ListClients() ([]*models.OAuth2Client, error) {
 	listClientsOK, err := s.hydraCLi.ListOAuth2Clients(admin.NewListOAuth2ClientsParams())
 	if err != nil {
@@ -130,6 +140,7 @@ func (s *service) ListClients() ([]*models.OAuth2Client, error) {
 	return listClientsOK.Payload, nil
 }
 
+// GetClientDetails missing godoc
 func (s *service) GetClientDetails(objType model.SystemAuthReferenceObjectType) (*ClientDetails, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {

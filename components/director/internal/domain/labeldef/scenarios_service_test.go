@@ -162,7 +162,6 @@ func TestGetAvailableScenarios(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "missing schema for `scenarios` label definition")
 	})
-
 }
 
 func TestScenariosService_AddDefaultScenarioIfEnabled(t *testing.T) {

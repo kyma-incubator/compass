@@ -98,7 +98,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result := testCase.Input.ToDocumentWithinBundle(id, tenant, bundleID)
 

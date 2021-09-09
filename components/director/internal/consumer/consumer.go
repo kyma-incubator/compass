@@ -6,21 +6,28 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
+// ConsumerType missing godoc
 type ConsumerType string
 
 const (
-	Runtime           ConsumerType = "Runtime"
-	Application       ConsumerType = "Application"
+	// Runtime missing godoc
+	Runtime ConsumerType = "Runtime"
+	// Application missing godoc
+	Application ConsumerType = "Application"
+	// IntegrationSystem missing godoc
 	IntegrationSystem ConsumerType = "Integration System"
-	User              ConsumerType = "Static User"
+	// User missing godoc
+	User ConsumerType = "Static User"
 )
 
+// Consumer missing godoc
 type Consumer struct {
 	ConsumerID string
 	ConsumerType
 	Flow oathkeeper.AuthFlow
 }
 
+// MapSystemAuthToConsumerType missing godoc
 func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (ConsumerType, error) {
 	switch refObj {
 	case model.ApplicationReference:

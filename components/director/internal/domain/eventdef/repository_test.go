@@ -37,15 +37,14 @@ func TestPgRepository_GetByID(t *testing.T) {
 		convMock.On("FromEntity", eventDefEntity).Return(model.EventDefinition{Tenant: tenantID, BaseEntity: &model.BaseEntity{ID: eventID}}, nil).Once()
 		pgRepository := event.NewRepository(convMock)
 		// WHEN
-		modelApiDef, err := pgRepository.GetByID(ctx, tenantID, eventID)
+		modelAPIDef, err := pgRepository.GetByID(ctx, tenantID, eventID)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, eventID, modelApiDef.ID)
-		assert.Equal(t, tenantID, modelApiDef.Tenant)
+		assert.Equal(t, eventID, modelAPIDef.ID)
+		assert.Equal(t, tenantID, modelAPIDef.Tenant)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
-
 }
 
 func TestPgRepository_ListByApplicationID(t *testing.T) {

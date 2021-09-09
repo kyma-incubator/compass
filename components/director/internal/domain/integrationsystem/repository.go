@@ -13,6 +13,7 @@ const tableName string = `public.integration_systems`
 
 var tableColumns = []string{"id", "name", "description"}
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.IntegrationSystem) *Entity
@@ -30,6 +31,7 @@ type pgRepository struct {
 	conv Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
 		creator:               repo.NewCreator(resource.IntegrationSystem, tableName, tableColumns),
@@ -42,10 +44,12 @@ func NewRepository(conv Converter) *pgRepository {
 	}
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, item model.IntegrationSystem) error {
 	return r.creator.Create(ctx, r.conv.ToEntity(&item))
 }
 
+// Get missing godoc
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.IntegrationSystem, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -54,10 +58,12 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.IntegrationSy
 	return r.conv.FromEntity(&entity), nil
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// List missing godoc
 func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (model.IntegrationSystemPage, error) {
 	var entityCollection Collection
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
@@ -65,7 +71,7 @@ func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (m
 		return model.IntegrationSystemPage{}, err
 	}
 
-	var items []*model.IntegrationSystem
+	items := make([]*model.IntegrationSystem, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
 		isModel := r.conv.FromEntity(&entity)
@@ -78,10 +84,12 @@ func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (m
 	}, nil
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model model.IntegrationSystem) error {
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(&model))
 }
 
+// Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }

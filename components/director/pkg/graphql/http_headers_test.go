@@ -8,18 +8,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
+func TestHTTPHeaders_UnmarshalGQL(t *testing.T) {
 	for name, tc := range map[string]struct {
 		input    interface{}
 		err      bool
 		errmsg   string
-		expected HttpHeaders
+		expected HTTPHeaders
 	}{
 		//given
 		"correct input": {
 			input:    map[string]interface{}{"header1": []interface{}{"val1", "val2"}},
 			err:      false,
-			expected: HttpHeaders{"header1": []string{"val1", "val2"}},
+			expected: HTTPHeaders{"header1": []string{"val1", "val2"}},
 		},
 		"error: input is nil": {
 			input:  nil,
@@ -39,7 +39,7 @@ func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			h := HttpHeaders{}
+			h := HTTPHeaders{}
 			err := h.UnmarshalGQL(tc.input)
 
 			//then
@@ -55,9 +55,9 @@ func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
 	}
 }
 
-func TestHttpHeaders_MarshalGQL(t *testing.T) {
+func TestHTTPHeaders_MarshalGQL(t *testing.T) {
 	//given
-	fixHeaders := HttpHeaders{
+	fixHeaders := HTTPHeaders{
 		"header": []string{"val1", "val2"},
 	}
 	expectedHeaders := `{"header":["val1","val2"]}`
@@ -71,14 +71,14 @@ func TestHttpHeaders_MarshalGQL(t *testing.T) {
 	assert.Equal(t, expectedHeaders, buf.String())
 }
 
-func Test_NewHttpHeadersSerialized(t *testing.T) {
-	t.Run("Success when invoking NewHttpHeadersSerialized", func(t *testing.T) {
+func Test_NewHTTPHeadersSerialized(t *testing.T) {
+	t.Run("Success when invoking NewHTTPHeadersSerialized", func(t *testing.T) {
 		// GIVEN
-		expected := HttpHeadersSerialized("{\"header1\":[\"val1\",\"val2\"]}")
+		expected := HTTPHeadersSerialized("{\"header1\":[\"val1\",\"val2\"]}")
 		given := map[string][]string{"header1": []string{"val1", "val2"}}
 
 		// WHEN
-		marshaled, err := NewHttpHeadersSerialized(given)
+		marshaled, err := NewHTTPHeadersSerialized(given)
 
 		// THEN
 		require.NoError(t, err)
@@ -86,11 +86,11 @@ func Test_NewHttpHeadersSerialized(t *testing.T) {
 	})
 }
 
-func Test_HttpHeadersSerializedUnmarshal(t *testing.T) {
-	t.Run("Success when unmarshaling serialized HttpHeaders", func(t *testing.T) {
+func Test_HTTPHeadersSerializedUnmarshal(t *testing.T) {
+	t.Run("Success when unmarshaling serialized HTTPHeaders", func(t *testing.T) {
 		// GIVEN
 		expected := map[string][]string{"header1": []string{"val1", "val2"}}
-		marshaled := HttpHeadersSerialized("{\"header1\":[\"val1\",\"val2\"]}")
+		marshaled := HTTPHeadersSerialized("{\"header1\":[\"val1\",\"val2\"]}")
 
 		// WHEN
 		headers, err := marshaled.Unmarshal()

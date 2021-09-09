@@ -18,11 +18,13 @@ package graphql
 
 import "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
+// Entity missing godoc
 type Entity interface {
 	GetID() string
 	GetType() resource.Type
 }
 
+// BaseEntity missing godoc
 type BaseEntity struct {
 	ID        string     `json:"id"`
 	Ready     bool       `json:"ready"`
@@ -32,10 +34,12 @@ type BaseEntity struct {
 	Error     *string    `json:"error"`
 }
 
+// GetID missing godoc
 func (e *BaseEntity) GetID() string {
 	return e.ID
 }
 
+// GetType missing godoc
 func (e *BaseEntity) GetType() resource.Type {
 	return ""
 }

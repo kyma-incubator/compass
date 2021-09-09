@@ -9,6 +9,9 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 errcheck-local:
 	 GO111MODULE="on" errcheck -blank -asserts -ignoregenerated ./...
 
+lint-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 test-local:
 	GO111MODULE=on go test ./...
 

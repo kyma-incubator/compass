@@ -4,6 +4,7 @@ import (
 	"database/sql"
 )
 
+// Version missing godoc
 type Version struct {
 	Value           sql.NullString `db:"version_value"`
 	Deprecated      sql.NullBool   `db:"version_deprecated"`

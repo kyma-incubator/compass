@@ -1,4 +1,4 @@
-package mp_package
+package ordpackage
 
 import (
 	"context"
@@ -22,6 +22,7 @@ var (
 		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.Package) *Entity
@@ -38,6 +39,7 @@ type pgRepository struct {
 	updater      repo.Updater
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
@@ -50,6 +52,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 	}
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -59,6 +62,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 	return r.creator.Create(ctx, r.conv.ToEntity(model))
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model *model.Package) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -67,15 +71,18 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Package) error {
 	return r.updater.UpdateSingle(ctx, r.conv.ToEntity(model))
 }
 
+// Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Package entity with id %q", id)
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Package, error) {
 	log.C(ctx).Debugf("Getting Package entity with id %q", id)
 	var pkgEnt Entity
@@ -91,6 +98,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 	return pkgModel, nil
 }
 
+// ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error) {
 	pkgCollection := pkgCollection{}
 	if err := r.lister.List(ctx, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
@@ -109,6 +117,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 
 type pkgCollection []Entity
 
+// Len missing godoc
 func (pc pkgCollection) Len() int {
 	return len(pc)
 }

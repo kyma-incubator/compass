@@ -2,6 +2,7 @@ package bundlereferences
 
 import "database/sql"
 
+// Entity missing godoc
 type Entity struct {
 	TenantID            string         `db:"tenant_id"`
 	BundleID            sql.NullString `db:"bundle_id"`

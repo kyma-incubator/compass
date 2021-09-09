@@ -10,22 +10,25 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyFetchRequestDocument = "dataloadersFetchRequestDocument"
+const loadersKeyFetchRequestDocument contextKey = "dataloadersFetchRequestDocument"
 
+// LoadersFetchRequestDocument missing godoc
 type LoadersFetchRequestDocument struct {
-	FetchRequestDocumentById FetchRequestDocumentLoader
+	FetchRequestDocumentByID FetchRequestDocumentLoader
 }
 
+// ParamFetchRequestDocument missing godoc
 type ParamFetchRequestDocument struct {
 	ID  string
 	Ctx context.Context
 }
 
+// HandlerFetchRequestDocument missing godoc
 func HandlerFetchRequestDocument(fetchFunc func(keys []ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyFetchRequestDocument, &LoadersFetchRequestDocument{
-				FetchRequestDocumentById: FetchRequestDocumentLoader{
+				FetchRequestDocumentByID: FetchRequestDocumentLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,
@@ -37,6 +40,7 @@ func HandlerFetchRequestDocument(fetchFunc func(keys []ParamFetchRequestDocument
 	}
 }
 
+// ForFetchRequestDocument missing godoc
 func ForFetchRequestDocument(ctx context.Context) *LoadersFetchRequestDocument {
 	return ctx.Value(loadersKeyFetchRequestDocument).(*LoadersFetchRequestDocument)
 }

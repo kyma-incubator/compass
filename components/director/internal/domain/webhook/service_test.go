@@ -599,7 +599,6 @@ func TestService_Update(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-
 }
 
 func TestService_Delete(t *testing.T) {
@@ -668,5 +667,4 @@ func TestService_Delete(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-
 }

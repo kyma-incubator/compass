@@ -7,9 +7,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// Close missing godoc
 func Close(ctx context.Context, closer io.Closer) {
-	err := closer.Close()
-	if err != nil {
+	if err := closer.Close(); err != nil {
 		log.C(ctx).WithError(err).Warnf("Warning: failed to close")
 	}
 }

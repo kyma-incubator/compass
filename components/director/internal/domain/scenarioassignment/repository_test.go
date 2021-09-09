@@ -134,8 +134,8 @@ func TestRepository_ListForSelector(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{scenario: scenarioName, tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
-			{scenario: "scenario-B", tenantId: tenantID, selectorKey: "key", selectorValue: "value"},
+			{scenario: scenarioName, tenantID: tenantID, selectorKey: "key", selectorValue: "value"},
+			{scenario: "scenario-B", tenantID: tenantID, selectorKey: "key", selectorValue: "value"},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE %s AND selector_key = $2 AND selector_value = $3`, fixUnescapedTenantIsolationSubquery()))).
 			WithArgs(tenantID, "key", "value").

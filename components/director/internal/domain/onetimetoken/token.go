@@ -38,7 +38,7 @@ func rawEncoded(obj *graphql.TokenWithURL) (*string, error) {
 	return &rawBaseEncoded, nil
 }
 
-func legacyConnectorUrlWithToken(legacyConnectorURL, token string) (string, error) {
+func legacyConnectorURLWithToken(legacyConnectorURL, token string) (string, error) {
 	if strings.Contains(token, legacyConnectorURL) {
 		return token, nil
 	}

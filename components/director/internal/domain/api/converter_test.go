@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -99,7 +98,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//give
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
@@ -128,7 +127,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	api1, spec1, bundleRef1 := fixFullAPIDefinitionModel("test1")
 	api2, spec2, bundleRef2 := fixFullAPIDefinitionModel("test2")
 
-	inputApis := []*model.APIDefinition{
+	inputAPIs := []*model.APIDefinition{
 		&api1, &api2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
@@ -149,7 +148,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	versionConverter := &automock.VersionConverter{}
 	specConverter := &automock.SpecConverter{}
 
-	for i, api := range inputApis {
+	for i, api := range inputAPIs {
 		if api == nil {
 			continue
 		}
@@ -159,7 +158,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	// when
 	converter := api.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs, inputBundleRefs)
+	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then
@@ -241,7 +240,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//give
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
@@ -308,8 +307,8 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		{
 			Name:          "Empty",
 			Input:         []*graphql.APIDefinitionInput{},
-			Expected:      nil,
-			ExpectedSpecs: nil,
+			Expected:      []*model.APIDefinitionInput{},
+			ExpectedSpecs: []*model.SpecInput{},
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -318,7 +317,9 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name: "Nil",
+			Name:          "Nil",
+			Expected:      []*model.APIDefinitionInput{},
+			ExpectedSpecs: []*model.SpecInput{},
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -329,7 +330,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//given
 			versionConverter := testCase.VersionConverter()
 			specCovnerter := testCase.SpecConverter()

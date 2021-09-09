@@ -241,7 +241,6 @@ func TestFromEntity(t *testing.T) {
 				ID: "givenID",
 			},
 		}, actualModel)
-
 	})
 
 	t.Run("all fields", func(t *testing.T) {

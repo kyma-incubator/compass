@@ -25,15 +25,13 @@ const (
 	bearerPrefix = "Bearer "
 
 	claimsIssuerKey = "iss"
-	claimsNameKey   = "name"
-	claimsGroupsKey = "groups"
-	claimsEmailKey  = "email"
 	jwksKeyIDKey    = "kid"
 	jwksURIKey      = "jwks_uri"
 
 	openIDConfigSubpath = ".well-known/openid-configuration"
 )
 
+// KeyGetter missing godoc
 type KeyGetter interface {
 	GetKey(ctx context.Context, token *jwt.Token) (interface{}, error)
 }
@@ -42,12 +40,14 @@ type tokenVerifier struct {
 	keys KeyGetter
 }
 
+// NewTokenVerifier missing godoc
 func NewTokenVerifier(keys KeyGetter) *tokenVerifier {
 	return &tokenVerifier{
 		keys: keys,
 	}
 }
 
+// Verify missing godoc
 func (tv *tokenVerifier) Verify(ctx context.Context, token string) (*jwt.MapClaims, error) {
 	if token == "" {
 		return nil, apperrors.NewUnauthorizedError("token cannot be empty")
@@ -78,10 +78,12 @@ func (tv *tokenVerifier) verifyToken(ctx context.Context, tokenStr string) (*jwt
 type jwksFetch struct {
 }
 
+// NewJWKsFetch missing godoc
 func NewJWKsFetch() *jwksFetch {
 	return &jwksFetch{}
 }
 
+// GetKey missing godoc
 func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, error) {
 	if token == nil {
 		return nil, apperrors.NewInternalError("token cannot be nil")

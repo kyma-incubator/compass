@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
+// Entity missing godoc
 type Entity struct {
 	TenantID              string         `db:"tenant_id"`
 	ApplicationTemplateID sql.NullString `db:"app_template_id"`
@@ -20,12 +21,14 @@ type Entity struct {
 	BaseURL               sql.NullString `db:"base_url"`
 	SystemNumber          sql.NullString `db:"system_number"`
 	Labels                sql.NullString `db:"labels"`
-	CorrelationIds        sql.NullString `db:"correlation_ids"`
+	CorrelationIDs        sql.NullString `db:"correlation_ids"`
 	*repo.BaseEntity
 }
 
+// EntityCollection missing godoc
 type EntityCollection []Entity
 
+// Len missing godoc
 func (a EntityCollection) Len() int {
 	return len(a)
 }
