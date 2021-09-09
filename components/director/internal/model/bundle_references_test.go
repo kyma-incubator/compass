@@ -11,6 +11,7 @@ import (
 
 func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 	// given
+	bundleRefID := "foo"
 	bundleID := "bundle-id"
 	refID := "ref-id"
 	tenant := "tnt"
@@ -31,6 +32,7 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 				APIDefaultTargetURL: &apiDefaultTargetURL,
 			},
 			Expected: &model.BundleReference{
+				ID:                  bundleRefID,
 				Tenant:              tenant,
 				BundleID:            &bundleID,
 				ObjectType:          model.BundleAPIReference,
@@ -56,6 +58,7 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 				APIDefaultTargetURL: nil,
 			},
 			Expected: &model.BundleReference{
+				ID:                  bundleRefID,
 				Tenant:              tenant,
 				BundleID:            &bundleID,
 				ObjectType:          model.BundleEventReference,
@@ -74,7 +77,7 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result, err := testCase.BundleReferenceInput.ToBundleReference(tenant, testCase.InputReferenceObjectType, &bundleID, testCase.InputReferenceObjectID)
+			result, err := testCase.BundleReferenceInput.ToBundleReference(bundleRefID, tenant, testCase.InputReferenceObjectType, &bundleID, testCase.InputReferenceObjectID)
 
 			// then
 			if testCase.ExpectedErr != nil {

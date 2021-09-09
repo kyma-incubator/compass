@@ -73,4 +73,12 @@ SELECT packages.id     AS package_id,
 FROM packages,
      jsonb_array_elements_text(packages.part_of_products) AS elements;
 
+---
+
+ALTER TABLE bundle_references
+DROP CONSTRAINT bundle_references_pk;
+
+ALTER TABLE bundle_references
+DROP COLUMN id;
+
 COMMIT;

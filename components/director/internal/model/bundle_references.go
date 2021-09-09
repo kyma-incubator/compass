@@ -3,6 +3,7 @@ package model
 import "github.com/pkg/errors"
 
 type BundleReference struct {
+	ID                  string
 	Tenant              string
 	BundleID            *string
 	ObjectType          BundleReferenceObjectType
@@ -21,7 +22,7 @@ type BundleReferenceInput struct {
 	APIDefaultTargetURL *string
 }
 
-func (b *BundleReferenceInput) ToBundleReference(tenant string, objectType BundleReferenceObjectType, bundleID, objectID *string) (*BundleReference, error) {
+func (b *BundleReferenceInput) ToBundleReference(id, tenant string, objectType BundleReferenceObjectType, bundleID, objectID *string) (*BundleReference, error) {
 	if b == nil {
 		return nil, nil
 	}
@@ -31,6 +32,7 @@ func (b *BundleReferenceInput) ToBundleReference(tenant string, objectType Bundl
 	}
 
 	return &BundleReference{
+		ID:                  id,
 		Tenant:              tenant,
 		BundleID:            bundleID,
 		ObjectType:          objectType,

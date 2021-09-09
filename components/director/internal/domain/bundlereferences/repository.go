@@ -20,7 +20,7 @@ const (
 
 var (
 	tenantColumn                    = "tenant_id"
-	bundleReferencesColumns         = []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url"}
+	bundleReferencesColumns         = []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
 	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url"}
 	updatableColumnsWithoutBundleID = []string{"api_def_id", "event_def_id", "api_def_url"}
 )

@@ -78,4 +78,11 @@ FROM packages,
      jsonb_array_elements_text(packages.part_of_products) AS elements
          JOIN products p ON elements.value = p.ord_id WHERE p.app_id = packages.app_id;
 
+--- add id to bundle_references table
+ALTER TABLE bundle_references
+ADD COLUMN id uuid DEFAULT uuid_generate_v4();
+
+ALTER TABLE bundle_references
+ADD CONSTRAINT bundle_references_pk PRIMARY KEY (id);
+
 COMMIT;

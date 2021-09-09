@@ -29,6 +29,7 @@ func (c *converter) ToEntity(in model.BundleReference) Entity {
 	}
 
 	return Entity{
+		ID:                  in.ID,
 		TenantID:            in.Tenant,
 		BundleID:            repo.NewNullableString(in.BundleID),
 		APIDefID:            apiDefID,
@@ -44,6 +45,7 @@ func (c *converter) FromEntity(in Entity) (model.BundleReference, error) {
 	}
 
 	return model.BundleReference{
+		ID:                  in.ID,
 		Tenant:              in.TenantID,
 		BundleID:            repo.StringPtrFromNullableString(in.BundleID),
 		ObjectType:          objectType,

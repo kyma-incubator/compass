@@ -19,13 +19,20 @@ type BundleReferenceRepository interface {
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
-type service struct {
-	repo BundleReferenceRepository
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo BundleReferenceRepository) *service {
+type service struct {
+	repo       BundleReferenceRepository
+	uidService UIDService
+}
+
+func NewService(repo BundleReferenceRepository, uidService UIDService) *service {
 	return &service{
-		repo: repo,
+		repo:       repo,
+		uidService: uidService,
 	}
 }
 
@@ -63,7 +70,8 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.Bundle
 		return err
 	}
 
-	bundleReference, err := in.ToBundleReference(tnt, objectType, bundleID, objectID)
+	id := s.uidService.Generate()
+	bundleReference, err := in.ToBundleReference(id, tnt, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
@@ -87,7 +95,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 		return err
 	}
 
-	bundleReference, err = in.ToBundleReference(tnt, objectType, bundleID, objectID)
+	bundleReference, err = in.ToBundleReference(bundleReference.ID, tnt, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
