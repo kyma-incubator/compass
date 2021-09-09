@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Validates if exactly one of passed pointers is not a nil.
+// ValidateExactlyOneNotNil validates if exactly one of passed pointers is not a nil.
 func ValidateExactlyOneNotNil(errorMessage string, ptr interface{}, ptrs ...interface{}) error {
 	ptrs = append(ptrs, ptr)
 

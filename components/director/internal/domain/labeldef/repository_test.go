@@ -27,8 +27,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
 	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 	someString := "any"
-	var someSchema interface{}
-	someSchema = someString
+	var someSchema interface{} = someString
 
 	in := model.LabelDefinition{
 		ID:     labelDefID,
@@ -96,8 +95,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
 	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 	someString := "any"
-	var someSchema interface{}
-	someSchema = someString
+	var someSchema interface{} = someString
 
 	in := model.LabelDefinition{
 		ID:     labelDefID,
@@ -267,7 +265,6 @@ func TestRepositoryGetByKey(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Object not found")
 		assert.Nil(t, actual)
-
 	})
 	t.Run("returns error when conversion fails", func(t *testing.T) {
 		// GIVEN
@@ -400,7 +397,6 @@ func TestRepositoryList(t *testing.T) {
 		_, err := sut.List(ctx, "tenant")
 		// THEN
 		require.EqualError(t, err, "while converting Label Definition [key=key1]: conversion error")
-
 	})
 	t.Run("returns error if if select fails", func(t *testing.T) {
 		// GIVEN
@@ -456,7 +452,6 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.False(t, actual)
-
 	})
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN

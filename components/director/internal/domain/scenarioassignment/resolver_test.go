@@ -258,7 +258,6 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		// THEN
 		require.Nil(t, actual)
 		require.EqualError(t, err, "while getting the assignments: some error")
-
 	})
 
 	t.Run("error on committing transaction", func(t *testing.T) {

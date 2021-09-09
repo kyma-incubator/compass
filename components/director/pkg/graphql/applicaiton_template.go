@@ -1,5 +1,6 @@
 package graphql
 
+// ApplicationTemplate missing godoc
 type ApplicationTemplate struct {
 	ID               string                         `json:"id"`
 	Name             string                         `json:"name"`

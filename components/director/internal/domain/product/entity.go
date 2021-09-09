@@ -4,6 +4,7 @@ import (
 	"database/sql"
 )
 
+// Entity missing godoc
 type Entity struct {
 	ID               string         `db:"id"`
 	OrdID            string         `db:"ord_id"`
@@ -13,6 +14,6 @@ type Entity struct {
 	ShortDescription string         `db:"short_description"`
 	Vendor           string         `db:"vendor"`
 	Parent           sql.NullString `db:"parent"`
-	CorrelationIds   sql.NullString `db:"correlation_ids"`
+	CorrelationIDs   sql.NullString `db:"correlation_ids"`
 	Labels           sql.NullString `db:"labels"`
 }

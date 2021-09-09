@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
@@ -24,6 +25,7 @@ type Repository interface {
 	Update(ctx context.Context, item *model.SystemAuth) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -34,6 +36,7 @@ type service struct {
 	uidService UIDService
 }
 
+// NewService missing godoc
 func NewService(repo Repository, uidService UIDService) *service {
 	return &service{
 		repo:       repo,
@@ -41,10 +44,12 @@ func NewService(repo Repository, uidService UIDService) *service {
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	return s.create(ctx, s.uidService.Generate(), objectType, objectID, authInput)
 }
 
+// CreateWithCustomID missing godoc
 func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	return s.create(ctx, id, objectType, objectID, authInput)
 }
@@ -86,6 +91,7 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 	return systemAuth.ID, nil
 }
 
+// GetByIDForObject missing godoc
 func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -108,6 +114,7 @@ func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemA
 	return item, nil
 }
 
+// GetGlobal missing godoc
 func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	item, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {
@@ -117,6 +124,7 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 	return item, nil
 }
 
+// GetByToken missing godoc
 func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
 	return s.repo.GetByJSONValue(ctx, map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
@@ -126,16 +134,19 @@ func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAu
 	})
 }
 
+// InvalidateToken missing godoc
 func (s *service) InvalidateToken(ctx context.Context, item *model.SystemAuth) error {
 	item.Value.OneTimeToken.Used = true
 	item.Value.OneTimeToken.UsedAt = time.Now()
 	return s.repo.Update(ctx, item)
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, item *model.SystemAuth) error {
 	return s.repo.Update(ctx, item)
 }
 
+// ListForObject missing godoc
 func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -158,6 +169,7 @@ func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuth
 	return systemAuths, nil
 }
 
+// DeleteByIDForObject missing godoc
 func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

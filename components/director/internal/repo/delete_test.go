@@ -85,7 +85,9 @@ func TestDelete(t *testing.T) {
 			db, mock := testdb.MockDatabase(t)
 			defer mock.AssertExpectations(t)
 
-			ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+			defer cancel()
+
 			ctx = persistence.SaveToContext(ctx, db)
 
 			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
@@ -166,7 +168,9 @@ func TestDeleteGlobal(t *testing.T) {
 			db, mock := testdb.MockDatabase(t)
 			defer mock.AssertExpectations(t)
 
-			ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+			defer cancel()
+
 			ctx = persistence.SaveToContext(ctx, db)
 
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})

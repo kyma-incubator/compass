@@ -1,17 +1,17 @@
-package panic_recovery_test
+package panicrecovery_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPanicRecoveryMiddleware(t *testing.T) {
-	middleware := panic_recovery.NewPanicRecoveryMiddleware()
+	middleware := panicrecovery.NewPanicRecoveryMiddleware()
 	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	require.NoError(t, err)
 

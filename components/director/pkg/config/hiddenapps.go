@@ -8,6 +8,7 @@ import (
 
 const applicationHideSelectorsPath = "applicationHideSelectors"
 
+// GetApplicationHideSelectors missing godoc
 func (p *Provider) GetApplicationHideSelectors() (map[string][]string, error) {
 	val, err := p.getValueForJSONPath(applicationHideSelectorsPath)
 	if err != nil {

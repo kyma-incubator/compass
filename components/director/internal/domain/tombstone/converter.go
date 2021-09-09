@@ -9,10 +9,12 @@ import (
 type converter struct {
 }
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.Tombstone) *Entity {
 	if in == nil {
 		return nil
@@ -29,6 +31,7 @@ func (c *converter) ToEntity(in *model.Tombstone) *Entity {
 	return output
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity *Entity) (*model.Tombstone, error) {
 	if entity == nil {
 		return nil, apperrors.NewInternalError("the Tombstone entity is nil")

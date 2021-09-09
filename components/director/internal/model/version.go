@@ -1,5 +1,6 @@
 package model
 
+// Version missing godoc
 type Version struct {
 	// for example 4.6
 	Value      string
@@ -10,6 +11,7 @@ type Version struct {
 	ForRemoval *bool
 }
 
+// VersionInput missing godoc
 type VersionInput struct {
 	Value           string  `json:"version"`
 	Deprecated      *bool   `json:",omitempty"`
@@ -17,6 +19,7 @@ type VersionInput struct {
 	ForRemoval      *bool   `json:",omitempty"`
 }
 
+// ToVersion missing godoc
 func (v *VersionInput) ToVersion() *Version {
 	if v == nil {
 		return nil

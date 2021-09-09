@@ -43,6 +43,8 @@ func TestErrorHandlerTransport_RoundTripReturnsAValidResponseOnSuccessRequest(t 
 	require.NoError(t, err)
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
 	bodyString := string(bodyBytes)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	require.Empty(t, bodyString)

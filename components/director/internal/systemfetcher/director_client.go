@@ -9,15 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Authenticator missing godoc
 type Authenticator interface {
 	GetAuthorization(ctx context.Context) (string, error)
 }
 
+// DirectorGraphClient missing godoc
 type DirectorGraphClient struct {
 	*gcli.Client
 	Authenticator Authenticator
 }
 
+// DeleteSystemAsync missing godoc
 func (d *DirectorGraphClient) DeleteSystemAsync(ctx context.Context, id, tenantID string) error {
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`mutation {
 			  unregisterApplication(

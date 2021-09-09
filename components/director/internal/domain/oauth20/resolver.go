@@ -16,38 +16,45 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
 }
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+// RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+// IntegrationSystemService missing godoc
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
+// SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(model *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
+// Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact       persistence.Transactioner
 	svc            Service
@@ -58,18 +65,22 @@ type Resolver struct {
 	isSvc          IntegrationSystemService
 }
 
+// NewResolver missing godoc
 func NewResolver(transactioner persistence.Transactioner, svc Service, appSvc ApplicationService, rtmSvc RuntimeService, isSvc IntegrationSystemService, systemAuthSvc SystemAuthService, systemAuthConv SystemAuthConverter) *Resolver {
 	return &Resolver{transact: transactioner, svc: svc, appSvc: appSvc, rtmSvc: rtmSvc, systemAuthSvc: systemAuthSvc, isSvc: isSvc, systemAuthConv: systemAuthConv}
 }
 
+// RequestClientCredentialsForRuntime missing godoc
 func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.RuntimeReference, id)
 }
 
+// RequestClientCredentialsForApplication missing godoc
 func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.ApplicationReference, id)
 }
 
+// RequestClientCredentialsForIntegrationSystem missing godoc
 func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.IntegrationSystemReference, id)
 }

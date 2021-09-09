@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// IntegrationSystemRepository missing godoc
 //go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
 type IntegrationSystemRepository interface {
 	Create(ctx context.Context, item model.IntegrationSystem) error
@@ -20,6 +21,7 @@ type IntegrationSystemRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -31,6 +33,7 @@ type service struct {
 	uidService UIDService
 }
 
+// NewService missing godoc
 func NewService(intSysRepo IntegrationSystemRepository, uidService UIDService) *service {
 	return &service{
 		intSysRepo: intSysRepo,
@@ -38,6 +41,7 @@ func NewService(intSysRepo IntegrationSystemRepository, uidService UIDService) *
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in model.IntegrationSystemInput) (string, error) {
 	id := s.uidService.Generate()
 	intSys := in.ToIntegrationSystem(id)
@@ -50,6 +54,7 @@ func (s *service) Create(ctx context.Context, in model.IntegrationSystemInput) (
 	return id, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.IntegrationSystem, error) {
 	intSys, err := s.intSysRepo.Get(ctx, id)
 	if err != nil {
@@ -59,6 +64,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.IntegrationSystem,
 	return intSys, nil
 }
 
+// Exists missing godoc
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	exist, err := s.intSysRepo.Exists(ctx, id)
 	if err != nil {
@@ -68,6 +74,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.IntegrationSystemPage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return model.IntegrationSystemPage{}, apperrors.NewInvalidDataError("page size must be between 1 and 200")
@@ -76,6 +83,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 	return s.intSysRepo.List(ctx, pageSize, cursor)
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.IntegrationSystemInput) error {
 	intSys := in.ToIntegrationSystem(id)
 
@@ -87,6 +95,7 @@ func (s *service) Update(ctx context.Context, id string, in model.IntegrationSys
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	err := s.intSysRepo.Delete(ctx, id)
 	if err != nil {

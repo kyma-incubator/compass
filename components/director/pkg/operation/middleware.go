@@ -28,6 +28,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// LocationsParam missing godoc
 const LocationsParam = "locations"
 
 type middleware struct {

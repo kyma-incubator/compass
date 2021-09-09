@@ -2,6 +2,7 @@ package model
 
 import "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
+// BusinessTenantMapping missing godoc
 type BusinessTenantMapping struct {
 	ID             string
 	Name           string
@@ -13,16 +14,19 @@ type BusinessTenantMapping struct {
 	Initialized    *bool // computed value
 }
 
+// WithExternalTenant missing godoc
 func (t BusinessTenantMapping) WithExternalTenant(externalTenant string) BusinessTenantMapping {
 	t.ExternalTenant = externalTenant
 	return t
 }
 
+// WithStatus missing godoc
 func (t BusinessTenantMapping) WithStatus(status tenant.Status) BusinessTenantMapping {
 	t.Status = status
 	return t
 }
 
+// BusinessTenantMappingInput missing godoc
 type BusinessTenantMappingInput struct {
 	Name           string `json:"name"`
 	ExternalTenant string `json:"id"`
@@ -33,12 +37,14 @@ type BusinessTenantMappingInput struct {
 	Provider       string
 }
 
+// MovedRuntimeByLabelMappingInput missing godoc
 type MovedRuntimeByLabelMappingInput struct {
 	LabelValue   string
 	SourceTenant string
 	TargetTenant string
 }
 
+// ToBusinessTenantMapping missing godoc
 func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *BusinessTenantMapping {
 	return &BusinessTenantMapping{
 		ID:             id,
@@ -51,6 +57,7 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 	}
 }
 
+// WithExternalTenant missing godoc
 func (i BusinessTenantMappingInput) WithExternalTenant(externalTenant string) BusinessTenantMappingInput {
 	i.ExternalTenant = externalTenant
 	return i

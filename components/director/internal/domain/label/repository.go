@@ -20,6 +20,7 @@ const (
 
 var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value"}
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.Label) (Entity, error)
@@ -35,6 +36,7 @@ type repository struct {
 	conv         Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		upserter:     repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
@@ -46,6 +48,7 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
+// Upsert missing godoc
 func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
@@ -59,6 +62,7 @@ func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 	return r.upserter.Upsert(ctx, labelEntity)
 }
 
+// GetByKey missing godoc
 func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
 	var entity Entity
 	if err := r.getter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)}, repo.NoOrderBy, &entity); err != nil {
@@ -73,6 +77,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	return &labelModel, nil
 }
 
+// ListForObject missing godoc
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection
 	typeCondition := repo.NewEqualCondition(labelableObjectField(objectType), objectID)
@@ -101,13 +106,14 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	return labelsMap, nil
 }
 
+// ListByKey missing godoc
 func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
 	var entities Collection
 	if err := r.lister.List(ctx, tenant, &entities, repo.NewEqualCondition("key", key)); err != nil {
 		return nil, err
 	}
 
-	var labels []*model.Label
+	labels := make([]*model.Label, 0, len(entities))
 
 	for _, entity := range entities {
 		m, err := r.conv.FromEntity(entity)
@@ -121,14 +127,17 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 	return labels, nil
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
 }
 
+// DeleteAll missing godoc
 func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
 }
 
+// DeleteByKeyNegationPattern missing godoc
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
 		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
@@ -137,10 +146,12 @@ func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant stri
 	})
 }
 
+// DeleteByKey missing godoc
 func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key)})
 }
 
+// GetRuntimesIDsByStringLabel missing godoc
 func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, key, value string) ([]string, error) {
 	var entities Collection
 	if err := r.lister.List(ctx, tenantID, &entities,
@@ -150,13 +161,14 @@ func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, 
 		return nil, err
 	}
 
-	var matchedRtmsIDs []string
+	matchedRtmsIDs := make([]string, 0, len(entities))
 	for _, entity := range entities {
 		matchedRtmsIDs = append(matchedRtmsIDs, entity.RuntimeID.String)
 	}
 	return matchedRtmsIDs, nil
 }
 
+// GetScenarioLabelsForRuntimes missing godoc
 func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
 	if len(runtimesIDs) == 0 {
 		return nil, apperrors.NewInvalidDataError("cannot execute query without runtimeIDs")
@@ -173,9 +185,8 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
-	var labelModels []model.Label
+	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-
 		labelModel, err := r.conv.FromEntity(label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")
@@ -185,6 +196,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return labelModels, nil
 }
 
+// GetRuntimeScenariosWhereLabelsMatchSelector missing godoc
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
 	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false,
 		repo.NewEqualCondition("key", selectorKey),
@@ -200,9 +212,8 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 		return nil, err
 	}
 
-	var labelModels []model.Label
+	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-
 		labelModel, err := r.conv.FromEntity(label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")

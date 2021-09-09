@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
-	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
+	panichandler "github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -192,7 +192,7 @@ func gqlContext(results []gqlResult, operations *[]*operation.Operation) context
 	ctx := operation.SaveToContext(context.Background(), operations)
 	rCtx := gqlRequestContextWithSelections(results...)
 	ctx = gqlgen.WithOperationContext(ctx, rCtx)
-	ctx = gqlgen.WithResponseContext(ctx, func(ctx context.Context, err error) *gqlerror.Error { return nil }, panic_handler.RecoverFn)
+	ctx = gqlgen.WithResponseContext(ctx, func(ctx context.Context, err error) *gqlerror.Error { return nil }, panichandler.RecoverFn)
 	return ctx
 }
 

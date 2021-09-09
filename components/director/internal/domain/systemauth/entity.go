@@ -2,6 +2,7 @@ package systemauth
 
 import "database/sql"
 
+// Entity missing godoc
 type Entity struct {
 	ID                  string         `db:"id"`
 	TenantID            sql.NullString `db:"tenant_id"`
@@ -11,8 +12,10 @@ type Entity struct {
 	Value               sql.NullString `db:"value"`
 }
 
+// Collection missing godoc
 type Collection []Entity
 
+// Len missing godoc
 func (c Collection) Len() int {
 	return len(c)
 }

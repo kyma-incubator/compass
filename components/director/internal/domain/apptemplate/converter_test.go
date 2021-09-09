@@ -259,8 +259,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return([]*model.WebhookInput(nil), nil)
 				return conv
 			},
-			Input:         graphql.ApplicationTemplateInput{},
-			Expected:      model.ApplicationTemplateInput{},
+			Input: graphql.ApplicationTemplateInput{},
+			Expected: model.ApplicationTemplateInput{
+				Placeholders: []model.ApplicationTemplatePlaceholder{},
+			},
 			ExpectedError: nil,
 		},
 		{
@@ -330,8 +332,10 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 				appConverter := automock.AppConverter{}
 				return &appConverter
 			},
-			Input:         graphql.ApplicationTemplateUpdateInput{},
-			Expected:      model.ApplicationTemplateUpdateInput{},
+			Input: graphql.ApplicationTemplateUpdateInput{},
+			Expected: model.ApplicationTemplateUpdateInput{
+				Placeholders: []model.ApplicationTemplatePlaceholder{},
+			},
 			ExpectedError: nil,
 		},
 		{

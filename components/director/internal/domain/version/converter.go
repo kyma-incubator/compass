@@ -8,10 +8,12 @@ import (
 
 type converter struct{}
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Version) *graphql.Version {
 	if in == nil {
 		return nil
@@ -25,6 +27,7 @@ func (c *converter) ToGraphQL(in *model.Version) *graphql.Version {
 	}
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput {
 	if in == nil {
 		return nil
@@ -38,6 +41,7 @@ func (c *converter) InputFromGraphQL(in *graphql.VersionInput) *model.VersionInp
 	}
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(version Version) *model.Version {
 	value := repo.StringPtrFromNullableString(version.Value)
 	versionValue := ""
@@ -57,6 +61,7 @@ func (c *converter) FromEntity(version Version) *model.Version {
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(version model.Version) Version {
 	return Version{
 		Value:           repo.NewNullableString(&version.Value),

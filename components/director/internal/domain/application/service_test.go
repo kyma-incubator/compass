@@ -2233,7 +2233,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: errors.New("Object not found").Error(),
 		},
 		{
-			Name:              "Returns error ensuring Integration System existance failed",
+			Name:              "Returns error ensuring Integration System existence failed",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -3654,7 +3654,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
 	Webhooks             []*model.Webhook
-	Apis                 []*model.APIDefinition
+	APIs                 []*model.APIDefinition
 	EventAPIs            []*model.EventDefinition
 	Documents            []*model.Document
 }
@@ -3662,7 +3662,7 @@ type testModel struct {
 type MatcherFunc func(app *model.Application) bool
 
 func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID string, applicationModelMatcherFn MatcherFunc) testModel {
-	var webhooksModel []*model.Webhook
+	webhooksModel := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
 		webhooksModel = append(webhooksModel, item.ToApplicationWebhook(uuid.New().String(), &tenant, applicationID))
 	}
@@ -3674,7 +3674,7 @@ func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID str
 }
 
 func convertToStringArray(t *testing.T, array []interface{}) []string {
-	var stringArray []string
+	stringArray := make([]string, 0, len(array))
 	for _, value := range array {
 		convertedValue, ok := value.(string)
 		require.True(t, ok, "Cannot convert array of interface{} to array of string in test method")

@@ -11,10 +11,13 @@ import (
 )
 
 const (
+	// SubdomainLabelKey is the key of the tenant label for subdomain.
 	SubdomainLabelKey = "subdomain"
-	RegionLabelKey    = "region"
+	// RegionLabelKey is the key of the tenant label for region.
+	RegionLabelKey = "region"
 )
 
+// TenantMappingRepository missing godoc
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
 type TenantMappingRepository interface {
 	Create(ctx context.Context, item model.BusinessTenantMapping) error
@@ -26,16 +29,19 @@ type TenantMappingRepository interface {
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
+// LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -52,6 +58,7 @@ type service struct {
 	tenantMappingRepo TenantMappingRepository
 }
 
+// NewService missing godoc
 func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *service {
 	return &service{
 		uidService:        uidService,
@@ -59,6 +66,7 @@ func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *s
 	}
 }
 
+// NewServiceWithLabels missing godoc
 func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService) *labeledService {
 	return &labeledService{
 		service: service{
@@ -70,6 +78,7 @@ func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDS
 	}
 }
 
+// GetExternalTenant missing godoc
 func (s *service) GetExternalTenant(ctx context.Context, id string) (string, error) {
 	mapping, err := s.tenantMappingRepo.Get(ctx, id)
 	if err != nil {
@@ -79,6 +88,7 @@ func (s *service) GetExternalTenant(ctx context.Context, id string) (string, err
 	return mapping.ExternalTenant, nil
 }
 
+// GetInternalTenant missing godoc
 func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
 	mapping, err := s.tenantMappingRepo.GetByExternalTenant(ctx, externalTenant)
 	if err != nil {
@@ -88,16 +98,19 @@ func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) 
 	return mapping.ID, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.List(ctx)
 }
 
+// GetTenantByExternalID missing godoc
 func (s *service) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.GetByExternalTenant(ctx, id)
 }
 
+// MultipleToTenantMapping missing godoc
 func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
-	var tenants []model.BusinessTenantMapping
+	tenants := make([]model.BusinessTenantMapping, 0, len(tenantInputs))
 	tenantIDs := make(map[string]string, len(tenantInputs))
 	for _, tenant := range tenantInputs {
 		id := s.uidService.Generate()
@@ -120,6 +133,7 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
+// CreateManyIfNotExists missing godoc
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains, regions := tenantLocality(tenantInputs)
@@ -201,6 +215,7 @@ func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]stri
 	return subdomains, regions
 }
 
+// DeleteMany missing godoc
 func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	for _, tenantInput := range tenantInputs {
 		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, tenantInput.ExternalTenant)
@@ -212,6 +227,7 @@ func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessT
 	return nil
 }
 
+// ListLabels missing godoc
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
 	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
 	if err := s.ensureTenantExists(ctx, tenantID); err != nil {

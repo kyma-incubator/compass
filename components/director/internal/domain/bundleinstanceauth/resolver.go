@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
 	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
@@ -22,6 +23,7 @@ type Service interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
@@ -29,16 +31,19 @@ type Converter interface {
 	SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error)
 }
 
+// BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
+// BundleConverter missing godoc
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 	svc      Service
@@ -47,6 +52,7 @@ type Resolver struct {
 	bndlConv BundleConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, svc Service, bndlSvc BundleService, conv Converter, bndlConv BundleConverter) *Resolver {
 	return &Resolver{
 		transact: transact,
@@ -57,6 +63,7 @@ func NewResolver(transact persistence.Transactioner, svc Service, bndlSvc Bundle
 	}
 }
 
+// BundleByInstanceAuth missing godoc
 func (r *Resolver) BundleByInstanceAuth(ctx context.Context, authID string) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -87,6 +94,7 @@ func (r *Resolver) BundleByInstanceAuth(ctx context.Context, authID string) (*gr
 	return r.bndlConv.ToGraphQL(pkg)
 }
 
+// BundleInstanceAuth missing godoc
 func (r *Resolver) BundleInstanceAuth(ctx context.Context, id string) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -112,6 +120,7 @@ func (r *Resolver) BundleInstanceAuth(ctx context.Context, id string) (*graphql.
 	return r.conv.ToGraphQL(bndlInstanceAuth)
 }
 
+// DeleteBundleInstanceAuth missing godoc
 func (r *Resolver) DeleteBundleInstanceAuth(ctx context.Context, authID string) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -141,6 +150,7 @@ func (r *Resolver) DeleteBundleInstanceAuth(ctx context.Context, authID string) 
 	return r.conv.ToGraphQL(instanceAuth)
 }
 
+// SetBundleInstanceAuth missing godoc
 func (r *Resolver) SetBundleInstanceAuth(ctx context.Context, authID string, in graphql.BundleInstanceAuthSetInput) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -177,6 +187,7 @@ func (r *Resolver) SetBundleInstanceAuth(ctx context.Context, authID string, in 
 	return r.conv.ToGraphQL(instanceAuth)
 }
 
+// RequestBundleInstanceAuthCreation missing godoc
 func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundleID string, in graphql.BundleInstanceAuthRequestInput) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -214,6 +225,7 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 	return r.conv.ToGraphQL(instanceAuth)
 }
 
+// RequestBundleInstanceAuthDeletion missing godoc
 func (r *Resolver) RequestBundleInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

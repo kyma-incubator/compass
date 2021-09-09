@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// DocumentService missing godoc
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
 	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
@@ -25,6 +26,7 @@ type DocumentService interface {
 	ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error)
 }
 
+// DocumentConverter missing godoc
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
@@ -33,21 +35,26 @@ type DocumentConverter interface {
 	FromEntity(in Entity) (model.Document, error)
 }
 
+// FetchRequestConverter missing godoc
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+// BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
+
+// Resolver missing godoc
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         DocumentService
@@ -57,6 +64,7 @@ type Resolver struct {
 	frConverter FetchRequestConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, bndlSvc BundleService, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
@@ -68,6 +76,7 @@ func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc
 	}
 }
 
+// AddDocumentToBundle missing godoc
 func (r *Resolver) AddDocumentToBundle(ctx context.Context, bundleID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -111,6 +120,7 @@ func (r *Resolver) AddDocumentToBundle(ctx context.Context, bundleID string, in 
 	return gqlDocument, nil
 }
 
+// DeleteDocument missing godoc
 func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -140,11 +150,13 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 	return deletedDocument, nil
 }
 
+// FetchRequest missing godoc
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
 	params := dataloader.ParamFetchRequestDocument{ID: obj.ID, Ctx: ctx}
-	return dataloader.ForFetchRequestDocument(ctx).FetchRequestDocumentById.Load(params)
+	return dataloader.ForFetchRequestDocument(ctx).FetchRequestDocumentByID.Load(params)
 }
 
+// FetchRequestDocumentDataLoader missing godoc
 func (r *Resolver) FetchRequestDocumentDataLoader(keys []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Documents found")}

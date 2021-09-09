@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// SpecRepository missing godoc
 //go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore
 type SpecRepository interface {
 	Create(ctx context.Context, item *model.Spec) error
@@ -24,6 +25,7 @@ type SpecRepository interface {
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 }
 
+// FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
@@ -32,11 +34,13 @@ type FetchRequestRepository interface {
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// FetchRequestService missing godoc
 //go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore
 type FetchRequestService interface {
 	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
@@ -50,16 +54,18 @@ type service struct {
 	timestampGen        timestamp.Generator
 }
 
+// NewService missing godoc
 func NewService(repo SpecRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
 		repo:                repo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
 		fetchRequestService: fetchRequestService,
-		timestampGen:        timestamp.DefaultGenerator(),
+		timestampGen:        timestamp.DefaultGenerator,
 	}
 }
 
+// ListByReferenceObjectID missing godoc
 func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -69,6 +75,7 @@ func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.
 	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
+// GetByReferenceObjectID
 // Until now APIs and Events had embedded specification in them, we will model this behavior by relying that the first created spec is the one which GraphQL expects
 func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -88,6 +95,7 @@ func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.S
 	return nil, nil
 }
 
+// ListByReferenceObjectIDs missing godoc
 func (s *service) ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -99,6 +107,7 @@ func (s *service) ListByReferenceObjectIDs(ctx context.Context, objectType model
 	return specs, err
 }
 
+// CreateByReferenceObjectID missing godoc
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -133,13 +142,14 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 	return id, nil
 }
 
+// UpdateByReferenceObjectID missing godoc
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	spec, err := s.repo.GetByID(ctx, tnt, id)
+	_, err = s.repo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return err
 	}
@@ -149,7 +159,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
-	spec, err = in.ToSpec(id, tnt, objectType, objectID)
+	spec, err := in.ToSpec(id, tnt, objectType, objectID)
 	if err != nil {
 		return err
 	}
@@ -171,6 +181,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	return nil
 }
 
+// DeleteByReferenceObjectID missing godoc
 func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -180,6 +191,7 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType mode
 	return s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -194,6 +206,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// RefetchSpec missing godoc
 func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -222,6 +235,7 @@ func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, erro
 	return spec, nil
 }
 
+// GetFetchRequest missing godoc
 func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -244,6 +258,7 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.Fe
 	return fetchRequest, nil
 }
 
+// ListFetchRequestsByReferenceObjectIDs missing godoc
 func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error) {
 	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.SpecFetchRequestReference, objectIDs)
 }

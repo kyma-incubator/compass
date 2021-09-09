@@ -1,4 +1,4 @@
-package mp_package_test
+package ordpackage_test
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
@@ -24,8 +24,8 @@ const (
 	resourceHash     = "123456"
 )
 
-func fixEntityPackage() *mp_package.Entity {
-	return &mp_package.Entity{
+func fixEntityPackage() *ordpackage.Entity {
+	return &ordpackage.Entity{
 		ID:                packageID,
 		TenantID:          tenantID,
 		ApplicationID:     appID,

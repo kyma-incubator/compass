@@ -9,10 +9,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// ApiDefLoaderConfig captures the config to create a new ApiDefLoader
-type ApiDefLoaderConfig struct {
+// APIDefLoaderConfig captures the config to create a new APIDefLoader
+type APIDefLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []ParamApiDef) ([]*graphql.APIDefinitionPage, []error)
+	Fetch func(keys []ParamAPIDef) ([]*graphql.APIDefinitionPage, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -21,19 +21,19 @@ type ApiDefLoaderConfig struct {
 	MaxBatch int
 }
 
-// NewApiDefLoader creates a new ApiDefLoader given a fetch, wait, and maxBatch
-func NewApiDefLoader(config ApiDefLoaderConfig) *ApiDefLoader {
-	return &ApiDefLoader{
+// NewAPIDefLoader creates a new APIDefLoader given a fetch, wait, and maxBatch
+func NewAPIDefLoader(config APIDefLoaderConfig) *APIDefLoader {
+	return &APIDefLoader{
 		fetch:    config.Fetch,
 		wait:     config.Wait,
 		maxBatch: config.MaxBatch,
 	}
 }
 
-// ApiDefLoader batches and caches requests
-type ApiDefLoader struct {
+// APIDefLoader batches and caches requests
+type APIDefLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []ParamApiDef) ([]*graphql.APIDefinitionPage, []error)
+	fetch func(keys []ParamAPIDef) ([]*graphql.APIDefinitionPage, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type ApiDefLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[ParamApiDef]*graphql.APIDefinitionPage
+	cache map[ParamAPIDef]*graphql.APIDefinitionPage
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -55,7 +55,7 @@ type ApiDefLoader struct {
 }
 
 type apiDefLoaderBatch struct {
-	keys    []ParamApiDef
+	keys    []ParamAPIDef
 	data    []*graphql.APIDefinitionPage
 	error   []error
 	closing bool
@@ -63,14 +63,14 @@ type apiDefLoaderBatch struct {
 }
 
 // Load a APIDefinitionPage by key, batching and caching will be applied automatically
-func (l *ApiDefLoader) Load(key ParamApiDef) (*graphql.APIDefinitionPage, error) {
+func (l *APIDefLoader) Load(key ParamAPIDef) (*graphql.APIDefinitionPage, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a APIDefinitionPage.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *ApiDefLoader) LoadThunk(key ParamApiDef) func() (*graphql.APIDefinitionPage, error) {
+func (l *APIDefLoader) LoadThunk(key ParamAPIDef) func() (*graphql.APIDefinitionPage, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
@@ -113,7 +113,7 @@ func (l *ApiDefLoader) LoadThunk(key ParamApiDef) func() (*graphql.APIDefinition
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *ApiDefLoader) LoadAll(keys []ParamApiDef) ([]*graphql.APIDefinitionPage, []error) {
+func (l *APIDefLoader) LoadAll(keys []ParamAPIDef) ([]*graphql.APIDefinitionPage, []error) {
 	results := make([]func() (*graphql.APIDefinitionPage, error), len(keys))
 
 	for i, key := range keys {
@@ -131,7 +131,7 @@ func (l *ApiDefLoader) LoadAll(keys []ParamApiDef) ([]*graphql.APIDefinitionPage
 // LoadAllThunk returns a function that when called will block waiting for a APIDefinitionPages.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *ApiDefLoader) LoadAllThunk(keys []ParamApiDef) func() ([]*graphql.APIDefinitionPage, []error) {
+func (l *APIDefLoader) LoadAllThunk(keys []ParamAPIDef) func() ([]*graphql.APIDefinitionPage, []error) {
 	results := make([]func() (*graphql.APIDefinitionPage, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
@@ -149,7 +149,7 @@ func (l *ApiDefLoader) LoadAllThunk(keys []ParamApiDef) func() ([]*graphql.APIDe
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *ApiDefLoader) Prime(key ParamApiDef, value *graphql.APIDefinitionPage) bool {
+func (l *APIDefLoader) Prime(key ParamAPIDef, value *graphql.APIDefinitionPage) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -163,22 +163,22 @@ func (l *ApiDefLoader) Prime(key ParamApiDef, value *graphql.APIDefinitionPage) 
 }
 
 // Clear the value at key from the cache, if it exists
-func (l *ApiDefLoader) Clear(key ParamApiDef) {
+func (l *APIDefLoader) Clear(key ParamAPIDef) {
 	l.mu.Lock()
 	delete(l.cache, key)
 	l.mu.Unlock()
 }
 
-func (l *ApiDefLoader) unsafeSet(key ParamApiDef, value *graphql.APIDefinitionPage) {
+func (l *APIDefLoader) unsafeSet(key ParamAPIDef, value *graphql.APIDefinitionPage) {
 	if l.cache == nil {
-		l.cache = map[ParamApiDef]*graphql.APIDefinitionPage{}
+		l.cache = map[ParamAPIDef]*graphql.APIDefinitionPage{}
 	}
 	l.cache[key] = value
 }
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *apiDefLoaderBatch) keyIndex(l *ApiDefLoader, key ParamApiDef) int {
+func (b *apiDefLoaderBatch) keyIndex(l *APIDefLoader, key ParamAPIDef) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -202,7 +202,7 @@ func (b *apiDefLoaderBatch) keyIndex(l *ApiDefLoader, key ParamApiDef) int {
 	return pos
 }
 
-func (b *apiDefLoaderBatch) startTimer(l *ApiDefLoader) {
+func (b *apiDefLoaderBatch) startTimer(l *APIDefLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -218,7 +218,7 @@ func (b *apiDefLoaderBatch) startTimer(l *ApiDefLoader) {
 	b.end(l)
 }
 
-func (b *apiDefLoaderBatch) end(l *ApiDefLoader) {
+func (b *apiDefLoaderBatch) end(l *APIDefLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

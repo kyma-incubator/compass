@@ -11,8 +11,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
 
+// JSONSchema missing godoc
 type JSONSchema string
 
+// UnmarshalGQL missing godoc
 func (j *JSONSchema) UnmarshalGQL(v interface{}) error {
 	val, err := scalar.ConvertToString(v)
 	if err != nil {
@@ -28,6 +30,7 @@ func (j *JSONSchema) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 
+// MarshalGQL missing godoc
 func (j JSONSchema) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(j)))
 	if err != nil {
@@ -35,6 +38,7 @@ func (j JSONSchema) MarshalGQL(w io.Writer) {
 	}
 }
 
+// Unmarshal missing godoc
 func (j *JSONSchema) Unmarshal() (*interface{}, error) {
 	if j == nil {
 		return nil, nil
@@ -47,6 +51,7 @@ func (j *JSONSchema) Unmarshal() (*interface{}, error) {
 	return &output, nil
 }
 
+// MarshalSchema missing godoc
 func MarshalSchema(input *interface{}) (*JSONSchema, error) {
 	if input == nil {
 		return nil, nil

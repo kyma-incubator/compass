@@ -1,7 +1,6 @@
 package eventdef_test
 
 import (
-	"fmt"
 	"testing"
 
 	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -101,7 +100,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//give
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
@@ -130,7 +129,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	event1, spec1, bundleRef1 := fixFullEventDefinitionModel("test1")
 	event2, spec2, bundleRef2 := fixFullEventDefinitionModel("test2")
 
-	inputApis := []*model.EventDefinition{
+	inputAPIs := []*model.EventDefinition{
 		&event1, &event2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
@@ -151,7 +150,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	versionConverter := &automock.VersionConverter{}
 	specConverter := &automock.SpecConverter{}
 
-	for i, event := range inputApis {
+	for i, event := range inputAPIs {
 		if event == nil {
 			continue
 		}
@@ -161,7 +160,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 	// when
 	converter := event.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputApis, inputSpecs, inputBundleRefs)
+	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then
@@ -243,7 +242,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//give
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
@@ -310,8 +309,8 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		{
 			Name:          "Empty",
 			Input:         []*graphql.EventDefinitionInput{},
-			Expected:      nil,
-			ExpectedSpecs: nil,
+			Expected:      []*model.EventDefinitionInput{},
+			ExpectedSpecs: []*model.SpecInput{},
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -320,7 +319,9 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name: "Nil",
+			Name:          "Nil",
+			Expected:      []*model.EventDefinitionInput{},
+			ExpectedSpecs: []*model.SpecInput{},
 			VersionConverter: func() *automock.VersionConverter {
 				return &automock.VersionConverter{}
 			},
@@ -331,7 +332,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//given
 			versionConverter := testCase.VersionConverter()
 			specCovnerter := testCase.SpecConverter()

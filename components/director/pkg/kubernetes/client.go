@@ -15,12 +15,14 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+// Config missing godoc
 type Config struct {
 	PollInterval time.Duration `envconfig:"default=2s,APP_KUBERNETES_POLL_INTERVAL"`
 	PollTimeout  time.Duration `envconfig:"default=1m,APP_KUBERNETES_POLL_TIMEOUT"`
 	Timeout      time.Duration `envconfig:"default=2m,APP_KUBERNETES_TIMEOUT"`
 }
 
+// NewKubernetesClientSet missing godoc
 func NewKubernetesClientSet(ctx context.Context, interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	kubeConfig, err := restclient.InClusterConfig()
 	if err != nil {

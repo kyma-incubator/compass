@@ -1,5 +1,6 @@
 package graphql
 
+// Tenant missing godoc
 type Tenant struct {
 	ID          string  `json:"id"`
 	InternalID  string  `json:"internalID"`

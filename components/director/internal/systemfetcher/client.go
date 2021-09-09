@@ -16,6 +16,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+// OAuth2Config missing godoc
 type OAuth2Config struct {
 	ClientID             string   `envconfig:"APP_OAUTH_CLIENT_ID"`
 	ClientSecret         string   `envconfig:"APP_OAUTH_CLIENT_SECRET"`
@@ -24,6 +25,7 @@ type OAuth2Config struct {
 	ScopesClaim          []string `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
 }
 
+// APIConfig missing godoc
 type APIConfig struct {
 	Endpoint                    string        `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
 	FilterCriteria              string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
@@ -34,6 +36,7 @@ type APIConfig struct {
 	PagingSizeParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 }
 
+// Client missing godoc
 type Client struct {
 	apiConfig     APIConfig
 	oAuth2Config  OAuth2Config
@@ -42,6 +45,7 @@ type Client struct {
 
 type clientCreatorFunc func(ctx context.Context, oauth2Config OAuth2Config) *http.Client
 
+// DefaultClientCreator missing godoc
 func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config) *http.Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
@@ -54,6 +58,7 @@ func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config) *http.
 	return httpClient
 }
 
+// NewClient missing godoc
 func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreator clientCreatorFunc) *Client {
 	return &Client{
 		apiConfig:     apiConfig,

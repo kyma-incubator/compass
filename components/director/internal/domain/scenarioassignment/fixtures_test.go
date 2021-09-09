@@ -132,7 +132,7 @@ func fixLabelSelector() model.LabelSelector {
 
 type sqlRow struct {
 	scenario      string
-	tenantId      string
+	tenantID      string
 	selectorKey   string
 	selectorValue string
 }
@@ -140,7 +140,7 @@ type sqlRow struct {
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
-		out.AddRow(row.scenario, row.tenantId, row.selectorKey, row.selectorValue)
+		out.AddRow(row.scenario, row.tenantID, row.selectorKey, row.selectorValue)
 	}
 	return out
 }

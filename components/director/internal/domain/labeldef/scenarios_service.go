@@ -17,6 +17,7 @@ type scenariosService struct {
 	defaultScenarioEnabled bool
 }
 
+// NewScenariosService missing godoc
 func NewScenariosService(r Repository, uidService UIDService, defaultScenarioEnabled bool) *scenariosService {
 	return &scenariosService{
 		repo:                   r,
@@ -25,6 +26,7 @@ func NewScenariosService(r Repository, uidService UIDService, defaultScenarioEna
 	}
 }
 
+// EnsureScenariosLabelDefinitionExists missing godoc
 func (s *scenariosService) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error {
 	ldExists, err := s.repo.Exists(ctx, tenant, model.ScenariosKey)
 	if err != nil {
@@ -46,6 +48,7 @@ func (s *scenariosService) EnsureScenariosLabelDefinitionExists(ctx context.Cont
 	return nil
 }
 
+// GetAvailableScenarios missing godoc
 func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
 	def, err := s.repo.GetByKey(ctx, tenantID, model.ScenariosKey)
 	if err != nil {
@@ -66,6 +69,7 @@ func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenantID s
 	return sd.Items.Enum, nil
 }
 
+// AddDefaultScenarioIfEnabled missing godoc
 func (s *scenariosService) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
 	if labels == nil || !s.defaultScenarioEnabled {
 		return
@@ -80,6 +84,7 @@ func (s *scenariosService) AddDefaultScenarioIfEnabled(ctx context.Context, labe
 	}
 }
 
+// ScenariosDefinition missing godoc
 type ScenariosDefinition struct {
 	Items struct {
 		Enum []string

@@ -1,4 +1,4 @@
-package error_presenter
+package errorpresenter
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
+// UUIDService missing godoc
 type UUIDService interface {
 	Generate() string
 }
@@ -21,10 +22,12 @@ type presenter struct {
 	uuidService UUIDService
 }
 
+// NewPresenter missing godoc
 func NewPresenter(service UUIDService) *presenter {
 	return &presenter{uuidService: service}
 }
 
+// Do missing godoc
 func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 	customErr := apperrors.Error{}
 	errID := p.uuidService.Generate()
@@ -46,7 +49,7 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 func newGraphqlErrorResponse(ctx context.Context, errCode apperrors.ErrorType, msg string, args ...interface{}) *gqlerror.Error {
 	return &gqlerror.Error{
 		Message:    fmt.Sprintf(msg, args...),
-		Path:       graphql.GetResolverContext(ctx).Path(),
+		Path:       graphql.GetFieldContext(ctx).Path(),
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()},
 	}
 }

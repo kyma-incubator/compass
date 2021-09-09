@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
@@ -25,11 +26,13 @@ type Repository interface {
 	DeleteByKey(ctx context.Context, tenant, key string) error
 }
 
+// ScenarioAssignmentLister missing godoc
 //go:generate mockery --name=ScenarioAssignmentLister --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentLister interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
+// LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -40,11 +43,13 @@ type LabelRepository interface {
 	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
+// ScenariosService missing godoc
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -58,6 +63,7 @@ type service struct {
 	uidService               UIDService
 }
 
+// NewService missing godoc
 func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, scenariosService ScenariosService, uidService UIDService) *service {
 	return &service{
 		repo:                     repo,
@@ -68,6 +74,7 @@ func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLi
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
 	id := s.uidService.Generate()
 	def.ID = id
@@ -79,6 +86,7 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	return def, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	// TODO: Once proper tenant initialization, with creating scenarios LD, is introduced this hack should be removed
 	if key == model.ScenariosKey {
@@ -95,6 +103,7 @@ func (s *service) Get(ctx context.Context, tenant string, key string) (*model.La
 	return def, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	defs, err := s.repo.List(ctx, tenant)
 	if err != nil {
@@ -103,6 +112,7 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 	return defs, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
 	if err != nil {
@@ -131,11 +141,11 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
+// Upsert missing godoc
 func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	def.ID = s.uidService.Generate()
 
-	err := s.repo.Upsert(ctx, def)
-	if err != nil {
+	if err := s.repo.Upsert(ctx, def); err != nil {
 		return errors.Wrapf(err, "while upserting Label Definition with id %s and key %s", def.ID, def.Key)
 	}
 	log.C(ctx).Debugf("Successfully upserted Label Definition with id %s and key %s", def.ID, def.Key)
@@ -143,9 +153,10 @@ func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
 	if key == model.ScenariosKey {
-		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
+		return fmt.Errorf("labelDefinition with key %s can not be deleted", model.ScenariosKey)
 	}
 
 	ld, err := s.Get(ctx, tenant, key)
@@ -153,7 +164,7 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 		return errors.Wrap(err, "while getting Label Definition")
 	}
 	if ld == nil {
-		return fmt.Errorf("Label Definition with key %s not found", key)
+		return fmt.Errorf("labelDefinition with key %s not found", key)
 	}
 
 	if deleteRelatedLabels {
@@ -241,8 +252,8 @@ func (s *service) fetchScenariosFromAssignments(ctx context.Context, tenantID st
 		cursor = page.PageInfo.EndCursor
 	}
 
-	var out []string
-	for k, _ := range m {
+	out := make([]string, 0, len(m))
+	for k := range m {
 		out = append(out, k)
 	}
 	return out, nil

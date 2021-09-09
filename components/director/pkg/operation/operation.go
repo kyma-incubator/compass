@@ -29,25 +29,36 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+type contextKey string
+
 const (
-	OpCtxKey  = "OperationCtx"
-	OpModeKey = "OperationModeCtx"
+	// OpCtxKey missing godoc
+	OpCtxKey contextKey = "OperationCtx"
+	// OpModeKey missing godoc
+	OpModeKey contextKey = "OperationModeCtx"
 )
 
 // OperationStatus denotes the different statuses that an Operation can be in
 type OperationStatus string
 
 const (
-	OperationStatusSucceeded  OperationStatus = "SUCCEEDED"
-	OperationStatusFailed     OperationStatus = "FAILED"
+	// OperationStatusSucceeded missing godoc
+	OperationStatusSucceeded OperationStatus = "SUCCEEDED"
+	// OperationStatusFailed missing godoc
+	OperationStatusFailed OperationStatus = "FAILED"
+	// OperationStatusInProgress missing godoc
 	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
 )
 
+// OperationType missing godoc
 type OperationType string
 
 const (
+	// OperationTypeCreate missing godoc
 	OperationTypeCreate OperationType = "Create"
+	// OperationTypeUpdate missing godoc
 	OperationTypeUpdate OperationType = "Update"
+	// OperationTypeDelete missing godoc
 	OperationTypeDelete OperationType = "Delete"
 )
 

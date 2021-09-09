@@ -15,7 +15,7 @@ import (
 func TestValidator_ValidateString(t *testing.T) {
 	// given
 
-	validInputJsonSchema := `{
+	validInputJSONSchema := `{
 	  "$id": "https://foo.com/bar.schema.json",
 	  "title": "foobarbaz",
 	  "type": "object",
@@ -37,45 +37,45 @@ func TestValidator_ValidateString(t *testing.T) {
       "required": ["foo", "bar", "baz"]
 	}`
 
-	inputJson := `{
+	inputJSON := `{
 	  "foo": "test",
 	  "bar": "test",
 	  "baz": 123
 	}`
-	invalidInputJson := `{ "abc": 123 }`
+	invalidInputJSON := `{ "abc": 123 }`
 
 	testCases := []struct {
 		Name            string
-		InputJsonSchema string
-		InputJson       string
+		InputJSONSchema string
+		InputJSON       string
 		ExpectedResult  bool
 		ExpectedError   error
 	}{
 		{
 			Name:            "Success",
-			InputJsonSchema: validInputJsonSchema,
-			InputJson:       inputJson,
+			InputJSONSchema: validInputJSONSchema,
+			InputJSON:       inputJSON,
 			ExpectedResult:  true,
 			ExpectedError:   nil,
 		},
 		{
-			Name:            "Json schema and json doesn't match",
-			InputJsonSchema: validInputJsonSchema,
-			InputJson:       invalidInputJson,
+			Name:            "JSON schema and json doesn't match",
+			InputJSONSchema: validInputJSONSchema,
+			InputJSON:       invalidInputJSON,
 			ExpectedResult:  false,
 			ExpectedError:   nil,
 		},
 		{
 			Name:            "Empty",
-			InputJsonSchema: "",
-			InputJson:       "",
+			InputJSONSchema: "",
+			InputJSON:       "",
 			ExpectedResult:  true,
 			ExpectedError:   nil,
 		},
 		{
 			Name:            "Invalid json",
-			InputJsonSchema: validInputJsonSchema,
-			InputJson:       "{test",
+			InputJSONSchema: validInputJSONSchema,
+			InputJSON:       "{test",
 			ExpectedResult:  false,
 			ExpectedError:   errors.New("invalid character"),
 		},
@@ -83,11 +83,11 @@ func TestValidator_ValidateString(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc, err := jsonschema.NewValidatorFromStringSchema(testCase.InputJsonSchema)
+			svc, err := jsonschema.NewValidatorFromStringSchema(testCase.InputJSONSchema)
 			require.NoError(t, err)
 
 			// when
-			result, err := svc.ValidateString(testCase.InputJson)
+			result, err := svc.ValidateString(testCase.InputJSON)
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result.Valid)
 			if testCase.ExpectedError != nil {
@@ -150,7 +150,7 @@ func TestValidator_ValidateRaw(t *testing.T) {
 			ExpectedError:   nil,
 		},
 		{
-			Name:            "Json schema and json doesn't match",
+			Name:            "JSON schema and json doesn't match",
 			InputJSONSchema: validInputJSONSchema,
 			InputJSON:       invalidInputJSON,
 			ExpectedResult:  false,

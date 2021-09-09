@@ -25,12 +25,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//RequestLogger returns middleware that setups request scoped logging
+// RequestLogger returns middleware that setups request scoped logging
 func RequestLogger() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			entry := LoggerWithCorrelationId(r)
+			entry := LoggerWithCorrelationID(r)
 
 			ctx = ContextWithLogger(ctx, entry)
 			r = r.WithContext(ctx)
@@ -65,7 +65,8 @@ func RequestLogger() func(next http.Handler) http.Handler {
 	}
 }
 
-func LoggerWithCorrelationId(r *http.Request) *logrus.Entry {
+// LoggerWithCorrelationID missing godoc
+func LoggerWithCorrelationID(r *http.Request) *logrus.Entry {
 	ctx := r.Context()
 	entry := C(ctx)
 	if correlationID := correlation.CorrelationIDForRequest(r); correlationID != "" {

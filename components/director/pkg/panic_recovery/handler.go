@@ -1,4 +1,4 @@
-package panic_recovery
+package panicrecovery
 
 import (
 	"encoding/json"

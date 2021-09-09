@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -30,10 +29,10 @@ const (
 
 	parentTenantExtID = "parent-tenant-external-id"
 
-	tenantProviderTenantIdProperty           = "tenantId"
-	tenantProviderCustomerIdProperty         = "customerId"
+	tenantProviderTenantIDProperty           = "tenantId"
+	tenantProviderCustomerIDProperty         = "customerId"
 	tenantProviderSubdomainProperty          = "subdomain"
-	tenantProvidersubaccountTenantIdProperty = "regionalTenantId"
+	tenantProviderSubaccountTenantIDProperty = "subaccountTenantId"
 
 	tenantCreationFailureMsgFmt = "Failed to create tenant with ID %s"
 	compassURL                  = "https://github.com/kyma-incubator/compass"
@@ -43,8 +42,9 @@ var (
 	testError          = errors.New("test error")
 	validHandlerConfig = tenantfetchersvc.HandlerConfig{
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
-			TenantIdProperty:   tenantProviderTenantIdProperty,
-			CustomerIdProperty: tenantProviderCustomerIdProperty,
+			TenantProvider:     testProviderName,
+			TenantIDProperty:   tenantProviderTenantIDProperty,
+			CustomerIDProperty: tenantProviderCustomerIDProperty,
 			SubdomainProperty:  tenantProviderSubdomainProperty,
 		},
 	}
@@ -57,7 +57,7 @@ type tenantCreationRequest struct {
 }
 
 type regionalTenantCreationRequest struct {
-	TenantID  string `json:"regionalTenantId"`
+	TenantID  string `json:"subaccountTenantId"`
 	ParentID  string `json:"tenantId"`
 	Subdomain string `json:"subdomain"`
 }
@@ -154,7 +154,7 @@ func TestService_Create(t *testing.T) {
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			TenantProvisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingTenant)),
-			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIdProperty),
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
 			ExpectedStatusCode:  http.StatusBadRequest,
 		},
 		{
@@ -228,7 +228,6 @@ func TestService_Create(t *testing.T) {
 			}
 
 			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
-
 		})
 	}
 }
@@ -264,9 +263,9 @@ func TestService_CreateRegional(t *testing.T) {
 		RegionPathParam: "region",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
 			TenantProvider:             testProviderName,
-			TenantIdProperty:           tenantProviderTenantIdProperty,
-			SubaccountTenantIdProperty: tenantProvidersubaccountTenantIdProperty,
-			CustomerIdProperty:         tenantProviderCustomerIdProperty,
+			TenantIDProperty:           tenantProviderTenantIDProperty,
+			SubaccountTenantIDProperty: tenantProviderSubaccountTenantIDProperty,
+			CustomerIDProperty:         tenantProviderCustomerIDProperty,
 			SubdomainProperty:          tenantProviderSubdomainProperty,
 		},
 	}
@@ -315,7 +314,7 @@ func TestService_CreateRegional(t *testing.T) {
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingParent)),
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIdProperty),
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
 		},
 		{
 			Name:                "Returns error when reading request body fails",
@@ -378,9 +377,6 @@ func TestService_CreateRegional(t *testing.T) {
 			provisioner := testCase.provisionerFn()
 			defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-			body, err := json.Marshal(regionalTenant)
-			require.NoError(t, err)
-
 			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
 			req := testCase.Request
 
@@ -398,7 +394,7 @@ func TestService_CreateRegional(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err = ioutil.ReadAll(resp.Body)
+			body, err := ioutil.ReadAll(resp.Body)
 			assert.NoError(t, err)
 
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -412,7 +408,6 @@ func TestService_CreateRegional(t *testing.T) {
 			}
 
 			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
-
 		})
 	}
 }

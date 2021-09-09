@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewSystemAuthContextProvider missing godoc
 func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *systemAuthContextProvider {
 	return &systemAuthContextProvider{
 		systemAuthSvc: systemAuthSvc,
@@ -31,6 +32,7 @@ type systemAuthContextProvider struct {
 	tenantRepo    TenantRepository
 }
 
+// GetObjectContext missing godoc
 func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
@@ -107,7 +109,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx c
 			// TODO: Remove once the whole tenant hierarchy is stored in tenant_mappings table
 			return NewTenantContext(externalTenantID, externalTenantID), scopes, nil
 		}
-		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
+		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
 	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
@@ -159,7 +161,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 			log.C(ctx).Info("Returning tenant context with empty internal tenant ID...")
 			return NewTenantContext(externalTenantID, ""), scopes, nil
 		}
-		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
+		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
 	if tenantMapping.ID != *sysAuth.TenantID {

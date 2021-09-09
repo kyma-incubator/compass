@@ -28,6 +28,7 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// UnmarshalJSON missing godoc
 func (csrf *CSRFTokenCredentialRequestAuth) UnmarshalJSON(data []byte) error {
 	type Alias CSRFTokenCredentialRequestAuth
 

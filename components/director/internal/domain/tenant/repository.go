@@ -36,6 +36,7 @@ var (
 	initializedComputedColumn = "initialized"
 )
 
+// Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.BusinessTenantMapping) *tenant.Entity
@@ -53,6 +54,7 @@ type pgRepository struct {
 	conv Converter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
 		creator:            repo.NewCreator(resource.Tenant, tableName, tableColumns),
@@ -65,10 +67,12 @@ func NewRepository(conv Converter) *pgRepository {
 	}
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, item model.BusinessTenantMapping) error {
 	return r.creator.Create(ctx, r.conv.ToEntity(&item))
 }
 
+// Get missing godoc
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
@@ -81,6 +85,7 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 	return r.conv.FromEntity(&entity), nil
 }
 
+// GetByExternalTenant missing godoc
 func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
@@ -92,14 +97,17 @@ func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant s
 	return r.conv.FromEntity(&entity), nil
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
+// ExistsByExternalTenant missing godoc
 func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(externalTenantColumn, externalTenant)})
 }
 
+// List missing godoc
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
@@ -119,7 +127,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	var items []*model.BusinessTenantMapping
+	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
 		tmModel := r.conv.FromEntity(&entity)
@@ -128,6 +136,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	return items, nil
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMapping) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -138,6 +147,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
+// DeleteByExternalTenant missing godoc
 func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(externalTenantColumn, externalTenant),

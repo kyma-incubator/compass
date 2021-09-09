@@ -33,6 +33,7 @@ import (
 type logKey struct{}
 
 const (
+	// FieldRequestID missing godoc
 	FieldRequestID     = "x-request-id"
 	fieldComponentName = "component"
 	jsonFormatterKey   = "json"
@@ -56,7 +57,9 @@ var (
 	mutex           = sync.RWMutex{}
 	currentSettings = DefaultConfig()
 
+	// C missing godoc
 	C = LoggerFromContext
+	// D missing godoc
 	D = DefaultLogger
 )
 

@@ -60,8 +60,7 @@ func TestToGraphQL(t *testing.T) {
 		anySchema := map[string]interface{}{
 			"schema": interface{}("schema"),
 		}
-		var schema interface{}
-		schema = anySchema
+		var schema interface{} = anySchema
 		actual, err := sut.ToGraphQL(model.LabelDefinition{
 			Key:    "some-key",
 			Schema: &schema,
@@ -157,7 +156,6 @@ func TestFromEntityWhenSchemaProvided(t *testing.T) {
 	err = json.Unmarshal(b, &exSchema)
 	require.NoError(t, err)
 	assert.Equal(t, ExampleSchema{ID: "xxx", Title: "title"}, exSchema)
-
 }
 
 type ExampleSchema struct {

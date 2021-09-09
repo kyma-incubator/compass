@@ -1,7 +1,6 @@
 package runtimemapping
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -29,7 +28,7 @@ import (
 func TestHandler(t *testing.T) {
 	txCtxGenerator := txtest.NewTransactionContextGenerator(errors.New("some-error"))
 
-	authorizationHeader := fmt.Sprintf("Bearer token-value")
+	authorizationHeader := "Bearer token-value"
 	issuer := "https://dex.domain.local"
 	claimsMock := &jwt.MapClaims{"iss": issuer, "email": "me@domain.local", "groups": "admin-group", "name": "John Doe"}
 	tenantID := uuid.New().String()

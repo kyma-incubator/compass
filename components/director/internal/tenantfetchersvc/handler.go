@@ -21,12 +21,14 @@ const (
 	tenantCreationFailureMsgFmt = "Failed to create tenant with ID %s"
 )
 
+// TenantProvisioner missing godoc
 //go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore
 type TenantProvisioner interface {
 	ProvisionTenants(context.Context, TenantProvisioningRequest) error
 	ProvisionRegionalTenants(context.Context, TenantProvisioningRequest) error
 }
 
+// HandlerConfig missing godoc
 type HandlerConfig struct {
 	HandlerEndpoint         string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	RegionalHandlerEndpoint string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
@@ -42,12 +44,13 @@ type HandlerConfig struct {
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
+// TenantProviderConfig missing godoc
 type TenantProviderConfig struct {
-	TenantIdProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
-	SubaccountTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
-	CustomerIdProperty         string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
-	SubdomainProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
-	TenantProvider             string `envconfig:"APP_TENANT_PROVIDER"`
+	TenantIDProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
+	SubaccountTenantIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
+	CustomerIDProperty         string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
+	SubdomainProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
+	TenantProvider             string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 }
 
 type handler struct {
@@ -56,6 +59,7 @@ type handler struct {
 	config      HandlerConfig
 }
 
+// NewTenantsHTTPHandler missing godoc
 func NewTenantsHTTPHandler(provisioner TenantProvisioner, transact persistence.Transactioner, config HandlerConfig) *handler {
 	return &handler{
 		provisioner: provisioner,
@@ -64,6 +68,7 @@ func NewTenantsHTTPHandler(provisioner TenantProvisioner, transact persistence.T
 	}
 }
 
+// Create missing godoc
 func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	h.handleTenantCreationRequest(writer, request, "")
 }
@@ -82,6 +87,7 @@ func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Reque
 	h.handleTenantCreationRequest(writer, request, region)
 }
 
+// DeleteByExternalID missing godoc
 func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	body, err := ioutil.ReadAll(req.Body)
@@ -91,10 +97,10 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	if tenantID := gjson.GetBytes(body, h.config.TenantIdProperty).String(); len(tenantID) > 0 {
+	if tenantID := gjson.GetBytes(body, h.config.TenantIDProperty).String(); len(tenantID) > 0 {
 		log.C(ctx).Infof("Received delete request for tenant with external tenant ID %s, returning 200 OK", tenantID)
 	} else {
-		log.C(ctx).Infof("External tenant ID property %q is missing from delete request body", h.config.TenantIdProperty)
+		log.C(ctx).Infof("External tenant ID property %q is missing from delete request body", h.config.TenantIDProperty)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -139,19 +145,19 @@ func (h *handler) handleTenantCreationRequest(writer http.ResponseWriter, reques
 
 func (h *handler) getProvisioningRequest(body []byte, region string) (*TenantProvisioningRequest, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIdProperty:           true,
+		h.config.TenantIDProperty:           true,
+		h.config.SubaccountTenantIDProperty: false,
 		h.config.SubdomainProperty:          true,
-		h.config.SubaccountTenantIdProperty: false,
-		h.config.CustomerIdProperty:         false,
+		h.config.CustomerIDProperty:         false,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &TenantProvisioningRequest{
-		AccountTenantID:    properties[h.config.TenantIdProperty],
-		SubaccountTenantID: properties[h.config.SubaccountTenantIdProperty],
-		CustomerTenantID:   properties[h.config.CustomerIdProperty],
+		AccountTenantID:    properties[h.config.TenantIDProperty],
+		SubaccountTenantID: properties[h.config.SubaccountTenantIDProperty],
+		CustomerTenantID:   properties[h.config.CustomerIDProperty],
 		Subdomain:          properties[h.config.SubdomainProperty],
 		Region:             region,
 	}, nil
@@ -186,7 +192,7 @@ func getProperties(body []byte, props map[string]bool) (map[string]string, error
 	resultProps := map[string]string{}
 	for propName, mandatory := range props {
 		result := gjson.GetBytes(body, propName).String()
-		if mandatory && len(result) <= 0 {
+		if mandatory && len(result) == 0 {
 			return nil, fmt.Errorf("mandatory property %q is missing from request body", propName)
 		}
 		resultProps[propName] = result

@@ -20,6 +20,7 @@ import (
 	"net/http"
 )
 
+// HTTPRoundTripper missing godoc
 //go:generate mockery --name=HTTPRoundTripper --output=automock --outpkg=automock --case=underscore
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . HTTPRoundTripper
 type HTTPRoundTripper interface {

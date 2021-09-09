@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+// Product missing godoc
 type Product struct {
 	ID               string
 	OrdID            string
@@ -13,20 +14,22 @@ type Product struct {
 	ShortDescription string
 	Vendor           string
 	Parent           *string
-	CorrelationIds   json.RawMessage
+	CorrelationIDs   json.RawMessage
 	Labels           json.RawMessage
 }
 
+// ProductInput missing godoc
 type ProductInput struct {
 	OrdID            string          `json:"ordId"`
 	Title            string          `json:"title"`
 	ShortDescription string          `json:"shortDescription"`
 	Vendor           string          `json:"vendor"`
 	Parent           *string         `json:"parent"`
-	CorrelationIds   json.RawMessage `json:"correlationIds"`
+	CorrelationIDs   json.RawMessage `json:"correlationIds"`
 	Labels           json.RawMessage `json:"labels"`
 }
 
+// ToProduct missing godoc
 func (i *ProductInput) ToProduct(id, tenantID, appID string) *Product {
 	if i == nil {
 		return nil
@@ -41,16 +44,17 @@ func (i *ProductInput) ToProduct(id, tenantID, appID string) *Product {
 		ShortDescription: i.ShortDescription,
 		Vendor:           i.Vendor,
 		Parent:           i.Parent,
-		CorrelationIds:   i.CorrelationIds,
+		CorrelationIDs:   i.CorrelationIDs,
 		Labels:           i.Labels,
 	}
 }
 
+// SetFromUpdateInput missing godoc
 func (p *Product) SetFromUpdateInput(update ProductInput) {
 	p.Title = update.Title
 	p.ShortDescription = update.ShortDescription
 	p.Vendor = update.Vendor
 	p.Parent = update.Parent
-	p.CorrelationIds = update.CorrelationIds
+	p.CorrelationIDs = update.CorrelationIDs
 	p.Labels = update.Labels
 }

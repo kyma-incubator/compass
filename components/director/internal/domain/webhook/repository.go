@@ -27,6 +27,7 @@ var (
 	tenantColumn           = "tenant_id"
 )
 
+// EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	FromEntity(in Entity) (model.Webhook, error)
@@ -46,6 +47,7 @@ type repository struct {
 	conv               EntityConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
@@ -61,6 +63,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
+// GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -73,6 +76,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Web
 	return &m, nil
 }
 
+// GetByIDGlobal missing godoc
 func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -85,6 +89,7 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Webho
 	return &m, nil
 }
 
+// ListByApplicationID missing godoc
 func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
 	var entities Collection
 
@@ -96,7 +101,7 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 		return nil, err
 	}
 
-	var out []*model.Webhook
+	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
 		w, err := r.conv.FromEntity(ent)
 		if err != nil {
@@ -108,6 +113,7 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 	return out, nil
 }
 
+// ListByApplicationTemplateID missing godoc
 func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	var entities Collection
 
@@ -119,7 +125,7 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 		return nil, err
 	}
 
-	var out []*model.Webhook
+	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
 		w, err := r.conv.FromEntity(ent)
 		if err != nil {
@@ -131,6 +137,7 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 	return out, nil
 }
 
+// Create missing godoc
 func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 	if item == nil {
 		return missingInputModelError
@@ -144,6 +151,7 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 	return r.creator.Create(ctx, entity)
 }
 
+// CreateMany missing godoc
 func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
 	for _, item := range items {
 		if err := r.Create(ctx, item); err != nil {
@@ -154,6 +162,7 @@ func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) err
 	return nil
 }
 
+// Update missing godoc
 func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	if item == nil {
 		return missingInputModelError
@@ -168,14 +177,17 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// Delete missing godoc
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// DeleteAllByApplicationID missing godoc
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }
 
+// PrintOwnerInfo missing godoc
 func PrintOwnerInfo(item *model.Webhook) string {
 	var (
 		owningResource      resource.Type

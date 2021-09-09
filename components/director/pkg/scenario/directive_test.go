@@ -478,7 +478,6 @@ func TestHasScenario(t *testing.T) {
 		assert.Error(t, err, scenario.ErrMissingScenario)
 		assert.Equal(t, res, nil)
 	})
-
 }
 
 type dummyResolver struct {
