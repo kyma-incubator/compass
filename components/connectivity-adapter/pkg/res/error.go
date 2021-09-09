@@ -47,7 +47,7 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 }
 
 /**
-Copied from https://github.com/kyma-project/kyma/tree/master/components/application-registry
+Copied from https://github.com/kyma-project/kyma/tree/main/components/application-registry
 */
 
 func errorCodeToHTTPStatus(code int) int {
