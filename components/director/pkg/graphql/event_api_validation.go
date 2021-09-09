@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Validate missing godoc
 func (i EventDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
@@ -17,6 +18,7 @@ func (i EventDefinitionInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i EventSpecInput) Validate() error {
 	return validation.Errors{
 		"Rule.Type":                  validation.Validate(&i.Type, validation.Required, validation.In(EventSpecTypeAsyncAPI)),

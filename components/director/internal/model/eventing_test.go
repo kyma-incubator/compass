@@ -33,7 +33,6 @@ func TestNewRuntimeEventingConfiguration(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			//WHEN
 			config, err := model.NewRuntimeEventingConfiguration(testCase.RawURL)
 
@@ -66,7 +65,6 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 		require.NotNil(t, config)
 
 		assert.Equal(t, expectedEventURL, config.DefaultURL.String())
-
 	})
 
 	t.Run("Valid - empty runtimeEventURL", func(t *testing.T) {

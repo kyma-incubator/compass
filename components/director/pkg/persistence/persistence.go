@@ -19,6 +19,7 @@ import (
 // RetryCount is a number of retries when trying to open the database
 const RetryCount int = 50
 
+// SaveToContext missing godoc
 func SaveToContext(ctx context.Context, persistOp PersistenceOp) context.Context {
 	return context.WithValue(ctx, PersistenceCtxKey, persistOp)
 }
@@ -34,6 +35,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 	return nil, apperrors.NewInternalError("unable to fetch database from context")
 }
 
+// Transactioner missing godoc
 //go:generate mockery --name=Transactioner --output=automock --outpkg=automock --case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
@@ -46,14 +48,17 @@ type db struct {
 	sqlDB *sqlx.DB
 }
 
+// PingContext missing godoc
 func (db *db) PingContext(ctx context.Context) error {
 	return db.sqlDB.PingContext(ctx)
 }
 
+// Stats missing godoc
 func (db *db) Stats() sql.DBStats {
 	return db.sqlDB.Stats()
 }
 
+// Begin missing godoc
 func (db *db) Begin() (PersistenceTx, error) {
 	tx, err := db.sqlDB.Beginx()
 	customTx := &Transaction{
@@ -63,6 +68,7 @@ func (db *db) Begin() (PersistenceTx, error) {
 	return PersistenceTx(customTx), err
 }
 
+// RollbackUnlessCommitted missing godoc
 func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 	customTx, ok := tx.(*Transaction)
 	if !ok {
@@ -76,31 +82,32 @@ func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 }
 
 func (db *db) rollback(ctx context.Context, tx PersistenceTx) {
-	err := tx.Rollback()
-	if err == nil {
+	if err := tx.Rollback(); err == nil {
 		log.C(ctx).Warn("Transaction rolled back")
 	} else if err != sql.ErrTxDone {
 		log.C(ctx).Warn(err)
 	}
 }
 
+// Transaction missing godoc
 type Transaction struct {
 	*sqlx.Tx
 	committed bool
 }
 
+// Commit missing godoc
 func (db *Transaction) Commit() error {
 	if db.committed {
 		return apperrors.NewInternalError("transaction already committed")
 	}
-	err := db.Tx.Commit()
-	if err != nil {
+	if err := db.Tx.Commit(); err != nil {
 		return errors.Wrap(err, "while committing transaction")
 	}
 	db.committed = true
 	return nil
 }
 
+// PersistenceTx missing godoc
 //go:generate mockery --name=PersistenceTx --output=automock --outpkg=automock --case=underscore
 type PersistenceTx interface {
 	Commit() error
@@ -108,6 +115,7 @@ type PersistenceTx interface {
 	PersistenceOp
 }
 
+// PersistenceOp missing godoc
 //go:generate mockery --name=PersistenceOp --output=automock --outpkg=automock --case=underscore
 type PersistenceOp interface {
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
@@ -151,7 +159,6 @@ func waitForPersistance(ctx context.Context, conf DatabaseConfig, retryCount int
 		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)
 		sqlxDB.SetConnMaxLifetime(conf.ConnMaxLifetime)
 		return &db{sqlDB: sqlxDB}, sqlxDB.Close, nil
-
 	}
 
 	return nil, nil, err

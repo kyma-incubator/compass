@@ -32,14 +32,14 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
-		transactioner.On("PingContext", ctxWithTransaction).Once().Return(nil)
+		transactioner.On("PingContext", ctx).Once().Return(nil)
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 200, "")
@@ -54,14 +54,14 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
-		transactioner.On("PingContext", ctxWithTransaction).Twice().Return(nil)
+		transactioner.On("PingContext", ctx).Twice().Return(nil)
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 200, "")
@@ -77,14 +77,14 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
-		transactioner.On("PingContext", ctxWithTransaction).Once().Return(errors.New("Ping failure"))
+		transactioner.On("PingContext", ctx).Once().Return(errors.New("Ping failure"))
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
@@ -104,7 +104,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("YYYYYYYYYYYYY", nil)
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
@@ -124,7 +124,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("", errors.New("db error"))
 		defer repository.AssertExpectations(t)
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
@@ -140,7 +140,7 @@ func TestNewReadinessHandler(t *testing.T) {
 
 		repository := &automock.Repository{}
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
@@ -157,7 +157,7 @@ func TestNewReadinessHandler(t *testing.T) {
 
 		repository := &automock.Repository{}
 
-		ready := healthz.NewReady(ctx, transactioner, cfg, repository)
+		ready := healthz.NewReady(transactioner, cfg, repository)
 
 		// THEN
 		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")

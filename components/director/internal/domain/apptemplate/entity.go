@@ -4,6 +4,7 @@ import (
 	"database/sql"
 )
 
+// Entity missing godoc
 type Entity struct {
 	ID                   string         `db:"id"`
 	Name                 string         `db:"name"`
@@ -13,8 +14,10 @@ type Entity struct {
 	AccessLevel          string         `db:"access_level"`
 }
 
+// EntityCollection missing godoc
 type EntityCollection []Entity
 
+// Len missing godoc
 func (a EntityCollection) Len() int {
 	return len(a)
 }

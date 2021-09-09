@@ -27,7 +27,6 @@ func TestNewIndicator(t *testing.T) {
 		require.NotNil(t, indicator.Status())
 		require.NoError(t, indicator.Status().Error())
 		require.Equal(t, "", indicator.Status().Details())
-
 	})
 }
 
@@ -82,8 +81,8 @@ func TestRun(t *testing.T) {
 		indicator := healthz.NewIndicator("test", func(ctx context.Context) healthz.Status {
 			atomic.AddUint64(&counter, 1)
 			return status
-
 		})
+
 		indicator.Configure(cfg)
 		indicator.Run(ctx)
 

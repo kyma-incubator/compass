@@ -13,20 +13,20 @@ type TenantIndexRepository struct {
 	mock.Mock
 }
 
-// GetOwnerTenantByResourceID provides a mock function with given fields: ctx, callingTenant, resourceId
-func (_m *TenantIndexRepository) GetOwnerTenantByResourceID(ctx context.Context, callingTenant string, resourceId string) (string, error) {
-	ret := _m.Called(ctx, callingTenant, resourceId)
+// GetOwnerTenantByResourceID provides a mock function with given fields: ctx, callingTenant, resourceID
+func (_m *TenantIndexRepository) GetOwnerTenantByResourceID(ctx context.Context, callingTenant string, resourceID string) (string, error) {
+	ret := _m.Called(ctx, callingTenant, resourceID)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
-		r0 = rf(ctx, callingTenant, resourceId)
+		r0 = rf(ctx, callingTenant, resourceID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, callingTenant, resourceId)
+		r1 = rf(ctx, callingTenant, resourceID)
 	} else {
 		r1 = ret.Error(1)
 	}

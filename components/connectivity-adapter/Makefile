@@ -18,5 +18,8 @@ resolve-local:
 ensure-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
+lint-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}

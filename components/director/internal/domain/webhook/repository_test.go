@@ -124,7 +124,6 @@ func TestRepositoryGetByID(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
-
 }
 
 func TestRepositoryCreate(t *testing.T) {
@@ -643,7 +642,6 @@ func givenID() string {
 
 func anotherID() string {
 	return "dddddddd-dddd-dddd-dddd-dddddddddddd"
-
 }
 
 func givenTenant() string {
@@ -692,14 +690,14 @@ func givenAuthAsAString(t *testing.T) string {
 
 func givenModel() model.Webhook {
 	appID := givenApplicationID()
-	appTemplateId := givenApplicationTemplateID()
+	appTemplateID := givenApplicationTemplateID()
 	webhookMode := model.WebhookModeSync
 	tenant := givenTenant()
 	return model.Webhook{
 		ID:                    givenID(),
 		TenantID:              &tenant,
 		ApplicationID:         &appID,
-		ApplicationTemplateID: &appTemplateId,
+		ApplicationTemplateID: &appTemplateID,
 		Type:                  model.WebhookTypeConfigurationChanged,
 		URL:                   stringPtr("http://kyma.io"),
 		Mode:                  &webhookMode,

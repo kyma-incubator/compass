@@ -232,7 +232,6 @@ func TestService_DeleteMany(t *testing.T) {
 			tenantMappingRepo.AssertExpectations(t)
 		})
 	}
-
 }
 
 func TestService_CreateManyIfNotExists(t *testing.T) {
@@ -459,7 +458,6 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 			require.Equal(t, testCase.ExpectedSlice, svc.MultipleToTenantMapping(testCase.InputSlice))
 		})
 	}
-
 }
 
 func Test_MoveBeforeIndex(t *testing.T) {

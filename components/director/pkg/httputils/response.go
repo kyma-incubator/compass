@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// RespondWithBody missing godoc
 func RespondWithBody(ctx context.Context, w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Add(HeaderContentType, ContentTypeApplicationJSON)
 	w.WriteHeader(status)
@@ -17,6 +18,7 @@ func RespondWithBody(ctx context.Context, w http.ResponseWriter, status int, dat
 	}
 }
 
+// RespondWithError missing godoc
 func RespondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {
 	log.C(ctx).WithError(err).Errorf("Responding with error: %v", err)
 	w.Header().Add(HeaderContentType, ContentTypeApplicationJSON)

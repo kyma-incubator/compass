@@ -13,12 +13,14 @@ import (
 
 const surprise = "DpKtJ4j9jDq"
 
+// Page missing godoc
 type Page struct {
 	StartCursor string
 	EndCursor   string
 	HasNextPage bool
 }
 
+// DecodeOffsetCursor missing godoc
 func DecodeOffsetCursor(cursor string) (int, error) {
 	if cursor == "" {
 		return 0, nil
@@ -43,6 +45,7 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 	return offset, nil
 }
 
+// EncodeNextOffsetCursor missing godoc
 func EncodeNextOffsetCursor(offset, pageSize int) string {
 	nextPage := pageSize + offset
 
@@ -51,6 +54,7 @@ func EncodeNextOffsetCursor(offset, pageSize int) string {
 	return base64.StdEncoding.EncodeToString([]byte(cursor))
 }
 
+// ConvertOffsetLimitAndOrderedColumnToSQL missing godoc
 func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn string) (string, error) {
 	if orderedColumn == "" {
 		return "", apperrors.NewInvalidDataError("to use pagination you must provide column to order by")

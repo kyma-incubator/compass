@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// VersionConverter missing godoc
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -23,6 +24,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
+// SpecConverter missing godoc
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
@@ -34,10 +36,12 @@ type converter struct {
 	specConverter SpecConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(version VersionConverter, specConverter SpecConverter) *converter {
 	return &converter{version: version, specConverter: specConverter}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error) {
 	if in == nil {
 		return nil, nil
@@ -72,12 +76,13 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
 	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
-	var apis []*graphql.APIDefinition
+	apis := make([]*graphql.APIDefinition, 0, len(in))
 	for i, a := range in {
 		if a == nil {
 			continue
@@ -94,9 +99,10 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 	return apis, nil
 }
 
+// MultipleInputFromGraphQL missing godoc
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error) {
-	var apiDefs []*model.APIDefinitionInput
-	var specs []*model.SpecInput
+	apiDefs := make([]*model.APIDefinitionInput, 0, len(in))
+	specs := make([]*model.SpecInput, 0, len(in))
 
 	for _, item := range in {
 		api, spec, err := c.InputFromGraphQL(item)
@@ -111,6 +117,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) (
 	return apiDefs, specs, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error) {
 	if in == nil {
 		return nil, nil, nil
@@ -124,14 +131,14 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	return &model.APIDefinitionInput{
 		Name:         in.Name,
 		Description:  in.Description,
-		TargetURLs:   ConvertTargetUrlToJsonArray(in.TargetURL),
+		TargetURLs:   ConvertTargetURLToJSONArray(in.TargetURL),
 		Group:        in.Group,
 		VersionInput: c.version.InputFromGraphQL(in.Version),
 	}, spec, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
-
 	return model.APIDefinition{
 		ApplicationID:                           entity.ApplicationID,
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
@@ -143,7 +150,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		OrdID:                                   repo.StringPtrFromNullableString(entity.OrdID),
 		ShortDescription:                        repo.StringPtrFromNullableString(entity.ShortDescription),
 		SystemInstanceAware:                     repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
-		ApiProtocol:                             repo.StringPtrFromNullableString(entity.ApiProtocol),
+		APIProtocol:                             repo.StringPtrFromNullableString(entity.APIProtocol),
 		Tags:                                    repo.JSONRawMessageFromNullableString(entity.Tags),
 		Countries:                               repo.JSONRawMessageFromNullableString(entity.Countries),
 		Links:                                   repo.JSONRawMessageFromNullableString(entity.Links),
@@ -175,6 +182,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 	}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 	return &Entity{
 		TenantID:                                apiModel.Tenant,
@@ -187,7 +195,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		OrdID:                                   repo.NewNullableString(apiModel.OrdID),
 		ShortDescription:                        repo.NewNullableString(apiModel.ShortDescription),
 		SystemInstanceAware:                     repo.NewNullableBool(apiModel.SystemInstanceAware),
-		ApiProtocol:                             repo.NewNullableString(apiModel.ApiProtocol),
+		APIProtocol:                             repo.NewNullableString(apiModel.APIProtocol),
 		Tags:                                    repo.NewNullableStringFromJSONRawMessage(apiModel.Tags),
 		Countries:                               repo.NewNullableStringFromJSONRawMessage(apiModel.Countries),
 		Links:                                   repo.NewNullableStringFromJSONRawMessage(apiModel.Links),
@@ -236,18 +244,20 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 	return &t
 }
 
-func ExtractTargetUrlFromJsonArray(jsonTargetUrl json.RawMessage) string {
-	strTargetUrl := string(jsonTargetUrl)
-	strTargetUrl = strings.TrimPrefix(strTargetUrl, `["`)
-	strTargetUrl = strings.TrimSuffix(strTargetUrl, `"]`)
+// ExtractTargetURLFromJSONArray missing godoc
+func ExtractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
+	strTargetURL := string(jsonTargetURL)
+	strTargetURL = strings.TrimPrefix(strTargetURL, `["`)
+	strTargetURL = strings.TrimSuffix(strTargetURL, `"]`)
 
-	return strTargetUrl
+	return strTargetURL
 }
 
-func ConvertTargetUrlToJsonArray(targetUrl string) json.RawMessage {
-	if targetUrl == "" {
+// ConvertTargetURLToJSONArray missing godoc
+func ConvertTargetURLToJSONArray(targetURL string) json.RawMessage {
+	if targetURL == "" {
 		return nil
 	}
 
-	return json.RawMessage(`["` + targetUrl + `"]`)
+	return json.RawMessage(`["` + targetURL + `"]`)
 }

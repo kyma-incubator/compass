@@ -31,7 +31,7 @@ func TestService_Create(t *testing.T) {
 		model.ScenariosKey:          "DEFAULT",
 		"protected_defaultEventing": "true",
 	}
-	labelsForDbMock := map[string]interface{}{
+	labelsForDBMock := map[string]interface{}{
 		model.ScenariosKey:        []interface{}{"DEFAULT"},
 		runtime.IsNormalizedLabel: "true",
 	}
@@ -82,7 +82,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, labelsForDbMock).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, labelsForDBMock).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -227,7 +227,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, labelsForDbMock).Return(testErr).Once()
+				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, labelsForDBMock).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -291,7 +291,7 @@ func TestService_Update(t *testing.T) {
 
 	desc := "Lorem ipsum"
 
-	labelsDbMock := map[string]interface{}{
+	labelsDBMock := map[string]interface{}{
 		"label1":                  "val1",
 		"scenarios":               []interface{}{"SCENARIO"},
 		runtime.IsNormalizedLabel: "true",
@@ -411,7 +411,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, labelsDbMock).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, labelsDBMock).Return(nil).Once()
 				return repo
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
@@ -2402,7 +2402,6 @@ func TestService_UpdateTenantID(t *testing.T) {
 			scenariosService.AssertExpectations(t)
 			scenarioAssignmentEngine.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
-
 		})
 	}
 
@@ -2483,7 +2482,6 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			scenariosService.AssertExpectations(t)
 			scenarioAssignmentEngine.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
-
 		})
 	}
 

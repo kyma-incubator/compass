@@ -9,10 +9,12 @@ import (
 
 type converter struct{}
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	if in == nil {
 		return nil
@@ -27,8 +29,9 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	}
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
-	var runtimes []*graphql.Runtime
+	runtimes := make([]*graphql.Runtime, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -40,6 +43,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 	return runtimes
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
 	var labels map[string]interface{}
 	if in.Labels != nil {
@@ -110,8 +114,9 @@ func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *
 	return &condition
 }
 
+// MultipleFromEntities missing godoc
 func (c *converter) MultipleFromEntities(entities RuntimeCollection) []*model.Runtime {
-	var items []*model.Runtime
+	items := make([]*model.Runtime, 0, len(entities))
 	for _, ent := range entities {
 		model := ent.ToModel()
 

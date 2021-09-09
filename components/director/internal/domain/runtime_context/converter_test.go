@@ -1,9 +1,9 @@
-package runtime_context_test
+package runtimectx_test
 
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -52,7 +52,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
-			converter := runtime_context.NewConverter()
+			converter := runtimectx.NewConverter()
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -100,7 +100,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := runtime_context.NewConverter()
+	converter := runtimectx.NewConverter()
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -147,7 +147,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
-			converter := runtime_context.NewConverter()
+			converter := runtimectx.NewConverter()
 			res := converter.InputFromGraphQL(testCase.Input, runtimeID)
 
 			// then

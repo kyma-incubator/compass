@@ -10,12 +10,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyBundle = "dataloadersBundle"
+const loadersKeyBundle contextKey = "dataloadersBundle"
 
+// BundleLoaders missing godoc
 type BundleLoaders struct {
-	BundleById BundleLoader
+	BundleByID BundleLoader
 }
 
+// ParamBundle missing godoc
 type ParamBundle struct {
 	ID    string
 	First *int
@@ -23,11 +25,12 @@ type ParamBundle struct {
 	Ctx   context.Context
 }
 
+// HandlerBundle missing godoc
 func HandlerBundle(fetchFunc func(keys []ParamBundle) ([]*graphql.BundlePage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyBundle, &BundleLoaders{
-				BundleById: BundleLoader{
+				BundleByID: BundleLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,
@@ -39,6 +42,7 @@ func HandlerBundle(fetchFunc func(keys []ParamBundle) ([]*graphql.BundlePage, []
 	}
 }
 
+// BundleFor missing godoc
 func BundleFor(ctx context.Context) *BundleLoaders {
 	return ctx.Value(loadersKeyBundle).(*BundleLoaders)
 }

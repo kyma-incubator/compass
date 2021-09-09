@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
+// Validate missing godoc
 func (i ApplicationRegisterInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(1, appNameLengthLimit)),
@@ -15,6 +16,7 @@ func (i ApplicationRegisterInput) Validate() error {
 		validation.Field(&i.Webhooks, validation.Each(validation.Required)))
 }
 
+// Validate missing godoc
 func (i ApplicationUpdateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.ProviderName, validation.RuneLength(0, longStringLengthLimit)),

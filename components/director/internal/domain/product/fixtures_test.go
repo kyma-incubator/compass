@@ -19,7 +19,7 @@ const (
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
-	correlationIds   = `["id1", "id2"]`
+	correlationIDs   = `["id1", "id2"]`
 )
 
 func fixEntityProduct() *product.Entity {
@@ -35,8 +35,8 @@ func fixEntityProduct() *product.Entity {
 			String: "parent",
 			Valid:  true,
 		},
-		CorrelationIds: sql.NullString{
-			String: correlationIds,
+		CorrelationIDs: sql.NullString{
+			String: correlationIDs,
 			Valid:  true,
 		},
 		Labels: repo.NewValidNullableString("{}"),
@@ -54,7 +54,7 @@ func fixProductModel() *model.Product {
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent:           &parent,
-		CorrelationIds:   json.RawMessage(correlationIds),
+		CorrelationIDs:   json.RawMessage(correlationIDs),
 		Labels:           json.RawMessage("{}"),
 	}
 }
@@ -67,7 +67,7 @@ func fixProductModelInput() *model.ProductInput {
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent:           &parent,
-		CorrelationIds:   json.RawMessage(correlationIds),
+		CorrelationIDs:   json.RawMessage(correlationIDs),
 		Labels:           json.RawMessage("{}"),
 	}
 }
@@ -78,11 +78,11 @@ func fixProductColumns() []string {
 
 func fixProductRow() []driver.Value {
 	return []driver.Value{ordID, tenantID, appID, "title", "short desc", "vendorID", "parent",
-		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIds), productID}
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID}
 }
 
 func fixProductUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIds)}
+	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs)}
 }
 
 func fixUpdateTenantIsolationSubquery() string {

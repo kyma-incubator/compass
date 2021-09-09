@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -23,10 +24,12 @@ type converter struct {
 	authConverter AuthConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error) {
 	if in == nil {
 		return nil, nil
@@ -46,6 +49,7 @@ func (c *converter) ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, er
 	}, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error) {
 	if in == nil {
 		return nil, nil
@@ -70,6 +74,7 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) (*model.Fetc
 	}, nil
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 	if in.Status == nil {
 		return Entity{}, apperrors.NewInvalidDataError("Invalid input model")
@@ -108,6 +113,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 	}, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 	objectID, objectType, err := c.objectReferenceFromEntity(in)
 	if err != nil {

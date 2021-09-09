@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-	"github.com/kyma-incubator/compass/components/director/internal/scopes_sync"
+	scopes "github.com/kyma-incubator/compass/components/director/internal/scopes_sync"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -67,7 +67,7 @@ func main() {
 
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
-	syncService := scopes_sync.NewService(oAuth20Svc, transact, systemauth.NewRepository(systemAuthConverter))
+	syncService := scopes.NewService(oAuth20Svc, transact, systemauth.NewRepository(systemAuthConverter))
 	err = syncService.SynchronizeClientScopes(ctx)
 	exitOnError(ctx, err, "Error while updating client scopes")
 }

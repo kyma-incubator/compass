@@ -2,7 +2,6 @@ package scenario
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -12,7 +11,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
-	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -26,11 +25,15 @@ import (
 )
 
 const (
-	GetApplicationID                     = "GetApplicationID"
-	GetApplicationIDByBundle             = "GetApplicationIDByBundle"
+	// GetApplicationID missing godoc
+	GetApplicationID = "GetApplicationID"
+	// GetApplicationIDByBundle missing godoc
+	GetApplicationIDByBundle = "GetApplicationIDByBundle"
+	// GetApplicationIDByBundleInstanceAuth missing godoc
 	GetApplicationIDByBundleInstanceAuth = "GetApplicationIDByBundleInstanceAuth"
 )
 
+// ErrMissingScenario missing godoc
 var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
 
 type directive struct {
@@ -41,7 +44,7 @@ type directive struct {
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, bundleRepo mp_bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
+func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, bundleRepo bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
 	getApplicationIDByBundleFunc := func(ctx context.Context, tenantID, bundleID string) (string, error) {
 		bndl, err := bundleRepo.GetByID(ctx, tenantID, bundleID)
 		if err != nil {
@@ -107,15 +110,15 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	resCtx := graphql.GetResolverContext(ctx)
+	resCtx := graphql.GetFieldContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Could not get idField: %s from request context", idField))
+		return nil, errors.Errorf("Could not get idField: %s from request context", idField)
 	}
 
 	appProviderFunc, ok := d.applicationProviders[applicationProvider]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Could not get app provider func: %s from provider list", applicationProvider))
+		return nil, errors.Errorf("Could not get app provider func: %s from provider list", applicationProvider)
 	}
 
 	tx, err := d.transact.Begin()

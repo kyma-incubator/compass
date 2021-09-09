@@ -10,12 +10,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyEventDef = "dataloadersEventDef"
+const loadersKeyEventDef contextKey = "dataloadersEventDef"
 
+// EventDefLoaders missing godoc
 type EventDefLoaders struct {
-	EventDefById EventDefLoader
+	EventDefByID EventDefLoader
 }
 
+// ParamEventDef missing godoc
 type ParamEventDef struct {
 	ID    string
 	First *int
@@ -23,11 +25,12 @@ type ParamEventDef struct {
 	Ctx   context.Context
 }
 
+// HandlerEventDef missing godoc
 func HandlerEventDef(fetchFunc func(keys []ParamEventDef) ([]*graphql.EventDefinitionPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), loadersKeyEventDef, &EventDefLoaders{
-				EventDefById: EventDefLoader{
+				EventDefByID: EventDefLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,
@@ -39,6 +42,7 @@ func HandlerEventDef(fetchFunc func(keys []ParamEventDef) ([]*graphql.EventDefin
 	}
 }
 
+// EventDefFor missing godoc
 func EventDefFor(ctx context.Context) *EventDefLoaders {
 	return ctx.Value(loadersKeyEventDef).(*EventDefLoaders)
 }

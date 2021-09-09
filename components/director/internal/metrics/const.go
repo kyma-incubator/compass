@@ -1,9 +1,14 @@
 package metrics
 
 const (
-	Namespace              = "compass"
-	DirectorSubsystem      = "director"
+	// Namespace missing godoc
+	Namespace = "compass"
+	// DirectorSubsystem missing godoc
+	DirectorSubsystem = "director"
+	// TenantFetcherSubsystem missing godoc
 	TenantFetcherSubsystem = "tenantfetcher"
-	TenantFetcherJobName   = TenantFetcherSubsystem
-	InstanceIDKeyName      = "instance"
+	// TenantFetcherJobName missing godoc
+	TenantFetcherJobName = TenantFetcherSubsystem
+	// InstanceIDKeyName missing godoc
+	InstanceIDKeyName = "instance"
 )

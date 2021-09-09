@@ -7,8 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DefaultName missing godoc
 const DefaultName = "default"
 
+// IndicatorConfig missing godoc
 type IndicatorConfig struct {
 	Name         string        `envconfig:"default=default"`
 	Interval     time.Duration `envconfig:"default=5s"`
@@ -17,6 +19,7 @@ type IndicatorConfig struct {
 	Threshold    int           `envconfig:"default=3"`
 }
 
+// NewDefaultConfig missing godoc
 func NewDefaultConfig() IndicatorConfig {
 	return IndicatorConfig{
 		Name:         DefaultName,
@@ -27,6 +30,7 @@ func NewDefaultConfig() IndicatorConfig {
 	}
 }
 
+// Validate missing godoc
 func (ic *IndicatorConfig) Validate() error {
 	if ic.Interval <= 0 {
 		return errors.New("interval could not be <= 0")
@@ -43,10 +47,12 @@ func (ic *IndicatorConfig) Validate() error {
 	return nil
 }
 
+// Config missing godoc
 type Config struct {
 	Indicators []IndicatorConfig
 }
 
+// Validate missing godoc
 func (c *Config) Validate() error {
 	for _, ind := range c.Indicators {
 		if err := ind.Validate(); err != nil {

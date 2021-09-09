@@ -93,7 +93,6 @@ func TestQueryBuilder(t *testing.T) {
 		assert.Equal(t, expectedFirstArgument, args[1])
 		assert.Equal(t, expectedSecondArgument, args[2])
 		assert.Equal(t, expectedQuery, removeWhitespace(query))
-
 	})
 
 	t.Run("returns error when tenantID is empty", func(t *testing.T) {
@@ -106,7 +105,6 @@ func TestQueryBuilder(t *testing.T) {
 		assert.Equal(t, "", removeWhitespace(query))
 		assert.Equal(t, []interface{}(nil), args)
 	})
-
 }
 
 func getExpectedQueryWithTenantCondition() (string, int) {

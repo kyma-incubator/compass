@@ -14,10 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// PageableQuerier missing godoc
 type PageableQuerier interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
 
+// PageableQuerierGlobal missing godoc
 type PageableQuerierGlobal interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
@@ -29,6 +31,7 @@ type universalPageableQuerier struct {
 	resourceType    resource.Type
 }
 
+// NewPageableQuerier missing godoc
 func NewPageableQuerier(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
 	return &universalPageableQuerier{
 		tableName:       tableName,
@@ -38,6 +41,7 @@ func NewPageableQuerier(resourceType resource.Type, tableName string, tenantColu
 	}
 }
 
+// NewPageableQuerierGlobal missing godoc
 func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, selectedColumns []string) PageableQuerierGlobal {
 	return &universalPageableQuerier{
 		tableName:       tableName,
@@ -46,6 +50,7 @@ func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, sele
 	}
 }
 
+// Collection missing godoc
 type Collection interface {
 	Len() int
 }
@@ -60,6 +65,7 @@ func (g *universalPageableQuerier) List(ctx context.Context, tenant string, page
 	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
+// ListGlobal missing godoc
 func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
 	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }

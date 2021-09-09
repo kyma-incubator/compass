@@ -493,7 +493,6 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 }
 
 func TestService_GetGlobal(t *testing.T) {
-
 	authID := "authID"
 
 	t.Run("success when systemAuth can be fetched from repo", func(t *testing.T) {
@@ -524,7 +523,6 @@ func TestService_GetGlobal(t *testing.T) {
 }
 
 func TestService_GetByToken(t *testing.T) {
-
 	token := "tokenValue"
 	input := map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{

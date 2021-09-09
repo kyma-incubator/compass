@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 )
 
+// OneTimeToken missing godoc
 type OneTimeToken struct {
 	Token        string
 	ConnectorURL string

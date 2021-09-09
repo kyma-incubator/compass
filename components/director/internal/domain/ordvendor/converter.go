@@ -10,10 +10,12 @@ import (
 type converter struct {
 }
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.Vendor) *Entity {
 	if in == nil {
 		return nil
@@ -32,6 +34,7 @@ func (c *converter) ToEntity(in *model.Vendor) *Entity {
 	return output
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity *Entity) (*model.Vendor, error) {
 	if entity == nil {
 		return nil, apperrors.NewInternalError("the Vendor entity is nil")

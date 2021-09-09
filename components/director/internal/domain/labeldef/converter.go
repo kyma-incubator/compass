@@ -9,12 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
 type converter struct{}
 
+// FromGraphQL missing godoc
 func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error) {
 	schema, err := input.Schema.Unmarshal()
 	if err != nil {
@@ -28,6 +30,7 @@ func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant strin
 	}, nil
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in model.LabelDefinition) (graphql.LabelDefinition, error) {
 	schema, err := graphql.MarshalSchema(in.Schema)
 	if err != nil {
@@ -39,6 +42,7 @@ func (c *converter) ToGraphQL(in model.LabelDefinition) (graphql.LabelDefinition
 	}, nil
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {
 	out := Entity{
 		ID:       in.ID,
@@ -57,6 +61,7 @@ func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {
 	return out, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.LabelDefinition, error) {
 	out := model.LabelDefinition{
 		ID:     in.ID,

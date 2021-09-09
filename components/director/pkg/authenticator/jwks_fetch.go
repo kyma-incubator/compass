@@ -40,7 +40,7 @@ SOFTWARE.
 
 */
 
-// fetchJWK fetches a JWK resource specified by a URL
+// FetchJWK fetches a JWK resource specified by a URL
 func FetchJWK(ctx context.Context, urlstring string, options ...jwk.FetchOption) (jwk.Set, error) {
 	u, err := url.Parse(urlstring)
 	if err != nil {

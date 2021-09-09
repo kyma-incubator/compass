@@ -186,7 +186,6 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("Invalid type of the Fetch Request reference object").Error())
 	})
-
 }
 
 func TestRepository_Delete(t *testing.T) {

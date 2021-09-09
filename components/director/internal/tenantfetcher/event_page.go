@@ -35,7 +35,7 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 	return tenantDetails
 }
 
-func (ep eventsPage) getMovedRuntimes() ([]model.MovedRuntimeByLabelMappingInput, error) {
+func (ep eventsPage) getMovedRuntimes() []model.MovedRuntimeByLabelMappingInput {
 	eds := ep.getEventsDetails()
 	mappings := make([]model.MovedRuntimeByLabelMappingInput, 0, len(eds))
 	for _, detail := range eds {
@@ -48,10 +48,10 @@ func (ep eventsPage) getMovedRuntimes() ([]model.MovedRuntimeByLabelMappingInput
 		mappings = append(mappings, *mapping)
 	}
 
-	return mappings, nil
+	return mappings
 }
 
-func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+func (ep eventsPage) getTenantMappings(eventsType EventsType) []model.BusinessTenantMappingInput {
 	eds := ep.getEventsDetails()
 	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
 	for _, detail := range eds {
@@ -64,7 +64,7 @@ func (ep eventsPage) getTenantMappings(eventsType EventsType) ([]model.BusinessT
 		tenants = append(tenants, *mapping)
 	}
 
-	return tenants, nil
+	return tenants
 }
 
 func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRuntimeByLabelMappingInput, error) {
@@ -114,8 +114,8 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.NameField)
 	}
 
-	customerIdResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
-	if !customerIdResult.Exists() {
+	customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
+	if !customerIDResult.Exists() {
 		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
 	}
 
@@ -127,7 +127,7 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	return &model.BusinessTenantMappingInput{
 		Name:           nameResult.String(),
 		ExternalTenant: idResult.String(),
-		Parent:         customerIdResult.String(),
+		Parent:         customerIDResult.String(),
 		Subdomain:      subdomain.String(),
 		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       ep.providerName,

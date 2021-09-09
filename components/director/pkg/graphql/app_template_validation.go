@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Validate missing godoc
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": validPlaceholders(i.Placeholders, i.ApplicationInput),
@@ -24,6 +25,7 @@ func (i ApplicationTemplateInput) Validate() error {
 	}.Filter()
 }
 
+// Validate missing godoc
 func (i ApplicationTemplateUpdateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": validPlaceholders(i.Placeholders, i.ApplicationInput),
@@ -35,6 +37,7 @@ func (i ApplicationTemplateUpdateInput) Validate() error {
 	}.Filter()
 }
 
+// Validate missing godoc
 func (i PlaceholderDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
@@ -42,6 +45,7 @@ func (i PlaceholderDefinitionInput) Validate() error {
 	)
 }
 
+// Validate missing godoc
 func (i ApplicationFromTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
@@ -65,6 +69,7 @@ func (i ApplicationFromTemplateInput) ensureUniquePlaceholders() error {
 	return nil
 }
 
+// Validate missing godoc
 func (i TemplateValueInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Placeholder, validation.Required, inputvalidation.DNSName),

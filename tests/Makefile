@@ -14,6 +14,9 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
 
+lint-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 test:
 	@echo ${SKIP_STEP_MESSAGE}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// ApplicationTemplateRepository missing godoc
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
@@ -25,11 +26,13 @@ type ApplicationTemplateRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
 }
 
+// WebhookRepository missing godoc
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, items []*model.Webhook) error
@@ -41,6 +44,7 @@ type service struct {
 	uidService      UIDService
 }
 
+// NewService missing godoc
 func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService) *service {
 	return &service{
 		appTemplateRepo: appTemplateRepo,
@@ -49,6 +53,7 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo Webho
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	appTemplateID := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
@@ -60,7 +65,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
 
-	var webhooks []*model.Webhook
+	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToApplicationTemplateWebhook(s.uidService.Generate(), nil, appTemplateID))
 	}
@@ -72,6 +77,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	return appTemplateID, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
@@ -81,6 +87,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	return appTemplate, nil
 }
 
+// GetByName missing godoc
 func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
 	if err != nil {
@@ -90,6 +97,7 @@ func (s *service) GetByName(ctx context.Context, name string) (*model.Applicatio
 	return appTemplate, nil
 }
 
+// Exists missing godoc
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	exist, err := s.appTemplateRepo.Exists(ctx, id)
 	if err != nil {
@@ -99,6 +107,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 200")
@@ -107,6 +116,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 	return s.appTemplateRepo.List(ctx, pageSize, cursor)
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
 	appTemplate := in.ToApplicationTemplate(id)
 
@@ -118,6 +128,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	err := s.appTemplateRepo.Delete(ctx, id)
 	if err != nil {
@@ -127,6 +138,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// PrepareApplicationCreateInputJSON missing godoc
 func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error) {
 	appCreateInputJSON := appTemplate.ApplicationInputJSON
 	for _, placeholder := range appTemplate.Placeholders {

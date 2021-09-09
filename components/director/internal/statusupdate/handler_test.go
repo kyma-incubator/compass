@@ -251,7 +251,6 @@ func TestUpdate_Handler(t *testing.T) {
 			transact.AssertExpectations(t)
 		})
 	}
-
 }
 
 func createRequestWithClaims(id string, consumerType consumer.ConsumerType, flow oathkeeper.AuthFlow) *http.Request {
@@ -263,7 +262,6 @@ func createRequestWithClaims(id string, consumerType consumer.ConsumerType, flow
 
 func fixNextHandler(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		_, err := w.Write([]byte("OK"))
 		require.NoError(t, err)
 	}

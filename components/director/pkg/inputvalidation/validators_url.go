@@ -13,12 +13,14 @@ import (
 
 type urlValidator struct{}
 
+// IsURL missing godoc
 var IsURL = &urlValidator{}
 
 const protocolRegex = govalidator.URLSchema
 
 const errMsg = "must be a valid URL"
 
+// Validate missing godoc
 func (v *urlValidator) Validate(value interface{}) error {
 	s, isNil, err := ensureIsString(value)
 	if err != nil {

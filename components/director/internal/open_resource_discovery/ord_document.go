@@ -1,4 +1,4 @@
-package open_resource_discovery
+package ord
 
 import (
 	"encoding/json"
@@ -10,19 +10,21 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-const (
-	WellKnownEndpoint = "/.well-known/open-resource-discovery"
-)
+// WellKnownEndpoint missing godoc
+const WellKnownEndpoint = "/.well-known/open-resource-discovery"
 
+// WellKnownConfig missing godoc
 type WellKnownConfig struct {
 	Schema                  string                  `json:"$schema"`
 	OpenResourceDiscoveryV1 OpenResourceDiscoveryV1 `json:"openResourceDiscoveryV1"`
 }
 
+// OpenResourceDiscoveryV1 missing godoc
 type OpenResourceDiscoveryV1 struct {
 	Documents []DocumentDetails `json:"documents"`
 }
 
+// DocumentDetails missing godoc
 type DocumentDetails struct {
 	URL string `json:"url"`
 	// TODO: Currently we cannot differentiate between system instance types reliably, therefore we cannot make use of the systemInstanceAware optimization (store it once per system type and reuse it for each system instance of that type).
@@ -32,6 +34,7 @@ type DocumentDetails struct {
 	AccessStrategies    AccessStrategies `json:"accessStrategies"`
 }
 
+// Document missing godoc
 type Document struct {
 	Schema                string `json:"$schema"`
 	OpenResourceDiscovery string `json:"openResourceDiscovery"`
@@ -50,6 +53,7 @@ type Document struct {
 	Vendors            []*model.VendorInput          `json:"vendors"`
 }
 
+// Documents missing godoc
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
@@ -65,13 +69,13 @@ func (docs Documents) Validate(webhookURL string, apisFromDB map[string]*model.A
 		}
 	}
 
-	packageIDs := make(map[string]bool, 0)
-	packagePolicyLevels := make(map[string]string, 0)
-	bundleIDs := make(map[string]bool, 0)
-	productIDs := make(map[string]bool, 0)
-	apiIDs := make(map[string]bool, 0)
-	eventIDs := make(map[string]bool, 0)
-	vendorIDs := make(map[string]bool, 0)
+	packageIDs := make(map[string]bool)
+	packagePolicyLevels := make(map[string]string)
+	bundleIDs := make(map[string]bool)
+	productIDs := make(map[string]bool)
+	apiIDs := make(map[string]bool)
+	eventIDs := make(map[string]bool)
+	vendorIDs := make(map[string]bool)
 
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
@@ -216,19 +220,19 @@ func (docs Documents) Sanitize(baseURL string) error {
 	// Rewrite relative URIs
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if pkg.PackageLinks, err = rewriteRelativeURIsInJson(pkg.PackageLinks, baseURL, "url"); err != nil {
+			if pkg.PackageLinks, err = rewriteRelativeURIsInJSON(pkg.PackageLinks, baseURL, "url"); err != nil {
 				return err
 			}
-			if pkg.Links, err = rewriteRelativeURIsInJson(pkg.Links, baseURL, "url"); err != nil {
+			if pkg.Links, err = rewriteRelativeURIsInJSON(pkg.Links, baseURL, "url"); err != nil {
 				return err
 			}
 		}
 
 		for _, bndl := range doc.ConsumptionBundles {
-			if bndl.Links, err = rewriteRelativeURIsInJson(bndl.Links, baseURL, "url"); err != nil {
+			if bndl.Links, err = rewriteRelativeURIsInJSON(bndl.Links, baseURL, "url"); err != nil {
 				return err
 			}
-			if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJson(bndl.CredentialExchangeStrategies, baseURL, "callbackUrl"); err != nil {
+			if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJSON(bndl.CredentialExchangeStrategies, baseURL, "callbackUrl"); err != nil {
 				return err
 			}
 		}
@@ -239,26 +243,26 @@ func (docs Documents) Sanitize(baseURL string) error {
 					definition.URL = baseURL + definition.URL
 				}
 			}
-			if api.APIResourceLinks, err = rewriteRelativeURIsInJson(api.APIResourceLinks, baseURL, "url"); err != nil {
+			if api.APIResourceLinks, err = rewriteRelativeURIsInJSON(api.APIResourceLinks, baseURL, "url"); err != nil {
 				return err
 			}
-			if api.Links, err = rewriteRelativeURIsInJson(api.Links, baseURL, "url"); err != nil {
+			if api.Links, err = rewriteRelativeURIsInJSON(api.Links, baseURL, "url"); err != nil {
 				return err
 			}
-			if api.ChangeLogEntries, err = rewriteRelativeURIsInJson(api.ChangeLogEntries, baseURL, "url"); err != nil {
+			if api.ChangeLogEntries, err = rewriteRelativeURIsInJSON(api.ChangeLogEntries, baseURL, "url"); err != nil {
 				return err
 			}
-			if api.TargetURLs, err = rewriteRelativeURIsInJsonArray(api.TargetURLs, baseURL); err != nil {
+			if api.TargetURLs, err = rewriteRelativeURIsInJSONArray(api.TargetURLs, baseURL); err != nil {
 				return err
 			}
 			rewriteDefaultTargetURL(api.PartOfConsumptionBundles, baseURL)
 		}
 
 		for _, event := range doc.EventResources {
-			if event.ChangeLogEntries, err = rewriteRelativeURIsInJson(event.ChangeLogEntries, baseURL, "url"); err != nil {
+			if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, baseURL, "url"); err != nil {
 				return err
 			}
-			if event.Links, err = rewriteRelativeURIsInJson(event.Links, baseURL, "url"); err != nil {
+			if event.Links, err = rewriteRelativeURIsInJSON(event.Links, baseURL, "url"); err != nil {
 				return err
 			}
 			for _, definition := range event.ResourceDefinitions {
@@ -270,7 +274,7 @@ func (docs Documents) Sanitize(baseURL string) error {
 	}
 
 	// Package properties inheritance
-	packages := make(map[string]*model.PackageInput, 0)
+	packages := make(map[string]*model.PackageInput)
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			packages[pkg.OrdID] = pkg
@@ -407,11 +411,11 @@ func deduplicate(s []string) []string {
 	return result
 }
 
-func rewriteRelativeURIsInJsonArray(j json.RawMessage, baseURL string) (json.RawMessage, error) {
-	parsedJson := gjson.ParseBytes(j)
+func rewriteRelativeURIsInJSONArray(j json.RawMessage, baseURL string) (json.RawMessage, error) {
+	parsedJSON := gjson.ParseBytes(j)
 
-	items := make([]interface{}, 0, 0)
-	for _, crrURI := range parsedJson.Array() {
+	items := make([]interface{}, 0)
+	for _, crrURI := range parsedJSON.Array() {
 		if !isAbsoluteURL(crrURI.String()) {
 			rewrittenURI := baseURL + crrURI.String()
 
@@ -421,12 +425,12 @@ func rewriteRelativeURIsInJsonArray(j json.RawMessage, baseURL string) (json.Raw
 		}
 	}
 
-	rewrittenJson, err := json.Marshal(items)
+	rewrittenJSON, err := json.Marshal(items)
 	if err != nil {
 		return nil, err
 	}
 
-	return rewrittenJson, nil
+	return rewrittenJSON, nil
 }
 
 func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, baseURL string) {
@@ -437,19 +441,19 @@ func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, bas
 	}
 }
 
-func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
-	parsedJson := gjson.ParseBytes(j)
-	if parsedJson.IsArray() {
-		items := make([]interface{}, 0, 0)
-		for _, jsonElement := range parsedJson.Array() {
-			rewrittenElement, err := rewriteRelativeURIsInJson(json.RawMessage(jsonElement.Raw), baseURL, jsonPath)
+func rewriteRelativeURIsInJSON(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
+	parsedJSON := gjson.ParseBytes(j)
+	if parsedJSON.IsArray() {
+		items := make([]interface{}, 0)
+		for _, jsonElement := range parsedJSON.Array() {
+			rewrittenElement, err := rewriteRelativeURIsInJSON(json.RawMessage(jsonElement.Raw), baseURL, jsonPath)
 			if err != nil {
 				return nil, err
 			}
 			items = append(items, gjson.ParseBytes(rewrittenElement).Value())
 		}
 		return json.Marshal(items)
-	} else if parsedJson.IsObject() {
+	} else if parsedJSON.IsObject() {
 		uriProperty := gjson.GetBytes(j, jsonPath)
 		if uriProperty.Exists() && !isAbsoluteURL(uriProperty.String()) {
 			return sjson.SetBytes(j, jsonPath, baseURL+uriProperty.String())

@@ -9,21 +9,23 @@ import (
 type converter struct {
 }
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	if in == nil {
 		return nil, nil
 	}
 
-	var headers graphql.HttpHeaders
-	var headersSerialized *graphql.HttpHeadersSerialized
+	var headers graphql.HTTPHeaders
+	var headersSerialized *graphql.HTTPHeadersSerialized
 	if len(in.AdditionalHeaders) != 0 {
 		headers = in.AdditionalHeaders
 
-		serialized, err := graphql.NewHttpHeadersSerialized(in.AdditionalHeaders)
+		serialized, err := graphql.NewHTTPHeadersSerialized(in.AdditionalHeaders)
 		if err != nil {
 			return nil, errors.Wrap(err, "while marshaling AdditionalHeaders")
 		}
@@ -52,6 +54,7 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	}, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error) {
 	if in == nil {
 		return nil, nil
@@ -89,7 +92,7 @@ func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graph
 
 	var csrf *graphql.CSRFTokenCredentialRequestAuth
 	if in.Csrf != nil {
-		var headers graphql.HttpHeaders
+		var headers graphql.HTTPHeaders
 		if len(in.Csrf.AdditionalHeaders) != 0 {
 			headers = in.Csrf.AdditionalHeaders
 		}
@@ -142,7 +145,7 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 	}, nil
 }
 
-func (c *converter) headersFromGraphQL(headers graphql.HttpHeaders, headersSerialized *graphql.HttpHeadersSerialized) (map[string][]string, error) {
+func (c *converter) headersFromGraphQL(headers graphql.HTTPHeaders, headersSerialized *graphql.HTTPHeadersSerialized) (map[string][]string, error) {
 	var h map[string][]string
 
 	if headersSerialized != nil {
