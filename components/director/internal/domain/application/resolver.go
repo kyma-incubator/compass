@@ -527,6 +527,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
 		if shouldSkip := r.checkApplicationOneTimeTokenIsInvalid(sa.Value, r.oneTimeTokenCfg); shouldSkip {
+			log.C(ctx).Debug("skipping one-time token due to its expiration or usage")
 			continue
 		}
 
