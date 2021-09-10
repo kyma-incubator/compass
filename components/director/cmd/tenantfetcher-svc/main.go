@@ -62,6 +62,7 @@ type config struct {
 	SecurityConfig
 }
 
+// SecurityConfig is the security configuration for incoming requests to tenant fetcher.
 type SecurityConfig struct {
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
@@ -116,7 +117,7 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	configureAuthMiddleware(ctx, router, cfg.securityConfig)
+	configureAuthMiddleware(ctx, router, cfg.SecurityConfig)
 
 	registerHandler(ctx, router, cfg.Handler, transact)
 
@@ -168,7 +169,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg securityConfig) {
+func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg SecurityConfig) {
 	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
 	middleware := auth.New(cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
