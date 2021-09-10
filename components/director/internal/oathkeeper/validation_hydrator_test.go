@@ -45,7 +45,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when db transaction open fails", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
@@ -62,7 +62,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when session cannot be decoded", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -79,7 +79,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -102,7 +102,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -126,7 +126,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when the token is invalid", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -159,7 +159,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when invalidating token fails", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -189,7 +189,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when db transaction commit fails", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -219,7 +219,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should succeed when token is resolved successfully", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
+		tokenService := &mocks.SystemAuthService{}
 		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
