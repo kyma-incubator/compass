@@ -140,7 +140,7 @@ fmt-local:
 
 format-local: imports-local fmt-local
 
-verify-local: test-local check-imports-local check-fmt-local errcheck-local
+verify-local: test-local check-imports-local check-fmt-local errcheck-local lint-local
 
 errcheck-local:
 	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
